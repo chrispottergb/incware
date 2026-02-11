@@ -54,7 +54,7 @@ interface Props {
 export default function OrganizationTab({ companyId, company }: Props) {
   const queryClient = useQueryClient();
 
-  // Filing details form (lives on companies table per original manual's Org Info tab)
+  // Filing details form
   const [filingForm, setFilingForm] = useState({
     second_name_choice: company.second_name_choice ?? "",
     filing_date: company.filing_date ?? "",
@@ -161,7 +161,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  // Directors (Initial List of Directors per manual)
+  // Directors
   const { data: directors = [] } = useQuery({
     queryKey: ["directors", companyId],
     queryFn: async () => {
@@ -218,7 +218,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  // Assets (Benefits, Vehicles/Equipment, Leases, Property)
+  // Assets
   const { data: assets = [] } = useQuery({
     queryKey: ["company_assets", companyId],
     queryFn: async () => {
@@ -271,79 +271,79 @@ export default function OrganizationTab({ companyId, company }: Props) {
   });
 
   return (
-    <div className="space-y-6">
-      {/* Filing / Articles Details — matches original Org Info tab */}
+    <div className="space-y-5">
+      {/* Filing & Articles Details */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2 pt-4 px-4">
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-primary" />
-            <CardTitle className="font-display text-base">Filing & Articles Details</CardTitle>
+            <FileText className="h-3.5 w-3.5 text-primary" />
+            <CardTitle className="card-section-title">Filing & Articles Details</CardTitle>
           </div>
-          <CardDescription>Information used to prepare articles of incorporation/organization</CardDescription>
+          <CardDescription className="text-[11px]">Information used to prepare articles of incorporation/organization</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 pb-4">
           <form
             onSubmit={(e) => {
               e.preventDefault();
               saveFiling.mutate();
             }}
-            className="space-y-4"
+            className="space-y-3"
           >
-            <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">2nd Name Choice</Label>
-                <Input value={filingForm.second_name_choice} onChange={(e) => setFilingForm((p) => ({ ...p, second_name_choice: e.target.value }))} />
+            <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="field-group">
+                <Label className="field-label">2nd Name Choice</Label>
+                <Input className="h-8 text-sm" value={filingForm.second_name_choice} onChange={(e) => setFilingForm((p) => ({ ...p, second_name_choice: e.target.value }))} />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">Filing Date</Label>
-                <Input type="date" value={filingForm.filing_date} onChange={(e) => setFilingForm((p) => ({ ...p, filing_date: e.target.value }))} />
+              <div className="field-group">
+                <Label className="field-label">Filing Date</Label>
+                <Input type="date" className="h-8 text-sm" value={filingForm.filing_date} onChange={(e) => setFilingForm((p) => ({ ...p, filing_date: e.target.value }))} />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">Delayed Effective Filing Date</Label>
-                <Input type="date" value={filingForm.delayed_effective_filing_date} onChange={(e) => setFilingForm((p) => ({ ...p, delayed_effective_filing_date: e.target.value }))} />
+              <div className="field-group">
+                <Label className="field-label">Delayed Effective Filing Date</Label>
+                <Input type="date" className="h-8 text-sm" value={filingForm.delayed_effective_filing_date} onChange={(e) => setFilingForm((p) => ({ ...p, delayed_effective_filing_date: e.target.value }))} />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">Business Purpose</Label>
-                <Input value={filingForm.business_purpose} onChange={(e) => setFilingForm((p) => ({ ...p, business_purpose: e.target.value }))} />
+              <div className="field-group">
+                <Label className="field-label">Business Purpose</Label>
+                <Input className="h-8 text-sm" value={filingForm.business_purpose} onChange={(e) => setFilingForm((p) => ({ ...p, business_purpose: e.target.value }))} />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">Accounting Method</Label>
+              <div className="field-group">
+                <Label className="field-label">Accounting Method</Label>
                 <Select value={filingForm.accounting_method} onValueChange={(v) => setFilingForm((p) => ({ ...p, accounting_method: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cash basis">Cash Basis</SelectItem>
                     <SelectItem value="accrual">Accrual</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">SIC Code</Label>
-                <Input value={filingForm.sic_code} onChange={(e) => setFilingForm((p) => ({ ...p, sic_code: e.target.value }))} />
+              <div className="field-group">
+                <Label className="field-label">SIC Code</Label>
+                <Input className="h-8 text-sm" value={filingForm.sic_code} onChange={(e) => setFilingForm((p) => ({ ...p, sic_code: e.target.value }))} />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">First Year Annual Meeting</Label>
-                <Input type="number" value={filingForm.first_year_annual_meeting} onChange={(e) => setFilingForm((p) => ({ ...p, first_year_annual_meeting: e.target.value }))} />
+              <div className="field-group">
+                <Label className="field-label">First Year Annual Meeting</Label>
+                <Input type="number" className="h-8 text-sm" value={filingForm.first_year_annual_meeting} onChange={(e) => setFilingForm((p) => ({ ...p, first_year_annual_meeting: e.target.value }))} />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">Initial # of Directors</Label>
-                <Input type="number" value={filingForm.initial_directors_count} onChange={(e) => setFilingForm((p) => ({ ...p, initial_directors_count: e.target.value }))} />
+              <div className="field-group">
+                <Label className="field-label">Initial # of Directors</Label>
+                <Input type="number" className="h-8 text-sm" value={filingForm.initial_directors_count} onChange={(e) => setFilingForm((p) => ({ ...p, initial_directors_count: e.target.value }))} />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">Max Directors Allowed</Label>
-                <Input type="number" value={filingForm.max_directors_allowed} onChange={(e) => setFilingForm((p) => ({ ...p, max_directors_allowed: e.target.value }))} />
+              <div className="field-group">
+                <Label className="field-label">Max Directors Allowed</Label>
+                <Input type="number" className="h-8 text-sm" value={filingForm.max_directors_allowed} onChange={(e) => setFilingForm((p) => ({ ...p, max_directors_allowed: e.target.value }))} />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">Max VPs Allowed</Label>
-                <Input type="number" value={filingForm.max_vps_allowed} onChange={(e) => setFilingForm((p) => ({ ...p, max_vps_allowed: e.target.value }))} />
+              <div className="field-group">
+                <Label className="field-label">Max VPs Allowed</Label>
+                <Input type="number" className="h-8 text-sm" value={filingForm.max_vps_allowed} onChange={(e) => setFilingForm((p) => ({ ...p, max_vps_allowed: e.target.value }))} />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">Additional Provisions</Label>
-              <Textarea value={filingForm.additional_provisions} onChange={(e) => setFilingForm((p) => ({ ...p, additional_provisions: e.target.value }))} rows={3} />
+            <div className="field-group">
+              <Label className="field-label">Additional Provisions</Label>
+              <Textarea className="text-sm min-h-[60px]" value={filingForm.additional_provisions} onChange={(e) => setFilingForm((p) => ({ ...p, additional_provisions: e.target.value }))} rows={2} />
             </div>
             <div className="flex justify-end">
               <Button type="submit" disabled={saveFiling.isPending} size="sm">
-                {saveFiling.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {saveFiling.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
                 Save Filing Details
               </Button>
             </div>
@@ -353,58 +353,48 @@ export default function OrganizationTab({ companyId, company }: Props) {
 
       {/* Initial List of Directors */}
       <Card>
-        <CardHeader className="pb-3 flex flex-row items-center justify-between">
+        <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary" />
-              <CardTitle className="font-display text-base">Initial List of Directors</CardTitle>
+              <Users className="h-3.5 w-3.5 text-primary" />
+              <CardTitle className="card-section-title">Initial List of Directors</CardTitle>
             </div>
-            <CardDescription className="mt-1">Directors serve at the organizational meeting until the board is officially elected</CardDescription>
+            <CardDescription className="text-[11px] mt-0.5">Directors serve at the organizational meeting until the board is officially elected</CardDescription>
           </div>
           <Dialog open={directorDialog} onOpenChange={setDirectorDialog}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
-                <Plus className="mr-2 h-4 w-4" /> Add
+              <Button size="sm" variant="outline" className="h-7 text-xs">
+                <Plus className="mr-1 h-3 w-3" /> Add
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle className="font-display">Add Director</DialogTitle>
+                <DialogTitle className="font-display text-base">Add Director</DialogTitle>
               </DialogHeader>
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   addDirector.mutate();
                 }}
-                className="space-y-4"
+                className="space-y-3"
               >
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Director Name</Label>
-                  <Input
-                    value={newDirector.name}
-                    onChange={(e) => setNewDirector((p) => ({ ...p, name: e.target.value }))}
-                    required
-                  />
+                <div className="field-group">
+                  <Label className="field-label">Director Name</Label>
+                  <Input className="h-8 text-sm" value={newDirector.name} onChange={(e) => setNewDirector((p) => ({ ...p, name: e.target.value }))} required />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Business Address</Label>
-                  <Input
-                    value={newDirector.address}
-                    onChange={(e) => setNewDirector((p) => ({ ...p, address: e.target.value }))}
-                  />
+                <div className="field-group">
+                  <Label className="field-label">Business Address</Label>
+                  <Input className="h-8 text-sm" value={newDirector.address} onChange={(e) => setNewDirector((p) => ({ ...p, address: e.target.value }))} />
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">City</Label>
-                    <Input
-                      value={newDirector.city}
-                      onChange={(e) => setNewDirector((p) => ({ ...p, city: e.target.value }))}
-                    />
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="field-group">
+                    <Label className="field-label">City</Label>
+                    <Input className="h-8 text-sm" value={newDirector.city} onChange={(e) => setNewDirector((p) => ({ ...p, city: e.target.value }))} />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">State</Label>
+                  <div className="field-group">
+                    <Label className="field-label">State</Label>
                     <Select value={newDirector.state} onValueChange={(v) => setNewDirector((p) => ({ ...p, state: v }))}>
-                      <SelectTrigger><SelectValue placeholder="ST" /></SelectTrigger>
+                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
                       <SelectContent>
                         {US_STATES.map((s) => (
                           <SelectItem key={s} value={s}>{s}</SelectItem>
@@ -412,57 +402,49 @@ export default function OrganizationTab({ companyId, company }: Props) {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">Zip</Label>
-                    <Input
-                      value={newDirector.zip}
-                      onChange={(e) => setNewDirector((p) => ({ ...p, zip: e.target.value }))}
-                    />
+                  <div className="field-group">
+                    <Label className="field-label">Zip</Label>
+                    <Input className="h-8 text-sm" value={newDirector.zip} onChange={(e) => setNewDirector((p) => ({ ...p, zip: e.target.value }))} />
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={addDirector.isPending}>
-                  {addDirector.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button type="submit" className="w-full" size="sm" disabled={addDirector.isPending}>
+                  {addDirector.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
                   Add Director
                 </Button>
               </form>
             </DialogContent>
           </Dialog>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 pb-4">
           {directors.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border py-8 text-center">
-              <Users className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">No directors added yet</p>
+            <div className="rounded-md border border-dashed border-border py-6 text-center">
+              <Users className="mx-auto mb-1.5 h-6 w-6 text-muted-foreground/30" />
+              <p className="text-xs text-muted-foreground">No directors added yet</p>
             </div>
           ) : (
-            <div className="rounded-lg border border-border overflow-hidden">
+            <div className="rounded-md border border-border overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold">Director Name</TableHead>
-                    <TableHead>Business Address</TableHead>
-                    <TableHead>City</TableHead>
-                    <TableHead>State</TableHead>
-                    <TableHead>Zip</TableHead>
-                    <TableHead className="w-12"></TableHead>
+                  <TableRow className="bg-muted/40 hover:bg-muted/40">
+                    <TableHead className="text-xs font-semibold h-8">Director Name</TableHead>
+                    <TableHead className="text-xs h-8">Business Address</TableHead>
+                    <TableHead className="text-xs h-8">City</TableHead>
+                    <TableHead className="text-xs h-8">State</TableHead>
+                    <TableHead className="text-xs h-8">Zip</TableHead>
+                    <TableHead className="w-10 h-8"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {directors.map((d) => (
                     <TableRow key={d.id}>
-                      <TableCell className="font-medium">{d.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{d.address}</TableCell>
-                      <TableCell className="text-muted-foreground">{d.city}</TableCell>
-                      <TableCell className="text-muted-foreground">{d.state}</TableCell>
-                      <TableCell className="text-muted-foreground">{d.zip}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteDirector.mutate(d.id)}
-                          className="h-8 w-8 text-destructive/60 hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
+                      <TableCell className="font-medium text-sm py-2">{d.name}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground py-2">{d.address || "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground py-2">{d.city || "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground py-2">{d.state || "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground py-2">{d.zip || "—"}</TableCell>
+                      <TableCell className="py-2">
+                        <Button variant="ghost" size="icon" onClick={() => deleteDirector.mutate(d.id)} className="h-6 w-6 text-destructive/50 hover:text-destructive">
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -476,53 +458,41 @@ export default function OrganizationTab({ companyId, company }: Props) {
 
       {/* Officers */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2 pt-4 px-4">
           <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-primary" />
-            <CardTitle className="font-display text-base">Officers</CardTitle>
+            <Users className="h-3.5 w-3.5 text-primary" />
+            <CardTitle className="card-section-title">Officers</CardTitle>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 pb-4">
           <form
             onSubmit={(e) => {
               e.preventDefault();
               saveOfficers.mutate();
             }}
-            className="space-y-4"
+            className="space-y-3"
           >
-            <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">President</Label>
-                <Input
-                  value={officerForm.president}
-                  onChange={(e) => setOfficerForm((p) => ({ ...p, president: e.target.value }))}
-                />
+            <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
+              <div className="field-group">
+                <Label className="field-label">President</Label>
+                <Input className="h-8 text-sm" value={officerForm.president} onChange={(e) => setOfficerForm((p) => ({ ...p, president: e.target.value }))} />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">Vice President</Label>
-                <Input
-                  value={officerForm.vice_president}
-                  onChange={(e) => setOfficerForm((p) => ({ ...p, vice_president: e.target.value }))}
-                />
+              <div className="field-group">
+                <Label className="field-label">Vice President</Label>
+                <Input className="h-8 text-sm" value={officerForm.vice_president} onChange={(e) => setOfficerForm((p) => ({ ...p, vice_president: e.target.value }))} />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">Secretary</Label>
-                <Input
-                  value={officerForm.secretary}
-                  onChange={(e) => setOfficerForm((p) => ({ ...p, secretary: e.target.value }))}
-                />
+              <div className="field-group">
+                <Label className="field-label">Secretary</Label>
+                <Input className="h-8 text-sm" value={officerForm.secretary} onChange={(e) => setOfficerForm((p) => ({ ...p, secretary: e.target.value }))} />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">Treasurer</Label>
-                <Input
-                  value={officerForm.treasurer}
-                  onChange={(e) => setOfficerForm((p) => ({ ...p, treasurer: e.target.value }))}
-                />
+              <div className="field-group">
+                <Label className="field-label">Treasurer</Label>
+                <Input className="h-8 text-sm" value={officerForm.treasurer} onChange={(e) => setOfficerForm((p) => ({ ...p, treasurer: e.target.value }))} />
               </div>
             </div>
             <div className="flex justify-end">
               <Button type="submit" disabled={saveOfficers.isPending} size="sm">
-                {saveOfficers.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {saveOfficers.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
                 Save Officers
               </Button>
             </div>
@@ -532,35 +502,35 @@ export default function OrganizationTab({ companyId, company }: Props) {
 
       {/* Company Assets */}
       <Card>
-        <CardHeader className="pb-3 flex flex-row items-center justify-between">
+        <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-primary" />
-              <CardTitle className="font-display text-base">Assets</CardTitle>
+              <Briefcase className="h-3.5 w-3.5 text-primary" />
+              <CardTitle className="card-section-title">Assets</CardTitle>
             </div>
-            <CardDescription className="mt-1">Benefits, Vehicles/Equipment, Leases, and Property</CardDescription>
+            <CardDescription className="text-[11px] mt-0.5">Benefits, Vehicles/Equipment, Leases, and Property</CardDescription>
           </div>
           <Dialog open={assetDialog} onOpenChange={setAssetDialog}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
-                <Plus className="mr-2 h-4 w-4" /> Add
+              <Button size="sm" variant="outline" className="h-7 text-xs">
+                <Plus className="mr-1 h-3 w-3" /> Add
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle className="font-display">Add Asset</DialogTitle>
+                <DialogTitle className="font-display text-base">Add Asset</DialogTitle>
               </DialogHeader>
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   addAsset.mutate();
                 }}
-                className="space-y-4"
+                className="space-y-3"
               >
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Asset Type</Label>
+                <div className="field-group">
+                  <Label className="field-label">Asset Type</Label>
                   <Select value={newAsset.asset_type} onValueChange={(v) => setNewAsset((p) => ({ ...p, asset_type: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {ASSET_TYPES.map((t) => (
                         <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
@@ -568,68 +538,54 @@ export default function OrganizationTab({ companyId, company }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Description</Label>
-                  <Input
-                    value={newAsset.description}
-                    onChange={(e) => setNewAsset((p) => ({ ...p, description: e.target.value }))}
-                    required
-                  />
+                <div className="field-group">
+                  <Label className="field-label">Description</Label>
+                  <Input className="h-8 text-sm" value={newAsset.description} onChange={(e) => setNewAsset((p) => ({ ...p, description: e.target.value }))} required />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Value ($)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={newAsset.value}
-                    onChange={(e) => setNewAsset((p) => ({ ...p, value: e.target.value }))}
-                  />
+                <div className="field-group">
+                  <Label className="field-label">Value ($)</Label>
+                  <Input type="number" step="0.01" className="h-8 text-sm" value={newAsset.value} onChange={(e) => setNewAsset((p) => ({ ...p, value: e.target.value }))} />
                 </div>
-                <Button type="submit" className="w-full" disabled={addAsset.isPending}>
-                  {addAsset.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button type="submit" className="w-full" size="sm" disabled={addAsset.isPending}>
+                  {addAsset.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
                   Add Asset
                 </Button>
               </form>
             </DialogContent>
           </Dialog>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 pb-4">
           {assets.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border py-8 text-center">
-              <Briefcase className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">No assets added yet</p>
+            <div className="rounded-md border border-dashed border-border py-6 text-center">
+              <Briefcase className="mx-auto mb-1.5 h-6 w-6 text-muted-foreground/30" />
+              <p className="text-xs text-muted-foreground">No assets added yet</p>
             </div>
           ) : (
-            <div className="rounded-lg border border-border overflow-hidden">
+            <div className="rounded-md border border-border overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold">Type</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Value</TableHead>
-                    <TableHead className="w-12"></TableHead>
+                  <TableRow className="bg-muted/40 hover:bg-muted/40">
+                    <TableHead className="text-xs font-semibold h-8">Type</TableHead>
+                    <TableHead className="text-xs h-8">Description</TableHead>
+                    <TableHead className="text-xs text-right h-8">Value</TableHead>
+                    <TableHead className="w-10 h-8"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {assets.map((a) => (
                     <TableRow key={a.id}>
-                      <TableCell>
-                        <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium capitalize text-primary">
+                      <TableCell className="py-2">
+                        <span className="inline-flex items-center rounded-full bg-primary/8 px-2 py-0.5 text-[10px] font-medium capitalize text-primary">
                           {a.asset_type}
                         </span>
                       </TableCell>
-                      <TableCell>{a.description}</TableCell>
-                      <TableCell className="text-right font-mono text-sm">
+                      <TableCell className="text-sm py-2">{a.description}</TableCell>
+                      <TableCell className="text-right font-mono text-xs py-2">
                         {a.value != null ? `$${Number(a.value).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "—"}
                       </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteAsset.mutate(a.id)}
-                          className="h-8 w-8 text-destructive/60 hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
+                      <TableCell className="py-2">
+                        <Button variant="ghost" size="icon" onClick={() => deleteAsset.mutate(a.id)} className="h-6 w-6 text-destructive/50 hover:text-destructive">
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </TableCell>
                     </TableRow>

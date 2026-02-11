@@ -30,7 +30,7 @@ export default function CompanyDetail() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -38,9 +38,9 @@ export default function CompanyDetail() {
   if (!company) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <Building2 className="h-12 w-12 text-muted-foreground/40" />
-        <p className="text-muted-foreground">Company not found.</p>
-        <Button variant="outline" onClick={() => navigate("/")}>
+        <Building2 className="h-10 w-10 text-muted-foreground/30" />
+        <p className="text-sm text-muted-foreground">Company not found.</p>
+        <Button variant="outline" size="sm" onClick={() => navigate("/")}>
           Back to Dashboard
         </Button>
       </div>
@@ -53,27 +53,27 @@ export default function CompanyDetail() {
       : "bg-muted text-muted-foreground border-muted";
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => navigate("/")}
-          className="mt-0.5 shrink-0"
+          className="mt-0.5 shrink-0 h-8 w-8"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="font-display text-2xl font-bold tracking-tight truncate">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="font-display text-xl font-bold tracking-tight truncate">
               {company.name}
             </h1>
-            <Badge variant="outline" className={statusColor}>
+            <Badge variant="outline" className={`${statusColor} text-[10px] px-1.5 py-0`}>
               {company.status === "active" ? "Active" : "Inactive"}
             </Badge>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {company.entity_type}
             {company.state_of_incorporation && ` · ${company.state_of_incorporation}`}
             {company.incorporation_date &&
@@ -82,7 +82,7 @@ export default function CompanyDetail() {
         </div>
       </div>
 
-      {/* Tabs — matching original IncWare tab structure */}
+      {/* Tabs */}
       <Tabs defaultValue="incorporation" className="w-full">
         <div className="border-b border-border">
           <TabsList className="h-auto w-full justify-start gap-0 rounded-none bg-transparent p-0">
@@ -94,7 +94,7 @@ export default function CompanyDetail() {
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
-                className="relative rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="relative rounded-none border-b-2 border-transparent px-4 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
                 {tab.label}
               </TabsTrigger>
@@ -102,13 +102,13 @@ export default function CompanyDetail() {
           </TabsList>
         </div>
 
-        <TabsContent value="incorporation" className="mt-6">
+        <TabsContent value="incorporation" className="mt-5">
           <IncorporationTab company={company} />
         </TabsContent>
-        <TabsContent value="organization" className="mt-6">
+        <TabsContent value="organization" className="mt-5">
           <OrganizationTab companyId={company.id} company={company} />
         </TabsContent>
-        <TabsContent value="meetings" className="mt-6">
+        <TabsContent value="meetings" className="mt-5">
           <MeetingsTab companyId={company.id} company={company} />
         </TabsContent>
       </Tabs>

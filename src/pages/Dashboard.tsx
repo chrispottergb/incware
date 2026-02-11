@@ -6,7 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +22,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Building2, Plus, Search, MapPin, Calendar, Loader2 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Building2, Plus, Search, Loader2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "S-Corp", "Non-Profit", "Partnership"];
@@ -41,7 +50,6 @@ export default function Dashboard() {
   const [filterType, setFilterType] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // New company form state
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("Corporation");
   const [newState, setNewState] = useState("");
@@ -85,20 +93,25 @@ export default function Dashboard() {
     return matchesSearch && matchesType;
   });
 
+  const statusBadge = (status: string | null) => {
+    if (status === "active") return <Badge variant="outline" className="bg-success/10 text-success border-success/20 text-[10px] px-1.5 py-0">Active</Badge>;
+    return <Badge variant="outline" className="bg-muted text-muted-foreground border-muted text-[10px] px-1.5 py-0">Inactive</Badge>;
+  };
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-5 animate-fade-in">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight">Companies</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="font-display text-xl font-bold tracking-tight">Client Companies</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
             {companies.length} client{companies.length !== 1 ? "s" : ""} on file
           </p>
         </div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add Company
+            <Button size="sm">
+              <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Company
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -112,17 +125,12 @@ export default function Dashboard() {
               }}
               className="space-y-4"
             >
-              <div className="space-y-2">
-                <Label>Company Name</Label>
-                <Input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="Acme Corp"
-                  required
-                />
+              <div className="field-group">
+                <Label className="field-label">Company Name</Label>
+                <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Acme Corp" required />
               </div>
-              <div className="space-y-2">
-                <Label>Entity Type</Label>
+              <div className="field-group">
+                <Label className="field-label">Entity Type</Label>
                 <Select value={newType} onValueChange={setNewType}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -132,8 +140,8 @@ export default function Dashboard() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>State of Incorporation</Label>
+              <div className="field-group">
+                <Label className="field-label">State of Incorporation</Label>
                 <Select value={newState} onValueChange={setNewState}>
                   <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
                   <SelectContent>
@@ -153,18 +161,18 @@ export default function Dashboard() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search companies..."
-            className="pl-9"
+            className="pl-8 h-9 text-sm"
           />
         </div>
         <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-full sm:w-44">
+          <SelectTrigger className="w-full sm:w-40 h-9 text-sm">
             <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>
@@ -176,59 +184,71 @@ export default function Dashboard() {
         </Select>
       </div>
 
-      {/* Companies Grid */}
+      {/* Companies Table */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       ) : filtered.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <Building2 className="mb-4 h-12 w-12 text-muted-foreground/40" />
-            <h3 className="font-display text-lg font-semibold">No companies yet</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <Building2 className="mb-3 h-10 w-10 text-muted-foreground/30" />
+            <h3 className="font-display text-base font-semibold">No companies yet</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
               Add your first client company to get started.
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((company) => (
-            <Card
-              key={company.id}
-              className="group cursor-pointer transition-shadow hover:shadow-md"
-              onClick={() => navigate(`/company/${company.id}`)}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Building2 className="h-5 w-5 text-primary" />
-                  </div>
-                  <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
-                    {company.entity_type}
-                  </span>
-                </div>
-                <CardTitle className="mt-3 font-display text-lg leading-tight">
-                  {company.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm text-muted-foreground">
-                {company.state_of_incorporation && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {company.state_of_incorporation}
-                  </div>
-                )}
-                {company.incorporation_date && (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-3.5 w-3.5" />
-                    {new Date(company.incorporation_date).toLocaleDateString()}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-hidden rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="font-semibold text-xs">Company Name</TableHead>
+                    <TableHead className="text-xs">Type</TableHead>
+                    <TableHead className="text-xs">State</TableHead>
+                    <TableHead className="text-xs">Inc. Date</TableHead>
+                    <TableHead className="text-xs">Fiscal Year End</TableHead>
+                    <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="w-10"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((company) => (
+                    <TableRow
+                      key={company.id}
+                      className="cursor-pointer group"
+                      onClick={() => navigate(`/company/${company.id}`)}
+                    >
+                      <TableCell className="font-medium text-sm">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/8 shrink-0">
+                            <Building2 className="h-3.5 w-3.5 text-primary" />
+                          </div>
+                          {company.name}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{company.entity_type}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{company.state_of_incorporation || "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {company.incorporation_date
+                          ? new Date(company.incorporation_date + "T00:00:00").toLocaleDateString()
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{company.fiscal_year_end || "—"}</TableCell>
+                      <TableCell>{statusBadge(company.status)}</TableCell>
+                      <TableCell>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary transition-colors" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

@@ -45,7 +45,7 @@ export default function MeetingDetail() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -53,9 +53,9 @@ export default function MeetingDetail() {
   if (!meeting) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <Calendar className="h-12 w-12 text-muted-foreground/40" />
-        <p className="text-muted-foreground">Meeting not found.</p>
-        <Button variant="outline" onClick={() => navigate(`/company/${id}`)}>
+        <Calendar className="h-10 w-10 text-muted-foreground/30" />
+        <p className="text-sm text-muted-foreground">Meeting not found.</p>
+        <Button variant="outline" size="sm" onClick={() => navigate(`/company/${id}`)}>
           Back to Company
         </Button>
       </div>
@@ -65,7 +65,7 @@ export default function MeetingDetail() {
   const subTabs = [
     { value: "info", label: "Meeting Info" },
     { value: "financials", label: "Financial" },
-    { value: "shareholders", label: "Shareholders" },
+    { value: "shareholders", label: "Shrhlds/Members" },
     { value: "directors", label: "Directors" },
     { value: "officers", label: "Officers" },
     { value: "counsel", label: "Counsel" },
@@ -77,26 +77,26 @@ export default function MeetingDetail() {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-start gap-4">
+    <div className="space-y-5 animate-fade-in">
+      <div className="flex items-start gap-3">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => navigate(`/company/${id}`)}
-          className="mt-0.5 shrink-0"
+          className="mt-0.5 shrink-0 h-8 w-8"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="font-display text-2xl font-bold tracking-tight">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="font-display text-xl font-bold tracking-tight">
               {meeting.meeting_type}
             </h1>
             {meeting.sub_type && (
-              <Badge variant="outline">{meeting.sub_type}</Badge>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">{meeting.sub_type}</Badge>
             )}
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {company?.name} · {new Date(meeting.meeting_date + "T00:00:00").toLocaleDateString()}
             {meeting.tax_year && ` · Tax Year ${meeting.tax_year}`}
           </p>
@@ -110,7 +110,7 @@ export default function MeetingDetail() {
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
-                className="rounded-none border-b-2 border-transparent px-3 py-3 text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="rounded-none border-b-2 border-transparent px-3 py-2.5 text-[11px] sm:text-xs font-medium text-muted-foreground whitespace-nowrap transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
                 {tab.label}
               </TabsTrigger>
@@ -118,19 +118,14 @@ export default function MeetingDetail() {
           </TabsList>
         </div>
 
-        <TabsContent value="info" className="mt-6">
+        <TabsContent value="info" className="mt-5">
           <MeetingInfoCard meeting={meeting} />
         </TabsContent>
-
-        <TabsContent value="financials" className="mt-6">
+        <TabsContent value="financials" className="mt-5">
           <MeetingFinancials meetingId={meeting.id} />
         </TabsContent>
-
-        <TabsContent value="shareholders" className="mt-6">
-          <MeetingSubTable
-            meetingId={meeting.id}
-            tableName="meeting_shareholders"
-            title="Shareholders / Members"
+        <TabsContent value="shareholders" className="mt-5">
+          <MeetingSubTable meetingId={meeting.id} tableName="meeting_shareholders" title="Shareholders / Members"
             columns={[
               { key: "shareholder_name", label: "Name", required: true },
               { key: "common_shares", label: "Common Shares", type: "number" },
@@ -139,35 +134,21 @@ export default function MeetingDetail() {
             ]}
           />
         </TabsContent>
-
-        <TabsContent value="directors" className="mt-6">
-          <MeetingSubTable
-            meetingId={meeting.id}
-            tableName="meeting_directors"
-            title="Directors"
-            columns={[
-              { key: "director_name", label: "Director Name", required: true },
-            ]}
+        <TabsContent value="directors" className="mt-5">
+          <MeetingSubTable meetingId={meeting.id} tableName="meeting_directors" title="Directors"
+            columns={[{ key: "director_name", label: "Director Name", required: true }]}
           />
         </TabsContent>
-
-        <TabsContent value="officers" className="mt-6">
-          <MeetingSubTable
-            meetingId={meeting.id}
-            tableName="meeting_officers"
-            title="Officers"
+        <TabsContent value="officers" className="mt-5">
+          <MeetingSubTable meetingId={meeting.id} tableName="meeting_officers" title="Officers"
             columns={[
               { key: "title", label: "Title", required: true },
               { key: "name", label: "Name", required: true },
             ]}
           />
         </TabsContent>
-
-        <TabsContent value="counsel" className="mt-6">
-          <MeetingSubTable
-            meetingId={meeting.id}
-            tableName="meeting_counsel"
-            title="Counsel / Banking / Loans"
+        <TabsContent value="counsel" className="mt-5">
+          <MeetingSubTable meetingId={meeting.id} tableName="meeting_counsel" title="Counsel / Banking / Loans"
             columns={[
               { key: "counsel_name", label: "Counsel" },
               { key: "bank_name", label: "Bank" },
@@ -175,12 +156,8 @@ export default function MeetingDetail() {
             ]}
           />
         </TabsContent>
-
-        <TabsContent value="assets" className="mt-6">
-          <MeetingSubTable
-            meetingId={meeting.id}
-            tableName="meeting_assets"
-            title="Vehicles / Equipment / Leases / Property"
+        <TabsContent value="assets" className="mt-5">
+          <MeetingSubTable meetingId={meeting.id} tableName="meeting_assets" title="Vehicles / Equipment / Leases / Property"
             columns={[
               { key: "asset_type", label: "Type", required: true },
               { key: "description", label: "Description", required: true },
@@ -188,41 +165,22 @@ export default function MeetingDetail() {
             ]}
           />
         </TabsContent>
-
-        <TabsContent value="amendments" className="mt-6">
-          <MeetingSubTable
-            meetingId={meeting.id}
-            tableName="meeting_amendments"
-            title="Amendments"
-            columns={[
-              { key: "amendment_text", label: "Amendment", required: true, wide: true },
-            ]}
+        <TabsContent value="amendments" className="mt-5">
+          <MeetingSubTable meetingId={meeting.id} tableName="meeting_amendments" title="Amendments"
+            columns={[{ key: "amendment_text", label: "Amendment", required: true, wide: true }]}
           />
         </TabsContent>
-
-        <TabsContent value="resolutions" className="mt-6">
+        <TabsContent value="resolutions" className="mt-5">
           <MeetingResolutions meetingId={meeting.id} />
         </TabsContent>
-
-        <TabsContent value="benefits" className="mt-6">
-          <MeetingSubTable
-            meetingId={meeting.id}
-            tableName="meeting_benefits"
-            title="Benefits"
-            columns={[
-              { key: "benefit_description", label: "Benefit Description", required: true, wide: true },
-            ]}
+        <TabsContent value="benefits" className="mt-5">
+          <MeetingSubTable meetingId={meeting.id} tableName="meeting_benefits" title="Benefits"
+            columns={[{ key: "benefit_description", label: "Benefit Description", required: true, wide: true }]}
           />
         </TabsContent>
-
-        <TabsContent value="other" className="mt-6">
-          <MeetingSubTable
-            meetingId={meeting.id}
-            tableName="meeting_other"
-            title="Other Notes"
-            columns={[
-              { key: "notes", label: "Notes", required: true, wide: true },
-            ]}
+        <TabsContent value="other" className="mt-5">
+          <MeetingSubTable meetingId={meeting.id} tableName="meeting_other" title="Other Notes"
+            columns={[{ key: "notes", label: "Notes", required: true, wide: true }]}
           />
         </TabsContent>
       </Tabs>
