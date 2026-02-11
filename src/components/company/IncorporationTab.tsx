@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Save, Shield, Building2, Share2, UserCheck } from "lucide-react";
 import { toast } from "sonner";
+import WIComplianceChecklist from "./WIComplianceChecklist";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "S-Corp", "Non-Profit", "Partnership"];
 const US_STATES = [
@@ -114,6 +115,9 @@ export default function IncorporationTab({ company }: Props) {
       }}
       className="space-y-5"
     >
+      {/* WI Compliance Checklist */}
+      <WIComplianceChecklist company={company} />
+
       {/* Corporate Status Verification */}
       <Card className="border-l-2 border-l-warning">
         <CardHeader className="pb-2 pt-4 px-4">
