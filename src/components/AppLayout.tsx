@@ -11,6 +11,9 @@ import {
   FileText,
   Users,
   Calendar,
+  Clock,
+  Landmark,
+  UsersRound,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -29,7 +32,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   const companyNav = companyId
     ? [
-        { label: "Company", href: `/company/${companyId}`, icon: Building2 },
+        { label: "Overview", href: `/company/${companyId}#incorporation`, icon: Building2 },
+        { label: "Organization", href: `/company/${companyId}#organization`, icon: Landmark },
+        { label: "Meetings", href: `/company/${companyId}#meetings`, icon: Calendar },
+        { label: "Shareholders", href: `/company/${companyId}#shareholders`, icon: UsersRound },
+        { label: "Timeline", href: `/company/${companyId}#timeline`, icon: Clock },
       ]
     : [];
 
@@ -79,7 +86,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 Company
               </p>
               {companyNav.map((item) => {
-                const active = location.pathname === item.href;
+                const itemHash = item.href.split("#")[1] || "";
+                const currentHash = location.hash.replace("#", "") || "incorporation";
+                const active = companyId && itemHash === currentHash;
                 return (
                   <Link
                     key={item.href}
