@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Building2, Loader2 } from "lucide-react";
 import IncorporationTab from "@/components/company/IncorporationTab";
 import OrganizationTab from "@/components/company/OrganizationTab";
+import MeetingsTab from "@/components/company/MeetingsTab";
 
 export default function CompanyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -19,7 +20,7 @@ export default function CompanyDetail() {
         .from("companies")
         .select("*")
         .eq("id", id!)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -88,6 +89,7 @@ export default function CompanyDetail() {
             {[
               { value: "incorporation", label: "Incorporation Info" },
               { value: "organization", label: "Organizational Info" },
+              { value: "meetings", label: "Meetings" },
             ].map((tab) => (
               <TabsTrigger
                 key={tab.value}
@@ -105,6 +107,9 @@ export default function CompanyDetail() {
         </TabsContent>
         <TabsContent value="organization" className="mt-6">
           <OrganizationTab companyId={company.id} company={company} />
+        </TabsContent>
+        <TabsContent value="meetings" className="mt-6">
+          <MeetingsTab companyId={company.id} company={company} />
         </TabsContent>
       </Tabs>
     </div>

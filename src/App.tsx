@@ -9,6 +9,7 @@ import AppLayout from "@/components/AppLayout";
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import CompanyDetail from "@/pages/CompanyDetail";
+import MeetingDetail from "@/pages/MeetingDetail";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,16 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <CompanyDetail />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/company/:id/meetings/:meetingId"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <MeetingDetail />
                   </AppLayout>
                 </ProtectedRoute>
               }
