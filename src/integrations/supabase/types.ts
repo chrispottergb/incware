@@ -231,6 +231,430 @@ export type Database = {
           },
         ]
       }
+      meeting_amendments: {
+        Row: {
+          amendment_text: string
+          created_at: string
+          id: string
+          meeting_id: string
+        }
+        Insert: {
+          amendment_text: string
+          created_at?: string
+          id?: string
+          meeting_id: string
+        }
+        Update: {
+          amendment_text?: string
+          created_at?: string
+          id?: string
+          meeting_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_amendments_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_assets: {
+        Row: {
+          asset_type: string
+          created_at: string
+          description: string
+          id: string
+          meeting_id: string
+          value: number | null
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string
+          description: string
+          id?: string
+          meeting_id: string
+          value?: number | null
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string
+          description?: string
+          id?: string
+          meeting_id?: string
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_assets_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_benefits: {
+        Row: {
+          benefit_description: string
+          created_at: string
+          id: string
+          meeting_id: string
+        }
+        Insert: {
+          benefit_description: string
+          created_at?: string
+          id?: string
+          meeting_id: string
+        }
+        Update: {
+          benefit_description?: string
+          created_at?: string
+          id?: string
+          meeting_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_benefits_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_counsel: {
+        Row: {
+          bank_name: string | null
+          counsel_name: string | null
+          created_at: string
+          id: string
+          loans: string | null
+          meeting_id: string
+        }
+        Insert: {
+          bank_name?: string | null
+          counsel_name?: string | null
+          created_at?: string
+          id?: string
+          loans?: string | null
+          meeting_id: string
+        }
+        Update: {
+          bank_name?: string | null
+          counsel_name?: string | null
+          created_at?: string
+          id?: string
+          loans?: string | null
+          meeting_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_counsel_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_directors: {
+        Row: {
+          created_at: string
+          director_name: string
+          id: string
+          meeting_id: string
+        }
+        Insert: {
+          created_at?: string
+          director_name: string
+          id?: string
+          meeting_id: string
+        }
+        Update: {
+          created_at?: string
+          director_name?: string
+          id?: string
+          meeting_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_directors_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_financials: {
+        Row: {
+          created_at: string
+          current_cog: number | null
+          current_cog_ratio: number | null
+          current_gross_profit: number | null
+          current_net_income: number | null
+          current_total_sales: number | null
+          id: string
+          meeting_id: string
+          previous_cog: number | null
+          previous_cog_ratio: number | null
+          previous_gross_profit: number | null
+          previous_net_income: number | null
+          previous_total_sales: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_cog?: number | null
+          current_cog_ratio?: number | null
+          current_gross_profit?: number | null
+          current_net_income?: number | null
+          current_total_sales?: number | null
+          id?: string
+          meeting_id: string
+          previous_cog?: number | null
+          previous_cog_ratio?: number | null
+          previous_gross_profit?: number | null
+          previous_net_income?: number | null
+          previous_total_sales?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_cog?: number | null
+          current_cog_ratio?: number | null
+          current_gross_profit?: number | null
+          current_net_income?: number | null
+          current_total_sales?: number | null
+          id?: string
+          meeting_id?: string
+          previous_cog?: number | null
+          previous_cog_ratio?: number | null
+          previous_gross_profit?: number | null
+          previous_net_income?: number | null
+          previous_total_sales?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_financials_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: true
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_officers: {
+        Row: {
+          created_at: string
+          id: string
+          meeting_id: string
+          name: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meeting_id: string
+          name: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          name?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_officers_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_other: {
+        Row: {
+          created_at: string
+          id: string
+          meeting_id: string
+          notes: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meeting_id: string
+          notes: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          notes?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_other_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_resolutions: {
+        Row: {
+          created_at: string
+          id: string
+          meeting_id: string
+          purpose: string
+          resolution_text: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meeting_id: string
+          purpose: string
+          resolution_text: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          purpose?: string
+          resolution_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_resolutions_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_shareholders: {
+        Row: {
+          common_shares: number | null
+          created_at: string
+          distribution: string | null
+          id: string
+          meeting_id: string
+          preferred_shares: number | null
+          shareholder_name: string
+        }
+        Insert: {
+          common_shares?: number | null
+          created_at?: string
+          distribution?: string | null
+          id?: string
+          meeting_id: string
+          preferred_shares?: number | null
+          shareholder_name: string
+        }
+        Update: {
+          common_shares?: number | null
+          created_at?: string
+          distribution?: string | null
+          id?: string
+          meeting_id?: string
+          preferred_shares?: number | null
+          shareholder_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_shareholders_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meetings: {
+        Row: {
+          chairperson: string | null
+          company_address_at_meeting: string | null
+          company_city_at_meeting: string | null
+          company_id: string
+          company_name_at_meeting: string | null
+          company_state_at_meeting: string | null
+          company_zip_at_meeting: string | null
+          created_at: string
+          id: string
+          meeting_date: string
+          meeting_location: string | null
+          meeting_time: string | null
+          meeting_type: string
+          mtg_secretary: string | null
+          next_annual_mtg: string | null
+          others_present: string | null
+          prior_mtg_date: string | null
+          sub_type: string | null
+          tax_year: number | null
+          updated_at: string
+        }
+        Insert: {
+          chairperson?: string | null
+          company_address_at_meeting?: string | null
+          company_city_at_meeting?: string | null
+          company_id: string
+          company_name_at_meeting?: string | null
+          company_state_at_meeting?: string | null
+          company_zip_at_meeting?: string | null
+          created_at?: string
+          id?: string
+          meeting_date: string
+          meeting_location?: string | null
+          meeting_time?: string | null
+          meeting_type?: string
+          mtg_secretary?: string | null
+          next_annual_mtg?: string | null
+          others_present?: string | null
+          prior_mtg_date?: string | null
+          sub_type?: string | null
+          tax_year?: number | null
+          updated_at?: string
+        }
+        Update: {
+          chairperson?: string | null
+          company_address_at_meeting?: string | null
+          company_city_at_meeting?: string | null
+          company_id?: string
+          company_name_at_meeting?: string | null
+          company_state_at_meeting?: string | null
+          company_zip_at_meeting?: string | null
+          created_at?: string
+          id?: string
+          meeting_date?: string
+          meeting_location?: string | null
+          meeting_time?: string | null
+          meeting_type?: string
+          mtg_secretary?: string | null
+          next_annual_mtg?: string | null
+          others_present?: string | null
+          prior_mtg_date?: string | null
+          sub_type?: string | null
+          tax_year?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       officers: {
         Row: {
           company_id: string
