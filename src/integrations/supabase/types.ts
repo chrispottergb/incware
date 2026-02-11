@@ -16,14 +16,26 @@ export type Database = {
     Tables: {
       companies: {
         Row: {
+          accounting_method: string | null
+          additional_provisions: string | null
           address: string | null
+          annual_report_year: number | null
           authorized_shares: number | null
+          business_purpose: string | null
           city: string | null
+          corporate_status: string | null
           created_at: string
+          delayed_effective_filing_date: string | null
+          election_1244: boolean | null
           entity_type: string
+          filing_date: string | null
+          first_year_annual_meeting: number | null
           fiscal_year_end: string | null
           id: string
           incorporation_date: string | null
+          initial_directors_count: number | null
+          max_directors_allowed: number | null
+          max_vps_allowed: number | null
           name: string
           par_value: number | null
           par_value_type: string | null
@@ -34,21 +46,39 @@ export type Database = {
           registered_agent_state: string | null
           registered_agent_zip: string | null
           s_election_date: string | null
+          scheduled_annual_meeting: string | null
+          seal_type: string | null
+          second_name_choice: string | null
+          sic_code: string | null
           state: string | null
           state_of_incorporation: string | null
+          status: string | null
           updated_at: string
           user_id: string
+          verification_date: string | null
           zip: string | null
         }
         Insert: {
+          accounting_method?: string | null
+          additional_provisions?: string | null
           address?: string | null
+          annual_report_year?: number | null
           authorized_shares?: number | null
+          business_purpose?: string | null
           city?: string | null
+          corporate_status?: string | null
           created_at?: string
+          delayed_effective_filing_date?: string | null
+          election_1244?: boolean | null
           entity_type?: string
+          filing_date?: string | null
+          first_year_annual_meeting?: number | null
           fiscal_year_end?: string | null
           id?: string
           incorporation_date?: string | null
+          initial_directors_count?: number | null
+          max_directors_allowed?: number | null
+          max_vps_allowed?: number | null
           name: string
           par_value?: number | null
           par_value_type?: string | null
@@ -59,21 +89,39 @@ export type Database = {
           registered_agent_state?: string | null
           registered_agent_zip?: string | null
           s_election_date?: string | null
+          scheduled_annual_meeting?: string | null
+          seal_type?: string | null
+          second_name_choice?: string | null
+          sic_code?: string | null
           state?: string | null
           state_of_incorporation?: string | null
+          status?: string | null
           updated_at?: string
           user_id: string
+          verification_date?: string | null
           zip?: string | null
         }
         Update: {
+          accounting_method?: string | null
+          additional_provisions?: string | null
           address?: string | null
+          annual_report_year?: number | null
           authorized_shares?: number | null
+          business_purpose?: string | null
           city?: string | null
+          corporate_status?: string | null
           created_at?: string
+          delayed_effective_filing_date?: string | null
+          election_1244?: boolean | null
           entity_type?: string
+          filing_date?: string | null
+          first_year_annual_meeting?: number | null
           fiscal_year_end?: string | null
           id?: string
           incorporation_date?: string | null
+          initial_directors_count?: number | null
+          max_directors_allowed?: number | null
+          max_vps_allowed?: number | null
           name?: string
           par_value?: number | null
           par_value_type?: string | null
@@ -84,13 +132,145 @@ export type Database = {
           registered_agent_state?: string | null
           registered_agent_zip?: string | null
           s_election_date?: string | null
+          scheduled_annual_meeting?: string | null
+          seal_type?: string | null
+          second_name_choice?: string | null
+          sic_code?: string | null
           state?: string | null
           state_of_incorporation?: string | null
+          status?: string | null
           updated_at?: string
           user_id?: string
+          verification_date?: string | null
           zip?: string | null
         }
         Relationships: []
+      }
+      company_assets: {
+        Row: {
+          asset_type: string
+          company_id: string
+          created_at: string
+          description: string
+          id: string
+          updated_at: string
+          value: number | null
+        }
+        Insert: {
+          asset_type: string
+          company_id: string
+          created_at?: string
+          description: string
+          id?: string
+          updated_at?: string
+          value?: number | null
+        }
+        Update: {
+          asset_type?: string
+          company_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          updated_at?: string
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_assets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      directors: {
+        Row: {
+          added_date: string | null
+          address: string | null
+          city: string | null
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+          state: string | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          added_date?: string | null
+          address?: string | null
+          city?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          name: string
+          state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          added_date?: string | null
+          address?: string | null
+          city?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "directors_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      officers: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          president: string | null
+          secretary: string | null
+          treasurer: string | null
+          updated_at: string
+          vice_president: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          president?: string | null
+          secretary?: string | null
+          treasurer?: string | null
+          updated_at?: string
+          vice_president?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          president?: string | null
+          secretary?: string | null
+          treasurer?: string | null
+          updated_at?: string
+          vice_president?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "officers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

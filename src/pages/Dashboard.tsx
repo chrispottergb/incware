@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,6 +35,7 @@ const US_STATES = [
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
@@ -195,6 +197,7 @@ export default function Dashboard() {
             <Card
               key={company.id}
               className="group cursor-pointer transition-shadow hover:shadow-md"
+              onClick={() => navigate(`/company/${company.id}`)}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
