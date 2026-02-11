@@ -6,92 +6,92 @@
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 224 30% 12%;
+    --background: 220 18% 96%;
+    --foreground: 222 28% 14%;
 
     --card: 0 0% 100%;
-    --card-foreground: 224 30% 12%;
+    --card-foreground: 222 28% 14%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 30% 12%;
+    --popover-foreground: 222 28% 14%;
 
-    --primary: 230 65% 52%;
+    --primary: 222 62% 48%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 16% 93%;
-    --secondary-foreground: 224 30% 18%;
+    --secondary: 218 14% 92%;
+    --secondary-foreground: 222 28% 18%;
 
-    --muted: 220 16% 93%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 218 14% 92%;
+    --muted-foreground: 218 10% 44%;
 
-    --accent: 170 60% 42%;
+    --accent: 166 56% 40%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 56%;
+    --destructive: 0 68% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 16% 88%;
-    --input: 220 16% 88%;
-    --ring: 230 65% 52%;
+    --border: 218 14% 88%;
+    --input: 218 14% 88%;
+    --ring: 222 62% 48%;
 
-    --radius: 0.625rem;
+    --radius: 0.5rem;
 
-    --sidebar-background: 224 30% 12%;
-    --sidebar-foreground: 220 16% 80%;
-    --sidebar-primary: 230 65% 60%;
+    --sidebar-background: 222 28% 11%;
+    --sidebar-foreground: 218 14% 78%;
+    --sidebar-primary: 222 62% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 224 25% 18%;
-    --sidebar-accent-foreground: 220 16% 90%;
-    --sidebar-border: 224 20% 20%;
-    --sidebar-ring: 230 65% 52%;
+    --sidebar-accent: 222 22% 16%;
+    --sidebar-accent-foreground: 218 14% 90%;
+    --sidebar-border: 222 18% 18%;
+    --sidebar-ring: 222 62% 48%;
 
-    --success: 152 56% 42%;
+    --success: 152 52% 40%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 36 90% 48%;
     --warning-foreground: 0 0% 100%;
   }
 
   .dark {
-    --background: 224 30% 8%;
-    --foreground: 220 16% 93%;
+    --background: 222 28% 7%;
+    --foreground: 218 14% 93%;
 
-    --card: 224 25% 12%;
-    --card-foreground: 220 16% 93%;
+    --card: 222 22% 11%;
+    --card-foreground: 218 14% 93%;
 
-    --popover: 224 25% 12%;
-    --popover-foreground: 220 16% 93%;
+    --popover: 222 22% 11%;
+    --popover-foreground: 218 14% 93%;
 
-    --primary: 230 65% 60%;
+    --primary: 222 62% 56%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 224 20% 18%;
-    --secondary-foreground: 220 16% 90%;
+    --secondary: 222 18% 16%;
+    --secondary-foreground: 218 14% 90%;
 
-    --muted: 224 20% 18%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 222 18% 16%;
+    --muted-foreground: 218 10% 52%;
 
-    --accent: 170 60% 48%;
+    --accent: 166 56% 44%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62% 45%;
+    --destructive: 0 58% 44%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 224 20% 20%;
-    --input: 224 20% 20%;
-    --ring: 230 65% 60%;
+    --border: 222 18% 18%;
+    --input: 222 18% 18%;
+    --ring: 222 62% 56%;
 
-    --sidebar-background: 224 30% 6%;
-    --sidebar-foreground: 220 16% 75%;
-    --sidebar-primary: 230 65% 60%;
+    --sidebar-background: 222 28% 5%;
+    --sidebar-foreground: 218 14% 72%;
+    --sidebar-primary: 222 62% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 224 25% 14%;
-    --sidebar-accent-foreground: 220 16% 85%;
-    --sidebar-border: 224 20% 14%;
-    --sidebar-ring: 230 65% 60%;
+    --sidebar-accent: 222 22% 12%;
+    --sidebar-accent-foreground: 218 14% 82%;
+    --sidebar-border: 222 18% 12%;
+    --sidebar-ring: 222 62% 56%;
 
-    --success: 152 56% 48%;
+    --success: 152 52% 44%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 55%;
+    --warning: 36 90% 52%;
     --warning-foreground: 0 0% 100%;
   }
 }
@@ -108,5 +108,19 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;
+  }
+}
+
+@layer components {
+  .field-group {
+    @apply space-y-1.5;
+  }
+
+  .field-label {
+    @apply text-xs font-medium text-muted-foreground uppercase tracking-wider;
+  }
+
+  .card-section-title {
+    @apply font-display text-sm font-semibold tracking-tight;
   }
 }
