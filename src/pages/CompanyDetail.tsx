@@ -12,6 +12,7 @@ import ShareholdersTab from "@/components/company/ShareholdersTab";
 import StockCertificatesTab from "@/components/company/StockCertificatesTab";
 import StockLedgerTab from "@/components/company/StockLedgerTab";
 import BillsOfSaleTab from "@/components/company/BillsOfSaleTab";
+import TimelineTab from "@/components/company/TimelineTab";
 
 export default function CompanyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -95,6 +96,7 @@ export default function CompanyDetail() {
               { value: "organization", label: "Organizational Info" },
               { value: "meetings", label: "Meetings" },
               { value: "shareholders", label: "Shareholders & Stock" },
+              { value: "timeline", label: "Timeline" },
             ].map((tab) => (
               <TabsTrigger
                 key={tab.value}
@@ -123,6 +125,9 @@ export default function CompanyDetail() {
             <StockLedgerTab companyId={company.id} />
             <BillsOfSaleTab companyId={company.id} />
           </div>
+        </TabsContent>
+        <TabsContent value="timeline" className="mt-5">
+          <TimelineTab companyId={company.id} company={company} />
         </TabsContent>
       </Tabs>
     </div>
