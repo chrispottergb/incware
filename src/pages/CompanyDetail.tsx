@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +17,12 @@ import TimelineTab from "@/components/company/TimelineTab";
 export default function CompanyDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const hashTab = location.hash.replace("#", "") || "incorporation";
+
+  const handleTabChange = (value: string) => {
+    navigate(`#${value}`, { replace: true });
+  };
 
   const { data: company, isLoading } = useQuery({
     queryKey: ["company", id],
@@ -88,7 +94,7 @@ export default function CompanyDetail() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="incorporation" className="w-full">
+      <Tabs value={hashTab} onValueChange={handleTabChange} className="w-full">
         <div className="border-b border-border">
           <TabsList className="h-auto w-full justify-start gap-0 rounded-none bg-transparent p-0">
             {[
