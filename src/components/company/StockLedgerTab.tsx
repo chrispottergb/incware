@@ -1,0 +1,296 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Trash2, Loader2, BookOpen } from "lucide-react";
+import { toast } from "sonner";
+
+const TRANSACTION_TYPES = [
+  { value: "issuance", label: "Issuance" },
+  { value: "transfer", label: "Transfer" },
+  { value: "redemption", label: "Redemption" },
+  { value: "cancellation", label: "Cancellation" },
+  { value: "stock_split", label: "Stock Split" },
+  { value: "gift", label: "Gift" },
+];
+
+const CONSIDERATION_TYPES = [
+  { value: "cash", label: "Cash" },
+  { value: "property", label: "Property" },
+  { value: "services", label: "Services" },
+  { value: "promissory_note", label: "Promissory Note" },
+  { value: "other", label: "Other" },
+];
+
+interface Props {
+  companyId: string;
+}
+
+export default function StockLedgerTab({ companyId }: Props) {
+  const queryClient = useQueryClient();
+  const [dialog, setDialog] = useState(false);
+
+  const { data: shareholders = [] } = useQuery({
+    queryKey: ["shareholders", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("shareholders").select("id, name").eq("company_id", companyId).order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: transactions = [], isLoading } = useQuery({
+    queryKey: ["share_transactions", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("share_transactions")
+        .select("*, shareholders(name)")
+        .eq("company_id", companyId)
+        .order("transaction_date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const [form, setForm] = useState({
+    transaction_type: "issuance",
+    shareholder_id: "",
+    share_class: "Common",
+    num_shares: "",
+    price_per_share: "",
+    total_consideration: "",
+    consideration_type: "cash",
+    transaction_date: new Date().toISOString().split("T")[0],
+    from_shareholder: "",
+    to_shareholder: "",
+    notes: "",
+  });
+
+  const add = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("share_transactions").insert({
+        company_id: companyId,
+        transaction_type: form.transaction_type,
+        shareholder_id: form.shareholder_id || null,
+        share_class: form.share_class,
+        num_shares: parseInt(form.num_shares) || 0,
+        price_per_share: form.price_per_share ? parseFloat(form.price_per_share) : null,
+        total_consideration: form.total_consideration ? parseFloat(form.total_consideration) : null,
+        consideration_type: form.consideration_type,
+        transaction_date: form.transaction_date,
+        from_shareholder: form.from_shareholder || null,
+        to_shareholder: form.to_shareholder || null,
+        notes: form.notes || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
+      setDialog(false);
+      setForm({
+        transaction_type: "issuance", shareholder_id: "", share_class: "Common",
+        num_shares: "", price_per_share: "", total_consideration: "",
+        consideration_type: "cash", transaction_date: new Date().toISOString().split("T")[0],
+        from_shareholder: "", to_shareholder: "", notes: "",
+      });
+      toast.success("Transaction recorded!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("share_transactions").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
+      toast.success("Transaction removed.");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const isTransfer = form.transaction_type === "transfer";
+
+  return (
+    <Card>
+      <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-3.5 w-3.5 text-primary" />
+            <CardTitle className="card-section-title">Stock Ledger / Transactions</CardTitle>
+          </div>
+          <CardDescription className="text-[11px] mt-0.5">
+            Wis. Stat. § 180.0601 / § 180.0621 — Shares may not be issued until articles filed; consideration must be received
+          </CardDescription>
+        </div>
+        <Dialog open={dialog} onOpenChange={setDialog}>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="outline" className="h-7 text-xs">
+              <Plus className="mr-1 h-3 w-3" /> Record Transaction
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="font-display text-base">Record Share Transaction</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={(e) => { e.preventDefault(); add.mutate(); }} className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="field-group">
+                  <Label className="field-label">Transaction Type</Label>
+                  <Select value={form.transaction_type} onValueChange={(v) => setForm(p => ({ ...p, transaction_type: v }))}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {TRANSACTION_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">Date</Label>
+                  <Input className="h-8 text-sm" type="date" value={form.transaction_date} onChange={(e) => setForm(p => ({ ...p, transaction_date: e.target.value }))} required />
+                </div>
+              </div>
+              <div className="field-group">
+                <Label className="field-label">Shareholder</Label>
+                <Select value={form.shareholder_id} onValueChange={(v) => setForm(p => ({ ...p, shareholder_id: v }))}>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select shareholder" /></SelectTrigger>
+                  <SelectContent>
+                    {shareholders.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {isTransfer && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="field-group">
+                    <Label className="field-label">From</Label>
+                    <Input className="h-8 text-sm" value={form.from_shareholder} onChange={(e) => setForm(p => ({ ...p, from_shareholder: e.target.value }))} />
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">To</Label>
+                    <Input className="h-8 text-sm" value={form.to_shareholder} onChange={(e) => setForm(p => ({ ...p, to_shareholder: e.target.value }))} />
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="field-group">
+                  <Label className="field-label">Class</Label>
+                  <Select value={form.share_class} onValueChange={(v) => setForm(p => ({ ...p, share_class: v }))}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Common">Common</SelectItem>
+                      <SelectItem value="Preferred">Preferred</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="field-group">
+                  <Label className="field-label"># Shares</Label>
+                  <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">Price/Share</Label>
+                  <Input className="h-8 text-sm" type="number" step="0.01" value={form.price_per_share} onChange={(e) => setForm(p => ({ ...p, price_per_share: e.target.value }))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="field-group">
+                  <Label className="field-label">Total Consideration</Label>
+                  <Input className="h-8 text-sm" type="number" step="0.01" value={form.total_consideration} onChange={(e) => setForm(p => ({ ...p, total_consideration: e.target.value }))} />
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">Consideration Type</Label>
+                  <Select value={form.consideration_type} onValueChange={(v) => setForm(p => ({ ...p, consideration_type: v }))}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {CONSIDERATION_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="field-group">
+                <Label className="field-label">Notes</Label>
+                <Textarea className="text-sm min-h-[50px]" rows={2} value={form.notes} onChange={(e) => setForm(p => ({ ...p, notes: e.target.value }))} />
+              </div>
+              <Button type="submit" className="w-full" size="sm" disabled={add.isPending}>
+                {add.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                Record Transaction
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent className="px-4 pb-4">
+        {isLoading ? (
+          <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+        ) : transactions.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-6">No transactions recorded yet.</p>
+        ) : (
+          <div className="rounded-md border border-border overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-[10px] uppercase">Date</TableHead>
+                  <TableHead className="text-[10px] uppercase">Type</TableHead>
+                  <TableHead className="text-[10px] uppercase">Shareholder</TableHead>
+                  <TableHead className="text-[10px] uppercase">Class</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right">Shares</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right">$/Share</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right">Total</TableHead>
+                  <TableHead className="text-[10px] uppercase">Consideration</TableHead>
+                  <TableHead className="text-[10px] uppercase w-10"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {transactions.map((t: any) => (
+                  <TableRow key={t.id}>
+                    <TableCell className="text-xs">{t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">{t.transaction_type?.replace("_", " ")}</Badge>
+                    </TableCell>
+                    <TableCell className="text-xs">{t.shareholders?.name ?? t.to_shareholder ?? "—"}</TableCell>
+                    <TableCell className="text-xs">{t.share_class}</TableCell>
+                    <TableCell className="text-xs text-right">{t.num_shares?.toLocaleString()}</TableCell>
+                    <TableCell className="text-xs text-right">{t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—"}</TableCell>
+                    <TableCell className="text-xs text-right">{t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—"}</TableCell>
+                    <TableCell className="text-xs capitalize">{t.consideration_type?.replace("_", " ") ?? "—"}</TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => remove.mutate(t.id)}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

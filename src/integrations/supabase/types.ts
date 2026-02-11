@@ -14,6 +14,76 @@ export type Database = {
   }
   public: {
     Tables: {
+      bills_of_sale: {
+        Row: {
+          buyer_name: string
+          certificate_id: string | null
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          num_shares: number
+          price_per_share: number | null
+          sale_date: string
+          seller_name: string
+          share_class: string
+          shareholder_id: string | null
+          total_price: number | null
+        }
+        Insert: {
+          buyer_name: string
+          certificate_id?: string | null
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          num_shares?: number
+          price_per_share?: number | null
+          sale_date?: string
+          seller_name: string
+          share_class?: string
+          shareholder_id?: string | null
+          total_price?: number | null
+        }
+        Update: {
+          buyer_name?: string
+          certificate_id?: string | null
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          num_shares?: number
+          price_per_share?: number | null
+          sale_date?: string
+          seller_name?: string
+          share_class?: string
+          shareholder_id?: string | null
+          total_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bills_of_sale_certificate_id_fkey"
+            columns: ["certificate_id"]
+            isOneToOne: false
+            referencedRelation: "stock_certificates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_of_sale_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_of_sale_shareholder_id_fkey"
+            columns: ["shareholder_id"]
+            isOneToOne: false
+            referencedRelation: "shareholders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           accounting_method: string | null
@@ -722,6 +792,198 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      share_transactions: {
+        Row: {
+          certificate_id: string | null
+          company_id: string
+          consideration_type: string | null
+          created_at: string
+          from_shareholder: string | null
+          id: string
+          notes: string | null
+          num_shares: number
+          price_per_share: number | null
+          share_class: string
+          shareholder_id: string | null
+          to_shareholder: string | null
+          total_consideration: number | null
+          transaction_date: string
+          transaction_type: string
+        }
+        Insert: {
+          certificate_id?: string | null
+          company_id: string
+          consideration_type?: string | null
+          created_at?: string
+          from_shareholder?: string | null
+          id?: string
+          notes?: string | null
+          num_shares?: number
+          price_per_share?: number | null
+          share_class?: string
+          shareholder_id?: string | null
+          to_shareholder?: string | null
+          total_consideration?: number | null
+          transaction_date?: string
+          transaction_type?: string
+        }
+        Update: {
+          certificate_id?: string | null
+          company_id?: string
+          consideration_type?: string | null
+          created_at?: string
+          from_shareholder?: string | null
+          id?: string
+          notes?: string | null
+          num_shares?: number
+          price_per_share?: number | null
+          share_class?: string
+          shareholder_id?: string | null
+          to_shareholder?: string | null
+          total_consideration?: number | null
+          transaction_date?: string
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_transactions_certificate_id_fkey"
+            columns: ["certificate_id"]
+            isOneToOne: false
+            referencedRelation: "stock_certificates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "share_transactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "share_transactions_shareholder_id_fkey"
+            columns: ["shareholder_id"]
+            isOneToOne: false
+            referencedRelation: "shareholders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shareholders: {
+        Row: {
+          address: string | null
+          city: string | null
+          company_id: string
+          created_at: string
+          date_added: string | null
+          id: string
+          name: string
+          ssn_ein: string | null
+          state: string | null
+          status: string | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company_id: string
+          created_at?: string
+          date_added?: string | null
+          id?: string
+          name: string
+          ssn_ein?: string | null
+          state?: string | null
+          status?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company_id?: string
+          created_at?: string
+          date_added?: string | null
+          id?: string
+          name?: string
+          ssn_ein?: string | null
+          state?: string | null
+          status?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shareholders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_certificates: {
+        Row: {
+          cancelled_date: string | null
+          cancelled_reason: string | null
+          certificate_number: number
+          company_id: string
+          created_at: string
+          id: string
+          issue_date: string | null
+          num_shares: number
+          par_value: number | null
+          share_class: string
+          shareholder_id: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancelled_date?: string | null
+          cancelled_reason?: string | null
+          certificate_number: number
+          company_id: string
+          created_at?: string
+          id?: string
+          issue_date?: string | null
+          num_shares?: number
+          par_value?: number | null
+          share_class?: string
+          shareholder_id?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancelled_date?: string | null
+          cancelled_reason?: string | null
+          certificate_number?: number
+          company_id?: string
+          created_at?: string
+          id?: string
+          issue_date?: string | null
+          num_shares?: number
+          par_value?: number | null
+          share_class?: string
+          shareholder_id?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_certificates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_certificates_shareholder_id_fkey"
+            columns: ["shareholder_id"]
+            isOneToOne: false
+            referencedRelation: "shareholders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
