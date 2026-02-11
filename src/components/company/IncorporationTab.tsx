@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Shield, Building2, Share2, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "S-Corp", "Non-Profit", "Partnership"];
@@ -24,10 +23,6 @@ const US_STATES = [
   "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
   "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
   "VA","WA","WV","WI","WY","DC",
-];
-const PAR_VALUE_TYPES = [
-  { value: "par", label: "Par Value" },
-  { value: "no_par", label: "No Par Value" },
 ];
 
 type Company = Tables<"companies">;
@@ -54,30 +49,16 @@ export default function IncorporationTab({ company }: Props) {
     corporate_status: company.corporate_status ?? "current",
     verification_date: company.verification_date ?? "",
     annual_report_year: company.annual_report_year?.toString() ?? "",
-    // Registered agent
     registered_agent_name: company.registered_agent_name ?? "",
     registered_agent_address: company.registered_agent_address ?? "",
     registered_agent_city: company.registered_agent_city ?? "",
     registered_agent_state: company.registered_agent_state ?? "",
     registered_agent_zip: company.registered_agent_zip ?? "",
-    // Company address
     address: company.address ?? "",
     city: company.city ?? "",
     state: company.state ?? "",
     zip: company.zip ?? "",
     phone: company.phone ?? "",
-    // Organizational info fields on companies table
-    second_name_choice: company.second_name_choice ?? "",
-    filing_date: company.filing_date ?? "",
-    delayed_effective_filing_date: company.delayed_effective_filing_date ?? "",
-    business_purpose: company.business_purpose ?? "",
-    accounting_method: company.accounting_method ?? "cash basis",
-    sic_code: company.sic_code ?? "",
-    first_year_annual_meeting: company.first_year_annual_meeting?.toString() ?? "",
-    initial_directors_count: company.initial_directors_count?.toString() ?? "",
-    max_directors_allowed: company.max_directors_allowed?.toString() ?? "",
-    max_vps_allowed: company.max_vps_allowed?.toString() ?? "",
-    additional_provisions: company.additional_provisions ?? "",
   });
 
   const update = (field: string, value: string | boolean) =>
@@ -113,17 +94,6 @@ export default function IncorporationTab({ company }: Props) {
           state: form.state || null,
           zip: form.zip || null,
           phone: form.phone || null,
-          second_name_choice: form.second_name_choice || null,
-          filing_date: form.filing_date || null,
-          delayed_effective_filing_date: form.delayed_effective_filing_date || null,
-          business_purpose: form.business_purpose || null,
-          accounting_method: form.accounting_method || null,
-          sic_code: form.sic_code || null,
-          first_year_annual_meeting: form.first_year_annual_meeting ? parseInt(form.first_year_annual_meeting) : null,
-          initial_directors_count: form.initial_directors_count ? parseInt(form.initial_directors_count) : null,
-          max_directors_allowed: form.max_directors_allowed ? parseInt(form.max_directors_allowed) : null,
-          max_vps_allowed: form.max_vps_allowed ? parseInt(form.max_vps_allowed) : null,
-          additional_provisions: form.additional_provisions || null,
         })
         .eq("id", company.id);
       if (error) throw error;
@@ -131,7 +101,7 @@ export default function IncorporationTab({ company }: Props) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company", company.id] });
       queryClient.invalidateQueries({ queryKey: ["companies"] });
-      toast.success("Company saved!");
+      toast.success("Incorporation info saved!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -144,14 +114,18 @@ export default function IncorporationTab({ company }: Props) {
       }}
       className="space-y-6"
     >
-      {/* Corporate Status */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="font-display text-base">Corporate Status</CardTitle>
+      {/* Corporate Status Verification */}
+      <Card className="border-l-4 border-l-warning">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-warning" />
+            <CardTitle className="font-display text-base">Verification of Corporate Status</CardTitle>
+          </div>
+          <CardDescription>Always verify corporate status with the Secretary of State</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label>Status</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Corporate Status</Label>
             <Select value={form.corporate_status} onValueChange={(v) => update("corporate_status", v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -162,29 +136,32 @@ export default function IncorporationTab({ company }: Props) {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>Verification Date</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Verification Date</Label>
             <Input type="date" value={form.verification_date} onChange={(e) => update("verification_date", e.target.value)} />
           </div>
-          <div className="space-y-2">
-            <Label>Annual Report Filed Year</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Annual Report Filed Year</Label>
             <Input type="number" value={form.annual_report_year} onChange={(e) => update("annual_report_year", e.target.value)} placeholder="2024" />
           </div>
         </CardContent>
       </Card>
 
-      {/* Basic Info */}
+      {/* Company Information */}
       <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="font-display text-base">Company Information</CardTitle>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-primary" />
+            <CardTitle className="font-display text-base">Company Information</CardTitle>
+          </div>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Company Name</Label>
+        <CardContent className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Company Name</Label>
             <Input value={form.name} onChange={(e) => update("name", e.target.value)} required />
           </div>
-          <div className="space-y-2">
-            <Label>Entity Type</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Entity Type</Label>
             <Select value={form.entity_type} onValueChange={(v) => update("entity_type", v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -194,8 +171,8 @@ export default function IncorporationTab({ company }: Props) {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>State of Incorporation</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">State of Incorporation</Label>
             <Select value={form.state_of_incorporation} onValueChange={(v) => update("state_of_incorporation", v)}>
               <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
               <SelectContent>
@@ -205,16 +182,16 @@ export default function IncorporationTab({ company }: Props) {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>Incorporation Date</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Incorporation Date</Label>
             <Input type="date" value={form.incorporation_date} onChange={(e) => update("incorporation_date", e.target.value)} />
           </div>
-          <div className="space-y-2">
-            <Label>Fiscal Year End</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Fiscal Year End</Label>
             <Input value={form.fiscal_year_end} onChange={(e) => update("fiscal_year_end", e.target.value)} placeholder="December 31" />
           </div>
-          <div className="space-y-2">
-            <Label>Scheduled Annual Meeting</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Scheduled Annual Meeting</Label>
             <Input value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
           </div>
         </CardContent>
@@ -222,77 +199,88 @@ export default function IncorporationTab({ company }: Props) {
 
       {/* Shares & Elections */}
       <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="font-display text-base">Shares & Elections</CardTitle>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Share2 className="h-4 w-4 text-primary" />
+            <CardTitle className="font-display text-base">Shares & Elections</CardTitle>
+          </div>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="space-y-2">
-            <Label>Authorized Shares</Label>
-            <Input type="number" value={form.authorized_shares} onChange={(e) => update("authorized_shares", e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Par Value Type</Label>
-            <Select value={form.par_value_type} onValueChange={(v) => update("par_value_type", v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {PAR_VALUE_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {form.par_value_type === "par" && (
-            <div className="space-y-2">
-              <Label>Par Value ($)</Label>
-              <Input type="number" step="0.01" value={form.par_value} onChange={(e) => update("par_value", e.target.value)} />
+        <CardContent>
+          <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Authorized Shares</Label>
+              <Input type="number" value={form.authorized_shares} onChange={(e) => update("authorized_shares", e.target.value)} />
             </div>
-          )}
-          <div className="space-y-2">
-            <Label>S-Election Date</Label>
-            <Input type="date" value={form.s_election_date} onChange={(e) => update("s_election_date", e.target.value)} />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Par Value Type</Label>
+              <Select value={form.par_value_type} onValueChange={(v) => update("par_value_type", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="par">Par Value</SelectItem>
+                  <SelectItem value="no_par">No Par Value</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {form.par_value_type === "par" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">Par Value ($)</Label>
+                <Input type="number" step="0.01" value={form.par_value} onChange={(e) => update("par_value", e.target.value)} />
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">S-Election Date</Label>
+              <Input type="date" value={form.s_election_date} onChange={(e) => update("s_election_date", e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Seal</Label>
+              <Select value={form.seal_type} onValueChange={(v) => update("seal_type", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="seal">Seal</SelectItem>
+                  <SelectItem value="no_seal">No Seal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="flex items-center gap-3 pt-6">
+          <div className="mt-4 flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
             <Checkbox
               id="election_1244"
               checked={form.election_1244}
               onCheckedChange={(v) => update("election_1244", !!v)}
             />
-            <Label htmlFor="election_1244" className="cursor-pointer">Section 1244 Election</Label>
-          </div>
-          <div className="space-y-2">
-            <Label>Seal</Label>
-            <Select value={form.seal_type} onValueChange={(v) => update("seal_type", v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="seal">Seal</SelectItem>
-                <SelectItem value="no_seal">No Seal</SelectItem>
-              </SelectContent>
-            </Select>
+            <div>
+              <Label htmlFor="election_1244" className="cursor-pointer font-medium">Section 1244 Election</Label>
+              <p className="text-xs text-muted-foreground">A loss on Section 1244 stock is treated as an ordinary loss</p>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Registered Agent */}
       <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="font-display text-base">Registered Agent</CardTitle>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <UserCheck className="h-4 w-4 text-primary" />
+            <CardTitle className="font-display text-base">Registered Agent</CardTitle>
+          </div>
+          <CardDescription>Statutory agent on file with the Secretary of State for service of process</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2 sm:col-span-2">
-            <Label>Agent Name</Label>
+        <CardContent className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label className="text-xs font-medium text-muted-foreground">Agent Name</Label>
             <Input value={form.registered_agent_name} onChange={(e) => update("registered_agent_name", e.target.value)} />
           </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label>Address</Label>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label className="text-xs font-medium text-muted-foreground">Address</Label>
             <Input value={form.registered_agent_address} onChange={(e) => update("registered_agent_address", e.target.value)} />
           </div>
-          <div className="space-y-2">
-            <Label>City</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">City</Label>
             <Input value={form.registered_agent_city} onChange={(e) => update("registered_agent_city", e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>State</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">State</Label>
               <Select value={form.registered_agent_state} onValueChange={(v) => update("registered_agent_state", v)}>
                 <SelectTrigger><SelectValue placeholder="State" /></SelectTrigger>
                 <SelectContent>
@@ -302,8 +290,8 @@ export default function IncorporationTab({ company }: Props) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Zip</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Zip</Label>
               <Input value={form.registered_agent_zip} onChange={(e) => update("registered_agent_zip", e.target.value)} />
             </div>
           </div>
@@ -312,21 +300,24 @@ export default function IncorporationTab({ company }: Props) {
 
       {/* Company Address */}
       <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="font-display text-base">Company Address</CardTitle>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-primary" />
+            <CardTitle className="font-display text-base">Company Address</CardTitle>
+          </div>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2 sm:col-span-2">
-            <Label>Address</Label>
+        <CardContent className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label className="text-xs font-medium text-muted-foreground">Address</Label>
             <Input value={form.address} onChange={(e) => update("address", e.target.value)} />
           </div>
-          <div className="space-y-2">
-            <Label>City</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">City</Label>
             <Input value={form.city} onChange={(e) => update("city", e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>State</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">State</Label>
               <Select value={form.state} onValueChange={(v) => update("state", v)}>
                 <SelectTrigger><SelectValue placeholder="State" /></SelectTrigger>
                 <SelectContent>
@@ -336,79 +327,21 @@ export default function IncorporationTab({ company }: Props) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Zip</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Zip</Label>
               <Input value={form.zip} onChange={(e) => update("zip", e.target.value)} />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>Phone</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Phone</Label>
             <Input value={form.phone} onChange={(e) => update("phone", e.target.value)} />
           </div>
         </CardContent>
       </Card>
 
-      {/* Filing / Organizational Details */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="font-display text-base">Filing Details</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="space-y-2">
-            <Label>2nd Name Choice</Label>
-            <Input value={form.second_name_choice} onChange={(e) => update("second_name_choice", e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Filing Date</Label>
-            <Input type="date" value={form.filing_date} onChange={(e) => update("filing_date", e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Delayed Effective Filing Date</Label>
-            <Input type="date" value={form.delayed_effective_filing_date} onChange={(e) => update("delayed_effective_filing_date", e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Business Purpose</Label>
-            <Input value={form.business_purpose} onChange={(e) => update("business_purpose", e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Accounting Method</Label>
-            <Select value={form.accounting_method} onValueChange={(v) => update("accounting_method", v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cash basis">Cash Basis</SelectItem>
-                <SelectItem value="accrual">Accrual</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>SIC Code</Label>
-            <Input value={form.sic_code} onChange={(e) => update("sic_code", e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>First Year Annual Meeting</Label>
-            <Input type="number" value={form.first_year_annual_meeting} onChange={(e) => update("first_year_annual_meeting", e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Initial # of Directors</Label>
-            <Input type="number" value={form.initial_directors_count} onChange={(e) => update("initial_directors_count", e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Max Directors Allowed</Label>
-            <Input type="number" value={form.max_directors_allowed} onChange={(e) => update("max_directors_allowed", e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Max VPs Allowed</Label>
-            <Input type="number" value={form.max_vps_allowed} onChange={(e) => update("max_vps_allowed", e.target.value)} />
-          </div>
-          <div className="space-y-2 sm:col-span-2 lg:col-span-3">
-            <Label>Additional Provisions</Label>
-            <Textarea value={form.additional_provisions} onChange={(e) => update("additional_provisions", e.target.value)} rows={3} />
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-end">
-        <Button type="submit" disabled={save.isPending} className="min-w-32">
+      {/* Sticky Save Bar */}
+      <div className="sticky bottom-4 flex justify-end">
+        <Button type="submit" disabled={save.isPending} size="lg" className="shadow-lg">
           {save.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           Save Changes
         </Button>
