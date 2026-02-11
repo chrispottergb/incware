@@ -8,6 +8,10 @@ import { ArrowLeft, Building2, Loader2 } from "lucide-react";
 import IncorporationTab from "@/components/company/IncorporationTab";
 import OrganizationTab from "@/components/company/OrganizationTab";
 import MeetingsTab from "@/components/company/MeetingsTab";
+import ShareholdersTab from "@/components/company/ShareholdersTab";
+import StockCertificatesTab from "@/components/company/StockCertificatesTab";
+import StockLedgerTab from "@/components/company/StockLedgerTab";
+import BillsOfSaleTab from "@/components/company/BillsOfSaleTab";
 
 export default function CompanyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -90,6 +94,7 @@ export default function CompanyDetail() {
               { value: "incorporation", label: "Incorporation Info" },
               { value: "organization", label: "Organizational Info" },
               { value: "meetings", label: "Meetings" },
+              { value: "shareholders", label: "Shareholders & Stock" },
             ].map((tab) => (
               <TabsTrigger
                 key={tab.value}
@@ -110,6 +115,14 @@ export default function CompanyDetail() {
         </TabsContent>
         <TabsContent value="meetings" className="mt-5">
           <MeetingsTab companyId={company.id} company={company} />
+        </TabsContent>
+        <TabsContent value="shareholders" className="mt-5">
+          <div className="space-y-5">
+            <ShareholdersTab companyId={company.id} />
+            <StockCertificatesTab companyId={company.id} />
+            <StockLedgerTab companyId={company.id} />
+            <BillsOfSaleTab companyId={company.id} />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
