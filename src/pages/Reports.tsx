@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { exportCompliancePDF, exportStockLedgerPDF } from "@/lib/pdf-export";
 import {
   Table,
   TableBody,
@@ -29,6 +30,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   XCircle,
+  FileDown,
 } from "lucide-react";
 
 export default function Reports() {
@@ -158,6 +160,35 @@ export default function Reports() {
 
   const handlePrint = () => window.print();
 
+  const handleExportCompliance = () => {
+    exportCompliancePDF(
+      complianceData.map((c) => ({
+        companyName: c.company.name,
+        score: c.score,
+        passed: c.passed,
+        total: c.total,
+        checks: c.checks,
+      })),
+      overallScore
+    );
+  };
+
+  const handleExportLedger = () => {
+    exportStockLedgerPDF(
+      certificates.map((cert: any) => ({
+        certNumber: cert.certificate_number,
+        companyName: cert.companies?.name || "—",
+        shareholderName: cert.shareholders?.name || "—",
+        shareClass: cert.share_class,
+        numShares: cert.num_shares,
+        parValue: cert.par_value,
+        issueDate: cert.issue_date,
+        status: cert.status,
+      })),
+      selectedCompany
+    );
+  };
+
   const fmt = (n: number | null) =>
     n != null ? n.toLocaleString() : "—";
 
@@ -208,7 +239,11 @@ export default function Reports() {
 
         {/* COMPLIANCE TAB */}
         <TabsContent value="compliance" className="space-y-4 mt-4">
-          {/* Summary cards */}
+          <div className="flex justify-end print:hidden">
+            <Button variant="outline" size="sm" onClick={handleExportCompliance} disabled={complianceData.length === 0}>
+              <FileDown className="mr-1.5 h-3.5 w-3.5" /> Export PDF
+            </Button>
+          </div>
           <div className="grid gap-4 sm:grid-cols-3">
             <Card>
               <CardContent className="flex items-center gap-4 p-5">
@@ -374,9 +409,14 @@ export default function Reports() {
           ) : (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="font-display text-sm">
-                  Stock Ledger ({certificates.length} certificates)
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="font-display text-sm">
+                    Stock Ledger ({certificates.length} certificates)
+                  </CardTitle>
+                  <Button variant="outline" size="sm" onClick={handleExportLedger} disabled={certificates.length === 0} className="print:hidden">
+                    <FileDown className="mr-1.5 h-3.5 w-3.5" /> Export PDF
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 <Table>
