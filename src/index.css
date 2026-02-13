@@ -153,6 +153,8 @@
     --foreground: 0 0% 10%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 10%;
+    --primary: 4 58% 46%;
+    --primary-foreground: 0 0% 100%;
     --muted: 0 0% 96%;
     --muted-foreground: 0 0% 40%;
     --border: 0 0% 85%;
@@ -218,7 +220,14 @@
   /* Page settings */
   @page {
     margin: 0.5in;
-    size: landscape;
+    size: portrait;
+  }
+
+  /* Landscape override for stock ledger */
+  .print-landscape {
+    @page {
+      size: landscape;
+    }
   }
 
   /* Ensure tab content is visible */
@@ -228,5 +237,74 @@
 
   [role="tabpanel"][data-state="inactive"] {
     display: none !important;
+  }
+
+  /* ── Compliance checklist print styles ── */
+
+  /* Accordion: show all items expanded */
+  [data-state="closed"] > [data-radix-collection-item] + div,
+  [data-state="closed"][role="region"] {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+  }
+
+  /* Hide accordion chevron triggers */
+  [data-radix-collection-item] svg[class*="lucide-chevron"] {
+    display: none !important;
+  }
+
+  /* Checklist items: avoid page breaks mid-item */
+  [data-radix-collection-item] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Status icons: ensure color prints */
+  .text-success {
+    color: #16a34a !important;
+  }
+  .text-warning {
+    color: #ca8a04 !important;
+  }
+  .text-destructive,
+  .text-destructive\/60,
+  .text-destructive\/70 {
+    color: #dc2626 !important;
+  }
+
+  /* Statute references: ensure mono font and readability */
+  .font-mono {
+    font-family: 'Courier New', Courier, monospace !important;
+    font-size: 8pt;
+  }
+
+  /* Compliance card left border accent */
+  .border-l-primary {
+    border-left: 3px solid #b33a2a !important;
+  }
+
+  /* Important notice box */
+  .bg-muted\/20 {
+    background: #f7f7f7 !important;
+    border: 1px solid #ccc !important;
+  }
+
+  /* Score/summary badges */
+  .bg-success\/10 {
+    background: #dcfce7 !important;
+  }
+  .bg-warning\/10 {
+    background: #fef9c3 !important;
+  }
+  .bg-destructive\/10 {
+    background: #fee2e2 !important;
+  }
+
+  /* Description boxes */
+  .bg-muted\/30 {
+    background: #f3f3f3 !important;
+    border: 1px solid #e5e5e5 !important;
   }
 }
