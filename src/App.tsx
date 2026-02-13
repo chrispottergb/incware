@@ -11,6 +11,7 @@ import Dashboard from "@/pages/Dashboard";
 import CompanyDetail from "@/pages/CompanyDetail";
 import MeetingDetail from "@/pages/MeetingDetail";
 import Reports from "@/pages/Reports";
+import BusinessSales from "@/pages/BusinessSales";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,16 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <MeetingDetail />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/business-sales"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <BusinessSales />
                   </AppLayout>
                 </ProtectedRoute>
               }
