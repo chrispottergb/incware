@@ -97,7 +97,7 @@ export default function CompanyDetail() {
       {/* Tabs */}
       <Tabs value={hashTab} onValueChange={handleTabChange} className="w-full">
         <div className="border-b border-border">
-          <TabsList className="h-auto w-full justify-start gap-0 rounded-none bg-transparent p-0">
+          <TabsList className="h-auto w-full flex-wrap justify-center gap-0 rounded-none bg-transparent p-0">
             {[
               { value: "incorporation", label: "Incorporation Info" },
               { value: "organization", label: "Organizational Info" },
@@ -109,7 +109,7 @@ export default function CompanyDetail() {
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
-                className="relative rounded-none border-b-2 border-transparent px-4 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="relative rounded-none border-b-2 border-transparent px-3 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
                 {tab.label}
               </TabsTrigger>
