@@ -1,4 +1,5 @@
 import { ReactNode, useState, useMemo } from "react";
+import logoEntityIQ from "@/assets/logo-entityiq.png";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
@@ -73,9 +74,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         }`}
       >
         <div className="flex h-14 items-center gap-2.5 border-b border-sidebar-border px-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-primary">
-            <Building2 className="h-4 w-4 text-sidebar-primary-foreground" />
-          </div>
+          <img src={logoEntityIQ} alt="EntityIQ" className="h-8 w-8 rounded-md" />
           <span className="font-display text-base font-bold text-sidebar-primary-foreground tracking-tight">
             EntityIQ
           </span>
