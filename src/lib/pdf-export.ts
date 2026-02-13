@@ -202,3 +202,60 @@ export function exportStockLedgerPDF(certificates: CertificateRow[], companyFilt
   addFooter(doc);
   doc.save("stock-ledger.pdf");
 }
+
+interface ShareholderRow {
+  name: string;
+  companyName: string;
+  address: string;
+  status: string | null;
+  dateAdded: string | null;
+}
+
+export function exportShareholderPDF(shareholders: ShareholderRow[]) {
+  const doc = new jsPDF();
+
+  addHeader(doc, "Shareholder Summary Report", `${shareholders.length} shareholder(s)`);
+
+  autoTable(doc, {
+    startY: 54,
+    head: [["Name", "Company", "Address", "Status", "Date Added"]],
+    body: shareholders.map((sh) => [
+      sh.name,
+      sh.companyName,
+      sh.address || "—",
+      sh.status || "—",
+      sh.dateAdded ? new Date(sh.dateAdded + "T00:00:00").toLocaleDateString() : "—",
+    ]),
+    theme: "grid",
+    headStyles: {
+      fillColor: [45, 55, 72],
+      fontSize: 8,
+      fontStyle: "bold",
+    },
+    bodyStyles: { fontSize: 8 },
+    didParseCell(data) {
+      if (data.section === "body" && data.column.index === 3) {
+        const text = (data.cell.raw as string || "").toLowerCase();
+        if (text === "active") {
+          data.cell.styles.textColor = [22, 163, 74];
+          data.cell.styles.fontStyle = "bold";
+        } else if (text === "inactive") {
+          data.cell.styles.textColor = [220, 38, 38];
+          data.cell.styles.fontStyle = "bold";
+        }
+      }
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  const activeCount = shareholders.filter((s) => s.status === "active").length;
+  const finalY = (doc as any).lastAutoTable.finalY + 10;
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
+  doc.text(`Total Shareholders: ${shareholders.length}`, 14, finalY);
+  doc.text(`Active: ${activeCount}`, 14, finalY + 5);
+
+  addFooter(doc);
+  doc.save("shareholder-summary.pdf");
+}
