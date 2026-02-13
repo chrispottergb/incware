@@ -30,7 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Building2, Plus, Search, Loader2, ChevronRight, UserPlus, FolderOpen, CalendarCheck, SearchIcon } from "lucide-react";
+import { Building2, Plus, Search, Loader2, ChevronRight, UserPlus, FolderOpen, CalendarCheck, SearchIcon, Bot, AlertTriangle, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import cardNewClient from "@/assets/card-new-client.jpg";
@@ -191,6 +191,9 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* AI Compliance Summary */}
+      <AIComplianceSummary />
+
       <div id="companies-section" />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -343,6 +346,55 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
+
+function AIComplianceSummary() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["ai_compliance_summary"],
+    queryFn: async () => {
+      const [systemsRes, incidentsRes, logsRes] = await Promise.all([
+        supabase.from("ai_systems").select("id, status", { count: "exact" }),
+        supabase.from("ai_risk_incidents").select("id, status", { count: "exact" }).in("status", ["open", "investigating"]),
+        supabase.from("ai_usage_logs").select("id, review_decision", { count: "exact" }).is("review_decision", null),
+      ]);
+      return {
+        totalSystems: systemsRes.count ?? 0,
+        activeSystems: (systemsRes.data || []).filter(s => s.status === "active").length,
+        openIncidents: incidentsRes.count ?? 0,
+        pendingReviews: logsRes.count ?? 0,
+      };
+    },
+  });
+
+  if (isLoading || !data) return null;
+  if (data.totalSystems === 0 && data.openIncidents === 0 && data.pendingReviews === 0) return null;
+
+  const stats = [
+    { label: "AI Systems", value: data.activeSystems, sub: `${data.totalSystems} total`, icon: Bot, color: "text-primary" },
+    { label: "Open Incidents", value: data.openIncidents, sub: "need attention", icon: AlertTriangle, color: data.openIncidents > 0 ? "text-destructive" : "text-success" },
+    { label: "Pending Reviews", value: data.pendingReviews, sub: "awaiting decision", icon: ClipboardCheck, color: data.pendingReviews > 0 ? "text-yellow-600" : "text-success" },
+  ];
+
+  return (
+    <div className="space-y-2">
+      <h2 className="text-sm font-semibold text-muted-foreground">EU AI Act Compliance</h2>
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        {stats.map(s => (
+          <Card key={s.label} className="relative overflow-hidden">
+            <CardContent className="p-3 sm:p-4 flex items-center gap-3">
+              <div className={`shrink-0 ${s.color}`}>
+                <s.icon className="h-5 w-5 sm:h-6 sm:w-6" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg sm:text-2xl font-bold leading-none">{s.value}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 truncate">{s.label}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
