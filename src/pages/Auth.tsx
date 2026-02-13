@@ -62,7 +62,7 @@ const Auth = () => {
       {/* Branding — bottom-left */}
       <div className="absolute bottom-12 left-10 right-10 z-10 hidden animate-fade-in lg:block">
         <h1 className="font-display text-5xl font-bold tracking-tight text-foreground">
-          EntityIQ
+          entityIQ
         </h1>
         <p className="mt-2 max-w-sm text-lg text-muted-foreground">
           Next-generation corporate records management — organized, compliant, effortless.
@@ -75,7 +75,7 @@ const Auth = () => {
           {/* Branding for mobile */}
           <div className="mb-10 text-center lg:hidden">
             <h1 className="font-display text-4xl font-bold tracking-tight text-foreground">
-              EntityIQ
+              entityIQ
             </h1>
             <p className="mt-1 text-muted-foreground">Corporate Records Management</p>
           </div>
@@ -87,7 +87,7 @@ const Auth = () => {
             <p className="mt-1 text-sm text-muted-foreground">
               {isSignUp
                 ? "Get started managing corporate records"
-                : "Sign in to continue to EntityIQ"}
+                : "Sign in to continue to entityIQ"}
             </p>
           </div>
 

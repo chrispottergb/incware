@@ -115,7 +115,7 @@ export default function Dashboard() {
       {/* Welcome greeting */}
       <div className="min-w-0">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground truncate">
-          Welcome to your new EntityIQ, Kathy <span className="inline-block">:)</span>
+          Welcome to your new entityIQ, Kathy <span className="inline-block">:)</span>
         </h1>
       </div>
 
