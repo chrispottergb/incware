@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { exportCompliancePDF, exportStockLedgerPDF } from "@/lib/pdf-export";
+import { exportCompliancePDF, exportStockLedgerPDF, exportShareholderPDF } from "@/lib/pdf-export";
 import {
   Table,
   TableBody,
@@ -189,6 +189,18 @@ export default function Reports() {
     );
   };
 
+  const handleExportShareholders = () => {
+    exportShareholderPDF(
+      shareholders.map((sh: any) => ({
+        name: sh.name,
+        companyName: sh.companies?.name || "—",
+        address: [sh.address, sh.city, sh.state, sh.zip].filter(Boolean).join(", ") || "—",
+        status: sh.status,
+        dateAdded: sh.date_added,
+      }))
+    );
+  };
+
   const fmt = (n: number | null) =>
     n != null ? n.toLocaleString() : "—";
 
@@ -342,9 +354,14 @@ export default function Reports() {
           ) : (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="font-display text-sm">
-                  Shareholder Summary ({shareholders.length})
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="font-display text-sm">
+                    Shareholder Summary ({shareholders.length})
+                  </CardTitle>
+                  <Button variant="outline" size="sm" onClick={handleExportShareholders} disabled={shareholders.length === 0} className="print:hidden">
+                    <FileDown className="mr-1.5 h-3.5 w-3.5" /> Export PDF
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 <Table>
