@@ -33,6 +33,7 @@ import {
 import { Building2, Plus, Search, Loader2, ChevronRight, UserPlus, FolderOpen, CalendarCheck, SearchIcon, Bot, AlertTriangle, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 
+import logoEntityIQ from "@/assets/logo-entityiq.png";
 import cardNewClient from "@/assets/card-new-client.jpg";
 import cardExistingClient from "@/assets/card-existing-client.jpg";
 import cardAnnualUpdate from "@/assets/card-annual-update.jpg";
@@ -112,11 +113,9 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in min-w-0">
-      {/* Welcome greeting */}
-      <div className="min-w-0">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground truncate">
-          Welcome to your new entityIQ, Kathy <span className="inline-block">:)</span>
-        </h1>
+      {/* Logo */}
+      <div className="flex justify-center py-2">
+        <img src={logoEntityIQ} alt="entityIQ" className="h-14 sm:h-16 md:h-20" />
       </div>
 
       {/* Welcome Action Cards */}
