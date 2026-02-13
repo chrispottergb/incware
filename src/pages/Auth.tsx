@@ -54,13 +54,13 @@ const Auth = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-background/40" />
       </div>
 
-      {/* Branding — bottom-left */}
-      <div className="absolute bottom-12 left-10 right-10 z-10 hidden animate-fade-in lg:block">
-        <h1 className="font-display text-5xl font-bold tracking-tight text-foreground">
+      {/* Branding — upper-right */}
+      <div className="absolute top-8 right-12 z-10 hidden animate-fade-in text-right lg:block">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
           entityIQ
         </h1>
-        <p className="mt-2 max-w-sm text-lg text-muted-foreground">
-          Next-generation corporate records management — organized, compliant, effortless.
+        <p className="mt-1 max-w-xs text-sm text-muted-foreground">
+          Next-generation corporate records management
         </p>
       </div>
 
