@@ -112,6 +112,13 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* Welcome greeting */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          Welcome to your new IncWare, Kathy <span className="inline-block">:)</span>
+        </h1>
+      </div>
+
       {/* Welcome Action Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
