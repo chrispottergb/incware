@@ -134,3 +134,99 @@
     @apply relative inline-block after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left;
   }
 }
+
+/* ── Print styles ── */
+@media print {
+  /* Hide navigation, sidebar, and UI chrome */
+  nav,
+  aside,
+  [data-sidebar],
+  .print\\:hidden,
+  button,
+  [role="tablist"] {
+    display: none !important;
+  }
+
+  /* Reset dark theme to white for print */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
+    --border: 0 0% 85%;
+    --success: 152 44% 38%;
+    --destructive: 0 68% 48%;
+    --warning: 38 92% 50%;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Full-width content without sidebar gap */
+  main,
+  [class*="SidebarInset"],
+  [data-panel-group] {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Clean card styling */
+  [class*="Card"] {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  /* Table readability */
+  table {
+    width: 100% !important;
+    border-collapse: collapse;
+    font-size: 9pt;
+  }
+
+  th {
+    background: #f3f3f3 !important;
+    color: #222 !important;
+    font-weight: 600;
+    border-bottom: 2px solid #999 !important;
+  }
+
+  td, th {
+    padding: 4px 8px !important;
+    border: 1px solid #ddd !important;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+
+  /* Badge colors for print */
+  [class*="Badge"] {
+    border: 1px solid #999 !important;
+    background: transparent !important;
+  }
+
+  /* Page settings */
+  @page {
+    margin: 0.5in;
+    size: landscape;
+  }
+
+  /* Ensure tab content is visible */
+  [role="tabpanel"][data-state="active"] {
+    display: block !important;
+  }
+
+  [role="tabpanel"][data-state="inactive"] {
+    display: none !important;
+  }
+}
