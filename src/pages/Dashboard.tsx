@@ -111,16 +111,16 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in overflow-hidden">
+    <div className="space-y-6 animate-fade-in min-w-0">
       {/* Welcome greeting */}
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground break-words">
+      <div className="min-w-0">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground truncate">
           Welcome to your new IncWare, Kathy <span className="inline-block">:)</span>
         </h1>
       </div>
 
       {/* Welcome Action Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 min-w-0">
         {[
           {
             title: "New Client",
@@ -169,7 +169,7 @@ export default function Dashboard() {
           <button
             key={card.title}
             onClick={card.onClick}
-            className="group relative overflow-hidden rounded-xl border border-border bg-card text-left shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="group relative overflow-hidden rounded-xl border border-border bg-card text-left shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-primary/40 min-w-0"
           >
             <div className="aspect-[16/9] overflow-hidden">
               <img
@@ -180,12 +180,12 @@ export default function Dashboard() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
             </div>
-            <div className="absolute bottom-0 left-0 right-0 p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <card.icon className="h-6 w-6 text-white/90" />
-                <h3 className="text-lg font-bold text-white font-display tracking-tight">{card.title}</h3>
+            <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5">
+                <card.icon className="h-4 w-4 sm:h-6 sm:w-6 text-white/90 shrink-0" />
+                <h3 className="text-sm sm:text-lg font-bold text-white font-display tracking-tight truncate">{card.title}</h3>
               </div>
-              <p className="text-sm text-white/70">{card.description}</p>
+              <p className="text-xs sm:text-sm text-white/70 truncate">{card.description}</p>
             </div>
           </button>
         ))}
