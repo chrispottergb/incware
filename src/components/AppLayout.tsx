@@ -14,6 +14,7 @@ import {
   Clock,
   Landmark,
   UsersRound,
+  ClipboardList,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -28,6 +29,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   const mainNav = [
     { label: "Dashboard", href: "/", icon: LayoutDashboard },
+    { label: "Reports", href: "/reports", icon: ClipboardList },
   ];
 
   const companyNav = companyId
