@@ -20,6 +20,7 @@ import {
   ClipboardList,
   Search,
   Plus,
+  Handshake,
 } from "lucide-react";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -51,6 +52,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   const mainNav = [
     { label: "Dashboard", href: "/", icon: LayoutDashboard },
+    { label: "Business Sales", href: "/business-sales", icon: Handshake },
     { label: "Reports", href: "/reports", icon: ClipboardList },
   ];
 
