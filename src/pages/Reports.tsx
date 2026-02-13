@@ -237,7 +237,7 @@ export default function Reports() {
       </div>
 
       <Tabs defaultValue="compliance" className="w-full">
-        <TabsList className="print:hidden">
+        <TabsList className="print:hidden w-full justify-center flex-wrap">
           <TabsTrigger value="compliance" className="gap-1.5 text-xs">
             <ShieldCheck className="h-3.5 w-3.5" /> Compliance
           </TabsTrigger>
@@ -363,15 +363,15 @@ export default function Reports() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent className="p-0 overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
                       <TableHead className="text-xs">Name</TableHead>
                       <TableHead className="text-xs">Company</TableHead>
-                      <TableHead className="text-xs">Address</TableHead>
+                      <TableHead className="text-xs hidden sm:table-cell">Address</TableHead>
                       <TableHead className="text-xs">Status</TableHead>
-                      <TableHead className="text-xs">Date Added</TableHead>
+                      <TableHead className="text-xs hidden sm:table-cell">Date Added</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -381,7 +381,7 @@ export default function Reports() {
                         <TableCell className="text-xs text-muted-foreground">
                           {sh.companies?.name || "—"}
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
+                        <TableCell className="text-xs text-muted-foreground hidden sm:table-cell">
                           {[sh.address, sh.city, sh.state, sh.zip].filter(Boolean).join(", ") || "—"}
                         </TableCell>
                         <TableCell>
@@ -396,7 +396,7 @@ export default function Reports() {
                             {sh.status || "—"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
+                        <TableCell className="text-xs text-muted-foreground hidden sm:table-cell">
                           {sh.date_added
                             ? new Date(sh.date_added + "T00:00:00").toLocaleDateString()
                             : "—"}
@@ -435,17 +435,17 @@ export default function Reports() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent className="p-0 overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
                       <TableHead className="text-xs">Cert #</TableHead>
-                      <TableHead className="text-xs">Company</TableHead>
+                      <TableHead className="text-xs hidden sm:table-cell">Company</TableHead>
                       <TableHead className="text-xs">Shareholder</TableHead>
                       <TableHead className="text-xs">Class</TableHead>
                       <TableHead className="text-xs text-right">Shares</TableHead>
-                      <TableHead className="text-xs text-right">Par Value</TableHead>
-                      <TableHead className="text-xs">Issue Date</TableHead>
+                      <TableHead className="text-xs text-right hidden sm:table-cell">Par Value</TableHead>
+                      <TableHead className="text-xs hidden sm:table-cell">Issue Date</TableHead>
                       <TableHead className="text-xs">Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -455,7 +455,7 @@ export default function Reports() {
                         <TableCell className="text-sm font-mono font-medium">
                           #{cert.certificate_number}
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
+                        <TableCell className="text-xs text-muted-foreground hidden sm:table-cell">
                           {cert.companies?.name || "—"}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
@@ -465,10 +465,10 @@ export default function Reports() {
                         <TableCell className="text-xs text-right font-mono">
                           {fmt(cert.num_shares)}
                         </TableCell>
-                        <TableCell className="text-xs text-right font-mono">
+                        <TableCell className="text-xs text-right font-mono hidden sm:table-cell">
                           {fmtCurrency(cert.par_value)}
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
+                        <TableCell className="text-xs text-muted-foreground hidden sm:table-cell">
                           {cert.issue_date
                             ? new Date(cert.issue_date + "T00:00:00").toLocaleDateString()
                             : "—"}
