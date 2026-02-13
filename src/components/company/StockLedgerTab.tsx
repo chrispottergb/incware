@@ -32,13 +32,61 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Loader2, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
-const TRANSACTION_TYPES = [
-  { value: "issuance", label: "Issuance" },
-  { value: "transfer", label: "Transfer" },
-  { value: "redemption", label: "Redemption" },
-  { value: "cancellation", label: "Cancellation" },
-  { value: "stock_split", label: "Stock Split" },
-  { value: "gift", label: "Gift" },
+// Wisconsin statutory stock transaction types by entity type
+const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string; statute: string }[]> = {
+  Corporation: [
+    { value: "initial_issuance", label: "Initial Share Issuance", statute: "§ 180.0601" },
+    { value: "authorized_issuance", label: "Authorized Share Issuance", statute: "§ 180.0602" },
+    { value: "subscription_issuance", label: "Share Subscription", statute: "§ 180.0620" },
+    { value: "consideration_issuance", label: "Issuance for Consideration", statute: "§ 180.0621" },
+    { value: "share_dividend", label: "Share Dividend / Stock Split", statute: "§ 180.0623" },
+    { value: "fractional_shares", label: "Fractional Shares", statute: "§ 180.0604" },
+    { value: "transfer", label: "Share Transfer", statute: "§ 180.0627" },
+    { value: "share_exchange", label: "Share Exchange", statute: "§ 180.1102" },
+    { value: "redemption", label: "Share Redemption", statute: "§ 180.0631" },
+    { value: "reacquisition", label: "Corporation Reacquisition", statute: "§ 180.0631" },
+    { value: "cancellation", label: "Share Cancellation", statute: "§ 180.0631" },
+    { value: "conversion", label: "Share Conversion", statute: "§ 180.0604" },
+    { value: "treasury_acquisition", label: "Treasury Share Acquisition", statute: "§ 180.0631" },
+    { value: "treasury_reissue", label: "Treasury Share Reissue", statute: "§ 180.0631" },
+    { value: "preemptive_rights", label: "Preemptive Rights Issuance", statute: "§ 180.0630" },
+    { value: "gift", label: "Gift / Donation of Shares", statute: "§ 180.0621" },
+  ],
+  "S-Corp": [
+    { value: "initial_issuance", label: "Initial Share Issuance", statute: "§ 180.0601 / IRC § 1361" },
+    { value: "authorized_issuance", label: "Authorized Share Issuance", statute: "§ 180.0602 / IRC § 1361(b)" },
+    { value: "subscription_issuance", label: "Share Subscription", statute: "§ 180.0620" },
+    { value: "consideration_issuance", label: "Issuance for Consideration", statute: "§ 180.0621" },
+    { value: "transfer", label: "Share Transfer", statute: "§ 180.0627 / IRC § 1361(b)(1)" },
+    { value: "redemption", label: "Share Redemption", statute: "§ 180.0631 / IRC § 302" },
+    { value: "reacquisition", label: "Corporation Reacquisition", statute: "§ 180.0631 / IRC § 302" },
+    { value: "cancellation", label: "Share Cancellation", statute: "§ 180.0631" },
+    { value: "distribution", label: "S-Corp Distribution", statute: "IRC § 1368" },
+    { value: "gift", label: "Gift / Donation of Shares", statute: "§ 180.0621 / IRC § 1361(b)(1)" },
+  ],
+  LLC: [
+    { value: "initial_contribution", label: "Initial Capital Contribution", statute: "§ 183.0401" },
+    { value: "additional_contribution", label: "Additional Contribution", statute: "§ 183.0401" },
+    { value: "membership_issuance", label: "Membership Interest Issuance", statute: "§ 183.0501" },
+    { value: "interest_transfer", label: "Transfer of Membership Interest", statute: "§ 183.0706" },
+    { value: "interest_assignment", label: "Assignment of Interest", statute: "§ 183.0706" },
+    { value: "distribution", label: "Distribution to Members", statute: "§ 183.0404" },
+    { value: "interim_distribution", label: "Interim Distribution", statute: "§ 183.0404" },
+    { value: "withdrawal_distribution", label: "Withdrawal Distribution", statute: "§ 183.0602" },
+    { value: "redemption", label: "Interest Redemption", statute: "§ 183.0602" },
+    { value: "dissociation_buyout", label: "Dissociation Buyout", statute: "§ 183.0701" },
+    { value: "gift", label: "Gift of Membership Interest", statute: "§ 183.0706" },
+  ],
+};
+
+// Fallback for other entity types (Non-Profit, Partnership, etc.)
+const DEFAULT_TRANSACTION_TYPES = [
+  { value: "issuance", label: "Issuance", statute: "" },
+  { value: "transfer", label: "Transfer", statute: "" },
+  { value: "redemption", label: "Redemption", statute: "" },
+  { value: "cancellation", label: "Cancellation", statute: "" },
+  { value: "distribution", label: "Distribution", statute: "" },
+  { value: "gift", label: "Gift", statute: "" },
 ];
 
 const CONSIDERATION_TYPES = [
@@ -51,11 +99,13 @@ const CONSIDERATION_TYPES = [
 
 interface Props {
   companyId: string;
+  entityType?: string;
 }
 
-export default function StockLedgerTab({ companyId }: Props) {
+export default function StockLedgerTab({ companyId, entityType = "Corporation" }: Props) {
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState(false);
+  const transactionTypes = TRANSACTION_TYPES_BY_ENTITY[entityType] || DEFAULT_TRANSACTION_TYPES;
 
   const { data: shareholders = [] } = useQuery({
     queryKey: ["shareholders", companyId],
@@ -137,7 +187,13 @@ export default function StockLedgerTab({ companyId }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const isTransfer = form.transaction_type === "transfer";
+  const isTransfer = ["transfer", "interest_transfer", "interest_assignment", "share_exchange"].includes(form.transaction_type);
+
+  const statuteDescription = entityType === "LLC"
+    ? "Wis. Stat. Ch. 183 — Uniform Limited Liability Company Law"
+    : entityType === "S-Corp"
+    ? "Wis. Stat. Ch. 180 / IRC Subchapter S — S-Corporation share transactions"
+    : "Wis. Stat. § 180.0601 / § 180.0621 — Shares may not be issued until articles filed; consideration must be received";
 
   return (
     <Card>
@@ -145,10 +201,12 @@ export default function StockLedgerTab({ companyId }: Props) {
         <div>
           <div className="flex items-center gap-2">
             <BookOpen className="h-3.5 w-3.5 text-primary" />
-            <CardTitle className="card-section-title">Stock Ledger / Transactions</CardTitle>
+            <CardTitle className="card-section-title">
+              {entityType === "LLC" ? "Capital & Interest Ledger" : "Stock Ledger / Transactions"}
+            </CardTitle>
           </div>
           <CardDescription className="text-[11px] mt-0.5">
-            Wis. Stat. § 180.0601 / § 180.0621 — Shares may not be issued until articles filed; consideration must be received
+            {statuteDescription}
           </CardDescription>
         </div>
         <Dialog open={dialog} onOpenChange={setDialog}>
@@ -168,7 +226,12 @@ export default function StockLedgerTab({ companyId }: Props) {
                   <Select value={form.transaction_type} onValueChange={(v) => setForm(p => ({ ...p, transaction_type: v }))}>
                     <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {TRANSACTION_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                      {transactionTypes.map(t => (
+                        <SelectItem key={t.value} value={t.value}>
+                          <span>{t.label}</span>
+                          {t.statute && <span className="ml-1.5 text-muted-foreground text-[10px]">({t.statute})</span>}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
