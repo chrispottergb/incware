@@ -50,8 +50,8 @@ const Auth = () => {
           alt="Futuristic corporate records book"
           className="h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/50 to-background/30" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-background/40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/60 via-background/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-background/20" />
       </div>
 
       {/* Branding — upper-right */}
