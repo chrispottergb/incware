@@ -65,8 +65,8 @@ const Auth = () => {
       </div>
 
       {/* Auth form — overlaid */}
-      <div className="relative z-10 flex min-h-screen items-start justify-end px-4 pt-16 lg:pr-12 xl:pr-20">
-        <div className="w-full max-w-xs animate-fade-in rounded-2xl border border-border/50 bg-background/80 p-5 shadow-2xl backdrop-blur-xl">
+      <div className="relative z-10 flex min-h-screen items-start justify-end px-4 pt-8 lg:pr-10 xl:pr-16">
+        <div className="w-full max-w-[280px] animate-fade-in rounded-2xl border border-border/50 bg-background/80 p-4 shadow-2xl backdrop-blur-xl">
           {/* Branding for mobile */}
           <div className="mb-6 lg:hidden">
             <h1 className="font-display text-4xl font-bold tracking-tight text-foreground">
