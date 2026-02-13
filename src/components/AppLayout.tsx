@@ -77,7 +77,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <Building2 className="h-4 w-4 text-sidebar-primary-foreground" />
           </div>
           <span className="font-display text-base font-bold text-sidebar-primary-foreground tracking-tight">
-            IncWare
+            EntityIQ
           </span>
         </div>
 

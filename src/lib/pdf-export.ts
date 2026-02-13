@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const BRAND = "IncWare";
+const BRAND = "EntityIQ";
 const BRAND_SUB = "Corporate Records Management";
 
 function addHeader(doc: jsPDF, title: string, subtitle?: string) {
