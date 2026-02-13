@@ -19,6 +19,7 @@ import {
   UsersRound,
   ClipboardList,
   Search,
+  Plus,
 } from "lucide-react";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -142,6 +143,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <p className="px-3 py-2 text-[11px] text-sidebar-foreground/40">No matches</p>
             )}
           </div>
+          <button
+            onClick={() => {
+              navigate("/");
+              setMobileOpen(false);
+              // Small delay to let Dashboard mount, then trigger dialog
+              setTimeout(() => window.dispatchEvent(new CustomEvent("open-add-company")), 100);
+            }}
+            className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-[12px] font-medium text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
+          >
+            <Plus className="h-3 w-3 shrink-0" />
+            <span>Add Company</span>
+          </button>
 
           {companyNav.length > 0 && (
             <>
