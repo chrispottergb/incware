@@ -14,6 +14,229 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_oversight_persons: {
+        Row: {
+          ai_system_id: string
+          assigned_date: string | null
+          authority_scope: string | null
+          competence_description: string | null
+          created_at: string
+          id: string
+          person_name: string
+          status: string
+          title: string | null
+        }
+        Insert: {
+          ai_system_id: string
+          assigned_date?: string | null
+          authority_scope?: string | null
+          competence_description?: string | null
+          created_at?: string
+          id?: string
+          person_name: string
+          status?: string
+          title?: string | null
+        }
+        Update: {
+          ai_system_id?: string
+          assigned_date?: string | null
+          authority_scope?: string | null
+          competence_description?: string | null
+          created_at?: string
+          id?: string
+          person_name?: string
+          status?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_oversight_persons_ai_system_id_fkey"
+            columns: ["ai_system_id"]
+            isOneToOne: false
+            referencedRelation: "ai_systems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_risk_incidents: {
+        Row: {
+          actions_taken: string | null
+          ai_system_id: string
+          authority_notified: boolean | null
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          incident_date: string
+          provider_notified: boolean | null
+          reported_by: string | null
+          resolution_date: string | null
+          severity: string
+          status: string
+        }
+        Insert: {
+          actions_taken?: string | null
+          ai_system_id: string
+          authority_notified?: boolean | null
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          incident_date?: string
+          provider_notified?: boolean | null
+          reported_by?: string | null
+          resolution_date?: string | null
+          severity?: string
+          status?: string
+        }
+        Update: {
+          actions_taken?: string | null
+          ai_system_id?: string
+          authority_notified?: boolean | null
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          incident_date?: string
+          provider_notified?: boolean | null
+          reported_by?: string | null
+          resolution_date?: string | null
+          severity?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_risk_incidents_ai_system_id_fkey"
+            columns: ["ai_system_id"]
+            isOneToOne: false
+            referencedRelation: "ai_systems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_risk_incidents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_systems: {
+        Row: {
+          company_id: string
+          created_at: string
+          data_categories: string | null
+          deployment_date: string | null
+          id: string
+          instructions_for_use: string | null
+          provider: string | null
+          purpose: string | null
+          risk_level: string
+          status: string
+          system_name: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          data_categories?: string | null
+          deployment_date?: string | null
+          id?: string
+          instructions_for_use?: string | null
+          provider?: string | null
+          purpose?: string | null
+          risk_level?: string
+          status?: string
+          system_name: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          data_categories?: string | null
+          deployment_date?: string | null
+          id?: string
+          instructions_for_use?: string | null
+          provider?: string | null
+          purpose?: string | null
+          risk_level?: string
+          status?: string
+          system_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_systems_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_usage_logs: {
+        Row: {
+          affected_persons_notified: boolean | null
+          ai_system_id: string
+          company_id: string
+          created_at: string
+          description: string | null
+          human_reviewer: string | null
+          id: string
+          input_summary: string | null
+          output_summary: string | null
+          review_decision: string | null
+          review_notes: string | null
+          usage_date: string
+          usage_type: string
+        }
+        Insert: {
+          affected_persons_notified?: boolean | null
+          ai_system_id: string
+          company_id: string
+          created_at?: string
+          description?: string | null
+          human_reviewer?: string | null
+          id?: string
+          input_summary?: string | null
+          output_summary?: string | null
+          review_decision?: string | null
+          review_notes?: string | null
+          usage_date?: string
+          usage_type?: string
+        }
+        Update: {
+          affected_persons_notified?: boolean | null
+          ai_system_id?: string
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          human_reviewer?: string | null
+          id?: string
+          input_summary?: string | null
+          output_summary?: string | null
+          review_decision?: string | null
+          review_notes?: string | null
+          usage_date?: string
+          usage_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_logs_ai_system_id_fkey"
+            columns: ["ai_system_id"]
+            isOneToOne: false
+            referencedRelation: "ai_systems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_usage_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bills_of_sale: {
         Row: {
           buyer_name: string
