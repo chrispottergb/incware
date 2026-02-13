@@ -259,3 +259,256 @@ export function exportShareholderPDF(shareholders: ShareholderRow[]) {
   addFooter(doc);
   doc.save("shareholder-summary.pdf");
 }
+
+// ---------- AI Compliance Audit Report ----------
+
+interface AISystemRow {
+  system_name: string;
+  provider: string | null;
+  risk_level: string;
+  status: string;
+  deployment_date: string | null;
+  purpose: string | null;
+  data_categories: string | null;
+}
+
+interface AIOversightRow {
+  person_name: string;
+  title: string | null;
+  competence_description: string | null;
+  authority_scope: string | null;
+  status: string;
+  system_name: string;
+}
+
+interface AIUsageRow {
+  usage_date: string;
+  system_name: string;
+  usage_type: string;
+  description: string | null;
+  human_reviewer: string | null;
+  review_decision: string | null;
+  affected_persons_notified: boolean | null;
+}
+
+interface AIIncidentRow {
+  incident_date: string;
+  system_name: string;
+  severity: string;
+  status: string;
+  description: string | null;
+  reported_by: string | null;
+  provider_notified: boolean | null;
+  authority_notified: boolean | null;
+}
+
+export interface AIComplianceData {
+  companyName: string;
+  systems: AISystemRow[];
+  oversightPersons: AIOversightRow[];
+  usageLogs: AIUsageRow[];
+  incidents: AIIncidentRow[];
+}
+
+export function exportAICompliancePDF(data: AIComplianceData) {
+  const doc = new jsPDF();
+  const pw = doc.internal.pageSize.getWidth();
+
+  addHeader(doc, "EU AI Act Compliance Report", `${data.companyName} — Regulation (EU) 2024/1689`);
+
+  let y = 54;
+
+  // --- Section 1: AI Systems Registry ---
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
+  doc.text("1. AI Systems Registry", 14, y);
+  y += 2;
+
+  if (data.systems.length === 0) {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(130, 130, 130);
+    doc.text("No AI systems registered.", 14, y + 6);
+    y += 14;
+  } else {
+    autoTable(doc, {
+      startY: y,
+      head: [["System", "Provider", "Risk Level", "Status", "Deployed", "Purpose"]],
+      body: data.systems.map(s => [
+        s.system_name,
+        s.provider || "—",
+        s.risk_level,
+        s.status,
+        s.deployment_date ? new Date(s.deployment_date + "T00:00:00").toLocaleDateString() : "—",
+        s.purpose || "—",
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
+      bodyStyles: { fontSize: 7 },
+      didParseCell(data) {
+        if (data.section === "body" && data.column.index === 2) {
+          const risk = (data.cell.raw as string).toLowerCase();
+          if (risk === "high" || risk === "unacceptable") data.cell.styles.textColor = [220, 38, 38];
+          else if (risk === "limited") data.cell.styles.textColor = [202, 138, 4];
+          else data.cell.styles.textColor = [22, 163, 74];
+          data.cell.styles.fontStyle = "bold";
+        }
+      },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+  }
+
+  // --- Section 2: Human Oversight (Art. 26.2) ---
+  if (y > doc.internal.pageSize.getHeight() - 50) { doc.addPage(); y = 20; }
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
+  doc.text("2. Human Oversight Assignments (Art. 26.2)", 14, y);
+  y += 2;
+
+  if (data.oversightPersons.length === 0) {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(130, 130, 130);
+    doc.text("No oversight persons assigned.", 14, y + 6);
+    y += 14;
+  } else {
+    autoTable(doc, {
+      startY: y,
+      head: [["Liable Person", "Title", "AI System", "Competence", "Authority Scope", "Status"]],
+      body: data.oversightPersons.map(p => [
+        p.person_name,
+        p.title || "—",
+        p.system_name,
+        p.competence_description || "—",
+        p.authority_scope || "—",
+        p.status,
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
+      bodyStyles: { fontSize: 7 },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+  }
+
+  // --- Section 3: Usage Log (Art. 26.6) ---
+  if (y > doc.internal.pageSize.getHeight() - 50) { doc.addPage(); y = 20; }
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
+  doc.text("3. AI Usage Log (Art. 26.6 — 6-month retention)", 14, y);
+  y += 2;
+
+  if (data.usageLogs.length === 0) {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(130, 130, 130);
+    doc.text("No usage events recorded.", 14, y + 6);
+    y += 14;
+  } else {
+    autoTable(doc, {
+      startY: y,
+      head: [["Date", "System", "Type", "Description", "Reviewer", "Decision", "Notified"]],
+      body: data.usageLogs.map(l => [
+        new Date(l.usage_date).toLocaleDateString(),
+        l.system_name,
+        l.usage_type,
+        l.description || "—",
+        l.human_reviewer || "—",
+        l.review_decision || "Pending",
+        l.affected_persons_notified ? "Yes" : "No",
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
+      bodyStyles: { fontSize: 7 },
+      didParseCell(data) {
+        if (data.section === "body" && data.column.index === 5) {
+          const d = (data.cell.raw as string).toLowerCase();
+          if (d === "approved") data.cell.styles.textColor = [22, 163, 74];
+          else if (d === "rejected") data.cell.styles.textColor = [220, 38, 38];
+          else if (d === "modified") data.cell.styles.textColor = [202, 138, 4];
+          data.cell.styles.fontStyle = "bold";
+        }
+      },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+  }
+
+  // --- Section 4: Risk & Incidents (Art. 26.5) ---
+  if (y > doc.internal.pageSize.getHeight() - 50) { doc.addPage(); y = 20; }
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
+  doc.text("4. Risk & Incidents (Art. 26.5)", 14, y);
+  y += 2;
+
+  if (data.incidents.length === 0) {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(130, 130, 130);
+    doc.text("No incidents reported.", 14, y + 6);
+    y += 14;
+  } else {
+    autoTable(doc, {
+      startY: y,
+      head: [["Date", "System", "Severity", "Status", "Description", "Reporter", "Provider", "Authority"]],
+      body: data.incidents.map(i => [
+        new Date(i.incident_date + "T00:00:00").toLocaleDateString(),
+        i.system_name,
+        i.severity,
+        i.status,
+        i.description || "—",
+        i.reported_by || "—",
+        i.provider_notified ? "Yes" : "No",
+        i.authority_notified ? "Yes" : "No",
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
+      bodyStyles: { fontSize: 7 },
+      didParseCell(data) {
+        if (data.section === "body" && data.column.index === 2) {
+          const s = (data.cell.raw as string).toLowerCase();
+          if (s === "serious" || s === "high") data.cell.styles.textColor = [220, 38, 38];
+          else if (s === "medium") data.cell.styles.textColor = [202, 138, 4];
+          else data.cell.styles.textColor = [22, 163, 74];
+          data.cell.styles.fontStyle = "bold";
+        }
+      },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+  }
+
+  // --- Summary ---
+  if (y > doc.internal.pageSize.getHeight() - 40) { doc.addPage(); y = 20; }
+  doc.setDrawColor(200, 200, 200);
+  doc.line(14, y, pw - 14, y);
+  y += 8;
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
+  doc.text("Summary", 14, y);
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  const openIncidents = data.incidents.filter(i => i.status !== "resolved").length;
+  const pendingReviews = data.usageLogs.filter(l => !l.review_decision).length;
+  doc.text(`• Registered AI Systems: ${data.systems.length} (${data.systems.filter(s => s.status === "active").length} active)`, 14, y); y += 5;
+  doc.text(`• Oversight Persons Assigned: ${data.oversightPersons.length} (${data.oversightPersons.filter(p => p.status === "active").length} active)`, 14, y); y += 5;
+  doc.text(`• Usage Events Logged: ${data.usageLogs.length}`, 14, y); y += 5;
+  doc.text(`• Pending Reviews: ${pendingReviews}`, 14, y); y += 5;
+  doc.text(`• Total Incidents: ${data.incidents.length} (${openIncidents} open)`, 14, y); y += 5;
+  const highRisk = data.systems.filter(s => s.risk_level === "high" || s.risk_level === "unacceptable").length;
+  if (highRisk > 0) {
+    doc.setTextColor(220, 38, 38);
+    doc.setFont("helvetica", "bold");
+    doc.text(`⚠ ${highRisk} high/unacceptable risk system(s) require enhanced oversight`, 14, y);
+  }
+
+  addFooter(doc);
+  doc.save(`ai-compliance-report-${data.companyName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
+}

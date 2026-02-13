@@ -138,7 +138,7 @@ export default function CompanyDetail() {
           <TimelineTab companyId={company.id} company={company} />
         </TabsContent>
         <TabsContent value="ai-compliance" className="mt-5">
-          <AIComplianceTab companyId={company.id} />
+          <AIComplianceTab companyId={company.id} companyName={company.name} />
         </TabsContent>
       </Tabs>
     </div>
