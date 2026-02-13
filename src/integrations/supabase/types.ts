@@ -84,68 +84,6 @@ export type Database = {
           },
         ]
       }
-      business_sales: {
-        Row: {
-          buyer_name: string
-          company_id: string
-          consideration_type: string
-          created_at: string
-          financing_terms: string | null
-          id: string
-          notes: string | null
-          property_description: string | null
-          sale_date: string
-          sale_type: string
-          seller_name: string
-          status: string
-          statute_reference: string | null
-          total_price: number | null
-          updated_at: string
-        }
-        Insert: {
-          buyer_name: string
-          company_id: string
-          consideration_type?: string
-          created_at?: string
-          financing_terms?: string | null
-          id?: string
-          notes?: string | null
-          property_description?: string | null
-          sale_date?: string
-          sale_type: string
-          seller_name: string
-          status?: string
-          statute_reference?: string | null
-          total_price?: number | null
-          updated_at?: string
-        }
-        Update: {
-          buyer_name?: string
-          company_id?: string
-          consideration_type?: string
-          created_at?: string
-          financing_terms?: string | null
-          id?: string
-          notes?: string | null
-          property_description?: string | null
-          sale_date?: string
-          sale_type?: string
-          seller_name?: string
-          status?: string
-          statute_reference?: string | null
-          total_price?: number | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "business_sales_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       companies: {
         Row: {
           accounting_method: string | null
