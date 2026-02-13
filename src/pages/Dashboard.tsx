@@ -30,8 +30,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Building2, Plus, Search, Loader2, ChevronRight } from "lucide-react";
+import { Building2, Plus, Search, Loader2, ChevronRight, UserPlus, FolderOpen, CalendarCheck, SearchIcon } from "lucide-react";
 import { toast } from "sonner";
+
+import cardNewClient from "@/assets/card-new-client.jpg";
+import cardExistingClient from "@/assets/card-existing-client.jpg";
+import cardAnnualUpdate from "@/assets/card-annual-update.jpg";
+import cardQuickSearch from "@/assets/card-quick-search.jpg";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "S-Corp", "Non-Profit", "Partnership"];
 
@@ -49,7 +54,8 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-
+  const [showSearch, setShowSearch] = useState(false);
+  const searchInputRef = useState<HTMLInputElement | null>(null);
   useEffect(() => {
     const handler = () => setDialogOpen(true);
     window.addEventListener("open-add-company", handler);
@@ -105,7 +111,80 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
+      {/* Welcome Action Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          {
+            title: "New Client",
+            description: "Set up a new company",
+            image: cardNewClient,
+            icon: UserPlus,
+            onClick: () => setDialogOpen(true),
+          },
+          {
+            title: "Existing Client",
+            description: "View & manage companies",
+            image: cardExistingClient,
+            icon: FolderOpen,
+            onClick: () => {
+              const el = document.getElementById("companies-section");
+              el?.scrollIntoView({ behavior: "smooth" });
+            },
+          },
+          {
+            title: "Annual Update",
+            description: "Schedule annual meetings",
+            image: cardAnnualUpdate,
+            icon: CalendarCheck,
+            onClick: () => {
+              if (companies.length > 0) {
+                navigate(`/company/${companies[0].id}#meetings`);
+              } else {
+                toast.info("Add a company first to manage annual meetings.");
+              }
+            },
+          },
+          {
+            title: "Quick Search",
+            description: "Find a company fast",
+            image: cardQuickSearch,
+            icon: SearchIcon,
+            onClick: () => {
+              setShowSearch(true);
+              setTimeout(() => {
+                const input = document.getElementById("company-search-input");
+                input?.focus();
+              }, 100);
+            },
+          },
+        ].map((card) => (
+          <button
+            key={card.title}
+            onClick={card.onClick}
+            className="group relative overflow-hidden rounded-xl border border-border bg-card text-left shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-primary/40"
+          >
+            <div className="aspect-square overflow-hidden">
+              <img
+                src={card.image}
+                alt={card.title}
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <card.icon className="h-5 w-5 text-white/90" />
+                <h3 className="text-base font-bold text-white font-display tracking-tight">{card.title}</h3>
+              </div>
+              <p className="text-xs text-white/70">{card.description}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <div id="companies-section" />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-xl font-bold tracking-tight">Client Companies</h1>
@@ -171,6 +250,7 @@ export default function Dashboard() {
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
+            id="company-search-input"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search companies..."
