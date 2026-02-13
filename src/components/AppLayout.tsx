@@ -211,7 +211,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       )}
 
       {/* Main content */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col min-w-0">
         <header className="flex h-14 items-center gap-4 border-b border-border bg-card/80 backdrop-blur-sm px-4 lg:px-6">
           <Button
             variant="ghost"
@@ -226,7 +226,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </span>
         </header>
-        <main className="flex-1 overflow-auto p-4 lg:p-6">{children}</main>
+        <main className="flex-1 overflow-auto p-4 lg:p-6 min-w-0">{children}</main>
       </div>
     </div>
   );
