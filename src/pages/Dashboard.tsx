@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,6 +49,12 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setDialogOpen(true);
+    window.addEventListener("open-add-company", handler);
+    return () => window.removeEventListener("open-add-company", handler);
+  }, []);
 
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("Corporation");
