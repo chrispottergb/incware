@@ -171,7 +171,7 @@ export default function Dashboard() {
             onClick={card.onClick}
             className="group relative overflow-hidden rounded-xl border border-border bg-card text-left shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
-            <div className="aspect-square overflow-hidden">
+            <div className="aspect-[4/3] overflow-hidden">
               <img
                 src={card.image}
                 alt={card.title}
@@ -182,10 +182,10 @@ export default function Dashboard() {
             </div>
             <div className="absolute bottom-0 left-0 right-0 p-4">
               <div className="flex items-center gap-2 mb-1">
-                <card.icon className="h-5 w-5 text-white/90" />
-                <h3 className="text-base font-bold text-white font-display tracking-tight">{card.title}</h3>
+                <card.icon className="h-6 w-6 text-white/90" />
+                <h3 className="text-lg font-bold text-white font-display tracking-tight">{card.title}</h3>
               </div>
-              <p className="text-xs text-white/70">{card.description}</p>
+              <p className="text-sm text-white/70">{card.description}</p>
             </div>
           </button>
         ))}
