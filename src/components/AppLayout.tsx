@@ -73,11 +73,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-14 items-center gap-2.5 border-b border-sidebar-border px-4">
-          <img src={logoEntityIQ} alt="EntityIQ" className="h-8 w-8 rounded-md" />
-          <span className="font-display text-base font-bold text-sidebar-primary-foreground tracking-tight">
-            EntityIQ
-          </span>
+        <div className="flex h-14 items-center border-b border-sidebar-border px-4">
+          <img src={logoEntityIQ} alt="EntityIQ" className="h-7" />
         </div>
 
         <nav className="flex-1 space-y-0.5 p-2">
