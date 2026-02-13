@@ -47,31 +47,32 @@ const Auth = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Left — Hero image */}
-      <div className="relative hidden w-1/2 lg:block">
+    <div className="relative min-h-screen">
+      {/* Full-screen background image */}
+      <div className="fixed inset-0 z-0">
         <img
           src={loginHero}
           alt="Futuristic corporate records book"
-          className="absolute inset-0 h-full w-full object-cover"
+          className="h-full w-full object-cover"
         />
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-        {/* Branding over image */}
-        <div className="absolute bottom-12 left-10 right-10 animate-fade-in">
-          <h1 className="font-display text-5xl font-bold tracking-tight text-foreground">
-            IncWare
-          </h1>
-          <p className="mt-2 max-w-sm text-lg text-muted-foreground">
-            Next-generation corporate records management — organized, compliant, effortless.
-          </p>
-        </div>
+        <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/50 to-background/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-background/40" />
       </div>
 
-      {/* Right — Auth form */}
-      <div className="flex w-full flex-col items-center justify-center px-6 lg:w-1/2">
-        <div className="w-full max-w-md animate-fade-in">
-          {/* Mobile-only branding */}
+      {/* Branding — bottom-left */}
+      <div className="absolute bottom-12 left-10 right-10 z-10 hidden animate-fade-in lg:block">
+        <h1 className="font-display text-5xl font-bold tracking-tight text-foreground">
+          IncWare
+        </h1>
+        <p className="mt-2 max-w-sm text-lg text-muted-foreground">
+          Next-generation corporate records management — organized, compliant, effortless.
+        </p>
+      </div>
+
+      {/* Auth form — overlaid */}
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-6 lg:justify-end lg:pr-16 xl:pr-24">
+        <div className="w-full max-w-md animate-fade-in rounded-2xl border border-border/50 bg-background/80 p-8 shadow-2xl backdrop-blur-xl">
+          {/* Branding for mobile */}
           <div className="mb-10 text-center lg:hidden">
             <h1 className="font-display text-4xl font-bold tracking-tight text-foreground">
               IncWare
@@ -79,7 +80,7 @@ const Auth = () => {
             <p className="mt-1 text-muted-foreground">Corporate Records Management</p>
           </div>
 
-          <div className="mb-8 hidden lg:block">
+          <div className="mb-8">
             <h2 className="font-display text-2xl font-semibold text-foreground">
               {isSignUp ? "Create your account" : "Welcome back"}
             </h2>
