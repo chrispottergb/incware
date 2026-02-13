@@ -72,6 +72,23 @@ export default function MeetingFinancials({ meetingId }: Props) {
 
   const toNum = (s: string) => (s ? parseFloat(s) : null);
 
+  // Auto-calculate derived fields when sales or COG change
+  const handleFieldChange = (prefix: "current" | "previous", key: string, value: string) => {
+    setForm((prev) => {
+      const updated = { ...prev, [`${prefix}_${key}`]: value };
+
+      const sales = toNum(key === "total_sales" ? value : updated[`${prefix}_total_sales`]);
+      const cog = toNum(key === "cog" ? value : updated[`${prefix}_cog`]);
+
+      if (sales != null && cog != null) {
+        updated[`${prefix}_gross_profit`] = (sales - cog).toFixed(2);
+        updated[`${prefix}_cog_ratio`] = sales > 0 ? ((cog / sales) * 100).toFixed(2) : "0";
+      }
+
+      return updated;
+    });
+  };
+
   const save = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -139,11 +156,19 @@ export default function MeetingFinancials({ meetingId }: Props) {
 
   const hasData = chartData.some((d) => d["Current Year"] > 0 || d["Previous Year"] > 0);
 
-  const fields = [
+  // YoY change helpers
+  const yoyChange = (currentKey: string, previousKey: string) => {
+    const cur = toNum((form as any)[currentKey]);
+    const prev = toNum((form as any)[previousKey]);
+    if (cur == null || prev == null || prev === 0) return null;
+    return ((cur - prev) / Math.abs(prev)) * 100;
+  };
+
+  const fields: { key: string; label: string; computed?: boolean }[] = [
     { key: "total_sales", label: "Total Sales" },
-    { key: "gross_profit", label: "Gross Profit" },
-    { key: "cog", label: "COG" },
-    { key: "cog_ratio", label: "COG Ratio (%)" },
+    { key: "cog", label: "Cost of Goods" },
+    { key: "gross_profit", label: "Gross Profit", computed: true },
+    { key: "cog_ratio", label: "COG Ratio (%)", computed: true },
     { key: "net_income", label: "Net Income" },
   ];
 
@@ -163,30 +188,43 @@ export default function MeetingFinancials({ meetingId }: Props) {
               save.mutate();
             }}
           >
-            <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 mb-4">
               <div></div>
               <p className="text-xs font-semibold text-center text-muted-foreground uppercase tracking-wider">Current Year</p>
               <p className="text-xs font-semibold text-center text-muted-foreground uppercase tracking-wider">Previous Year</p>
+              <p className="w-16 text-xs font-semibold text-right text-muted-foreground uppercase tracking-wider">YoY</p>
             </div>
-            {fields.map((f) => (
-              <div key={f.key} className="grid grid-cols-3 gap-4 mb-3 items-center">
-                <Label className="text-sm">{f.label}</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={(form as any)[`current_${f.key}`]}
-                  onChange={(e) => setForm((p) => ({ ...p, [`current_${f.key}`]: e.target.value }))}
-                  className="text-right font-mono text-sm"
-                />
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={(form as any)[`previous_${f.key}`]}
-                  onChange={(e) => setForm((p) => ({ ...p, [`previous_${f.key}`]: e.target.value }))}
-                  className="text-right font-mono text-sm"
-                />
-              </div>
-            ))}
+            {fields.map((f) => {
+              const change = yoyChange(`current_${f.key}`, `previous_${f.key}`);
+              return (
+                <div key={f.key} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 mb-3 items-center">
+                  <Label className="text-sm">{f.label}</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={(form as any)[`current_${f.key}`]}
+                    onChange={(e) => handleFieldChange("current", f.key, e.target.value)}
+                    readOnly={f.computed}
+                    className={`text-right font-mono text-sm ${f.computed ? "bg-muted/50 text-muted-foreground" : ""}`}
+                  />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={(form as any)[`previous_${f.key}`]}
+                    onChange={(e) => handleFieldChange("previous", f.key, e.target.value)}
+                    readOnly={f.computed}
+                    className={`text-right font-mono text-sm ${f.computed ? "bg-muted/50 text-muted-foreground" : ""}`}
+                  />
+                  <div className="w-16 text-right">
+                    {change != null && (
+                      <span className={`text-[11px] font-mono font-medium ${change >= 0 ? "text-success" : "text-destructive"}`}>
+                        {change >= 0 ? "▲" : "▼"} {Math.abs(change).toFixed(1)}%
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
             <div className="flex justify-end mt-4">
               <Button type="submit" disabled={save.isPending} size="sm">
                 {save.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
