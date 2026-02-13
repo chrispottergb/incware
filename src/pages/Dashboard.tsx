@@ -120,7 +120,7 @@ export default function Dashboard() {
       </div>
 
       {/* Welcome Action Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           {
             title: "New Client",
@@ -171,7 +171,7 @@ export default function Dashboard() {
             onClick={card.onClick}
             className="group relative overflow-hidden rounded-xl border border-border bg-card text-left shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
-            <div className="aspect-[4/3] overflow-hidden">
+            <div className="aspect-[16/9] overflow-hidden">
               <img
                 src={card.image}
                 alt={card.title}
