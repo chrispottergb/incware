@@ -128,7 +128,7 @@ export default function CompanyDetail() {
           <div className="space-y-5">
             <ShareholdersTab companyId={company.id} />
             <StockCertificatesTab companyId={company.id} />
-            <StockLedgerTab companyId={company.id} />
+            <StockLedgerTab companyId={company.id} entityType={company.entity_type} />
             <BillsOfSaleTab companyId={company.id} />
           </div>
         </TabsContent>
