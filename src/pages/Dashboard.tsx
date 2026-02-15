@@ -55,7 +55,7 @@ export default function Dashboard() {
   const [filterType, setFilterType] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
-  const searchInputRef = useState<HTMLInputElement | null>(null);
+  
   useEffect(() => {
     const handler = () => setDialogOpen(true);
     window.addEventListener("open-add-company", handler);
