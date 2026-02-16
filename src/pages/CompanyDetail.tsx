@@ -16,6 +16,7 @@ import TimelineTab from "@/components/company/TimelineTab";
 import AIComplianceTab from "@/components/company/AIComplianceTab";
 import RecordBookGenerator from "@/components/company/RecordBookGenerator";
 import OperatingAgreementGenerator from "@/components/company/OperatingAgreementGenerator";
+import BylawsGenerator from "@/components/company/BylawsGenerator";
 
 export default function CompanyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -108,6 +109,7 @@ export default function CompanyDetail() {
               { value: "timeline", label: "Timeline" },
               { value: "ai-compliance", label: "AI Compliance" },
               ...(company.entity_type === "LLC" ? [{ value: "operating-agreement", label: "Operating Agreement" }] : []),
+              ...((company.entity_type === "Corporation" || company.entity_type === "S-Corp") ? [{ value: "bylaws", label: "Bylaws" }] : []),
               { value: "record-book", label: "Record Book" },
             ].map((tab) => (
               <TabsTrigger
@@ -147,6 +149,11 @@ export default function CompanyDetail() {
         {company.entity_type === "LLC" && (
           <TabsContent value="operating-agreement" className="mt-5">
             <OperatingAgreementGenerator companyId={company.id} companyName={company.name} company={company} />
+          </TabsContent>
+        )}
+        {(company.entity_type === "Corporation" || company.entity_type === "S-Corp") && (
+          <TabsContent value="bylaws" className="mt-5">
+            <BylawsGenerator companyId={company.id} companyName={company.name} company={company} />
           </TabsContent>
         )}
         <TabsContent value="record-book" className="mt-5">
