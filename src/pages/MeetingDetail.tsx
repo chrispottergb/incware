@@ -170,7 +170,7 @@ export default function MeetingDetail() {
           <MeetingAmendments meetingId={meeting.id} entityType={company?.entity_type || "Corporation"} />
         </TabsContent>
         <TabsContent value="resolutions" className="mt-5">
-          <MeetingResolutions meetingId={meeting.id} />
+          <MeetingResolutions meetingId={meeting.id} entityType={company?.entity_type || "Corporation"} />
         </TabsContent>
         <TabsContent value="benefits" className="mt-5">
           <MeetingSubTable meetingId={meeting.id} tableName="meeting_benefits" title="Benefits"
