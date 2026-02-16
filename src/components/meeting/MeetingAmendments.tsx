@@ -28,7 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 const AMENDMENT_TYPES: Record<string, { label: string; statute?: string }[]> = {
@@ -47,7 +47,7 @@ const AMENDMENT_TYPES: Record<string, { label: string; statute?: string }[]> = {
     { label: "Amendment to Bylaws", statute: "Wis. Stat. § 180.1020" },
     { label: "Adoption of New Bylaws", statute: "Wis. Stat. § 180.1020" },
     { label: "Repeal of Bylaws Provision", statute: "Wis. Stat. § 180.1020" },
-    { label: "Other", },
+    { label: "Other" },
   ],
   "S-Corp": [
     { label: "Amendment to Articles – Name Change", statute: "Wis. Stat. § 180.1001" },
@@ -123,6 +123,7 @@ interface Props {
 export default function MeetingAmendments({ meetingId, entityType }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [amendmentType, setAmendmentType] = useState("");
   const [amendmentText, setAmendmentText] = useState("");
 
@@ -154,10 +155,27 @@ export default function MeetingAmendments({ meetingId, entityType }: Props) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meeting_amendments", meetingId] });
-      setDialogOpen(false);
-      setAmendmentType("");
-      setAmendmentText("");
+      closeDialog();
       toast.success("Amendment added!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const updateRow = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("meeting_amendments" as any)
+        .update({
+          amendment_type: amendmentType,
+          amendment_text: amendmentText,
+        } as any)
+        .eq("id", editingId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["meeting_amendments", meetingId] });
+      closeDialog();
+      toast.success("Amendment updated!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -177,32 +195,50 @@ export default function MeetingAmendments({ meetingId, entityType }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setEditingId(null);
+    setAmendmentType("");
+    setAmendmentText("");
+  };
+
+  const openEdit = (row: any) => {
+    setEditingId(row.id);
+    setAmendmentType(row.amendment_type || "");
+    setAmendmentText(row.amendment_text || "");
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingId) {
+      updateRow.mutate();
+    } else {
+      addRow.mutate();
+    }
+  };
+
+  const isPending = addRow.isPending || updateRow.isPending;
   const selectedOption = amendmentOptions.find((o) => o.label === amendmentType);
 
   return (
     <Card>
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <CardTitle className="font-display text-base">Amendments</CardTitle>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setAmendmentType(""); setAmendmentText(""); }}>
               <Plus className="mr-2 h-4 w-4" /> Add
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle className="font-display">Add Amendment</DialogTitle>
+              <DialogTitle className="font-display">{editingId ? "Edit Amendment" : "Add Amendment"}</DialogTitle>
               <DialogDescription>
-                Select the type of amendment for this {entityType} entity.
+                {editingId ? "Update" : "Select"} the type of amendment for this {entityType} entity.
               </DialogDescription>
             </DialogHeader>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                addRow.mutate();
-              }}
-              className="space-y-4"
-            >
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground">Amendment Type</Label>
                 <Select value={amendmentType} onValueChange={setAmendmentType} required>
@@ -233,9 +269,9 @@ export default function MeetingAmendments({ meetingId, entityType }: Props) {
                   placeholder="Describe the amendment…"
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={addRow.isPending || !amendmentType}>
-                {addRow.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Add Amendment
+              <Button type="submit" className="w-full" disabled={isPending || !amendmentType}>
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {editingId ? "Save Changes" : "Add Amendment"}
               </Button>
             </form>
           </DialogContent>
@@ -253,7 +289,7 @@ export default function MeetingAmendments({ meetingId, entityType }: Props) {
                 <TableRow className="bg-muted/50">
                   <TableHead>Type</TableHead>
                   <TableHead>Details</TableHead>
-                  <TableHead className="w-12" />
+                  <TableHead className="w-20" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -269,14 +305,24 @@ export default function MeetingAmendments({ meetingId, entityType }: Props) {
                       </TableCell>
                       <TableCell className="text-sm whitespace-pre-wrap">{row.amendment_text}</TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteRow.mutate(row.id)}
-                          className="h-8 w-8 text-destructive/60 hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEdit(row)}
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteRow.mutate(row.id)}
+                            className="h-8 w-8 text-destructive/60 hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
