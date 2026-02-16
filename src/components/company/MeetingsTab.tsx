@@ -29,9 +29,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Calendar, MapPin, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Loader2, Calendar, MapPin, ChevronRight, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import TaxReturnUpload from "@/components/TaxReturnUpload";
 
 const MEETING_TYPES = [
   "Annual Meeting",
@@ -155,7 +156,20 @@ export default function MeetingsTab({ companyId, company }: Props) {
             {meetings.length} meeting{meetings.length !== 1 ? "s" : ""} on record
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <div className="flex items-center gap-2">
+          <TaxReturnUpload
+            companyId={companyId}
+            mode="populate"
+            onExtracted={() => {
+              queryClient.invalidateQueries({ queryKey: ["meetings", companyId] });
+            }}
+            trigger={
+              <Button variant="outline" size="sm">
+                <Upload className="h-3.5 w-3.5 mr-1.5" /> Import Tax Return
+              </Button>
+            }
+          />
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" /> New Meeting
@@ -338,6 +352,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Meeting List */}
