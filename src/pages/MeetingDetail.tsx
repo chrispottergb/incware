@@ -11,6 +11,7 @@ import MeetingSubTable from "@/components/meeting/MeetingSubTable";
 import MeetingResolutions from "@/components/meeting/MeetingResolutions";
 import MeetingAmendments from "@/components/meeting/MeetingAmendments";
 import PrintPreviewButton from "@/components/meeting/PrintPreviewButton";
+import { OFFICER_TITLE_OPTIONS } from "@/components/company/OrganizationTab";
 import {
   exportMeetingMinutesPDF,
   exportSectionPDF,
@@ -315,7 +316,7 @@ export default function MeetingDetail() {
             </div>
             <MeetingSubTable meetingId={meeting.id} tableName="meeting_officers" title="Officers"
               columns={[
-                { key: "title", label: "Title", required: true },
+                { key: "title", label: "Title", required: true, type: "select", options: OFFICER_TITLE_OPTIONS[company?.entity_type || "Corporation"] || OFFICER_TITLE_OPTIONS["Corporation"] },
                 { key: "name", label: "Name", required: true },
               ]}
             />
