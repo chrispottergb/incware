@@ -142,20 +142,24 @@ export function downloadSectionPdf(config: SectionPdfConfig) {
 }
 
 export function previewSectionPdf(config: SectionPdfConfig) {
+  const win = window.open("", "_blank");
   const doc = generateSectionPdf(config);
   const blob = doc.output("blob");
   const url = URL.createObjectURL(blob);
-  window.open(url, "_blank");
+  if (win) {
+    win.location.href = url;
+  }
 }
 
 export function printSectionPdf(config: SectionPdfConfig) {
+  const win = window.open("", "_blank");
   const doc = generateSectionPdf(config);
   const blob = doc.output("blob");
   const url = URL.createObjectURL(blob);
-  const printWindow = window.open(url, "_blank");
-  if (printWindow) {
-    printWindow.addEventListener("load", () => {
-      printWindow.print();
+  if (win) {
+    win.location.href = url;
+    win.addEventListener("load", () => {
+      win.print();
     });
   }
 }
