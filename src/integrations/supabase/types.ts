@@ -503,31 +503,67 @@ export type Database = {
       }
       company_assets: {
         Row: {
+          address: string | null
           asset_type: string
           company_id: string
+          cost: number | null
           created_at: string
           description: string
+          escrow: number | null
+          finance_company: string | null
           id: string
+          make: string | null
+          manufacturer: string | null
+          model: string | null
+          mortgage: number | null
+          ownership_type: string | null
+          running_hours: number | null
+          taxes: number | null
           updated_at: string
           value: number | null
+          year: string | null
         }
         Insert: {
+          address?: string | null
           asset_type: string
           company_id: string
+          cost?: number | null
           created_at?: string
           description: string
+          escrow?: number | null
+          finance_company?: string | null
           id?: string
+          make?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          mortgage?: number | null
+          ownership_type?: string | null
+          running_hours?: number | null
+          taxes?: number | null
           updated_at?: string
           value?: number | null
+          year?: string | null
         }
         Update: {
+          address?: string | null
           asset_type?: string
           company_id?: string
+          cost?: number | null
           created_at?: string
           description?: string
+          escrow?: number | null
+          finance_company?: string | null
           id?: string
+          make?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          mortgage?: number | null
+          ownership_type?: string | null
+          running_hours?: number | null
+          taxes?: number | null
           updated_at?: string
           value?: number | null
+          year?: string | null
         }
         Relationships: [
           {

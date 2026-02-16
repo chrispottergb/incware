@@ -29,7 +29,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Save, Users, Briefcase, FileText } from "lucide-react";
+import { Plus, Trash2, Loader2, Save, Users, FileText } from "lucide-react";
+import CompanyAssetsSection from "@/components/company/CompanyAssetsSection";
 import { toast } from "sonner";
 
 const US_STATES = [
@@ -39,12 +40,6 @@ const US_STATES = [
   "VA","WA","WV","WI","WY","DC",
 ];
 
-const ASSET_TYPES = [
-  { value: "benefit", label: "Benefits" },
-  { value: "vehicle", label: "Vehicles / Equipment" },
-  { value: "lease", label: "Leases" },
-  { value: "property", label: "Property" },
-];
 
 interface Props {
   companyId: string;
@@ -218,57 +213,6 @@ export default function OrganizationTab({ companyId, company }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  // Assets
-  const { data: assets = [] } = useQuery({
-    queryKey: ["company_assets", companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("company_assets")
-        .select("*")
-        .eq("company_id", companyId)
-        .order("asset_type");
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const [assetDialog, setAssetDialog] = useState(false);
-  const [newAsset, setNewAsset] = useState({
-    asset_type: "benefit",
-    description: "",
-    value: "",
-  });
-
-  const addAsset = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from("company_assets").insert({
-        company_id: companyId,
-        asset_type: newAsset.asset_type,
-        description: newAsset.description,
-        value: newAsset.value ? parseFloat(newAsset.value) : null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["company_assets", companyId] });
-      setAssetDialog(false);
-      setNewAsset({ asset_type: "benefit", description: "", value: "" });
-      toast.success("Asset added!");
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  const deleteAsset = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("company_assets").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["company_assets", companyId] });
-      toast.success("Asset removed.");
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
 
   return (
     <div className="space-y-5">
@@ -501,101 +445,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
       </Card>
 
       {/* Company Assets */}
-      <Card>
-        <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <Briefcase className="h-3.5 w-3.5 text-primary" />
-              <CardTitle className="card-section-title">Assets</CardTitle>
-            </div>
-            <CardDescription className="text-[11px] mt-0.5">Benefits, Vehicles/Equipment, Leases, and Property</CardDescription>
-          </div>
-          <Dialog open={assetDialog} onOpenChange={setAssetDialog}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="h-7 text-xs">
-                <Plus className="mr-1 h-3 w-3" /> Add
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="font-display text-base">Add Asset</DialogTitle>
-              </DialogHeader>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  addAsset.mutate();
-                }}
-                className="space-y-3"
-              >
-                <div className="field-group">
-                  <Label className="field-label">Asset Type</Label>
-                  <Select value={newAsset.asset_type} onValueChange={(v) => setNewAsset((p) => ({ ...p, asset_type: v }))}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {ASSET_TYPES.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Description</Label>
-                  <Input className="h-8 text-sm" value={newAsset.description} onChange={(e) => setNewAsset((p) => ({ ...p, description: e.target.value }))} required />
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Value ($)</Label>
-                  <Input type="number" step="0.01" className="h-8 text-sm" value={newAsset.value} onChange={(e) => setNewAsset((p) => ({ ...p, value: e.target.value }))} />
-                </div>
-                <Button type="submit" className="w-full" size="sm" disabled={addAsset.isPending}>
-                  {addAsset.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                  Add Asset
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </CardHeader>
-        <CardContent className="px-4 pb-4">
-          {assets.length === 0 ? (
-            <div className="rounded-md border border-dashed border-border py-6 text-center">
-              <Briefcase className="mx-auto mb-1.5 h-6 w-6 text-muted-foreground/30" />
-              <p className="text-xs text-muted-foreground">No assets added yet</p>
-            </div>
-          ) : (
-            <div className="rounded-md border border-border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/40 hover:bg-muted/40">
-                    <TableHead className="text-xs font-semibold h-8">Type</TableHead>
-                    <TableHead className="text-xs h-8">Description</TableHead>
-                    <TableHead className="text-xs text-right h-8">Value</TableHead>
-                    <TableHead className="w-10 h-8"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {assets.map((a) => (
-                    <TableRow key={a.id}>
-                      <TableCell className="py-2">
-                        <span className="inline-flex items-center rounded-full bg-primary/8 px-2 py-0.5 text-[10px] font-medium capitalize text-primary">
-                          {a.asset_type}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-sm py-2">{a.description}</TableCell>
-                      <TableCell className="text-right font-mono text-xs py-2">
-                        {a.value != null ? `$${Number(a.value).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "—"}
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <Button variant="ghost" size="icon" onClick={() => deleteAsset.mutate(a.id)} className="h-6 w-6 text-destructive/50 hover:text-destructive">
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <CompanyAssetsSection companyId={companyId} />
     </div>
   );
 }
