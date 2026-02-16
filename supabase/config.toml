@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.generate-operating-agreement]
 verify_jwt = false
+
+[functions.generate-bylaws]
+verify_jwt = false
