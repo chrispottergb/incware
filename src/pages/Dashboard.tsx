@@ -30,8 +30,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Building2, Plus, Search, Loader2, ChevronRight, UserPlus, FolderOpen, CalendarCheck, SearchIcon, Bot, AlertTriangle, ClipboardCheck } from "lucide-react";
+import { Building2, Plus, Search, Loader2, ChevronRight, UserPlus, FolderOpen, CalendarCheck, SearchIcon, Bot, AlertTriangle, ClipboardCheck, Upload } from "lucide-react";
 import { toast } from "sonner";
+import TaxReturnUpload from "@/components/TaxReturnUpload";
 
 import cardNewClient from "@/assets/card-new-client.jpg";
 import cardExistingClient from "@/assets/card-existing-client.jpg";
@@ -250,6 +251,25 @@ export default function Dashboard() {
                 {createCompany.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Create Company
               </Button>
+
+              <div className="relative flex items-center py-2">
+                <div className="flex-1 border-t border-border" />
+                <span className="mx-3 text-xs text-muted-foreground">or</span>
+                <div className="flex-1 border-t border-border" />
+              </div>
+
+              <TaxReturnUpload
+                onCompanyCreated={(id) => {
+                  queryClient.invalidateQueries({ queryKey: ["companies"] });
+                  setDialogOpen(false);
+                  navigate(`/company/${id}`);
+                }}
+                trigger={
+                  <Button variant="outline" className="w-full">
+                    <Upload className="mr-2 h-4 w-4" /> Import from Tax Return
+                  </Button>
+                }
+              />
             </form>
           </DialogContent>
         </Dialog>

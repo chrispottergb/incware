@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.generate-bylaws]
 verify_jwt = false
+
+[functions.generate-nonprofit-bylaws]
+verify_jwt = false
+
+[functions.parse-tax-return]
+verify_jwt = false
