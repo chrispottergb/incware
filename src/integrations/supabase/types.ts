@@ -622,6 +622,69 @@ export type Database = {
           },
         ]
       }
+      document_registry: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          document_category: string
+          document_type: string
+          file_name: string | null
+          file_url: string | null
+          id: string
+          meeting_id: string | null
+          status: string
+          statute_reference: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          document_category: string
+          document_type: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          meeting_id?: string | null
+          status?: string
+          statute_reference?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          document_category?: string
+          document_type?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          meeting_id?: string | null
+          status?: string
+          statute_reference?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_registry_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_registry_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_amendments: {
         Row: {
           amendment_text: string
@@ -982,6 +1045,7 @@ export type Database = {
           company_state_at_meeting: string | null
           company_zip_at_meeting: string | null
           created_at: string
+          document_status: string | null
           id: string
           meeting_date: string
           meeting_location: string | null
@@ -1004,6 +1068,7 @@ export type Database = {
           company_state_at_meeting?: string | null
           company_zip_at_meeting?: string | null
           created_at?: string
+          document_status?: string | null
           id?: string
           meeting_date: string
           meeting_location?: string | null
@@ -1026,6 +1091,7 @@ export type Database = {
           company_state_at_meeting?: string | null
           company_zip_at_meeting?: string | null
           created_at?: string
+          document_status?: string | null
           id?: string
           meeting_date?: string
           meeting_location?: string | null

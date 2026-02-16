@@ -10,6 +10,14 @@ import MeetingFinancials from "@/components/meeting/MeetingFinancials";
 import MeetingSubTable from "@/components/meeting/MeetingSubTable";
 import MeetingResolutions from "@/components/meeting/MeetingResolutions";
 import MeetingAmendments from "@/components/meeting/MeetingAmendments";
+import PrintPreviewButton from "@/components/meeting/PrintPreviewButton";
+import {
+  exportMeetingMinutesPDF,
+  exportSectionPDF,
+  exportAmendmentsPDF,
+  exportResolutionsPDF,
+  exportFinancialsPDF,
+} from "@/lib/meeting-pdf-export";
 
 export default function MeetingDetail() {
   const { id, meetingId } = useParams<{ id: string; meetingId: string }>();
@@ -43,6 +51,107 @@ export default function MeetingDetail() {
     enabled: !!id,
   });
 
+  // Fetch all sub-data for full minutes PDF
+  const { data: shareholders = [] } = useQuery({
+    queryKey: ["meeting_shareholders", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_shareholders").select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!meetingId,
+  });
+
+  const { data: directors = [] } = useQuery({
+    queryKey: ["meeting_directors", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_directors" as any).select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!meetingId,
+  });
+
+  const { data: officers = [] } = useQuery({
+    queryKey: ["meeting_officers", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_officers").select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!meetingId,
+  });
+
+  const { data: counsel = [] } = useQuery({
+    queryKey: ["meeting_counsel", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_counsel" as any).select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!meetingId,
+  });
+
+  const { data: assets = [] } = useQuery({
+    queryKey: ["meeting_assets", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_assets" as any).select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!meetingId,
+  });
+
+  const { data: amendments = [] } = useQuery({
+    queryKey: ["meeting_amendments", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_amendments" as any).select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!meetingId,
+  });
+
+  const { data: resolutions = [] } = useQuery({
+    queryKey: ["meeting_resolutions", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_resolutions").select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!meetingId,
+  });
+
+  const { data: benefits = [] } = useQuery({
+    queryKey: ["meeting_benefits", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_benefits" as any).select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!meetingId,
+  });
+
+  const { data: other = [] } = useQuery({
+    queryKey: ["meeting_other", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_other" as any).select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!meetingId,
+  });
+
+  const { data: financials } = useQuery({
+    queryKey: ["meeting_financials", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_financials").select("*").eq("meeting_id", meetingId!).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!meetingId,
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -63,6 +172,22 @@ export default function MeetingDetail() {
     );
   }
 
+  const generateFullMinutes = () =>
+    exportMeetingMinutesPDF({
+      meeting,
+      company,
+      shareholders,
+      directors,
+      officers,
+      counsel,
+      assets,
+      amendments,
+      resolutions,
+      benefits,
+      other,
+      financials,
+    });
+
   const subTabs = [
     { value: "info", label: "Meeting Info" },
     { value: "financials", label: "Financial" },
@@ -76,6 +201,8 @@ export default function MeetingDetail() {
     { value: "benefits", label: "Benefits" },
     { value: "other", label: "Other" },
   ];
+
+  const meetingFileName = `${company?.name || "meeting"}-${meeting.meeting_type}-${meeting.meeting_date}.pdf`.replace(/\s+/g, "-").toLowerCase();
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -102,6 +229,11 @@ export default function MeetingDetail() {
             {meeting.tax_year && ` · Tax Year ${meeting.tax_year}`}
           </p>
         </div>
+        <PrintPreviewButton
+          label="Print Full Minutes"
+          generatePDF={generateFullMinutes}
+          fileName={meetingFileName}
+        />
       </div>
 
       <Tabs defaultValue="info" className="w-full">
@@ -123,64 +255,159 @@ export default function MeetingDetail() {
           <MeetingInfoCard meeting={meeting} />
         </TabsContent>
         <TabsContent value="financials" className="mt-5">
-          <MeetingFinancials meetingId={meeting.id} />
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <PrintPreviewButton
+                label="Print"
+                generatePDF={() => exportFinancialsPDF(company, meeting, financials)}
+                fileName={`financials-${meetingFileName}`}
+              />
+            </div>
+            <MeetingFinancials meetingId={meeting.id} />
+          </div>
         </TabsContent>
         <TabsContent value="shareholders" className="mt-5">
-          <MeetingSubTable meetingId={meeting.id} tableName="meeting_shareholders" title="Shareholders / Members"
-            columns={[
-              { key: "shareholder_name", label: "Name", required: true },
-              { key: "common_shares", label: "Common Shares", type: "number" },
-              { key: "preferred_shares", label: "Preferred Shares", type: "number" },
-              { key: "distribution", label: "Distribution" },
-            ]}
-          />
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <PrintPreviewButton
+                label="Print"
+                generatePDF={() => exportSectionPDF(
+                  company?.entity_type === "LLC" ? "Members" : "Shareholders",
+                  company, meeting,
+                  ["Name", "Common Shares", "Preferred Shares", "Distribution"],
+                  shareholders.map(s => [s.shareholder_name, s.common_shares?.toLocaleString() ?? "—", s.preferred_shares?.toLocaleString() ?? "—", s.distribution || "—"]),
+                )}
+                fileName={`shareholders-${meetingFileName}`}
+              />
+            </div>
+            <MeetingSubTable meetingId={meeting.id} tableName="meeting_shareholders" title="Shareholders / Members"
+              columns={[
+                { key: "shareholder_name", label: "Name", required: true },
+                { key: "common_shares", label: "Common Shares", type: "number" },
+                { key: "preferred_shares", label: "Preferred Shares", type: "number" },
+                { key: "distribution", label: "Distribution" },
+              ]}
+            />
+          </div>
         </TabsContent>
         <TabsContent value="directors" className="mt-5">
-          <MeetingSubTable meetingId={meeting.id} tableName="meeting_directors" title="Directors"
-            columns={[{ key: "director_name", label: "Director Name", required: true }]}
-          />
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <PrintPreviewButton
+                label="Print"
+                generatePDF={() => exportSectionPDF("Directors", company, meeting, ["Director Name"], directors.map(d => [d.director_name]))}
+                fileName={`directors-${meetingFileName}`}
+              />
+            </div>
+            <MeetingSubTable meetingId={meeting.id} tableName="meeting_directors" title="Directors"
+              columns={[{ key: "director_name", label: "Director Name", required: true }]}
+            />
+          </div>
         </TabsContent>
         <TabsContent value="officers" className="mt-5">
-          <MeetingSubTable meetingId={meeting.id} tableName="meeting_officers" title="Officers"
-            columns={[
-              { key: "title", label: "Title", required: true },
-              { key: "name", label: "Name", required: true },
-            ]}
-          />
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <PrintPreviewButton
+                label="Print"
+                generatePDF={() => exportSectionPDF("Officers", company, meeting, ["Title", "Name"], officers.map(o => [o.title, o.name]))}
+                fileName={`officers-${meetingFileName}`}
+              />
+            </div>
+            <MeetingSubTable meetingId={meeting.id} tableName="meeting_officers" title="Officers"
+              columns={[
+                { key: "title", label: "Title", required: true },
+                { key: "name", label: "Name", required: true },
+              ]}
+            />
+          </div>
         </TabsContent>
         <TabsContent value="counsel" className="mt-5">
-          <MeetingSubTable meetingId={meeting.id} tableName="meeting_counsel" title="Counsel / Banking / Loans"
-            columns={[
-              { key: "counsel_name", label: "Counsel" },
-              { key: "bank_name", label: "Bank" },
-              { key: "loans", label: "Loans" },
-            ]}
-          />
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <PrintPreviewButton
+                label="Print"
+                generatePDF={() => exportSectionPDF("Counsel / Banking / Loans", company, meeting, ["Counsel", "Bank", "Loans"], counsel.map(c => [c.counsel_name || "—", c.bank_name || "—", c.loans || "—"]))}
+                fileName={`counsel-${meetingFileName}`}
+              />
+            </div>
+            <MeetingSubTable meetingId={meeting.id} tableName="meeting_counsel" title="Counsel / Banking / Loans"
+              columns={[
+                { key: "counsel_name", label: "Counsel" },
+                { key: "bank_name", label: "Bank" },
+                { key: "loans", label: "Loans" },
+              ]}
+            />
+          </div>
         </TabsContent>
         <TabsContent value="assets" className="mt-5">
-          <MeetingSubTable meetingId={meeting.id} tableName="meeting_assets" title="Vehicles / Equipment / Leases / Property"
-            columns={[
-              { key: "asset_type", label: "Type", required: true },
-              { key: "description", label: "Description", required: true },
-              { key: "value", label: "Value", type: "number" },
-            ]}
-          />
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <PrintPreviewButton
+                label="Print"
+                generatePDF={() => exportSectionPDF("Assets", company, meeting, ["Type", "Description", "Value"], assets.map(a => [a.asset_type, a.description, a.value != null ? `$${Number(a.value).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"]))}
+                fileName={`assets-${meetingFileName}`}
+              />
+            </div>
+            <MeetingSubTable meetingId={meeting.id} tableName="meeting_assets" title="Vehicles / Equipment / Leases / Property"
+              columns={[
+                { key: "asset_type", label: "Type", required: true },
+                { key: "description", label: "Description", required: true },
+                { key: "value", label: "Value", type: "number" },
+              ]}
+            />
+          </div>
         </TabsContent>
         <TabsContent value="amendments" className="mt-5">
-          <MeetingAmendments meetingId={meeting.id} entityType={company?.entity_type || "Corporation"} />
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <PrintPreviewButton
+                label="Print"
+                generatePDF={() => exportAmendmentsPDF(company, meeting, amendments)}
+                fileName={`amendments-${meetingFileName}`}
+              />
+            </div>
+            <MeetingAmendments meetingId={meeting.id} entityType={company?.entity_type || "Corporation"} />
+          </div>
         </TabsContent>
         <TabsContent value="resolutions" className="mt-5">
-          <MeetingResolutions meetingId={meeting.id} entityType={company?.entity_type || "Corporation"} />
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <PrintPreviewButton
+                label="Print"
+                generatePDF={() => exportResolutionsPDF(company, meeting, resolutions)}
+                fileName={`resolutions-${meetingFileName}`}
+              />
+            </div>
+            <MeetingResolutions meetingId={meeting.id} entityType={company?.entity_type || "Corporation"} />
+          </div>
         </TabsContent>
         <TabsContent value="benefits" className="mt-5">
-          <MeetingSubTable meetingId={meeting.id} tableName="meeting_benefits" title="Benefits"
-            columns={[{ key: "benefit_description", label: "Benefit Description", required: true, wide: true }]}
-          />
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <PrintPreviewButton
+                label="Print"
+                generatePDF={() => exportSectionPDF("Benefits", company, meeting, ["Benefit Description"], benefits.map(b => [b.benefit_description]))}
+                fileName={`benefits-${meetingFileName}`}
+              />
+            </div>
+            <MeetingSubTable meetingId={meeting.id} tableName="meeting_benefits" title="Benefits"
+              columns={[{ key: "benefit_description", label: "Benefit Description", required: true, wide: true }]}
+            />
+          </div>
         </TabsContent>
         <TabsContent value="other" className="mt-5">
-          <MeetingSubTable meetingId={meeting.id} tableName="meeting_other" title="Other Notes"
-            columns={[{ key: "notes", label: "Notes", required: true, wide: true }]}
-          />
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <PrintPreviewButton
+                label="Print"
+                generatePDF={() => exportSectionPDF("Other Notes", company, meeting, ["Notes"], other.map(o => [o.notes]))}
+                fileName={`other-${meetingFileName}`}
+              />
+            </div>
+            <MeetingSubTable meetingId={meeting.id} tableName="meeting_other" title="Other Notes"
+              columns={[{ key: "notes", label: "Notes", required: true, wide: true }]}
+            />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
