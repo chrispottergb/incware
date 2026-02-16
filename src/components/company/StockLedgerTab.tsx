@@ -31,6 +31,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Loader2, BookOpen } from "lucide-react";
 import { toast } from "sonner";
+import SectionPdfActions from "./SectionPdfActions";
 
 // Wisconsin statutory stock transaction types by entity type
 const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string; statute: string }[]> = {
@@ -209,12 +210,32 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
             {statuteDescription}
           </CardDescription>
         </div>
-        <Dialog open={dialog} onOpenChange={setDialog}>
-          <DialogTrigger asChild>
-            <Button size="sm" variant="outline" className="h-7 text-xs">
-              <Plus className="mr-1 h-3 w-3" /> Record Transaction
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-1">
+          <SectionPdfActions config={{
+            title: entityType === "LLC" ? "Capital & Interest Ledger" : "Stock Ledger / Transactions",
+            companyName: "",
+            statuteRef: statuteDescription,
+            landscape: true,
+            table: {
+              headers: ["Date", "Type", entityType === "LLC" ? "Member" : "Shareholder", entityType === "LLC" ? "Interest Type" : "Class", entityType === "LLC" ? "Units" : "Shares", entityType === "LLC" ? "$/Unit" : "$/Share", "Total", "Consideration"],
+              rows: transactions.map((t: any) => [
+                t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—",
+                t.transaction_type?.replace("_", " ") ?? "—",
+                t.shareholders?.name ?? "—",
+                t.share_class,
+                t.num_shares?.toLocaleString(),
+                t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—",
+                t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—",
+                t.consideration_type ?? "—",
+              ]),
+            },
+          }} />
+          <Dialog open={dialog} onOpenChange={setDialog}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline" className="h-7 text-xs">
+                <Plus className="mr-1 h-3 w-3" /> Record Transaction
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="font-display text-base">{entityType === "LLC" ? "Record Interest Transaction" : "Record Share Transaction"}</DialogTitle>
@@ -316,6 +337,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </CardHeader>
       <CardContent className="px-4 pb-4">
         {isLoading ? (

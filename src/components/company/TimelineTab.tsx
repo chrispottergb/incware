@@ -27,6 +27,7 @@ import {
   Users, Award, BookOpen, FileText, DollarSign, Flag,
 } from "lucide-react";
 import { toast } from "sonner";
+import SectionPdfActions from "./SectionPdfActions";
 
 type Company = Tables<"companies">;
 

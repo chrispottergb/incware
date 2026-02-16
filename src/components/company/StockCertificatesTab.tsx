@@ -30,6 +30,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Loader2, Award, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import SectionPdfActions from "./SectionPdfActions";
 
 interface Props {
   companyId: string;
@@ -156,11 +157,29 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
               {statuteRef}
             </CardDescription>
           </div>
-          <Dialog open={dialog} onOpenChange={setDialog}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="h-7 text-xs">
-                <Plus className="mr-1 h-3 w-3" /> Issue Certificate
-              </Button>
+          <div className="flex items-center gap-1">
+            <SectionPdfActions config={{
+              title: certsLabel,
+              companyName: "",
+              statuteRef,
+              table: {
+                headers: ["Cert #", holderLabel, classLabel, unitLabel, isLLC ? "Value/Unit" : "Par Value", "Issue Date", "Status"],
+                rows: certificates.map((c: any) => [
+                  String(c.certificate_number),
+                  c.shareholders?.name ?? "—",
+                  c.share_class,
+                  c.num_shares?.toLocaleString(),
+                  c.par_value != null ? `$${Number(c.par_value).toFixed(2)}` : "—",
+                  c.issue_date ? new Date(c.issue_date + "T00:00:00").toLocaleDateString() : "—",
+                  c.status ?? "—",
+                ]),
+              },
+            }} />
+            <Dialog open={dialog} onOpenChange={setDialog}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline" className="h-7 text-xs">
+                  <Plus className="mr-1 h-3 w-3" /> Issue Certificate
+                </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -211,7 +230,8 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                 </Button>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </CardHeader>
         <CardContent className="px-4 pb-4">
           {isLoading ? (

@@ -6,30 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, Users, Edit2, Save } from "lucide-react";
+import { Plus, Trash2, Loader2, Users, Edit2 } from "lucide-react";
 import { toast } from "sonner";
+import SectionPdfActions from "./SectionPdfActions";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
@@ -62,10 +50,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
     queryKey: ["shareholders", companyId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("shareholders")
-        .select("*")
-        .eq("company_id", companyId)
-        .order("name");
+        .from("shareholders").select("*").eq("company_id", companyId).order("name");
       if (error) throw error;
       return data;
     },
@@ -80,33 +65,22 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
     mutationFn: async () => {
       if (editId) {
         const { error } = await supabase.from("shareholders").update({
-          name: form.name,
-          address: form.address || null,
-          city: form.city || null,
-          state: form.state || null,
-          zip: form.zip || null,
-          ssn_ein: form.ssn_ein || null,
-          status: form.status,
+          name: form.name, address: form.address || null, city: form.city || null,
+          state: form.state || null, zip: form.zip || null, ssn_ein: form.ssn_ein || null, status: form.status,
         }).eq("id", editId);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("shareholders").insert({
-          company_id: companyId,
-          name: form.name,
-          address: form.address || null,
-          city: form.city || null,
-          state: form.state || null,
-          zip: form.zip || null,
-          ssn_ein: form.ssn_ein || null,
-          status: form.status,
+          company_id: companyId, name: form.name, address: form.address || null,
+          city: form.city || null, state: form.state || null, zip: form.zip || null,
+          ssn_ein: form.ssn_ein || null, status: form.status,
         });
         if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shareholders", companyId] });
-      setDialog(false);
-      resetForm();
+      setDialog(false); resetForm();
       toast.success(editId ? `${personLabel} updated!` : `${personLabel} added!`);
     },
     onError: (err: Error) => toast.error(err.message),
@@ -126,15 +100,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
 
   const openEdit = (s: typeof shareholders[0]) => {
     setEditId(s.id);
-    setForm({
-      name: s.name,
-      address: s.address ?? "",
-      city: s.city ?? "",
-      state: s.state ?? "",
-      zip: s.zip ?? "",
-      ssn_ein: s.ssn_ein ?? "",
-      status: s.status ?? "active",
-    });
+    setForm({ name: s.name, address: s.address ?? "", city: s.city ?? "", state: s.state ?? "", zip: s.zip ?? "", ssn_ein: s.ssn_ein ?? "", status: s.status ?? "active" });
     setDialog(true);
   };
 
@@ -146,73 +112,86 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
             <Users className="h-3.5 w-3.5 text-primary" />
             <CardTitle className="card-section-title">{personsLabel}</CardTitle>
           </div>
-          <CardDescription className="text-[11px] mt-0.5">
-            {statuteRef}
-          </CardDescription>
+          <CardDescription className="text-[11px] mt-0.5">{statuteRef}</CardDescription>
         </div>
-        <Dialog open={dialog} onOpenChange={(o) => { setDialog(o); if (!o) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button size="sm" variant="outline" className="h-7 text-xs">
-              <Plus className="mr-1 h-3 w-3" /> Add
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle className="font-display text-base">
-                {editId ? `Edit ${personLabel}` : `Add ${personLabel}`}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-3">
-              <div className="field-group">
-                <Label className="field-label">{personLabel} Name</Label>
-                <Input className="h-8 text-sm" value={form.name} onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))} required />
-              </div>
-              <div className="field-group">
-                <Label className="field-label">Address</Label>
-                <Input className="h-8 text-sm" value={form.address} onChange={(e) => setForm(p => ({ ...p, address: e.target.value }))} />
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="field-group">
-                  <Label className="field-label">City</Label>
-                  <Input className="h-8 text-sm" value={form.city} onChange={(e) => setForm(p => ({ ...p, city: e.target.value }))} />
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">State</Label>
-                  <Select value={form.state} onValueChange={(v) => setForm(p => ({ ...p, state: v }))}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
-                    <SelectContent>
-                      {US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Zip</Label>
-                  <Input className="h-8 text-sm" value={form.zip} onChange={(e) => setForm(p => ({ ...p, zip: e.target.value }))} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="field-group">
-                  <Label className="field-label">SSN / EIN</Label>
-                  <Input className="h-8 text-sm" value={form.ssn_ein} onChange={(e) => setForm(p => ({ ...p, ssn_ein: e.target.value }))} />
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Status</Label>
-                  <Select value={form.status} onValueChange={(v) => setForm(p => ({ ...p, status: v }))}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <Button type="submit" className="w-full" size="sm" disabled={save.isPending}>
-                {save.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                {editId ? "Save Changes" : `Add ${personLabel}`}
+        <div className="flex items-center gap-1">
+          <SectionPdfActions config={{
+            title: personsLabel,
+            companyName: "",
+            statuteRef,
+            table: {
+              headers: ["Name", "Address", "City/State/Zip", "SSN/EIN", "Status"],
+              rows: shareholders.map((s) => [
+                s.name,
+                s.address ?? "—",
+                [s.city, s.state, s.zip].filter(Boolean).join(", ") || "—",
+                s.ssn_ein ? "••••" + s.ssn_ein.slice(-4) : "—",
+                s.status ?? "—",
+              ]),
+            },
+          }} />
+          <Dialog open={dialog} onOpenChange={(o) => { setDialog(o); if (!o) resetForm(); }}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline" className="h-7 text-xs">
+                <Plus className="mr-1 h-3 w-3" /> Add
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="font-display text-base">
+                  {editId ? `Edit ${personLabel}` : `Add ${personLabel}`}
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-3">
+                <div className="field-group">
+                  <Label className="field-label">{personLabel} Name</Label>
+                  <Input className="h-8 text-sm" value={form.name} onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))} required />
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">Address</Label>
+                  <Input className="h-8 text-sm" value={form.address} onChange={(e) => setForm(p => ({ ...p, address: e.target.value }))} />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="field-group">
+                    <Label className="field-label">City</Label>
+                    <Input className="h-8 text-sm" value={form.city} onChange={(e) => setForm(p => ({ ...p, city: e.target.value }))} />
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">State</Label>
+                    <Select value={form.state} onValueChange={(v) => setForm(p => ({ ...p, state: v }))}>
+                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
+                      <SelectContent>{US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">Zip</Label>
+                    <Input className="h-8 text-sm" value={form.zip} onChange={(e) => setForm(p => ({ ...p, zip: e.target.value }))} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="field-group">
+                    <Label className="field-label">SSN / EIN</Label>
+                    <Input className="h-8 text-sm" value={form.ssn_ein} onChange={(e) => setForm(p => ({ ...p, ssn_ein: e.target.value }))} />
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">Status</Label>
+                    <Select value={form.status} onValueChange={(v) => setForm(p => ({ ...p, status: v }))}>
+                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" size="sm" disabled={save.isPending}>
+                  {save.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                  {editId ? "Save Changes" : `Add ${personLabel}`}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent className="px-4 pb-4">
         {isLoading ? (

@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash2, Loader2, FileText } from "lucide-react";
 import { toast } from "sonner";
+import SectionPdfActions from "./SectionPdfActions";
 
 interface Props {
   companyId: string;
@@ -140,12 +141,30 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
             {statuteRef}
           </CardDescription>
         </div>
-        <Dialog open={dialog} onOpenChange={setDialog}>
-          <DialogTrigger asChild>
-            <Button size="sm" variant="outline" className="h-7 text-xs">
-              <Plus className="mr-1 h-3 w-3" /> Record Sale
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-1">
+          <SectionPdfActions config={{
+            title: titleLabel,
+            companyName: "",
+            statuteRef,
+            table: {
+              headers: ["Date", "Seller", "Buyer", classLabel, unitLabel, `$/${isLLC ? "Unit" : "Share"}`, "Total"],
+              rows: bills.map((b) => [
+                b.sale_date ? new Date(b.sale_date + "T00:00:00").toLocaleDateString() : "—",
+                b.seller_name,
+                b.buyer_name,
+                b.share_class,
+                b.num_shares?.toLocaleString(),
+                b.price_per_share != null ? `$${Number(b.price_per_share).toFixed(2)}` : "—",
+                b.total_price != null ? `$${Number(b.total_price).toFixed(2)}` : "—",
+              ]),
+            },
+          }} />
+          <Dialog open={dialog} onOpenChange={setDialog}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline" className="h-7 text-xs">
+                <Plus className="mr-1 h-3 w-3" /> Record Sale
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="font-display text-base">
@@ -210,6 +229,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </CardHeader>
       <CardContent className="px-4 pb-4">
         {isLoading ? (
