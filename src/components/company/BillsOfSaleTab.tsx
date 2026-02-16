@@ -33,11 +33,24 @@ import { toast } from "sonner";
 
 interface Props {
   companyId: string;
+  entityType?: string;
 }
 
-export default function BillsOfSaleTab({ companyId }: Props) {
+export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }: Props) {
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState(false);
+
+  const isLLC = entityType === "LLC";
+  const holderLabel = isLLC ? "Member" : "Shareholder";
+  const unitLabel = isLLC ? "Units" : "Shares";
+  const classLabel = isLLC ? "Interest Type" : "Class";
+  const classOptions = isLLC
+    ? [{ value: "Membership", label: "Membership" }, { value: "Profits", label: "Profits Interest" }]
+    : [{ value: "Common", label: "Common" }, { value: "Preferred", label: "Preferred" }];
+  const statuteRef = isLLC
+    ? "Record membership interest transfers between parties — supports Wis. Stat. § 183.0706"
+    : "Record share sales between parties — supports Wis. Stat. § 180.0627 share transfer restrictions";
+  const titleLabel = isLLC ? "Bills of Sale / Interest Transfers" : "Bills of Sale";
 
   const { data: shareholders = [] } = useQuery({
     queryKey: ["shareholders", companyId],
@@ -61,11 +74,12 @@ export default function BillsOfSaleTab({ companyId }: Props) {
     },
   });
 
+  const defaultClass = isLLC ? "Membership" : "Common";
   const [form, setForm] = useState({
     seller_name: "",
     buyer_name: "",
     num_shares: "",
-    share_class: "Common",
+    share_class: defaultClass,
     price_per_share: "",
     total_price: "",
     sale_date: new Date().toISOString().split("T")[0],
@@ -93,7 +107,7 @@ export default function BillsOfSaleTab({ companyId }: Props) {
       queryClient.invalidateQueries({ queryKey: ["bills_of_sale", companyId] });
       setDialog(false);
       setForm({
-        seller_name: "", buyer_name: "", num_shares: "", share_class: "Common",
+        seller_name: "", buyer_name: "", num_shares: "", share_class: defaultClass,
         price_per_share: "", total_price: "", sale_date: new Date().toISOString().split("T")[0],
         description: "", shareholder_id: "",
       });
@@ -120,10 +134,10 @@ export default function BillsOfSaleTab({ companyId }: Props) {
         <div>
           <div className="flex items-center gap-2">
             <FileText className="h-3.5 w-3.5 text-primary" />
-            <CardTitle className="card-section-title">Bills of Sale</CardTitle>
+            <CardTitle className="card-section-title">{titleLabel}</CardTitle>
           </div>
           <CardDescription className="text-[11px] mt-0.5">
-            Record share sales between parties — supports Wis. Stat. § 180.0627 share transfer restrictions
+            {statuteRef}
           </CardDescription>
         </div>
         <Dialog open={dialog} onOpenChange={setDialog}>
@@ -134,7 +148,9 @@ export default function BillsOfSaleTab({ companyId }: Props) {
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle className="font-display text-base">Record Bill of Sale</DialogTitle>
+              <DialogTitle className="font-display text-base">
+                {isLLC ? "Record Interest Transfer / Bill of Sale" : "Record Bill of Sale"}
+              </DialogTitle>
             </DialogHeader>
             <form onSubmit={(e) => { e.preventDefault(); add.mutate(); }} className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
@@ -148,7 +164,7 @@ export default function BillsOfSaleTab({ companyId }: Props) {
                 </div>
               </div>
               <div className="field-group">
-                <Label className="field-label">Linked Shareholder (optional)</Label>
+                <Label className="field-label">Linked {holderLabel} (optional)</Label>
                 <Select value={form.shareholder_id} onValueChange={(v) => setForm(p => ({ ...p, shareholder_id: v }))}>
                   <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select if applicable" /></SelectTrigger>
                   <SelectContent>
@@ -158,21 +174,20 @@ export default function BillsOfSaleTab({ companyId }: Props) {
               </div>
               <div className="grid grid-cols-4 gap-2">
                 <div className="field-group">
-                  <Label className="field-label">Class</Label>
+                  <Label className="field-label">{classLabel}</Label>
                   <Select value={form.share_class} onValueChange={(v) => setForm(p => ({ ...p, share_class: v }))}>
                     <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Common">Common</SelectItem>
-                      <SelectItem value="Preferred">Preferred</SelectItem>
+                      {classOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="field-group">
-                  <Label className="field-label"># Shares</Label>
+                  <Label className="field-label"># {unitLabel}</Label>
                   <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
                 </div>
                 <div className="field-group">
-                  <Label className="field-label">$/Share</Label>
+                  <Label className="field-label">$/{isLLC ? "Unit" : "Share"}</Label>
                   <Input className="h-8 text-sm" type="number" step="0.01" value={form.price_per_share} onChange={(e) => setForm(p => ({ ...p, price_per_share: e.target.value }))} />
                 </div>
                 <div className="field-group">
@@ -209,9 +224,9 @@ export default function BillsOfSaleTab({ companyId }: Props) {
                   <TableHead className="text-[10px] uppercase">Date</TableHead>
                   <TableHead className="text-[10px] uppercase">Seller</TableHead>
                   <TableHead className="text-[10px] uppercase">Buyer</TableHead>
-                  <TableHead className="text-[10px] uppercase">Class</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">Shares</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">$/Share</TableHead>
+                  <TableHead className="text-[10px] uppercase">{classLabel}</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right">{unitLabel}</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right">$/{isLLC ? "Unit" : "Share"}</TableHead>
                   <TableHead className="text-[10px] uppercase text-right">Total</TableHead>
                   <TableHead className="text-[10px] uppercase w-10"></TableHead>
                 </TableRow>

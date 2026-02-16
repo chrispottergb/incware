@@ -102,7 +102,7 @@ export default function CompanyDetail() {
               { value: "incorporation", label: "Incorporation Info" },
               { value: "organization", label: "Organizational Info" },
               { value: "meetings", label: "Meetings" },
-              { value: "shareholders", label: "Shareholders & Stock" },
+              { value: "shareholders", label: company.entity_type === "LLC" ? "Members & Interest" : "Shareholders & Stock" },
               { value: "timeline", label: "Timeline" },
               { value: "ai-compliance", label: "AI Compliance" },
             ].map((tab) => (
@@ -128,10 +128,10 @@ export default function CompanyDetail() {
         </TabsContent>
         <TabsContent value="shareholders" className="mt-5">
           <div className="space-y-5">
-            <ShareholdersTab companyId={company.id} />
-            <StockCertificatesTab companyId={company.id} />
+            <ShareholdersTab companyId={company.id} entityType={company.entity_type} />
+            <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
             <StockLedgerTab companyId={company.id} entityType={company.entity_type} />
-            <BillsOfSaleTab companyId={company.id} />
+            <BillsOfSaleTab companyId={company.id} entityType={company.entity_type} />
           </div>
         </TabsContent>
         <TabsContent value="timeline" className="mt-5">

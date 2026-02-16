@@ -217,7 +217,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle className="font-display text-base">Record Share Transaction</DialogTitle>
+              <DialogTitle className="font-display text-base">{entityType === "LLC" ? "Record Interest Transaction" : "Record Share Transaction"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={(e) => { e.preventDefault(); add.mutate(); }} className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
@@ -241,9 +241,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 </div>
               </div>
               <div className="field-group">
-                <Label className="field-label">Shareholder</Label>
-                <Select value={form.shareholder_id} onValueChange={(v) => setForm(p => ({ ...p, shareholder_id: v }))}>
-                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select shareholder" /></SelectTrigger>
+                  <Label className="field-label">{entityType === "LLC" ? "Member" : "Shareholder"}</Label>
+                  <Select value={form.shareholder_id} onValueChange={(v) => setForm(p => ({ ...p, shareholder_id: v }))}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={entityType === "LLC" ? "Select member" : "Select shareholder"} /></SelectTrigger>
                   <SelectContent>
                     {shareholders.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                   </SelectContent>
@@ -263,21 +263,30 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
               )}
               <div className="grid grid-cols-3 gap-2">
                 <div className="field-group">
-                  <Label className="field-label">Class</Label>
+                  <Label className="field-label">{entityType === "LLC" ? "Interest Type" : "Class"}</Label>
                   <Select value={form.share_class} onValueChange={(v) => setForm(p => ({ ...p, share_class: v }))}>
                     <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Common">Common</SelectItem>
-                      <SelectItem value="Preferred">Preferred</SelectItem>
+                      {entityType === "LLC" ? (
+                        <>
+                          <SelectItem value="Membership">Membership</SelectItem>
+                          <SelectItem value="Profits">Profits Interest</SelectItem>
+                        </>
+                      ) : (
+                        <>
+                          <SelectItem value="Common">Common</SelectItem>
+                          <SelectItem value="Preferred">Preferred</SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="field-group">
-                  <Label className="field-label"># Shares</Label>
+                  <Label className="field-label">{entityType === "LLC" ? "# Units" : "# Shares"}</Label>
                   <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
                 </div>
                 <div className="field-group">
-                  <Label className="field-label">Price/Share</Label>
+                  <Label className="field-label">{entityType === "LLC" ? "Price/Unit" : "Price/Share"}</Label>
                   <Input className="h-8 text-sm" type="number" step="0.01" value={form.price_per_share} onChange={(e) => setForm(p => ({ ...p, price_per_share: e.target.value }))} />
                 </div>
               </div>
@@ -320,10 +329,10 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 <TableRow>
                   <TableHead className="text-[10px] uppercase">Date</TableHead>
                   <TableHead className="text-[10px] uppercase">Type</TableHead>
-                  <TableHead className="text-[10px] uppercase">Shareholder</TableHead>
-                  <TableHead className="text-[10px] uppercase">Class</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">Shares</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">$/Share</TableHead>
+                  <TableHead className="text-[10px] uppercase">{entityType === "LLC" ? "Member" : "Shareholder"}</TableHead>
+                  <TableHead className="text-[10px] uppercase">{entityType === "LLC" ? "Interest Type" : "Class"}</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right">{entityType === "LLC" ? "Units" : "Shares"}</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right">{entityType === "LLC" ? "$/Unit" : "$/Share"}</TableHead>
                   <TableHead className="text-[10px] uppercase text-right">Total</TableHead>
                   <TableHead className="text-[10px] uppercase">Consideration</TableHead>
                   <TableHead className="text-[10px] uppercase w-10"></TableHead>

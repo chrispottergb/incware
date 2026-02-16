@@ -281,11 +281,12 @@ export default function MeetingDetail() {
                 fileName={`shareholders-${meetingFileName}`}
               />
             </div>
-            <MeetingSubTable meetingId={meeting.id} tableName="meeting_shareholders" title="Shareholders / Members"
+            <MeetingSubTable meetingId={meeting.id} tableName="meeting_shareholders"
+              title={company?.entity_type === "LLC" ? "Members" : "Shareholders / Members"}
               columns={[
-                { key: "shareholder_name", label: "Name", required: true },
-                { key: "common_shares", label: "Common Shares", type: "number" },
-                { key: "preferred_shares", label: "Preferred Shares", type: "number" },
+                { key: "shareholder_name", label: company?.entity_type === "LLC" ? "Member Name" : "Name", required: true },
+                { key: "common_shares", label: company?.entity_type === "LLC" ? "Membership Units" : "Common Shares", type: "number" },
+                { key: "preferred_shares", label: company?.entity_type === "LLC" ? "Profits Interest Units" : "Preferred Shares", type: "number" },
                 { key: "distribution", label: "Distribution" },
               ]}
             />

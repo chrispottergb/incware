@@ -40,15 +40,23 @@ const US_STATES = [
 
 interface Props {
   companyId: string;
+  entityType?: string;
 }
 
-export default function ShareholdersTab({ companyId }: Props) {
+export default function ShareholdersTab({ companyId, entityType = "Corporation" }: Props) {
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "", address: "", city: "", state: "", zip: "", ssn_ein: "", status: "active",
   });
+
+  const isLLC = entityType === "LLC";
+  const personLabel = isLLC ? "Member" : "Shareholder";
+  const personsLabel = isLLC ? "Members" : "Shareholders";
+  const statuteRef = isLLC
+    ? "Wis. Stat. § 183.0405 — Record of members by name, address, and interest held"
+    : "Wis. Stat. § 180.1601(3) — Record of shareholders by name, address, and shares held";
 
   const { data: shareholders = [], isLoading } = useQuery({
     queryKey: ["shareholders", companyId],
@@ -99,7 +107,7 @@ export default function ShareholdersTab({ companyId }: Props) {
       queryClient.invalidateQueries({ queryKey: ["shareholders", companyId] });
       setDialog(false);
       resetForm();
-      toast.success(editId ? "Shareholder updated!" : "Shareholder added!");
+      toast.success(editId ? `${personLabel} updated!` : `${personLabel} added!`);
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -111,7 +119,7 @@ export default function ShareholdersTab({ companyId }: Props) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shareholders", companyId] });
-      toast.success("Shareholder removed.");
+      toast.success(`${personLabel} removed.`);
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -136,10 +144,10 @@ export default function ShareholdersTab({ companyId }: Props) {
         <div>
           <div className="flex items-center gap-2">
             <Users className="h-3.5 w-3.5 text-primary" />
-            <CardTitle className="card-section-title">Shareholders</CardTitle>
+            <CardTitle className="card-section-title">{personsLabel}</CardTitle>
           </div>
           <CardDescription className="text-[11px] mt-0.5">
-            Wis. Stat. § 180.1601(3) — Record of shareholders by name, address, and shares held
+            {statuteRef}
           </CardDescription>
         </div>
         <Dialog open={dialog} onOpenChange={(o) => { setDialog(o); if (!o) resetForm(); }}>
@@ -151,12 +159,12 @@ export default function ShareholdersTab({ companyId }: Props) {
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="font-display text-base">
-                {editId ? "Edit Shareholder" : "Add Shareholder"}
+                {editId ? `Edit ${personLabel}` : `Add ${personLabel}`}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-3">
               <div className="field-group">
-                <Label className="field-label">Shareholder Name</Label>
+                <Label className="field-label">{personLabel} Name</Label>
                 <Input className="h-8 text-sm" value={form.name} onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))} required />
               </div>
               <div className="field-group">
@@ -200,7 +208,7 @@ export default function ShareholdersTab({ companyId }: Props) {
               </div>
               <Button type="submit" className="w-full" size="sm" disabled={save.isPending}>
                 {save.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                {editId ? "Save Changes" : "Add Shareholder"}
+                {editId ? "Save Changes" : `Add ${personLabel}`}
               </Button>
             </form>
           </DialogContent>
@@ -210,7 +218,7 @@ export default function ShareholdersTab({ companyId }: Props) {
         {isLoading ? (
           <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : shareholders.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-6">No shareholders recorded yet.</p>
+          <p className="text-xs text-muted-foreground text-center py-6">No {personsLabel.toLowerCase()} recorded yet.</p>
         ) : (
           <div className="rounded-md border border-border overflow-auto">
             <Table>
