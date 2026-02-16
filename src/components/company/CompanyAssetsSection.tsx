@@ -1,0 +1,432 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Plus, Trash2, Loader2, Briefcase, Car, Wrench, FileText, Home } from "lucide-react";
+import { toast } from "sonner";
+
+const ASSET_TABS = [
+  { key: "vehicle", label: "Vehicles", icon: Car },
+  { key: "equipment", label: "Equipment", icon: Wrench },
+  { key: "lease", label: "Leases", icon: FileText },
+  { key: "property", label: "Property", icon: Home },
+] as const;
+
+type AssetTab = (typeof ASSET_TABS)[number]["key"];
+
+interface Props {
+  companyId: string;
+}
+
+export default function CompanyAssetsSection({ companyId }: Props) {
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<AssetTab>("vehicle");
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Form state for each type
+  const [vehicleForm, setVehicleForm] = useState({ year: "", make: "", model: "", cost: "", ownership_type: "owned", description: "" });
+  const [equipmentForm, setEquipmentForm] = useState({ year: "", make: "", model: "", running_hours: "", manufacturer: "", ownership_type: "owned", description: "" });
+  const [leaseForm, setLeaseForm] = useState({ description: "", value: "" });
+  const [propertyForm, setPropertyForm] = useState({ address: "", finance_company: "", escrow: "", mortgage: "", taxes: "", description: "" });
+
+  const { data: allAssets = [] } = useQuery({
+    queryKey: ["company_assets", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("company_assets")
+        .select("*")
+        .eq("company_id", companyId)
+        .order("created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const assets = allAssets.filter((a) => a.asset_type === activeTab);
+
+  const addAsset = useMutation({
+    mutationFn: async () => {
+      let insertData: any = { company_id: companyId, asset_type: activeTab };
+
+      if (activeTab === "vehicle") {
+        insertData = {
+          ...insertData,
+          year: vehicleForm.year || null,
+          make: vehicleForm.make || null,
+          model: vehicleForm.model || null,
+          cost: vehicleForm.cost ? parseFloat(vehicleForm.cost) : null,
+          ownership_type: vehicleForm.ownership_type,
+          description: `${vehicleForm.year} ${vehicleForm.make} ${vehicleForm.model}`.trim() || "Vehicle",
+        };
+      } else if (activeTab === "equipment") {
+        insertData = {
+          ...insertData,
+          year: equipmentForm.year || null,
+          make: equipmentForm.make || null,
+          model: equipmentForm.model || null,
+          running_hours: equipmentForm.running_hours ? parseFloat(equipmentForm.running_hours) : null,
+          manufacturer: equipmentForm.manufacturer || null,
+          ownership_type: equipmentForm.ownership_type,
+          description: equipmentForm.description || `${equipmentForm.manufacturer || ""} ${equipmentForm.make || ""} ${equipmentForm.model || ""}`.trim() || "Equipment",
+        };
+      } else if (activeTab === "lease") {
+        insertData = {
+          ...insertData,
+          description: leaseForm.description,
+          value: leaseForm.value ? parseFloat(leaseForm.value) : null,
+        };
+      } else if (activeTab === "property") {
+        insertData = {
+          ...insertData,
+          address: propertyForm.address || null,
+          finance_company: propertyForm.finance_company || null,
+          escrow: propertyForm.escrow ? parseFloat(propertyForm.escrow) : null,
+          mortgage: propertyForm.mortgage ? parseFloat(propertyForm.mortgage) : null,
+          taxes: propertyForm.taxes ? parseFloat(propertyForm.taxes) : null,
+          description: propertyForm.address || "Property",
+        };
+      }
+
+      const { error } = await supabase.from("company_assets").insert(insertData);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["company_assets", companyId] });
+      setDialogOpen(false);
+      resetForm();
+      toast.success("Asset added!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const deleteAsset = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("company_assets").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["company_assets", companyId] });
+      toast.success("Asset removed.");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const resetForm = () => {
+    setVehicleForm({ year: "", make: "", model: "", cost: "", ownership_type: "owned", description: "" });
+    setEquipmentForm({ year: "", make: "", model: "", running_hours: "", manufacturer: "", ownership_type: "owned", description: "" });
+    setLeaseForm({ description: "", value: "" });
+    setPropertyForm({ address: "", finance_company: "", escrow: "", mortgage: "", taxes: "", description: "" });
+  };
+
+  const fmt = (v: number | null | undefined) =>
+    v != null ? `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "—";
+
+  return (
+    <Card>
+      <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <Briefcase className="h-3.5 w-3.5 text-primary" />
+            <CardTitle className="card-section-title">Vehicles, Equipment, Leases & Property</CardTitle>
+          </div>
+        </div>
+        <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="outline" className="h-7 text-xs">
+              <Plus className="mr-1 h-3 w-3" /> Add
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="font-display text-base">
+                Add {ASSET_TABS.find((t) => t.key === activeTab)?.label.slice(0, -1) || "Asset"}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={(e) => { e.preventDefault(); addAsset.mutate(); }} className="space-y-3">
+              {activeTab === "vehicle" && (
+                <>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Year</Label>
+                      <Input className="h-8 text-sm" value={vehicleForm.year} onChange={(e) => setVehicleForm((p) => ({ ...p, year: e.target.value }))} />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Make</Label>
+                      <Input className="h-8 text-sm" value={vehicleForm.make} onChange={(e) => setVehicleForm((p) => ({ ...p, make: e.target.value }))} required />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Model</Label>
+                      <Input className="h-8 text-sm" value={vehicleForm.model} onChange={(e) => setVehicleForm((p) => ({ ...p, model: e.target.value }))} required />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Cost ($)</Label>
+                      <Input type="number" step="0.01" className="h-8 text-sm" value={vehicleForm.cost} onChange={(e) => setVehicleForm((p) => ({ ...p, cost: e.target.value }))} />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Financed / Owned</Label>
+                      <Select value={vehicleForm.ownership_type} onValueChange={(v) => setVehicleForm((p) => ({ ...p, ownership_type: v }))}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="owned">Owned</SelectItem>
+                          <SelectItem value="financed">Financed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {activeTab === "equipment" && (
+                <>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Year</Label>
+                      <Input className="h-8 text-sm" value={equipmentForm.year} onChange={(e) => setEquipmentForm((p) => ({ ...p, year: e.target.value }))} />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Make</Label>
+                      <Input className="h-8 text-sm" value={equipmentForm.make} onChange={(e) => setEquipmentForm((p) => ({ ...p, make: e.target.value }))} required />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Model</Label>
+                      <Input className="h-8 text-sm" value={equipmentForm.model} onChange={(e) => setEquipmentForm((p) => ({ ...p, model: e.target.value }))} required />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Manufacturer</Label>
+                      <Input className="h-8 text-sm" value={equipmentForm.manufacturer} onChange={(e) => setEquipmentForm((p) => ({ ...p, manufacturer: e.target.value }))} />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Running Hours</Label>
+                      <Input type="number" className="h-8 text-sm" value={equipmentForm.running_hours} onChange={(e) => setEquipmentForm((p) => ({ ...p, running_hours: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">Lease / Own</Label>
+                    <Select value={equipmentForm.ownership_type} onValueChange={(v) => setEquipmentForm((p) => ({ ...p, ownership_type: v }))}>
+                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="owned">Own</SelectItem>
+                        <SelectItem value="leased">Lease</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
+
+              {activeTab === "lease" && (
+                <>
+                  <div className="field-group">
+                    <Label className="field-label">Lease Description</Label>
+                    <Input className="h-8 text-sm" value={leaseForm.description} onChange={(e) => setLeaseForm((p) => ({ ...p, description: e.target.value }))} required />
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">Value ($)</Label>
+                    <Input type="number" step="0.01" className="h-8 text-sm" value={leaseForm.value} onChange={(e) => setLeaseForm((p) => ({ ...p, value: e.target.value }))} />
+                  </div>
+                </>
+              )}
+
+              {activeTab === "property" && (
+                <>
+                  <div className="field-group">
+                    <Label className="field-label">Address</Label>
+                    <Input className="h-8 text-sm" value={propertyForm.address} onChange={(e) => setPropertyForm((p) => ({ ...p, address: e.target.value }))} required />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Finance Company</Label>
+                      <Input className="h-8 text-sm" value={propertyForm.finance_company} onChange={(e) => setPropertyForm((p) => ({ ...p, finance_company: e.target.value }))} />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Escrow ($)</Label>
+                      <Input type="number" step="0.01" className="h-8 text-sm" value={propertyForm.escrow} onChange={(e) => setPropertyForm((p) => ({ ...p, escrow: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Mortgage ($)</Label>
+                      <Input type="number" step="0.01" className="h-8 text-sm" value={propertyForm.mortgage} onChange={(e) => setPropertyForm((p) => ({ ...p, mortgage: e.target.value }))} />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Taxes ($)</Label>
+                      <Input type="number" step="0.01" className="h-8 text-sm" value={propertyForm.taxes} onChange={(e) => setPropertyForm((p) => ({ ...p, taxes: e.target.value }))} />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <Button type="submit" className="w-full" size="sm" disabled={addAsset.isPending}>
+                {addAsset.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                Add {ASSET_TABS.find((t) => t.key === activeTab)?.label.slice(0, -1)}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent className="px-4 pb-4">
+        {/* Sub-tabs */}
+        <div className="flex gap-1 mb-4 border-b border-border">
+          {ASSET_TABS.map((tab) => {
+            const Icon = tab.icon;
+            const count = allAssets.filter((a) => a.asset_type === tab.key).length;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
+                  activeTab === tab.key
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-3 w-3" />
+                {tab.label}
+                {count > 0 && (
+                  <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0 text-[10px] font-semibold text-primary">{count}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Content */}
+        {assets.length === 0 ? (
+          <div className="rounded-md border border-dashed border-border py-6 text-center">
+            <Briefcase className="mx-auto mb-1.5 h-6 w-6 text-muted-foreground/30" />
+            <p className="text-xs text-muted-foreground">No {ASSET_TABS.find((t) => t.key === activeTab)?.label.toLowerCase()} added yet</p>
+          </div>
+        ) : (
+          <div className="rounded-md border border-border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                  {activeTab === "vehicle" && (
+                    <>
+                      <TableHead className="text-xs font-semibold h-8">Year</TableHead>
+                      <TableHead className="text-xs h-8">Make</TableHead>
+                      <TableHead className="text-xs h-8">Model</TableHead>
+                      <TableHead className="text-xs text-right h-8">Cost</TableHead>
+                      <TableHead className="text-xs h-8">Ownership</TableHead>
+                    </>
+                  )}
+                  {activeTab === "equipment" && (
+                    <>
+                      <TableHead className="text-xs font-semibold h-8">Year</TableHead>
+                      <TableHead className="text-xs h-8">Make</TableHead>
+                      <TableHead className="text-xs h-8">Model</TableHead>
+                      <TableHead className="text-xs h-8">Manufacturer</TableHead>
+                      <TableHead className="text-xs text-right h-8">Running Hrs</TableHead>
+                      <TableHead className="text-xs h-8">Lease/Own</TableHead>
+                    </>
+                  )}
+                  {activeTab === "lease" && (
+                    <>
+                      <TableHead className="text-xs font-semibold h-8">Description</TableHead>
+                      <TableHead className="text-xs text-right h-8">Value</TableHead>
+                    </>
+                  )}
+                  {activeTab === "property" && (
+                    <>
+                      <TableHead className="text-xs font-semibold h-8">Address</TableHead>
+                      <TableHead className="text-xs h-8">Finance Co.</TableHead>
+                      <TableHead className="text-xs text-right h-8">Escrow</TableHead>
+                      <TableHead className="text-xs text-right h-8">Mortgage</TableHead>
+                      <TableHead className="text-xs text-right h-8">Taxes</TableHead>
+                    </>
+                  )}
+                  <TableHead className="w-10 h-8"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {assets.map((a: any) => (
+                  <TableRow key={a.id}>
+                    {activeTab === "vehicle" && (
+                      <>
+                        <TableCell className="text-sm py-2 font-medium">{a.year || "—"}</TableCell>
+                        <TableCell className="text-sm py-2">{a.make || "—"}</TableCell>
+                        <TableCell className="text-sm py-2">{a.model || "—"}</TableCell>
+                        <TableCell className="text-right font-mono text-xs py-2">{fmt(a.cost)}</TableCell>
+                        <TableCell className="py-2">
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${
+                            a.ownership_type === "financed" ? "bg-accent/50 text-accent-foreground" : "bg-primary/8 text-primary"
+                          }`}>
+                            {a.ownership_type || "owned"}
+                          </span>
+                        </TableCell>
+                      </>
+                    )}
+                    {activeTab === "equipment" && (
+                      <>
+                        <TableCell className="text-sm py-2 font-medium">{a.year || "—"}</TableCell>
+                        <TableCell className="text-sm py-2">{a.make || "—"}</TableCell>
+                        <TableCell className="text-sm py-2">{a.model || "—"}</TableCell>
+                        <TableCell className="text-sm py-2">{a.manufacturer || "—"}</TableCell>
+                        <TableCell className="text-right font-mono text-xs py-2">{a.running_hours != null ? a.running_hours : "—"}</TableCell>
+                        <TableCell className="py-2">
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${
+                            a.ownership_type === "leased" ? "bg-accent/50 text-accent-foreground" : "bg-primary/8 text-primary"
+                          }`}>
+                            {a.ownership_type === "leased" ? "Lease" : "Own"}
+                          </span>
+                        </TableCell>
+                      </>
+                    )}
+                    {activeTab === "lease" && (
+                      <>
+                        <TableCell className="text-sm py-2 font-medium">{a.description}</TableCell>
+                        <TableCell className="text-right font-mono text-xs py-2">{fmt(a.value)}</TableCell>
+                      </>
+                    )}
+                    {activeTab === "property" && (
+                      <>
+                        <TableCell className="text-sm py-2 font-medium">{a.address || a.description || "—"}</TableCell>
+                        <TableCell className="text-sm py-2">{a.finance_company || "—"}</TableCell>
+                        <TableCell className="text-right font-mono text-xs py-2">{fmt(a.escrow)}</TableCell>
+                        <TableCell className="text-right font-mono text-xs py-2">{fmt(a.mortgage)}</TableCell>
+                        <TableCell className="text-right font-mono text-xs py-2">{fmt(a.taxes)}</TableCell>
+                      </>
+                    )}
+                    <TableCell className="py-2">
+                      <Button variant="ghost" size="icon" onClick={() => deleteAsset.mutate(a.id)} className="h-6 w-6 text-destructive/50 hover:text-destructive">
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
