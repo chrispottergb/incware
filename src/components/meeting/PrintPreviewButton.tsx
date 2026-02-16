@@ -39,11 +39,12 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
   };
 
   const handlePrint = () => {
+    const printWindow = window.open("", "_blank");
     const doc = generatePDF();
     const blob = doc.output("blob");
     const url = URL.createObjectURL(blob);
-    const printWindow = window.open(url);
     if (printWindow) {
+      printWindow.location.href = url;
       printWindow.addEventListener("load", () => {
         printWindow.print();
       });
