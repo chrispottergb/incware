@@ -31,7 +31,20 @@ import {
   AlertTriangle,
   XCircle,
   FileDown,
+  TrendingUp,
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 export default function Reports() {
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
@@ -96,6 +109,20 @@ export default function Reports() {
     queryFn: async () => {
       let q = supabase.from("officers").select("*");
       if (selectedCompany !== "all") q = q.eq("company_id", selectedCompany);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch meeting financials with meeting info for tax_year
+  const { data: meetingFinancials = [], isLoading: finLoading } = useQuery({
+    queryKey: ["all-meeting-financials", selectedCompany],
+    queryFn: async () => {
+      let q = supabase
+        .from("meeting_financials")
+        .select("*, meetings!inner(tax_year, meeting_date, company_id, companies!inner(name))");
+      if (selectedCompany !== "all") q = q.eq("meetings.company_id", selectedCompany);
       const { data, error } = await q;
       if (error) throw error;
       return data;
@@ -246,6 +273,9 @@ export default function Reports() {
           </TabsTrigger>
           <TabsTrigger value="ledger" className="gap-1.5 text-xs">
             <BookOpen className="h-3.5 w-3.5" /> Stock Ledger
+          </TabsTrigger>
+          <TabsTrigger value="financials" className="gap-1.5 text-xs">
+            <TrendingUp className="h-3.5 w-3.5" /> Financials
           </TabsTrigger>
         </TabsList>
 
@@ -499,6 +529,257 @@ export default function Reports() {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        {/* FINANCIALS TAB */}
+        <TabsContent value="financials" className="space-y-4 mt-4">
+          {finLoading ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : (() => {
+            // Build year-over-year chart data from meeting financials
+            const yearData: Record<string, {
+              year: string;
+              totalSales: number;
+              grossProfit: number;
+              cog: number;
+              netIncome: number;
+              cogRatio: number;
+              count: number;
+            }> = {};
+
+            meetingFinancials.forEach((mf: any) => {
+              const meeting = mf.meetings;
+              const year = meeting?.tax_year?.toString() || (meeting?.meeting_date ? new Date(meeting.meeting_date + "T00:00:00").getFullYear().toString() : null);
+              if (!year) return;
+
+              if (!yearData[year]) {
+                yearData[year] = { year, totalSales: 0, grossProfit: 0, cog: 0, netIncome: 0, cogRatio: 0, count: 0 };
+              }
+              yearData[year].totalSales += mf.current_total_sales || 0;
+              yearData[year].grossProfit += mf.current_gross_profit || 0;
+              yearData[year].cog += mf.current_cog || 0;
+              yearData[year].netIncome += mf.current_net_income || 0;
+              yearData[year].count += 1;
+            });
+
+            // Calculate average COG ratio per year
+            Object.values(yearData).forEach((yd) => {
+              yd.cogRatio = yd.totalSales > 0 ? (yd.cog / yd.totalSales) * 100 : 0;
+            });
+
+            const chartData = Object.values(yearData).sort((a, b) => a.year.localeCompare(b.year));
+            const hasFinData = chartData.length > 0;
+
+            // Per-company breakdown
+            const companyYearData: Record<string, Record<string, number>> = {};
+            meetingFinancials.forEach((mf: any) => {
+              const meeting = mf.meetings;
+              const compName = meeting?.companies?.name || "Unknown";
+              const year = meeting?.tax_year?.toString() || (meeting?.meeting_date ? new Date(meeting.meeting_date + "T00:00:00").getFullYear().toString() : null);
+              if (!year) return;
+              if (!companyYearData[compName]) companyYearData[compName] = {};
+              companyYearData[compName][year] = (companyYearData[compName][year] || 0) + (mf.current_total_sales || 0);
+            });
+
+            // Build line chart data for per-company revenue
+            const allYears = [...new Set(chartData.map(d => d.year))].sort();
+            const companyNames = Object.keys(companyYearData);
+            const lineChartData = allYears.map(year => {
+              const row: any = { year };
+              companyNames.forEach(name => {
+                row[name] = companyYearData[name][year] || 0;
+              });
+              return row;
+            });
+
+            const lineColors = [
+              "hsl(var(--primary))",
+              "hsl(var(--accent))",
+              "hsl(var(--warning))",
+              "hsl(var(--destructive))",
+              "hsl(var(--success))",
+              "hsl(var(--muted-foreground))",
+            ];
+
+            return hasFinData ? (
+              <>
+                {/* Summary cards */}
+                <div className="grid gap-4 sm:grid-cols-4">
+                  <Card>
+                    <CardContent className="p-5">
+                      <p className="text-xs text-muted-foreground">Years Tracked</p>
+                      <p className="text-2xl font-display font-bold mt-1">{chartData.length}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-5">
+                      <p className="text-xs text-muted-foreground">Latest Year Revenue</p>
+                      <p className="text-2xl font-display font-bold mt-1">
+                        ${(chartData[chartData.length - 1]?.totalSales || 0).toLocaleString()}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-5">
+                      <p className="text-xs text-muted-foreground">Latest Year Net Income</p>
+                      <p className="text-2xl font-display font-bold mt-1">
+                        ${(chartData[chartData.length - 1]?.netIncome || 0).toLocaleString()}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-5">
+                      <p className="text-xs text-muted-foreground">Latest COG Ratio</p>
+                      <p className="text-2xl font-display font-bold mt-1">
+                        {(chartData[chartData.length - 1]?.cogRatio || 0).toFixed(1)}%
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Revenue & Profit Trend */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="font-display text-sm">Revenue & Profit Trend</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={320}>
+                      <BarChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="year" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "var(--radius)",
+                            fontSize: 12,
+                          }}
+                          formatter={(value: number) => [`$${value.toLocaleString()}`, undefined]}
+                        />
+                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        <Bar dataKey="totalSales" name="Total Sales" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="grossProfit" name="Gross Profit" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="netIncome" name="Net Income" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                  {/* COG Ratio Trend */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="font-display text-sm">COG Ratio Trend (%)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <LineChart data={chartData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="year" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} unit="%" />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "hsl(var(--card))",
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: "var(--radius)",
+                              fontSize: 12,
+                            }}
+                            formatter={(value: number) => [`${value.toFixed(2)}%`, "COG Ratio"]}
+                          />
+                          <Line type="monotone" dataKey="cogRatio" name="COG Ratio" stroke="hsl(var(--warning))" strokeWidth={2} dot={{ r: 4 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  {/* Per-company revenue */}
+                  {companyNames.length > 1 && (
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="font-display text-sm">Revenue by Company</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={280}>
+                          <LineChart data={lineChartData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                            <XAxis dataKey="year" tick={{ fontSize: 11 }} />
+                            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "hsl(var(--card))",
+                                border: "1px solid hsl(var(--border))",
+                                borderRadius: "var(--radius)",
+                                fontSize: 12,
+                              }}
+                              formatter={(value: number) => [`$${value.toLocaleString()}`, undefined]}
+                            />
+                            <Legend wrapperStyle={{ fontSize: 11 }} />
+                            {companyNames.map((name, i) => (
+                              <Line key={name} type="monotone" dataKey={name} stroke={lineColors[i % lineColors.length]} strokeWidth={2} dot={{ r: 3 }} />
+                            ))}
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+
+                {/* Data table */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="font-display text-sm">Year-over-Year Data</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0 overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                          <TableHead className="text-xs">Year</TableHead>
+                          <TableHead className="text-xs text-right">Total Sales</TableHead>
+                          <TableHead className="text-xs text-right">COG</TableHead>
+                          <TableHead className="text-xs text-right">Gross Profit</TableHead>
+                          <TableHead className="text-xs text-right">Net Income</TableHead>
+                          <TableHead className="text-xs text-right">COG Ratio</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {chartData.map((row, idx) => {
+                          const prev = idx > 0 ? chartData[idx - 1] : null;
+                          const salesChange = prev && prev.totalSales > 0 ? ((row.totalSales - prev.totalSales) / prev.totalSales) * 100 : null;
+                          return (
+                            <TableRow key={row.year}>
+                              <TableCell className="text-sm font-medium">{row.year}</TableCell>
+                              <TableCell className="text-xs text-right font-mono">
+                                ${row.totalSales.toLocaleString()}
+                                {salesChange != null && (
+                                  <span className={`ml-1.5 text-[10px] ${salesChange >= 0 ? "text-success" : "text-destructive"}`}>
+                                    {salesChange >= 0 ? "▲" : "▼"}{Math.abs(salesChange).toFixed(1)}%
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-xs text-right font-mono">${row.cog.toLocaleString()}</TableCell>
+                              <TableCell className="text-xs text-right font-mono">${row.grossProfit.toLocaleString()}</TableCell>
+                              <TableCell className="text-xs text-right font-mono">${row.netIncome.toLocaleString()}</TableCell>
+                              <TableCell className="text-xs text-right font-mono">{row.cogRatio.toFixed(1)}%</TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-16 gap-3">
+                  <TrendingUp className="h-10 w-10 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">No financial data found. Add financials to meeting records to see year-over-year trends.</p>
+                </CardContent>
+              </Card>
+            );
+          })()}
         </TabsContent>
       </Tabs>
     </div>
