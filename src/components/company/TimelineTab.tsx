@@ -331,11 +331,28 @@ export default function TimelineTab({ companyId, company }: Props) {
               Auto-generated from corporate records + manual entries · {timeline.length} events
             </CardDescription>
           </div>
-          <Dialog open={dialog} onOpenChange={setDialog}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="h-7 text-xs">
-                <Plus className="mr-1 h-3 w-3" /> Add Event
-              </Button>
+          <div className="flex items-center gap-1">
+            <SectionPdfActions
+              config={{
+                title: "Corporate Timeline",
+                companyName: company.name,
+                table: {
+                  headers: ["Date", "Type", "Event", "Description", "Source"],
+                  rows: timeline.map((e) => [
+                    new Date(e.date + "T00:00:00").toLocaleDateString(),
+                    e.type.replace("_", " "),
+                    e.title,
+                    e.description || "—",
+                    e.source,
+                  ]),
+                },
+              }}
+            />
+            <Dialog open={dialog} onOpenChange={setDialog}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline" className="h-7 text-xs">
+                  <Plus className="mr-1 h-3 w-3" /> Add Event
+                </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -372,6 +389,7 @@ export default function TimelineTab({ companyId, company }: Props) {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </CardHeader>
         <CardContent className="px-4 pb-4">
           {isLoading ? (

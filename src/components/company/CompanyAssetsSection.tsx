@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash2, Loader2, Briefcase, Car, Wrench, FileText, Home } from "lucide-react";
 import { toast } from "sonner";
+import SectionPdfActions from "./SectionPdfActions";
 
 const ASSET_TABS = [
   { key: "vehicle", label: "Vehicles", icon: Car },
@@ -41,9 +42,10 @@ type AssetTab = (typeof ASSET_TABS)[number]["key"];
 
 interface Props {
   companyId: string;
+  companyName?: string;
 }
 
-export default function CompanyAssetsSection({ companyId }: Props) {
+export default function CompanyAssetsSection({ companyId, companyName = "" }: Props) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<AssetTab>("vehicle");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -155,10 +157,32 @@ export default function CompanyAssetsSection({ companyId }: Props) {
             <CardTitle className="card-section-title">Vehicles, Equipment, Leases & Property</CardTitle>
           </div>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button size="sm" variant="outline" className="h-7 text-xs">
-              <Plus className="mr-1 h-3 w-3" /> Add
+        <div className="flex items-center gap-1">
+          <SectionPdfActions
+            config={{
+              title: `Company Assets — ${ASSET_TABS.find((t) => t.key === activeTab)?.label || "All"}`,
+              companyName,
+              table: {
+                headers: activeTab === "vehicle"
+                  ? ["Year", "Make", "Model", "Cost", "Ownership"]
+                  : activeTab === "equipment"
+                  ? ["Year", "Make", "Model", "Manufacturer", "Running Hrs", "Lease/Own"]
+                  : activeTab === "lease"
+                  ? ["Description", "Value"]
+                  : ["Address", "Finance Co.", "Escrow", "Mortgage", "Taxes"],
+                rows: assets.map((a) => {
+                  if (activeTab === "vehicle") return [a.year || "—", a.make || "—", a.model || "—", fmt(a.cost), a.ownership_type || "—"];
+                  if (activeTab === "equipment") return [a.year || "—", a.make || "—", a.model || "—", a.manufacturer || "—", a.running_hours?.toString() || "—", a.ownership_type || "—"];
+                  if (activeTab === "lease") return [a.description, fmt(a.value)];
+                  return [a.address || "—", a.finance_company || "—", fmt(a.escrow), fmt(a.mortgage), fmt(a.taxes)];
+                }),
+              },
+            }}
+          />
+          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline" className="h-7 text-xs">
+                <Plus className="mr-1 h-3 w-3" /> Add
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -292,6 +316,7 @@ export default function CompanyAssetsSection({ companyId }: Props) {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </CardHeader>
       <CardContent className="px-4 pb-4">
         {/* Sub-tabs */}

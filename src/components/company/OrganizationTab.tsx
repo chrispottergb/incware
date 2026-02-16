@@ -563,7 +563,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
       </Card>
 
       {/* Company Assets */}
-      <CompanyAssetsSection companyId={companyId} />
+      <CompanyAssetsSection companyId={companyId} companyName={company.name} />
     </div>
   );
 }
