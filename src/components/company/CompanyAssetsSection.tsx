@@ -190,11 +190,12 @@ export default function CompanyAssetsSection({ companyId }: Props) {
                       <Input type="number" step="0.01" className="h-8 text-sm" value={vehicleForm.cost} onChange={(e) => setVehicleForm((p) => ({ ...p, cost: e.target.value }))} />
                     </div>
                     <div className="field-group">
-                      <Label className="field-label">Financed / Owned</Label>
+                      <Label className="field-label">Ownership</Label>
                       <Select value={vehicleForm.ownership_type} onValueChange={(v) => setVehicleForm((p) => ({ ...p, ownership_type: v }))}>
                         <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="owned">Owned</SelectItem>
+                          <SelectItem value="leased">Leased</SelectItem>
                           <SelectItem value="financed">Financed</SelectItem>
                         </SelectContent>
                       </Select>
