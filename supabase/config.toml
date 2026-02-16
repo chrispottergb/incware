@@ -1,1 +1,4 @@
 project_id = "spoljisxqqfiiyyutnab"
+
+[functions.generate-record-book]
+verify_jwt = false
