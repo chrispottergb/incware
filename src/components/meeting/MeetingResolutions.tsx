@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +15,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -23,35 +23,100 @@ import {
 import { Plus, Trash2, Loader2, FileText } from "lucide-react";
 import { toast } from "sonner";
 
-const RESOLUTION_PURPOSES = [
-  "Authorize a line of credit",
-  "Approve Officer Bonuses",
-  "Approve Issuance, Transfer, Sale of Shares",
-  "Adopt Regular Meeting Resolution",
-  "Approve Distributions",
-  "Elect Officers",
-  "Name Directors to Committees",
-  "Other",
-];
-
-const RESOLUTION_TEMPLATES: Record<string, string> = {
-  "Authorize a line of credit":
-    "WHEREAS, it would be in the best interests of the corporation to obtain a line of credit, and after discussion, it was\n\nRESOLVED, that the proper officers of this corporation are hereby authorized to contact the Bank and are further authorized to execute any documents necessary to establish a line of credit not to exceed $_______ (amount) dollars for and on behalf of the corporation.",
-  "Approve Officer Bonuses":
-    "WHEREAS, the Board of Directors has reviewed the performance of the officers of the corporation and, after discussion, it was\n\nRESOLVED, that bonuses be paid to the following officers in the amounts set forth below:\n\n[Officer Name] - $[Amount]",
-  "Adopt Regular Meeting Resolution":
-    "RESOLVED, that regular meetings of the Board of Directors shall be held on the ______ day of each ______ at ______ o'clock at the principal office of the corporation, or at such other place as may be designated by the Chairman.",
+const RESOLUTION_TYPES: Record<string, { label: string; statute?: string; template?: string }[]> = {
+  Corporation: [
+    { label: "Authorize a Line of Credit", statute: "Wis. Stat. § 180.0302", template: "WHEREAS, it would be in the best interests of the corporation to obtain a line of credit, and after discussion, it was\n\nRESOLVED, that the proper officers of this corporation are hereby authorized to contact the Bank and are further authorized to execute any documents necessary to establish a line of credit not to exceed $_______ (amount) dollars for and on behalf of the corporation." },
+    { label: "Approve Officer Bonuses", statute: "Wis. Stat. § 180.0302", template: "WHEREAS, the Board of Directors has reviewed the performance of the officers of the corporation and, after discussion, it was\n\nRESOLVED, that bonuses be paid to the following officers in the amounts set forth below:\n\n[Officer Name] - $[Amount]" },
+    { label: "Approve Issuance of Shares", statute: "Wis. Stat. § 180.0621", template: "RESOLVED, that the corporation is hereby authorized to issue ______ shares of ______ stock to ______ in consideration of $______ per share." },
+    { label: "Approve Transfer/Sale of Shares", statute: "Wis. Stat. § 180.0621", template: "RESOLVED, that the transfer of ______ shares of ______ stock from ______ to ______ is hereby approved and the officers are directed to update the stock ledger accordingly." },
+    { label: "Adopt Regular Meeting Resolution", statute: "Wis. Stat. § 180.0820", template: "RESOLVED, that regular meetings of the Board of Directors shall be held on the ______ day of each ______ at ______ o'clock at the principal office of the corporation, or at such other place as may be designated by the Chairman." },
+    { label: "Approve Distributions/Dividends", statute: "Wis. Stat. § 180.0640", template: "RESOLVED, that a dividend of $______ per share be declared on the outstanding ______ stock of the corporation, payable on ______ to shareholders of record as of ______." },
+    { label: "Elect Officers", statute: "Wis. Stat. § 180.0840", template: "RESOLVED, that the following persons are hereby elected to the offices set forth opposite their names, to serve until their successors are duly elected and qualified:\n\nPresident: ______\nVice President: ______\nSecretary: ______\nTreasurer: ______" },
+    { label: "Elect Directors", statute: "Wis. Stat. § 180.0803", template: "RESOLVED, that the following persons are hereby elected as directors of the corporation, to serve until the next annual meeting or until their successors are duly elected and qualified:\n\n______" },
+    { label: "Name Directors to Committees", statute: "Wis. Stat. § 180.0825", template: "RESOLVED, that the following directors are hereby appointed to serve on the ______ Committee:\n\n______" },
+    { label: "Approve Employment Agreement", statute: "Wis. Stat. § 180.0302", template: "RESOLVED, that the corporation is hereby authorized to enter into an employment agreement with ______ on the terms presented to and reviewed by the Board." },
+    { label: "Approve Lease Agreement", statute: "Wis. Stat. § 180.0302", template: "RESOLVED, that the proper officers are hereby authorized to execute a lease agreement for the premises located at ______ on the terms presented to the Board." },
+    { label: "Approve Purchase/Sale of Assets", statute: "Wis. Stat. § 180.1202", template: "RESOLVED, that the corporation is hereby authorized to [purchase/sell] the following assets: ______ for consideration of $______." },
+    { label: "Ratify Prior Actions", statute: "Wis. Stat. § 180.0302", template: "RESOLVED, that all acts and transactions of the officers and directors of the corporation since the last meeting of the Board are hereby ratified and approved." },
+    { label: "Approve Tax Election (S-Corp)", statute: "IRC § 1362", template: "RESOLVED, that the corporation hereby elects to be treated as an S corporation under IRC § 1362, and the proper officers are authorized to file IRS Form 2553." },
+    { label: "Approve Employee Benefit Plan", statute: "Wis. Stat. § 180.0302", template: "RESOLVED, that the corporation is authorized to establish and maintain the following employee benefit plan: ______" },
+    { label: "Other" },
+  ],
+  "S-Corp": [
+    { label: "Authorize a Line of Credit", statute: "Wis. Stat. § 180.0302", template: "WHEREAS, it would be in the best interests of the corporation to obtain a line of credit, and after discussion, it was\n\nRESOLVED, that the proper officers of this corporation are hereby authorized to contact the Bank and are further authorized to execute any documents necessary to establish a line of credit not to exceed $_______ (amount) dollars for and on behalf of the corporation." },
+    { label: "Approve Officer Bonuses (Reasonable Compensation)", statute: "Wis. Stat. § 180.0302; IRC § 1366", template: "WHEREAS, the Board has reviewed officer compensation in light of IRS reasonable compensation requirements for S corporations, and after discussion, it was\n\nRESOLVED, that bonuses be paid to the following officers:\n\n[Officer Name] - $[Amount]\n\nThe Board has determined these amounts constitute reasonable compensation for services rendered." },
+    { label: "Approve Issuance of Shares", statute: "Wis. Stat. § 180.0621; IRC § 1361(b)", template: "RESOLVED, that the corporation is authorized to issue ______ shares of common stock to ______, provided that the issuance does not cause the corporation to exceed 100 shareholders or create a second class of stock in violation of IRC § 1361(b)." },
+    { label: "Approve Transfer/Sale of Shares", statute: "Wis. Stat. § 180.0621; IRC § 1361(b)", template: "RESOLVED, that the transfer of ______ shares from ______ to ______ is approved, subject to verification that the transferee is an eligible S corporation shareholder under IRC § 1361(b)(1)." },
+    { label: "Adopt Regular Meeting Resolution", statute: "Wis. Stat. § 180.0820", template: "RESOLVED, that regular meetings of the Board of Directors shall be held on the ______ day of each ______ at ______ o'clock at the principal office of the corporation." },
+    { label: "Approve Distributions", statute: "Wis. Stat. § 180.0640; IRC § 1368", template: "RESOLVED, that a distribution of $______ per share be made to shareholders, to be treated in accordance with IRC § 1368 (distributions from AAA, then AE&P if applicable)." },
+    { label: "Elect Officers", statute: "Wis. Stat. § 180.0840", template: "RESOLVED, that the following persons are hereby elected to the offices set forth opposite their names:\n\nPresident: ______\nVice President: ______\nSecretary: ______\nTreasurer: ______" },
+    { label: "Elect Directors", statute: "Wis. Stat. § 180.0803", template: "RESOLVED, that the following persons are hereby elected as directors:\n\n______" },
+    { label: "Approve Employment Agreement", statute: "Wis. Stat. § 180.0302", template: "RESOLVED, that the corporation is authorized to enter into an employment agreement with ______ on the terms reviewed by the Board." },
+    { label: "Approve Lease Agreement", statute: "Wis. Stat. § 180.0302", template: "RESOLVED, that the proper officers are authorized to execute a lease agreement for premises at ______." },
+    { label: "Approve Purchase/Sale of Assets", statute: "Wis. Stat. § 180.1202", template: "RESOLVED, that the corporation is authorized to [purchase/sell] the following assets: ______ for $______." },
+    { label: "Ratify Prior Actions", statute: "Wis. Stat. § 180.0302", template: "RESOLVED, that all acts and transactions of the officers and directors since the last meeting are hereby ratified and approved." },
+    { label: "Revoke S-Election", statute: "IRC § 1362(d)", template: "RESOLVED, that the corporation hereby revokes its election to be treated as an S corporation, effective ______, and the proper officers are authorized to file the necessary documents with the IRS." },
+    { label: "Approve Employee Benefit Plan", statute: "Wis. Stat. § 180.0302; IRC § 1372", template: "RESOLVED, that the corporation is authorized to establish the following employee benefit plan: ______\n\nNote: Under IRC § 1372, 2% shareholders are treated as partners for fringe benefit purposes." },
+    { label: "Other" },
+  ],
+  LLC: [
+    { label: "Authorize a Line of Credit", statute: "Wis. Stat. § 183.0301", template: "WHEREAS, it would be in the best interests of the LLC to obtain a line of credit, and after discussion, it was\n\nRESOLVED, that the [managers/members] are authorized to execute documents to establish a line of credit not to exceed $_______ for the LLC." },
+    { label: "Approve Member Distributions", statute: "Wis. Stat. § 183.0504", template: "RESOLVED, that a distribution of $______ be made to the members in accordance with their respective membership interests as set forth in the Operating Agreement." },
+    { label: "Approve Guaranteed Payments", statute: "IRC § 707(c)", template: "RESOLVED, that guaranteed payments in the following amounts be made to the following members for services rendered:\n\n[Member Name] - $[Amount]" },
+    { label: "Admit New Member", statute: "Wis. Stat. § 183.0801", template: "RESOLVED, that ______ is hereby admitted as a member of the LLC with a ______% membership interest, effective ______, in accordance with the Operating Agreement." },
+    { label: "Approve Transfer of Membership Interest", statute: "Wis. Stat. § 183.0706", template: "RESOLVED, that the transfer of ______% membership interest from ______ to ______ is hereby approved, subject to the terms of the Operating Agreement." },
+    { label: "Elect/Appoint Managers", statute: "Wis. Stat. § 183.0401", template: "RESOLVED, that the following persons are appointed as managers of the LLC:\n\n______" },
+    { label: "Approve Employment/Service Agreement", statute: "Wis. Stat. § 183.0301", template: "RESOLVED, that the LLC is authorized to enter into a service agreement with ______ on the terms reviewed by the [members/managers]." },
+    { label: "Approve Lease Agreement", statute: "Wis. Stat. § 183.0301", template: "RESOLVED, that the LLC is authorized to execute a lease for premises at ______." },
+    { label: "Approve Purchase/Sale of Assets", statute: "Wis. Stat. § 183.0301", template: "RESOLVED, that the LLC is authorized to [purchase/sell] the following assets: ______ for $______." },
+    { label: "Approve Tax Classification Election", statute: "IRC § 301.7701-3", template: "RESOLVED, that the LLC hereby elects to be classified as a ______ for federal tax purposes, and the proper representatives are authorized to file IRS Form 8832." },
+    { label: "Ratify Prior Actions", statute: "Wis. Stat. § 183.0301", template: "RESOLVED, that all acts and transactions of the [managers/members] since the last meeting are hereby ratified and approved." },
+    { label: "Approve Employee Benefit Plan", statute: "Wis. Stat. § 183.0301", template: "RESOLVED, that the LLC is authorized to establish the following employee benefit plan: ______" },
+    { label: "Adopt Regular Meeting Resolution", statute: "Wis. Stat. § 183.0301", template: "RESOLVED, that regular meetings of the [members/managers] shall be held on the ______ day of each ______ at ______ o'clock." },
+    { label: "Other" },
+  ],
+  "Non-Profit": [
+    { label: "Authorize a Line of Credit", statute: "Wis. Stat. § 181.0302", template: "WHEREAS, it would be in the best interests of the corporation to obtain a line of credit, and after discussion, it was\n\nRESOLVED, that the proper officers are authorized to establish a line of credit not to exceed $_______ for the corporation." },
+    { label: "Approve Budget", statute: "Wis. Stat. § 181.0302", template: "RESOLVED, that the proposed budget for fiscal year ______ in the total amount of $______ is hereby adopted." },
+    { label: "Elect Officers", statute: "Wis. Stat. § 181.0840", template: "RESOLVED, that the following persons are elected to the offices indicated:\n\nPresident: ______\nVice President: ______\nSecretary: ______\nTreasurer: ______" },
+    { label: "Elect Directors/Board Members", statute: "Wis. Stat. § 181.0803", template: "RESOLVED, that the following persons are elected as directors, to serve until the next annual meeting:\n\n______" },
+    { label: "Approve Grant Application", statute: "Wis. Stat. § 181.0302", template: "RESOLVED, that the corporation is authorized to apply for a grant from ______ in the amount of $______ for the purpose of ______." },
+    { label: "Approve Fundraising Activity", statute: "Wis. Stat. § 181.0302", template: "RESOLVED, that the corporation is authorized to conduct a ______ fundraising event on ______ at ______." },
+    { label: "Approve Conflict of Interest Policy", statute: "IRC § 501(c)(3); Wis. Stat. § 181.0831", template: "RESOLVED, that the Conflict of Interest Policy as presented is hereby adopted, and all directors and officers shall complete annual disclosure statements." },
+    { label: "Approve Lease Agreement", statute: "Wis. Stat. § 181.0302", template: "RESOLVED, that the proper officers are authorized to execute a lease for premises at ______." },
+    { label: "Approve Purchase/Sale of Assets", statute: "Wis. Stat. § 181.1202", template: "RESOLVED, that the corporation is authorized to [purchase/sell]: ______ for $______." },
+    { label: "Ratify Prior Actions", statute: "Wis. Stat. § 181.0302", template: "RESOLVED, that all acts and transactions of the officers and directors since the last meeting are hereby ratified and approved." },
+    { label: "Adopt Regular Meeting Resolution", statute: "Wis. Stat. § 181.0820", template: "RESOLVED, that regular meetings of the Board shall be held on the ______ day of each ______ at ______ o'clock." },
+    { label: "Approve Charitable Purpose Activity", statute: "IRC § 501(c)(3)", template: "RESOLVED, that the corporation is authorized to undertake the following charitable activity: ______" },
+    { label: "Other" },
+  ],
+  Partnership: [
+    { label: "Authorize a Line of Credit", template: "WHEREAS, it would be in the best interests of the partnership to obtain a line of credit, and after discussion, it was\n\nRESOLVED, that the [managing partner/general partners] are authorized to establish a line of credit not to exceed $_______." },
+    { label: "Approve Partner Distributions", template: "RESOLVED, that distributions be made to the partners in accordance with their partnership interests as follows:\n\n[Partner Name] - $[Amount]" },
+    { label: "Approve Guaranteed Payments", statute: "IRC § 707(c)", template: "RESOLVED, that guaranteed payments be made to the following partners:\n\n[Partner Name] - $[Amount]" },
+    { label: "Admit New Partner", statute: "Wis. Stat. § 178.0401", template: "RESOLVED, that ______ is admitted as a [general/limited] partner with a ______% interest, effective ______." },
+    { label: "Approve Transfer of Partnership Interest", statute: "Wis. Stat. § 178.0503", template: "RESOLVED, that the transfer of ______% partnership interest from ______ to ______ is approved." },
+    { label: "Approve Employment/Service Agreement", template: "RESOLVED, that the partnership is authorized to enter into a service agreement with ______." },
+    { label: "Approve Lease Agreement", template: "RESOLVED, that the partnership is authorized to execute a lease for premises at ______." },
+    { label: "Approve Purchase/Sale of Assets", template: "RESOLVED, that the partnership is authorized to [purchase/sell]: ______ for $______." },
+    { label: "Ratify Prior Actions", template: "RESOLVED, that all acts and transactions of the partners since the last meeting are hereby ratified and approved." },
+    { label: "Adopt Regular Meeting Resolution", template: "RESOLVED, that regular meetings of the partners shall be held on the ______ day of each ______ at ______ o'clock." },
+    { label: "Other" },
+  ],
 };
 
 interface Props {
   meetingId: string;
+  entityType: string;
 }
 
-export default function MeetingResolutions({ meetingId }: Props) {
+export default function MeetingResolutions({ meetingId, entityType }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [purpose, setPurpose] = useState("");
   const [resolutionText, setResolutionText] = useState("");
+
+  const resolutionOptions = RESOLUTION_TYPES[entityType] || RESOLUTION_TYPES["Corporation"];
 
   const { data: resolutions = [] } = useQuery({
     queryKey: ["meeting_resolutions", meetingId],
@@ -99,10 +164,13 @@ export default function MeetingResolutions({ meetingId }: Props) {
 
   const handlePurposeChange = (value: string) => {
     setPurpose(value);
-    if (RESOLUTION_TEMPLATES[value]) {
-      setResolutionText(RESOLUTION_TEMPLATES[value]);
+    const selected = resolutionOptions.find((o) => o.label === value);
+    if (selected?.template) {
+      setResolutionText(selected.template);
     }
   };
+
+  const selectedOption = resolutionOptions.find((o) => o.label === purpose);
 
   return (
     <Card>
@@ -113,7 +181,7 @@ export default function MeetingResolutions({ meetingId }: Props) {
             <CardTitle className="font-display text-base">Resolutions</CardTitle>
           </div>
           <CardDescription className="mt-1">
-            Select a purpose to auto-fill a boiler plate resolution, or create a custom one
+            Select a resolution type for this <span className="font-semibold">{entityType}</span> entity, or create a custom one
           </CardDescription>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -125,6 +193,9 @@ export default function MeetingResolutions({ meetingId }: Props) {
           <DialogContent className="max-w-xl">
             <DialogHeader>
               <DialogTitle className="font-display">Add Resolution</DialogTitle>
+              <DialogDescription>
+                Select the type of resolution for this <span className="font-semibold">{entityType}</span> entity.
+              </DialogDescription>
             </DialogHeader>
             <form
               onSubmit={(e) => {
@@ -134,15 +205,24 @@ export default function MeetingResolutions({ meetingId }: Props) {
               className="space-y-4"
             >
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">Purpose of Meeting</Label>
+                <Label className="text-xs font-medium text-muted-foreground">Purpose / Resolution Type</Label>
                 <Select value={purpose} onValueChange={handlePurposeChange}>
-                  <SelectTrigger><SelectValue placeholder="Choose a purpose..." /></SelectTrigger>
-                  <SelectContent>
-                    {RESOLUTION_PURPOSES.map((p) => (
-                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="Select resolution type..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50 max-h-[300px]">
+                    {resolutionOptions.map((opt) => (
+                      <SelectItem key={opt.label} value={opt.label}>
+                        {opt.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {selectedOption?.statute && (
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Ref: {selectedOption.statute}
+                  </p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground">Resolution</Label>
@@ -157,7 +237,7 @@ export default function MeetingResolutions({ meetingId }: Props) {
               <p className="text-xs text-muted-foreground italic">
                 If resolutions involve complex issues, it is advised to have your final documentation reviewed by your attorney or tax advisor.
               </p>
-              <Button type="submit" className="w-full" disabled={addResolution.isPending}>
+              <Button type="submit" className="w-full" disabled={addResolution.isPending || !purpose}>
                 {addResolution.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Add Resolution
               </Button>
@@ -173,26 +253,32 @@ export default function MeetingResolutions({ meetingId }: Props) {
           </div>
         ) : (
           <div className="space-y-4">
-            {resolutions.map((r) => (
-              <div key={r.id} className="rounded-lg border border-border p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-2">
-                      {r.purpose}
-                    </p>
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.resolution_text}</p>
+            {resolutions.map((r) => {
+              const match = resolutionOptions.find((o) => o.label === r.purpose);
+              return (
+                <div key={r.id} className="rounded-lg border border-border p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">
+                        {r.purpose}
+                      </p>
+                      {match?.statute && (
+                        <p className="text-[10px] text-muted-foreground mb-2">{match.statute}</p>
+                      )}
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.resolution_text}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteResolution.mutate(r.id)}
+                      className="h-8 w-8 shrink-0 text-destructive/60 hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteResolution.mutate(r.id)}
-                    className="h-8 w-8 shrink-0 text-destructive/60 hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
