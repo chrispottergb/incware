@@ -17,6 +17,8 @@ import AIComplianceTab from "@/components/company/AIComplianceTab";
 import RecordBookGenerator from "@/components/company/RecordBookGenerator";
 import OperatingAgreementGenerator from "@/components/company/OperatingAgreementGenerator";
 import BylawsGenerator from "@/components/company/BylawsGenerator";
+import NonprofitBylawsGenerator from "@/components/company/NonprofitBylawsGenerator";
+import ConflictOfInterestGenerator from "@/components/company/ConflictOfInterestGenerator";
 
 export default function CompanyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -110,6 +112,10 @@ export default function CompanyDetail() {
               { value: "ai-compliance", label: "AI Compliance" },
               ...(company.entity_type === "LLC" ? [{ value: "operating-agreement", label: "Operating Agreement" }] : []),
               ...((company.entity_type === "Corporation" || company.entity_type === "S-Corp") ? [{ value: "bylaws", label: "Bylaws" }] : []),
+              ...(company.entity_type === "Non-Profit" ? [
+                { value: "nonprofit-bylaws", label: "Bylaws" },
+                { value: "conflict-of-interest", label: "Conflict of Interest" },
+              ] : []),
               { value: "record-book", label: "Record Book" },
             ].map((tab) => (
               <TabsTrigger
@@ -155,6 +161,16 @@ export default function CompanyDetail() {
           <TabsContent value="bylaws" className="mt-5">
             <BylawsGenerator companyId={company.id} companyName={company.name} company={company} />
           </TabsContent>
+        )}
+        {company.entity_type === "Non-Profit" && (
+          <>
+            <TabsContent value="nonprofit-bylaws" className="mt-5">
+              <NonprofitBylawsGenerator companyId={company.id} companyName={company.name} company={company} />
+            </TabsContent>
+            <TabsContent value="conflict-of-interest" className="mt-5">
+              <ConflictOfInterestGenerator companyId={company.id} companyName={company.name} company={company} />
+            </TabsContent>
+          </>
         )}
         <TabsContent value="record-book" className="mt-5">
           <RecordBookGenerator companyId={company.id} companyName={company.name} entityType={company.entity_type} />
