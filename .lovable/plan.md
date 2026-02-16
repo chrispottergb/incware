@@ -1,164 +1,91 @@
 
 
-# EU AI Act Compliance -- AI Usage Documentation System
+# AI-Generated Digital Corporate Record Book
 
-## Background: EU AI Act Requirements
+## Overview
+Build a one-click "Generate Corporate Record Book" feature that uses AI (Lovable AI Gateway) to compile all of a company's data into a beautifully formatted, comprehensive digital corporate record book PDF. The record book will be structured for official use and shareable with the IRS, state departments of revenue, and the Wisconsin DFI.
 
-The EU AI Act (Regulation 2024/1689), entering full force August 2, 2026, requires companies that deploy AI systems to maintain detailed documentation. Key obligations from Article 26 (Deployer Obligations) include:
+## What It Does
+- Pulls all company data (incorporation, officers, directors, shareholders/members, meetings, stock/membership certificates, financials, compliance, AI compliance, timeline) into a single, professionally formatted PDF document
+- Uses AI to generate a polished executive summary, narrative descriptions, and compliance commentary
+- Includes a Table of Contents, section dividers, and official formatting suitable for government submission
+- Stores the generated PDF in the existing `generated-documents` storage bucket
+- Provides a shareable link for one-click sharing with IRS, state departments, or other parties
 
-- **Human Oversight** (Art. 26.2): Assign oversight to persons with necessary competence, training, and authority
-- **Record-Keeping** (Art. 26.6): Keep automatically generated logs for at least 6 months
-- **Monitoring** (Art. 26.5): Monitor AI system operation and report risks
-- **Transparency** (Art. 26.11): Inform affected persons they are subject to AI use
-- **Technical Documentation** (Art. 11, Annex IV): Maintain documentation of AI system purpose, capabilities, and limitations
-- **Risk Management** (Art. 9): Establish and maintain a risk management system
+## Architecture
 
-## What We Will Build
+### 1. New Edge Function: `generate-record-book`
+- Accepts a `company_id` parameter
+- Fetches ALL company-related data from the database (companies, officers, directors, shareholders, stock certificates, share transactions, meetings + all sub-tables, bills of sale, business sales, AI systems, timeline events, document registry)
+- Calls Lovable AI (google/gemini-3-flash-preview) to generate:
+  - An executive summary of the company's corporate standing
+  - A compliance narrative based on Wisconsin statutes (Ch. 180 for Corps, Ch. 183 for LLCs)
+  - Section introductions and any flagged concerns
+- Returns the structured AI content as JSON to the frontend
 
-A new **"AI Compliance"** tab on the Company Detail page and supporting database infrastructure to track and document all AI usage within each company's operations.
+### 2. New PDF Generator: `src/lib/record-book-pdf.ts`
+- Builds a multi-section PDF using jsPDF + jspdf-autotable (existing dependencies)
+- Sections include:
+  1. **Cover Page** -- Company name, entity type, state, EIN placeholder, generation date, "CORPORATE RECORD BOOK" title
+  2. **Table of Contents** -- Auto-generated with page numbers
+  3. **Executive Summary** -- AI-generated narrative of the company's status
+  4. **Articles of Incorporation / Organization** -- Key incorporation data
+  5. **Officers & Directors / Managers & Members** -- Dynamic based on entity type
+  6. **Shareholders / Members Registry** -- Full list with addresses, shares/units
+  7. **Stock Certificates / Membership Interest Certificates** -- All certificates with status
+  8. **Stock Ledger / Interest Ledger** -- Full transaction history
+  9. **Meeting Minutes** -- All meetings with resolutions, financials, attendees
+  10. **Bills of Sale / Interest Transfers** -- All sales records
+  11. **Business Sales** -- Asset/stock sales history
+  12. **Compliance Checklist** -- Wisconsin statute compliance status (reuses existing logic)
+  13. **AI Compliance (EU AI Act)** -- If applicable, AI systems registry and oversight
+  14. **Corporate Timeline** -- Chronological event history
+  15. **Appendix: Document Registry** -- List of all filed documents
 
----
+### 3. New UI Component: `src/components/company/RecordBookGenerator.tsx`
+- Button on the CompanyDetail page (new "Record Book" tab or prominent button in header)
+- Shows a progress indicator while generating
+- Previews the PDF in-browser and offers download
+- "Share" button that generates a time-limited shareable URL from the storage bucket
 
-## Step 1: Database Tables
-
-### Table: `ai_systems`
-Registers each AI system used by a company.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid (PK) | |
-| company_id | uuid (FK -> companies) | |
-| system_name | text | Name of the AI system (e.g., "ChatGPT", "EntityIQ Assistant") |
-| provider | text | AI provider/vendor |
-| risk_level | text | "minimal", "limited", "high", "unacceptable" |
-| purpose | text | Intended purpose and use case |
-| deployment_date | date | When the system was put into service |
-| status | text | "active", "suspended", "decommissioned" |
-| instructions_for_use | text | Provider's instructions summary |
-| data_categories | text | Types of data processed |
-| created_at | timestamptz | |
-| updated_at | timestamptz | |
-
-### Table: `ai_oversight_persons`
-Tracks the responsible human(s) assigned to oversee each AI system (Art. 26.2).
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid (PK) | |
-| ai_system_id | uuid (FK -> ai_systems) | |
-| person_name | text | Full name |
-| title | text | Job title |
-| competence_description | text | Relevant training/qualifications |
-| authority_scope | text | What authority they have to intervene |
-| assigned_date | date | |
-| status | text | "active", "inactive" |
-| created_at | timestamptz | |
-
-### Table: `ai_usage_logs`
-Documents each use of AI in company operations (Art. 26.6 -- 6-month minimum retention).
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid (PK) | |
-| ai_system_id | uuid (FK -> ai_systems) | |
-| company_id | uuid (FK -> companies) | |
-| usage_date | timestamptz | When AI was used |
-| usage_type | text | Category: "decision-support", "content-generation", "data-analysis", etc. |
-| description | text | What the AI was used for |
-| input_summary | text | Summary of input data (not raw data) |
-| output_summary | text | Summary of AI output |
-| human_reviewer | text | Person who reviewed the output |
-| review_decision | text | "approved", "modified", "rejected" |
-| review_notes | text | Notes on modifications or rejection reasons |
-| affected_persons_notified | boolean | Were affected individuals informed? (Art. 26.11) |
-| created_at | timestamptz | |
-
-### Table: `ai_risk_incidents`
-Tracks risk events and incidents (Art. 26.5).
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid (PK) | |
-| ai_system_id | uuid (FK -> ai_systems) | |
-| company_id | uuid (FK -> companies) | |
-| incident_date | date | |
-| severity | text | "low", "medium", "high", "serious" |
-| description | text | What happened |
-| actions_taken | text | Corrective actions |
-| provider_notified | boolean | Was the AI provider informed? |
-| authority_notified | boolean | Was the market surveillance authority informed? |
-| reported_by | text | Person who reported |
-| resolution_date | date | |
-| status | text | "open", "investigating", "resolved" |
-| created_at | timestamptz | |
-
-All tables will have RLS policies scoped to the company owner (same pattern as existing tables).
-
----
-
-## Step 2: Storage Bucket
-
-Create a **`ai-compliance-docs`** storage bucket with folders for:
-- `/company-{id}/technical-docs/` -- Technical documentation, instructions for use
-- `/company-{id}/risk-assessments/` -- Risk assessment reports
-- `/company-{id}/dpia/` -- Data Protection Impact Assessments (Art. 26.9)
-- `/company-{id}/incident-reports/` -- Formal incident report documents
-
-The bucket will have RLS policies so users can only access documents for their own companies.
-
----
-
-## Step 3: Frontend -- AI Compliance Tab
-
-Add a new **"AI Compliance"** tab to the Company Detail page with sub-sections:
-
-### 3a. AI Systems Registry
-- Table listing all registered AI systems with risk level badges
-- Add/Edit dialog to register new AI systems
-- Status indicators (active/suspended/decommissioned)
-
-### 3b. Human Oversight Assignments
-- For each AI system, show the assigned oversight person(s)
-- Name, title, competence summary, authority scope
-- Clearly highlights the **liable responsible human** per system
-
-### 3c. Usage Log
-- Chronological log of all AI usage events
-- Filterable by system, date range, usage type
-- Add entry form: what AI was used for, who reviewed output, decision made
-- Indicator for whether affected persons were notified
-
-### 3d. Risk & Incidents
-- List of reported incidents with severity badges
-- Track whether provider and authorities were notified
-- Resolution tracking
-
-### 3e. Document Upload
-- Upload technical documentation, risk assessments, DPIAs
-- Files stored in the `ai-compliance-docs` bucket
-- Download/preview uploaded documents
-
----
-
-## Step 4: File Structure
-
-New files to create:
-- `src/components/company/AIComplianceTab.tsx` -- Main tab container with sub-tabs
-- `src/components/company/ai-compliance/AISystemsRegistry.tsx`
-- `src/components/company/ai-compliance/AIOversightPersons.tsx`
-- `src/components/company/ai-compliance/AIUsageLog.tsx`
-- `src/components/company/ai-compliance/AIRiskIncidents.tsx`
-- `src/components/company/ai-compliance/AIComplianceDocs.tsx`
-
-Modified files:
-- `src/pages/CompanyDetail.tsx` -- Add the AI Compliance tab
-
----
+### 4. Shareable Link Feature
+- Uploads the generated PDF to the `generated-documents` Supabase storage bucket
+- Creates a signed URL (e.g., 30-day expiry) for sharing
+- Copy-to-clipboard functionality for easy sharing with IRS/state departments
+- Records the generation in the `document_registry` table for audit trail
 
 ## Technical Details
 
-- 4 new database tables with RLS policies matching the existing pattern (company owner scoped)
-- 1 new storage bucket with RLS policies for authenticated users on their own company files
-- Migration SQL for all tables, foreign keys, RLS policies, and updated_at triggers
-- All frontend components follow existing patterns (shadcn/ui, Tanstack Query, Supabase client)
+### Edge Function (`supabase/functions/generate-record-book/index.ts`)
+- Authenticates the request using the user's JWT
+- Uses `SUPABASE_SERVICE_ROLE_KEY` to fetch all company data
+- Calls Lovable AI Gateway with a structured prompt asking for executive summary and compliance narrative
+- Handles 429/402 rate limit errors gracefully
+- Returns JSON with AI-generated text sections
+
+### PDF Structure (using existing jsPDF patterns)
+- Reuses `addDFIHeader` / `addDFIFooter` styling from `meeting-pdf-export.ts`
+- Professional formatting: Wisconsin DFI-style headers, section dividers, page numbers
+- Entity-type-aware labels (Shareholders vs Members, Shares vs Units, etc.)
+- Color-coded compliance status indicators
+
+### Database Changes
+- No new tables needed; uses existing `document_registry` to log generated record books
+- The PDF file is stored in the existing `generated-documents` bucket (not in the database)
+
+### CompanyDetail Integration
+- Add a "Record Book" tab or a prominent "Generate Record Book" button in the company header
+- New route not needed; stays within the existing CompanyDetail page
+
+### Config Updates
+- Update `supabase/config.toml` to register the new edge function with `verify_jwt = true`
+
+### Files to Create
+- `supabase/functions/generate-record-book/index.ts` -- Edge function for AI content generation
+- `src/lib/record-book-pdf.ts` -- PDF generation logic
+- `src/components/company/RecordBookGenerator.tsx` -- UI component
+
+### Files to Modify
+- `src/pages/CompanyDetail.tsx` -- Add Record Book tab/button
+- `supabase/config.toml` -- Register edge function
 
