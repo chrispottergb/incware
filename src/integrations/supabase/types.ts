@@ -589,18 +589,21 @@ export type Database = {
       meeting_amendments: {
         Row: {
           amendment_text: string
+          amendment_type: string
           created_at: string
           id: string
           meeting_id: string
         }
         Insert: {
           amendment_text: string
+          amendment_type?: string
           created_at?: string
           id?: string
           meeting_id: string
         }
         Update: {
           amendment_text?: string
+          amendment_type?: string
           created_at?: string
           id?: string
           meeting_id?: string

@@ -9,6 +9,7 @@ import MeetingInfoCard from "@/components/meeting/MeetingInfoCard";
 import MeetingFinancials from "@/components/meeting/MeetingFinancials";
 import MeetingSubTable from "@/components/meeting/MeetingSubTable";
 import MeetingResolutions from "@/components/meeting/MeetingResolutions";
+import MeetingAmendments from "@/components/meeting/MeetingAmendments";
 
 export default function MeetingDetail() {
   const { id, meetingId } = useParams<{ id: string; meetingId: string }>();
@@ -166,9 +167,7 @@ export default function MeetingDetail() {
           />
         </TabsContent>
         <TabsContent value="amendments" className="mt-5">
-          <MeetingSubTable meetingId={meeting.id} tableName="meeting_amendments" title="Amendments"
-            columns={[{ key: "amendment_text", label: "Amendment", required: true, wide: true }]}
-          />
+          <MeetingAmendments meetingId={meeting.id} entityType={company?.entity_type || "Corporation"} />
         </TabsContent>
         <TabsContent value="resolutions" className="mt-5">
           <MeetingResolutions meetingId={meeting.id} />
