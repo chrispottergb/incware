@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Loader2, FileText } from "lucide-react";
+import { Plus, Trash2, Loader2, FileText, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 const RESOLUTION_TYPES: Record<string, { label: string; statute?: string; template?: string }[]> = {
@@ -113,6 +113,7 @@ interface Props {
 export default function MeetingResolutions({ meetingId, entityType }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [purpose, setPurpose] = useState("");
   const [resolutionText, setResolutionText] = useState("");
 
@@ -142,10 +143,24 @@ export default function MeetingResolutions({ meetingId, entityType }: Props) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meeting_resolutions", meetingId] });
-      setDialogOpen(false);
-      setPurpose("");
-      setResolutionText("");
+      closeDialog();
       toast.success("Resolution added!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const updateResolution = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("meeting_resolutions").update({
+        purpose,
+        resolution_text: resolutionText,
+      }).eq("id", editingId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["meeting_resolutions", meetingId] });
+      closeDialog();
+      toast.success("Resolution updated!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -162,14 +177,40 @@ export default function MeetingResolutions({ meetingId, entityType }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const handlePurposeChange = (value: string) => {
-    setPurpose(value);
-    const selected = resolutionOptions.find((o) => o.label === value);
-    if (selected?.template) {
-      setResolutionText(selected.template);
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setEditingId(null);
+    setPurpose("");
+    setResolutionText("");
+  };
+
+  const openEdit = (r: any) => {
+    setEditingId(r.id);
+    setPurpose(r.purpose || "");
+    setResolutionText(r.resolution_text || "");
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingId) {
+      updateResolution.mutate();
+    } else {
+      addResolution.mutate();
     }
   };
 
+  const handlePurposeChange = (value: string) => {
+    setPurpose(value);
+    if (!editingId) {
+      const selected = resolutionOptions.find((o) => o.label === value);
+      if (selected?.template) {
+        setResolutionText(selected.template);
+      }
+    }
+  };
+
+  const isPending = addResolution.isPending || updateResolution.isPending;
   const selectedOption = resolutionOptions.find((o) => o.label === purpose);
 
   return (
@@ -184,26 +225,20 @@ export default function MeetingResolutions({ meetingId, entityType }: Props) {
             Select a resolution type for this <span className="font-semibold">{entityType}</span> entity, or create a custom one
           </CardDescription>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setPurpose(""); setResolutionText(""); }}>
               <Plus className="mr-2 h-4 w-4" /> Add
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-xl">
             <DialogHeader>
-              <DialogTitle className="font-display">Add Resolution</DialogTitle>
+              <DialogTitle className="font-display">{editingId ? "Edit Resolution" : "Add Resolution"}</DialogTitle>
               <DialogDescription>
-                Select the type of resolution for this <span className="font-semibold">{entityType}</span> entity.
+                {editingId ? "Update" : "Select"} the type of resolution for this <span className="font-semibold">{entityType}</span> entity.
               </DialogDescription>
             </DialogHeader>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                addResolution.mutate();
-              }}
-              className="space-y-4"
-            >
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground">Purpose / Resolution Type</Label>
                 <Select value={purpose} onValueChange={handlePurposeChange}>
@@ -237,9 +272,9 @@ export default function MeetingResolutions({ meetingId, entityType }: Props) {
               <p className="text-xs text-muted-foreground italic">
                 If resolutions involve complex issues, it is advised to have your final documentation reviewed by your attorney or tax advisor.
               </p>
-              <Button type="submit" className="w-full" disabled={addResolution.isPending || !purpose}>
-                {addResolution.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Add Resolution
+              <Button type="submit" className="w-full" disabled={isPending || !purpose}>
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {editingId ? "Save Changes" : "Add Resolution"}
               </Button>
             </form>
           </DialogContent>
@@ -267,14 +302,24 @@ export default function MeetingResolutions({ meetingId, entityType }: Props) {
                       )}
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.resolution_text}</p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteResolution.mutate(r.id)}
-                      className="h-8 w-8 shrink-0 text-destructive/60 hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEdit(r)}
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteResolution.mutate(r.id)}
+                        className="h-8 w-8 text-destructive/60 hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               );
