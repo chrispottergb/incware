@@ -17,6 +17,7 @@ import {
 import { Loader2, Save, Shield, Building2, Share2, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import WIComplianceChecklist from "./WIComplianceChecklist";
+import SectionPdfActions from "./SectionPdfActions";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "S-Corp", "Non-Profit", "Partnership"];
 const US_STATES = [
@@ -121,11 +122,24 @@ export default function IncorporationTab({ company }: Props) {
       {/* Corporate Status Verification */}
       <Card className="border-l-2 border-l-warning">
         <CardHeader className="pb-2 pt-4 px-4">
-          <div className="flex items-center gap-2">
-            <Shield className="h-3.5 w-3.5 text-warning" />
-            <CardTitle className="card-section-title">Verification of Corporate Status</CardTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Shield className="h-3.5 w-3.5 text-warning" />
+                <CardTitle className="card-section-title">Verification of Corporate Status</CardTitle>
+              </div>
+              <CardDescription className="text-[11px]">Always verify corporate status with the Secretary of State</CardDescription>
+            </div>
+            <SectionPdfActions config={{
+              title: "Verification of Corporate Status",
+              companyName: company.name,
+              fields: [
+                { label: "Corporate Status", value: form.corporate_status },
+                { label: "Verification Date", value: form.verification_date ? new Date(form.verification_date + "T00:00:00").toLocaleDateString() : "" },
+                { label: "Annual Report Filed Year", value: form.annual_report_year },
+              ],
+            }} />
           </div>
-          <CardDescription className="text-[11px]">Always verify corporate status with the Secretary of State</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-3 px-4 pb-4">
           <div className="field-group">
@@ -154,9 +168,23 @@ export default function IncorporationTab({ company }: Props) {
       {/* Company Information */}
       <Card>
         <CardHeader className="pb-2 pt-4 px-4">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-3.5 w-3.5 text-primary" />
-            <CardTitle className="card-section-title">Company Information</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-3.5 w-3.5 text-primary" />
+              <CardTitle className="card-section-title">Company Information</CardTitle>
+            </div>
+            <SectionPdfActions config={{
+              title: "Company Information",
+              companyName: company.name,
+              fields: [
+                { label: "Company Name", value: form.name },
+                { label: "Entity Type", value: form.entity_type },
+                { label: "State of Incorporation", value: form.state_of_incorporation },
+                { label: "Incorporation Date", value: form.incorporation_date ? new Date(form.incorporation_date + "T00:00:00").toLocaleDateString() : "" },
+                { label: "Fiscal Year End", value: form.fiscal_year_end },
+                { label: "Scheduled Annual Meeting", value: form.scheduled_annual_meeting },
+              ],
+            }} />
           </div>
         </CardHeader>
         <CardContent className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 px-4 pb-4">
@@ -204,9 +232,23 @@ export default function IncorporationTab({ company }: Props) {
       {/* Shares & Elections */}
       <Card>
         <CardHeader className="pb-2 pt-4 px-4">
-          <div className="flex items-center gap-2">
-            <Share2 className="h-3.5 w-3.5 text-primary" />
-            <CardTitle className="card-section-title">Shares & Elections</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Share2 className="h-3.5 w-3.5 text-primary" />
+              <CardTitle className="card-section-title">Shares & Elections</CardTitle>
+            </div>
+            <SectionPdfActions config={{
+              title: "Shares & Elections",
+              companyName: company.name,
+              fields: [
+                { label: "Authorized Shares", value: form.authorized_shares },
+                { label: "Par Value Type", value: form.par_value_type === "par" ? "Par Value" : "No Par Value" },
+                { label: "Par Value ($)", value: form.par_value },
+                { label: "S-Election Date", value: form.s_election_date ? new Date(form.s_election_date + "T00:00:00").toLocaleDateString() : "" },
+                { label: "Seal", value: form.seal_type === "seal" ? "Seal" : "No Seal" },
+                { label: "Section 1244 Election", value: form.election_1244 ? "Yes" : "No" },
+              ],
+            }} />
           </div>
         </CardHeader>
         <CardContent className="px-4 pb-4">
@@ -263,11 +305,26 @@ export default function IncorporationTab({ company }: Props) {
       {/* Registered Agent */}
       <Card>
         <CardHeader className="pb-2 pt-4 px-4">
-          <div className="flex items-center gap-2">
-            <UserCheck className="h-3.5 w-3.5 text-primary" />
-            <CardTitle className="card-section-title">Registered Agent</CardTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <UserCheck className="h-3.5 w-3.5 text-primary" />
+                <CardTitle className="card-section-title">Registered Agent</CardTitle>
+              </div>
+              <CardDescription className="text-[11px]">Statutory agent on file with the Secretary of State</CardDescription>
+            </div>
+            <SectionPdfActions config={{
+              title: "Registered Agent",
+              companyName: company.name,
+              fields: [
+                { label: "Agent Name", value: form.registered_agent_name },
+                { label: "Address", value: form.registered_agent_address },
+                { label: "City", value: form.registered_agent_city },
+                { label: "State", value: form.registered_agent_state },
+                { label: "Zip", value: form.registered_agent_zip },
+              ],
+            }} />
           </div>
-          <CardDescription className="text-[11px]">Statutory agent on file with the Secretary of State</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-x-4 gap-y-3 sm:grid-cols-2 px-4 pb-4">
           <div className="field-group sm:col-span-2">
@@ -305,9 +362,22 @@ export default function IncorporationTab({ company }: Props) {
       {/* Company Address */}
       <Card>
         <CardHeader className="pb-2 pt-4 px-4">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-3.5 w-3.5 text-primary" />
-            <CardTitle className="card-section-title">Company Address</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-3.5 w-3.5 text-primary" />
+              <CardTitle className="card-section-title">Company Address</CardTitle>
+            </div>
+            <SectionPdfActions config={{
+              title: "Company Address",
+              companyName: company.name,
+              fields: [
+                { label: "Address", value: form.address },
+                { label: "City", value: form.city },
+                { label: "State", value: form.state },
+                { label: "Zip", value: form.zip },
+                { label: "Phone", value: form.phone },
+              ],
+            }} />
           </div>
         </CardHeader>
         <CardContent className="grid gap-x-4 gap-y-3 sm:grid-cols-2 px-4 pb-4">

@@ -32,6 +32,7 @@ import {
 import { Plus, Trash2, Loader2, Save, Users, FileText } from "lucide-react";
 import CompanyAssetsSection from "@/components/company/CompanyAssetsSection";
 import { toast } from "sonner";
+import SectionPdfActions from "./SectionPdfActions";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
@@ -290,11 +291,31 @@ export default function OrganizationTab({ companyId, company }: Props) {
       {/* Filing & Articles Details */}
       <Card>
         <CardHeader className="pb-2 pt-4 px-4">
-          <div className="flex items-center gap-2">
-            <FileText className="h-3.5 w-3.5 text-primary" />
-            <CardTitle className="card-section-title">Filing & Articles Details</CardTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <FileText className="h-3.5 w-3.5 text-primary" />
+                <CardTitle className="card-section-title">Filing & Articles Details</CardTitle>
+              </div>
+              <CardDescription className="text-[11px]">Information used to prepare articles of incorporation/organization</CardDescription>
+            </div>
+            <SectionPdfActions config={{
+              title: "Filing & Articles Details",
+              companyName: company.name,
+              fields: [
+                { label: "2nd Name Choice", value: filingForm.second_name_choice },
+                { label: "Filing Date", value: filingForm.filing_date ? new Date(filingForm.filing_date + "T00:00:00").toLocaleDateString() : "" },
+                { label: "Business Purpose", value: filingForm.business_purpose },
+                { label: "Accounting Method", value: filingForm.accounting_method },
+                { label: "SIC Code", value: filingForm.sic_code },
+                { label: "First Year Annual Meeting", value: filingForm.first_year_annual_meeting },
+                { label: "Initial # of Directors", value: filingForm.initial_directors_count },
+                { label: "Max Directors Allowed", value: filingForm.max_directors_allowed },
+                { label: "Max VPs Allowed", value: filingForm.max_vps_allowed },
+                { label: "Additional Provisions", value: filingForm.additional_provisions },
+              ],
+            }} />
           </div>
-          <CardDescription className="text-[11px]">Information used to prepare articles of incorporation/organization</CardDescription>
         </CardHeader>
         <CardContent className="px-4 pb-4">
           <form
@@ -376,6 +397,15 @@ export default function OrganizationTab({ companyId, company }: Props) {
             </div>
             <CardDescription className="text-[11px] mt-0.5">Directors serve at the organizational meeting until the board is officially elected</CardDescription>
           </div>
+          <div className="flex items-center gap-1">
+            <SectionPdfActions config={{
+              title: "Initial List of Directors",
+              companyName: company.name,
+              table: {
+                headers: ["Director Name", "Business Address", "City", "State", "Zip"],
+                rows: directors.map((d) => [d.name, d.address || "—", d.city || "—", d.state || "—", d.zip || "—"]),
+              },
+            }} />
           <Dialog open={directorDialog} onOpenChange={setDirectorDialog}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline" className="h-7 text-xs">
@@ -429,6 +459,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </CardHeader>
         <CardContent className="px-4 pb-4">
           {directors.length === 0 ? (
@@ -474,19 +505,31 @@ export default function OrganizationTab({ companyId, company }: Props) {
       {/* Officers */}
       <Card>
         <CardHeader className="pb-2 pt-4 px-4">
-          <div className="flex items-center gap-2">
-            <Users className="h-3.5 w-3.5 text-primary" />
-            <CardTitle className="card-section-title">
-              {company.entity_type === "LLC" ? "Managers / Officers" : company.entity_type === "Partnership" ? "Partners" : company.entity_type === "Non-Profit" ? "Officers" : "Officers"}
-            </CardTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Users className="h-3.5 w-3.5 text-primary" />
+                <CardTitle className="card-section-title">
+                  {company.entity_type === "LLC" ? "Managers / Officers" : company.entity_type === "Partnership" ? "Partners" : "Officers"}
+                </CardTitle>
+              </div>
+              <CardDescription className="text-[11px] mt-0.5">
+                {company.entity_type === "LLC" && "Manager-managed or member-managed officers per Wis. Stat. § 183.0401"}
+                {company.entity_type === "Corporation" && "Officers per Wis. Stat. § 180.0840"}
+                {company.entity_type === "S-Corp" && "Officers per Wis. Stat. § 180.0840"}
+                {company.entity_type === "Non-Profit" && "Officers per Wis. Stat. § 181.0840"}
+                {company.entity_type === "Partnership" && "Partners per Wis. Stat. § 178.0401"}
+              </CardDescription>
+            </div>
+            <SectionPdfActions config={{
+              title: company.entity_type === "LLC" ? "Managers / Officers" : "Officers",
+              companyName: company.name,
+              fields: getOfficerFields(company.entity_type).map((f) => ({
+                label: f.label,
+                value: (officerForm as any)[f.key] || "",
+              })),
+            }} />
           </div>
-          <CardDescription className="text-[11px] mt-0.5">
-            {company.entity_type === "LLC" && "Manager-managed or member-managed officers per Wis. Stat. § 183.0401"}
-            {company.entity_type === "Corporation" && "Officers per Wis. Stat. § 180.0840"}
-            {company.entity_type === "S-Corp" && "Officers per Wis. Stat. § 180.0840"}
-            {company.entity_type === "Non-Profit" && "Officers per Wis. Stat. § 181.0840"}
-            {company.entity_type === "Partnership" && "Partners per Wis. Stat. § 178.0401"}
-          </CardDescription>
         </CardHeader>
         <CardContent className="px-4 pb-4">
           <form
