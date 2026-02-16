@@ -7,6 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -21,13 +28,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 interface Column {
   key: string;
   label: string;
-  type?: "number" | "text";
+  type?: "number" | "text" | "select";
+  options?: string[];
   required?: boolean;
   wide?: boolean;
 }
@@ -42,6 +50,7 @@ interface Props {
 export default function MeetingSubTable({ meetingId, tableName, title, columns }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
 
   const { data: rows = [] } = useQuery({
@@ -57,25 +66,43 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns }
     },
   });
 
+  const buildPayload = () => {
+    const payload: Record<string, any> = { meeting_id: meetingId };
+    columns.forEach((col) => {
+      const val = form[col.key] || "";
+      if (col.type === "number") {
+        payload[col.key] = val ? parseFloat(val) : null;
+      } else {
+        payload[col.key] = val || null;
+      }
+    });
+    return payload;
+  };
+
   const addRow = useMutation({
     mutationFn: async () => {
-      const payload: Record<string, any> = { meeting_id: meetingId };
-      columns.forEach((col) => {
-        const val = form[col.key] || "";
-        if (col.type === "number") {
-          payload[col.key] = val ? parseFloat(val) : null;
-        } else {
-          payload[col.key] = val || null;
-        }
-      });
-      const { error } = await supabase.from(tableName as any).insert(payload as any);
+      const { error } = await supabase.from(tableName as any).insert(buildPayload() as any);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [tableName, meetingId] });
-      setDialogOpen(false);
-      setForm({});
+      closeDialog();
       toast.success("Added!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const updateRow = useMutation({
+    mutationFn: async () => {
+      const payload = buildPayload();
+      delete payload.meeting_id;
+      const { error } = await supabase.from(tableName as any).update(payload as any).eq("id", editingId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [tableName, meetingId] });
+      closeDialog();
+      toast.success("Updated!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -92,51 +119,91 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns }
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setEditingId(null);
+    setForm({});
+  };
+
+  const openEdit = (row: any) => {
+    setEditingId(row.id);
+    const f: Record<string, string> = {};
+    columns.forEach((col) => {
+      f[col.key] = row[col.key] != null ? String(row[col.key]) : "";
+    });
+    setForm(f);
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingId) {
+      updateRow.mutate();
+    } else {
+      addRow.mutate();
+    }
+  };
+
+  const isPending = addRow.isPending || updateRow.isPending;
+
+  const renderField = (col: Column) => {
+    if (col.type === "select" && col.options) {
+      return (
+        <Select value={form[col.key] ?? ""} onValueChange={(v) => setForm((p) => ({ ...p, [col.key]: v }))}>
+          <SelectTrigger className="bg-background"><SelectValue placeholder={`Select ${col.label}...`} /></SelectTrigger>
+          <SelectContent className="bg-popover z-50 max-h-[300px]">
+            {col.options.map((opt) => (
+              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    if (col.wide) {
+      return (
+        <Textarea
+          value={form[col.key] ?? ""}
+          onChange={(e) => setForm((p) => ({ ...p, [col.key]: e.target.value }))}
+          required={col.required}
+          rows={3}
+        />
+      );
+    }
+    return (
+      <Input
+        type={col.type === "number" ? "number" : "text"}
+        step={col.type === "number" ? "0.01" : undefined}
+        value={form[col.key] ?? ""}
+        onChange={(e) => setForm((p) => ({ ...p, [col.key]: e.target.value }))}
+        required={col.required}
+      />
+    );
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <CardTitle className="font-display text-base">{title}</CardTitle>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setForm({}); }}>
               <Plus className="mr-2 h-4 w-4" /> Add
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle className="font-display">Add {title}</DialogTitle>
+              <DialogTitle className="font-display">{editingId ? `Edit ${title}` : `Add ${title}`}</DialogTitle>
             </DialogHeader>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                addRow.mutate();
-              }}
-              className="space-y-4"
-            >
+            <form onSubmit={handleSubmit} className="space-y-4">
               {columns.map((col) => (
                 <div key={col.key} className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">{col.label}</Label>
-                  {col.wide ? (
-                    <Textarea
-                      value={form[col.key] ?? ""}
-                      onChange={(e) => setForm((p) => ({ ...p, [col.key]: e.target.value }))}
-                      required={col.required}
-                      rows={3}
-                    />
-                  ) : (
-                    <Input
-                      type={col.type === "number" ? "number" : "text"}
-                      step={col.type === "number" ? "0.01" : undefined}
-                      value={form[col.key] ?? ""}
-                      onChange={(e) => setForm((p) => ({ ...p, [col.key]: e.target.value }))}
-                      required={col.required}
-                    />
-                  )}
+                  {renderField(col)}
                 </div>
               ))}
-              <Button type="submit" className="w-full" disabled={addRow.isPending}>
-                {addRow.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Add
+              <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {editingId ? "Save Changes" : "Add"}
               </Button>
             </form>
           </DialogContent>
@@ -157,7 +224,7 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns }
                       {col.label}
                     </TableHead>
                   ))}
-                  <TableHead className="w-12" />
+                  <TableHead className="w-20" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -171,14 +238,24 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns }
                       </TableCell>
                     ))}
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteRow.mutate(row.id)}
-                        className="h-8 w-8 text-destructive/60 hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEdit(row)}
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteRow.mutate(row.id)}
+                          className="h-8 w-8 text-destructive/60 hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

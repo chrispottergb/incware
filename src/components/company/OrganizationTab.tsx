@@ -40,6 +40,77 @@ const US_STATES = [
   "VA","WA","WV","WI","WY","DC",
 ];
 
+// Entity-type-specific officer field labels
+function getOfficerFields(entityType: string) {
+  switch (entityType) {
+    case "LLC":
+      return [
+        { key: "president", label: "Managing Member / Manager", placeholder: "Name" },
+        { key: "vice_president", label: "Assistant Manager", placeholder: "Name" },
+        { key: "secretary", label: "Secretary / Organizer", placeholder: "Name" },
+        { key: "treasurer", label: "Treasurer / Financial Manager", placeholder: "Name" },
+      ];
+    case "Non-Profit":
+      return [
+        { key: "president", label: "President / Chair", placeholder: "Name" },
+        { key: "vice_president", label: "Vice President / Vice Chair", placeholder: "Name" },
+        { key: "secretary", label: "Secretary", placeholder: "Name" },
+        { key: "treasurer", label: "Treasurer", placeholder: "Name" },
+      ];
+    case "Partnership":
+      return [
+        { key: "president", label: "Managing Partner / General Partner", placeholder: "Name" },
+        { key: "vice_president", label: "Partner", placeholder: "Name" },
+        { key: "secretary", label: "Secretary (if applicable)", placeholder: "Name" },
+        { key: "treasurer", label: "Treasurer / Financial Partner", placeholder: "Name" },
+      ];
+    case "S-Corp":
+      return [
+        { key: "president", label: "President / CEO", placeholder: "Name" },
+        { key: "vice_president", label: "Vice President", placeholder: "Name" },
+        { key: "secretary", label: "Secretary", placeholder: "Name" },
+        { key: "treasurer", label: "Treasurer / CFO", placeholder: "Name" },
+      ];
+    case "Corporation":
+    default:
+      return [
+        { key: "president", label: "President / CEO", placeholder: "Name" },
+        { key: "vice_president", label: "Vice President", placeholder: "Name" },
+        { key: "secretary", label: "Secretary", placeholder: "Name" },
+        { key: "treasurer", label: "Treasurer / CFO", placeholder: "Name" },
+      ];
+  }
+}
+
+// Entity-type-specific officer title dropdown options for meeting officers
+export const OFFICER_TITLE_OPTIONS: Record<string, string[]> = {
+  Corporation: [
+    "President", "CEO", "Vice President", "Secretary", "Treasurer", "CFO",
+    "COO", "CTO", "Assistant Secretary", "Assistant Treasurer",
+    "Executive Vice President", "Senior Vice President",
+  ],
+  "S-Corp": [
+    "President", "CEO", "Vice President", "Secretary", "Treasurer", "CFO",
+    "COO", "CTO", "Assistant Secretary", "Assistant Treasurer",
+    "Executive Vice President", "Senior Vice President",
+  ],
+  LLC: [
+    "Managing Member", "Manager", "Assistant Manager", "Secretary",
+    "Treasurer", "Financial Manager", "Organizer", "Member-Manager",
+    "Chief Manager", "Operations Manager",
+  ],
+  "Non-Profit": [
+    "President", "Chair", "Vice President", "Vice Chair", "Secretary",
+    "Treasurer", "Executive Director", "Assistant Secretary",
+    "Assistant Treasurer", "Board Chair", "Board Vice Chair",
+  ],
+  Partnership: [
+    "Managing Partner", "General Partner", "Limited Partner", "Senior Partner",
+    "Partner", "Secretary", "Treasurer", "Financial Partner",
+    "Administrative Partner", "Founding Partner",
+  ],
+};
+
 
 interface Props {
   companyId: string;
@@ -405,8 +476,17 @@ export default function OrganizationTab({ companyId, company }: Props) {
         <CardHeader className="pb-2 pt-4 px-4">
           <div className="flex items-center gap-2">
             <Users className="h-3.5 w-3.5 text-primary" />
-            <CardTitle className="card-section-title">Officers</CardTitle>
+            <CardTitle className="card-section-title">
+              {company.entity_type === "LLC" ? "Managers / Officers" : company.entity_type === "Partnership" ? "Partners" : company.entity_type === "Non-Profit" ? "Officers" : "Officers"}
+            </CardTitle>
           </div>
+          <CardDescription className="text-[11px] mt-0.5">
+            {company.entity_type === "LLC" && "Manager-managed or member-managed officers per Wis. Stat. § 183.0401"}
+            {company.entity_type === "Corporation" && "Officers per Wis. Stat. § 180.0840"}
+            {company.entity_type === "S-Corp" && "Officers per Wis. Stat. § 180.0840"}
+            {company.entity_type === "Non-Profit" && "Officers per Wis. Stat. § 181.0840"}
+            {company.entity_type === "Partnership" && "Partners per Wis. Stat. § 178.0401"}
+          </CardDescription>
         </CardHeader>
         <CardContent className="px-4 pb-4">
           <form
@@ -417,27 +497,22 @@ export default function OrganizationTab({ companyId, company }: Props) {
             className="space-y-3"
           >
             <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
-              <div className="field-group">
-                <Label className="field-label">President</Label>
-                <Input className="h-8 text-sm" value={officerForm.president} onChange={(e) => setOfficerForm((p) => ({ ...p, president: e.target.value }))} />
-              </div>
-              <div className="field-group">
-                <Label className="field-label">Vice President</Label>
-                <Input className="h-8 text-sm" value={officerForm.vice_president} onChange={(e) => setOfficerForm((p) => ({ ...p, vice_president: e.target.value }))} />
-              </div>
-              <div className="field-group">
-                <Label className="field-label">Secretary</Label>
-                <Input className="h-8 text-sm" value={officerForm.secretary} onChange={(e) => setOfficerForm((p) => ({ ...p, secretary: e.target.value }))} />
-              </div>
-              <div className="field-group">
-                <Label className="field-label">Treasurer</Label>
-                <Input className="h-8 text-sm" value={officerForm.treasurer} onChange={(e) => setOfficerForm((p) => ({ ...p, treasurer: e.target.value }))} />
-              </div>
+              {getOfficerFields(company.entity_type).map((field) => (
+                <div key={field.key} className="field-group">
+                  <Label className="field-label">{field.label}</Label>
+                  <Input
+                    className="h-8 text-sm"
+                    value={(officerForm as any)[field.key] || ""}
+                    onChange={(e) => setOfficerForm((p) => ({ ...p, [field.key]: e.target.value }))}
+                    placeholder={field.placeholder}
+                  />
+                </div>
+              ))}
             </div>
             <div className="flex justify-end">
               <Button type="submit" disabled={saveOfficers.isPending} size="sm">
                 {saveOfficers.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-                Save Officers
+                Save {company.entity_type === "LLC" ? "Managers" : company.entity_type === "Partnership" ? "Partners" : "Officers"}
               </Button>
             </div>
           </form>
