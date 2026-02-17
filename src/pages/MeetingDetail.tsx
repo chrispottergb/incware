@@ -11,6 +11,7 @@ import MeetingFinancials from "@/components/meeting/MeetingFinancials";
 import MeetingSubTable from "@/components/meeting/MeetingSubTable";
 import MeetingResolutions from "@/components/meeting/MeetingResolutions";
 import MeetingAmendments from "@/components/meeting/MeetingAmendments";
+import MeetingBenefits from "@/components/meeting/MeetingBenefits";
 import PrintPreviewButton from "@/components/meeting/PrintPreviewButton";
 import { OFFICER_TITLE_OPTIONS } from "@/components/company/OrganizationTab";
 import {
@@ -401,13 +402,21 @@ export default function MeetingDetail() {
             <div className="flex justify-end">
               <PrintPreviewButton
                 label="Print"
-                generatePDF={() => exportSectionPDF("Benefits", company, meeting, ["Benefit Description"], benefits.map(b => [b.benefit_description]))}
+                generatePDF={() => exportSectionPDF("Benefits", company, meeting,
+                  ["Benefit Type", "Provider", "Agent/Admin", "Insurance Agency", "Plan Year", "Contribution"],
+                  benefits.map(b => [
+                    b.benefit_type || b.benefit_description || "—",
+                    b.provider || "—",
+                    b.agent_administrator || "—",
+                    b.insurance_agency || "—",
+                    b.plan_year?.toString() || "—",
+                    b.retirement_contribution != null ? `$${Number(b.retirement_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
+                  ])
+                )}
                 fileName={`benefits-${meetingFileName}`}
               />
             </div>
-            <MeetingSubTable meetingId={meeting.id} tableName="meeting_benefits" title="Benefits"
-              columns={[{ key: "benefit_description", label: "Benefit Description", required: true, wide: true }]}
-            />
+            <MeetingBenefits meetingId={meeting.id} />
           </div>
         </TabsContent>
         <TabsContent value="other" className="mt-5">
