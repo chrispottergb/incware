@@ -14,6 +14,9 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     global: "globalThis",
+    "process.env": {},
+    "process.version": JSON.stringify("v18.0.0"),
+    "process.browser": true,
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
