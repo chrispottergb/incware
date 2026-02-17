@@ -12,6 +12,7 @@ import CompanyDetail from "@/pages/CompanyDetail";
 import MeetingDetail from "@/pages/MeetingDetail";
 import Reports from "@/pages/Reports";
 import ImportAccess from "@/pages/ImportAccess";
+import OrgChart from "@/pages/OrgChart";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -71,6 +72,16 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <ImportAccess />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/org-chart"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <OrgChart />
                   </AppLayout>
                 </ProtectedRoute>
               }

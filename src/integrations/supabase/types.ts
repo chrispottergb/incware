@@ -908,6 +908,60 @@ export type Database = {
           },
         ]
       }
+      company_relationships: {
+        Row: {
+          child_company_id: string
+          created_at: string
+          effective_date: string | null
+          id: string
+          notes: string | null
+          ownership_percentage: number | null
+          parent_company_id: string
+          relationship_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          child_company_id: string
+          created_at?: string
+          effective_date?: string | null
+          id?: string
+          notes?: string | null
+          ownership_percentage?: number | null
+          parent_company_id: string
+          relationship_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          child_company_id?: string
+          created_at?: string
+          effective_date?: string | null
+          id?: string
+          notes?: string | null
+          ownership_percentage?: number | null
+          parent_company_id?: string
+          relationship_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_relationships_child_company_id_fkey"
+            columns: ["child_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_relationships_parent_company_id_fkey"
+            columns: ["parent_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       directors: {
         Row: {
           added_date: string | null
