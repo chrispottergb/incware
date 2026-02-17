@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -543,6 +544,33 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
                     </tbody>
                   </table>
                 </div>
+
+                {/* YoY Bar Chart */}
+                {extractedList.length > 1 && (() => {
+                  const chartData = extractedList.map((d) => ({
+                    year: String(d.tax_year),
+                    Revenue: d.financials.total_sales ?? 0,
+                    COGS: d.financials.cost_of_goods_sold ?? 0,
+                    "Net Income": d.financials.net_income ?? 0,
+                  }));
+                  return (
+                    <div className="mt-4 pt-3 border-t">
+                      <p className="text-[11px] font-medium text-muted-foreground mb-2">Trend Visualization</p>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                          <XAxis dataKey="year" tick={{ fontSize: 10 }} className="fill-muted-foreground" />
+                          <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} className="fill-muted-foreground" />
+                          <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} contentStyle={{ fontSize: 11 }} />
+                          <Legend wrapperStyle={{ fontSize: 10 }} />
+                          <Bar dataKey="Revenue" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
+                          <Bar dataKey="COGS" fill="hsl(var(--destructive))" radius={[2, 2, 0, 0]} />
+                          <Bar dataKey="Net Income" fill="hsl(var(--success, 142 71% 45%))" radius={[2, 2, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           )}
