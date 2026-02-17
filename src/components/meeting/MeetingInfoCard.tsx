@@ -1,17 +1,79 @@
 import { useState } from "react";
+import { format, parseISO } from "date-fns";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, MapPin, User, Users, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarIcon, Clock, MapPin, User, Users, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 type Meeting = Tables<"meetings">;
 
 interface Props {
   meeting: Meeting;
+}
+
+function DateField({
+  label,
+  value,
+  onChange,
+  icon: Icon,
+}: {
+  label: string;
+  value: string | null;
+  onChange: (val: string | null) => void;
+  icon?: React.ElementType;
+}) {
+  const date = value ? parseISO(value) : undefined;
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+        {Icon && <Icon className="h-3.5 w-3.5" />}
+        {label}
+      </Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full h-9 justify-start text-left text-sm font-normal",
+              !date && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+            {date ? format(date, "PPP") : "Pick a date"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0 bg-white text-black" align="start">
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={(d) => onChange(d ? format(d, "yyyy-MM-dd") : null)}
+            initialFocus
+            className="p-3 pointer-events-auto"
+            classNames={{
+              day_selected: "bg-primary text-white hover:bg-primary hover:text-white focus:bg-primary focus:text-white",
+              day_today: "bg-gray-100 text-black",
+              head_cell: "text-gray-500 rounded-md w-9 font-normal text-[0.8rem]",
+              nav_button: cn(
+                "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 border border-gray-200 rounded-md inline-flex items-center justify-center"
+              ),
+              day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-md hover:bg-gray-100 inline-flex items-center justify-center",
+              day_outside: "day-outside text-gray-400 opacity-50",
+              caption_label: "text-sm font-medium text-black",
+            }}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
 }
 
 export default function MeetingInfoCard({ meeting }: Props) {
@@ -40,6 +102,13 @@ export default function MeetingInfoCard({ meeting }: Props) {
     }
   };
 
+  const handleDateChange = (field: string, value: string | null) => {
+    const original = (meeting as any)[field] ?? null;
+    if (value !== original) {
+      updateMeeting.mutate({ [field]: value } as any);
+    }
+  };
+
   const getValue = (field: string) => {
     if (field in values) return values[field];
     return (meeting as any)[field] ?? "";
@@ -49,18 +118,12 @@ export default function MeetingInfoCard({ meeting }: Props) {
     setValues((prev) => ({ ...prev, [field]: value }));
   };
 
-  const infoFields = [
-    { icon: Calendar, label: "Meeting Date", field: "meeting_date", type: "date" },
+  const textFields = [
     { icon: Clock, label: "Time", field: "meeting_time" },
     { icon: MapPin, label: "Location", field: "meeting_location" },
     { icon: User, label: "Chairperson", field: "chairperson" },
     { icon: Users, label: "Secretary", field: "mtg_secretary" },
     { icon: Users, label: "Others Present", field: "others_present" },
-  ];
-
-  const dateFields = [
-    { label: "Prior Meeting Date", field: "prior_mtg_date", type: "date" },
-    { label: "Next Annual Meeting", field: "next_annual_mtg", type: "date" },
   ];
 
   const companyFields = [
@@ -82,14 +145,19 @@ export default function MeetingInfoCard({ meeting }: Props) {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {infoFields.map((item) => (
+            <DateField
+              label="Meeting Date"
+              value={meeting.meeting_date}
+              onChange={(val) => handleDateChange("meeting_date", val)}
+              icon={CalendarIcon}
+            />
+            {textFields.map((item) => (
               <div key={item.field} className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                   <item.icon className="h-3.5 w-3.5" />
                   {item.label}
                 </Label>
                 <Input
-                  type={item.type || "text"}
                   value={getValue(item.field)}
                   onChange={(e) => handleChange(item.field, e.target.value)}
                   onBlur={(e) => handleBlur(item.field, e.target.value)}
@@ -99,18 +167,16 @@ export default function MeetingInfoCard({ meeting }: Props) {
             ))}
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 border-t pt-4">
-            {dateFields.map((item) => (
-              <div key={item.field} className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">{item.label}</Label>
-                <Input
-                  type="date"
-                  value={getValue(item.field)}
-                  onChange={(e) => handleChange(item.field, e.target.value)}
-                  onBlur={(e) => handleBlur(item.field, e.target.value)}
-                  className="h-9 text-sm"
-                />
-              </div>
-            ))}
+            <DateField
+              label="Prior Meeting Date"
+              value={meeting.prior_mtg_date}
+              onChange={(val) => handleDateChange("prior_mtg_date", val)}
+            />
+            <DateField
+              label="Next Annual Meeting"
+              value={meeting.next_annual_mtg}
+              onChange={(val) => handleDateChange("next_annual_mtg", val)}
+            />
           </div>
         </CardContent>
       </Card>
