@@ -51,7 +51,7 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
       qc.invalidateQueries({ queryKey: ["bank_authorized_signers", companyId] });
       setOpen(false);
       setForm({ signer_name: "", title: "", bank_id: "" });
-      toast.success("Authorized signer added");
+      toast.success("Authorized signatory added");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -63,7 +63,7 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bank_authorized_signers", companyId] });
-      toast.success("Signer removed");
+      toast.success("Signatory removed");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -77,10 +77,10 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
     <Card>
       <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          <PenTool className="h-4 w-4" /> Authorized Signers
+          <PenTool className="h-4 w-4" /> Authorized Signatories
         </CardTitle>
         <Button size="sm" variant="outline" onClick={openNew} className="h-7 text-xs" disabled={banks.length === 0}>
-          <Plus className="h-3 w-3 mr-1" />Add Signer
+          <Plus className="h-3 w-3 mr-1" />Add Signatory
         </Button>
       </CardHeader>
       <CardContent className="p-0">
@@ -109,7 +109,7 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
             {signers.length === 0 && (
               <TableRow>
                 <TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">
-                  {banks.length === 0 ? "Add a bank account first" : "No authorized signers yet"}
+                  {banks.length === 0 ? "Add a bank account first" : "No authorized signatories yet"}
                 </TableCell>
               </TableRow>
             )}
@@ -118,7 +118,7 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
       </CardContent>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Add Authorized Signer</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Add Authorized Signatory</DialogTitle></DialogHeader>
           <div className="grid gap-3">
             <div>
               <Label className="text-xs">Bank Account *</Label>
@@ -132,13 +132,13 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Signer Name *</Label><Input value={form.signer_name} onChange={e => setForm(p => ({ ...p, signer_name: e.target.value }))} /></div>
+              <div><Label className="text-xs">Signatory Name *</Label><Input value={form.signer_name} onChange={e => setForm(p => ({ ...p, signer_name: e.target.value }))} /></div>
               <div><Label className="text-xs">Title</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. President, Treasurer" /></div>
             </div>
           </div>
           <DialogFooter>
             <Button onClick={() => save.mutate()} disabled={!form.signer_name.trim() || !form.bank_id || save.isPending}>
-              {save.isPending ? "Saving…" : "Add Signer"}
+              {save.isPending ? "Saving…" : "Add Signatory"}
             </Button>
           </DialogFooter>
         </DialogContent>
