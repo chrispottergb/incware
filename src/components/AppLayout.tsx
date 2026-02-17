@@ -23,6 +23,7 @@ import {
   Search,
   Plus,
   Scale,
+  GitBranch,
 } from "lucide-react";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -56,6 +57,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     { label: "Dashboard", href: "/", icon: LayoutDashboard },
     { label: "Import Access DB", href: "/import-access", icon: Database },
     { label: "Reports", href: "/reports", icon: ClipboardList },
+    { label: "Org Chart", href: "/org-chart", icon: GitBranch },
   ];
 
   const companyNav = companyId
@@ -67,6 +69,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         { label: "Timeline", href: `/company/${companyId}#timeline`, icon: Clock },
         { label: "Counsel", href: `/company/${companyId}#counsel`, icon: Scale },
         { label: "Banks", href: `/company/${companyId}#banks`, icon: Landmark },
+        { label: "Relationships", href: `/company/${companyId}#relationships`, icon: GitBranch },
       ]
     : [];
 

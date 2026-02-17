@@ -33,6 +33,7 @@ import NonprofitBylawsGenerator from "@/components/company/NonprofitBylawsGenera
 import ConflictOfInterestGenerator from "@/components/company/ConflictOfInterestGenerator";
 import CounselTab from "@/components/company/CounselTab";
 import BanksTab from "@/components/company/BanksTab";
+import RelationshipsTab from "@/components/company/RelationshipsTab";
 
 export default function CompanyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -199,6 +200,7 @@ export default function CompanyDetail() {
               { value: "timeline", label: "Timeline" },
               { value: "counsel", label: "Counsel" },
               { value: "banks", label: "Banks" },
+              { value: "relationships", label: "Relationships" },
               { value: "ai-compliance", label: "AI Compliance" },
               ...(company.entity_type === "LLC" ? [{ value: "operating-agreement", label: "Operating Agreement" }] : []),
               ...((company.entity_type === "Corporation" || company.entity_type === "S-Corp") ? [{ value: "bylaws", label: "Bylaws" }] : []),
@@ -244,6 +246,9 @@ export default function CompanyDetail() {
         </TabsContent>
         <TabsContent value="banks" className="mt-5">
           <BanksTab companyId={company.id} />
+        </TabsContent>
+        <TabsContent value="relationships" className="mt-5">
+          <RelationshipsTab companyId={company.id} companyName={company.name} />
         </TabsContent>
         <TabsContent value="ai-compliance" className="mt-5">
           <AIComplianceTab companyId={company.id} companyName={company.name} />
