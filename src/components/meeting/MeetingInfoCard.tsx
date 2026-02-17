@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, Clock, MapPin, User, Users, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, MapPin, User, Users, Loader2, Hash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -30,6 +30,7 @@ function DateField({
   onChange: (val: string | null) => void;
   icon?: React.ElementType;
 }) {
+  const [open, setOpen] = useState(false);
   const date = value ? parseISO(value) : undefined;
 
   return (
@@ -38,7 +39,7 @@ function DateField({
         {Icon && <Icon className="h-3.5 w-3.5" />}
         {label}
       </Label>
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -55,7 +56,10 @@ function DateField({
           <Calendar
             mode="single"
             selected={date}
-            onSelect={(d) => onChange(d ? format(d, "yyyy-MM-dd") : null)}
+            onSelect={(d) => {
+              onChange(d ? format(d, "yyyy-MM-dd") : null);
+              setOpen(false);
+            }}
             initialFocus
             className="p-3 pointer-events-auto"
             classNames={{
@@ -99,6 +103,14 @@ export default function MeetingInfoCard({ meeting }: Props) {
     const original = (meeting as any)[field] ?? "";
     if (value !== original) {
       updateMeeting.mutate({ [field]: value || null } as any);
+    }
+  };
+
+  const handleNumericBlur = (field: string, value: string) => {
+    const original = (meeting as any)[field];
+    const numVal = value ? parseInt(value) : null;
+    if (numVal !== original) {
+      updateMeeting.mutate({ [field]: numVal } as any);
     }
   };
 
@@ -151,6 +163,21 @@ export default function MeetingInfoCard({ meeting }: Props) {
               onChange={(val) => handleDateChange("meeting_date", val)}
               icon={CalendarIcon}
             />
+            {/* Tax Year - editable, defaults shown but overridable */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <Hash className="h-3.5 w-3.5" />
+                Tax Year
+              </Label>
+              <Input
+                type="number"
+                value={getValue("tax_year")}
+                onChange={(e) => handleChange("tax_year", e.target.value)}
+                onBlur={(e) => handleNumericBlur("tax_year", e.target.value)}
+                className="h-9 text-sm"
+                placeholder="e.g. 2024"
+              />
+            </div>
             {textFields.map((item) => (
               <div key={item.field} className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
