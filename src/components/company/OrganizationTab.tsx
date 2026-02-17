@@ -29,7 +29,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Save, Users, FileText } from "lucide-react";
+import { Plus, Trash2, Loader2, Save, Users, FileText, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import CompanyAssetsSection from "@/components/company/CompanyAssetsSection";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
@@ -502,65 +503,70 @@ export default function OrganizationTab({ companyId, company }: Props) {
         </CardContent>
       </Card>
 
-      {/* Officers */}
-      <Card>
-        <CardHeader className="pb-2 pt-4 px-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <Users className="h-3.5 w-3.5 text-primary" />
-                <CardTitle className="card-section-title">
-                  {company.entity_type === "LLC" ? "Managers / Officers" : company.entity_type === "Partnership" ? "Partners" : "Officers"}
-                </CardTitle>
+      {/* Officers - Collapsible */}
+      <Collapsible>
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" className="w-full justify-between text-sm font-medium">
+            <span className="flex items-center gap-2">
+              <Users className="h-3.5 w-3.5 text-primary" />
+              {company.entity_type === "LLC" ? "Managers / Officers" : company.entity_type === "Partnership" ? "Partners" : "Officers"}
+            </span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-3">
+          <Card>
+            <CardHeader className="pb-2 pt-4 px-4">
+              <div className="flex items-center justify-between">
+                <CardDescription className="text-[11px] mt-0.5">
+                  {company.entity_type === "LLC" && "Manager-managed or member-managed officers per Wis. Stat. § 183.0401"}
+                  {company.entity_type === "Corporation" && "Officers per Wis. Stat. § 180.0840"}
+                  {company.entity_type === "S-Corp" && "Officers per Wis. Stat. § 180.0840"}
+                  {company.entity_type === "Non-Profit" && "Officers per Wis. Stat. § 181.0840"}
+                  {company.entity_type === "Partnership" && "Partners per Wis. Stat. § 178.0401"}
+                </CardDescription>
+                <SectionPdfActions config={{
+                  title: company.entity_type === "LLC" ? "Managers / Officers" : "Officers",
+                  companyName: company.name,
+                  fields: getOfficerFields(company.entity_type).map((f) => ({
+                    label: f.label,
+                    value: (officerForm as any)[f.key] || "",
+                  })),
+                }} />
               </div>
-              <CardDescription className="text-[11px] mt-0.5">
-                {company.entity_type === "LLC" && "Manager-managed or member-managed officers per Wis. Stat. § 183.0401"}
-                {company.entity_type === "Corporation" && "Officers per Wis. Stat. § 180.0840"}
-                {company.entity_type === "S-Corp" && "Officers per Wis. Stat. § 180.0840"}
-                {company.entity_type === "Non-Profit" && "Officers per Wis. Stat. § 181.0840"}
-                {company.entity_type === "Partnership" && "Partners per Wis. Stat. § 178.0401"}
-              </CardDescription>
-            </div>
-            <SectionPdfActions config={{
-              title: company.entity_type === "LLC" ? "Managers / Officers" : "Officers",
-              companyName: company.name,
-              fields: getOfficerFields(company.entity_type).map((f) => ({
-                label: f.label,
-                value: (officerForm as any)[f.key] || "",
-              })),
-            }} />
-          </div>
-        </CardHeader>
-        <CardContent className="px-4 pb-4">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              saveOfficers.mutate();
-            }}
-            className="space-y-3"
-          >
-            <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
-              {getOfficerFields(company.entity_type).map((field) => (
-                <div key={field.key} className="field-group">
-                  <Label className="field-label">{field.label}</Label>
-                  <Input
-                    className="h-8 text-sm"
-                    value={(officerForm as any)[field.key] || ""}
-                    onChange={(e) => setOfficerForm((p) => ({ ...p, [field.key]: e.target.value }))}
-                    placeholder={field.placeholder}
-                  />
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  saveOfficers.mutate();
+                }}
+                className="space-y-3"
+              >
+                <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
+                  {getOfficerFields(company.entity_type).map((field) => (
+                    <div key={field.key} className="field-group">
+                      <Label className="field-label">{field.label}</Label>
+                      <Input
+                        className="h-8 text-sm"
+                        value={(officerForm as any)[field.key] || ""}
+                        onChange={(e) => setOfficerForm((p) => ({ ...p, [field.key]: e.target.value }))}
+                        placeholder={field.placeholder}
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="flex justify-end">
-              <Button type="submit" disabled={saveOfficers.isPending} size="sm">
-                {saveOfficers.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-                Save {company.entity_type === "LLC" ? "Managers" : company.entity_type === "Partnership" ? "Partners" : "Officers"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+                <div className="flex justify-end">
+                  <Button type="submit" disabled={saveOfficers.isPending} size="sm">
+                    {saveOfficers.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
+                    Save {company.entity_type === "LLC" ? "Managers" : company.entity_type === "Partnership" ? "Partners" : "Officers"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Company Assets */}
       <CompanyAssetsSection companyId={companyId} companyName={company.name} />
