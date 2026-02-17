@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Building2,
+  Database,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -52,6 +53,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   const mainNav = [
     { label: "Dashboard", href: "/", icon: LayoutDashboard },
+    { label: "Import Access DB", href: "/import-access", icon: Database },
     { label: "Reports", href: "/reports", icon: ClipboardList },
   ];
 

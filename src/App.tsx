@@ -11,6 +11,7 @@ import Dashboard from "@/pages/Dashboard";
 import CompanyDetail from "@/pages/CompanyDetail";
 import MeetingDetail from "@/pages/MeetingDetail";
 import Reports from "@/pages/Reports";
+import ImportAccess from "@/pages/ImportAccess";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,16 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <Reports />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/import-access"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <ImportAccess />
                   </AppLayout>
                 </ProtectedRoute>
               }
