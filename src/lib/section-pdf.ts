@@ -178,23 +178,33 @@ export function printSectionPdf(config: SectionPdfConfig) {
   const blob = doc.output("blob");
   const url = URL.createObjectURL(blob);
 
-  // Use a hidden iframe to trigger print — avoids Edge popup blocker
-  const iframe = document.createElement("iframe");
-  iframe.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:0;height:0;";
-  iframe.src = url;
-  document.body.appendChild(iframe);
+  // Convert to data URI to avoid cross-origin iframe print restrictions in Chrome/Edge
+  const reader = new FileReader();
+  reader.onload = () => {
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;";
+    document.body.appendChild(iframe);
 
-  iframe.onload = () => {
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (iframeDoc) {
+      iframeDoc.open();
+      iframeDoc.write(`<html><body style="margin:0"><embed src="${reader.result}" type="application/pdf" width="100%" height="100%" style="width:100%;height:100vh;"></body></html>`);
+      iframeDoc.close();
+    }
+
     setTimeout(() => {
       try {
+        iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
       } catch {
+        // Fallback: open in new tab
         window.open(url, "_blank");
       }
       setTimeout(() => {
         document.body.removeChild(iframe);
         URL.revokeObjectURL(url);
       }, 5000);
-    }, 500);
+    }, 1000);
   };
+  reader.readAsDataURL(blob);
 }
