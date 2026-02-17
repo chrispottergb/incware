@@ -48,23 +48,38 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
   };
 
   const handlePrint = () => {
-    // Open blank window synchronously to avoid popup blockers
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      toast.error("Popup blocked — please allow popups for this site, or use Preview instead.");
-      return;
-    }
     try {
       const doc = generatePDF();
       const blob = doc.output("blob");
       const url = URL.createObjectURL(blob);
-      printWindow.location.href = url;
-      printWindow.addEventListener("load", () => {
-        setTimeout(() => printWindow.print(), 500);
-      });
+
+      // Use a hidden iframe to print — avoids popup blockers entirely
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.left = "-9999px";
+      iframe.style.top = "-9999px";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.src = url;
+      document.body.appendChild(iframe);
+
+      iframe.onload = () => {
+        setTimeout(() => {
+          try {
+            iframe.contentWindow?.print();
+          } catch {
+            // Fallback: open in new tab if print fails
+            window.open(url, "_blank");
+          }
+          // Clean up after a delay
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+            URL.revokeObjectURL(url);
+          }, 5000);
+        }, 500);
+      };
     } catch (err: any) {
       console.error("PDF print error:", err);
-      printWindow.close();
       toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
     }
   };
