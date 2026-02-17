@@ -53,34 +53,56 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       const blob = doc.output("blob");
       const url = URL.createObjectURL(blob);
 
-      // Use a hidden iframe to print — avoids popup blockers entirely
-      const iframe = document.createElement("iframe");
-      iframe.style.position = "fixed";
-      iframe.style.left = "-9999px";
-      iframe.style.top = "-9999px";
-      iframe.style.width = "0";
-      iframe.style.height = "0";
-      iframe.src = url;
-      document.body.appendChild(iframe);
+      // Convert blob to data URI to avoid cross-origin iframe restrictions
+      const reader = new FileReader();
+      reader.onload = () => {
+        const iframe = document.createElement("iframe");
+        iframe.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;";
+        document.body.appendChild(iframe);
 
-      iframe.onload = () => {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (iframeDoc) {
+          iframeDoc.open();
+          iframeDoc.write(`<html><body style="margin:0"><embed src="${reader.result}" type="application/pdf" width="100%" height="100%" style="width:100%;height:100vh;"></body></html>`);
+          iframeDoc.close();
+        }
+
         setTimeout(() => {
           try {
+            iframe.contentWindow?.focus();
             iframe.contentWindow?.print();
           } catch {
-            // Fallback: open in new tab if print fails
-            window.open(url, "_blank");
+            // Fallback: download file instead
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            toast.info("Print blocked — file downloaded instead.");
           }
-          // Clean up after a delay
           setTimeout(() => {
             document.body.removeChild(iframe);
             URL.revokeObjectURL(url);
           }, 5000);
-        }, 500);
+        }, 1000);
       };
+      reader.readAsDataURL(blob);
     } catch (err: any) {
       console.error("PDF print error:", err);
       toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
+    }
+  };
+
+  const handlePrintFromPreview = () => {
+    const iframe = document.querySelector<HTMLIFrameElement>('iframe[title="PDF Preview"]');
+    if (iframe?.contentWindow) {
+      try {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      } catch {
+        handlePrint();
+      }
+    } else {
+      handlePrint();
     }
   };
 
@@ -119,7 +141,7 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
                   <Download className="mr-1.5 h-3.5 w-3.5" />
                   Download PDF
                 </Button>
-                <Button size="sm" onClick={handlePrint}>
+                <Button size="sm" onClick={handlePrintFromPreview}>
                   <Printer className="mr-1.5 h-3.5 w-3.5" />
                   Print
                 </Button>
