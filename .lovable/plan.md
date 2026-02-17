@@ -1,40 +1,79 @@
 
-## Batch Tax Return Upload
 
-### Overview
-Enhance the TaxReturnUpload component to accept multiple files at once. Each file is parsed individually by the AI, and the results are displayed in a scrollable list grouped by tax year. The user reviews all extractions, then saves them all in one action -- creating a single company (or updating an existing one) with meeting/financial records for each year.
+# Inter-Company Relationships & Org Chart
 
-### How It Works
+## Overview
+Add a new tab to the Company Detail page and a dedicated page showing ownership hierarchies between entities already in the system. Users will be able to define parent/subsidiary relationships between their companies and visualize them as an org chart.
 
-1. **Multi-file selection**: The upload area accepts multiple files (via `multiple` attribute and multi-drop). A file queue displays below the drop zone showing each file's name and parse status (pending, processing, done, error).
+## Database Changes
 
-2. **Sequential AI parsing**: Files are processed one at a time through the existing `parse-tax-return` edge function. A progress bar shows overall completion (e.g., "3 of 5 returns parsed").
+### New table: `company_relationships`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid (PK) | Default `gen_random_uuid()` |
+| parent_company_id | uuid (FK to companies) | The parent/holding entity |
+| child_company_id | uuid (FK to companies) | The subsidiary/owned entity |
+| relationship_type | text | e.g. "subsidiary", "division", "affiliate", "joint_venture" |
+| ownership_percentage | numeric | Nullable, 0-100 |
+| effective_date | date | When the relationship started |
+| notes | text | Nullable |
+| user_id | uuid | Owner of both companies (for RLS) |
+| created_at | timestamptz | Default `now()` |
+| updated_at | timestamptz | Default `now()` |
 
-3. **Aggregated preview**: After all files are parsed, results are displayed sorted by tax year ascending. Each year gets a collapsible card showing the same extracted data preview (company info, financials, assets, officers). A small "Year-over-Year" summary table at the top shows Revenue, COGS, Net Income across all years with percentage change columns.
+- Unique constraint on `(parent_company_id, child_company_id)` to prevent duplicates
+- RLS policy: user can manage relationships where `user_id = auth.uid()`
+- Validation trigger to prevent a company from being its own parent
 
-4. **Single save action**: One "Save All" button creates or updates the company and inserts a meeting + meeting_financials record for each tax year. Assets, officers, and shareholders are de-duplicated (matched by name) so multi-year imports don't create duplicates.
+## UI Changes
 
-### Technical Details
+### 1. New "Relationships" tab on Company Detail
+Add a tab between "Banks" and "AI Compliance" called **"Relationships"** that shows:
+- A table of parent entities (companies that own this one)
+- A table of child entities (companies this one owns)
+- An "Add Relationship" dialog to link two existing companies with type, ownership %, effective date, and notes
+- Each row links to the related company and has edit/delete actions
 
-**File: `src/components/TaxReturnUpload.tsx`**
+### 2. New standalone Org Chart page (`/org-chart`)
+A top-level page accessible from the sidebar that renders a visual tree of all the user's entities:
+- Pure CSS/HTML tree layout (no extra dependency needed) using nested `<ul>` elements styled as an org chart
+- Each node shows company name, entity type badge, and ownership %
+- Clicking a node navigates to that company
+- Companies with no relationships appear as standalone roots
+- Color-coded by entity type
 
-- Replace single `extracted` state (`ExtractedData | null`) with `extractedList` state (`ExtractedData[]`)
-- Replace single `fileName` with `files` array tracking `{ file: File, name: string, status: 'pending' | 'processing' | 'done' | 'error', data?: ExtractedData }`
-- Change `<input>` to `multiple` and update `onDrop` to handle `e.dataTransfer.files` (all files, not just `[0]`)
-- Add `handleFiles(files: File[])` that queues all files then processes them sequentially via `handleFile`
-- Add a progress indicator: `{completed} of {total} parsed`
-- Update the preview section:
-  - Show a YoY summary table (year, revenue, COGS, net income, YoY % change) at the top
-  - Below it, render collapsible `Accordion` items per year with the existing card grid inside each
-- Update `handleSaveToCompany` to loop through all extracted records:
-  - Company fields come from the most recent tax year
-  - A meeting + meeting_financials row is created per year
-  - For the most recent year's meeting, link previous year financials into `previous_*` columns
-  - Assets are inserted with de-duplication by description
-  - Shareholders/officers are de-duplicated by name
-- Button text changes to "Create Company & Save All ({n} years)" or "Save All ({n} years)"
+### 3. Sidebar update
+Add an "Org Chart" link to the main nav section in `AppLayout.tsx` with a `GitBranch` or `Network` icon.
 
-**No backend or database changes needed** -- the existing edge function and tables support this entirely from the frontend.
+## Files to Create/Modify
 
-### Files Modified
-- `src/components/TaxReturnUpload.tsx` -- all changes are in this single file
+| File | Action |
+|---|---|
+| Migration SQL | Create `company_relationships` table with RLS |
+| `src/components/company/RelationshipsTab.tsx` | New - table + add/edit/delete dialogs |
+| `src/pages/OrgChart.tsx` | New - visual tree page |
+| `src/pages/CompanyDetail.tsx` | Add "Relationships" tab |
+| `src/components/AppLayout.tsx` | Add "Org Chart" to sidebar nav |
+| `src/App.tsx` | Add `/org-chart` route |
+
+## Technical Details
+
+### Org Chart Rendering
+The tree will be built client-side by:
+1. Fetching all `company_relationships` for the user
+2. Fetching all `companies` for the user
+3. Building an adjacency list and identifying root nodes (companies that have children but no parent, or standalone)
+4. Recursively rendering a tree using Tailwind-styled nested lists with connector lines via CSS borders/pseudo-elements
+
+### Relationship Dialog
+- Parent company dropdown (searchable select of all user's companies, excluding current)
+- Relationship type select: Subsidiary, Division, Affiliate, Joint Venture
+- Ownership % input (optional)
+- Effective date picker
+- Notes textarea
+- Cancel and Save buttons (matching existing dialog pattern)
+
+### Mobile Responsive
+- Relationship tables follow the same hidden-column pattern used in Counsel/Banks tabs
+- Org chart scrolls horizontally on small screens
+
