@@ -100,7 +100,7 @@ function AttorneyFirmsSection({ companyId }: { companyId: string }) {
             </div>
             <div><Label className="text-xs">Website</Label><Input value={form.website} onChange={e => setForm(p => ({ ...p, website: e.target.value }))} /></div>
           </div>
-          <DialogFooter><Button onClick={() => save.mutate()} disabled={!form.firm_name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
+          <DialogFooter className="gap-2"><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={() => save.mutate()} disabled={!form.firm_name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
@@ -213,7 +213,7 @@ function AttorneysSection({ companyId }: { companyId: string }) {
             </div>
             <div><Label className="text-xs">Notes</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
           </div>
-          <DialogFooter><Button onClick={() => save.mutate()} disabled={!form.attorney_name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
+          <DialogFooter className="gap-2"><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={() => save.mutate()} disabled={!form.attorney_name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
@@ -304,7 +304,7 @@ function AccountantFirmsSection({ companyId }: { companyId: string }) {
             </div>
             <div><Label className="text-xs">Website</Label><Input value={form.website} onChange={e => setForm(p => ({ ...p, website: e.target.value }))} /></div>
           </div>
-          <DialogFooter><Button onClick={() => save.mutate()} disabled={!form.firm_name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
+          <DialogFooter className="gap-2"><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={() => save.mutate()} disabled={!form.firm_name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
@@ -417,7 +417,7 @@ function AccountantsSection({ companyId }: { companyId: string }) {
             </div>
             <div><Label className="text-xs">Notes</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
           </div>
-          <DialogFooter><Button onClick={() => save.mutate()} disabled={!form.accountant_name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
+          <DialogFooter className="gap-2"><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={() => save.mutate()} disabled={!form.accountant_name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
