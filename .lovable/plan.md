@@ -1,57 +1,76 @@
 
 
-# Fix .accdb Upload: Empty Table List
+# Expand Meeting Benefits Form
 
 ## Problem
-When uploading an `.accdb` file, the wizard advances to "Select Tables" but shows no tables. This is NOT a 32-bit vs. 64-bit issue -- the `mdb-reader` library supports all Access versions (97 through 2019) regardless of bitness.
+The current `meeting_benefits` table only stores a single `benefit_description` column. The legacy Access application has a detailed benefits form with fields for benefit type, provider, agent, insurance agency, transaction details, plan year, effective date, contribution amount, and eligibility comments.
 
-## Root Causes to Address
+## Database Changes
 
-1. **Password-protected databases**: The library supports decryption but the code never asks for a password
-2. **Silent empty results**: When zero tables are found, the user gets no explanation of why
-3. **All tables filtered out**: System table filtering (`MSys*`, `~*`) may remove everything if no user tables exist
+Add new columns to the `meeting_benefits` table:
 
-## Changes
+| Column | Type | Notes |
+|---|---|---|
+| benefit_type | text | e.g., "401(k) Profit Sharing Plan", "Health Insurance", "Dental", etc. |
+| provider | text | Insurance/plan provider name |
+| agent_administrator | text | Agent or administrator name |
+| insurance_agency | text | Insurance agency name |
+| transaction_type | text | Type of transaction |
+| plan_year | integer | Plan year (e.g., 2024) |
+| new_plan_effective_date | date | When new plan takes effect |
+| retirement_contribution | numeric | Contribution amount |
+| eligibility_comments | text | Eligibility criteria and comments |
 
-### File: `src/pages/ImportAccess.tsx`
+The existing `benefit_description` column will be kept for backward compatibility but the new fields will be the primary data entry method.
 
-1. **Add a password prompt**
-   - Add a state variable for an optional database password
-   - When parsing fails OR returns zero tables, show a dialog asking if the database is password-protected
-   - Re-attempt parsing with `new MDBReader(Buffer.from(buffer), { password })` when a password is provided
+## UI Changes
 
-2. **Improve error diagnostics**
-   - After `reader.getTableNames()`, if no tables are found, check how many total tables exist (including system tables) and report:
-     - "No user tables found. The database contains X system tables only." or
-     - "No tables found. The file may be corrupted or in an unsupported format."
-   - Show the Access database version/creation date from the reader for debugging context
+### File: `src/pages/MeetingDetail.tsx`
 
-3. **Add a "Show system tables" toggle**
-   - Add a checkbox on the table selection step: "Include system tables"
-   - When enabled, show all tables (including `MSys*` prefixed ones) so users can verify the file was read correctly
+Replace the simple single-column `MeetingSubTable` for Benefits with a dedicated `MeetingBenefits` component that renders a richer form matching the legacy layout.
 
-4. **Better error toast messages**
-   - Replace the generic "Failed to parse Access file" with more specific guidance based on the error type
-   - If the error message contains "encryption" or "password", prompt for credentials automatically
+### New File: `src/components/meeting/MeetingBenefits.tsx`
+
+Create a dedicated component with:
+- A table listing existing benefits showing: Benefit Type, Provider, Agent/Administrator, Insurance Agency
+- Expandable rows or an inline detail area showing: Transaction type, Plan Year, New Plan Effective Date, Retirement Contribution, Eligibility/Comments
+- Add/Edit/Delete functionality using the same patterns as `MeetingAmendments` or `MeetingResolutions`
+- Benefit Type as a dropdown with common options: 401(k), Profit Sharing Plan, Health Insurance, Dental Insurance, Vision Insurance, Life Insurance, Disability Insurance, Other
+- Print support via the existing `PrintPreviewButton` pattern
+
+### PDF Export Update
+
+Update the benefits section PDF export in `MeetingDetail.tsx` to include the new fields in the printed output.
 
 ## Technical Details
 
-### Password flow
-```text
-1. User uploads .accdb
-2. Parse without password
-3. If error contains "password"/"encrypt" OR zero tables found:
-   -> Show password input dialog
-   -> Re-parse with: new MDBReader(Buffer.from(buffer), { password })
-4. If still fails, show specific error
+### Migration SQL
+
+```sql
+ALTER TABLE meeting_benefits
+  ADD COLUMN IF NOT EXISTS benefit_type text,
+  ADD COLUMN IF NOT EXISTS provider text,
+  ADD COLUMN IF NOT EXISTS agent_administrator text,
+  ADD COLUMN IF NOT EXISTS insurance_agency text,
+  ADD COLUMN IF NOT EXISTS transaction_type text,
+  ADD COLUMN IF NOT EXISTS plan_year integer,
+  ADD COLUMN IF NOT EXISTS new_plan_effective_date date,
+  ADD COLUMN IF NOT EXISTS retirement_contribution numeric,
+  ADD COLUMN IF NOT EXISTS eligibility_comments text;
 ```
 
-### Diagnostic info to display
-After successful parse, show a small info line:
-- Database created: [date from reader.getCreationDate()]
-- Total tables: X user / Y system
-- This helps the user confirm the file was read correctly
+No new RLS policies needed -- existing `meeting_benefits` policies already cover all operations via the meeting -> company -> user chain.
 
-### No database or dependency changes needed
-This is purely a UI/parsing logic fix in `ImportAccess.tsx`.
+### Component Pattern
+
+The new `MeetingBenefits` component will follow the same pattern as `MeetingAmendments`:
+- Dialog-based add/edit form
+- Inline delete with confirmation
+- `useQuery` for fetching, `useMutation` for CRUD
+- React Query cache invalidation on mutations
+
+### Files Modified
+1. **Migration** -- add columns to `meeting_benefits`
+2. **New**: `src/components/meeting/MeetingBenefits.tsx` -- dedicated benefits CRUD component
+3. **Edit**: `src/pages/MeetingDetail.tsx` -- swap `MeetingSubTable` for the new `MeetingBenefits` component, update PDF export columns
 
