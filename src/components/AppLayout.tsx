@@ -22,6 +22,7 @@ import {
   ClipboardList,
   Search,
   Plus,
+  Scale,
 } from "lucide-react";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -64,6 +65,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         { label: "Meetings", href: `/company/${companyId}#meetings`, icon: Calendar },
         { label: "Shareholders", href: `/company/${companyId}#shareholders`, icon: UsersRound },
         { label: "Timeline", href: `/company/${companyId}#timeline`, icon: Clock },
+        { label: "Counsel", href: `/company/${companyId}#counsel`, icon: Scale },
+        { label: "Banks", href: `/company/${companyId}#banks`, icon: Landmark },
       ]
     : [];
 

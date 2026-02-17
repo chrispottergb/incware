@@ -14,6 +14,119 @@ export type Database = {
   }
   public: {
     Tables: {
+      accountant_firms: {
+        Row: {
+          address: string | null
+          city: string | null
+          company_id: string
+          created_at: string
+          email: string | null
+          firm_name: string
+          id: string
+          phone: string | null
+          state: string | null
+          updated_at: string
+          website: string | null
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company_id: string
+          created_at?: string
+          email?: string | null
+          firm_name: string
+          id?: string
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          website?: string | null
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company_id?: string
+          created_at?: string
+          email?: string | null
+          firm_name?: string
+          id?: string
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          website?: string | null
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accountant_firms_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accountants: {
+        Row: {
+          accountant_name: string
+          company_id: string
+          cpa_number: string | null
+          created_at: string
+          email: string | null
+          firm_id: string | null
+          id: string
+          notes: string | null
+          phone: string | null
+          specialty: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          accountant_name: string
+          company_id: string
+          cpa_number?: string | null
+          created_at?: string
+          email?: string | null
+          firm_id?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          specialty?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accountant_name?: string
+          company_id?: string
+          cpa_number?: string | null
+          created_at?: string
+          email?: string | null
+          firm_id?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          specialty?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accountants_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountants_firm_id_fkey"
+            columns: ["firm_id"]
+            isOneToOne: false
+            referencedRelation: "accountant_firms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_oversight_persons: {
         Row: {
           ai_system_id: string
@@ -233,6 +346,119 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attorney_firms: {
+        Row: {
+          address: string | null
+          city: string | null
+          company_id: string
+          created_at: string
+          email: string | null
+          firm_name: string
+          id: string
+          phone: string | null
+          state: string | null
+          updated_at: string
+          website: string | null
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company_id: string
+          created_at?: string
+          email?: string | null
+          firm_name: string
+          id?: string
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          website?: string | null
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company_id?: string
+          created_at?: string
+          email?: string | null
+          firm_name?: string
+          id?: string
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          website?: string | null
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attorney_firms_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attorneys: {
+        Row: {
+          attorney_name: string
+          bar_number: string | null
+          company_id: string
+          created_at: string
+          email: string | null
+          firm_id: string | null
+          id: string
+          notes: string | null
+          phone: string | null
+          specialty: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          attorney_name: string
+          bar_number?: string | null
+          company_id: string
+          created_at?: string
+          email?: string | null
+          firm_id?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          specialty?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attorney_name?: string
+          bar_number?: string | null
+          company_id?: string
+          created_at?: string
+          email?: string | null
+          firm_id?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          specialty?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attorneys_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attorneys_firm_id_fkey"
+            columns: ["firm_id"]
+            isOneToOne: false
+            referencedRelation: "attorney_firms"
             referencedColumns: ["id"]
           },
         ]
@@ -568,6 +794,71 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "company_assets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_banks: {
+        Row: {
+          account_number: string | null
+          account_type: string | null
+          address: string | null
+          bank_name: string
+          city: string | null
+          company_id: string
+          contact_name: string | null
+          contact_title: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          phone: string | null
+          routing_number: string | null
+          state: string | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          account_number?: string | null
+          account_type?: string | null
+          address?: string | null
+          bank_name: string
+          city?: string | null
+          company_id: string
+          contact_name?: string | null
+          contact_title?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          routing_number?: string | null
+          state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          account_number?: string | null
+          account_type?: string | null
+          address?: string | null
+          bank_name?: string
+          city?: string | null
+          company_id?: string
+          contact_name?: string | null
+          contact_title?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          routing_number?: string | null
+          state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_banks_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
