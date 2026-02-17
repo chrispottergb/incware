@@ -8,6 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -42,6 +53,8 @@ import {
   AlertCircle,
   XCircle,
   Eye,
+  Lock,
+  Info,
 } from "lucide-react";
 
 // Target fields grouped by destination table
@@ -122,6 +135,12 @@ interface ColumnMapping {
   targetField: string;
 }
 
+interface DbDiagnostics {
+  userTableCount: number;
+  systemTableCount: number;
+  creationDate?: string;
+}
+
 export default function ImportAccess() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -138,6 +157,91 @@ export default function ImportAccess() {
   const [importedCount, setImportedCount] = useState(0);
   const [previewTable, setPreviewTable] = useState<string | null>(null);
 
+  // New state for password & diagnostics
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [dbPassword, setDbPassword] = useState("");
+  const [pendingBuffer, setPendingBuffer] = useState<ArrayBuffer | null>(null);
+  const [diagnostics, setDiagnostics] = useState<DbDiagnostics | null>(null);
+  const [showSystemTables, setShowSystemTables] = useState(false);
+  const [allTables, setAllTables] = useState<AccessTable[]>([]);
+
+  const parseAccessFile = useCallback((buffer: ArrayBuffer, password?: string) => {
+    try {
+      const options: any = {};
+      if (password) options.password = password;
+      const reader = new MDBReader(Buffer.from(buffer), options);
+
+      const allTableNames = reader.getTableNames();
+      const systemTableNames = allTableNames.filter(
+        (n) => n.startsWith("MSys") || n.startsWith("~")
+      );
+      const userTableNames = allTableNames.filter(
+        (n) => !n.startsWith("MSys") && !n.startsWith("~")
+      );
+
+      // Get creation date if available
+      let creationDate: string | undefined;
+      try {
+        const d = (reader as any).getCreationDate?.();
+        if (d) creationDate = new Date(d).toLocaleDateString();
+      } catch {}
+
+      setDiagnostics({
+        userTableCount: userTableNames.length,
+        systemTableCount: systemTableNames.length,
+        creationDate,
+      });
+
+      // Parse all tables (user + system) for the system table toggle
+      const parsedAll: AccessTable[] = allTableNames.map((name) => {
+        try {
+          const table = reader.getTable(name);
+          const columns = table.getColumnNames();
+          const data = table.getData({ columns, rowLimit: 5000 }) as Record<string, unknown>[];
+          return { name, columns, rowCount: data.length, data };
+        } catch {
+          return { name, columns: [], rowCount: 0, data: [] };
+        }
+      });
+
+      const parsedUser = parsedAll.filter(
+        (t) => !t.name.startsWith("MSys") && !t.name.startsWith("~")
+      );
+
+      setAllTables(parsedAll);
+      setTables(parsedUser);
+      setSelectedTables(new Set(parsedUser.filter((t) => t.rowCount > 0).map((t) => t.name)));
+
+      if (userTableNames.length === 0) {
+        if (systemTableNames.length > 0) {
+          toast.warning(
+            `No user tables found. The database contains ${systemTableNames.length} system table(s) only. Try enabling "Show system tables" or check if the file is password-protected.`
+          );
+        } else {
+          toast.error(
+            "No tables found. The file may be corrupted or in an unsupported format."
+          );
+        }
+        // Still show the tables step so user can toggle system tables
+        setStep("tables");
+        return;
+      }
+
+      setStep("tables");
+      toast.success(`Loaded ${parsedUser.length} tables from ${fileName}`);
+    } catch (err: any) {
+      console.error(err);
+      const msg = (err.message || "").toLowerCase();
+      if (msg.includes("password") || msg.includes("encrypt") || msg.includes("credentials")) {
+        toast.error("This database appears to be password-protected.");
+        setPendingBuffer(buffer);
+        setShowPasswordDialog(true);
+      } else {
+        toast.error(`Failed to parse Access file: ${err.message}`);
+      }
+    }
+  }, [fileName]);
+
   const handleFile = useCallback(async (file: File) => {
     if (!file) return;
     const ext = file.name.toLowerCase();
@@ -152,30 +256,23 @@ export default function ImportAccess() {
 
     setFileName(file.name);
     setStep("upload");
+    setDiagnostics(null);
+    setShowSystemTables(false);
 
-    try {
-      const buffer = await file.arrayBuffer();
-      const reader = new MDBReader(Buffer.from(buffer));
-      const tableNames = reader.getTableNames().filter(
-        (n) => !n.startsWith("MSys") && !n.startsWith("~")
-      );
+    const buffer = await file.arrayBuffer();
+    setPendingBuffer(buffer);
+    parseAccessFile(buffer);
+  }, [parseAccessFile]);
 
-      const parsed: AccessTable[] = tableNames.map((name) => {
-        const table = reader.getTable(name);
-        const columns = table.getColumnNames();
-        const data = table.getData({ columns, rowLimit: 5000 }) as Record<string, unknown>[];
-        return { name, columns, rowCount: data.length, data };
-      });
+  const handlePasswordSubmit = () => {
+    if (!pendingBuffer) return;
+    setShowPasswordDialog(false);
+    parseAccessFile(pendingBuffer, dbPassword);
+    setDbPassword("");
+  };
 
-      setTables(parsed);
-      setSelectedTables(new Set(parsed.filter((t) => t.rowCount > 0).map((t) => t.name)));
-      setStep("tables");
-      toast.success(`Loaded ${parsed.length} tables from ${file.name}`);
-    } catch (err: any) {
-      console.error(err);
-      toast.error(`Failed to parse Access file: ${err.message}`);
-    }
-  }, []);
+  // Toggle between showing user tables only vs all tables
+  const displayedTables = showSystemTables ? allTables : tables;
 
   const autoMapColumns = useCallback(() => {
     const newMappings: ColumnMapping[] = [];
@@ -205,13 +302,12 @@ export default function ImportAccess() {
     };
 
     for (const tableName of selectedTables) {
-      const table = tables.find((t) => t.name === tableName);
+      const table = (showSystemTables ? allTables : tables).find((t) => t.name === tableName);
       if (!table) continue;
       for (const col of table.columns) {
         const normalized = col.toLowerCase().replace(/[\s\-_]+/g, "_").replace(/[^a-z0-9_]/g, "");
         const match = keywords[normalized];
         if (match) {
-          // Don't double-map the same target
           if (!newMappings.some((m) => m.targetField === match)) {
             newMappings.push({ sourceTable: tableName, sourceColumn: col, targetField: match });
           }
@@ -220,7 +316,7 @@ export default function ImportAccess() {
     }
 
     setMappings(newMappings);
-  }, [selectedTables, tables]);
+  }, [selectedTables, tables, allTables, showSystemTables]);
 
   const handleProceedToMapping = () => {
     autoMapColumns();
@@ -249,13 +345,11 @@ export default function ImportAccess() {
     setImportedCount(0);
 
     try {
-      // Group mappings by target entity prefix
       const companyMappings = mappings.filter((m) => m.targetField.startsWith("company."));
       const shareholderMappings = mappings.filter((m) => m.targetField.startsWith("shareholder."));
       const directorMappings = mappings.filter((m) => m.targetField.startsWith("director."));
       const officerMappings = mappings.filter((m) => m.targetField.startsWith("officer."));
 
-      // Determine the "main" table (the one with company.name mapping)
       const companyNameMapping = companyMappings.find((m) => m.targetField === "company.name");
       if (!companyNameMapping) {
         toast.error("You must map at least a Company Name field");
@@ -264,7 +358,8 @@ export default function ImportAccess() {
         return;
       }
 
-      const mainTable = tables.find((t) => t.name === companyNameMapping.sourceTable);
+      const activeTables = showSystemTables ? allTables : tables;
+      const mainTable = activeTables.find((t) => t.name === companyNameMapping.sourceTable);
       if (!mainTable) {
         toast.error("Source table not found");
         setStep("mapping");
@@ -278,20 +373,18 @@ export default function ImportAccess() {
       for (let i = 0; i < mainTable.data.length; i++) {
         const row = mainTable.data[i];
 
-        // Build company record from mappings
         const companyRecord: Record<string, unknown> = { user_id: user.id };
         for (const m of companyMappings) {
           const field = m.targetField.replace("company.", "");
           const val = m.sourceTable === mainTable.name
             ? row[m.sourceColumn]
-            : tables.find((t) => t.name === m.sourceTable)?.data[i]?.[m.sourceColumn];
+            : activeTables.find((t) => t.name === m.sourceTable)?.data[i]?.[m.sourceColumn];
           if (val !== null && val !== undefined && val !== "") {
             companyRecord[field] = String(val);
           }
         }
 
         if (!companyRecord.name) continue;
-        // Default entity type
         if (!companyRecord.entity_type) companyRecord.entity_type = "Corporation";
 
         const { data: newComp, error: compErr } = await supabase
@@ -307,17 +400,12 @@ export default function ImportAccess() {
 
         const companyId = newComp.id;
 
-        // Import shareholders from mapped table
         if (shareholderMappings.length > 0) {
           const shNameMapping = shareholderMappings.find((m) => m.targetField === "shareholder.name");
           if (shNameMapping) {
-            const shTable = tables.find((t) => t.name === shNameMapping.sourceTable);
+            const shTable = activeTables.find((t) => t.name === shNameMapping.sourceTable);
             if (shTable) {
-              // Filter rows that belong to this company (by matching row index or all if same table)
-              const shRows = shNameMapping.sourceTable === mainTable.name
-                ? [row]
-                : shTable.data;
-
+              const shRows = shNameMapping.sourceTable === mainTable.name ? [row] : shTable.data;
               for (const shRow of shRows) {
                 const shRecord: Record<string, unknown> = { company_id: companyId };
                 for (const m of shareholderMappings) {
@@ -335,11 +423,10 @@ export default function ImportAccess() {
           }
         }
 
-        // Import directors
         if (directorMappings.length > 0) {
           const dirNameMapping = directorMappings.find((m) => m.targetField === "director.name");
           if (dirNameMapping) {
-            const dirTable = tables.find((t) => t.name === dirNameMapping.sourceTable);
+            const dirTable = activeTables.find((t) => t.name === dirNameMapping.sourceTable);
             if (dirTable) {
               const dirRows = dirNameMapping.sourceTable === mainTable.name ? [row] : dirTable.data;
               for (const dirRow of dirRows) {
@@ -359,14 +446,13 @@ export default function ImportAccess() {
           }
         }
 
-        // Import officers
         if (officerMappings.length > 0) {
           const officerRecord: Record<string, unknown> = { company_id: companyId };
           for (const m of officerMappings) {
             const field = m.targetField.replace("officer.", "");
             const val = m.sourceTable === mainTable.name
               ? row[m.sourceColumn]
-              : tables.find((t) => t.name === m.sourceTable)?.data[i]?.[m.sourceColumn];
+              : activeTables.find((t) => t.name === m.sourceTable)?.data[i]?.[m.sourceColumn];
             if (val !== null && val !== undefined && val !== "") {
               officerRecord[field] = String(val);
             }
@@ -393,10 +479,46 @@ export default function ImportAccess() {
     }
   };
 
-  const previewData = previewTable ? tables.find((t) => t.name === previewTable) : null;
+  const previewData = previewTable ? displayedTables.find((t) => t.name === previewTable) : null;
 
   return (
     <div className="space-y-5 animate-fade-in max-w-4xl mx-auto">
+      {/* Password Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-4 w-4" />
+              Password-Protected Database
+            </DialogTitle>
+            <DialogDescription>
+              This Access database appears to be password-protected. Enter the password to decrypt and read the file.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Label htmlFor="db-password" className="text-sm">Database Password</Label>
+            <Input
+              id="db-password"
+              type="password"
+              value={dbPassword}
+              onChange={(e) => setDbPassword(e.target.value)}
+              placeholder="Enter database password…"
+              className="mt-1.5"
+              onKeyDown={(e) => { if (e.key === "Enter") handlePasswordSubmit(); }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowPasswordDialog(false); setDbPassword(""); }}>
+              Cancel
+            </Button>
+            <Button onClick={handlePasswordSubmit} disabled={!dbPassword}>
+              <Lock className="h-3.5 w-3.5 mr-1.5" />
+              Unlock & Parse
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="h-8 w-8 shrink-0">
@@ -467,7 +589,7 @@ export default function ImportAccess() {
             <div>
               <p className="text-sm font-medium">Drop your Access database here or click to upload</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Supports .accdb and .mdb files (32-bit and 64-bit)
+                Supports .accdb and .mdb files (Access 97–2019, all versions)
               </p>
             </div>
           </div>
@@ -477,46 +599,109 @@ export default function ImportAccess() {
       {/* Step: Select Tables */}
       {step === "tables" && (
         <div className="space-y-4">
+          {/* Diagnostics info */}
+          {diagnostics && (
+            <div className="flex items-start gap-2 p-3 rounded-md bg-muted/50 border text-xs">
+              <Info className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+              <div className="space-y-0.5">
+                <p className="font-medium">Database Info</p>
+                {diagnostics.creationDate && (
+                  <p className="text-muted-foreground">Created: {diagnostics.creationDate}</p>
+                )}
+                <p className="text-muted-foreground">
+                  Tables: {diagnostics.userTableCount} user / {diagnostics.systemTableCount} system
+                </p>
+              </div>
+            </div>
+          )}
+
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <TableIcon className="h-4 w-4 text-primary" />
-                Tables Found in {fileName}
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <TableIcon className="h-4 w-4 text-primary" />
+                  Tables Found in {fileName}
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="show-system"
+                    checked={showSystemTables}
+                    onCheckedChange={(checked) => setShowSystemTables(checked === true)}
+                  />
+                  <Label htmlFor="show-system" className="text-xs text-muted-foreground cursor-pointer">
+                    Include system tables
+                  </Label>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-2">
-              <p className="text-xs text-muted-foreground mb-3">
-                Select the tables that contain your client data. Deselect system or irrelevant tables.
-              </p>
-              {tables.map((t) => (
-                <div key={t.name} className="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-muted/50 transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={selectedTables.has(t.name)}
-                    onChange={(e) => {
-                      const next = new Set(selectedTables);
-                      if (e.target.checked) next.add(t.name);
-                      else next.delete(t.name);
-                      setSelectedTables(next);
-                    }}
-                    className="rounded border-border"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{t.name}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {t.columns.length} columns · {t.rowCount} rows
-                    </p>
-                  </div>
+              {displayedTables.length === 0 ? (
+                <div className="py-6 text-center space-y-2">
+                  <AlertCircle className="h-8 w-8 text-muted-foreground/40 mx-auto" />
+                  <p className="text-sm text-muted-foreground">No tables found in this file.</p>
+                  <p className="text-xs text-muted-foreground">
+                    The file may be corrupted, empty, or password-protected.
+                  </p>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => setPreviewTable(previewTable === t.name ? null : t.name)}
+                    className="mt-2"
+                    onClick={() => {
+                      if (pendingBuffer) {
+                        setShowPasswordDialog(true);
+                      } else {
+                        setStep("upload");
+                      }
+                    }}
                   >
-                    <Eye className="h-3 w-3 mr-1" /> Preview
+                    <Lock className="h-3.5 w-3.5 mr-1.5" />
+                    Try with Password
                   </Button>
                 </div>
-              ))}
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Select the tables that contain your client data. Deselect system or irrelevant tables.
+                  </p>
+                  {displayedTables.map((t) => {
+                    const isSystem = t.name.startsWith("MSys") || t.name.startsWith("~");
+                    return (
+                      <div key={t.name} className={`flex items-center gap-3 py-2 px-3 rounded-md hover:bg-muted/50 transition-colors ${isSystem ? "opacity-60" : ""}`}>
+                        <input
+                          type="checkbox"
+                          checked={selectedTables.has(t.name)}
+                          onChange={(e) => {
+                            const next = new Set(selectedTables);
+                            if (e.target.checked) next.add(t.name);
+                            else next.delete(t.name);
+                            setSelectedTables(next);
+                          }}
+                          className="rounded border-border"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {t.name}
+                            {isSystem && (
+                              <Badge variant="outline" className="ml-2 text-[9px] py-0">system</Badge>
+                            )}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {t.columns.length} columns · {t.rowCount} rows
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => setPreviewTable(previewTable === t.name ? null : t.name)}
+                        >
+                          <Eye className="h-3 w-3 mr-1" /> Preview
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -557,7 +742,7 @@ export default function ImportAccess() {
           )}
 
           <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => { setStep("upload"); setTables([]); }}>
+            <Button variant="outline" onClick={() => { setStep("upload"); setTables([]); setAllTables([]); setDiagnostics(null); }}>
               Back
             </Button>
             <Button onClick={handleProceedToMapping} disabled={selectedTables.size === 0}>
@@ -582,7 +767,6 @@ export default function ImportAccess() {
                 We auto-detected some mappings. Adjust as needed. Unmapped columns will be skipped.
               </p>
 
-              {/* Active mappings */}
               {mappings.map((m, idx) => (
                 <div key={idx} className="flex items-center gap-2 text-xs">
                   <Badge variant="outline" className="shrink-0 text-[10px]">{m.sourceTable}</Badge>
@@ -606,10 +790,9 @@ export default function ImportAccess() {
                 </div>
               ))}
 
-              {/* Unmapped columns accordion */}
               <Accordion type="multiple" className="mt-4">
                 {Array.from(selectedTables).map((tableName) => {
-                  const table = tables.find((t) => t.name === tableName);
+                  const table = displayedTables.find((t) => t.name === tableName);
                   if (!table) return null;
                   const unmapped = table.columns.filter(
                     (col) => !mappings.some((m) => m.sourceTable === tableName && m.sourceColumn === col)
@@ -667,7 +850,8 @@ export default function ImportAccess() {
       {/* Step: Preview */}
       {step === "preview" && (() => {
         const companyNameMapping = mappings.find((m) => m.targetField === "company.name");
-        const mainTable = companyNameMapping ? tables.find((t) => t.name === companyNameMapping.sourceTable) : null;
+        const activeTables = showSystemTables ? allTables : tables;
+        const mainTable = companyNameMapping ? activeTables.find((t) => t.name === companyNameMapping.sourceTable) : null;
         const previewRows = mainTable?.data.slice(0, 5) || [];
 
         return (
@@ -742,7 +926,7 @@ export default function ImportAccess() {
               <Button variant="outline" onClick={() => navigate("/")}>
                 Go to Dashboard
               </Button>
-              <Button onClick={() => { setStep("upload"); setTables([]); setMappings([]); setFileName(""); }}>
+              <Button onClick={() => { setStep("upload"); setTables([]); setAllTables([]); setMappings([]); setFileName(""); setDiagnostics(null); }}>
                 Import Another File
               </Button>
             </div>
