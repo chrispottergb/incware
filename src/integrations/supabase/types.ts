@@ -127,6 +127,44 @@ export type Database = {
           },
         ]
       }
+      agreements: {
+        Row: {
+          agreement_date: string | null
+          agreement_purpose: string | null
+          agreement_type: string
+          agreement_with: string | null
+          created_at: string
+          id: string
+          meeting_id: string
+        }
+        Insert: {
+          agreement_date?: string | null
+          agreement_purpose?: string | null
+          agreement_type: string
+          agreement_with?: string | null
+          created_at?: string
+          id?: string
+          meeting_id: string
+        }
+        Update: {
+          agreement_date?: string | null
+          agreement_purpose?: string | null
+          agreement_type?: string
+          agreement_with?: string | null
+          created_at?: string
+          id?: string
+          meeting_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreements_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_oversight_persons: {
         Row: {
           ai_system_id: string
@@ -786,15 +824,20 @@ export type Database = {
           escrow: number | null
           finance_company: string | null
           id: string
+          lease_amount: number | null
+          lease_date: string | null
           make: string | null
           manufacturer: string | null
           model: string | null
           mortgage: number | null
           ownership_type: string | null
+          purchase_amount: number | null
+          purchase_date: string | null
           running_hours: number | null
           taxes: number | null
           updated_at: string
           value: number | null
+          vin: string | null
           year: string | null
         }
         Insert: {
@@ -807,15 +850,20 @@ export type Database = {
           escrow?: number | null
           finance_company?: string | null
           id?: string
+          lease_amount?: number | null
+          lease_date?: string | null
           make?: string | null
           manufacturer?: string | null
           model?: string | null
           mortgage?: number | null
           ownership_type?: string | null
+          purchase_amount?: number | null
+          purchase_date?: string | null
           running_hours?: number | null
           taxes?: number | null
           updated_at?: string
           value?: number | null
+          vin?: string | null
           year?: string | null
         }
         Update: {
@@ -828,15 +876,20 @@ export type Database = {
           escrow?: number | null
           finance_company?: string | null
           id?: string
+          lease_amount?: number | null
+          lease_date?: string | null
           make?: string | null
           manufacturer?: string | null
           model?: string | null
           mortgage?: number | null
           ownership_type?: string | null
+          purchase_amount?: number | null
+          purchase_date?: string | null
           running_hours?: number | null
           taxes?: number | null
           updated_at?: string
           value?: number | null
+          vin?: string | null
           year?: string | null
         }
         Relationships: [
@@ -1369,26 +1422,73 @@ export type Database = {
           },
         ]
       }
-      meeting_officers: {
+      meeting_loans: {
         Row: {
           created_at: string
           id: string
+          loan_amount: number | null
+          loan_date: string | null
+          loan_rate: number | null
+          loan_type: string | null
           meeting_id: string
-          name: string
-          title: string
+          notes: string | null
         }
         Insert: {
           created_at?: string
           id?: string
+          loan_amount?: number | null
+          loan_date?: string | null
+          loan_rate?: number | null
+          loan_type?: string | null
           meeting_id: string
-          name: string
-          title: string
+          notes?: string | null
         }
         Update: {
           created_at?: string
           id?: string
+          loan_amount?: number | null
+          loan_date?: string | null
+          loan_rate?: number | null
+          loan_type?: string | null
+          meeting_id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_loans_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_officers: {
+        Row: {
+          bonus: number | null
+          created_at: string
+          id: string
+          meeting_id: string
+          name: string
+          salary: number | null
+          title: string
+        }
+        Insert: {
+          bonus?: number | null
+          created_at?: string
+          id?: string
+          meeting_id: string
+          name: string
+          salary?: number | null
+          title: string
+        }
+        Update: {
+          bonus?: number | null
+          created_at?: string
+          id?: string
           meeting_id?: string
           name?: string
+          salary?: number | null
           title?: string
         }
         Relationships: [
