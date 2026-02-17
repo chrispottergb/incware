@@ -35,6 +35,7 @@ import { toast } from "sonner";
 import TaxReturnUpload from "@/components/TaxReturnUpload";
 
 import cardNewClient from "@/assets/card-new-client.jpg";
+import cardImportTaxReturn from "@/assets/card-import-tax-return.jpg";
 import cardExistingClient from "@/assets/card-existing-client.jpg";
 import cardAnnualUpdate from "@/assets/card-annual-update.jpg";
 import cardQuickSearch from "@/assets/card-quick-search.jpg";
@@ -56,6 +57,7 @@ export default function Dashboard() {
   const [filterType, setFilterType] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [taxReturnOpen, setTaxReturnOpen] = useState(false);
   
   useEffect(() => {
     const handler = () => setDialogOpen(true);
@@ -121,7 +123,7 @@ export default function Dashboard() {
       </div>
 
       {/* Welcome Action Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 min-w-0">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 min-w-0">
         {[
           {
             title: "New Client",
@@ -129,6 +131,13 @@ export default function Dashboard() {
             image: cardNewClient,
             icon: UserPlus,
             onClick: () => setDialogOpen(true),
+          },
+          {
+            title: "Import Tax Return",
+            description: "Upload & auto-populate",
+            image: cardImportTaxReturn,
+            icon: Upload,
+            onClick: () => setTaxReturnOpen(true),
           },
           {
             title: "Existing Client",
@@ -191,6 +200,18 @@ export default function Dashboard() {
           </button>
         ))}
       </div>
+
+      {/* Standalone Tax Return Upload Dialog */}
+      <TaxReturnUpload
+        onCompanyCreated={(id) => {
+          queryClient.invalidateQueries({ queryKey: ["companies"] });
+          setTaxReturnOpen(false);
+          navigate(`/company/${id}`);
+        }}
+        trigger={<span />}
+        externalOpen={taxReturnOpen}
+        onExternalOpenChange={setTaxReturnOpen}
+      />
 
       {/* AI Compliance Summary */}
       <AIComplianceSummary />
