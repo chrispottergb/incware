@@ -7,7 +7,7 @@
 @layer base {
   :root {
     /* Black, brick red, tan, white — Squarespace-inspired dark palette */
-    --background: 0 0% 7%;
+    --background: 0 0% 15%;
     --foreground: 30 20% 90%;
 
     --card: 0 0% 10%;
