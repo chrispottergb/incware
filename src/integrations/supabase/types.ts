@@ -468,6 +468,8 @@ export type Database = {
           bank_id: string
           company_id: string
           created_at: string
+          effective_date: string | null
+          end_date: string | null
           id: string
           signer_name: string
           title: string | null
@@ -476,6 +478,8 @@ export type Database = {
           bank_id: string
           company_id: string
           created_at?: string
+          effective_date?: string | null
+          end_date?: string | null
           id?: string
           signer_name: string
           title?: string | null
@@ -484,6 +488,8 @@ export type Database = {
           bank_id?: string
           company_id?: string
           created_at?: string
+          effective_date?: string | null
+          end_date?: string | null
           id?: string
           signer_name?: string
           title?: string | null
@@ -1135,6 +1141,51 @@ export type Database = {
             columns: ["meeting_id"]
             isOneToOne: false
             referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_authorized_signers: {
+        Row: {
+          bank_name: string | null
+          created_at: string
+          id: string
+          meeting_id: string
+          signer_id: string | null
+          signer_name: string
+          title: string | null
+        }
+        Insert: {
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          meeting_id: string
+          signer_id?: string | null
+          signer_name: string
+          title?: string | null
+        }
+        Update: {
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          signer_id?: string | null
+          signer_name?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_authorized_signers_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_authorized_signers_signer_id_fkey"
+            columns: ["signer_id"]
+            isOneToOne: false
+            referencedRelation: "bank_authorized_signers"
             referencedColumns: ["id"]
           },
         ]

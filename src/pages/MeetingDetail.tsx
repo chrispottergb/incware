@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calendar, Loader2 } from "lucide-react";
+import MeetingAuthorizedSigners from "@/components/meeting/MeetingAuthorizedSigners";
 import MeetingInfoCard from "@/components/meeting/MeetingInfoCard";
 import MeetingFinancials from "@/components/meeting/MeetingFinancials";
 import MeetingSubTable from "@/components/meeting/MeetingSubTable";
@@ -143,6 +144,16 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
+  const { data: authorizedSigners = [] } = useQuery({
+    queryKey: ["meeting_authorized_signers", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_authorized_signers" as any).select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!meetingId,
+  });
+
   const { data: financials } = useQuery({
     queryKey: ["meeting_financials", meetingId],
     queryFn: async () => {
@@ -187,6 +198,7 @@ export default function MeetingDetail() {
       benefits,
       other,
       financials,
+      authorizedSigners,
     });
 
   const subTabs = [
@@ -201,6 +213,7 @@ export default function MeetingDetail() {
     { value: "resolutions", label: "Resolutions" },
     { value: "benefits", label: "Benefits" },
     { value: "other", label: "Other" },
+    { value: "auth_signers", label: "Auth. Signatories" },
   ];
 
   const meetingFileName = `${company?.name || "meeting"}-${meeting.meeting_type}-${meeting.meeting_date}.pdf`.replace(/\s+/g, "-").toLowerCase();
@@ -409,6 +422,18 @@ export default function MeetingDetail() {
             <MeetingSubTable meetingId={meeting.id} tableName="meeting_other" title="Other Notes"
               columns={[{ key: "notes", label: "Notes", required: true, wide: true }]}
             />
+          </div>
+        </TabsContent>
+        <TabsContent value="auth_signers" className="mt-5">
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <PrintPreviewButton
+                label="Print"
+                generatePDF={() => exportSectionPDF("Authorized Signatories", company, meeting, ["Name", "Title", "Bank"], authorizedSigners.map((s: any) => [s.signer_name, s.title || "—", s.bank_name || "—"]))}
+                fileName={`auth-signatories-${meetingFileName}`}
+              />
+            </div>
+            <MeetingAuthorizedSigners meetingId={meeting.id} companyId={meeting.company_id} meetingDate={meeting.meeting_date} />
           </div>
         </TabsContent>
       </Tabs>

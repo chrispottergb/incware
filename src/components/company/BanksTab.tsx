@@ -9,8 +9,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, Pencil, Trash2, Landmark, PenTool } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Plus, Pencil, Trash2, Landmark, PenTool, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface BanksTabProps {
   companyId: string;
@@ -22,7 +27,7 @@ const ACCOUNT_TYPES = ["checking", "savings", "money_market", "cd", "line_of_cre
 function AuthorizedSignersSection({ companyId, banks }: { companyId: string; banks: any[] }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ signer_name: "", title: "", bank_id: "" });
+  const [form, setForm] = useState({ signer_name: "", title: "", bank_id: "", effective_date: new Date().toISOString().split("T")[0], end_date: "" });
 
   const { data: signers = [] } = useQuery({
     queryKey: ["bank_authorized_signers", companyId],
@@ -39,18 +44,20 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("bank_authorized_signers").insert({
+      const { error } = await supabase.from("bank_authorized_signers" as any).insert({
         signer_name: form.signer_name,
         title: form.title || null,
         bank_id: form.bank_id,
         company_id: companyId,
-      });
+        effective_date: form.effective_date || null,
+        end_date: form.end_date || null,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bank_authorized_signers", companyId] });
       setOpen(false);
-      setForm({ signer_name: "", title: "", bank_id: "" });
+      setForm({ signer_name: "", title: "", bank_id: "", effective_date: new Date().toISOString().split("T")[0], end_date: "" });
       toast.success("Authorized signatory added");
     },
     onError: (e: any) => toast.error(e.message),
@@ -69,8 +76,18 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
   });
 
   const openNew = () => {
-    setForm({ signer_name: "", title: "", bank_id: banks.length === 1 ? banks[0].id : "" });
+    setForm({ signer_name: "", title: "", bank_id: banks.length === 1 ? banks[0].id : "", effective_date: new Date().toISOString().split("T")[0], end_date: "" });
     setOpen(true);
+  };
+
+  const isActive = (s: any) => {
+    const today = new Date().toISOString().split("T")[0];
+    const eff = s.effective_date;
+    const end = s.end_date;
+    if (!eff) return true;
+    if (eff > today) return false;
+    if (end && end < today) return false;
+    return true;
   };
 
   return (
@@ -90,6 +107,9 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
               <TableHead>Name</TableHead>
               <TableHead className="hidden sm:table-cell">Title</TableHead>
               <TableHead>Bank</TableHead>
+              <TableHead className="hidden md:table-cell">Effective</TableHead>
+              <TableHead className="hidden md:table-cell">End</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="w-12" />
             </TableRow>
           </TableHeader>
@@ -99,6 +119,13 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
                 <TableCell className="font-medium text-xs">{s.signer_name}</TableCell>
                 <TableCell className="hidden sm:table-cell text-xs">{s.title}</TableCell>
                 <TableCell className="text-xs">{s.company_banks?.bank_name}</TableCell>
+                <TableCell className="hidden md:table-cell text-xs">{s.effective_date ? new Date(s.effective_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
+                <TableCell className="hidden md:table-cell text-xs">{s.end_date ? new Date(s.end_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
+                <TableCell>
+                  <Badge variant={isActive(s) ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
+                    {isActive(s) ? "Active" : "Inactive"}
+                  </Badge>
+                </TableCell>
                 <TableCell>
                   <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(s.id)}>
                     <Trash2 className="h-3 w-3" />
@@ -108,7 +135,7 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
             ))}
             {signers.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">
+                <TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-6">
                   {banks.length === 0 ? "Add a bank account first" : "No authorized signatories yet"}
                 </TableCell>
               </TableRow>
@@ -134,6 +161,36 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
             <div className="grid grid-cols-2 gap-2">
               <div><Label className="text-xs">Signatory Name *</Label><Input value={form.signer_name} onChange={e => setForm(p => ({ ...p, signer_name: e.target.value }))} /></div>
               <div><Label className="text-xs">Title</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. President, Treasurer" /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs">Effective Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal text-xs", !form.effective_date && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-3 w-3" />
+                      {form.effective_date ? format(new Date(form.effective_date + "T00:00:00"), "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={form.effective_date ? new Date(form.effective_date + "T00:00:00") : undefined} onSelect={d => setForm(p => ({ ...p, effective_date: d ? d.toISOString().split("T")[0] : "" }))} initialFocus className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <Label className="text-xs">End Date (optional)</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal text-xs", !form.end_date && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-3 w-3" />
+                      {form.end_date ? format(new Date(form.end_date + "T00:00:00"), "PPP") : "Still active"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={form.end_date ? new Date(form.end_date + "T00:00:00") : undefined} onSelect={d => setForm(p => ({ ...p, end_date: d ? d.toISOString().split("T")[0] : "" }))} initialFocus className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </div>
           <DialogFooter className="gap-2">
