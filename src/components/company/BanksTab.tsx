@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, Pencil, Trash2, Landmark } from "lucide-react";
+import { Plus, Pencil, Trash2, Landmark, PenTool } from "lucide-react";
 import { toast } from "sonner";
 
 interface BanksTabProps {
@@ -18,6 +18,136 @@ interface BanksTabProps {
 
 const ACCOUNT_TYPES = ["checking", "savings", "money_market", "cd", "line_of_credit", "loan", "other"];
 
+// ─── Authorized Signers Section ───
+function AuthorizedSignersSection({ companyId, banks }: { companyId: string; banks: any[] }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ signer_name: "", title: "", bank_id: "" });
+
+  const { data: signers = [] } = useQuery({
+    queryKey: ["bank_authorized_signers", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("bank_authorized_signers")
+        .select("*, company_banks(bank_name)")
+        .eq("company_id", companyId)
+        .order("signer_name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("bank_authorized_signers").insert({
+        signer_name: form.signer_name,
+        title: form.title || null,
+        bank_id: form.bank_id,
+        company_id: companyId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bank_authorized_signers", companyId] });
+      setOpen(false);
+      setForm({ signer_name: "", title: "", bank_id: "" });
+      toast.success("Authorized signer added");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const del = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("bank_authorized_signers").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bank_authorized_signers", companyId] });
+      toast.success("Signer removed");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const openNew = () => {
+    setForm({ signer_name: "", title: "", bank_id: banks.length === 1 ? banks[0].id : "" });
+    setOpen(true);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
+        <CardTitle className="text-sm font-semibold flex items-center gap-2">
+          <PenTool className="h-4 w-4" /> Authorized Signers
+        </CardTitle>
+        <Button size="sm" variant="outline" onClick={openNew} className="h-7 text-xs" disabled={banks.length === 0}>
+          <Plus className="h-3 w-3 mr-1" />Add Signer
+        </Button>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead className="hidden sm:table-cell">Title</TableHead>
+              <TableHead>Bank</TableHead>
+              <TableHead className="w-12" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {signers.map((s: any) => (
+              <TableRow key={s.id}>
+                <TableCell className="font-medium text-xs">{s.signer_name}</TableCell>
+                <TableCell className="hidden sm:table-cell text-xs">{s.title}</TableCell>
+                <TableCell className="text-xs">{s.company_banks?.bank_name}</TableCell>
+                <TableCell>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(s.id)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {signers.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">
+                  {banks.length === 0 ? "Add a bank account first" : "No authorized signers yet"}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add Authorized Signer</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div>
+              <Label className="text-xs">Bank Account *</Label>
+              <Select value={form.bank_id} onValueChange={v => setForm(p => ({ ...p, bank_id: v }))}>
+                <SelectTrigger className="bg-popover"><SelectValue placeholder="Select bank account" /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  {banks.map((b: any) => (
+                    <SelectItem key={b.id} value={b.id}>{b.bank_name} ({b.account_type?.replace(/_/g, " ")})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div><Label className="text-xs">Signer Name *</Label><Input value={form.signer_name} onChange={e => setForm(p => ({ ...p, signer_name: e.target.value }))} /></div>
+              <div><Label className="text-xs">Title</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. President, Treasurer" /></div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => save.mutate()} disabled={!form.signer_name.trim() || !form.bank_id || save.isPending}>
+              {save.isPending ? "Saving…" : "Add Signer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
+// ─── Main BanksTab ───
 export default function BanksTab({ companyId }: BanksTabProps) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -68,79 +198,83 @@ export default function BanksTab({ companyId }: BanksTabProps) {
   const formatType = (t: string) => t.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2"><Landmark className="h-4 w-4" /> Bank Accounts</CardTitle>
-        <Button size="sm" variant="outline" onClick={openNew} className="h-7 text-xs"><Plus className="h-3 w-3 mr-1" />Add Bank</Button>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Bank Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead className="hidden sm:table-cell">Account #</TableHead>
-              <TableHead className="hidden md:table-cell">Routing #</TableHead>
-              <TableHead className="hidden lg:table-cell">Contact</TableHead>
-              <TableHead className="hidden md:table-cell">Phone</TableHead>
-              <TableHead className="w-16" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {banks.map((b: any) => (
-              <TableRow key={b.id}>
-                <TableCell className="font-medium text-xs">{b.bank_name}</TableCell>
-                <TableCell className="text-xs">{formatType(b.account_type || "")}</TableCell>
-                <TableCell className="hidden sm:table-cell text-xs font-mono">{b.account_number ? `••••${b.account_number.slice(-4)}` : ""}</TableCell>
-                <TableCell className="hidden md:table-cell text-xs font-mono">{b.routing_number}</TableCell>
-                <TableCell className="hidden lg:table-cell text-xs">{[b.contact_name, b.contact_title].filter(Boolean).join(", ")}</TableCell>
-                <TableCell className="hidden md:table-cell text-xs">{b.phone}</TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(b)}><Pencil className="h-3 w-3" /></Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(b.id)}><Trash2 className="h-3 w-3" /></Button>
-                  </div>
-                </TableCell>
+    <div className="space-y-5">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2"><Landmark className="h-4 w-4" /> Bank Accounts</CardTitle>
+          <Button size="sm" variant="outline" onClick={openNew} className="h-7 text-xs"><Plus className="h-3 w-3 mr-1" />Add Bank</Button>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Bank Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead className="hidden sm:table-cell">Account #</TableHead>
+                <TableHead className="hidden md:table-cell">Routing #</TableHead>
+                <TableHead className="hidden lg:table-cell">Contact</TableHead>
+                <TableHead className="hidden md:table-cell">Phone</TableHead>
+                <TableHead className="w-16" />
               </TableRow>
-            ))}
-            {banks.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-6">No bank accounts yet</TableCell></TableRow>}
-          </TableBody>
-        </Table>
-      </CardContent>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{editing ? "Edit" : "Add"} Bank Account</DialogTitle></DialogHeader>
-          <div className="grid gap-3">
-            <div><Label className="text-xs">Bank Name *</Label><Input value={form.bank_name} onChange={e => setForm(p => ({ ...p, bank_name: e.target.value }))} /></div>
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <Label className="text-xs">Account Type</Label>
-                <Select value={form.account_type} onValueChange={v => setForm(p => ({ ...p, account_type: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {ACCOUNT_TYPES.map(t => <SelectItem key={t} value={t}>{formatType(t)}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+            </TableHeader>
+            <TableBody>
+              {banks.map((b: any) => (
+                <TableRow key={b.id}>
+                  <TableCell className="font-medium text-xs">{b.bank_name}</TableCell>
+                  <TableCell className="text-xs">{formatType(b.account_type || "")}</TableCell>
+                  <TableCell className="hidden sm:table-cell text-xs font-mono">{b.account_number ? `••••${b.account_number.slice(-4)}` : ""}</TableCell>
+                  <TableCell className="hidden md:table-cell text-xs font-mono">{b.routing_number}</TableCell>
+                  <TableCell className="hidden lg:table-cell text-xs">{[b.contact_name, b.contact_title].filter(Boolean).join(", ")}</TableCell>
+                  <TableCell className="hidden md:table-cell text-xs">{b.phone}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(b)}><Pencil className="h-3 w-3" /></Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(b.id)}><Trash2 className="h-3 w-3" /></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {banks.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-6">No bank accounts yet</TableCell></TableRow>}
+            </TableBody>
+          </Table>
+        </CardContent>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader><DialogTitle>{editing ? "Edit" : "Add"} Bank Account</DialogTitle></DialogHeader>
+            <div className="grid gap-3">
+              <div><Label className="text-xs">Bank Name *</Label><Input value={form.bank_name} onChange={e => setForm(p => ({ ...p, bank_name: e.target.value }))} /></div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Label className="text-xs">Account Type</Label>
+                  <Select value={form.account_type} onValueChange={v => setForm(p => ({ ...p, account_type: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      {ACCOUNT_TYPES.map(t => <SelectItem key={t} value={t}>{formatType(t)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label className="text-xs">Account #</Label><Input value={form.account_number} onChange={e => setForm(p => ({ ...p, account_number: e.target.value }))} /></div>
+                <div><Label className="text-xs">Routing #</Label><Input value={form.routing_number} onChange={e => setForm(p => ({ ...p, routing_number: e.target.value }))} /></div>
               </div>
-              <div><Label className="text-xs">Account #</Label><Input value={form.account_number} onChange={e => setForm(p => ({ ...p, account_number: e.target.value }))} /></div>
-              <div><Label className="text-xs">Routing #</Label><Input value={form.routing_number} onChange={e => setForm(p => ({ ...p, routing_number: e.target.value }))} /></div>
+              <div className="grid grid-cols-2 gap-2">
+                <div><Label className="text-xs">Contact Name</Label><Input value={form.contact_name} onChange={e => setForm(p => ({ ...p, contact_name: e.target.value }))} /></div>
+                <div><Label className="text-xs">Contact Title</Label><Input value={form.contact_title} onChange={e => setForm(p => ({ ...p, contact_title: e.target.value }))} /></div>
+              </div>
+              <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
+              <div><Label className="text-xs">Address</Label><Input value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
+              <div className="grid grid-cols-3 gap-2">
+                <div><Label className="text-xs">City</Label><Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
+                <div><Label className="text-xs">State</Label><Input value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
+                <div><Label className="text-xs">Zip</Label><Input value={form.zip} onChange={e => setForm(p => ({ ...p, zip: e.target.value }))} /></div>
+              </div>
+              <div><Label className="text-xs">Notes</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Contact Name</Label><Input value={form.contact_name} onChange={e => setForm(p => ({ ...p, contact_name: e.target.value }))} /></div>
-              <div><Label className="text-xs">Contact Title</Label><Input value={form.contact_title} onChange={e => setForm(p => ({ ...p, contact_title: e.target.value }))} /></div>
-            </div>
-            <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
-            <div><Label className="text-xs">Address</Label><Input value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
-            <div className="grid grid-cols-3 gap-2">
-              <div><Label className="text-xs">City</Label><Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
-              <div><Label className="text-xs">State</Label><Input value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
-              <div><Label className="text-xs">Zip</Label><Input value={form.zip} onChange={e => setForm(p => ({ ...p, zip: e.target.value }))} /></div>
-            </div>
-            <div><Label className="text-xs">Notes</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
-          </div>
-          <DialogFooter><Button onClick={() => save.mutate()} disabled={!form.bank_name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
+            <DialogFooter><Button onClick={() => save.mutate()} disabled={!form.bank_name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </Card>
+
+      <AuthorizedSignersSection companyId={companyId} banks={banks} />
+    </div>
   );
 }
