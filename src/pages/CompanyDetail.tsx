@@ -1,10 +1,22 @@
+import { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Building2, Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ArrowLeft, Building2, Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import IncorporationTab from "@/components/company/IncorporationTab";
 import OrganizationTab from "@/components/company/OrganizationTab";
 import MeetingsTab from "@/components/company/MeetingsTab";
@@ -24,10 +36,32 @@ export default function CompanyDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const hashTab = location.hash.replace("#", "") || "incorporation";
+
+  const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
+  const [deleting, setDeleting] = useState(false);
 
   const handleTabChange = (value: string) => {
     navigate(`#${value}`, { replace: true });
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from("companies").delete().eq("id", id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      toast.success("Company and all associated data have been permanently deleted.");
+      navigate("/");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to delete company");
+    } finally {
+      setDeleting(false);
+      setDeleteStep(0);
+    }
   };
 
   const { data: company, isLoading } = useQuery({
@@ -97,7 +131,59 @@ export default function CompanyDetail() {
               ` · Inc. ${new Date(company.incorporation_date + "T00:00:00").toLocaleDateString()}`}
           </p>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setDeleteStep(1)}
+          className="mt-0.5 shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          title="Delete company"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
+
+      {/* Delete Confirmation Step 1 */}
+      <AlertDialog open={deleteStep === 1} onOpenChange={(open) => !open && setDeleteStep(0)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{company.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this company and all associated records including meetings, financials, shareholders, stock certificates, assets, and documents.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); setDeleteStep(2); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Step 2 */}
+      <AlertDialog open={deleteStep === 2} onOpenChange={(open) => !open && setDeleteStep(0)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure? This is permanent.</AlertDialogTitle>
+            <AlertDialogDescription>
+              All data for <span className="font-semibold text-foreground">{company.name}</span> will be permanently lost and cannot be recovered. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Go Back</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleDelete(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleting}
+            >
+              {deleting ? <><Loader2 className="h-4 w-4 animate-spin mr-1.5" /> Deleting…</> : "Yes, Delete Permanently"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Tabs */}
       <Tabs value={hashTab} onValueChange={handleTabChange} className="w-full">
