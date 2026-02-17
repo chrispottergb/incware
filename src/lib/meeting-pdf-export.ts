@@ -207,25 +207,91 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   // Financials
   if (data.financials) {
     const f = data.financials;
-    y = checkPageBreak(doc, y, 50);
-    y = addSectionTitle(doc, y, "Financial Comparison");
+    y = checkPageBreak(doc, y, 80);
+    y = addSectionTitle(doc, y, "Financial Comparison — Year to Year");
+
+    const yoy = (cur: number | null | undefined, prev: number | null | undefined): string => {
+      if (cur == null || prev == null || prev === 0) return "—";
+      const change = ((cur - prev) / Math.abs(prev)) * 100;
+      return `${change >= 0 ? "▲" : "▼"} ${Math.abs(change).toFixed(1)}%`;
+    };
+
     autoTable(doc, {
       startY: y,
-      head: [["", "Current Year", "Previous Year"]],
+      head: [["", "Current Year", "Previous Year", "YoY Change"]],
       body: [
-        ["Total Sales", fmt(f.current_total_sales), fmt(f.previous_total_sales)],
-        ["Cost of Goods", fmt(f.current_cog), fmt(f.previous_cog)],
-        ["Gross Profit", fmt(f.current_gross_profit), fmt(f.previous_gross_profit)],
-        ["COG Ratio (%)", f.current_cog_ratio != null ? `${Number(f.current_cog_ratio).toFixed(2)}%` : "—", f.previous_cog_ratio != null ? `${Number(f.previous_cog_ratio).toFixed(2)}%` : "—"],
-        ["Net Income", fmt(f.current_net_income), fmt(f.previous_net_income)],
+        ["Total Sales", fmt(f.current_total_sales), fmt(f.previous_total_sales), yoy(f.current_total_sales, f.previous_total_sales)],
+        ["Cost of Goods", fmt(f.current_cog), fmt(f.previous_cog), yoy(f.current_cog, f.previous_cog)],
+        ["Gross Profit", fmt(f.current_gross_profit), fmt(f.previous_gross_profit), yoy(f.current_gross_profit, f.previous_gross_profit)],
+        ["COG Ratio (%)", f.current_cog_ratio != null ? `${Number(f.current_cog_ratio).toFixed(2)}%` : "—", f.previous_cog_ratio != null ? `${Number(f.previous_cog_ratio).toFixed(2)}%` : "—", yoy(f.current_cog_ratio, f.previous_cog_ratio)],
+        ["Net Income", fmt(f.current_net_income), fmt(f.previous_net_income), yoy(f.current_net_income, f.previous_net_income)],
       ],
       theme: "grid",
       headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
       bodyStyles: { fontSize: 8 },
-      columnStyles: { 1: { halign: "right", fontStyle: "bold" }, 2: { halign: "right" } },
+      columnStyles: { 1: { halign: "right", fontStyle: "bold" }, 2: { halign: "right" }, 3: { halign: "center", fontStyle: "bold" } },
       margin: { left: 14, right: 14 },
     });
     y = (doc as any).lastAutoTable.finalY + 6;
+
+    // Draw simple YoY bar chart in PDF
+    const pw = doc.internal.pageSize.getWidth();
+    const chartW = pw - 28;
+    const chartH = 50;
+    y = checkPageBreak(doc, y, chartH + 30);
+    y = addSectionTitle(doc, y, "Year to Year Visual Comparison");
+
+    const metrics = [
+      { label: "Sales", cur: f.current_total_sales, prev: f.previous_total_sales },
+      { label: "COG", cur: f.current_cog, prev: f.previous_cog },
+      { label: "Gross Profit", cur: f.current_gross_profit, prev: f.previous_gross_profit },
+      { label: "Net Income", cur: f.current_net_income, prev: f.previous_net_income },
+    ];
+    const maxVal = Math.max(...metrics.map(m => Math.max(Math.abs(m.cur || 0), Math.abs(m.prev || 0))), 1);
+    const barGroupW = chartW / metrics.length;
+    const barW = barGroupW * 0.3;
+    const chartX = 14;
+    const chartBottom = y + chartH;
+
+    // Background
+    doc.setFillColor(248, 249, 250);
+    doc.rect(chartX, y, chartW, chartH, "F");
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.2);
+    doc.rect(chartX, y, chartW, chartH, "S");
+
+    metrics.forEach((m, i) => {
+      const gx = chartX + i * barGroupW + barGroupW * 0.1;
+      const curH = (Math.abs(m.cur || 0) / maxVal) * (chartH - 10);
+      const prevH = (Math.abs(m.prev || 0) / maxVal) * (chartH - 10);
+
+      // Current year bar (blue)
+      doc.setFillColor(45, 55, 120);
+      doc.rect(gx, chartBottom - curH, barW, curH, "F");
+
+      // Previous year bar (gray)
+      doc.setFillColor(160, 160, 160);
+      doc.rect(gx + barW + 2, chartBottom - prevH, barW, prevH, "F");
+
+      // Label
+      doc.setFontSize(6);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(60, 60, 60);
+      doc.text(m.label, gx + barW, chartBottom + 4, { align: "center" });
+    });
+
+    // Legend
+    const ly = chartBottom + 8;
+    doc.setFillColor(45, 55, 120);
+    doc.rect(chartX, ly, 6, 3, "F");
+    doc.setFontSize(6);
+    doc.setTextColor(60, 60, 60);
+    doc.text("Current Year", chartX + 8, ly + 2.5);
+    doc.setFillColor(160, 160, 160);
+    doc.rect(chartX + 40, ly, 6, 3, "F");
+    doc.text("Previous Year", chartX + 48, ly + 2.5);
+
+    y = ly + 10;
   }
 
   // Counsel
