@@ -55,10 +55,18 @@ interface Props {
   onExtracted?: (data: ExtractedData) => void;
   onCompanyCreated?: (companyId: string) => void;
   trigger?: React.ReactNode;
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
-export default function TaxReturnUpload({ companyId, mode = "extract", onExtracted, onCompanyCreated, trigger }: Props) {
-  const [open, setOpen] = useState(false);
+export default function TaxReturnUpload({ companyId, mode = "extract", onExtracted, onCompanyCreated, trigger, externalOpen, onExternalOpenChange }: Props) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = externalOpen !== undefined;
+  const open = isControlled ? externalOpen : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (isControlled) onExternalOpenChange?.(v);
+    else setInternalOpen(v);
+  };
   const [uploading, setUploading] = useState(false);
   const [extracted, setExtracted] = useState<ExtractedData | null>(null);
   const [saving, setSaving] = useState(false);
