@@ -388,120 +388,127 @@ export default function OrganizationTab({ companyId, company }: Props) {
         </CardContent>
       </Card>
 
-      {/* Initial List of Directors */}
-      <Card>
-        <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2">
+      {/* Initial List of Directors - Collapsible */}
+      <Collapsible>
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" className="w-full justify-between text-sm font-medium">
+            <span className="flex items-center gap-2">
               <Users className="h-3.5 w-3.5 text-primary" />
-              <CardTitle className="card-section-title">Initial List of Directors</CardTitle>
-            </div>
-            <CardDescription className="text-[11px] mt-0.5">Directors serve at the organizational meeting until the board is officially elected</CardDescription>
-          </div>
-          <div className="flex items-center gap-1">
-            <SectionPdfActions config={{
-              title: "Initial List of Directors",
-              companyName: company.name,
-              table: {
-                headers: ["Director Name", "Business Address", "City", "State", "Zip"],
-                rows: directors.map((d) => [d.name, d.address || "—", d.city || "—", d.state || "—", d.zip || "—"]),
-              },
-            }} />
-          <Dialog open={directorDialog} onOpenChange={setDirectorDialog}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="h-7 text-xs">
-                <Plus className="mr-1 h-3 w-3" /> Add
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="font-display text-base">Add Director</DialogTitle>
-              </DialogHeader>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  addDirector.mutate();
-                }}
-                className="space-y-3"
-              >
-                <div className="field-group">
-                  <Label className="field-label">Director Name</Label>
-                  <Input className="h-8 text-sm" value={newDirector.name} onChange={(e) => setNewDirector((p) => ({ ...p, name: e.target.value }))} required />
+              Initial List of Directors
+            </span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-3">
+          <Card>
+            <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between">
+              <CardDescription className="text-[11px] mt-0.5">Directors serve at the organizational meeting until the board is officially elected</CardDescription>
+              <div className="flex items-center gap-1">
+                <SectionPdfActions config={{
+                  title: "Initial List of Directors",
+                  companyName: company.name,
+                  table: {
+                    headers: ["Director Name", "Business Address", "City", "State", "Zip"],
+                    rows: directors.map((d) => [d.name, d.address || "—", d.city || "—", d.state || "—", d.zip || "—"]),
+                  },
+                }} />
+              <Dialog open={directorDialog} onOpenChange={setDirectorDialog}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-7 text-xs">
+                    <Plus className="mr-1 h-3 w-3" /> Add
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="font-display text-base">Add Director</DialogTitle>
+                  </DialogHeader>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      addDirector.mutate();
+                    }}
+                    className="space-y-3"
+                  >
+                    <div className="field-group">
+                      <Label className="field-label">Director Name</Label>
+                      <Input className="h-8 text-sm" value={newDirector.name} onChange={(e) => setNewDirector((p) => ({ ...p, name: e.target.value }))} required />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Business Address</Label>
+                      <Input className="h-8 text-sm" value={newDirector.address} onChange={(e) => setNewDirector((p) => ({ ...p, address: e.target.value }))} />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="field-group">
+                        <Label className="field-label">City</Label>
+                        <Input className="h-8 text-sm" value={newDirector.city} onChange={(e) => setNewDirector((p) => ({ ...p, city: e.target.value }))} />
+                      </div>
+                      <div className="field-group">
+                        <Label className="field-label">State</Label>
+                        <Select value={newDirector.state} onValueChange={(v) => setNewDirector((p) => ({ ...p, state: v }))}>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
+                          <SelectContent>
+                            {US_STATES.map((s) => (
+                              <SelectItem key={s} value={s}>{s}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="field-group">
+                        <Label className="field-label">Zip</Label>
+                        <Input className="h-8 text-sm" value={newDirector.zip} onChange={(e) => setNewDirector((p) => ({ ...p, zip: e.target.value }))} />
+                      </div>
+                    </div>
+                    <Button type="submit" className="w-full" size="sm" disabled={addDirector.isPending}>
+                      {addDirector.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                      Add Director
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              {directors.length === 0 ? (
+                <div className="rounded-md border border-dashed border-border py-6 text-center">
+                  <Users className="mx-auto mb-1.5 h-6 w-6 text-muted-foreground/30" />
+                  <p className="text-xs text-muted-foreground">No directors added yet</p>
                 </div>
-                <div className="field-group">
-                  <Label className="field-label">Business Address</Label>
-                  <Input className="h-8 text-sm" value={newDirector.address} onChange={(e) => setNewDirector((p) => ({ ...p, address: e.target.value }))} />
+              ) : (
+                <div className="rounded-md border border-border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/40 hover:bg-muted/40">
+                        <TableHead className="text-xs font-semibold h-8">Director Name</TableHead>
+                        <TableHead className="text-xs h-8">Business Address</TableHead>
+                        <TableHead className="text-xs h-8">City</TableHead>
+                        <TableHead className="text-xs h-8">State</TableHead>
+                        <TableHead className="text-xs h-8">Zip</TableHead>
+                        <TableHead className="w-10 h-8"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {directors.map((d) => (
+                        <TableRow key={d.id}>
+                          <TableCell className="font-medium text-sm py-2">{d.name}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground py-2">{d.address || "—"}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground py-2">{d.city || "—"}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground py-2">{d.state || "—"}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground py-2">{d.zip || "—"}</TableCell>
+                          <TableCell className="py-2">
+                            <Button variant="ghost" size="icon" onClick={() => deleteDirector.mutate(d.id)} className="h-6 w-6 text-destructive/50 hover:text-destructive">
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label">City</Label>
-                    <Input className="h-8 text-sm" value={newDirector.city} onChange={(e) => setNewDirector((p) => ({ ...p, city: e.target.value }))} />
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">State</Label>
-                    <Select value={newDirector.state} onValueChange={(v) => setNewDirector((p) => ({ ...p, state: v }))}>
-                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
-                      <SelectContent>
-                        {US_STATES.map((s) => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">Zip</Label>
-                    <Input className="h-8 text-sm" value={newDirector.zip} onChange={(e) => setNewDirector((p) => ({ ...p, zip: e.target.value }))} />
-                  </div>
-                </div>
-                <Button type="submit" className="w-full" size="sm" disabled={addDirector.isPending}>
-                  {addDirector.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                  Add Director
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent className="px-4 pb-4">
-          {directors.length === 0 ? (
-            <div className="rounded-md border border-dashed border-border py-6 text-center">
-              <Users className="mx-auto mb-1.5 h-6 w-6 text-muted-foreground/30" />
-              <p className="text-xs text-muted-foreground">No directors added yet</p>
-            </div>
-          ) : (
-            <div className="rounded-md border border-border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/40 hover:bg-muted/40">
-                    <TableHead className="text-xs font-semibold h-8">Director Name</TableHead>
-                    <TableHead className="text-xs h-8">Business Address</TableHead>
-                    <TableHead className="text-xs h-8">City</TableHead>
-                    <TableHead className="text-xs h-8">State</TableHead>
-                    <TableHead className="text-xs h-8">Zip</TableHead>
-                    <TableHead className="w-10 h-8"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {directors.map((d) => (
-                    <TableRow key={d.id}>
-                      <TableCell className="font-medium text-sm py-2">{d.name}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground py-2">{d.address || "—"}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground py-2">{d.city || "—"}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground py-2">{d.state || "—"}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground py-2">{d.zip || "—"}</TableCell>
-                      <TableCell className="py-2">
-                        <Button variant="ghost" size="icon" onClick={() => deleteDirector.mutate(d.id)} className="h-6 w-6 text-destructive/50 hover:text-destructive">
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              )}
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Officers - Collapsible */}
       <Collapsible>
