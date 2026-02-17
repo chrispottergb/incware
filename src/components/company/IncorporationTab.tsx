@@ -14,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Save, Shield, Building2, Share2, UserCheck } from "lucide-react";
+import { Loader2, Save, Shield, Building2, Share2, UserCheck, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import WIComplianceChecklist from "./WIComplianceChecklist";
 import SectionPdfActions from "./SectionPdfActions";
@@ -116,9 +117,6 @@ export default function IncorporationTab({ company }: Props) {
       }}
       className="space-y-5"
     >
-      {/* WI Compliance Checklist */}
-      <WIComplianceChecklist company={company} />
-
       {/* Corporate Status Verification */}
       <Card className="border-l-2 border-l-warning">
         <CardHeader className="pb-2 pt-4 px-4">
@@ -412,6 +410,22 @@ export default function IncorporationTab({ company }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      {/* WI Compliance Checklist - Collapsible */}
+      <Collapsible>
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" className="w-full justify-between text-sm font-medium">
+            <span className="flex items-center gap-2">
+              <Shield className="h-3.5 w-3.5 text-warning" />
+              Records Compliance Checklist
+            </span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-3">
+          <WIComplianceChecklist company={company} />
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Sticky Save Bar */}
       <div className="sticky bottom-3 flex justify-end">
