@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Printer, Eye, Download, Loader2 } from "lucide-react";
 import jsPDF from "jspdf";
+import { toast } from "sonner";
 
 interface Props {
   label?: string;
@@ -28,26 +29,43 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       const url = URL.createObjectURL(blob);
       setPreviewUrl(url);
       setPreviewOpen(true);
+    } catch (err: any) {
+      console.error("PDF preview error:", err);
+      toast.error("Failed to generate PDF preview: " + (err?.message || "Unknown error"));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDownload = () => {
-    const doc = generatePDF();
-    doc.save(fileName);
+    try {
+      const doc = generatePDF();
+      doc.save(fileName);
+    } catch (err: any) {
+      console.error("PDF download error:", err);
+      toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
+    }
   };
 
   const handlePrint = () => {
+    // Open blank window synchronously to avoid popup blockers
     const printWindow = window.open("", "_blank");
-    const doc = generatePDF();
-    const blob = doc.output("blob");
-    const url = URL.createObjectURL(blob);
-    if (printWindow) {
+    if (!printWindow) {
+      toast.error("Popup blocked — please allow popups for this site, or use Preview instead.");
+      return;
+    }
+    try {
+      const doc = generatePDF();
+      const blob = doc.output("blob");
+      const url = URL.createObjectURL(blob);
       printWindow.location.href = url;
       printWindow.addEventListener("load", () => {
-        printWindow.print();
+        setTimeout(() => printWindow.print(), 500);
       });
+    } catch (err: any) {
+      console.error("PDF print error:", err);
+      printWindow.close();
+      toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
     }
   };
 

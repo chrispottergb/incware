@@ -125,8 +125,17 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   y = addLabelValue(doc, y, "Type", `${meeting.meeting_type}${meeting.sub_type ? ` — ${meeting.sub_type}` : ""}`);
   if (meeting.meeting_time) y = addLabelValue(doc, y, "Time", meeting.meeting_time);
   if (meeting.meeting_location) y = addLabelValue(doc, y, "Location", meeting.meeting_location);
-  if (meeting.chairperson) y = addLabelValue(doc, y, "Chairperson", meeting.chairperson);
-  if (meeting.mtg_secretary) y = addLabelValue(doc, y, "Secretary", meeting.mtg_secretary);
+
+  // Smart chairperson/secretary paragraph: combine if same person
+  const chair = meeting.chairperson?.trim() || "";
+  const sec = meeting.mtg_secretary?.trim() || "";
+  if (chair && sec && chair.toLowerCase() === sec.toLowerCase()) {
+    y = addLabelValue(doc, y, "Chairperson & Secretary", chair);
+  } else {
+    if (chair) y = addLabelValue(doc, y, "Chairperson", chair);
+    if (sec) y = addLabelValue(doc, y, "Secretary", sec);
+  }
+
   if (meeting.tax_year) y = addLabelValue(doc, y, "Tax Year", String(meeting.tax_year));
   if (meeting.others_present) y = addLabelValue(doc, y, "Others Present", meeting.others_present);
 
@@ -489,21 +498,81 @@ export function exportFinancialsPDF(company: any, meeting: any, financials: any)
   y += 3;
 
   if (financials) {
+    // YoY helper
+    const yoy = (cur: any, prev: any): string => {
+      if (cur == null || prev == null || prev === 0) return "";
+      const pct = ((Number(cur) - Number(prev)) / Math.abs(Number(prev))) * 100;
+      return `${pct >= 0 ? "▲" : "▼"} ${Math.abs(pct).toFixed(1)}%`;
+    };
+
     autoTable(doc, {
       startY: y,
-      head: [["", "Current Year", "Previous Year"]],
+      head: [["", "Current Year", "Previous Year", "YoY Change"]],
       body: [
-        ["Total Sales", fmt(financials.current_total_sales), fmt(financials.previous_total_sales)],
-        ["Cost of Goods", fmt(financials.current_cog), fmt(financials.previous_cog)],
-        ["Gross Profit", fmt(financials.current_gross_profit), fmt(financials.previous_gross_profit)],
-        ["COG Ratio (%)", financials.current_cog_ratio != null ? `${Number(financials.current_cog_ratio).toFixed(2)}%` : "—", financials.previous_cog_ratio != null ? `${Number(financials.previous_cog_ratio).toFixed(2)}%` : "—"],
-        ["Net Income", fmt(financials.current_net_income), fmt(financials.previous_net_income)],
+        ["Total Sales", fmt(financials.current_total_sales), fmt(financials.previous_total_sales), yoy(financials.current_total_sales, financials.previous_total_sales)],
+        ["Cost of Goods", fmt(financials.current_cog), fmt(financials.previous_cog), yoy(financials.current_cog, financials.previous_cog)],
+        ["Gross Profit", fmt(financials.current_gross_profit), fmt(financials.previous_gross_profit), yoy(financials.current_gross_profit, financials.previous_gross_profit)],
+        ["COG Ratio (%)", financials.current_cog_ratio != null ? `${Number(financials.current_cog_ratio).toFixed(2)}%` : "—", financials.previous_cog_ratio != null ? `${Number(financials.previous_cog_ratio).toFixed(2)}%` : "—", yoy(financials.current_cog_ratio, financials.previous_cog_ratio)],
+        ["Net Income", fmt(financials.current_net_income), fmt(financials.previous_net_income), yoy(financials.current_net_income, financials.previous_net_income)],
       ],
       theme: "grid",
       headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
       bodyStyles: { fontSize: 8 },
-      columnStyles: { 1: { halign: "right", fontStyle: "bold" }, 2: { halign: "right" } },
+      columnStyles: { 1: { halign: "right", fontStyle: "bold" }, 2: { halign: "right" }, 3: { halign: "center", fontSize: 7 } },
       margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 8;
+
+    // Draw simple bar chart comparison
+    const pw = doc.internal.pageSize.getWidth();
+    y = checkPageBreak(doc, y, 90);
+    y = addSectionTitle(doc, y, "Visual Comparison");
+
+    const chartItems = [
+      { label: "Total Sales", cur: Number(financials.current_total_sales) || 0, prev: Number(financials.previous_total_sales) || 0 },
+      { label: "Gross Profit", cur: Number(financials.current_gross_profit) || 0, prev: Number(financials.previous_gross_profit) || 0 },
+      { label: "COG", cur: Number(financials.current_cog) || 0, prev: Number(financials.previous_cog) || 0 },
+      { label: "Net Income", cur: Number(financials.current_net_income) || 0, prev: Number(financials.previous_net_income) || 0 },
+    ];
+
+    const maxVal = Math.max(...chartItems.map(i => Math.max(Math.abs(i.cur), Math.abs(i.prev))), 1);
+    const barMaxWidth = pw - 80;
+    const barHeight = 6;
+    const groupHeight = 22;
+
+    // Legend
+    doc.setFillColor(45, 55, 120);
+    doc.rect(14, y, 8, 4, "F");
+    doc.setFontSize(7);
+    doc.setTextColor(80, 80, 80);
+    doc.text("Current Year", 24, y + 3);
+    doc.setFillColor(160, 160, 180);
+    doc.rect(60, y, 8, 4, "F");
+    doc.text("Previous Year", 70, y + 3);
+    y += 10;
+
+    chartItems.forEach((item) => {
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(60, 60, 60);
+      doc.text(item.label, 14, y + 3);
+
+      const curWidth = maxVal > 0 ? (Math.abs(item.cur) / maxVal) * barMaxWidth : 0;
+      const prevWidth = maxVal > 0 ? (Math.abs(item.prev) / maxVal) * barMaxWidth : 0;
+
+      doc.setFillColor(45, 55, 120);
+      doc.roundedRect(50, y - 2, Math.max(curWidth, 1), barHeight, 1, 1, "F");
+
+      doc.setFillColor(160, 160, 180);
+      doc.roundedRect(50, y + barHeight, Math.max(prevWidth, 1), barHeight, 1, 1, "F");
+
+      // Values
+      doc.setFontSize(6);
+      doc.setTextColor(30, 30, 30);
+      if (item.cur > 0) doc.text(fmt(item.cur), 50 + curWidth + 2, y + 3);
+      if (item.prev > 0) doc.text(fmt(item.prev), 50 + prevWidth + 2, y + barHeight + 5);
+
+      y += groupHeight;
     });
   }
 
