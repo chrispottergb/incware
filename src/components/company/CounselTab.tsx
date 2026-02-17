@@ -63,14 +63,14 @@ function AttorneyFirmsSection({ companyId }: { companyId: string }) {
       </CardHeader>
       <CardContent className="p-0">
         <Table>
-          <TableHeader><TableRow><TableHead>Firm Name</TableHead><TableHead>City/State</TableHead><TableHead>Phone</TableHead><TableHead>Email</TableHead><TableHead className="w-20" /></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Firm Name</TableHead><TableHead className="hidden sm:table-cell">City/State</TableHead><TableHead className="hidden md:table-cell">Phone</TableHead><TableHead className="hidden md:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow></TableHeader>
           <TableBody>
             {firms.map((f: any) => (
               <TableRow key={f.id}>
                 <TableCell className="font-medium text-xs">{f.firm_name}</TableCell>
-                <TableCell className="text-xs">{[f.city, f.state].filter(Boolean).join(", ")}</TableCell>
-                <TableCell className="text-xs">{f.phone}</TableCell>
-                <TableCell className="text-xs">{f.email}</TableCell>
+                <TableCell className="hidden sm:table-cell text-xs">{[f.city, f.state].filter(Boolean).join(", ")}</TableCell>
+                <TableCell className="hidden md:table-cell text-xs">{f.phone}</TableCell>
+                <TableCell className="hidden md:table-cell text-xs">{f.email}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(f)}><Pencil className="h-3 w-3" /></Button>
@@ -164,16 +164,16 @@ function AttorneysSection({ companyId }: { companyId: string }) {
       </CardHeader>
       <CardContent className="p-0">
         <Table>
-          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Title</TableHead><TableHead>Firm</TableHead><TableHead>Bar #</TableHead><TableHead>Phone</TableHead><TableHead>Email</TableHead><TableHead className="w-20" /></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead className="hidden sm:table-cell">Title</TableHead><TableHead className="hidden sm:table-cell">Firm</TableHead><TableHead className="hidden md:table-cell">Bar #</TableHead><TableHead className="hidden lg:table-cell">Phone</TableHead><TableHead className="hidden lg:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow></TableHeader>
           <TableBody>
             {attorneys.map((a: any) => (
               <TableRow key={a.id}>
                 <TableCell className="font-medium text-xs">{a.attorney_name}</TableCell>
-                <TableCell className="text-xs">{a.title}</TableCell>
-                <TableCell className="text-xs">{a.attorney_firms?.firm_name}</TableCell>
-                <TableCell className="text-xs">{a.bar_number}</TableCell>
-                <TableCell className="text-xs">{a.phone}</TableCell>
-                <TableCell className="text-xs">{a.email}</TableCell>
+                <TableCell className="hidden sm:table-cell text-xs">{a.title}</TableCell>
+                <TableCell className="hidden sm:table-cell text-xs">{a.attorney_firms?.firm_name}</TableCell>
+                <TableCell className="hidden md:table-cell text-xs">{a.bar_number}</TableCell>
+                <TableCell className="hidden lg:table-cell text-xs">{a.phone}</TableCell>
+                <TableCell className="hidden lg:table-cell text-xs">{a.email}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(a)}><Pencil className="h-3 w-3" /></Button>
@@ -267,14 +267,14 @@ function AccountantFirmsSection({ companyId }: { companyId: string }) {
       </CardHeader>
       <CardContent className="p-0">
         <Table>
-          <TableHeader><TableRow><TableHead>Firm Name</TableHead><TableHead>City/State</TableHead><TableHead>Phone</TableHead><TableHead>Email</TableHead><TableHead className="w-20" /></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Firm Name</TableHead><TableHead className="hidden sm:table-cell">City/State</TableHead><TableHead className="hidden md:table-cell">Phone</TableHead><TableHead className="hidden md:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow></TableHeader>
           <TableBody>
             {firms.map((f: any) => (
               <TableRow key={f.id}>
                 <TableCell className="font-medium text-xs">{f.firm_name}</TableCell>
-                <TableCell className="text-xs">{[f.city, f.state].filter(Boolean).join(", ")}</TableCell>
-                <TableCell className="text-xs">{f.phone}</TableCell>
-                <TableCell className="text-xs">{f.email}</TableCell>
+                <TableCell className="hidden sm:table-cell text-xs">{[f.city, f.state].filter(Boolean).join(", ")}</TableCell>
+                <TableCell className="hidden md:table-cell text-xs">{f.phone}</TableCell>
+                <TableCell className="hidden md:table-cell text-xs">{f.email}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(f)}><Pencil className="h-3 w-3" /></Button>
@@ -368,16 +368,16 @@ function AccountantsSection({ companyId }: { companyId: string }) {
       </CardHeader>
       <CardContent className="p-0">
         <Table>
-          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Title</TableHead><TableHead>Firm</TableHead><TableHead>CPA #</TableHead><TableHead>Phone</TableHead><TableHead>Email</TableHead><TableHead className="w-20" /></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead className="hidden sm:table-cell">Title</TableHead><TableHead className="hidden sm:table-cell">Firm</TableHead><TableHead className="hidden md:table-cell">CPA #</TableHead><TableHead className="hidden lg:table-cell">Phone</TableHead><TableHead className="hidden lg:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow></TableHeader>
           <TableBody>
             {accountants.map((a: any) => (
               <TableRow key={a.id}>
                 <TableCell className="font-medium text-xs">{a.accountant_name}</TableCell>
-                <TableCell className="text-xs">{a.title}</TableCell>
-                <TableCell className="text-xs">{a.accountant_firms?.firm_name}</TableCell>
-                <TableCell className="text-xs">{a.cpa_number}</TableCell>
-                <TableCell className="text-xs">{a.phone}</TableCell>
-                <TableCell className="text-xs">{a.email}</TableCell>
+                <TableCell className="hidden sm:table-cell text-xs">{a.title}</TableCell>
+                <TableCell className="hidden sm:table-cell text-xs">{a.accountant_firms?.firm_name}</TableCell>
+                <TableCell className="hidden md:table-cell text-xs">{a.cpa_number}</TableCell>
+                <TableCell className="hidden lg:table-cell text-xs">{a.phone}</TableCell>
+                <TableCell className="hidden lg:table-cell text-xs">{a.email}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(a)}><Pencil className="h-3 w-3" /></Button>

@@ -78,12 +78,12 @@ export default function BanksTab({ companyId }: BanksTabProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Bank Name</TableHead>
-              <TableHead>Account Type</TableHead>
-              <TableHead>Account #</TableHead>
-              <TableHead>Routing #</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead className="w-20" />
+              <TableHead>Type</TableHead>
+              <TableHead className="hidden sm:table-cell">Account #</TableHead>
+              <TableHead className="hidden md:table-cell">Routing #</TableHead>
+              <TableHead className="hidden lg:table-cell">Contact</TableHead>
+              <TableHead className="hidden md:table-cell">Phone</TableHead>
+              <TableHead className="w-16" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -91,10 +91,10 @@ export default function BanksTab({ companyId }: BanksTabProps) {
               <TableRow key={b.id}>
                 <TableCell className="font-medium text-xs">{b.bank_name}</TableCell>
                 <TableCell className="text-xs">{formatType(b.account_type || "")}</TableCell>
-                <TableCell className="text-xs font-mono">{b.account_number ? `••••${b.account_number.slice(-4)}` : ""}</TableCell>
-                <TableCell className="text-xs font-mono">{b.routing_number}</TableCell>
-                <TableCell className="text-xs">{[b.contact_name, b.contact_title].filter(Boolean).join(", ")}</TableCell>
-                <TableCell className="text-xs">{b.phone}</TableCell>
+                <TableCell className="hidden sm:table-cell text-xs font-mono">{b.account_number ? `••••${b.account_number.slice(-4)}` : ""}</TableCell>
+                <TableCell className="hidden md:table-cell text-xs font-mono">{b.routing_number}</TableCell>
+                <TableCell className="hidden lg:table-cell text-xs">{[b.contact_name, b.contact_title].filter(Boolean).join(", ")}</TableCell>
+                <TableCell className="hidden md:table-cell text-xs">{b.phone}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(b)}><Pencil className="h-3 w-3" /></Button>
