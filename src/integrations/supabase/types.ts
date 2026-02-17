@@ -1192,22 +1192,49 @@ export type Database = {
       }
       meeting_benefits: {
         Row: {
+          agent_administrator: string | null
           benefit_description: string
+          benefit_type: string | null
           created_at: string
+          eligibility_comments: string | null
           id: string
+          insurance_agency: string | null
           meeting_id: string
+          new_plan_effective_date: string | null
+          plan_year: number | null
+          provider: string | null
+          retirement_contribution: number | null
+          transaction_type: string | null
         }
         Insert: {
+          agent_administrator?: string | null
           benefit_description: string
+          benefit_type?: string | null
           created_at?: string
+          eligibility_comments?: string | null
           id?: string
+          insurance_agency?: string | null
           meeting_id: string
+          new_plan_effective_date?: string | null
+          plan_year?: number | null
+          provider?: string | null
+          retirement_contribution?: number | null
+          transaction_type?: string | null
         }
         Update: {
+          agent_administrator?: string | null
           benefit_description?: string
+          benefit_type?: string | null
           created_at?: string
+          eligibility_comments?: string | null
           id?: string
+          insurance_agency?: string | null
           meeting_id?: string
+          new_plan_effective_date?: string | null
+          plan_year?: number | null
+          provider?: string | null
+          retirement_contribution?: number | null
+          transaction_type?: string | null
         }
         Relationships: [
           {
