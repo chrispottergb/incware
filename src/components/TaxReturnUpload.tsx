@@ -3,6 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +21,7 @@ import { toast } from "sonner";
 import {
   Upload, FileText, Loader2, CheckCircle2, Building2,
   DollarSign, Users, Car, Wrench, PiggyBank, AlertCircle,
+  XCircle, Clock, TrendingUp, TrendingDown, Minus,
 } from "lucide-react";
 
 interface ExtractedData {
@@ -49,6 +57,14 @@ interface ExtractedData {
   depreciation_items: { description: string; cost: number | null; method: string | null; current_deduction: number | null }[];
 }
 
+interface FileEntry {
+  file: File;
+  name: string;
+  status: "pending" | "processing" | "done" | "error";
+  data?: ExtractedData;
+  error?: string;
+}
+
 interface Props {
   companyId?: string;
   mode?: "extract" | "populate";
@@ -67,103 +83,56 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     if (isControlled) onExternalOpenChange?.(v);
     else setInternalOpen(v);
   };
-  const [uploading, setUploading] = useState(false);
-  const [extracted, setExtracted] = useState<ExtractedData | null>(null);
+  const [files, setFiles] = useState<FileEntry[]>([]);
+  const [processing, setProcessing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [fileName, setFileName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = async (file: File) => {
-    if (!file) return;
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error("File must be under 20MB");
+  const extractedList = files
+    .filter((f) => f.status === "done" && f.data)
+    .map((f) => f.data!)
+    .sort((a, b) => a.tax_year - b.tax_year);
+
+  const completedCount = files.filter((f) => f.status === "done" || f.status === "error").length;
+  const progressPct = files.length > 0 ? (completedCount / files.length) * 100 : 0;
+
+  const handleFiles = async (newFiles: File[]) => {
+    const valid = newFiles.filter((f) => {
+      if (f.size > 20 * 1024 * 1024) {
+        toast.error(`${f.name} exceeds 20MB limit`);
+        return false;
+      }
+      return true;
+    });
+    if (valid.length === 0) return;
+
+    const entries: FileEntry[] = valid.map((f) => ({
+      file: f,
+      name: f.name,
+      status: "pending" as const,
+    }));
+
+    setFiles((prev) => [...prev, ...entries]);
+    setProcessing(true);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error("Please log in first");
+      setProcessing(false);
       return;
     }
-    setFileName(file.name);
-    setUploading(true);
-    setExtracted(null);
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { toast.error("Please log in first"); return; }
-
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("mode", "extract");
-      if (companyId) formData.append("company_id", companyId);
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-tax-return`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          body: formData,
-        }
+    // Process sequentially
+    for (const entry of entries) {
+      setFiles((prev) =>
+        prev.map((f) => (f === entry ? { ...f, status: "processing" } : f))
       );
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error || `Failed (${response.status})`);
-      }
-
-      const data = await response.json();
-      setExtracted(data.extracted);
-      onExtracted?.(data.extracted);
-      toast.success(`Tax return parsed: Form ${data.extracted.form_type} (${data.extracted.tax_year})`);
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Failed to parse tax return");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleSaveToCompany = async () => {
-    if (!extracted) return;
-    setSaving(true);
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { toast.error("Please log in first"); return; }
-
-      let targetCompanyId = companyId;
-
-      // If no company, create one
-      if (!targetCompanyId) {
-        const { data: newComp, error: createErr } = await supabase
-          .from("companies")
-          .insert({
-            user_id: session.user.id,
-            name: extracted.company.name || "New Company",
-            entity_type: extracted.company.entity_type || "Corporation",
-            state_of_incorporation: extracted.company.state || null,
-            address: extracted.company.address || null,
-            city: extracted.company.city || null,
-            state: extracted.company.state || null,
-            zip: extracted.company.zip || null,
-            fiscal_year_end: extracted.company.fiscal_year_end || null,
-            business_purpose: extracted.company.business_purpose || null,
-            accounting_method: extracted.company.accounting_method || null,
-            sic_code: extracted.company.sic_code || null,
-          })
-          .select("id")
-          .single();
-        if (createErr) throw createErr;
-        targetCompanyId = newComp.id;
-        onCompanyCreated?.(newComp.id);
-      }
-
-      // Re-upload with populate mode
-      const fileInput = fileRef.current;
-      const file = fileInput?.files?.[0];
-      if (!file) {
-        // Fallback: just populate using extracted data directly
-        await populateFromExtracted(targetCompanyId, extracted, session.access_token);
-      } else {
+      try {
         const formData = new FormData();
-        formData.append("file", file);
-        formData.append("mode", "populate");
-        formData.append("company_id", targetCompanyId);
+        formData.append("file", entry.file);
+        formData.append("mode", "extract");
+        if (companyId) formData.append("company_id", companyId);
 
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-tax-return`,
@@ -173,15 +142,171 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
             body: formData,
           }
         );
+
         if (!response.ok) {
           const err = await response.json().catch(() => ({}));
-          throw new Error(err.error || "Failed to save");
+          throw new Error(err.error || `Failed (${response.status})`);
+        }
+
+        const data = await response.json();
+        const extracted = data.extracted as ExtractedData;
+        onExtracted?.(extracted);
+
+        setFiles((prev) =>
+          prev.map((f) =>
+            f === entry ? { ...f, status: "done", data: extracted } : f
+          )
+        );
+      } catch (err: any) {
+        console.error(err);
+        setFiles((prev) =>
+          prev.map((f) =>
+            f === entry ? { ...f, status: "error", error: err.message } : f
+          )
+        );
+      }
+    }
+
+    setProcessing(false);
+    const doneCount = entries.filter((e) => e.status !== "error").length;
+    if (doneCount > 0) {
+      toast.success(`Parsed ${valid.length} tax return(s)`);
+    }
+  };
+
+  const handleSaveAll = async () => {
+    if (extractedList.length === 0) return;
+    setSaving(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error("Please log in first"); return; }
+
+      let targetCompanyId = companyId;
+      // Use most recent year for company info
+      const latest = extractedList[extractedList.length - 1];
+
+      if (!targetCompanyId) {
+        const { data: newComp, error: createErr } = await supabase
+          .from("companies")
+          .insert({
+            user_id: session.user.id,
+            name: latest.company.name || "New Company",
+            entity_type: latest.company.entity_type || "Corporation",
+            state_of_incorporation: latest.company.state || null,
+            address: latest.company.address || null,
+            city: latest.company.city || null,
+            state: latest.company.state || null,
+            zip: latest.company.zip || null,
+            fiscal_year_end: latest.company.fiscal_year_end || null,
+            business_purpose: latest.company.business_purpose || null,
+            accounting_method: latest.company.accounting_method || null,
+            sic_code: latest.company.sic_code || null,
+          })
+          .select("id")
+          .single();
+        if (createErr) throw createErr;
+        targetCompanyId = newComp.id;
+        onCompanyCreated?.(newComp.id);
+      } else {
+        // Update company with latest year info
+        const c = latest.company;
+        await supabase.from("companies").update({
+          address: c.address || undefined,
+          city: c.city || undefined,
+          state: c.state || undefined,
+          zip: c.zip || undefined,
+          fiscal_year_end: c.fiscal_year_end || undefined,
+          business_purpose: c.business_purpose || undefined,
+          accounting_method: c.accounting_method || undefined,
+          sic_code: c.sic_code || undefined,
+        }).eq("id", targetCompanyId);
+      }
+
+      // Create meetings & financials per year, linking previous year data
+      for (let i = 0; i < extractedList.length; i++) {
+        const d = extractedList[i];
+        const prev = i > 0 ? extractedList[i - 1] : null;
+        const f = d.financials;
+
+        if (d.tax_year && f.total_sales !== null) {
+          const { data: mtg } = await supabase.from("meetings").insert({
+            company_id: targetCompanyId,
+            meeting_date: `${d.tax_year}-12-31`,
+            meeting_type: "Annual Meeting",
+            tax_year: d.tax_year,
+          }).select("id").single();
+
+          if (mtg) {
+            await supabase.from("meeting_financials").insert({
+              meeting_id: mtg.id,
+              current_total_sales: f.total_sales,
+              current_cog: f.cost_of_goods_sold,
+              current_gross_profit: f.gross_profit,
+              current_net_income: f.net_income,
+              current_cog_ratio: f.cog_ratio,
+              previous_total_sales: prev?.financials.total_sales ?? null,
+              previous_cog: prev?.financials.cost_of_goods_sold ?? null,
+              previous_gross_profit: prev?.financials.gross_profit ?? null,
+              previous_net_income: prev?.financials.net_income ?? null,
+              previous_cog_ratio: prev?.financials.cog_ratio ?? null,
+            });
+          }
         }
       }
 
-      toast.success("Company records populated from tax return!");
+      // De-duplicate & insert assets
+      const seenAssets = new Set<string>();
+      const allAssets: any[] = [];
+      for (const d of extractedList) {
+        for (const v of d.vehicles || []) {
+          const key = `vehicle:${v.description || `${v.year} ${v.make} ${v.model}`}`.toLowerCase();
+          if (!seenAssets.has(key)) {
+            seenAssets.add(key);
+            allAssets.push({
+              company_id: targetCompanyId,
+              asset_type: "Vehicle",
+              description: v.description || `${v.year || ""} ${v.make || ""} ${v.model || ""}`.trim() || "Vehicle",
+              year: v.year || null, make: v.make || null, model: v.model || null, cost: v.cost || null,
+            });
+          }
+        }
+        for (const eq of d.equipment || []) {
+          const key = `equip:${eq.description || `${eq.manufacturer} ${eq.model}`}`.toLowerCase();
+          if (!seenAssets.has(key)) {
+            seenAssets.add(key);
+            allAssets.push({
+              company_id: targetCompanyId,
+              asset_type: "Equipment",
+              description: eq.description || `${eq.manufacturer || ""} ${eq.model || ""}`.trim() || "Equipment",
+              year: eq.year || null, manufacturer: eq.manufacturer || null, model: eq.model || null, cost: eq.cost || null,
+            });
+          }
+        }
+      }
+      if (allAssets.length > 0) {
+        await supabase.from("company_assets").insert(allAssets);
+      }
+
+      // De-duplicate & insert shareholders
+      const seenShareholders = new Set<string>();
+      for (const d of extractedList) {
+        for (const s of d.shareholders || []) {
+          const key = s.name.toLowerCase().trim();
+          if (!seenShareholders.has(key)) {
+            seenShareholders.add(key);
+            await supabase.from("shareholders").insert({
+              company_id: targetCompanyId,
+              name: s.name,
+              ssn_ein: s.ssn_ein || null,
+            });
+          }
+        }
+      }
+
+      toast.success(`Saved ${extractedList.length} year(s) of tax return data!`);
       setOpen(false);
-      setExtracted(null);
+      setFiles([]);
     } catch (err: any) {
       console.error(err);
       toast.error(err.message);
@@ -190,86 +315,28 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     }
   };
 
-  const populateFromExtracted = async (cid: string, data: ExtractedData, _token: string) => {
-    const c = data.company;
-    const f = data.financials;
-
-    // Update company
-    await supabase.from("companies").update({
-      address: c.address || undefined,
-      city: c.city || undefined,
-      state: c.state || undefined,
-      zip: c.zip || undefined,
-      fiscal_year_end: c.fiscal_year_end || undefined,
-      business_purpose: c.business_purpose || undefined,
-      accounting_method: c.accounting_method || undefined,
-      sic_code: c.sic_code || undefined,
-    }).eq("id", cid);
-
-    // Create meeting + financials
-    if (data.tax_year && f.total_sales !== null) {
-      const { data: mtg } = await supabase.from("meetings").insert({
-        company_id: cid,
-        meeting_date: `${data.tax_year}-12-31`,
-        meeting_type: "Annual Meeting",
-        tax_year: data.tax_year,
-      }).select("id").single();
-
-      if (mtg) {
-        await supabase.from("meeting_financials").insert({
-          meeting_id: mtg.id,
-          current_total_sales: f.total_sales,
-          current_cog: f.cost_of_goods_sold,
-          current_gross_profit: f.gross_profit,
-          current_net_income: f.net_income,
-          current_cog_ratio: f.cog_ratio,
-        });
-      }
-    }
-
-    // Add vehicles
-    if (data.vehicles?.length > 0) {
-      await supabase.from("company_assets").insert(
-        data.vehicles.map((v) => ({
-          company_id: cid,
-          asset_type: "Vehicle",
-          description: v.description || `${v.year || ""} ${v.make || ""} ${v.model || ""}`.trim() || "Vehicle",
-          year: v.year || null,
-          make: v.make || null,
-          model: v.model || null,
-          cost: v.cost || null,
-        }))
-      );
-    }
-
-    // Add equipment
-    if (data.equipment?.length > 0) {
-      await supabase.from("company_assets").insert(
-        data.equipment.map((eq) => ({
-          company_id: cid,
-          asset_type: "Equipment",
-          description: eq.description || `${eq.manufacturer || ""} ${eq.model || ""}`.trim() || "Equipment",
-          year: eq.year || null,
-          manufacturer: eq.manufacturer || null,
-          model: eq.model || null,
-          cost: eq.cost || null,
-        }))
-      );
-    }
-
-    // Add shareholders
-    if (data.shareholders?.length > 0) {
-      for (const s of data.shareholders) {
-        await supabase.from("shareholders").insert({
-          company_id: cid,
-          name: s.name,
-          ssn_ein: s.ssn_ein || null,
-        });
-      }
-    }
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const fmt = (n: number | null) => n != null ? `$${n.toLocaleString()}` : "—";
+
+  const yoyPct = (curr: number | null, prev: number | null) => {
+    if (curr == null || prev == null || prev === 0) return null;
+    return ((curr - prev) / Math.abs(prev)) * 100;
+  };
+
+  const YoYBadge = ({ value }: { value: number | null }) => {
+    if (value == null) return <span className="text-muted-foreground">—</span>;
+    const isPos = value > 0;
+    const isZero = Math.abs(value) < 0.01;
+    return (
+      <span className={`inline-flex items-center gap-0.5 text-[10px] font-medium ${isZero ? "text-muted-foreground" : isPos ? "text-success" : "text-destructive"}`}>
+        {isZero ? <Minus className="h-3 w-3" /> : isPos ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+        {value.toFixed(1)}%
+      </span>
+    );
+  };
 
   const defaultTrigger = (
     <Button variant="outline" size="sm">
@@ -277,14 +344,78 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     </Button>
   );
 
+  const renderYearPreview = (d: ExtractedData) => (
+    <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {/* Company Info */}
+        <Card>
+          <CardHeader className="pb-2 pt-3 px-3">
+            <CardTitle className="text-xs flex items-center gap-1.5">
+              <Building2 className="h-3.5 w-3.5 text-primary" /> Company Info
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-3 pb-3 space-y-1 text-xs">
+            <p><span className="text-muted-foreground">Name:</span> {d.company.name}</p>
+            <p><span className="text-muted-foreground">EIN:</span> {d.company.ein || "—"}</p>
+            <p><span className="text-muted-foreground">Type:</span> {d.company.entity_type}</p>
+            <p><span className="text-muted-foreground">Address:</span> {[d.company.address, d.company.city, d.company.state, d.company.zip].filter(Boolean).join(", ") || "—"}</p>
+          </CardContent>
+        </Card>
+        {/* Financials */}
+        <Card>
+          <CardHeader className="pb-2 pt-3 px-3">
+            <CardTitle className="text-xs flex items-center gap-1.5">
+              <DollarSign className="h-3.5 w-3.5 text-success" /> Financials
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-3 pb-3 space-y-1 text-xs">
+            <p><span className="text-muted-foreground">Revenue:</span> {fmt(d.financials.total_sales)}</p>
+            <p><span className="text-muted-foreground">COGS:</span> {fmt(d.financials.cost_of_goods_sold)}</p>
+            <p><span className="text-muted-foreground">Net Income:</span> {fmt(d.financials.net_income)}</p>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {d.officers?.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2 pt-3 px-3">
+              <CardTitle className="text-xs flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 text-primary" /> Officers ({d.officers.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-3 pb-3 space-y-1 text-xs">
+              {d.officers.map((o, i) => (
+                <p key={i}>{o.name} — {o.title}{o.compensation ? ` (${fmt(o.compensation)})` : ""}</p>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+        {d.vehicles?.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2 pt-3 px-3">
+              <CardTitle className="text-xs flex items-center gap-1.5">
+                <Car className="h-3.5 w-3.5 text-warning" /> Vehicles ({d.vehicles.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-3 pb-3 space-y-1 text-xs">
+              {d.vehicles.map((v, i) => (
+                <p key={i}>{v.description}{v.cost ? ` — ${fmt(v.cost)}` : ""}</p>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setFiles([]); } }}>
       <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            Import from Tax Return
+            Import from Tax Returns
           </DialogTitle>
         </DialogHeader>
 
@@ -292,199 +423,181 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
           {/* Upload area */}
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
-              uploading ? "border-primary/50 bg-primary/5" : "border-border hover:border-primary/30 hover:bg-muted/30"
+              processing ? "border-primary/50 bg-primary/5" : "border-border hover:border-primary/30 hover:bg-muted/30"
             }`}
-            onClick={() => !uploading && fileRef.current?.click()}
+            onClick={() => !processing && fileRef.current?.click()}
             onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
             onDrop={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              const file = e.dataTransfer.files[0];
-              if (file) handleFile(file);
+              const droppedFiles = Array.from(e.dataTransfer.files);
+              if (droppedFiles.length > 0) handleFiles(droppedFiles);
             }}
           >
             <input
               ref={fileRef}
               type="file"
               className="hidden"
+              multiple
               accept=".pdf,.jpg,.jpeg,.png,.tiff,.tif"
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleFile(file);
+                const selected = Array.from(e.target.files || []);
+                if (selected.length > 0) handleFiles(selected);
+                e.target.value = "";
               }}
             />
-            {uploading ? (
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-sm font-medium">Analyzing tax return with AI…</p>
-                <p className="text-xs text-muted-foreground">This may take 15-30 seconds</p>
+            <div className="flex flex-col items-center gap-3">
+              <Upload className="h-10 w-10 text-muted-foreground/40" />
+              <div>
+                <p className="text-sm font-medium">Drop tax returns here or click to upload</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Upload multiple years at once · PDF, JPG, PNG, TIFF · Forms 1120, 1120-S, 1065, 990
+                </p>
               </div>
-            ) : (
-              <div className="flex flex-col items-center gap-3">
-                <Upload className="h-10 w-10 text-muted-foreground/40" />
-                <div>
-                  <p className="text-sm font-medium">Drop tax return here or click to upload</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Supports PDF, JPG, PNG, TIFF — Forms 1120, 1120-S, 1065, 990
-                  </p>
-                </div>
-              </div>
-            )}
-            {fileName && !uploading && (
-              <p className="text-xs text-muted-foreground mt-2">Selected: {fileName}</p>
-            )}
+            </div>
           </div>
 
-          {/* Extracted Data Preview */}
-          {extracted && (
+          {/* File queue */}
+          {files.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {completedCount} of {files.length} parsed
+                </p>
+                {!processing && files.length > 0 && (
+                  <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setFiles([])}>
+                    Clear all
+                  </Button>
+                )}
+              </div>
+              <Progress value={progressPct} className="h-2" />
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {files.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs px-2 py-1 rounded bg-muted/50">
+                    {f.status === "pending" && <Clock className="h-3 w-3 text-muted-foreground shrink-0" />}
+                    {f.status === "processing" && <Loader2 className="h-3 w-3 animate-spin text-primary shrink-0" />}
+                    {f.status === "done" && <CheckCircle2 className="h-3 w-3 text-success shrink-0" />}
+                    {f.status === "error" && <XCircle className="h-3 w-3 text-destructive shrink-0" />}
+                    <span className="truncate flex-1">{f.name}</span>
+                    {f.data && (
+                      <Badge variant="outline" className="text-[10px] shrink-0">TY {f.data.tax_year}</Badge>
+                    )}
+                    {f.status === "error" && (
+                      <span className="text-destructive truncate max-w-[120px]">{f.error}</span>
+                    )}
+                    {!processing && (
+                      <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground">
+                        <XCircle className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* YoY Summary Table */}
+          {extractedList.length > 1 && (
+            <Card>
+              <CardHeader className="pb-2 pt-3 px-3">
+                <CardTitle className="text-xs flex items-center gap-1.5">
+                  <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                  Year-over-Year Comparison
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 pb-3">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-1.5 pr-3 font-medium text-muted-foreground">Year</th>
+                        <th className="text-right py-1.5 px-2 font-medium text-muted-foreground">Revenue</th>
+                        <th className="text-right py-1.5 px-2 font-medium text-muted-foreground">YoY</th>
+                        <th className="text-right py-1.5 px-2 font-medium text-muted-foreground">COGS</th>
+                        <th className="text-right py-1.5 px-2 font-medium text-muted-foreground">YoY</th>
+                        <th className="text-right py-1.5 px-2 font-medium text-muted-foreground">Net Income</th>
+                        <th className="text-right py-1.5 pl-2 font-medium text-muted-foreground">YoY</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {extractedList.map((d, i) => {
+                        const prev = i > 0 ? extractedList[i - 1] : null;
+                        return (
+                          <tr key={d.tax_year} className="border-b last:border-0">
+                            <td className="py-1.5 pr-3 font-medium">{d.tax_year}</td>
+                            <td className="text-right py-1.5 px-2">{fmt(d.financials.total_sales)}</td>
+                            <td className="text-right py-1.5 px-2">
+                              <YoYBadge value={yoyPct(d.financials.total_sales, prev?.financials.total_sales ?? null)} />
+                            </td>
+                            <td className="text-right py-1.5 px-2">{fmt(d.financials.cost_of_goods_sold)}</td>
+                            <td className="text-right py-1.5 px-2">
+                              <YoYBadge value={yoyPct(d.financials.cost_of_goods_sold, prev?.financials.cost_of_goods_sold ?? null)} />
+                            </td>
+                            <td className="text-right py-1.5 px-2">{fmt(d.financials.net_income)}</td>
+                            <td className="text-right py-1.5 pl-2">
+                              <YoYBadge value={yoyPct(d.financials.net_income, prev?.financials.net_income ?? null)} />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Per-year accordion */}
+          {extractedList.length > 0 && (
             <div className="space-y-3 animate-fade-in">
               <div className="flex items-center gap-2 text-sm font-medium text-success">
                 <CheckCircle2 className="h-4 w-4" />
-                Data extracted successfully
+                {extractedList.length === 1
+                  ? "Data extracted successfully"
+                  : `${extractedList.length} years extracted successfully`}
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                {/* Company Info */}
-                <Card>
-                  <CardHeader className="pb-2 pt-3 px-3">
-                    <CardTitle className="text-xs flex items-center gap-1.5">
-                      <Building2 className="h-3.5 w-3.5 text-primary" />
-                      Company Info
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-3 pb-3 space-y-1 text-xs">
-                    <p><span className="text-muted-foreground">Name:</span> {extracted.company.name}</p>
-                    <p><span className="text-muted-foreground">EIN:</span> {extracted.company.ein || "—"}</p>
-                    <p><span className="text-muted-foreground">Type:</span> {extracted.company.entity_type}</p>
-                    <p><span className="text-muted-foreground">Address:</span> {[extracted.company.address, extracted.company.city, extracted.company.state, extracted.company.zip].filter(Boolean).join(", ") || "—"}</p>
-                    <p><span className="text-muted-foreground">Fiscal Year:</span> {extracted.company.fiscal_year_end || "—"}</p>
-                    <div className="flex gap-1.5 pt-1">
-                      <Badge variant="outline" className="text-[10px]">
-                        Form {extracted.form_type}
-                      </Badge>
-                      <Badge variant="outline" className="text-[10px]">
-                        TY {extracted.tax_year}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Financials */}
-                <Card>
-                  <CardHeader className="pb-2 pt-3 px-3">
-                    <CardTitle className="text-xs flex items-center gap-1.5">
-                      <DollarSign className="h-3.5 w-3.5 text-success" />
-                      Financials
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-3 pb-3 space-y-1 text-xs">
-                    <p><span className="text-muted-foreground">Revenue:</span> {fmt(extracted.financials.total_sales)}</p>
-                    <p><span className="text-muted-foreground">COGS:</span> {fmt(extracted.financials.cost_of_goods_sold)}</p>
-                    <p><span className="text-muted-foreground">Gross Profit:</span> {fmt(extracted.financials.gross_profit)}</p>
-                    <p><span className="text-muted-foreground">Net Income:</span> {fmt(extracted.financials.net_income)}</p>
-                    <p><span className="text-muted-foreground">Total Assets:</span> {fmt(extracted.financials.total_assets)}</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Officers & Shareholders */}
-              <div className="grid gap-3 sm:grid-cols-2">
-                {extracted.officers?.length > 0 && (
-                  <Card>
-                    <CardHeader className="pb-2 pt-3 px-3">
-                      <CardTitle className="text-xs flex items-center gap-1.5">
-                        <Users className="h-3.5 w-3.5 text-primary" />
-                        Officers ({extracted.officers.length})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-3 pb-3 space-y-1 text-xs">
-                      {extracted.officers.map((o, i) => (
-                        <p key={i}>{o.name} — {o.title}{o.compensation ? ` (${fmt(o.compensation)})` : ""}</p>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
-                {extracted.shareholders?.length > 0 && (
-                  <Card>
-                    <CardHeader className="pb-2 pt-3 px-3">
-                      <CardTitle className="text-xs flex items-center gap-1.5">
-                        <Users className="h-3.5 w-3.5 text-accent" />
-                        Shareholders ({extracted.shareholders.length})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-3 pb-3 space-y-1 text-xs">
-                      {extracted.shareholders.map((s, i) => (
-                        <p key={i}>{s.name}{s.ownership_pct ? ` (${s.ownership_pct}%)` : ""}</p>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-
-              {/* Vehicles & Equipment */}
-              <div className="grid gap-3 sm:grid-cols-2">
-                {extracted.vehicles?.length > 0 && (
-                  <Card>
-                    <CardHeader className="pb-2 pt-3 px-3">
-                      <CardTitle className="text-xs flex items-center gap-1.5">
-                        <Car className="h-3.5 w-3.5 text-warning" />
-                        Vehicles ({extracted.vehicles.length})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-3 pb-3 space-y-1 text-xs">
-                      {extracted.vehicles.map((v, i) => (
-                        <p key={i}>{v.description}{v.cost ? ` — ${fmt(v.cost)}` : ""}</p>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
-                {extracted.equipment?.length > 0 && (
-                  <Card>
-                    <CardHeader className="pb-2 pt-3 px-3">
-                      <CardTitle className="text-xs flex items-center gap-1.5">
-                        <Wrench className="h-3.5 w-3.5 text-muted-foreground" />
-                        Equipment ({extracted.equipment.length})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-3 pb-3 space-y-1 text-xs">
-                      {extracted.equipment.map((e, i) => (
-                        <p key={i}>{e.description}{e.cost ? ` — ${fmt(e.cost)}` : ""}</p>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-
-              {/* Retirement */}
-              {extracted.retirement_contributions?.total_contribution && (
-                <Card>
-                  <CardHeader className="pb-2 pt-3 px-3">
-                    <CardTitle className="text-xs flex items-center gap-1.5">
-                      <PiggyBank className="h-3.5 w-3.5 text-success" />
-                      Retirement Contributions
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-3 pb-3 space-y-1 text-xs">
-                    <p><span className="text-muted-foreground">Plan:</span> {extracted.retirement_contributions.plan_type || "—"}</p>
-                    <p><span className="text-muted-foreground">Total:</span> {fmt(extracted.retirement_contributions.total_contribution)}</p>
-                    <p><span className="text-muted-foreground">Employer:</span> {fmt(extracted.retirement_contributions.employer_contribution)}</p>
-                  </CardContent>
-                </Card>
+              {extractedList.length === 1 ? (
+                renderYearPreview(extractedList[0])
+              ) : (
+                <Accordion type="multiple" defaultValue={extractedList.map((d) => String(d.tax_year))}>
+                  {extractedList.map((d) => (
+                    <AccordionItem key={d.tax_year} value={String(d.tax_year)}>
+                      <AccordionTrigger className="text-sm py-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">TY {d.tax_year}</Badge>
+                          <span>{d.company.name}</span>
+                          <span className="text-muted-foreground text-xs">
+                            Form {d.form_type} · Rev {fmt(d.financials.total_sales)}
+                          </span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        {renderYearPreview(d)}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
               )}
 
               {/* Action buttons */}
               <div className="flex items-center gap-2 pt-2 border-t">
                 <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0" />
                 <p className="text-xs text-muted-foreground flex-1">
-                  Review the extracted data above. Click "Save" to {companyId ? "update this company's records" : "create a new company"} with this data.
+                  Review the extracted data above. Click "Save" to {companyId ? "update this company's records" : "create a new company"} with {extractedList.length > 1 ? `all ${extractedList.length} years of` : "this"} data.
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleSaveToCompany} disabled={saving} className="flex-1">
+                <Button onClick={handleSaveAll} disabled={saving} className="flex-1">
                   {saving ? (
                     <><Loader2 className="h-4 w-4 animate-spin mr-1.5" /> Saving…</>
                   ) : (
-                    <><CheckCircle2 className="h-4 w-4 mr-1.5" /> {companyId ? "Save to Company" : "Create Company & Save"}</>
+                    <><CheckCircle2 className="h-4 w-4 mr-1.5" />
+                      {companyId
+                        ? `Save ${extractedList.length > 1 ? `All (${extractedList.length} years)` : "to Company"}`
+                        : `Create Company & Save${extractedList.length > 1 ? ` All (${extractedList.length} years)` : ""}`
+                      }
+                    </>
                   )}
                 </Button>
                 <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
