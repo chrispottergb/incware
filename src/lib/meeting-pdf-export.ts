@@ -18,6 +18,7 @@ interface MeetingData {
   benefits?: any[];
   other?: any[];
   financials?: any;
+  authorizedSigners?: any[];
 }
 
 function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType: string) {
@@ -311,6 +312,22 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
       startY: y,
       head: [["Notes"]],
       body: data.other.map(o => [o.notes]),
+      theme: "grid",
+      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8 },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 6;
+  }
+
+  // Authorized Signatories
+  if (data.authorizedSigners && data.authorizedSigners.length > 0) {
+    y = checkPageBreak(doc, y, 20 + data.authorizedSigners.length * 7);
+    y = addSectionTitle(doc, y, "Authorized Signatories");
+    autoTable(doc, {
+      startY: y,
+      head: [["Name", "Title", "Bank"]],
+      body: data.authorizedSigners.map(s => [s.signer_name, s.title || "—", s.bank_name || "—"]),
       theme: "grid",
       headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
       bodyStyles: { fontSize: 8 },
