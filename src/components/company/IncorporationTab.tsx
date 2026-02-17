@@ -117,51 +117,58 @@ export default function IncorporationTab({ company }: Props) {
       }}
       className="space-y-5"
     >
-      {/* Corporate Status Verification */}
-      <Card className="border-l-2 border-l-warning">
-        <CardHeader className="pb-2 pt-4 px-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <Shield className="h-3.5 w-3.5 text-warning" />
-                <CardTitle className="card-section-title">Verification of Corporate Status</CardTitle>
+      {/* Corporate Status Verification - Collapsible */}
+      <Collapsible>
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" className="w-full justify-between text-sm font-medium border-l-2 border-l-warning">
+            <span className="flex items-center gap-2">
+              <Shield className="h-3.5 w-3.5 text-warning" />
+              Verification of Corporate Status
+            </span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-3">
+          <Card className="border-l-2 border-l-warning">
+            <CardHeader className="pb-2 pt-4 px-4">
+              <div className="flex items-center justify-between">
+                <CardDescription className="text-[11px]">Always verify corporate status with the Secretary of State</CardDescription>
+                <SectionPdfActions config={{
+                  title: "Verification of Corporate Status",
+                  companyName: company.name,
+                  fields: [
+                    { label: "Corporate Status", value: form.corporate_status },
+                    { label: "Verification Date", value: form.verification_date ? new Date(form.verification_date + "T00:00:00").toLocaleDateString() : "" },
+                    { label: "Annual Report Filed Year", value: form.annual_report_year },
+                  ],
+                }} />
               </div>
-              <CardDescription className="text-[11px]">Always verify corporate status with the Secretary of State</CardDescription>
-            </div>
-            <SectionPdfActions config={{
-              title: "Verification of Corporate Status",
-              companyName: company.name,
-              fields: [
-                { label: "Corporate Status", value: form.corporate_status },
-                { label: "Verification Date", value: form.verification_date ? new Date(form.verification_date + "T00:00:00").toLocaleDateString() : "" },
-                { label: "Annual Report Filed Year", value: form.annual_report_year },
-              ],
-            }} />
-          </div>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-3 px-4 pb-4">
-          <div className="field-group">
-            <Label className="field-label">Corporate Status</Label>
-            <Select value={form.corporate_status} onValueChange={(v) => update("corporate_status", v)}>
-              <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="current">Current</SelectItem>
-                <SelectItem value="delinquent">Delinquent</SelectItem>
-                <SelectItem value="dissolved">Dissolved</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="field-group">
-            <Label className="field-label">Verification Date</Label>
-            <Input type="date" className="h-8 text-sm" value={form.verification_date} onChange={(e) => update("verification_date", e.target.value)} />
-          </div>
-          <div className="field-group">
-            <Label className="field-label">Annual Report Filed Year</Label>
-            <Input type="number" className="h-8 text-sm" value={form.annual_report_year} onChange={(e) => update("annual_report_year", e.target.value)} placeholder="2024" />
-          </div>
-        </CardContent>
-      </Card>
+            </CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-3 px-4 pb-4">
+              <div className="field-group">
+                <Label className="field-label">Corporate Status</Label>
+                <Select value={form.corporate_status} onValueChange={(v) => update("corporate_status", v)}>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="current">Current</SelectItem>
+                    <SelectItem value="delinquent">Delinquent</SelectItem>
+                    <SelectItem value="dissolved">Dissolved</SelectItem>
+                    <SelectItem value="suspended">Suspended</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="field-group">
+                <Label className="field-label">Verification Date</Label>
+                <Input type="date" className="h-8 text-sm" value={form.verification_date} onChange={(e) => update("verification_date", e.target.value)} />
+              </div>
+              <div className="field-group">
+                <Label className="field-label">Annual Report Filed Year</Label>
+                <Input type="number" className="h-8 text-sm" value={form.annual_report_year} onChange={(e) => update("annual_report_year", e.target.value)} placeholder="2024" />
+              </div>
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Company Information */}
       <Card>
