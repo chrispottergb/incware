@@ -118,10 +118,11 @@ export default function MeetingInfoCard({ meeting }: Props) {
     const original = (meeting as any)[field] ?? null;
     if (value !== original) {
       const updates: Partial<Meeting> = { [field]: value } as any;
-      // When meeting date changes and tax_year hasn't been manually set, auto-set tax_year = year - 1
-      if (field === "meeting_date" && value && !meeting.tax_year) {
+      // When meeting date changes, always auto-set tax_year = year - 1
+      if (field === "meeting_date" && value) {
         const year = parseISO(value).getFullYear() - 1;
         (updates as any).tax_year = year;
+        setValues((prev) => ({ ...prev, tax_year: String(year) }));
       }
       updateMeeting.mutate(updates);
     }
