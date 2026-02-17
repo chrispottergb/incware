@@ -463,6 +463,48 @@ export type Database = {
           },
         ]
       }
+      bank_authorized_signers: {
+        Row: {
+          bank_id: string
+          company_id: string
+          created_at: string
+          id: string
+          signer_name: string
+          title: string | null
+        }
+        Insert: {
+          bank_id: string
+          company_id: string
+          created_at?: string
+          id?: string
+          signer_name: string
+          title?: string | null
+        }
+        Update: {
+          bank_id?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          signer_name?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_authorized_signers_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: false
+            referencedRelation: "company_banks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_authorized_signers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bills_of_sale: {
         Row: {
           buyer_name: string
