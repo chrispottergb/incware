@@ -53,39 +53,21 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       const blob = doc.output("blob");
       const url = URL.createObjectURL(blob);
 
-      // Convert blob to data URI to avoid cross-origin iframe restrictions
-      const reader = new FileReader();
-      reader.onload = () => {
-        const iframe = document.createElement("iframe");
-        iframe.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;";
-        document.body.appendChild(iframe);
+      // Most reliable cross-browser: open blob URL directly in same window via anchor
+      // This avoids popup blockers entirely
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      // Use download as fallback — browsers that block the new tab will download instead
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
 
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-        if (iframeDoc) {
-          iframeDoc.open();
-          iframeDoc.write(`<html><body style="margin:0"><embed src="${reader.result}" type="application/pdf" width="100%" height="100%" style="width:100%;height:100vh;"></body></html>`);
-          iframeDoc.close();
-        }
+      toast.info("PDF opened — use Ctrl+P / ⌘+P to print from your PDF viewer.");
 
-        setTimeout(() => {
-          try {
-            iframe.contentWindow?.focus();
-            iframe.contentWindow?.print();
-          } catch {
-            // Fallback: download file instead
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = fileName;
-            a.click();
-            toast.info("Print blocked — file downloaded instead.");
-          }
-          setTimeout(() => {
-            document.body.removeChild(iframe);
-            URL.revokeObjectURL(url);
-          }, 5000);
-        }, 1000);
-      };
-      reader.readAsDataURL(blob);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (err: any) {
       console.error("PDF print error:", err);
       toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
