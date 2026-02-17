@@ -114,6 +114,237 @@ const TARGET_FIELDS: Record<string, { label: string; fields: { key: string; labe
       { key: "officer.treasurer", label: "Treasurer" },
     ],
   },
+  meetings: {
+    label: "Meetings",
+    fields: [
+      { key: "meeting.date", label: "Meeting Date" },
+      { key: "meeting.type", label: "Meeting Type" },
+      { key: "meeting.sub_type", label: "Sub Type" },
+      { key: "meeting.tax_year", label: "Tax Year" },
+      { key: "meeting.location", label: "Location" },
+      { key: "meeting.chairperson", label: "Chairperson" },
+      { key: "meeting.secretary", label: "Secretary" },
+    ],
+  },
+  mtg_officers: {
+    label: "Meeting Officers",
+    fields: [
+      { key: "mtg_officer.title", label: "Title" },
+      { key: "mtg_officer.name", label: "Name" },
+      { key: "mtg_officer.salary", label: "Salary" },
+      { key: "mtg_officer.bonus", label: "Bonus" },
+    ],
+  },
+  mtg_directors: {
+    label: "Meeting Directors",
+    fields: [
+      { key: "mtg_director.name", label: "Director Name" },
+    ],
+  },
+  mtg_shareholders: {
+    label: "Meeting Shareholders",
+    fields: [
+      { key: "mtg_shareholder.name", label: "Name" },
+      { key: "mtg_shareholder.common_shares", label: "Common Shares" },
+      { key: "mtg_shareholder.preferred_shares", label: "Preferred Shares" },
+      { key: "mtg_shareholder.distribution", label: "Distribution" },
+    ],
+  },
+  benefits: {
+    label: "Benefits",
+    fields: [
+      { key: "benefit.type", label: "Benefit Type" },
+      { key: "benefit.provider", label: "Provider" },
+      { key: "benefit.agent", label: "Agent/Admin" },
+      { key: "benefit.agency", label: "Insurance Agency" },
+      { key: "benefit.transaction_type", label: "Transaction Type" },
+      { key: "benefit.plan_year", label: "Plan Year" },
+      { key: "benefit.effective_date", label: "Effective Date" },
+      { key: "benefit.contribution", label: "Contribution" },
+      { key: "benefit.eligibility", label: "Eligibility" },
+    ],
+  },
+  amendments: {
+    label: "Amendments",
+    fields: [
+      { key: "amendment.type", label: "Amendment Type" },
+      { key: "amendment.text", label: "Amendment Text" },
+    ],
+  },
+  resolutions: {
+    label: "Resolutions",
+    fields: [
+      { key: "resolution.purpose", label: "Purpose" },
+      { key: "resolution.text", label: "Resolution Text" },
+    ],
+  },
+  loans: {
+    label: "Loans",
+    fields: [
+      { key: "loan.type", label: "Loan Type" },
+      { key: "loan.rate", label: "Rate" },
+      { key: "loan.amount", label: "Amount" },
+      { key: "loan.date", label: "Date" },
+    ],
+  },
+  agreements: {
+    label: "Agreements",
+    fields: [
+      { key: "agreement.type", label: "Agreement Type" },
+      { key: "agreement.date", label: "Date" },
+      { key: "agreement.with", label: "With" },
+      { key: "agreement.purpose", label: "Purpose" },
+    ],
+  },
+  auth_signers: {
+    label: "Auth Signers",
+    fields: [
+      { key: "auth_signer.name", label: "Signer Name" },
+      { key: "auth_signer.title", label: "Title" },
+      { key: "auth_signer.bank", label: "Bank" },
+    ],
+  },
+  banks: {
+    label: "Banks",
+    fields: [
+      { key: "bank.name", label: "Bank Name" },
+      { key: "bank.address", label: "Address" },
+      { key: "bank.city", label: "City" },
+      { key: "bank.state", label: "State" },
+      { key: "bank.zip", label: "ZIP" },
+      { key: "bank.account_number", label: "Account #" },
+      { key: "bank.routing_number", label: "Routing #" },
+      { key: "bank.account_type", label: "Account Type" },
+    ],
+  },
+  atty_firms: {
+    label: "Attorney Firms",
+    fields: [
+      { key: "atty_firm.name", label: "Firm Name" },
+      { key: "atty_firm.address", label: "Address" },
+      { key: "atty_firm.city", label: "City" },
+      { key: "atty_firm.state", label: "State" },
+      { key: "atty_firm.zip", label: "ZIP" },
+      { key: "atty_firm.phone", label: "Phone" },
+      { key: "atty_firm.email", label: "Email" },
+    ],
+  },
+  attorneys: {
+    label: "Attorneys",
+    fields: [
+      { key: "attorney.name", label: "Attorney Name" },
+      { key: "attorney.bar_number", label: "Bar Number" },
+      { key: "attorney.specialty", label: "Specialty" },
+      { key: "attorney.phone", label: "Phone" },
+      { key: "attorney.email", label: "Email" },
+    ],
+  },
+  acct_firms: {
+    label: "Accountant Firms",
+    fields: [
+      { key: "acct_firm.name", label: "Firm Name" },
+      { key: "acct_firm.address", label: "Address" },
+      { key: "acct_firm.city", label: "City" },
+      { key: "acct_firm.state", label: "State" },
+      { key: "acct_firm.zip", label: "ZIP" },
+      { key: "acct_firm.phone", label: "Phone" },
+      { key: "acct_firm.email", label: "Email" },
+    ],
+  },
+  accountants: {
+    label: "Accountants",
+    fields: [
+      { key: "accountant.name", label: "Accountant Name" },
+      { key: "accountant.cpa_number", label: "CPA Number" },
+      { key: "accountant.specialty", label: "Specialty" },
+      { key: "accountant.phone", label: "Phone" },
+      { key: "accountant.email", label: "Email" },
+    ],
+  },
+  vehicles: {
+    label: "Vehicles",
+    fields: [
+      { key: "vehicle.year", label: "Year" },
+      { key: "vehicle.make", label: "Make" },
+      { key: "vehicle.model", label: "Model" },
+      { key: "vehicle.vin", label: "VIN" },
+      { key: "vehicle.cost", label: "Cost" },
+      { key: "vehicle.ownership_type", label: "Ownership" },
+      { key: "vehicle.purchase_date", label: "Purchase Date" },
+      { key: "vehicle.purchase_amount", label: "Purchase Amount" },
+    ],
+  },
+  equipment: {
+    label: "Equipment",
+    fields: [
+      { key: "equipment.year", label: "Year" },
+      { key: "equipment.make", label: "Make" },
+      { key: "equipment.model", label: "Model" },
+      { key: "equipment.manufacturer", label: "Manufacturer" },
+      { key: "equipment.running_hours", label: "Running Hours" },
+      { key: "equipment.ownership_type", label: "Ownership" },
+    ],
+  },
+  leases: {
+    label: "Leases",
+    fields: [
+      { key: "lease.description", label: "Description" },
+      { key: "lease.value", label: "Value" },
+      { key: "lease.address", label: "Address" },
+    ],
+  },
+  property: {
+    label: "Property",
+    fields: [
+      { key: "property.address", label: "Address" },
+      { key: "property.finance_company", label: "Finance Company" },
+      { key: "property.escrow", label: "Escrow" },
+      { key: "property.mortgage", label: "Mortgage" },
+      { key: "property.taxes", label: "Taxes" },
+    ],
+  },
+  certificates: {
+    label: "Stock Certificates",
+    fields: [
+      { key: "certificate.number", label: "Cert. Number" },
+      { key: "certificate.share_class", label: "Share Class" },
+      { key: "certificate.num_shares", label: "Shares" },
+      { key: "certificate.issue_date", label: "Issue Date" },
+      { key: "certificate.status", label: "Status" },
+    ],
+  },
+  transactions: {
+    label: "Share Transactions",
+    fields: [
+      { key: "transaction.type", label: "Type" },
+      { key: "transaction.date", label: "Date" },
+      { key: "transaction.from", label: "From" },
+      { key: "transaction.to", label: "To" },
+      { key: "transaction.shares", label: "Shares" },
+      { key: "transaction.share_class", label: "Share Class" },
+      { key: "transaction.price_per_share", label: "Price/Share" },
+    ],
+  },
+  bills_of_sale: {
+    label: "Bills of Sale",
+    fields: [
+      { key: "bill.seller", label: "Seller" },
+      { key: "bill.buyer", label: "Buyer" },
+      { key: "bill.date", label: "Date" },
+      { key: "bill.shares", label: "Shares" },
+      { key: "bill.share_class", label: "Share Class" },
+      { key: "bill.price_per_share", label: "Price/Share" },
+      { key: "bill.total_price", label: "Total Price" },
+    ],
+  },
+  timeline: {
+    label: "Timeline",
+    fields: [
+      { key: "timeline.date", label: "Event Date" },
+      { key: "timeline.title", label: "Event Title" },
+      { key: "timeline.description", label: "Description" },
+    ],
+  },
 };
 
 const ALL_TARGET_OPTIONS = Object.values(TARGET_FIELDS).flatMap((g) =>

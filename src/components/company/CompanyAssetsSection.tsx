@@ -50,9 +50,9 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
   const [activeTab, setActiveTab] = useState<AssetTab>("vehicle");
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Form state for each type
-  const [vehicleForm, setVehicleForm] = useState({ year: "", make: "", model: "", cost: "", ownership_type: "owned", description: "" });
-  const [equipmentForm, setEquipmentForm] = useState({ year: "", make: "", model: "", running_hours: "", manufacturer: "", ownership_type: "owned", description: "" });
+  // Form state for each type — updated with new fields
+  const [vehicleForm, setVehicleForm] = useState({ year: "", make: "", model: "", cost: "", ownership_type: "owned", description: "", vin: "", purchase_date: "", purchase_amount: "" });
+  const [equipmentForm, setEquipmentForm] = useState({ year: "", make: "", model: "", running_hours: "", manufacturer: "", ownership_type: "owned", description: "", purchase_date: "", purchase_amount: "", lease_date: "", lease_amount: "" });
   const [leaseForm, setLeaseForm] = useState({ description: "", value: "" });
   const [propertyForm, setPropertyForm] = useState({ address: "", finance_company: "", escrow: "", mortgage: "", taxes: "", description: "" });
 
@@ -83,6 +83,9 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
           model: vehicleForm.model || null,
           cost: vehicleForm.cost ? parseFloat(vehicleForm.cost) : null,
           ownership_type: vehicleForm.ownership_type,
+          vin: vehicleForm.vin || null,
+          purchase_date: vehicleForm.purchase_date || null,
+          purchase_amount: vehicleForm.purchase_amount ? parseFloat(vehicleForm.purchase_amount) : null,
           description: `${vehicleForm.year} ${vehicleForm.make} ${vehicleForm.model}`.trim() || "Vehicle",
         };
       } else if (activeTab === "equipment") {
@@ -94,6 +97,10 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
           running_hours: equipmentForm.running_hours ? parseFloat(equipmentForm.running_hours) : null,
           manufacturer: equipmentForm.manufacturer || null,
           ownership_type: equipmentForm.ownership_type,
+          purchase_date: equipmentForm.purchase_date || null,
+          purchase_amount: equipmentForm.purchase_amount ? parseFloat(equipmentForm.purchase_amount) : null,
+          lease_date: equipmentForm.lease_date || null,
+          lease_amount: equipmentForm.lease_amount ? parseFloat(equipmentForm.lease_amount) : null,
           description: equipmentForm.description || `${equipmentForm.manufacturer || ""} ${equipmentForm.make || ""} ${equipmentForm.model || ""}`.trim() || "Equipment",
         };
       } else if (activeTab === "lease") {
@@ -139,8 +146,8 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
   });
 
   const resetForm = () => {
-    setVehicleForm({ year: "", make: "", model: "", cost: "", ownership_type: "owned", description: "" });
-    setEquipmentForm({ year: "", make: "", model: "", running_hours: "", manufacturer: "", ownership_type: "owned", description: "" });
+    setVehicleForm({ year: "", make: "", model: "", cost: "", ownership_type: "owned", description: "", vin: "", purchase_date: "", purchase_amount: "" });
+    setEquipmentForm({ year: "", make: "", model: "", running_hours: "", manufacturer: "", ownership_type: "owned", description: "", purchase_date: "", purchase_amount: "", lease_date: "", lease_amount: "" });
     setLeaseForm({ description: "", value: "" });
     setPropertyForm({ address: "", finance_company: "", escrow: "", mortgage: "", taxes: "", description: "" });
   };
@@ -164,14 +171,14 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
               companyName,
               table: {
                 headers: activeTab === "vehicle"
-                  ? ["Year", "Make", "Model", "Cost", "Ownership"]
+                  ? ["Year", "Make", "Model", "VIN", "Cost", "Ownership"]
                   : activeTab === "equipment"
                   ? ["Year", "Make", "Model", "Manufacturer", "Running Hrs", "Lease/Own"]
                   : activeTab === "lease"
                   ? ["Description", "Value"]
                   : ["Address", "Finance Co.", "Escrow", "Mortgage", "Taxes"],
                 rows: assets.map((a) => {
-                  if (activeTab === "vehicle") return [a.year || "—", a.make || "—", a.model || "—", fmt(a.cost), a.ownership_type || "—"];
+                  if (activeTab === "vehicle") return [a.year || "—", a.make || "—", a.model || "—", (a as any).vin || "—", fmt(a.cost), a.ownership_type || "—"];
                   if (activeTab === "equipment") return [a.year || "—", a.make || "—", a.model || "—", a.manufacturer || "—", a.running_hours?.toString() || "—", a.ownership_type || "—"];
                   if (activeTab === "lease") return [a.description, fmt(a.value)];
                   return [a.address || "—", a.finance_company || "—", fmt(a.escrow), fmt(a.mortgage), fmt(a.taxes)];
@@ -208,6 +215,10 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
                       <Input className="h-8 text-sm" value={vehicleForm.model} onChange={(e) => setVehicleForm((p) => ({ ...p, model: e.target.value }))} required />
                     </div>
                   </div>
+                  <div className="field-group">
+                    <Label className="field-label">VIN</Label>
+                    <Input className="h-8 text-sm" value={vehicleForm.vin} onChange={(e) => setVehicleForm((p) => ({ ...p, vin: e.target.value }))} placeholder="Vehicle Identification Number" />
+                  </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="field-group">
                       <Label className="field-label">Cost ($)</Label>
@@ -223,6 +234,16 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
                           <SelectItem value="financed">Financed</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Purchase Date</Label>
+                      <Input type="date" className="h-8 text-sm" value={vehicleForm.purchase_date} onChange={(e) => setVehicleForm((p) => ({ ...p, purchase_date: e.target.value }))} />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Purchase Amount ($)</Label>
+                      <Input type="number" step="0.01" className="h-8 text-sm" value={vehicleForm.purchase_amount} onChange={(e) => setVehicleForm((p) => ({ ...p, purchase_amount: e.target.value }))} />
                     </div>
                   </div>
                 </>
@@ -263,6 +284,26 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
                         <SelectItem value="leased">Lease</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Purchase Date</Label>
+                      <Input type="date" className="h-8 text-sm" value={equipmentForm.purchase_date} onChange={(e) => setEquipmentForm((p) => ({ ...p, purchase_date: e.target.value }))} />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Purchase Amount ($)</Label>
+                      <Input type="number" step="0.01" className="h-8 text-sm" value={equipmentForm.purchase_amount} onChange={(e) => setEquipmentForm((p) => ({ ...p, purchase_amount: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Lease Date</Label>
+                      <Input type="date" className="h-8 text-sm" value={equipmentForm.lease_date} onChange={(e) => setEquipmentForm((p) => ({ ...p, lease_date: e.target.value }))} />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Lease Amount ($)</Label>
+                      <Input type="number" step="0.01" className="h-8 text-sm" value={equipmentForm.lease_amount} onChange={(e) => setEquipmentForm((p) => ({ ...p, lease_amount: e.target.value }))} />
+                    </div>
                   </div>
                 </>
               )}
@@ -360,6 +401,7 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
                       <TableHead className="text-xs font-semibold h-8">Year</TableHead>
                       <TableHead className="text-xs h-8">Make</TableHead>
                       <TableHead className="text-xs h-8">Model</TableHead>
+                      <TableHead className="text-xs h-8">VIN</TableHead>
                       <TableHead className="text-xs text-right h-8">Cost</TableHead>
                       <TableHead className="text-xs h-8">Ownership</TableHead>
                     </>
@@ -400,6 +442,7 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
                         <TableCell className="text-sm py-2 font-medium">{a.year || "—"}</TableCell>
                         <TableCell className="text-sm py-2">{a.make || "—"}</TableCell>
                         <TableCell className="text-sm py-2">{a.model || "—"}</TableCell>
+                        <TableCell className="text-xs py-2 font-mono text-muted-foreground">{a.vin || "—"}</TableCell>
                         <TableCell className="text-right font-mono text-xs py-2">{fmt(a.cost)}</TableCell>
                         <TableCell className="py-2">
                           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${

@@ -12,6 +12,8 @@ import MeetingSubTable from "@/components/meeting/MeetingSubTable";
 import MeetingResolutions from "@/components/meeting/MeetingResolutions";
 import MeetingAmendments from "@/components/meeting/MeetingAmendments";
 import MeetingBenefits from "@/components/meeting/MeetingBenefits";
+import MeetingLoans from "@/components/meeting/MeetingLoans";
+import MeetingAgreements from "@/components/meeting/MeetingAgreements";
 import PrintPreviewButton from "@/components/meeting/PrintPreviewButton";
 import { OFFICER_TITLE_OPTIONS } from "@/components/company/OrganizationTab";
 import {
@@ -135,6 +137,26 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
+  const { data: loans = [] } = useQuery({
+    queryKey: ["meeting_loans", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_loans" as any).select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!meetingId,
+  });
+
+  const { data: agreements = [] } = useQuery({
+    queryKey: ["agreements", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("agreements" as any).select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!meetingId,
+  });
+
   const { data: other = [] } = useQuery({
     queryKey: ["meeting_other", meetingId],
     queryFn: async () => {
@@ -197,6 +219,8 @@ export default function MeetingDetail() {
       amendments,
       resolutions,
       benefits,
+      loans,
+      agreements,
       other,
       financials,
       authorizedSigners,
@@ -213,6 +237,8 @@ export default function MeetingDetail() {
     { value: "amendments", label: "Amendments" },
     { value: "resolutions", label: "Resolutions" },
     { value: "benefits", label: "Benefits" },
+    { value: "loans", label: "Loans" },
+    { value: "agreements", label: "Agreements" },
     { value: "other", label: "Other" },
     { value: "auth_signers", label: "Auth. Signatories" },
   ];
@@ -325,7 +351,15 @@ export default function MeetingDetail() {
             <div className="flex justify-end">
               <PrintPreviewButton
                 label="Print"
-                generatePDF={() => exportSectionPDF("Officers", company, meeting, ["Title", "Name"], officers.map(o => [o.title, o.name]))}
+                generatePDF={() => exportSectionPDF("Officers", company, meeting,
+                  ["Title", "Name", "Salary", "Bonus"],
+                  officers.map((o: any) => [
+                    o.title,
+                    o.name,
+                    o.salary != null ? `$${Number(o.salary).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
+                    o.bonus != null ? `$${Number(o.bonus).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
+                  ])
+                )}
                 fileName={`officers-${meetingFileName}`}
               />
             </div>
@@ -333,6 +367,8 @@ export default function MeetingDetail() {
               columns={[
                 { key: "title", label: "Title", required: true, type: "select", options: OFFICER_TITLE_OPTIONS[company?.entity_type || "Corporation"] || OFFICER_TITLE_OPTIONS["Corporation"] },
                 { key: "name", label: "Name", required: true },
+                { key: "salary", label: "Salary", type: "number" },
+                { key: "bonus", label: "Bonus", type: "number" },
               ]}
             />
           </div>
@@ -417,6 +453,47 @@ export default function MeetingDetail() {
               />
             </div>
             <MeetingBenefits meetingId={meeting.id} />
+          </div>
+        </TabsContent>
+        <TabsContent value="loans" className="mt-5">
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <PrintPreviewButton
+                label="Print"
+                generatePDF={() => exportSectionPDF("Loans", company, meeting,
+                  ["Type", "Rate", "Amount", "Date", "Notes"],
+                  loans.map((l: any) => [
+                    l.loan_type || "—",
+                    l.loan_rate != null ? `${Number(l.loan_rate).toFixed(2)}%` : "—",
+                    l.loan_amount != null ? `$${Number(l.loan_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
+                    l.loan_date ? new Date(l.loan_date + "T00:00:00").toLocaleDateString() : "—",
+                    l.notes || "—",
+                  ])
+                )}
+                fileName={`loans-${meetingFileName}`}
+              />
+            </div>
+            <MeetingLoans meetingId={meeting.id} />
+          </div>
+        </TabsContent>
+        <TabsContent value="agreements" className="mt-5">
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <PrintPreviewButton
+                label="Print"
+                generatePDF={() => exportSectionPDF("Agreements", company, meeting,
+                  ["Type", "Date", "With", "Purpose"],
+                  agreements.map((a: any) => [
+                    a.agreement_type,
+                    a.agreement_date ? new Date(a.agreement_date + "T00:00:00").toLocaleDateString() : "—",
+                    a.agreement_with || "—",
+                    a.agreement_purpose || "—",
+                  ])
+                )}
+                fileName={`agreements-${meetingFileName}`}
+              />
+            </div>
+            <MeetingAgreements meetingId={meeting.id} />
           </div>
         </TabsContent>
         <TabsContent value="other" className="mt-5">

@@ -16,6 +16,8 @@ interface MeetingData {
   amendments?: any[];
   resolutions?: any[];
   benefits?: any[];
+  loans?: any[];
+  agreements?: any[];
   other?: any[];
   financials?: any;
   authorizedSigners?: any[];
@@ -25,7 +27,6 @@ function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType
   const pw = doc.internal.pageSize.getWidth();
   const cx = pw / 2;
 
-  // State seal area
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
@@ -36,26 +37,22 @@ function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType
   doc.setTextColor(80, 80, 80);
   doc.text(DFI_SUB, cx, 21, { align: "center" });
 
-  // Double line
   doc.setDrawColor(30, 30, 30);
   doc.setLineWidth(0.8);
   doc.line(14, 25, pw - 14, 25);
   doc.setLineWidth(0.3);
   doc.line(14, 26.5, pw - 14, 26.5);
 
-  // Document title
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text(title.toUpperCase(), cx, 35, { align: "center" });
 
-  // Entity info
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(60, 60, 60);
   doc.text(`${companyName} — ${entityType}`, cx, 41, { align: "center" });
 
-  // Filing reference line
   doc.setLineWidth(0.3);
   doc.setDrawColor(160, 160, 160);
   doc.line(14, 45, pw - 14, 45);
@@ -157,14 +154,18 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     y = (doc as any).lastAutoTable.finalY + 6;
   }
 
-  // Officers
+  // Officers (with salary/bonus)
   if (data.officers && data.officers.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.officers.length * 7);
     y = addSectionTitle(doc, y, "Officers");
+    const hasSalaryData = data.officers.some(o => o.salary != null || o.bonus != null);
     autoTable(doc, {
       startY: y,
-      head: [["Title", "Name"]],
-      body: data.officers.map(o => [o.title, o.name]),
+      head: [hasSalaryData ? ["Title", "Name", "Salary", "Bonus"] : ["Title", "Name"]],
+      body: data.officers.map(o => hasSalaryData
+        ? [o.title, o.name, o.salary != null ? fmt(o.salary) : "—", o.bonus != null ? fmt(o.bonus) : "—"]
+        : [o.title, o.name]
+      ),
       theme: "grid",
       headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
       bodyStyles: { fontSize: 8 },
@@ -234,6 +235,28 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     y = (doc as any).lastAutoTable.finalY + 6;
   }
 
+  // Loans
+  if (data.loans && data.loans.length > 0) {
+    y = checkPageBreak(doc, y, 20 + data.loans.length * 7);
+    y = addSectionTitle(doc, y, "Loans");
+    autoTable(doc, {
+      startY: y,
+      head: [["Type", "Rate", "Amount", "Date", "Notes"]],
+      body: data.loans.map(l => [
+        l.loan_type || "—",
+        l.loan_rate != null ? `${Number(l.loan_rate).toFixed(2)}%` : "—",
+        l.loan_amount != null ? fmt(l.loan_amount) : "—",
+        l.loan_date ? new Date(l.loan_date + "T00:00:00").toLocaleDateString() : "—",
+        l.notes || "—",
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8 },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 6;
+  }
+
   // Assets
   if (data.assets && data.assets.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.assets.length * 7);
@@ -294,8 +317,35 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     y = addSectionTitle(doc, y, "Benefits");
     autoTable(doc, {
       startY: y,
-      head: [["Benefit Description"]],
-      body: data.benefits.map(b => [b.benefit_description]),
+      head: [["Benefit Type", "Provider", "Agent/Admin", "Plan Year", "Contribution"]],
+      body: data.benefits.map(b => [
+        b.benefit_type || b.benefit_description || "—",
+        b.provider || "—",
+        b.agent_administrator || "—",
+        b.plan_year?.toString() || "—",
+        b.retirement_contribution != null ? fmt(b.retirement_contribution) : "—",
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8 },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 6;
+  }
+
+  // Agreements
+  if (data.agreements && data.agreements.length > 0) {
+    y = checkPageBreak(doc, y, 20 + data.agreements.length * 7);
+    y = addSectionTitle(doc, y, "Agreements");
+    autoTable(doc, {
+      startY: y,
+      head: [["Type", "Date", "With", "Purpose"]],
+      body: data.agreements.map(a => [
+        a.agreement_type,
+        a.agreement_date ? new Date(a.agreement_date + "T00:00:00").toLocaleDateString() : "—",
+        a.agreement_with || "—",
+        a.agreement_purpose || "—",
+      ]),
       theme: "grid",
       headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
       bodyStyles: { fontSize: 8 },
@@ -348,14 +398,12 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   doc.text("There being no further business, the meeting was adjourned.", 14, y);
   y += 12;
 
-  // Secretary signature line
   doc.line(14, y, 90, y);
   doc.text("Secretary", 14, y + 4);
   doc.text("Date: _______________", 95, y + 4);
 
   y += 14;
 
-  // Chairperson signature line
   doc.line(14, y, 90, y);
   doc.text("Chairperson", 14, y + 4);
   doc.text("Date: _______________", 95, y + 4);
