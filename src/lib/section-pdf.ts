@@ -142,24 +142,59 @@ export function downloadSectionPdf(config: SectionPdfConfig) {
 }
 
 export function previewSectionPdf(config: SectionPdfConfig) {
-  const win = window.open("", "_blank");
   const doc = generateSectionPdf(config);
   const blob = doc.output("blob");
   const url = URL.createObjectURL(blob);
-  if (win) {
-    win.location.href = url;
-  }
+
+  // Use an inline iframe overlay instead of window.open to avoid Edge popup blocker
+  const overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;";
+  
+  const container = document.createElement("div");
+  container.style.cssText = "width:90vw;height:90vh;max-width:900px;background:#fff;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;";
+  
+  const toolbar = document.createElement("div");
+  toolbar.style.cssText = "display:flex;justify-content:flex-end;padding:8px 12px;background:#f3f4f6;border-bottom:1px solid #e5e7eb;";
+  
+  const closeBtn = document.createElement("button");
+  closeBtn.textContent = "✕ Close";
+  closeBtn.style.cssText = "padding:4px 12px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;font-size:13px;";
+  closeBtn.onclick = () => { document.body.removeChild(overlay); URL.revokeObjectURL(url); };
+  toolbar.appendChild(closeBtn);
+  
+  const iframe = document.createElement("iframe");
+  iframe.src = url;
+  iframe.style.cssText = "flex:1;border:0;width:100%;";
+  
+  container.appendChild(toolbar);
+  container.appendChild(iframe);
+  overlay.appendChild(container);
+  overlay.onclick = (e) => { if (e.target === overlay) { document.body.removeChild(overlay); URL.revokeObjectURL(url); } };
+  document.body.appendChild(overlay);
 }
 
 export function printSectionPdf(config: SectionPdfConfig) {
-  const win = window.open("", "_blank");
   const doc = generateSectionPdf(config);
   const blob = doc.output("blob");
   const url = URL.createObjectURL(blob);
-  if (win) {
-    win.location.href = url;
-    win.addEventListener("load", () => {
-      win.print();
-    });
-  }
+
+  // Use a hidden iframe to trigger print — avoids Edge popup blocker
+  const iframe = document.createElement("iframe");
+  iframe.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:0;height:0;";
+  iframe.src = url;
+  document.body.appendChild(iframe);
+
+  iframe.onload = () => {
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.print();
+      } catch {
+        window.open(url, "_blank");
+      }
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+        URL.revokeObjectURL(url);
+      }, 5000);
+    }, 500);
+  };
 }
