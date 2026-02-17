@@ -1,78 +1,57 @@
 
 
-# Link Authorized Signatories to Meeting Dates
+# Fix .accdb Upload: Empty Table List
 
-## Goal
-Track when each authorized signatory was active so that for any given meeting date, we can see exactly who was authorized to sign on behalf of the company at that point in time.
+## Problem
+When uploading an `.accdb` file, the wizard advances to "Select Tables" but shows no tables. This is NOT a 32-bit vs. 64-bit issue -- the `mdb-reader` library supports all Access versions (97 through 2019) regardless of bitness.
 
-## Step 1: Add Date Tracking to Authorized Signatories
+## Root Causes to Address
 
-Add `effective_date` and `end_date` columns to the existing `bank_authorized_signers` table:
+1. **Password-protected databases**: The library supports decryption but the code never asks for a password
+2. **Silent empty results**: When zero tables are found, the user gets no explanation of why
+3. **All tables filtered out**: System table filtering (`MSys*`, `~*`) may remove everything if no user tables exist
 
-| Column | Type | Purpose |
-|---|---|---|
-| effective_date | date | When this person became an authorized signatory (defaults to today) |
-| end_date | date | When authorization ended (NULL = still active) |
+## Changes
 
-This lets us determine who was authorized on any date by checking: `effective_date <= meeting_date AND (end_date IS NULL OR end_date >= meeting_date)`.
+### File: `src/pages/ImportAccess.tsx`
 
-## Step 2: Create a Meeting-Signatory Snapshot Table
+1. **Add a password prompt**
+   - Add a state variable for an optional database password
+   - When parsing fails OR returns zero tables, show a dialog asking if the database is password-protected
+   - Re-attempt parsing with `new MDBReader(Buffer.from(buffer), { password })` when a password is provided
 
-Create `meeting_authorized_signers` to store a snapshot of who was authorized at each meeting:
+2. **Improve error diagnostics**
+   - After `reader.getTableNames()`, if no tables are found, check how many total tables exist (including system tables) and report:
+     - "No user tables found. The database contains X system tables only." or
+     - "No tables found. The file may be corrupted or in an unsupported format."
+   - Show the Access database version/creation date from the reader for debugging context
 
-| Column | Type | Purpose |
-|---|---|---|
-| id | uuid (PK) | Primary key |
-| meeting_id | uuid (FK to meetings) | Which meeting |
-| signer_id | uuid (FK to bank_authorized_signers) | Links to the actual signatory record |
-| signer_name | text | Snapshot of name at time of meeting |
-| title | text | Snapshot of title |
-| bank_name | text | Snapshot of bank name |
-| created_at | timestamptz | Record timestamp |
+3. **Add a "Show system tables" toggle**
+   - Add a checkbox on the table selection step: "Include system tables"
+   - When enabled, show all tables (including `MSys*` prefixed ones) so users can verify the file was read correctly
 
-RLS policies will follow the existing meeting sub-table pattern (join through meetings to companies to verify user_id).
-
-## Step 3: Update BanksTab UI
-
-Modify the "Add Authorized Signatory" dialog and table to include:
-- **Effective Date** field (date picker, defaults to today)
-- **End Date** field (date picker, optional -- leave blank if still active)
-- **Status badge** showing "Active" or "Inactive" based on dates
-- Table columns updated to show effective/end dates
-
-## Step 4: Add "Authorized Signatories" Tab to Meeting Detail
-
-Add a new tab called **"Auth. Signatories"** to the Meeting Detail page that:
-- Shows a table of signatories who were active on the meeting date (auto-populated from date ranges)
-- Has an "Auto-populate from records" button that finds all signatories where `effective_date <= meeting_date AND (end_date IS NULL OR end_date >= meeting_date)` and inserts them as snapshots
-- Allows manual add/remove for corrections
-- Each row shows: Signatory Name, Title, Bank, and a status indicator
-- Includes a Print button for PDF export
-
-## Step 5: Include in Full Meeting Minutes PDF
-
-Update the meeting minutes PDF export to include the authorized signatories section when data exists.
-
-## Files to Create/Modify
-
-| File | Action |
-|---|---|
-| Migration SQL | Add columns to `bank_authorized_signers`, create `meeting_authorized_signers` table with RLS |
-| `src/components/company/BanksTab.tsx` | Add effective_date/end_date fields to signatory form and table |
-| `src/components/meeting/MeetingAuthorizedSigners.tsx` | New component for the meeting detail tab |
-| `src/pages/MeetingDetail.tsx` | Add "Auth. Signatories" tab |
-| `src/lib/meeting-pdf-export.ts` | Include signatories in full minutes PDF |
+4. **Better error toast messages**
+   - Replace the generic "Failed to parse Access file" with more specific guidance based on the error type
+   - If the error message contains "encryption" or "password", prompt for credentials automatically
 
 ## Technical Details
 
-### Auto-populate Logic
-When the user clicks "Auto-populate" on a meeting's signatories tab:
-1. Query `bank_authorized_signers` where `company_id` matches and `effective_date <= meeting.meeting_date AND (end_date IS NULL OR end_date >= meeting.meeting_date)`
-2. Join with `company_banks` to get bank names
-3. Insert snapshot rows into `meeting_authorized_signers` (skip duplicates by signer_id)
+### Password flow
+```text
+1. User uploads .accdb
+2. Parse without password
+3. If error contains "password"/"encrypt" OR zero tables found:
+   -> Show password input dialog
+   -> Re-parse with: new MDBReader(Buffer.from(buffer), { password })
+4. If still fails, show specific error
+```
 
-### Data Integrity
-- `meeting_authorized_signers.signer_id` uses `ON DELETE SET NULL` so historical meeting records survive if a signatory is later removed
-- The snapshot fields (signer_name, title, bank_name) preserve the record even if the source data changes later
-- The `effective_date`/`end_date` on `bank_authorized_signers` are optional for backward compatibility (existing records default effective_date to their created_at date)
+### Diagnostic info to display
+After successful parse, show a small info line:
+- Database created: [date from reader.getCreationDate()]
+- Total tables: X user / Y system
+- This helps the user confirm the file was read correctly
+
+### No database or dependency changes needed
+This is purely a UI/parsing logic fix in `ImportAccess.tsx`.
 
