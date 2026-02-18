@@ -64,6 +64,7 @@ interface FileEntry {
   status: "pending" | "processing" | "done" | "error";
   data?: ExtractedData;
   error?: string;
+  retries?: number;
 }
 
 interface Props {
@@ -148,54 +149,87 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
 
     // Process sequentially
     for (const entry of entries) {
-      setFiles((prev) =>
-        prev.map((f) => (f === entry ? { ...f, status: "processing" } : f))
-      );
-
-      try {
-        const formData = new FormData();
-        formData.append("file", entry.file);
-        formData.append("mode", mode);
-        if (companyId) formData.append("company_id", companyId);
-
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-tax-return`,
-          {
-            method: "POST",
-            headers: { Authorization: `Bearer ${session.access_token}` },
-            body: formData,
-          }
-        );
-
-        if (!response.ok) {
-          const err = await response.json().catch(() => ({}));
-          throw new Error(err.error || `Failed (${response.status})`);
-        }
-
-        const data = await response.json();
-        const extracted = data.extracted as ExtractedData;
-        onExtracted?.(extracted);
-
-        setFiles((prev) =>
-          prev.map((f) =>
-            f === entry ? { ...f, status: "done", data: extracted } : f
-          )
-        );
-      } catch (err: any) {
-        console.error(err);
-        setFiles((prev) =>
-          prev.map((f) =>
-            f === entry ? { ...f, status: "error", error: err.message } : f
-          )
-        );
-      }
+      await processEntry(entry, session.access_token);
     }
 
     setProcessing(false);
     const doneCount = entries.filter((e) => e.status !== "error").length;
     if (doneCount > 0) {
-      toast.success(`Parsed ${valid.length} tax return(s)`);
+      toast.success(`Parsed ${entries.length} tax return(s)`);
     }
+  };
+
+  const TIMEOUT_MS = 90_000; // 90 seconds
+  const MAX_RETRIES = 2;
+
+  const fetchWithTimeout = (url: string, options: RequestInit, timeoutMs: number): Promise<Response> => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+  };
+
+  const processEntry = async (entry: FileEntry, accessToken: string, retryCount = 0) => {
+    setFiles((prev) =>
+      prev.map((f) => (f === entry ? { ...f, status: "processing", error: undefined, retries: retryCount } : f))
+    );
+
+    try {
+      const formData = new FormData();
+      formData.append("file", entry.file);
+      formData.append("mode", mode);
+      if (companyId) formData.append("company_id", companyId);
+
+      const response = await fetchWithTimeout(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-tax-return`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: formData,
+        },
+        TIMEOUT_MS
+      );
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || `Failed (${response.status})`);
+      }
+
+      const data = await response.json();
+      const extracted = data.extracted as ExtractedData;
+      onExtracted?.(extracted);
+
+      setFiles((prev) =>
+        prev.map((f) =>
+          f === entry ? { ...f, status: "done", data: extracted } : f
+        )
+      );
+    } catch (err: any) {
+      const isTimeout = err.name === "AbortError";
+      const errorMsg = isTimeout ? "Request timed out" : err.message;
+
+      // Auto-retry on timeout or 5xx
+      if (retryCount < MAX_RETRIES && (isTimeout || /5\d{2}/.test(err.message))) {
+        console.warn(`Retry ${retryCount + 1}/${MAX_RETRIES} for ${entry.name}`);
+        toast.info(`Retrying ${entry.name}… (attempt ${retryCount + 2})`);
+        await processEntry(entry, accessToken, retryCount + 1);
+        return;
+      }
+
+      console.error(err);
+      setFiles((prev) =>
+        prev.map((f) =>
+          f === entry ? { ...f, status: "error", error: errorMsg, retries: retryCount } : f
+        )
+      );
+    }
+  };
+
+  const retryFile = async (entry: FileEntry) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { toast.error("Please log in first"); return; }
+    setProcessing(true);
+    await processEntry(entry, session.access_token);
+    setProcessing(false);
   };
 
   const handleSaveAll = async () => {
@@ -512,7 +546,17 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
                       <Badge variant="outline" className="text-[10px] shrink-0">TY {f.data.tax_year}</Badge>
                     )}
                     {f.status === "error" && (
-                      <span className="text-destructive truncate max-w-[120px]">{f.error}</span>
+                      <>
+                        <span className="text-destructive truncate max-w-[120px]">{f.error}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 px-1.5 text-[10px] shrink-0"
+                          onClick={(e) => { e.stopPropagation(); retryFile(f); }}
+                        >
+                          Retry
+                        </Button>
+                      </>
                     )}
                     {!processing && (
                       <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground">
