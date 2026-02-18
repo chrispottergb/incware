@@ -155,7 +155,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
       try {
         const formData = new FormData();
         formData.append("file", entry.file);
-        formData.append("mode", "extract");
+        formData.append("mode", mode);
         if (companyId) formData.append("company_id", companyId);
 
         const response = await fetch(
