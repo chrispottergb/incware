@@ -184,6 +184,43 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   addDFIHeader(doc, isWrittenConsent ? "Written Consent" : `${meeting.meeting_type} — Minutes`, companyName, entityType);
 
   let y = 52;
+  const pw = doc.internal.pageSize.getWidth();
+  const cx = pw / 2;
+
+  // Company info centered at top (letterhead style)
+  const displayName = meeting.company_name_at_meeting || companyName;
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
+  doc.text(displayName, cx, y, { align: "center" });
+  y += 5;
+
+  const addrLine = meeting.company_address_at_meeting || company?.address || "";
+  if (addrLine) {
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(30, 30, 30);
+    doc.text(addrLine, cx, y, { align: "center" });
+    y += 5;
+  }
+
+  const cityStateZip = [
+    meeting.company_city_at_meeting || company?.city,
+    meeting.company_state_at_meeting || company?.state,
+    meeting.company_zip_at_meeting || company?.zip
+  ].filter(Boolean);
+  if (cityStateZip.length > 0) {
+    const cityPart = meeting.company_city_at_meeting || company?.city || "";
+    const statePart = meeting.company_state_at_meeting || company?.state || "";
+    const zipPart = meeting.company_zip_at_meeting || company?.zip || "";
+    const cityStateLine = [cityPart, statePart].filter(Boolean).join(", ") + (zipPart ? `  ${zipPart}` : "");
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(cityStateLine, cx, y, { align: "center" });
+    y += 5;
+  }
+
+  y += 3;
 
   // Meeting Type Header
   y = addMeetingTypeHeader(doc, y, meeting.meeting_type, companyName, meetingDate, isWrittenConsent);
@@ -205,13 +242,6 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
 
   if (meeting.tax_year) y = addLabelValue(doc, y, "Tax Year", String(meeting.tax_year));
   if (meeting.others_present) y = addLabelValue(doc, y, "Others Present", meeting.others_present);
-
-  // Company Info
-  y += 3;
-  y = addSectionTitle(doc, y, "Company Information at Time of Meeting");
-  y = addLabelValue(doc, y, "Company Name", meeting.company_name_at_meeting || companyName);
-  const addr = [meeting.company_address_at_meeting, meeting.company_city_at_meeting, meeting.company_state_at_meeting, meeting.company_zip_at_meeting].filter(Boolean).join(", ");
-  if (addr) y = addLabelValue(doc, y, "Address", addr);
 
   // Section 1244 Stock Plan - include in Organizational Meeting if checked
   if (meeting.meeting_type === "Organizational Meeting" && company?.election_1244) {
