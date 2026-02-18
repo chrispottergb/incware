@@ -14,6 +14,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -88,6 +89,16 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [processing, setProcessing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [summaryData, setSummaryData] = useState<{
+    meetings: number;
+    shareholders: number;
+    vehicles: number;
+    equipment: number;
+    officers: number;
+    taxYears: number[];
+    companyName: string;
+  } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const extractedList = files
@@ -98,6 +109,36 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
   const completedCount = files.filter((f) => f.status === "done" || f.status === "error").length;
   const processingCount = files.filter((f) => f.status === "processing").length;
   const [simulatedProgress, setSimulatedProgress] = useState(0);
+
+  const buildAndShowSummary = (dataList: ExtractedData[]) => {
+    const seenShareholders = new Set<string>();
+    const seenVehicles = new Set<string>();
+    const seenEquipment = new Set<string>();
+    let officerCount = 0;
+    const taxYears: number[] = [];
+
+    for (const d of dataList) {
+      if (d.tax_year) taxYears.push(d.tax_year);
+      officerCount += d.officers?.length || 0;
+      for (const s of d.shareholders || []) seenShareholders.add(s.name.toLowerCase().trim());
+      for (const v of d.vehicles || []) seenVehicles.add((v.description || `${v.year} ${v.make} ${v.model}`).toLowerCase());
+      for (const eq of d.equipment || []) seenEquipment.add((eq.description || `${eq.manufacturer} ${eq.model}`).toLowerCase());
+    }
+
+    const meetingsCount = dataList.filter((d) => d.tax_year && d.financials.total_sales !== null).length;
+    const latest = dataList[dataList.length - 1];
+
+    setSummaryData({
+      meetings: meetingsCount,
+      shareholders: seenShareholders.size,
+      vehicles: seenVehicles.size,
+      equipment: seenEquipment.size,
+      officers: officerCount,
+      taxYears: taxYears.sort(),
+      companyName: latest?.company?.name || "Company",
+    });
+    setShowSummary(true);
+  };
 
   // Simulate real-time progress while a file is being parsed
   useEffect(() => {
@@ -153,8 +194,20 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     }
 
     setProcessing(false);
+    // In populate mode, show summary immediately since edge function already saved
+    if (mode === "populate") {
+      const doneFiles = entries.filter((e) => e.status !== "error");
+      // Re-read files state for data
+      setFiles((prev) => {
+        const doneData = prev.filter((f) => f.status === "done" && f.data).map((f) => f.data!);
+        if (doneData.length > 0) {
+          buildAndShowSummary(doneData);
+        }
+        return prev;
+      });
+    }
     const doneCount = entries.filter((e) => e.status !== "error").length;
-    if (doneCount > 0) {
+    if (doneCount > 0 && mode !== "populate") {
       toast.success(`Parsed ${entries.length} tax return(s)`);
     }
   };
@@ -362,9 +415,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
         }
       }
 
-      toast.success(`Saved ${extractedList.length} year(s) of tax return data!`);
-      setOpen(false);
-      setFiles([]);
+      buildAndShowSummary(extractedList);
     } catch (err: any) {
       console.error(err);
       toast.error(err.message);
@@ -466,8 +517,16 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     </div>
   );
 
+  const handleCloseSummary = () => {
+    setShowSummary(false);
+    setSummaryData(null);
+    setOpen(false);
+    setFiles([]);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setFiles([]); } }}>
+    <>
+    <Dialog open={open && !showSummary} onOpenChange={(v) => { setOpen(v); if (!v) { setFiles([]); } }}>
       <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
@@ -707,5 +766,61 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Success Summary Dialog */}
+    <Dialog open={showSummary} onOpenChange={(v) => { if (!v) handleCloseSummary(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-display flex items-center gap-2 text-success">
+            <CheckCircle2 className="h-5 w-5" />
+            Import Complete
+          </DialogTitle>
+        </DialogHeader>
+        {summaryData && (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Successfully imported data for <span className="font-medium text-foreground">{summaryData.companyName}</span>
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                <p className="text-2xl font-bold text-primary">{summaryData.meetings}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Meeting{summaryData.meetings !== 1 ? "s" : ""} Created</p>
+              </div>
+              <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                <p className="text-2xl font-bold text-primary">{summaryData.shareholders}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Shareholder{summaryData.shareholders !== 1 ? "s" : ""}</p>
+              </div>
+              <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                <p className="text-2xl font-bold text-primary">{summaryData.vehicles}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Vehicle{summaryData.vehicles !== 1 ? "s" : ""}</p>
+              </div>
+              <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                <p className="text-2xl font-bold text-primary">{summaryData.equipment}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Equipment</p>
+              </div>
+            </div>
+
+            {summaryData.officers > 0 && (
+              <p className="text-xs text-muted-foreground">
+                <Users className="h-3 w-3 inline mr-1" />
+                {summaryData.officers} officer{summaryData.officers !== 1 ? "s" : ""} recorded
+              </p>
+            )}
+
+            {summaryData.taxYears.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Tax year{summaryData.taxYears.length > 1 ? "s" : ""}: {summaryData.taxYears.join(", ")}
+              </p>
+            )}
+
+            <Button onClick={handleCloseSummary} className="w-full">
+              Done
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
