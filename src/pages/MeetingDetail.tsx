@@ -296,7 +296,7 @@ export default function MeetingDetail() {
   const subTabs = [
     { value: "info", label: "Meeting Info" },
     { value: "financials", label: "Financial" },
-    { value: "shareholders", label: "Shrhlds/Members" },
+    { value: "shareholders", label: "Shareholders/Members" },
     { value: "directors", label: "Directors" },
     { value: "officers", label: "Officers" },
     { value: "counsel", label: "Counsel" },
@@ -382,8 +382,16 @@ export default function MeetingDetail() {
                 generatePDF={() => exportSectionPDF(
                   company?.entity_type === "LLC" ? "Members" : "Shareholders",
                   company, meeting,
-                  ["Name", "Common Shares", "Preferred Shares", "Distribution"],
-                  shareholders.map(s => [s.shareholder_name, s.common_shares?.toLocaleString() ?? "—", s.preferred_shares?.toLocaleString() ?? "—", s.distribution || "—"]),
+                  ["Name", "Common Shares", "Preferred Shares", "Distribution", "Dist. Amount", "Basis", "Add'l Capital"],
+                  shareholders.map(s => [
+                    s.shareholder_name,
+                    s.common_shares?.toLocaleString() ?? "—",
+                    s.preferred_shares?.toLocaleString() ?? "—",
+                    s.distribution || "—",
+                    s.distribution_amount != null ? `$${Number(s.distribution_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
+                    s.basis != null ? `$${Number(s.basis).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
+                    s.additional_capital_contribution != null ? `$${Number(s.additional_capital_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
+                  ]),
                 )}
                 fileName={`shareholders-${meetingFileName}`}
               />
@@ -395,6 +403,9 @@ export default function MeetingDetail() {
                 { key: "common_shares", label: company?.entity_type === "LLC" ? "Membership Units" : "Common Shares", type: "number" },
                 { key: "preferred_shares", label: company?.entity_type === "LLC" ? "Profits Interest Units" : "Preferred Shares", type: "number" },
                 { key: "distribution", label: "Distribution" },
+                { key: "distribution_amount", label: "Distribution Amount", type: "number" },
+                { key: "basis", label: company?.entity_type === "LLC" ? "Member Basis" : "Shareholder Basis", type: "number" },
+                { key: "additional_capital_contribution", label: "Additional Capital Contribution", type: "number" },
               ]}
             />
           </div>
@@ -540,7 +551,7 @@ export default function MeetingDetail() {
                 fileName={`loans-${meetingFileName}`}
               />
             </div>
-            <MeetingLoans meetingId={meeting.id} />
+            <MeetingLoans meetingId={meeting.id} companyName={company?.name} />
           </div>
         </TabsContent>
         <TabsContent value="agreements" className="mt-5">

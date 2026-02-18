@@ -1424,34 +1424,55 @@ export type Database = {
       }
       meeting_loans: {
         Row: {
+          borrower_name: string | null
           created_at: string
+          end_date: string | null
           id: string
+          lender_name: string | null
           loan_amount: number | null
           loan_date: string | null
+          loan_direction: string | null
+          loan_duration: string | null
           loan_rate: number | null
           loan_type: string | null
           meeting_id: string
           notes: string | null
+          repayment_terms: string | null
+          start_date: string | null
         }
         Insert: {
+          borrower_name?: string | null
           created_at?: string
+          end_date?: string | null
           id?: string
+          lender_name?: string | null
           loan_amount?: number | null
           loan_date?: string | null
+          loan_direction?: string | null
+          loan_duration?: string | null
           loan_rate?: number | null
           loan_type?: string | null
           meeting_id: string
           notes?: string | null
+          repayment_terms?: string | null
+          start_date?: string | null
         }
         Update: {
+          borrower_name?: string | null
           created_at?: string
+          end_date?: string | null
           id?: string
+          lender_name?: string | null
           loan_amount?: number | null
           loan_date?: string | null
+          loan_direction?: string | null
+          loan_duration?: string | null
           loan_rate?: number | null
           loan_type?: string | null
           meeting_id?: string
           notes?: string | null
+          repayment_terms?: string | null
+          start_date?: string | null
         }
         Relationships: [
           {
@@ -1564,27 +1585,36 @@ export type Database = {
       }
       meeting_shareholders: {
         Row: {
+          additional_capital_contribution: number | null
+          basis: number | null
           common_shares: number | null
           created_at: string
           distribution: string | null
+          distribution_amount: number | null
           id: string
           meeting_id: string
           preferred_shares: number | null
           shareholder_name: string
         }
         Insert: {
+          additional_capital_contribution?: number | null
+          basis?: number | null
           common_shares?: number | null
           created_at?: string
           distribution?: string | null
+          distribution_amount?: number | null
           id?: string
           meeting_id: string
           preferred_shares?: number | null
           shareholder_name: string
         }
         Update: {
+          additional_capital_contribution?: number | null
+          basis?: number | null
           common_shares?: number | null
           created_at?: string
           distribution?: string | null
+          distribution_amount?: number | null
           id?: string
           meeting_id?: string
           preferred_shares?: number | null

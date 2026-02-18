@@ -64,6 +64,65 @@ function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType
   doc.line(14, 45, pw - 14, 45);
 }
 
+function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, companyName: string, meetingDate: string, isWrittenConsent: boolean): number {
+  const pw = doc.internal.pageSize.getWidth();
+  const cx = pw / 2;
+
+  if (isWrittenConsent) {
+    // Written Consent Header
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 30);
+    doc.text("WRITTEN CONSENT", cx, y, { align: "center" });
+    y += 5;
+    doc.setFontSize(10);
+    doc.text("IN LIEU OF A MEETING", cx, y, { align: "center" });
+    y += 5;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(60, 60, 60);
+    doc.text(`OF THE BOARD OF DIRECTORS / MEMBERS OF`, cx, y, { align: "center" });
+    y += 5;
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 30);
+    doc.text(companyName.toUpperCase(), cx, y, { align: "center" });
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(60, 60, 60);
+    doc.text(`Date: ${meetingDate}`, cx, y, { align: "center" });
+    y += 4;
+    doc.setDrawColor(160, 160, 160);
+    doc.setLineWidth(0.3);
+    doc.line(14, y, pw - 14, y);
+    y += 5;
+    // Intro paragraph
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(30, 30, 30);
+    const introText = `The undersigned, being all of the directors/members of ${companyName}, do hereby consent to and adopt the following resolutions and actions without a formal meeting, pursuant to the applicable provisions of the Wisconsin Statutes:`;
+    const lines = doc.splitTextToSize(introText, pw - 28);
+    doc.text(lines, 14, y);
+    y += lines.length * 4 + 4;
+  } else {
+    // Standard Meeting Type Header
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 30);
+    doc.text(`MINUTES OF ${meetingType.toUpperCase()}`, cx, y, { align: "center" });
+    y += 5;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(60, 60, 60);
+    doc.text(`${companyName} — ${meetingDate}`, cx, y, { align: "center" });
+    y += 4;
+    doc.setDrawColor(160, 160, 160);
+    doc.setLineWidth(0.3);
+    doc.line(14, y, pw - 14, y);
+    y += 5;
+  }
+  return y;
+}
+
 function addDFIFooter(doc: jsPDF, companyName: string) {
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
@@ -120,12 +179,14 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   const companyName = company?.name || "Unknown Company";
   const entityType = company?.entity_type || "Corporation";
   const meetingDate = new Date(meeting.meeting_date + "T00:00:00").toLocaleDateString();
+  const isWrittenConsent = meeting.meeting_type === "Written Consent";
 
-  addDFIHeader(doc, `${meeting.meeting_type} — Minutes`, companyName, entityType);
+  addDFIHeader(doc, isWrittenConsent ? "Written Consent" : `${meeting.meeting_type} — Minutes`, companyName, entityType);
 
   let y = 52;
 
-  // Meeting Info Section
+  // Meeting Type Header
+  y = addMeetingTypeHeader(doc, y, meeting.meeting_type, companyName, meetingDate, isWrittenConsent);
   y = addSectionTitle(doc, y, "Meeting Information");
   y = addLabelValue(doc, y, "Date", meetingDate);
   y = addLabelValue(doc, y, "Type", `${meeting.meeting_type}${meeting.sub_type ? ` — ${meeting.sub_type}` : ""}`);
@@ -151,6 +212,36 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   y = addLabelValue(doc, y, "Company Name", meeting.company_name_at_meeting || companyName);
   const addr = [meeting.company_address_at_meeting, meeting.company_city_at_meeting, meeting.company_state_at_meeting, meeting.company_zip_at_meeting].filter(Boolean).join(", ");
   if (addr) y = addLabelValue(doc, y, "Address", addr);
+
+  // Section 1244 Stock Plan - include in Organizational Meeting if checked
+  if (meeting.meeting_type === "Organizational Meeting" && company?.election_1244) {
+    y += 3;
+    y = checkPageBreak(doc, y, 60);
+    y = addSectionTitle(doc, y, "Section 1244 Stock Plan");
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(30, 30, 30);
+    const section1244Text = `WHEREAS, the Board of Directors deems it to be in the best interest of the corporation and its shareholders to qualify the stock of the corporation as "Section 1244 Stock" as defined in Section 1244 of the Internal Revenue Code of 1986, as amended; and
+
+WHEREAS, the Board of Directors desires to adopt a plan to offer and issue shares of the corporation's common stock pursuant to Section 1244 of the Internal Revenue Code;
+
+NOW, THEREFORE, BE IT RESOLVED, that the corporation hereby adopts the following Section 1244 Stock Plan:
+
+1. The corporation shall offer and issue shares of its common stock for an aggregate dollar amount of consideration that does not exceed the amount authorized by the Articles of Incorporation.
+
+2. Such shares shall be issued only for money, or other property (other than stock or securities), in exchange for the stock.
+
+3. At the time such plan is adopted, the corporation is a "small business corporation" as defined in Section 1244(c)(3) of the Internal Revenue Code.
+
+4. No portion of a prior offering shall be outstanding at the time of the adoption of this plan.
+
+5. The shares issued under this plan shall be designated as "Section 1244 Stock" and the corporation shall maintain such records as are necessary to substantiate compliance with the requirements of Section 1244 of the Internal Revenue Code.
+
+BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby authorized and directed to take all actions necessary to implement this plan and to maintain the qualification of the stock issued hereunder as Section 1244 Stock.`;
+    const lines1244 = doc.splitTextToSize(section1244Text, doc.internal.pageSize.getWidth() - 28);
+    doc.text(lines1244, 14, y);
+    y += lines1244.length * 3.5 + 6;
+  }
 
   // Directors
   if (data.directors && data.directors.length > 0) {

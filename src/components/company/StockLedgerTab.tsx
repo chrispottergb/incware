@@ -357,29 +357,61 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   <TableHead className="text-[10px] uppercase text-right">{entityType === "LLC" ? "$/Unit" : "$/Share"}</TableHead>
                   <TableHead className="text-[10px] uppercase text-right">Total</TableHead>
                   <TableHead className="text-[10px] uppercase">Consideration</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right bg-primary/5">Running Balance</TableHead>
                   <TableHead className="text-[10px] uppercase w-10"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.map((t: any) => (
-                  <TableRow key={t.id}>
-                    <TableCell className="text-xs">{t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">{t.transaction_type?.replace("_", " ")}</Badge>
-                    </TableCell>
-                    <TableCell className="text-xs">{t.shareholders?.name ?? t.to_shareholder ?? "—"}</TableCell>
-                    <TableCell className="text-xs">{t.share_class}</TableCell>
-                    <TableCell className="text-xs text-right">{t.num_shares?.toLocaleString()}</TableCell>
-                    <TableCell className="text-xs text-right">{t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—"}</TableCell>
-                    <TableCell className="text-xs text-right">{t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—"}</TableCell>
-                    <TableCell className="text-xs capitalize">{t.consideration_type?.replace("_", " ") ?? "—"}</TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => remove.mutate(t.id)}>
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {(() => {
+                  // Compute running balance per shareholder chronologically
+                  const sorted = [...transactions].sort((a, b) =>
+                    (a.transaction_date || "").localeCompare(b.transaction_date || "") || (a.created_at || "").localeCompare(b.created_at || "")
+                  );
+                  const balances: Record<string, number> = {};
+                  const balanceMap = new Map<string, number>();
+
+                  sorted.forEach((t: any) => {
+                    const holderId = t.shareholder_id || t.to_shareholder || "unknown";
+                    const isReduction = ["redemption", "reacquisition", "cancellation", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout"].includes(t.transaction_type);
+                    const isTransferOut = ["transfer", "interest_transfer", "interest_assignment", "share_exchange"].includes(t.transaction_type);
+
+                    if (isTransferOut && t.from_shareholder) {
+                      const fromId = t.from_shareholder;
+                      balances[fromId] = (balances[fromId] || 0) - (t.num_shares || 0);
+                    }
+
+                    if (isReduction) {
+                      balances[holderId] = (balances[holderId] || 0) - (t.num_shares || 0);
+                    } else {
+                      balances[holderId] = (balances[holderId] || 0) + (t.num_shares || 0);
+                    }
+
+                    const totalShares = Object.values(balances).reduce((sum, v) => sum + Math.max(0, v), 0);
+                    balanceMap.set(t.id, totalShares);
+                  });
+
+                  // Display in reverse chronological order (original order)
+                  return transactions.map((t: any) => (
+                    <TableRow key={t.id}>
+                      <TableCell className="text-xs">{t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">{t.transaction_type?.replace("_", " ")}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs">{t.shareholders?.name ?? t.to_shareholder ?? "—"}</TableCell>
+                      <TableCell className="text-xs">{t.share_class}</TableCell>
+                      <TableCell className="text-xs text-right">{t.num_shares?.toLocaleString()}</TableCell>
+                      <TableCell className="text-xs text-right">{t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—"}</TableCell>
+                      <TableCell className="text-xs text-right">{t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—"}</TableCell>
+                      <TableCell className="text-xs capitalize">{t.consideration_type?.replace("_", " ") ?? "—"}</TableCell>
+                      <TableCell className="text-xs text-right font-semibold bg-primary/5">{balanceMap.get(t.id)?.toLocaleString() ?? "—"}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => remove.mutate(t.id)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ));
+                })()}
               </TableBody>
             </Table>
           </div>
