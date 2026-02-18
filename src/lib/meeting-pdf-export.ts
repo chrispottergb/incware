@@ -21,6 +21,12 @@ interface MeetingData {
   other?: any[];
   financials?: any;
   authorizedSigners?: any[];
+  priorYear?: {
+    officers?: any[];
+    benefits?: any[];
+    loans?: any[];
+    authorizedSigners?: any[];
+  };
 }
 
 function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType: string) {
@@ -386,7 +392,137 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     });
   }
 
-  // Benefits
+  // Auto-generated resolutions from prior year comparison
+  if (data.priorYear) {
+    const autoResolutions: { purpose: string; text: string }[] = [];
+    const entityType = company?.entity_type || "Corporation";
+    const isLLC = entityType === "LLC";
+    const entityLabel = isLLC ? "LLC" : "corporation";
+
+    // Officer changes: new officers, title changes, salary/bonus changes
+    if (data.officers && data.officers.length > 0) {
+      const priorOfficers = data.priorYear.officers || [];
+      const priorByName: Record<string, any> = {};
+      priorOfficers.forEach((o: any) => { priorByName[o.name?.toLowerCase()] = o; });
+
+      data.officers.forEach((o: any) => {
+        const prior = priorByName[o.name?.toLowerCase()];
+        if (!prior) {
+          // New officer
+          autoResolutions.push({
+            purpose: `Elect ${o.title}`,
+            text: `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has determined it is in the best interests of the ${entityLabel} to elect a new officer, and after discussion, it was\n\nRESOLVED, that ${o.name} is hereby elected as ${o.title} of the ${entityLabel}${o.salary != null ? `, with an annual salary of ${fmt(o.salary)}` : ""}${o.bonus != null ? ` and a bonus of ${fmt(o.bonus)}` : ""}, effective immediately.`,
+          });
+        } else {
+          // Salary change
+          if (o.salary != null && prior.salary != null && Number(o.salary) !== Number(prior.salary)) {
+            autoResolutions.push({
+              purpose: `Adjust ${o.title} Salary`,
+              text: `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has reviewed the compensation of ${o.name}, ${o.title}, and after discussion, it was\n\nRESOLVED, that the annual salary of ${o.name}, ${o.title}, is hereby adjusted from ${fmt(prior.salary)} to ${fmt(o.salary)}, effective immediately.`,
+            });
+          }
+          // Bonus change
+          if (o.bonus != null && prior.bonus != null && Number(o.bonus) !== Number(prior.bonus)) {
+            autoResolutions.push({
+              purpose: `Adjust ${o.title} Bonus`,
+              text: `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has reviewed the bonus compensation of ${o.name}, ${o.title}, and after discussion, it was\n\nRESOLVED, that a bonus of ${fmt(o.bonus)} is hereby authorized for ${o.name}, ${o.title} (prior year bonus: ${fmt(prior.bonus)}).`,
+            });
+          }
+          // Title change
+          if (o.title !== prior.title) {
+            autoResolutions.push({
+              purpose: `Change Officer Title`,
+              text: `WHEREAS, ${o.name} previously held the title of ${prior.title}, and the ${isLLC ? "members/managers" : "Board"} has determined a change is appropriate, it was\n\nRESOLVED, that ${o.name} is hereby appointed as ${o.title} of the ${entityLabel}, replacing the prior title of ${prior.title}.`,
+            });
+          }
+        }
+      });
+    }
+
+    // Benefit changes
+    if (data.benefits && data.benefits.length > 0) {
+      const priorBenefits = data.priorYear.benefits || [];
+      const priorTypes = new Set(priorBenefits.map((b: any) => (b.benefit_type || b.benefit_description || "").toLowerCase()));
+
+      data.benefits.forEach((b: any) => {
+        const bType = b.benefit_type || b.benefit_description || "Benefit Plan";
+        if (!priorTypes.has(bType.toLowerCase())) {
+          autoResolutions.push({
+            purpose: `Approve ${bType}`,
+            text: `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has reviewed the proposed ${bType} plan${b.provider ? ` with ${b.provider}` : ""}, and after discussion, it was\n\nRESOLVED, that the ${entityLabel} is hereby authorized to establish the ${bType} plan${b.provider ? ` through ${b.provider}` : ""}${b.retirement_contribution != null ? `, with a contribution of ${fmt(b.retirement_contribution)}` : ""}${b.plan_year ? `, effective for plan year ${b.plan_year}` : ""}.`,
+          });
+        } else {
+          // Check for contribution changes
+          const priorMatch = priorBenefits.find((pb: any) => (pb.benefit_type || pb.benefit_description || "").toLowerCase() === bType.toLowerCase());
+          if (priorMatch && b.retirement_contribution != null && priorMatch.retirement_contribution != null && Number(b.retirement_contribution) !== Number(priorMatch.retirement_contribution)) {
+            autoResolutions.push({
+              purpose: `Adjust ${bType} Contribution`,
+              text: `WHEREAS, the ${isLLC ? "members/managers" : "Board"} has reviewed the ${bType} plan, and after discussion, it was\n\nRESOLVED, that the contribution to the ${bType} plan is hereby adjusted from ${fmt(priorMatch.retirement_contribution)} to ${fmt(b.retirement_contribution)}.`,
+            });
+          }
+        }
+      });
+    }
+
+    // Loan changes
+    if (data.loans && data.loans.length > 0) {
+      const priorLoans = data.priorYear.loans || [];
+      const priorLoanTypes = new Set(priorLoans.map((l: any) => `${l.loan_type || ""}|${l.loan_amount || ""}`));
+
+      data.loans.forEach((l: any) => {
+        const key = `${l.loan_type || ""}|${l.loan_amount || ""}`;
+        if (!priorLoanTypes.has(key)) {
+          autoResolutions.push({
+            purpose: `Authorize ${l.loan_type || "Loan"}`,
+            text: `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has determined it is in the best interests of the ${entityLabel} to obtain financing, and after discussion, it was\n\nRESOLVED, that the proper ${isLLC ? "managers" : "officers"} are hereby authorized to execute any documents necessary to establish a ${l.loan_type || "loan"}${l.loan_amount != null ? ` in the amount of ${fmt(l.loan_amount)}` : ""}${l.loan_rate != null ? ` at a rate of ${Number(l.loan_rate).toFixed(2)}%` : ""}.`,
+          });
+        }
+      });
+    }
+
+    // Authorized signer changes
+    if (data.authorizedSigners && data.authorizedSigners.length > 0) {
+      const priorSigners = data.priorYear.authorizedSigners || [];
+      const priorNames = new Set(priorSigners.map((s: any) => s.signer_name?.toLowerCase()));
+
+      data.authorizedSigners.forEach((s: any) => {
+        if (!priorNames.has(s.signer_name?.toLowerCase())) {
+          autoResolutions.push({
+            purpose: `Authorize Bank Signatory`,
+            text: `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has determined it is necessary to update the authorized signatories, and after discussion, it was\n\nRESOLVED, that ${s.signer_name}${s.title ? `, ${s.title},` : ""} is hereby authorized as a signatory${s.bank_name ? ` on the accounts at ${s.bank_name}` : ""}.`,
+          });
+        }
+      });
+    }
+
+    // Print auto-generated resolutions
+    if (autoResolutions.length > 0) {
+      y += 3;
+      y = checkPageBreak(doc, y, 20 + autoResolutions.length * 20);
+      y = addSectionTitle(doc, y, "Resolutions — Changes from Prior Year");
+
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(120, 120, 120);
+      doc.text("The following resolutions were auto-generated based on changes from the prior year meeting record.", 14, y);
+      y += 5;
+
+      autoResolutions.forEach((r) => {
+        y = checkPageBreak(doc, y, 30);
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(30, 30, 30);
+        doc.text(r.purpose, 14, y);
+        y += 4;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        const lines = doc.splitTextToSize(r.text, doc.internal.pageSize.getWidth() - 28);
+        doc.text(lines, 14, y);
+        y += lines.length * 4 + 4;
+      });
+    }
+  }
+
   if (data.benefits && data.benefits.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.benefits.length * 7);
     y = addSectionTitle(doc, y, "Benefits");

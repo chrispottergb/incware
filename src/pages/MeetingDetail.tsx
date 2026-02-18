@@ -56,6 +56,26 @@ export default function MeetingDetail() {
     enabled: !!id,
   });
 
+  // Fetch prior year meeting for comparison (most recent meeting before this one for same company)
+  const { data: priorMeeting } = useQuery({
+    queryKey: ["prior_meeting", id, meeting?.meeting_date],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meetings")
+        .select("*")
+        .eq("company_id", id!)
+        .lt("meeting_date", meeting!.meeting_date)
+        .order("meeting_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id && !!meeting?.meeting_date,
+  });
+
+  const priorMeetingId = priorMeeting?.id;
+
   // Fetch all sub-data for full minutes PDF
   const { data: shareholders = [] } = useQuery({
     queryKey: ["meeting_shareholders", meetingId],
@@ -187,6 +207,47 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
+  // Fetch prior year sub-data for change-based resolution generation
+  const { data: priorOfficers = [] } = useQuery({
+    queryKey: ["meeting_officers", priorMeetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_officers").select("*").eq("meeting_id", priorMeetingId!).order("created_at");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!priorMeetingId,
+  });
+
+  const { data: priorBenefits = [] } = useQuery({
+    queryKey: ["meeting_benefits", priorMeetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_benefits" as any).select("*").eq("meeting_id", priorMeetingId!).order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!priorMeetingId,
+  });
+
+  const { data: priorLoans = [] } = useQuery({
+    queryKey: ["meeting_loans", priorMeetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_loans" as any).select("*").eq("meeting_id", priorMeetingId!).order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!priorMeetingId,
+  });
+
+  const { data: priorSigners = [] } = useQuery({
+    queryKey: ["meeting_authorized_signers", priorMeetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_authorized_signers" as any).select("*").eq("meeting_id", priorMeetingId!).order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!priorMeetingId,
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -224,6 +285,12 @@ export default function MeetingDetail() {
       other,
       financials,
       authorizedSigners,
+      priorYear: priorMeetingId ? {
+        officers: priorOfficers,
+        benefits: priorBenefits,
+        loans: priorLoans,
+        authorizedSigners: priorSigners,
+      } : undefined,
     });
 
   const subTabs = [
