@@ -70,7 +70,7 @@ function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType
   doc.line(14, hy + 1.5, pw - 14, hy + 1.5);
 }
 
-function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, companyName: string, meetingDate: string, isWrittenConsent: boolean, meeting?: any, company?: any): number {
+function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, companyName: string, meetingDate: string, isWrittenConsent: boolean, meeting?: any, company?: any, meetingData?: MeetingData): number {
   const pw = doc.internal.pageSize.getWidth();
   const cx = pw / 2;
 
@@ -169,6 +169,50 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     const introLines = doc.splitTextToSize(introText, pw - 28);
     doc.text(introLines, 14, y);
     y += introLines.length * 4 + 4;
+
+    // List participants based on meeting sub_type / type
+    if (meetingData) {
+      const participants: string[] = [];
+      const subType = (meeting.sub_type || "").toLowerCase();
+      const mType = meetingType.toLowerCase();
+
+      // Shareholders/Members meeting → list shareholders
+      if (subType.includes("shareholder") || subType.includes("member")) {
+        (meetingData.shareholders || []).forEach(s => {
+          if (s.shareholder_name) participants.push(s.shareholder_name);
+        });
+      }
+      // Directors meeting → list directors
+      if (subType.includes("director") || subType.includes("board")) {
+        (meetingData.directors || []).forEach(d => {
+          if (d.director_name) participants.push(d.director_name);
+        });
+      }
+      // If no sub_type match or organizational/annual, list all available
+      if (participants.length === 0) {
+        (meetingData.shareholders || []).forEach(s => {
+          if (s.shareholder_name) participants.push(s.shareholder_name);
+        });
+        (meetingData.directors || []).forEach(d => {
+          if (d.director_name && !participants.includes(d.director_name)) participants.push(d.director_name);
+        });
+        (meetingData.officers || []).forEach(o => {
+          if (o.name && !participants.includes(o.name)) participants.push(o.name);
+        });
+      }
+
+      if (participants.length > 0) {
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(30, 30, 30);
+        participants.forEach(name => {
+          y = checkPageBreak(doc, y, 5);
+          doc.text(`•  ${name}`, 20, y);
+          y += 4;
+        });
+        y += 2;
+      }
+    }
   }
 
   return y;
@@ -237,7 +281,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   let y = 38;
 
   // Meeting Type Header
-  y = addMeetingTypeHeader(doc, y, meeting.meeting_type, companyName, meetingDate, isWrittenConsent, meeting, company);
+  y = addMeetingTypeHeader(doc, y, meeting.meeting_type, companyName, meetingDate, isWrittenConsent, meeting, company, data);
   y = addSectionTitle(doc, y, "Meeting Information");
   y = addLabelValue(doc, y, "Date", meetingDate);
   y = addLabelValue(doc, y, "Type", `${meeting.meeting_type}${meeting.sub_type ? ` — ${meeting.sub_type}` : ""}`);
