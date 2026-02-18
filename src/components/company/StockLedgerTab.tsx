@@ -29,7 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, BookOpen } from "lucide-react";
+import { Plus, Trash2, Loader2, BookOpen, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 
@@ -106,6 +106,7 @@ interface Props {
 export default function StockLedgerTab({ companyId, entityType = "Corporation" }: Props) {
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const transactionTypes = TRANSACTION_TYPES_BY_ENTITY[entityType] || DEFAULT_TRANSACTION_TYPES;
 
   const { data: shareholders = [] } = useQuery({
@@ -165,13 +166,36 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
       setDialog(false);
-      setForm({
-        transaction_type: "issuance", shareholder_id: "", share_class: "Common",
-        num_shares: "", price_per_share: "", total_consideration: "",
-        consideration_type: "cash", transaction_date: new Date().toISOString().split("T")[0],
-        from_shareholder: "", to_shareholder: "", notes: "",
-      });
+      resetForm();
       toast.success("Transaction recorded!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const update = useMutation({
+    mutationFn: async () => {
+      if (!editingId) return;
+      const { error } = await supabase.from("share_transactions").update({
+        transaction_type: form.transaction_type,
+        shareholder_id: form.shareholder_id || null,
+        share_class: form.share_class,
+        num_shares: parseInt(form.num_shares) || 0,
+        price_per_share: form.price_per_share ? parseFloat(form.price_per_share) : null,
+        total_consideration: form.total_consideration ? parseFloat(form.total_consideration) : null,
+        consideration_type: form.consideration_type,
+        transaction_date: form.transaction_date,
+        from_shareholder: form.from_shareholder || null,
+        to_shareholder: form.to_shareholder || null,
+        notes: form.notes || null,
+      }).eq("id", editingId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
+      setDialog(false);
+      setEditingId(null);
+      resetForm();
+      toast.success("Transaction updated!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -187,6 +211,31 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     },
     onError: (err: Error) => toast.error(err.message),
   });
+
+  const resetForm = () => setForm({
+    transaction_type: "issuance", shareholder_id: "", share_class: "Common",
+    num_shares: "", price_per_share: "", total_consideration: "",
+    consideration_type: "cash", transaction_date: new Date().toISOString().split("T")[0],
+    from_shareholder: "", to_shareholder: "", notes: "",
+  });
+
+  const openEdit = (t: any) => {
+    setForm({
+      transaction_type: t.transaction_type || "issuance",
+      shareholder_id: t.shareholder_id || "",
+      share_class: t.share_class || "Common",
+      num_shares: t.num_shares?.toString() || "",
+      price_per_share: t.price_per_share?.toString() || "",
+      total_consideration: t.total_consideration?.toString() || "",
+      consideration_type: t.consideration_type || "cash",
+      transaction_date: t.transaction_date || new Date().toISOString().split("T")[0],
+      from_shareholder: t.from_shareholder || "",
+      to_shareholder: t.to_shareholder || "",
+      notes: t.notes || "",
+    });
+    setEditingId(t.id);
+    setDialog(true);
+  };
 
   const isTransfer = ["transfer", "interest_transfer", "interest_assignment", "share_exchange"].includes(form.transaction_type);
 
@@ -230,17 +279,17 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
               ]),
             },
           }} />
-          <Dialog open={dialog} onOpenChange={setDialog}>
+          <Dialog open={dialog} onOpenChange={(open) => { setDialog(open); if (!open) { setEditingId(null); resetForm(); } }}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="h-7 text-xs">
+              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setEditingId(null); resetForm(); }}>
                 <Plus className="mr-1 h-3 w-3" /> Record Transaction
               </Button>
             </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle className="font-display text-base">{entityType === "LLC" ? "Record Interest Transaction" : "Record Share Transaction"}</DialogTitle>
+              <DialogTitle className="font-display text-base">{editingId ? "Edit Transaction" : entityType === "LLC" ? "Record Interest Transaction" : "Record Share Transaction"}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); add.mutate(); }} className="space-y-3">
+            <form onSubmit={(e) => { e.preventDefault(); editingId ? update.mutate() : add.mutate(); }} className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 <div className="field-group">
                   <Label className="field-label">Transaction Type</Label>
@@ -330,9 +379,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 <Label className="field-label">Notes</Label>
                 <Textarea className="text-sm min-h-[50px]" rows={2} value={form.notes} onChange={(e) => setForm(p => ({ ...p, notes: e.target.value }))} />
               </div>
-              <Button type="submit" className="w-full" size="sm" disabled={add.isPending}>
-                {add.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                Record Transaction
+              <Button type="submit" className="w-full" size="sm" disabled={add.isPending || update.isPending}>
+                {(add.isPending || update.isPending) && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                {editingId ? "Update Transaction" : "Record Transaction"}
               </Button>
             </form>
           </DialogContent>
@@ -405,9 +454,14 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                       <TableCell className="text-xs capitalize">{t.consideration_type?.replace("_", " ") ?? "—"}</TableCell>
                       <TableCell className="text-xs text-right font-semibold bg-primary/5">{balanceMap.get(t.id)?.toLocaleString() ?? "—"}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => remove.mutate(t.id)}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <div className="flex items-center gap-0.5">
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(t)} title="Edit transaction">
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => remove.mutate(t.id)} title="Delete transaction">
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ));
