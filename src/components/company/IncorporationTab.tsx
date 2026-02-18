@@ -14,11 +14,45 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Save, Shield, Building2, Share2, UserCheck, ChevronDown } from "lucide-react";
+import { Loader2, Save, Shield, Building2, Share2, UserCheck, ChevronDown, CalendarIcon } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import WIComplianceChecklist from "./WIComplianceChecklist";
 import SectionPdfActions from "./SectionPdfActions";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format, parseISO } from "date-fns";
+import { cn } from "@/lib/utils";
+
+function IncorporationDatePicker({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const date = value ? parseISO(value) : undefined;
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className={cn("w-full h-8 justify-start text-left text-xs font-normal mt-1", !date && "text-muted-foreground")}
+        >
+          <CalendarIcon className="mr-2 h-3 w-3" />
+          {date ? format(date, "PPP") : "Pick from calendar"}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={(d) => {
+            if (d) onChange(format(d, "yyyy-MM-dd"));
+            setOpen(false);
+          }}
+          initialFocus
+          className="p-3 pointer-events-auto"
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 const ENTITY_TYPES = ["Corporation", "LLC", "S-Corp", "Non-Profit", "Partnership"];
 const US_STATES = [
@@ -222,6 +256,10 @@ export default function IncorporationTab({ company }: Props) {
           <div className="field-group">
             <Label className="field-label">Incorporation Date</Label>
             <Input type="date" className="h-8 text-sm" value={form.incorporation_date} onChange={(e) => update("incorporation_date", e.target.value)} />
+            <IncorporationDatePicker
+              value={form.incorporation_date}
+              onChange={(val) => update("incorporation_date", val)}
+            />
           </div>
           <div className="field-group">
             <Label className="field-label">Fiscal Year End</Label>

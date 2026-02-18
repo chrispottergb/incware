@@ -38,6 +38,7 @@ const MEETING_TYPES = [
   "Annual Meeting",
   "Organizational Meeting",
   "Special Meeting of Board of Directors",
+  "Written Consent",
 ];
 
 const SUB_TYPES: Record<string, string[]> = {
