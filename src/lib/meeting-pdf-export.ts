@@ -70,7 +70,7 @@ function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType
   doc.line(14, hy + 1.5, pw - 14, hy + 1.5);
 }
 
-function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, companyName: string, meetingDate: string, isWrittenConsent: boolean): number {
+function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, companyName: string, meetingDate: string, isWrittenConsent: boolean, meeting?: any, company?: any): number {
   const pw = doc.internal.pageSize.getWidth();
   const cx = pw / 2;
 
@@ -126,6 +126,51 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     doc.line(14, y, pw - 14, y);
     y += 5;
   }
+
+  // Add introductory paragraph for all meeting types (non-written-consent)
+  if (!isWrittenConsent && meeting && company) {
+    const entityLabel = (company.entity_type || "Corporation").toLowerCase().includes("llc")
+      ? "a limited liability company"
+      : (company.entity_type || "Corporation").toLowerCase().includes("nonprofit")
+        ? "a nonprofit corporation"
+        : "a corporation";
+    const stateOfInc = company.state_of_incorporation || company.state || "Wisconsin";
+    const location = meeting.meeting_location || "";
+    const cityAtMeeting = meeting.company_city_at_meeting || company.city || "";
+    const stateAtMeeting = meeting.company_state_at_meeting || company.state || "";
+    const mtgDate = new Date(meeting.meeting_date + "T00:00:00");
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const dayName = days[mtgDate.getDay()];
+    const monthName = months[mtgDate.getMonth()];
+    const dateStr = `${dayName}, ${monthName} ${mtgDate.getDate()}, ${mtgDate.getFullYear()}`;
+    const timeStr = meeting.meeting_time || "";
+
+    const meetingLabel = meetingType.toLowerCase().includes("annual") ? "annual" :
+      meetingType.toLowerCase().includes("special") ? "special" :
+        meetingType.toLowerCase().includes("organizational") ? "organizational" : meetingType.toLowerCase();
+
+    let locationPart = "";
+    if (location) {
+      locationPart = `, was held at ${location}`;
+      if (cityAtMeeting || stateAtMeeting) {
+        locationPart += `, ${[cityAtMeeting, stateAtMeeting].filter(Boolean).join(", ")}`;
+      }
+    }
+
+    let datePart = ` on ${dateStr}`;
+    if (timeStr) datePart += ` at ${timeStr}`;
+
+    const introText = `The ${meetingLabel} meeting of ${companyName}, ${entityLabel} duly formed in the state of ${stateOfInc}${locationPart}${datePart}. There were present and participating at the meeting:`;
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(30, 30, 30);
+    const introLines = doc.splitTextToSize(introText, pw - 28);
+    doc.text(introLines, 14, y);
+    y += introLines.length * 4 + 4;
+  }
+
   return y;
 }
 
@@ -192,7 +237,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   let y = 38;
 
   // Meeting Type Header
-  y = addMeetingTypeHeader(doc, y, meeting.meeting_type, companyName, meetingDate, isWrittenConsent);
+  y = addMeetingTypeHeader(doc, y, meeting.meeting_type, companyName, meetingDate, isWrittenConsent, meeting, company);
   y = addSectionTitle(doc, y, "Meeting Information");
   y = addLabelValue(doc, y, "Date", meetingDate);
   y = addLabelValue(doc, y, "Type", `${meeting.meeting_type}${meeting.sub_type ? ` — ${meeting.sub_type}` : ""}`);
