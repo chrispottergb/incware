@@ -147,6 +147,7 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     const timeStr = meeting.meeting_time || "";
 
     const meetingLabel = meetingType.toLowerCase().includes("annual") ? "annual" :
+      meetingType.toLowerCase().includes("shareholder") ? "shareholder" :
       meetingType.toLowerCase().includes("special") ? "special" :
         meetingType.toLowerCase().includes("organizational") ? "organizational" : meetingType.toLowerCase();
 

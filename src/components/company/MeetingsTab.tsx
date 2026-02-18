@@ -36,12 +36,20 @@ import TaxReturnUpload from "@/components/TaxReturnUpload";
 
 const MEETING_TYPES = [
   "Annual Meeting",
+  "Shareholder Meeting",
   "Organizational Meeting",
   "Special Meeting of Board of Directors",
   "Written Consent",
 ];
 
 const SUB_TYPES: Record<string, string[]> = {
+  "Shareholder Meeting": [
+    "Election of Board of Directors",
+    "Approve Officer Compensation",
+    "Approve Amendments to Articles/Bylaws",
+    "Approve Merger or Dissolution",
+    "Other",
+  ],
   "Special Meeting of Board of Directors": [
     "Approve Officer Bonuses",
     "Approve Issuance, Transfer, Sale of Shares",
