@@ -212,7 +212,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     }
   };
 
-  const TIMEOUT_MS = 90_000; // 90 seconds
+  const TIMEOUT_MS = 180_000; // 3 minutes — AI vision on large PDFs can take time
   const MAX_RETRIES = 2;
 
   const fetchWithTimeout = (url: string, options: RequestInit, timeoutMs: number): Promise<Response> => {
