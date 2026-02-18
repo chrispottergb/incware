@@ -29,39 +29,45 @@ interface MeetingData {
   };
 }
 
-function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType: string) {
+function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType: string, meeting?: any, company?: any) {
   const pw = doc.internal.pageSize.getWidth();
   const cx = pw / 2;
 
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
-  doc.text(DFI_HEADER, cx, 16, { align: "center" });
-
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(80, 80, 80);
-  doc.text(DFI_SUB, cx, 21, { align: "center" });
-
-  doc.setDrawColor(30, 30, 30);
-  doc.setLineWidth(0.8);
-  doc.line(14, 25, pw - 14, 25);
-  doc.setLineWidth(0.3);
-  doc.line(14, 26.5, pw - 14, 26.5);
-
+  // Company name as top header (letterhead style)
+  const displayName = meeting?.company_name_at_meeting || companyName;
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text(title.toUpperCase(), cx, 35, { align: "center" });
+  doc.text(displayName, cx, 16, { align: "center" });
 
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(60, 60, 60);
-  doc.text(`${companyName} — ${entityType}`, cx, 41, { align: "center" });
+  // Address line
+  const addrLine = meeting?.company_address_at_meeting || company?.address || "";
+  let hy = 21;
+  if (addrLine) {
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(addrLine, cx, hy, { align: "center" });
+    hy += 5;
+  }
 
+  // City, State Zip
+  const cityPart = meeting?.company_city_at_meeting || company?.city || "";
+  const statePart = meeting?.company_state_at_meeting || company?.state || "";
+  const zipPart = meeting?.company_zip_at_meeting || company?.zip || "";
+  const cityStateLine = [cityPart, statePart].filter(Boolean).join(", ") + (zipPart ? `  ${zipPart}` : "");
+  if (cityStateLine.trim()) {
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(cityStateLine, cx, hy, { align: "center" });
+    hy += 5;
+  }
+
+  hy += 1;
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(0.8);
+  doc.line(14, hy, pw - 14, hy);
   doc.setLineWidth(0.3);
-  doc.setDrawColor(160, 160, 160);
-  doc.line(14, 45, pw - 14, 45);
+  doc.line(14, hy + 1.5, pw - 14, hy + 1.5);
 }
 
 function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, companyName: string, meetingDate: string, isWrittenConsent: boolean): number {
@@ -181,46 +187,9 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   const meetingDate = new Date(meeting.meeting_date + "T00:00:00").toLocaleDateString();
   const isWrittenConsent = meeting.meeting_type === "Written Consent";
 
-  addDFIHeader(doc, isWrittenConsent ? "Written Consent" : `${meeting.meeting_type} — Minutes`, companyName, entityType);
+  addDFIHeader(doc, isWrittenConsent ? "Written Consent" : `${meeting.meeting_type} — Minutes`, companyName, entityType, meeting, company);
 
-  let y = 52;
-  const pw = doc.internal.pageSize.getWidth();
-  const cx = pw / 2;
-
-  // Company info centered at top (letterhead style)
-  const displayName = meeting.company_name_at_meeting || companyName;
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
-  doc.text(displayName, cx, y, { align: "center" });
-  y += 5;
-
-  const addrLine = meeting.company_address_at_meeting || company?.address || "";
-  if (addrLine) {
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(30, 30, 30);
-    doc.text(addrLine, cx, y, { align: "center" });
-    y += 5;
-  }
-
-  const cityStateZip = [
-    meeting.company_city_at_meeting || company?.city,
-    meeting.company_state_at_meeting || company?.state,
-    meeting.company_zip_at_meeting || company?.zip
-  ].filter(Boolean);
-  if (cityStateZip.length > 0) {
-    const cityPart = meeting.company_city_at_meeting || company?.city || "";
-    const statePart = meeting.company_state_at_meeting || company?.state || "";
-    const zipPart = meeting.company_zip_at_meeting || company?.zip || "";
-    const cityStateLine = [cityPart, statePart].filter(Boolean).join(", ") + (zipPart ? `  ${zipPart}` : "");
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(cityStateLine, cx, y, { align: "center" });
-    y += 5;
-  }
-
-  y += 3;
+  let y = 38;
 
   // Meeting Type Header
   y = addMeetingTypeHeader(doc, y, meeting.meeting_type, companyName, meetingDate, isWrittenConsent);
