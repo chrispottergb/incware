@@ -197,6 +197,7 @@ export default function Dashboard() {
 
       {/* Standalone Tax Return Upload Dialog */}
       <TaxReturnUpload
+        mode="populate"
         onCompanyCreated={(id) => {
           queryClient.invalidateQueries({ queryKey: ["companies"] });
           setTaxReturnOpen(false);
@@ -274,6 +275,7 @@ export default function Dashboard() {
               </div>
 
               <TaxReturnUpload
+                mode="populate"
                 onCompanyCreated={(id) => {
                   queryClient.invalidateQueries({ queryKey: ["companies"] });
                   setDialogOpen(false);
