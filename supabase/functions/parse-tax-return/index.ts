@@ -60,6 +60,7 @@ serve(async (req) => {
     const admin = createClient(supabaseUrl, serviceKey);
     const fileName = `${user.id}/${Date.now()}_${file.name}`;
     const fileBuffer = await file.arrayBuffer();
+    console.log(`Processing ${file.name} (${(fileBuffer.byteLength / 1024).toFixed(0)} KB, mode=${mode})`);
 
     const { error: uploadError } = await admin.storage
       .from("tax-returns")
@@ -75,15 +76,17 @@ serve(async (req) => {
       });
     }
 
-    // Convert file to base64 for AI vision
+    // Convert file to base64 for AI vision — use small chunks to avoid call-stack overflow
     const uint8Array = new Uint8Array(fileBuffer);
-    let base64 = "";
-    const chunkSize = 8192;
+    let binaryStr = "";
+    const chunkSize = 1024; // small chunk to avoid spread-operator stack overflow
     for (let i = 0; i < uint8Array.length; i += chunkSize) {
-      const chunk = uint8Array.slice(i, i + chunkSize);
-      base64 += String.fromCharCode(...chunk);
+      const end = Math.min(i + chunkSize, uint8Array.length);
+      for (let j = i; j < end; j++) {
+        binaryStr += String.fromCharCode(uint8Array[j]);
+      }
     }
-    base64 = btoa(base64);
+    const base64 = btoa(binaryStr);
 
     const mimeType = file.type || "application/pdf";
 
