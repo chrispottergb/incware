@@ -100,6 +100,8 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     companyName: string;
   } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const cancelledRef = useRef(false);
 
   const extractedList = files
     .filter((f) => f.status === "done" && f.data)
@@ -188,8 +190,11 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
       return;
     }
 
+    cancelledRef.current = false;
+
     // Process sequentially
     for (const entry of entries) {
+      if (cancelledRef.current) break;
       await processEntry(entry, session.access_token);
     }
 
@@ -217,8 +222,24 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
 
   const fetchWithTimeout = (url: string, options: RequestInit, timeoutMs: number): Promise<Response> => {
     const controller = new AbortController();
+    abortRef.current = controller;
     const timer = setTimeout(() => controller.abort(), timeoutMs);
-    return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+    return fetch(url, { ...options, signal: controller.signal }).finally(() => {
+      clearTimeout(timer);
+      abortRef.current = null;
+    });
+  };
+
+  const cancelProcessing = () => {
+    cancelledRef.current = true;
+    abortRef.current?.abort();
+    setProcessing(false);
+    setFiles((prev) =>
+      prev.map((f) =>
+        f.status === "processing" ? { ...f, status: "error", error: "Cancelled" } : f
+      )
+    );
+    toast.info("Parsing cancelled");
   };
 
   const processEntry = async (entry: FileEntry, accessToken: string, retryCount = 0) => {
@@ -589,9 +610,19 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
               </div>
               <Progress value={progressPct} className="h-2" />
               {processing && (
-                <p className="text-[10px] text-muted-foreground animate-pulse">
-                  AI is analyzing the tax return… {Math.round(progressPct)}%
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] text-muted-foreground animate-pulse">
+                    AI is analyzing the tax return… {Math.round(progressPct)}%
+                  </p>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="h-5 px-2 text-[10px]"
+                    onClick={cancelProcessing}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               )}
               <div className="space-y-1 max-h-32 overflow-y-auto">
                 {files.map((f, i) => (
