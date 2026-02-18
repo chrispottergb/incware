@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useZipLookup } from "@/hooks/useZipLookup";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,11 @@ function AttorneyFirmsSection({ companyId }: { companyId: string }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ firm_name: "", address: "", city: "", state: "", zip: "", phone: "", email: "", website: "" });
+
+  const handleZipResult = useCallback((result: { city: string; state: string }) => {
+    setForm(prev => ({ ...prev, city: result.city, state: result.state }));
+  }, []);
+  const { handleZipChange } = useZipLookup(handleZipResult);
 
   const { data: firms = [] } = useQuery({
     queryKey: ["attorney_firms", companyId],
@@ -92,7 +98,7 @@ function AttorneyFirmsSection({ companyId }: { companyId: string }) {
             <div className="grid grid-cols-3 gap-2">
               <div><Label className="text-xs">City</Label><Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
               <div><Label className="text-xs">State</Label><Input value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
-              <div><Label className="text-xs">Zip</Label><Input value={form.zip} onChange={e => setForm(p => ({ ...p, zip: e.target.value }))} /></div>
+              <div><Label className="text-xs">Zip</Label><Input value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} /></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
@@ -227,6 +233,11 @@ function AccountantFirmsSection({ companyId }: { companyId: string }) {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ firm_name: "", address: "", city: "", state: "", zip: "", phone: "", email: "", website: "" });
 
+  const handleZipResult = useCallback((result: { city: string; state: string }) => {
+    setForm(prev => ({ ...prev, city: result.city, state: result.state }));
+  }, []);
+  const { handleZipChange } = useZipLookup(handleZipResult);
+
   const { data: firms = [] } = useQuery({
     queryKey: ["accountant_firms", companyId],
     queryFn: async () => {
@@ -296,7 +307,7 @@ function AccountantFirmsSection({ companyId }: { companyId: string }) {
             <div className="grid grid-cols-3 gap-2">
               <div><Label className="text-xs">City</Label><Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
               <div><Label className="text-xs">State</Label><Input value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
-              <div><Label className="text-xs">Zip</Label><Input value={form.zip} onChange={e => setForm(p => ({ ...p, zip: e.target.value }))} /></div>
+              <div><Label className="text-xs">Zip</Label><Input value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} /></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
