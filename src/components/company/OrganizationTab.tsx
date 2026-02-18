@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -34,6 +34,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import CompanyAssetsSection from "@/components/company/CompanyAssetsSection";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
+import { useZipLookup } from "@/hooks/useZipLookup";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
@@ -274,6 +275,11 @@ export default function OrganizationTab({ companyId, company }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const handleDirectorZipResult = useCallback((result: { city: string; state: string }) => {
+    setNewDirector(prev => ({ ...prev, city: result.city, state: result.state }));
+  }, []);
+  const { handleZipChange: handleDirectorZipChange } = useZipLookup(handleDirectorZipResult);
+
   const deleteDirector = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("directors").delete().eq("id", id);
@@ -455,7 +461,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                       </div>
                       <div className="field-group">
                         <Label className="field-label">Zip</Label>
-                        <Input className="h-8 text-sm" value={newDirector.zip} onChange={(e) => setNewDirector((p) => ({ ...p, zip: e.target.value }))} />
+                        <Input className="h-8 text-sm" value={newDirector.zip} onChange={(e) => { setNewDirector((p) => ({ ...p, zip: e.target.value })); handleDirectorZipChange(e.target.value); }} />
                       </div>
                     </div>
                     <Button type="submit" className="w-full" size="sm" disabled={addDirector.isPending}>
