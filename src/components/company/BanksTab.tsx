@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useZipLookup } from "@/hooks/useZipLookup";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -239,6 +240,11 @@ export default function BanksTab({ companyId }: BanksTabProps) {
   const emptyForm = { bank_name: "", account_type: "checking", account_number: "", routing_number: "", contact_name: "", contact_title: "", phone: "", address: "", city: "", state: "", zip: "", notes: "" };
   const [form, setForm] = useState(emptyForm);
 
+  const handleZipResult = useCallback((result: { city: string; state: string }) => {
+    setForm(prev => ({ ...prev, city: result.city, state: result.state }));
+  }, []);
+  const { handleZipChange } = useZipLookup(handleZipResult);
+
   const { data: banks = [] } = useQuery({
     queryKey: ["company_banks", companyId],
     queryFn: async () => {
@@ -349,7 +355,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
               <div className="grid grid-cols-3 gap-2">
                 <div><Label className="text-xs">City</Label><Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
                 <div><Label className="text-xs">State</Label><Input value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
-                <div><Label className="text-xs">Zip</Label><Input value={form.zip} onChange={e => setForm(p => ({ ...p, zip: e.target.value }))} /></div>
+                <div><Label className="text-xs">Zip</Label><Input value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} /></div>
               </div>
               <div><Label className="text-xs">Notes</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
             </div>

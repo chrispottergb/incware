@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useZipLookup } from "@/hooks/useZipLookup";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -100,6 +101,17 @@ export default function IncorporationTab({ company }: Props) {
 
   const update = (field: string, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
+
+  const handleAgentZipResult = useCallback((result: { city: string; state: string }) => {
+    setForm(prev => ({ ...prev, registered_agent_city: result.city, registered_agent_state: result.state }));
+  }, []);
+
+  const handleCompanyZipResult = useCallback((result: { city: string; state: string }) => {
+    setForm(prev => ({ ...prev, city: result.city, state: result.state }));
+  }, []);
+
+  const { handleZipChange: handleAgentZip } = useZipLookup(handleAgentZipResult);
+  const { handleZipChange: handleCompanyZip } = useZipLookup(handleCompanyZipResult);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -396,7 +408,7 @@ export default function IncorporationTab({ company }: Props) {
             </div>
             <div className="field-group">
               <Label className="field-label">Zip</Label>
-              <Input className="h-8 text-sm" value={form.registered_agent_zip} onChange={(e) => update("registered_agent_zip", e.target.value)} />
+              <Input className="h-8 text-sm" value={form.registered_agent_zip} onChange={(e) => { update("registered_agent_zip", e.target.value); handleAgentZip(e.target.value); }} />
             </div>
           </div>
         </CardContent>
@@ -446,7 +458,7 @@ export default function IncorporationTab({ company }: Props) {
             </div>
             <div className="field-group">
               <Label className="field-label">Zip</Label>
-              <Input className="h-8 text-sm" value={form.zip} onChange={(e) => update("zip", e.target.value)} />
+              <Input className="h-8 text-sm" value={form.zip} onChange={(e) => { update("zip", e.target.value); handleCompanyZip(e.target.value); }} />
             </div>
           </div>
           <div className="field-group">

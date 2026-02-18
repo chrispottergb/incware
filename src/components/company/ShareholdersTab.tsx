@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useZipLookup } from "@/hooks/useZipLookup";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -38,6 +39,11 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
   const [form, setForm] = useState({
     name: "", address: "", city: "", state: "", zip: "", ssn_ein: "", status: "active",
   });
+
+  const handleZipResult = useCallback((result: { city: string; state: string }) => {
+    setForm(prev => ({ ...prev, city: result.city, state: result.state }));
+  }, []);
+  const { handleZipChange } = useZipLookup(handleZipResult);
 
   const isLLC = entityType === "LLC";
   const personLabel = isLLC ? "Member" : "Shareholder";
@@ -165,7 +171,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Zip</Label>
-                    <Input className="h-8 text-sm" value={form.zip} onChange={(e) => setForm(p => ({ ...p, zip: e.target.value }))} />
+                    <Input className="h-8 text-sm" value={form.zip} onChange={(e) => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
