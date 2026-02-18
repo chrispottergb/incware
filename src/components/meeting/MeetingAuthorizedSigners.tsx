@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, RefreshCw, PenTool } from "lucide-react";
+import { Plus, Trash2, RefreshCw, PenTool, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -19,98 +19,75 @@ interface Props {
 export default function MeetingAuthorizedSigners({ meetingId, companyId, meetingDate }: Props) {
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ signer_name: "", title: "", bank_name: "" });
 
-  // Fetch snapshot signers for this meeting
   const { data: signers = [] } = useQuery({
     queryKey: ["meeting_authorized_signers", meetingId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("meeting_authorized_signers" as any)
-        .select("*")
-        .eq("meeting_id", meetingId)
-        .order("created_at");
+        .from("meeting_authorized_signers" as any).select("*").eq("meeting_id", meetingId).order("created_at");
       if (error) throw error;
       return data as any[];
     },
   });
 
-  // Auto-populate from bank_authorized_signers based on date ranges
   const autoPopulate = useMutation({
     mutationFn: async () => {
-      // Fetch active signers for this meeting date
       const { data: activeSigners, error: fetchErr } = await supabase
-        .from("bank_authorized_signers" as any)
-        .select("*, company_banks(bank_name)")
-        .eq("company_id", companyId)
-        .lte("effective_date", meetingDate)
+        .from("bank_authorized_signers" as any).select("*, company_banks(bank_name)")
+        .eq("company_id", companyId).lte("effective_date", meetingDate)
         .or(`end_date.is.null,end_date.gte.${meetingDate}`);
       if (fetchErr) throw fetchErr;
-
-      if (!activeSigners || activeSigners.length === 0) {
-        toast.info("No active signatories found for this meeting date");
-        return;
-      }
-
-      // Get existing signer_ids to skip duplicates
+      if (!activeSigners || activeSigners.length === 0) { toast.info("No active signatories found for this meeting date"); return; }
       const existingIds = new Set(signers.filter((s: any) => s.signer_id).map((s: any) => s.signer_id));
-
-      const newRows = (activeSigners as any[])
-        .filter(s => !existingIds.has(s.id))
-        .map(s => ({
-          meeting_id: meetingId,
-          signer_id: s.id,
-          signer_name: s.signer_name,
-          title: s.title || null,
-          bank_name: s.company_banks?.bank_name || null,
-        }));
-
-      if (newRows.length === 0) {
-        toast.info("All active signatories are already added");
-        return;
-      }
-
+      const newRows = (activeSigners as any[]).filter(s => !existingIds.has(s.id)).map(s => ({
+        meeting_id: meetingId, signer_id: s.id, signer_name: s.signer_name, title: s.title || null, bank_name: s.company_banks?.bank_name || null,
+      }));
+      if (newRows.length === 0) { toast.info("All active signatories are already added"); return; }
       const { error } = await supabase.from("meeting_authorized_signers" as any).insert(newRows as any);
       if (error) throw error;
-
       toast.success(`Added ${newRows.length} signator${newRows.length === 1 ? "y" : "ies"}`);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["meeting_authorized_signers", meetingId] }),
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Manual add
-  const manualAdd = useMutation({
+  const resetForm = () => { setForm({ signer_name: "", title: "", bank_name: "" }); setEditingId(null); };
+
+  const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("meeting_authorized_signers" as any).insert({
-        meeting_id: meetingId,
-        signer_name: form.signer_name,
-        title: form.title || null,
-        bank_name: form.bank_name || null,
-      } as any);
-      if (error) throw error;
+      const payload: any = { signer_name: form.signer_name, title: form.title || null, bank_name: form.bank_name || null };
+      if (editingId) {
+        const { error } = await supabase.from("meeting_authorized_signers" as any).update(payload as any).eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("meeting_authorized_signers" as any).insert({ ...payload, meeting_id: meetingId } as any);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["meeting_authorized_signers", meetingId] });
-      setAddOpen(false);
-      setForm({ signer_name: "", title: "", bank_name: "" });
-      toast.success("Signatory added");
+      setAddOpen(false); resetForm();
+      toast.success(editingId ? "Signatory updated" : "Signatory added");
     },
     onError: (e: any) => toast.error(e.message),
   });
 
-  // Delete
   const del = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("meeting_authorized_signers" as any).delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["meeting_authorized_signers", meetingId] });
-      toast.success("Signatory removed");
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["meeting_authorized_signers", meetingId] }); toast.success("Signatory removed"); },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const openEdit = (s: any) => {
+    setEditingId(s.id);
+    setForm({ signer_name: s.signer_name || "", title: s.title || "", bank_name: s.bank_name || "" });
+    setAddOpen(true);
+  };
 
   return (
     <Card>
@@ -120,10 +97,9 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
         </CardTitle>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => autoPopulate.mutate()} disabled={autoPopulate.isPending} className="h-7 text-xs">
-            <RefreshCw className={`h-3 w-3 mr-1 ${autoPopulate.isPending ? "animate-spin" : ""}`} />
-            Auto-populate
+            <RefreshCw className={`h-3 w-3 mr-1 ${autoPopulate.isPending ? "animate-spin" : ""}`} /> Auto-populate
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setAddOpen(true)} className="h-7 text-xs">
+          <Button size="sm" variant="outline" onClick={() => { resetForm(); setAddOpen(true); }} className="h-7 text-xs">
             <Plus className="h-3 w-3 mr-1" />Add Manual
           </Button>
         </div>
@@ -135,7 +111,7 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
               <TableHead>Name</TableHead>
               <TableHead className="hidden sm:table-cell">Title</TableHead>
               <TableHead>Bank</TableHead>
-              <TableHead className="w-12" />
+              <TableHead className="w-16" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -145,9 +121,14 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
                 <TableCell className="hidden sm:table-cell text-xs">{s.title || "—"}</TableCell>
                 <TableCell className="text-xs">{s.bank_name || "—"}</TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(s.id)}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(s)}>
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(s.id)}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -162,9 +143,9 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
         </Table>
       </CardContent>
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) resetForm(); }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Add Signatory Manually</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? "Edit" : "Add"} Signatory</DialogTitle></DialogHeader>
           <div className="grid gap-3">
             <div><Label className="text-xs">Signatory Name *</Label><Input value={form.signer_name} onChange={e => setForm(p => ({ ...p, signer_name: e.target.value }))} /></div>
             <div className="grid grid-cols-2 gap-2">
@@ -173,9 +154,9 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button onClick={() => manualAdd.mutate()} disabled={!form.signer_name.trim() || manualAdd.isPending}>
-              {manualAdd.isPending ? "Saving…" : "Add Signatory"}
+            <Button variant="outline" onClick={() => { setAddOpen(false); resetForm(); }}>Cancel</Button>
+            <Button onClick={() => save.mutate()} disabled={!form.signer_name.trim() || save.isPending}>
+              {save.isPending ? "Saving…" : editingId ? "Save Changes" : "Add Signatory"}
             </Button>
           </DialogFooter>
         </DialogContent>
