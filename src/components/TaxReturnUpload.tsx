@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -95,7 +95,30 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     .sort((a, b) => a.tax_year - b.tax_year);
 
   const completedCount = files.filter((f) => f.status === "done" || f.status === "error").length;
-  const progressPct = files.length > 0 ? (completedCount / files.length) * 100 : 0;
+  const processingCount = files.filter((f) => f.status === "processing").length;
+  const [simulatedProgress, setSimulatedProgress] = useState(0);
+
+  // Simulate real-time progress while a file is being parsed
+  useEffect(() => {
+    if (processingCount === 0) {
+      setSimulatedProgress(0);
+      return;
+    }
+    setSimulatedProgress(5);
+    const interval = setInterval(() => {
+      setSimulatedProgress((prev) => {
+        if (prev >= 92) return prev; // Cap at 92%, completion jumps to 100%
+        // Slow down as it gets higher to simulate realistic AI processing
+        const increment = prev < 30 ? 3 : prev < 60 ? 2 : prev < 80 ? 1 : 0.5;
+        return Math.min(prev + increment, 92);
+      });
+    }, 500);
+    return () => clearInterval(interval);
+  }, [processingCount]);
+
+  const progressPct = files.length > 0
+    ? ((completedCount + (processingCount > 0 ? simulatedProgress / 100 : 0)) / files.length) * 100
+    : 0;
 
   const handleFiles = async (newFiles: File[]) => {
     const valid = newFiles.filter((f) => {
@@ -472,6 +495,11 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
                 )}
               </div>
               <Progress value={progressPct} className="h-2" />
+              {processing && (
+                <p className="text-[10px] text-muted-foreground animate-pulse">
+                  AI is analyzing the tax return… {Math.round(progressPct)}%
+                </p>
+              )}
               <div className="space-y-1 max-h-32 overflow-y-auto">
                 {files.map((f, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs px-2 py-1 rounded bg-muted/50">
