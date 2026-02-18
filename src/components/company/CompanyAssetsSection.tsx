@@ -27,7 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Briefcase, Car, Wrench, FileText, Home } from "lucide-react";
+import { Plus, Trash2, Loader2, Briefcase, Car, Wrench, FileText, Home, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 
@@ -49,6 +49,7 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<AssetTab>("vehicle");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
 
   // Form state for each type — updated with new fields
   const [vehicleForm, setVehicleForm] = useState({ year: "", make: "", model: "", cost: "", ownership_type: "owned", description: "", vin: "", purchase_date: "", purchase_amount: "" });
@@ -71,32 +72,24 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
 
   const assets = allAssets.filter((a) => a.asset_type === activeTab);
 
-  const addAsset = useMutation({
+  const saveAsset = useMutation({
     mutationFn: async () => {
-      let insertData: any = { company_id: companyId, asset_type: activeTab };
+      let payload: any = { asset_type: activeTab };
 
       if (activeTab === "vehicle") {
-        insertData = {
-          ...insertData,
-          year: vehicleForm.year || null,
-          make: vehicleForm.make || null,
-          model: vehicleForm.model || null,
-          cost: vehicleForm.cost ? parseFloat(vehicleForm.cost) : null,
-          ownership_type: vehicleForm.ownership_type,
-          vin: vehicleForm.vin || null,
+        payload = {
+          ...payload, year: vehicleForm.year || null, make: vehicleForm.make || null,
+          model: vehicleForm.model || null, cost: vehicleForm.cost ? parseFloat(vehicleForm.cost) : null,
+          ownership_type: vehicleForm.ownership_type, vin: vehicleForm.vin || null,
           purchase_date: vehicleForm.purchase_date || null,
           purchase_amount: vehicleForm.purchase_amount ? parseFloat(vehicleForm.purchase_amount) : null,
           description: `${vehicleForm.year} ${vehicleForm.make} ${vehicleForm.model}`.trim() || "Vehicle",
         };
       } else if (activeTab === "equipment") {
-        insertData = {
-          ...insertData,
-          year: equipmentForm.year || null,
-          make: equipmentForm.make || null,
-          model: equipmentForm.model || null,
-          running_hours: equipmentForm.running_hours ? parseFloat(equipmentForm.running_hours) : null,
-          manufacturer: equipmentForm.manufacturer || null,
-          ownership_type: equipmentForm.ownership_type,
+        payload = {
+          ...payload, year: equipmentForm.year || null, make: equipmentForm.make || null,
+          model: equipmentForm.model || null, running_hours: equipmentForm.running_hours ? parseFloat(equipmentForm.running_hours) : null,
+          manufacturer: equipmentForm.manufacturer || null, ownership_type: equipmentForm.ownership_type,
           purchase_date: equipmentForm.purchase_date || null,
           purchase_amount: equipmentForm.purchase_amount ? parseFloat(equipmentForm.purchase_amount) : null,
           lease_date: equipmentForm.lease_date || null,
@@ -104,16 +97,10 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
           description: equipmentForm.description || `${equipmentForm.manufacturer || ""} ${equipmentForm.make || ""} ${equipmentForm.model || ""}`.trim() || "Equipment",
         };
       } else if (activeTab === "lease") {
-        insertData = {
-          ...insertData,
-          description: leaseForm.description,
-          value: leaseForm.value ? parseFloat(leaseForm.value) : null,
-        };
+        payload = { ...payload, description: leaseForm.description, value: leaseForm.value ? parseFloat(leaseForm.value) : null };
       } else if (activeTab === "property") {
-        insertData = {
-          ...insertData,
-          address: propertyForm.address || null,
-          finance_company: propertyForm.finance_company || null,
+        payload = {
+          ...payload, address: propertyForm.address || null, finance_company: propertyForm.finance_company || null,
           escrow: propertyForm.escrow ? parseFloat(propertyForm.escrow) : null,
           mortgage: propertyForm.mortgage ? parseFloat(propertyForm.mortgage) : null,
           taxes: propertyForm.taxes ? parseFloat(propertyForm.taxes) : null,
@@ -121,14 +108,19 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
         };
       }
 
-      const { error } = await supabase.from("company_assets").insert(insertData);
-      if (error) throw error;
+      if (editId) {
+        const { error } = await supabase.from("company_assets").update(payload).eq("id", editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("company_assets").insert({ ...payload, company_id: companyId });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company_assets", companyId] });
       setDialogOpen(false);
       resetForm();
-      toast.success("Asset added!");
+      toast.success(editId ? "Asset updated!" : "Asset added!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -150,6 +142,22 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
     setEquipmentForm({ year: "", make: "", model: "", running_hours: "", manufacturer: "", ownership_type: "owned", description: "", purchase_date: "", purchase_amount: "", lease_date: "", lease_amount: "" });
     setLeaseForm({ description: "", value: "" });
     setPropertyForm({ address: "", finance_company: "", escrow: "", mortgage: "", taxes: "", description: "" });
+    setEditId(null);
+  };
+
+  const openEdit = (a: any) => {
+    setEditId(a.id);
+    setActiveTab(a.asset_type as AssetTab);
+    if (a.asset_type === "vehicle") {
+      setVehicleForm({ year: a.year || "", make: a.make || "", model: a.model || "", cost: a.cost != null ? String(a.cost) : "", ownership_type: a.ownership_type || "owned", description: a.description || "", vin: a.vin || "", purchase_date: a.purchase_date || "", purchase_amount: a.purchase_amount != null ? String(a.purchase_amount) : "" });
+    } else if (a.asset_type === "equipment") {
+      setEquipmentForm({ year: a.year || "", make: a.make || "", model: a.model || "", running_hours: a.running_hours != null ? String(a.running_hours) : "", manufacturer: a.manufacturer || "", ownership_type: a.ownership_type || "owned", description: a.description || "", purchase_date: a.purchase_date || "", purchase_amount: a.purchase_amount != null ? String(a.purchase_amount) : "", lease_date: a.lease_date || "", lease_amount: a.lease_amount != null ? String(a.lease_amount) : "" });
+    } else if (a.asset_type === "lease") {
+      setLeaseForm({ description: a.description || "", value: a.value != null ? String(a.value) : "" });
+    } else if (a.asset_type === "property") {
+      setPropertyForm({ address: a.address || "", finance_company: a.finance_company || "", escrow: a.escrow != null ? String(a.escrow) : "", mortgage: a.mortgage != null ? String(a.mortgage) : "", taxes: a.taxes != null ? String(a.taxes) : "", description: a.description || "" });
+    }
+    setDialogOpen(true);
   };
 
   const fmt = (v: number | null | undefined) =>
@@ -195,10 +203,10 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="font-display text-base">
-                Add {ASSET_TABS.find((t) => t.key === activeTab)?.label.slice(0, -1) || "Asset"}
+                {editId ? "Edit" : "Add"} {ASSET_TABS.find((t) => t.key === activeTab)?.label.slice(0, -1) || "Asset"}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); addAsset.mutate(); }} className="space-y-3">
+            <form onSubmit={(e) => { e.preventDefault(); saveAsset.mutate(); }} className="space-y-3">
               {activeTab === "vehicle" && (
                 <>
                   <div className="grid grid-cols-3 gap-2">
@@ -350,9 +358,9 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
                 </>
               )}
 
-              <Button type="submit" className="w-full" size="sm" disabled={addAsset.isPending}>
-                {addAsset.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                Add {ASSET_TABS.find((t) => t.key === activeTab)?.label.slice(0, -1)}
+              <Button type="submit" className="w-full" size="sm" disabled={saveAsset.isPending}>
+                {saveAsset.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                {editId ? "Save Changes" : `Add ${ASSET_TABS.find((t) => t.key === activeTab)?.label.slice(0, -1)}`}
               </Button>
             </form>
           </DialogContent>
@@ -485,9 +493,14 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
                       </>
                     )}
                     <TableCell className="py-2">
-                      <Button variant="ghost" size="icon" onClick={() => deleteAsset.mutate(a.id)} className="h-6 w-6 text-destructive/50 hover:text-destructive">
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(a)} className="h-6 w-6">
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteAsset.mutate(a.id)} className="h-6 w-6 text-destructive/50 hover:text-destructive">
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

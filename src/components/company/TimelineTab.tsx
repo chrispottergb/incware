@@ -24,7 +24,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   Plus, Trash2, Loader2, Clock, Building2, CalendarDays, Gavel,
-  Users, Award, BookOpen, FileText, DollarSign, Flag,
+  Users, Award, BookOpen, FileText, DollarSign, Flag, Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
@@ -78,12 +78,24 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string }> = {
 export default function TimelineTab({ companyId, company }: Props) {
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({
     event_date: new Date().toISOString().split("T")[0],
     event_type: "general",
     title: "",
     description: "",
   });
+
+  const resetForm = () => {
+    setForm({ event_date: new Date().toISOString().split("T")[0], event_type: "general", title: "", description: "" });
+    setEditId(null);
+  };
+
+  const openEditEvent = (entry: TimelineEntry) => {
+    setEditId(entry.id);
+    setForm({ event_date: entry.date, event_type: entry.type, title: entry.title, description: entry.description || "" });
+    setDialog(true);
+  };
 
   // Fetch all related data for auto-generation
   const { data: meetings = [] } = useQuery({
@@ -130,22 +142,27 @@ export default function TimelineTab({ companyId, company }: Props) {
     },
   });
 
-  const addEvent = useMutation({
+  const saveEvent = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("timeline_events").insert({
-        company_id: companyId,
+      const payload = {
         event_date: form.event_date,
         event_type: form.event_type,
         title: form.title,
         description: form.description || null,
-      });
-      if (error) throw error;
+      };
+      if (editId) {
+        const { error } = await supabase.from("timeline_events").update(payload).eq("id", editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("timeline_events").insert({ ...payload, company_id: companyId });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["timeline_events", companyId] });
       setDialog(false);
-      setForm({ event_date: new Date().toISOString().split("T")[0], event_type: "general", title: "", description: "" });
-      toast.success("Event added!");
+      resetForm();
+      toast.success(editId ? "Event updated!" : "Event added!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -348,7 +365,7 @@ export default function TimelineTab({ companyId, company }: Props) {
                 },
               }}
             />
-            <Dialog open={dialog} onOpenChange={setDialog}>
+            <Dialog open={dialog} onOpenChange={(o) => { setDialog(o); if (!o) resetForm(); }}>
               <DialogTrigger asChild>
                 <Button size="sm" variant="outline" className="h-7 text-xs">
                   <Plus className="mr-1 h-3 w-3" /> Add Event
@@ -356,9 +373,9 @@ export default function TimelineTab({ companyId, company }: Props) {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle className="font-display text-base">Add Timeline Event</DialogTitle>
+                <DialogTitle className="font-display text-base">{editId ? "Edit Timeline Event" : "Add Timeline Event"}</DialogTitle>
               </DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); addEvent.mutate(); }} className="space-y-3">
+              <form onSubmit={(e) => { e.preventDefault(); saveEvent.mutate(); }} className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Date</Label>
@@ -382,9 +399,9 @@ export default function TimelineTab({ companyId, company }: Props) {
                   <Label className="field-label">Description (optional)</Label>
                   <Textarea className="text-sm min-h-[50px]" rows={2} value={form.description} onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))} />
                 </div>
-                <Button type="submit" className="w-full" size="sm" disabled={addEvent.isPending}>
-                  {addEvent.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                  Add Event
+                <Button type="submit" className="w-full" size="sm" disabled={saveEvent.isPending}>
+                  {saveEvent.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                  {editId ? "Save Changes" : "Add Event"}
                 </Button>
               </form>
             </DialogContent>
@@ -444,16 +461,26 @@ export default function TimelineTab({ companyId, company }: Props) {
                               )}
                             </div>
 
-                            {/* Delete manual events */}
+                            {/* Edit/Delete manual events */}
                             {entry.source === "manual" && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5"
-                                onClick={() => removeEvent.mutate(entry.id)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
+                              <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  onClick={() => openEditEvent(entry)}
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-destructive"
+                                  onClick={() => removeEvent.mutate(entry.id)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
                             )}
                           </div>
                         );

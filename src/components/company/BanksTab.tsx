@@ -27,6 +27,7 @@ const ACCOUNT_TYPES = ["checking", "savings", "money_market", "cd", "line_of_cre
 function AuthorizedSignersSection({ companyId, banks }: { companyId: string; banks: any[] }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ signer_name: "", title: "", bank_id: "", effective_date: new Date().toISOString().split("T")[0], end_date: "" });
 
   const { data: signers = [] } = useQuery({
@@ -44,21 +45,26 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("bank_authorized_signers" as any).insert({
+      const payload: any = {
         signer_name: form.signer_name,
         title: form.title || null,
         bank_id: form.bank_id,
-        company_id: companyId,
         effective_date: form.effective_date || null,
         end_date: form.end_date || null,
-      } as any);
-      if (error) throw error;
+      };
+      if (editingId) {
+        const { error } = await supabase.from("bank_authorized_signers" as any).update(payload as any).eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("bank_authorized_signers" as any).insert({ ...payload, company_id: companyId } as any);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bank_authorized_signers", companyId] });
       setOpen(false);
-      setForm({ signer_name: "", title: "", bank_id: "", effective_date: new Date().toISOString().split("T")[0], end_date: "" });
-      toast.success("Authorized signatory added");
+      resetSignerForm();
+      toast.success(editingId ? "Signatory updated" : "Authorized signatory added");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -75,8 +81,23 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
     onError: (e: any) => toast.error(e.message),
   });
 
-  const openNew = () => {
+  const resetSignerForm = () => {
     setForm({ signer_name: "", title: "", bank_id: banks.length === 1 ? banks[0].id : "", effective_date: new Date().toISOString().split("T")[0], end_date: "" });
+    setEditingId(null);
+  };
+
+  const openNew = () => {
+    resetSignerForm();
+    if (banks.length === 1) setForm(p => ({ ...p, bank_id: banks[0].id }));
+    setOpen(true);
+  };
+
+  const openEditSigner = (s: any) => {
+    setEditingId(s.id);
+    setForm({
+      signer_name: s.signer_name || "", title: s.title || "", bank_id: s.bank_id || "",
+      effective_date: s.effective_date || "", end_date: s.end_date || "",
+    });
     setOpen(true);
   };
 
@@ -127,9 +148,14 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(s.id)}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditSigner(s)}>
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(s.id)}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -145,7 +171,7 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
       </CardContent>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Add Authorized Signatory</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? "Edit" : "Add"} Authorized Signatory</DialogTitle></DialogHeader>
           <div className="grid gap-3">
             <div>
               <Label className="text-xs">Bank Account *</Label>
@@ -196,7 +222,7 @@ function AuthorizedSignersSection({ companyId, banks }: { companyId: string; ban
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
             <Button onClick={() => save.mutate()} disabled={!form.signer_name.trim() || !form.bank_id || save.isPending}>
-              {save.isPending ? "Saving…" : "Add Signatory"}
+              {save.isPending ? "Saving…" : editingId ? "Save Changes" : "Add Signatory"}
             </Button>
           </DialogFooter>
         </DialogContent>
