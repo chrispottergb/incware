@@ -237,7 +237,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const emptyForm = { bank_name: "", account_type: "checking", account_number: "", routing_number: "", contact_name: "", contact_title: "", phone: "", address: "", city: "", state: "", zip: "", notes: "" };
+  const emptyForm = { bank_name: "", account_type: "checking", account_number: "", routing_number: "", contact_name: "", contact_title: "", phone: "", address: "", address_2: "", city: "", state: "", zip: "", notes: "" };
   const [form, setForm] = useState(emptyForm);
 
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
@@ -280,7 +280,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     setForm({
       bank_name: b.bank_name, account_type: b.account_type || "checking", account_number: b.account_number || "",
       routing_number: b.routing_number || "", contact_name: b.contact_name || "", contact_title: b.contact_title || "",
-      phone: b.phone || "", address: b.address || "", city: b.city || "", state: b.state || "", zip: b.zip || "", notes: b.notes || "",
+      phone: b.phone || "", address: b.address || "", address_2: (b as any).address_2 || "", city: b.city || "", state: b.state || "", zip: b.zip || "", notes: b.notes || "",
     });
     setOpen(true);
   };
@@ -352,6 +352,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
               </div>
               <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
               <div><Label className="text-xs">Address</Label><Input value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
+              <div><Label className="text-xs">Address 2</Label><Input value={form.address_2} onChange={e => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor, etc." /></div>
               <div className="grid grid-cols-3 gap-2">
                 <div><Label className="text-xs">City</Label><Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
                 <div><Label className="text-xs">State</Label><Input value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>

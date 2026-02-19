@@ -38,7 +38,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
   const [dialog, setDialog] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({
-    name: "", address: "", city: "", state: "", zip: "", ssn_ein: "", status: "active",
+    name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active",
   });
 
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
@@ -59,7 +59,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
   });
 
   const resetForm = () => {
-    setForm({ name: "", address: "", city: "", state: "", zip: "", ssn_ein: "", status: "active" });
+    setForm({ name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active" });
     setEditId(null);
   };
 
@@ -67,13 +67,13 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
     mutationFn: async () => {
       if (editId) {
         const { error } = await supabase.from("shareholders").update({
-          name: form.name, address: form.address || null, city: form.city || null,
+          name: form.name, address: form.address || null, address_2: form.address_2 || null, city: form.city || null,
           state: form.state || null, zip: form.zip || null, ssn_ein: form.ssn_ein || null, status: form.status,
         }).eq("id", editId);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("shareholders").insert({
-          company_id: companyId, name: form.name, address: form.address || null,
+          company_id: companyId, name: form.name, address: form.address || null, address_2: form.address_2 || null,
           city: form.city || null, state: form.state || null, zip: form.zip || null,
           ssn_ein: form.ssn_ein || null, status: form.status,
         });
@@ -102,7 +102,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
 
   const openEdit = (s: typeof shareholders[0]) => {
     setEditId(s.id);
-    setForm({ name: s.name, address: s.address ?? "", city: s.city ?? "", state: s.state ?? "", zip: s.zip ?? "", ssn_ein: s.ssn_ein ?? "", status: s.status ?? "active" });
+    setForm({ name: s.name, address: s.address ?? "", address_2: (s as any).address_2 ?? "", city: s.city ?? "", state: s.state ?? "", zip: s.zip ?? "", ssn_ein: s.ssn_ein ?? "", status: s.status ?? "active" });
     setDialog(true);
   };
 
@@ -152,6 +152,10 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
                 <div className="field-group">
                   <Label className="field-label">Address</Label>
                   <Input className="h-8 text-sm" value={form.address} onChange={(e) => setForm(p => ({ ...p, address: e.target.value }))} />
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">Address 2</Label>
+                  <Input className="h-8 text-sm" value={form.address_2} onChange={(e) => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor, etc." />
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="field-group">

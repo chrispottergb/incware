@@ -55,7 +55,7 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
   const [vehicleForm, setVehicleForm] = useState({ year: "", make: "", model: "", cost: "", ownership_type: "owned", description: "", vin: "", purchase_date: "", purchase_amount: "" });
   const [equipmentForm, setEquipmentForm] = useState({ year: "", make: "", model: "", running_hours: "", manufacturer: "", ownership_type: "owned", description: "", purchase_date: "", purchase_amount: "", lease_date: "", lease_amount: "" });
   const [leaseForm, setLeaseForm] = useState({ description: "", value: "" });
-  const [propertyForm, setPropertyForm] = useState({ address: "", finance_company: "", escrow: "", mortgage: "", taxes: "", description: "" });
+  const [propertyForm, setPropertyForm] = useState({ address: "", address_2: "", finance_company: "", escrow: "", mortgage: "", taxes: "", description: "" });
 
   const { data: allAssets = [] } = useQuery({
     queryKey: ["company_assets", companyId],
@@ -99,8 +99,9 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
       } else if (activeTab === "lease") {
         payload = { ...payload, description: leaseForm.description, value: leaseForm.value ? parseFloat(leaseForm.value) : null };
       } else if (activeTab === "property") {
-        payload = {
-          ...payload, address: propertyForm.address || null, finance_company: propertyForm.finance_company || null,
+      payload = {
+          ...payload, address: propertyForm.address || null, address_2: propertyForm.address_2 || null,
+          finance_company: propertyForm.finance_company || null,
           escrow: propertyForm.escrow ? parseFloat(propertyForm.escrow) : null,
           mortgage: propertyForm.mortgage ? parseFloat(propertyForm.mortgage) : null,
           taxes: propertyForm.taxes ? parseFloat(propertyForm.taxes) : null,
@@ -141,7 +142,7 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
     setVehicleForm({ year: "", make: "", model: "", cost: "", ownership_type: "owned", description: "", vin: "", purchase_date: "", purchase_amount: "" });
     setEquipmentForm({ year: "", make: "", model: "", running_hours: "", manufacturer: "", ownership_type: "owned", description: "", purchase_date: "", purchase_amount: "", lease_date: "", lease_amount: "" });
     setLeaseForm({ description: "", value: "" });
-    setPropertyForm({ address: "", finance_company: "", escrow: "", mortgage: "", taxes: "", description: "" });
+    setPropertyForm({ address: "", address_2: "", finance_company: "", escrow: "", mortgage: "", taxes: "", description: "" });
     setEditId(null);
   };
 
@@ -155,7 +156,7 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
     } else if (a.asset_type === "lease") {
       setLeaseForm({ description: a.description || "", value: a.value != null ? String(a.value) : "" });
     } else if (a.asset_type === "property") {
-      setPropertyForm({ address: a.address || "", finance_company: a.finance_company || "", escrow: a.escrow != null ? String(a.escrow) : "", mortgage: a.mortgage != null ? String(a.mortgage) : "", taxes: a.taxes != null ? String(a.taxes) : "", description: a.description || "" });
+      setPropertyForm({ address: a.address || "", address_2: (a as any).address_2 || "", finance_company: a.finance_company || "", escrow: a.escrow != null ? String(a.escrow) : "", mortgage: a.mortgage != null ? String(a.mortgage) : "", taxes: a.taxes != null ? String(a.taxes) : "", description: a.description || "" });
     }
     setDialogOpen(true);
   };
@@ -334,6 +335,10 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
                   <div className="field-group">
                     <Label className="field-label">Address</Label>
                     <Input className="h-8 text-sm" value={propertyForm.address} onChange={(e) => setPropertyForm((p) => ({ ...p, address: e.target.value }))} required />
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">Address 2</Label>
+                    <Input className="h-8 text-sm" value={propertyForm.address_2} onChange={(e) => setPropertyForm((p) => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor, etc." />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="field-group">

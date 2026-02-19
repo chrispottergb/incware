@@ -248,6 +248,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
   const [newDirector, setNewDirector] = useState({
     name: "",
     address: "",
+    address_2: "",
     city: "",
     state: "",
     zip: "",
@@ -259,6 +260,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
         company_id: companyId,
         name: newDirector.name,
         address: newDirector.address || null,
+        address_2: newDirector.address_2 || null,
         city: newDirector.city || null,
         state: newDirector.state || null,
         zip: newDirector.zip || null,
@@ -269,7 +271,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["directors", companyId] });
       setDirectorDialog(false);
-      setNewDirector({ name: "", address: "", city: "", state: "", zip: "" });
+      setNewDirector({ name: "", address: "", address_2: "", city: "", state: "", zip: "" });
       toast.success("Director added!");
     },
     onError: (err: Error) => toast.error(err.message),
@@ -442,6 +444,10 @@ export default function OrganizationTab({ companyId, company }: Props) {
                     <div className="field-group">
                       <Label className="field-label">Business Address</Label>
                       <Input className="h-8 text-sm" value={newDirector.address} onChange={(e) => setNewDirector((p) => ({ ...p, address: e.target.value }))} />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Address 2</Label>
+                      <Input className="h-8 text-sm" value={newDirector.address_2} onChange={(e) => setNewDirector((p) => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor, etc." />
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="field-group">
