@@ -22,7 +22,7 @@ function AttorneyFirmsSection({ companyId }: { companyId: string }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ firm_name: "", address: "", city: "", state: "", zip: "", phone: "", email: "", website: "" });
+  const [form, setForm] = useState({ firm_name: "", address: "", address_2: "", city: "", state: "", zip: "", phone: "", email: "", website: "" });
 
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
@@ -58,8 +58,8 @@ function AttorneyFirmsSection({ companyId }: { companyId: string }) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const openNew = () => { setEditing(null); setForm({ firm_name: "", address: "", city: "", state: "", zip: "", phone: "", email: "", website: "" }); setOpen(true); };
-  const openEdit = (f: any) => { setEditing(f); setForm({ firm_name: f.firm_name, address: f.address || "", city: f.city || "", state: f.state || "", zip: f.zip || "", phone: f.phone || "", email: f.email || "", website: f.website || "" }); setOpen(true); };
+  const openNew = () => { setEditing(null); setForm({ firm_name: "", address: "", address_2: "", city: "", state: "", zip: "", phone: "", email: "", website: "" }); setOpen(true); };
+  const openEdit = (f: any) => { setEditing(f); setForm({ firm_name: f.firm_name, address: f.address || "", address_2: f.address_2 || "", city: f.city || "", state: f.state || "", zip: f.zip || "", phone: f.phone || "", email: f.email || "", website: f.website || "" }); setOpen(true); };
 
   return (
     <Card>
@@ -95,6 +95,7 @@ function AttorneyFirmsSection({ companyId }: { companyId: string }) {
           <div className="grid gap-3">
             <div><Label className="text-xs">Firm Name *</Label><Input value={form.firm_name} onChange={e => setForm(p => ({ ...p, firm_name: e.target.value }))} /></div>
             <div><Label className="text-xs">Address</Label><Input value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
+            <div><Label className="text-xs">Address 2</Label><Input value={form.address_2} onChange={e => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor, etc." /></div>
             <div className="grid grid-cols-3 gap-2">
               <div><Label className="text-xs">City</Label><Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
               <div><Label className="text-xs">State</Label><Input value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
@@ -231,7 +232,7 @@ function AccountantFirmsSection({ companyId }: { companyId: string }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ firm_name: "", address: "", city: "", state: "", zip: "", phone: "", email: "", website: "" });
+  const [form, setForm] = useState({ firm_name: "", address: "", address_2: "", city: "", state: "", zip: "", phone: "", email: "", website: "" });
 
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
@@ -267,8 +268,8 @@ function AccountantFirmsSection({ companyId }: { companyId: string }) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const openNew = () => { setEditing(null); setForm({ firm_name: "", address: "", city: "", state: "", zip: "", phone: "", email: "", website: "" }); setOpen(true); };
-  const openEdit = (f: any) => { setEditing(f); setForm({ firm_name: f.firm_name, address: f.address || "", city: f.city || "", state: f.state || "", zip: f.zip || "", phone: f.phone || "", email: f.email || "", website: f.website || "" }); setOpen(true); };
+  const openNew = () => { setEditing(null); setForm({ firm_name: "", address: "", address_2: "", city: "", state: "", zip: "", phone: "", email: "", website: "" }); setOpen(true); };
+  const openEdit = (f: any) => { setEditing(f); setForm({ firm_name: f.firm_name, address: f.address || "", address_2: f.address_2 || "", city: f.city || "", state: f.state || "", zip: f.zip || "", phone: f.phone || "", email: f.email || "", website: f.website || "" }); setOpen(true); };
 
   return (
     <Card>
@@ -304,6 +305,7 @@ function AccountantFirmsSection({ companyId }: { companyId: string }) {
           <div className="grid gap-3">
             <div><Label className="text-xs">Firm Name *</Label><Input value={form.firm_name} onChange={e => setForm(p => ({ ...p, firm_name: e.target.value }))} /></div>
             <div><Label className="text-xs">Address</Label><Input value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
+            <div><Label className="text-xs">Address 2</Label><Input value={form.address_2} onChange={e => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor, etc." /></div>
             <div className="grid grid-cols-3 gap-2">
               <div><Label className="text-xs">City</Label><Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
               <div><Label className="text-xs">State</Label><Input value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>

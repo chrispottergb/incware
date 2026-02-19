@@ -17,6 +17,7 @@ export type Database = {
       accountant_firms: {
         Row: {
           address: string | null
+          address_2: string | null
           city: string | null
           company_id: string
           created_at: string
@@ -31,6 +32,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          address_2?: string | null
           city?: string | null
           company_id: string
           created_at?: string
@@ -45,6 +47,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          address_2?: string | null
           city?: string | null
           company_id?: string
           created_at?: string
@@ -391,6 +394,7 @@ export type Database = {
       attorney_firms: {
         Row: {
           address: string | null
+          address_2: string | null
           city: string | null
           company_id: string
           created_at: string
@@ -405,6 +409,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          address_2?: string | null
           city?: string | null
           company_id: string
           created_at?: string
@@ -419,6 +424,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          address_2?: string | null
           city?: string | null
           company_id?: string
           created_at?: string
@@ -686,6 +692,7 @@ export type Database = {
           accounting_method: string | null
           additional_provisions: string | null
           address: string | null
+          address_2: string | null
           annual_report_year: number | null
           authorized_shares: number | null
           business_purpose: string | null
@@ -708,6 +715,7 @@ export type Database = {
           par_value_type: string | null
           phone: string | null
           registered_agent_address: string | null
+          registered_agent_address_2: string | null
           registered_agent_city: string | null
           registered_agent_name: string | null
           registered_agent_state: string | null
@@ -729,6 +737,7 @@ export type Database = {
           accounting_method?: string | null
           additional_provisions?: string | null
           address?: string | null
+          address_2?: string | null
           annual_report_year?: number | null
           authorized_shares?: number | null
           business_purpose?: string | null
@@ -751,6 +760,7 @@ export type Database = {
           par_value_type?: string | null
           phone?: string | null
           registered_agent_address?: string | null
+          registered_agent_address_2?: string | null
           registered_agent_city?: string | null
           registered_agent_name?: string | null
           registered_agent_state?: string | null
@@ -772,6 +782,7 @@ export type Database = {
           accounting_method?: string | null
           additional_provisions?: string | null
           address?: string | null
+          address_2?: string | null
           annual_report_year?: number | null
           authorized_shares?: number | null
           business_purpose?: string | null
@@ -794,6 +805,7 @@ export type Database = {
           par_value_type?: string | null
           phone?: string | null
           registered_agent_address?: string | null
+          registered_agent_address_2?: string | null
           registered_agent_city?: string | null
           registered_agent_name?: string | null
           registered_agent_state?: string | null
@@ -816,6 +828,7 @@ export type Database = {
       company_assets: {
         Row: {
           address: string | null
+          address_2: string | null
           asset_type: string
           company_id: string
           cost: number | null
@@ -842,6 +855,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          address_2?: string | null
           asset_type: string
           company_id: string
           cost?: number | null
@@ -868,6 +882,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          address_2?: string | null
           asset_type?: string
           company_id?: string
           cost?: number | null
@@ -907,6 +922,7 @@ export type Database = {
           account_number: string | null
           account_type: string | null
           address: string | null
+          address_2: string | null
           bank_name: string
           city: string | null
           company_id: string
@@ -925,6 +941,7 @@ export type Database = {
           account_number?: string | null
           account_type?: string | null
           address?: string | null
+          address_2?: string | null
           bank_name: string
           city?: string | null
           company_id: string
@@ -943,6 +960,7 @@ export type Database = {
           account_number?: string | null
           account_type?: string | null
           address?: string | null
+          address_2?: string | null
           bank_name?: string
           city?: string | null
           company_id?: string
@@ -1025,6 +1043,7 @@ export type Database = {
         Row: {
           added_date: string | null
           address: string | null
+          address_2: string | null
           city: string | null
           company_id: string
           created_at: string
@@ -1037,6 +1056,7 @@ export type Database = {
         Insert: {
           added_date?: string | null
           address?: string | null
+          address_2?: string | null
           city?: string | null
           company_id: string
           created_at?: string
@@ -1049,6 +1069,7 @@ export type Database = {
         Update: {
           added_date?: string | null
           address?: string | null
+          address_2?: string | null
           city?: string | null
           company_id?: string
           created_at?: string
@@ -1633,6 +1654,7 @@ export type Database = {
       meetings: {
         Row: {
           chairperson: string | null
+          company_address_2_at_meeting: string | null
           company_address_at_meeting: string | null
           company_city_at_meeting: string | null
           company_id: string
@@ -1656,6 +1678,7 @@ export type Database = {
         }
         Insert: {
           chairperson?: string | null
+          company_address_2_at_meeting?: string | null
           company_address_at_meeting?: string | null
           company_city_at_meeting?: string | null
           company_id: string
@@ -1679,6 +1702,7 @@ export type Database = {
         }
         Update: {
           chairperson?: string | null
+          company_address_2_at_meeting?: string | null
           company_address_at_meeting?: string | null
           company_city_at_meeting?: string | null
           company_id?: string
@@ -1857,6 +1881,7 @@ export type Database = {
       shareholders: {
         Row: {
           address: string | null
+          address_2: string | null
           city: string | null
           company_id: string
           created_at: string
@@ -1871,6 +1896,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          address_2?: string | null
           city?: string | null
           company_id: string
           created_at?: string
@@ -1885,6 +1911,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          address_2?: string | null
           city?: string | null
           company_id?: string
           created_at?: string

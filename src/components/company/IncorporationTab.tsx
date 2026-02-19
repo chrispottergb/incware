@@ -165,10 +165,12 @@ export default function IncorporationTab({ company }: Props) {
     annual_report_year: company.annual_report_year?.toString() ?? "",
     registered_agent_name: company.registered_agent_name ?? "",
     registered_agent_address: company.registered_agent_address ?? "",
+    registered_agent_address_2: (company as any).registered_agent_address_2 ?? "",
     registered_agent_city: company.registered_agent_city ?? "",
     registered_agent_state: company.registered_agent_state ?? "",
     registered_agent_zip: company.registered_agent_zip ?? "",
     address: company.address ?? "",
+    address_2: (company as any).address_2 ?? "",
     city: company.city ?? "",
     state: company.state ?? "",
     zip: company.zip ?? "",
@@ -214,10 +216,12 @@ export default function IncorporationTab({ company }: Props) {
           annual_report_year: form.annual_report_year ? parseInt(form.annual_report_year) : null,
           registered_agent_name: form.registered_agent_name || null,
           registered_agent_address: form.registered_agent_address || null,
+          registered_agent_address_2: form.registered_agent_address_2 || null,
           registered_agent_city: form.registered_agent_city || null,
           registered_agent_state: form.registered_agent_state || null,
           registered_agent_zip: form.registered_agent_zip || null,
           address: form.address || null,
+          address_2: form.address_2 || null,
           city: form.city || null,
           state: form.state || null,
           zip: form.zip || null,
@@ -545,6 +549,7 @@ export default function IncorporationTab({ company }: Props) {
               fields: [
                 { label: "Agent Name", value: form.registered_agent_name },
                 { label: "Address", value: form.registered_agent_address },
+                { label: "Address 2", value: form.registered_agent_address_2 },
                 { label: "City", value: form.registered_agent_city },
                 { label: "State", value: form.registered_agent_state },
                 { label: "Zip", value: form.registered_agent_zip },
@@ -560,6 +565,10 @@ export default function IncorporationTab({ company }: Props) {
           <div className="field-group sm:col-span-2">
             <Label className="field-label">Address</Label>
             <Input className="h-8 text-sm" value={form.registered_agent_address} onChange={(e) => update("registered_agent_address", e.target.value)} />
+          </div>
+          <div className="field-group sm:col-span-2">
+            <Label className="field-label">Address 2</Label>
+            <Input className="h-8 text-sm" value={form.registered_agent_address_2} onChange={(e) => update("registered_agent_address_2", e.target.value)} placeholder="Suite, Unit, Floor, etc." />
           </div>
           <div className="field-group">
             <Label className="field-label">City</Label>
@@ -598,6 +607,7 @@ export default function IncorporationTab({ company }: Props) {
               companyName: company.name,
               fields: [
                 { label: "Address", value: form.address },
+                { label: "Address 2", value: form.address_2 },
                 { label: "City", value: form.city },
                 { label: "State", value: form.state },
                 { label: "Zip", value: form.zip },
@@ -610,6 +620,10 @@ export default function IncorporationTab({ company }: Props) {
           <div className="field-group sm:col-span-2">
             <Label className="field-label">Address</Label>
             <Input className="h-8 text-sm" value={form.address} onChange={(e) => update("address", e.target.value)} />
+          </div>
+          <div className="field-group sm:col-span-2">
+            <Label className="field-label">Address 2</Label>
+            <Input className="h-8 text-sm" value={form.address_2} onChange={(e) => update("address_2", e.target.value)} placeholder="Suite, Unit, Floor, etc." />
           </div>
           <div className="field-group">
             <Label className="field-label">City</Label>
