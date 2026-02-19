@@ -1,56 +1,35 @@
 
 
-## Auto-Verify Corporate Status via WDFI Website
+## Fix LLC Terminology in Organizational Meeting PDF
 
-### Overview
-Add a "Verify with DFI" button to the Incorporation tab's Corporate Status section. When clicked, it will use **Firecrawl** to scrape the Wisconsin DFI corporate records search page, extract the entity's current status, and auto-populate the Corporate Status and Verification Date fields.
+### Problem
+The organizational meeting boilerplate uses corporate terminology (shares, election, shareholders) for LLCs, which is legally incorrect. LLCs have membership interests, not shares, and appoint managers rather than electing officers.
 
-### How It Works
-1. User clicks "Verify with DFI" on the Incorporation tab
-2. The app sends the company name to a new backend function
-3. The function searches `apps.dfi.wi.gov/apps/corpsearch/` using Firecrawl's scrape capability
-4. The function parses the results to find the matching entity and extract its status
-5. The app auto-updates the Corporate Status dropdown and sets Verification Date to today
+### Changes (all in `src/lib/meeting-pdf-export.ts`)
 
-### Prerequisites
-- **Firecrawl connector** must be linked to this project (you have one in your workspace but it's not linked yet -- I'll connect it during implementation)
+**1. Officers Section (lines 354-357) -- "Election" to "Appointment"**
+- Change section title from "Election of Officers" to "Appointment of Managers/Officers" for LLCs
+- Change resolution language from "elected as the initial managers/officers" to "appointed as the initial managers/officers"
 
-### Implementation Steps
+**2. Members Section (lines 383-398) -- "Shares" to "Membership Interests"**
+- When displaying LLC members, show "membership interest" or "percentage interest" instead of "shares"
+- Update resolution language: instead of referencing stock issuance concepts, reference "membership interests as set forth in the Operating Agreement"
 
-1. **Link Firecrawl connector** to the project so the API key is available to backend functions
+**3. Section 1244 Stock Plan (line 496) -- Exclude LLCs entirely**
+- Add `&& !isLLC` check so Section 1244 never appears on LLC documents (Section 1244 is a stock-specific provision under IRC that does not apply to membership interests)
 
-2. **Create a new backend function** (`supabase/functions/verify-corporate-status/index.ts`)
-   - Accepts: company name, state of incorporation
-   - Uses Firecrawl to scrape the DFI search page with the company name as a query
-   - Parses the scraped content (markdown) to find the entity status (e.g., "Organized", "Dissolved", "Admin. Dissolved")
-   - Maps DFI statuses to app statuses (Organized -> "current", Admin. Dissolved -> "dissolved", etc.)
-   - Returns: `{ status, dfiEntityName, dfiEntityType, verifiedAt }`
+**4. S-Corp Election (lines 423-432) -- Fix member terminology**
+- Change "all shareholders consenting" to "all members consenting" when entity is an LLC
+- This section correctly CAN appear for LLCs since they may elect S-Corp treatment via Form 2553
 
-3. **Add "Verify with DFI" button** to `src/components/company/IncorporationTab.tsx`
-   - Place it in the "Verification of Corporate Status" card, next to the existing fields
-   - Shows a loading spinner while fetching
-   - On success: auto-fills Corporate Status and Verification Date, then triggers save
-   - On failure: shows a toast with guidance (e.g., "Entity not found on DFI -- verify name matches filing")
+### Summary of Terminology Mapping
 
-4. **Only shown for Wisconsin entities** -- the button will only appear when `state_of_incorporation === "WI"` since this is specific to the Wisconsin DFI
-
-### Technical Details
-
-**Backend function** (`verify-corporate-status/index.ts`):
-- Uses Firecrawl scrape on URL: `https://apps.dfi.wi.gov/apps/corpsearch/Results.aspx?type=Simple&q={encodedCompanyName}`
-- Extracts entity status from the scraped markdown/HTML
-- Falls back to returning "not found" if no match
-
-**Frontend changes** (`IncorporationTab.tsx`):
-- New "Verify with DFI" button with Shield/RefreshCw icon
-- Calls the edge function via `supabase.functions.invoke('verify-corporate-status', ...)`
-- Updates form state and auto-saves on successful verification
-
-**Status mapping:**
-| DFI Status | App Status |
+| Corporate Term | LLC Equivalent |
 |---|---|
-| Organized / Registered | current |
-| Delinquent | delinquent |
-| Admin. Dissolved / Dissolved | dissolved |
-| Suspended / Revoked | suspended |
+| Shares / Stock | Membership Interests / Units |
+| Shareholders | Members |
+| Election of Officers | Appointment of Managers/Officers |
+| Elected | Appointed |
+| Stock Issuance | Capital Contributions |
+| Section 1244 | Not applicable (remove) |
 
