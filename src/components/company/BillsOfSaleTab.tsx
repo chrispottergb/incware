@@ -18,6 +18,7 @@ import {
 import { Plus, Trash2, Loader2, FileText, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
+import { getTerminology } from "@/lib/entity-terminology";
 
 interface Props {
   companyId: string;
@@ -29,17 +30,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
   const [dialog, setDialog] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
 
-  const isLLC = entityType === "LLC";
-  const holderLabel = isLLC ? "Member" : "Shareholder";
-  const unitLabel = isLLC ? "Units" : "Shares";
-  const classLabel = isLLC ? "Interest Type" : "Class";
-  const classOptions = isLLC
-    ? [{ value: "Membership", label: "Membership" }, { value: "Profits", label: "Profits Interest" }]
-    : [{ value: "Common", label: "Common" }, { value: "Preferred", label: "Preferred" }];
-  const statuteRef = isLLC
-    ? "Record membership interest transfers between parties — supports Wis. Stat. § 183.0706"
-    : "Record share sales between parties — supports Wis. Stat. § 180.0627 share transfer restrictions";
-  const titleLabel = isLLC ? "Bills of Sale / Interest Transfers" : "Bills of Sale";
+  const t = getTerminology(entityType);
 
   const { data: shareholders = [] } = useQuery({
     queryKey: ["shareholders", companyId],
@@ -60,9 +51,8 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
     },
   });
 
-  const defaultClass = isLLC ? "Membership" : "Common";
   const emptyForm = {
-    seller_name: "", buyer_name: "", num_shares: "", share_class: defaultClass,
+    seller_name: "", buyer_name: "", num_shares: "", share_class: t.defaultClass,
     price_per_share: "", total_price: "", sale_date: new Date().toISOString().split("T")[0],
     description: "", shareholder_id: "",
   };
@@ -74,7 +64,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
     setEditId(b.id);
     setForm({
       seller_name: b.seller_name || "", buyer_name: b.buyer_name || "",
-      num_shares: String(b.num_shares || ""), share_class: b.share_class || defaultClass,
+      num_shares: String(b.num_shares || ""), share_class: b.share_class || t.defaultClass,
       price_per_share: b.price_per_share != null ? String(b.price_per_share) : "",
       total_price: b.total_price != null ? String(b.total_price) : "",
       sale_date: b.sale_date || "", description: b.description || "",
@@ -127,15 +117,15 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
         <div>
           <div className="flex items-center gap-2">
             <FileText className="h-3.5 w-3.5 text-primary" />
-            <CardTitle className="card-section-title">{titleLabel}</CardTitle>
+            <CardTitle className="card-section-title">{t.billsTitle}</CardTitle>
           </div>
-          <CardDescription className="text-[11px] mt-0.5">{statuteRef}</CardDescription>
+          <CardDescription className="text-[11px] mt-0.5">{t.billsStatute}</CardDescription>
         </div>
         <div className="flex items-center gap-1">
           <SectionPdfActions config={{
-            title: titleLabel, companyName: "", statuteRef,
+            title: t.billsTitle, companyName: "", statuteRef: t.billsStatute,
             table: {
-              headers: ["Date", "Seller", "Buyer", classLabel, unitLabel, `$/${isLLC ? "Unit" : "Share"}`, "Total"],
+              headers: ["Date", "Seller", "Buyer", t.classLabel, t.shareUnit, t.dollarPerUnit, "Total"],
               rows: bills.map((b) => [
                 b.sale_date ? new Date(b.sale_date + "T00:00:00").toLocaleDateString() : "—",
                 b.seller_name, b.buyer_name, b.share_class, b.num_shares?.toLocaleString(),
@@ -153,7 +143,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle className="font-display text-base">
-                  {editId ? "Edit Bill of Sale" : (isLLC ? "Record Interest Transfer / Bill of Sale" : "Record Bill of Sale")}
+                  {editId ? "Edit Bill of Sale" : (t.isLLC ? "Record Interest Transfer / Bill of Sale" : "Record Bill of Sale")}
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-3">
@@ -168,7 +158,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
                   </div>
                 </div>
                 <div className="field-group">
-                  <Label className="field-label">Linked {holderLabel} (optional)</Label>
+                  <Label className="field-label">Linked {t.shareholder} (optional)</Label>
                   <Select value={form.shareholder_id} onValueChange={(v) => setForm(p => ({ ...p, shareholder_id: v }))}>
                     <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select if applicable" /></SelectTrigger>
                     <SelectContent>
@@ -178,20 +168,20 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                   <div className="field-group">
-                    <Label className="field-label">{classLabel}</Label>
+                    <Label className="field-label">{t.classLabel}</Label>
                     <Select value={form.share_class} onValueChange={(v) => setForm(p => ({ ...p, share_class: v }))}>
                       <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {classOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                        {t.classOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="field-group">
-                    <Label className="field-label"># {unitLabel}</Label>
+                    <Label className="field-label">{t.numUnitsLabel}</Label>
                     <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
                   </div>
                   <div className="field-group">
-                    <Label className="field-label">$/{isLLC ? "Unit" : "Share"}</Label>
+                    <Label className="field-label">{t.dollarPerUnit}</Label>
                     <Input className="h-8 text-sm" type="number" step="0.01" value={form.price_per_share} onChange={(e) => setForm(p => ({ ...p, price_per_share: e.target.value }))} />
                   </div>
                   <div className="field-group">
@@ -229,9 +219,9 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
                   <TableHead className="text-[10px] uppercase">Date</TableHead>
                   <TableHead className="text-[10px] uppercase">Seller</TableHead>
                   <TableHead className="text-[10px] uppercase">Buyer</TableHead>
-                  <TableHead className="text-[10px] uppercase">{classLabel}</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">{unitLabel}</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">$/{isLLC ? "Unit" : "Share"}</TableHead>
+                  <TableHead className="text-[10px] uppercase">{t.classLabel}</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right">{t.shareUnit}</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right">{t.dollarPerUnit}</TableHead>
                   <TableHead className="text-[10px] uppercase text-right">Total</TableHead>
                   <TableHead className="text-[10px] uppercase w-16"></TableHead>
                 </TableRow>

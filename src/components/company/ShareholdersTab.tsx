@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Loader2, Users, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
+import { getTerminology } from "@/lib/entity-terminology";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
@@ -45,12 +46,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
   }, []);
   const { handleZipChange } = useZipLookup(handleZipResult);
 
-  const isLLC = entityType === "LLC";
-  const personLabel = isLLC ? "Member" : "Shareholder";
-  const personsLabel = isLLC ? "Members" : "Shareholders";
-  const statuteRef = isLLC
-    ? "Wis. Stat. § 183.0405 — Record of members by name, address, and interest held"
-    : "Wis. Stat. § 180.1601(3) — Record of shareholders by name, address, and shares held";
+  const t = getTerminology(entityType);
 
   const { data: shareholders = [], isLoading } = useQuery({
     queryKey: ["shareholders", companyId],
@@ -87,7 +83,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shareholders", companyId] });
       setDialog(false); resetForm();
-      toast.success(editId ? `${personLabel} updated!` : `${personLabel} added!`);
+      toast.success(editId ? `${t.shareholder} updated!` : `${t.shareholder} added!`);
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -99,7 +95,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shareholders", companyId] });
-      toast.success(`${personLabel} removed.`);
+      toast.success(`${t.shareholder} removed.`);
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -116,15 +112,15 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
         <div>
           <div className="flex items-center gap-2">
             <Users className="h-3.5 w-3.5 text-primary" />
-            <CardTitle className="card-section-title">{personsLabel}</CardTitle>
+            <CardTitle className="card-section-title">{t.shareholders}</CardTitle>
           </div>
-          <CardDescription className="text-[11px] mt-0.5">{statuteRef}</CardDescription>
+          <CardDescription className="text-[11px] mt-0.5">{t.shareholderStatute}</CardDescription>
         </div>
         <div className="flex items-center gap-1">
           <SectionPdfActions config={{
-            title: personsLabel,
+            title: t.shareholders,
             companyName: "",
-            statuteRef,
+            statuteRef: t.shareholderStatute,
             table: {
               headers: ["Name", "Address", "City/State/Zip", "SSN/EIN", "Status"],
               rows: shareholders.map((s) => [
@@ -145,12 +141,12 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
             <DialogContent>
               <DialogHeader>
                 <DialogTitle className="font-display text-base">
-                  {editId ? `Edit ${personLabel}` : `Add ${personLabel}`}
+                  {editId ? `Edit ${t.shareholder}` : `Add ${t.shareholder}`}
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-3">
                 <div className="field-group">
-                  <Label className="field-label">{personLabel} Name</Label>
+                  <Label className="field-label">{t.shareholder} Name</Label>
                   <Input className="h-8 text-sm" value={form.name} onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))} required />
                 </div>
                 <div className="field-group">
@@ -192,7 +188,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
                 </div>
                 <Button type="submit" className="w-full" size="sm" disabled={save.isPending}>
                   {save.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                  {editId ? "Save Changes" : `Add ${personLabel}`}
+                  {editId ? "Save Changes" : `Add ${t.shareholder}`}
                 </Button>
               </form>
             </DialogContent>
@@ -203,7 +199,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
         {isLoading ? (
           <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : shareholders.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-6">No {personsLabel.toLowerCase()} recorded yet.</p>
+          <p className="text-xs text-muted-foreground text-center py-6">No {t.shareholders.toLowerCase()} recorded yet.</p>
         ) : (
           <div className="rounded-md border border-border overflow-auto">
             <Table>

@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Loader2, Award, XCircle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
+import { getTerminology } from "@/lib/entity-terminology";
 
 interface Props {
   companyId: string;
@@ -31,18 +32,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
   const [cancelDialog, setCancelDialog] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState("");
 
-  const isLLC = entityType === "LLC";
-  const certLabel = isLLC ? "Membership Interest Certificate" : "Stock Certificate";
-  const certsLabel = isLLC ? "Membership Interest Certificates" : "Stock Certificates";
-  const holderLabel = isLLC ? "Member" : "Shareholder";
-  const unitLabel = isLLC ? "Units" : "Shares";
-  const classLabel = isLLC ? "Interest Type" : "Class";
-  const classOptions = isLLC
-    ? [{ value: "Membership", label: "Membership" }, { value: "Profits", label: "Profits Interest" }]
-    : [{ value: "Common", label: "Common" }, { value: "Preferred", label: "Preferred" }];
-  const statuteRef = isLLC
-    ? "Wis. Stat. § 183.0501 — Membership interest certificates"
-    : "Wis. Stat. § 180.0625 — Share certificates must state corporate name, shares represented, class & par value";
+  const t = getTerminology(entityType);
 
   const { data: shareholders = [] } = useQuery({
     queryKey: ["shareholders", companyId],
@@ -66,11 +56,10 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
     },
   });
 
-  const defaultClass = isLLC ? "Membership" : "Common";
   const [form, setForm] = useState({
     certificate_number: "",
     shareholder_id: "",
-    share_class: defaultClass,
+    share_class: t.defaultClass,
     num_shares: "",
     par_value: "",
     issue_date: "",
@@ -81,7 +70,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
     : 1;
 
   const resetForm = () => {
-    setForm({ certificate_number: "", shareholder_id: "", share_class: defaultClass, num_shares: "", par_value: "", issue_date: "" });
+    setForm({ certificate_number: "", shareholder_id: "", share_class: t.defaultClass, num_shares: "", par_value: "", issue_date: "" });
     setEditId(null);
   };
 
@@ -90,7 +79,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
     setForm({
       certificate_number: String(c.certificate_number),
       shareholder_id: c.shareholder_id || "",
-      share_class: c.share_class || defaultClass,
+      share_class: c.share_class || t.defaultClass,
       num_shares: String(c.num_shares || ""),
       par_value: c.par_value != null ? String(c.par_value) : "",
       issue_date: c.issue_date || "",
@@ -162,15 +151,15 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
           <div>
             <div className="flex items-center gap-2">
               <Award className="h-3.5 w-3.5 text-primary" />
-              <CardTitle className="card-section-title">{certsLabel}</CardTitle>
+              <CardTitle className="card-section-title">{t.certificates}</CardTitle>
             </div>
-            <CardDescription className="text-[11px] mt-0.5">{statuteRef}</CardDescription>
+            <CardDescription className="text-[11px] mt-0.5">{t.certificateStatute}</CardDescription>
           </div>
           <div className="flex items-center gap-1">
             <SectionPdfActions config={{
-              title: certsLabel, companyName: "", statuteRef,
+              title: t.certificates, companyName: "", statuteRef: t.certificateStatute,
               table: {
-                headers: ["Cert #", holderLabel, classLabel, unitLabel, isLLC ? "Value/Unit" : "Par Value", "Issue Date", "Status"],
+                headers: ["Cert #", t.shareholder, t.classLabel, t.shareUnit, t.parValue, "Issue Date", "Status"],
                 rows: certificates.map((c: any) => [
                   String(c.certificate_number), c.shareholders?.name ?? "—", c.share_class,
                   c.num_shares?.toLocaleString(), c.par_value != null ? `$${Number(c.par_value).toFixed(2)}` : "—",
@@ -187,7 +176,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle className="font-display text-base">
-                    {editId ? `Edit ${certLabel}` : `Issue ${certLabel}`}
+                    {editId ? `Edit ${t.certificate}` : `Issue ${t.certificate}`}
                   </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-3">
@@ -202,9 +191,9 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                     </div>
                   </div>
                   <div className="field-group">
-                    <Label className="field-label">{holderLabel}</Label>
+                    <Label className="field-label">{t.shareholder}</Label>
                     <Select value={form.shareholder_id} onValueChange={(v) => setForm(p => ({ ...p, shareholder_id: v }))}>
-                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={`Select ${holderLabel.toLowerCase()}`} /></SelectTrigger>
+                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={`Select ${t.shareholder.toLowerCase()}`} /></SelectTrigger>
                       <SelectContent>
                         {shareholders.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                       </SelectContent>
@@ -212,20 +201,20 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="field-group">
-                      <Label className="field-label">{classLabel}</Label>
+                      <Label className="field-label">{t.classLabel}</Label>
                       <Select value={form.share_class} onValueChange={(v) => setForm(p => ({ ...p, share_class: v }))}>
                         <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {classOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                          {t.classOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="field-group">
-                      <Label className="field-label"># {unitLabel}</Label>
+                      <Label className="field-label">{t.numUnitsLabel}</Label>
                       <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
                     </div>
                     <div className="field-group">
-                      <Label className="field-label">{isLLC ? "Value/Unit" : "Par Value"}</Label>
+                      <Label className="field-label">{t.parValue}</Label>
                       <Input className="h-8 text-sm" type="number" step="0.01" value={form.par_value} onChange={(e) => setForm(p => ({ ...p, par_value: e.target.value }))} />
                     </div>
                   </div>
@@ -249,10 +238,10 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-[10px] uppercase">Cert #</TableHead>
-                    <TableHead className="text-[10px] uppercase">{holderLabel}</TableHead>
-                    <TableHead className="text-[10px] uppercase">{classLabel}</TableHead>
-                    <TableHead className="text-[10px] uppercase text-right">{unitLabel}</TableHead>
-                    <TableHead className="text-[10px] uppercase text-right">{isLLC ? "Value/Unit" : "Par Value"}</TableHead>
+                    <TableHead className="text-[10px] uppercase">{t.shareholder}</TableHead>
+                    <TableHead className="text-[10px] uppercase">{t.classLabel}</TableHead>
+                    <TableHead className="text-[10px] uppercase text-right">{t.shareUnit}</TableHead>
+                    <TableHead className="text-[10px] uppercase text-right">{t.parValue}</TableHead>
                     <TableHead className="text-[10px] uppercase">Issue Date</TableHead>
                     <TableHead className="text-[10px] uppercase">Status</TableHead>
                     <TableHead className="text-[10px] uppercase w-24">Actions</TableHead>

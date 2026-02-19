@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Loader2, BookOpen, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
+import { getTerminology } from "@/lib/entity-terminology";
 
 // Wisconsin statutory stock transaction types by entity type
 const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string; statute: string }[]> = {
@@ -108,6 +109,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
   const [dialog, setDialog] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const transactionTypes = TRANSACTION_TYPES_BY_ENTITY[entityType] || DEFAULT_TRANSACTION_TYPES;
+  const term = getTerminology(entityType);
 
   const { data: shareholders = [] } = useQuery({
     queryKey: ["shareholders", companyId],
@@ -252,7 +254,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
           <div className="flex items-center gap-2">
             <BookOpen className="h-3.5 w-3.5 text-primary" />
             <CardTitle className="card-section-title">
-              {entityType === "LLC" ? "Capital & Interest Ledger" : "Stock Ledger / Transactions"}
+              {term.ledgerTitle}
             </CardTitle>
           </div>
           <CardDescription className="text-[11px] mt-0.5">
@@ -261,12 +263,12 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         </div>
         <div className="flex items-center gap-1">
           <SectionPdfActions config={{
-            title: entityType === "LLC" ? "Capital & Interest Ledger" : "Stock Ledger / Transactions",
+            title: term.ledgerTitle,
             companyName: "",
             statuteRef: statuteDescription,
             landscape: true,
             table: {
-              headers: ["Date", "Type", entityType === "LLC" ? "Member" : "Shareholder", entityType === "LLC" ? "Interest Type" : "Class", entityType === "LLC" ? "Units" : "Shares", entityType === "LLC" ? "$/Unit" : "$/Share", "Total", "Consideration"],
+              headers: ["Date", "Type", term.shareholder, term.classLabel, term.shareUnit, term.pricePerUnit, "Total", "Consideration"],
               rows: transactions.map((t: any) => [
                 t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—",
                 t.transaction_type?.replace("_", " ") ?? "—",
@@ -287,7 +289,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
             </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle className="font-display text-base">{editingId ? "Edit Transaction" : entityType === "LLC" ? "Record Interest Transaction" : "Record Share Transaction"}</DialogTitle>
+              <DialogTitle className="font-display text-base">{editingId ? "Edit Transaction" : term.isLLC ? "Record Interest Transaction" : "Record Share Transaction"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={(e) => { e.preventDefault(); editingId ? update.mutate() : add.mutate(); }} className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
@@ -311,9 +313,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 </div>
               </div>
               <div className="field-group">
-                  <Label className="field-label">{entityType === "LLC" ? "Member" : "Shareholder"}</Label>
+                  <Label className="field-label">{term.shareholder}</Label>
                   <Select value={form.shareholder_id} onValueChange={(v) => setForm(p => ({ ...p, shareholder_id: v }))}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={entityType === "LLC" ? "Select member" : "Select shareholder"} /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={`Select ${term.shareholder.toLowerCase()}`} /></SelectTrigger>
                   <SelectContent>
                     {shareholders.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                   </SelectContent>
@@ -333,30 +335,22 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
               )}
               <div className="grid grid-cols-3 gap-2">
                 <div className="field-group">
-                  <Label className="field-label">{entityType === "LLC" ? "Interest Type" : "Class"}</Label>
+                  <Label className="field-label">{term.classLabel}</Label>
                   <Select value={form.share_class} onValueChange={(v) => setForm(p => ({ ...p, share_class: v }))}>
                     <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {entityType === "LLC" ? (
-                        <>
-                          <SelectItem value="Membership">Membership</SelectItem>
-                          <SelectItem value="Profits">Profits Interest</SelectItem>
-                        </>
-                      ) : (
-                        <>
-                          <SelectItem value="Common">Common</SelectItem>
-                          <SelectItem value="Preferred">Preferred</SelectItem>
-                        </>
-                      )}
+                      {term.classOptions.map(o => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="field-group">
-                  <Label className="field-label">{entityType === "LLC" ? "# Units" : "# Shares"}</Label>
+                  <Label className="field-label">{term.numUnitsLabel}</Label>
                   <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
                 </div>
                 <div className="field-group">
-                  <Label className="field-label">{entityType === "LLC" ? "Price/Unit" : "Price/Share"}</Label>
+                  <Label className="field-label">{term.pricePerUnit}</Label>
                   <Input className="h-8 text-sm" type="number" step="0.01" value={form.price_per_share} onChange={(e) => setForm(p => ({ ...p, price_per_share: e.target.value }))} />
                 </div>
               </div>
@@ -370,7 +364,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   <Select value={form.consideration_type} onValueChange={(v) => setForm(p => ({ ...p, consideration_type: v }))}>
                     <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {CONSIDERATION_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                      {CONSIDERATION_TYPES.map(ct => <SelectItem key={ct.value} value={ct.value}>{ct.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -400,10 +394,10 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 <TableRow>
                   <TableHead className="text-[10px] uppercase">Date</TableHead>
                   <TableHead className="text-[10px] uppercase">Type</TableHead>
-                  <TableHead className="text-[10px] uppercase">{entityType === "LLC" ? "Member" : "Shareholder"}</TableHead>
-                  <TableHead className="text-[10px] uppercase">{entityType === "LLC" ? "Interest Type" : "Class"}</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">{entityType === "LLC" ? "Units" : "Shares"}</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">{entityType === "LLC" ? "$/Unit" : "$/Share"}</TableHead>
+                  <TableHead className="text-[10px] uppercase">{term.shareholder}</TableHead>
+                  <TableHead className="text-[10px] uppercase">{term.classLabel}</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right">{term.shareUnit}</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right">{term.dollarPerUnit}</TableHead>
                   <TableHead className="text-[10px] uppercase text-right">Total</TableHead>
                   <TableHead className="text-[10px] uppercase">Consideration</TableHead>
                   <TableHead className="text-[10px] uppercase text-right bg-primary/5">Running Balance</TableHead>
