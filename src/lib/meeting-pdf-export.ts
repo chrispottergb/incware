@@ -27,6 +27,12 @@ interface MeetingData {
     loans?: any[];
     authorizedSigners?: any[];
   };
+  // Company-level data for organizational meeting boilerplate
+  companyOfficers?: any;
+  companyShareholders?: any[];
+  companyDirectors?: any[];
+  companyBanks?: any[];
+  companyBankSigners?: any[];
 }
 
 function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType: string, meeting?: any, company?: any) {
@@ -269,6 +275,190 @@ function checkPageBreak(doc: jsPDF, y: number, needed: number): number {
   return y;
 }
 
+function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string): number {
+  const pw = doc.internal.pageSize.getWidth();
+  y = checkPageBreak(doc, y, 30);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
+  doc.text(purpose, 14, y);
+  y += 4;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  const lines = doc.splitTextToSize(text, pw - 28);
+  doc.text(lines, 14, y);
+  y += lines.length * 3.5 + 5;
+  return y;
+}
+
+function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData): number {
+  const { company, meeting } = data;
+  const entityType = company?.entity_type || "Corporation";
+  const isLLC = entityType === "LLC";
+  const isNonprofit = entityType === "Non-Profit";
+  const isSCorp = entityType === "S-Corp";
+  const entityLabel = isLLC ? "limited liability company" : isNonprofit ? "nonprofit corporation" : "corporation";
+  const governingBody = isLLC ? "members/managers" : "Board of Directors";
+  const companyName = company?.name || "the Company";
+  const stateOfInc = company?.state_of_incorporation || "Wisconsin";
+  const pw = doc.internal.pageSize.getWidth();
+
+  const hasOfficerData = (data.officers && data.officers.length > 0);
+  const hasShareholderData = (data.shareholders && data.shareholders.length > 0);
+  const hasDirectorData = (data.directors && data.directors.length > 0);
+
+  // 1. Formation
+  y += 3;
+  y = checkPageBreak(doc, y, 40);
+  y = addSectionTitle(doc, y, "Formation & Organization");
+
+  const incDate = company?.incorporation_date
+    ? new Date(company.incorporation_date + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+    : "the date of filing";
+  const formationDoc = isLLC ? "Articles of Organization" : "Articles of Incorporation";
+
+  y = addResolutionBlock(doc, y, "Ratification of Formation",
+    `WHEREAS, the ${formationDoc} of ${companyName} were filed with the ${stateOfInc} Department of Financial Institutions on ${incDate}, thereby forming the ${entityLabel}; and\n\nWHEREAS, this organizational meeting has been called for the purpose of completing the organization of the ${entityLabel}, adopting initial resolutions, and transacting such other business as may properly come before the meeting;\n\nNOW, THEREFORE, BE IT RESOLVED, that the filing of the ${formationDoc} and the formation of the ${entityLabel} under the laws of the State of ${stateOfInc} are hereby ratified and confirmed.`);
+
+  // 2. Registered Agent
+  if (company?.registered_agent_name) {
+    y = checkPageBreak(doc, y, 30);
+    y = addSectionTitle(doc, y, "Registered Agent");
+    const agentAddr = [company.registered_agent_address, company.registered_agent_city, company.registered_agent_state, company.registered_agent_zip].filter(Boolean).join(", ");
+    y = addResolutionBlock(doc, y, "Appointment of Registered Agent",
+      `RESOLVED, that ${company.registered_agent_name}${agentAddr ? `, located at ${agentAddr},` : ""} is hereby confirmed as the registered agent of the ${entityLabel} in the State of ${stateOfInc}, and the proper ${isLLC ? "managers" : "officers"} are authorized to execute any documents necessary to maintain the registered agent designation.`);
+  }
+
+  // 3. Fiscal Year & Accounting
+  y = checkPageBreak(doc, y, 30);
+  y = addSectionTitle(doc, y, "Fiscal Year & Accounting");
+  const fiscalEnd = company?.fiscal_year_end || "December 31";
+  const acctMethod = company?.accounting_method || "cash basis";
+  y = addResolutionBlock(doc, y, "Adoption of Fiscal Year & Accounting Method",
+    `RESOLVED, that the fiscal year of the ${entityLabel} shall end on ${fiscalEnd} of each year, and that the ${entityLabel} shall maintain its books and records on the ${acctMethod} method of accounting.`);
+
+  // 4. Officers
+  const officerSource = hasOfficerData ? data.officers! :
+    data.companyOfficers ? (() => {
+      const o = data.companyOfficers;
+      const list: { title: string; name: string }[] = [];
+      if (o.president) list.push({ title: isLLC ? "Managing Member" : "President", name: o.president });
+      if (o.vice_president) list.push({ title: isLLC ? "Member" : "Vice President", name: o.vice_president });
+      if (o.secretary) list.push({ title: "Secretary", name: o.secretary });
+      if (o.treasurer) list.push({ title: "Treasurer", name: o.treasurer });
+      return list;
+    })() : [];
+
+  if (officerSource.length > 0) {
+    y = checkPageBreak(doc, y, 30 + officerSource.length * 7);
+    y = addSectionTitle(doc, y, isLLC ? "Managers / Officers" : "Election of Officers");
+    const officerLines = officerSource.map((o: any) => `${o.name} as ${o.title}`).join("; ");
+    y = addResolutionBlock(doc, y, `Initial ${isLLC ? "Managers/Officers" : "Officers"}`,
+      `RESOLVED, that the following persons are hereby elected as the initial ${isLLC ? "managers/officers" : "officers"} of the ${entityLabel}, to serve until their successors are duly elected and qualified:\n\n${officerLines}.`);
+    autoTable(doc, {
+      startY: y,
+      head: [["Title", "Name"]],
+      body: officerSource.map((o: any) => [o.title, o.name]),
+      theme: "grid",
+      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8 },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 6;
+  }
+
+  // 5. Directors (Corp only)
+  if (!isLLC) {
+    const directorSource = hasDirectorData
+      ? data.directors!.map((d: any) => d.director_name)
+      : (data.companyDirectors || []).map((d: any) => d.name);
+    if (directorSource.length > 0) {
+      y = checkPageBreak(doc, y, 30 + directorSource.length * 7);
+      y = addSectionTitle(doc, y, "Board of Directors");
+      y = addResolutionBlock(doc, y, "Election of Board of Directors",
+        `RESOLVED, that the following persons are hereby elected as the initial Board of Directors of the ${entityLabel}, to serve until the first annual meeting of ${isNonprofit ? "the board" : "shareholders"} and until their successors are duly elected and qualified:\n\n${directorSource.join("; ")}.`);
+    }
+  }
+
+  // 6. Members / Shareholders
+  const shareholderSource = hasShareholderData
+    ? data.shareholders!.map((s: any) => ({ name: s.shareholder_name, shares: s.common_shares }))
+    : (data.companyShareholders || []).map((s: any) => ({ name: s.name, shares: null }));
+
+  if (shareholderSource.length > 0) {
+    y = checkPageBreak(doc, y, 30 + shareholderSource.length * 7);
+    const memberLabel = isLLC ? "Members" : "Shareholders";
+    y = addSectionTitle(doc, y, `Initial ${memberLabel}`);
+    if (isLLC) {
+      y = addResolutionBlock(doc, y, "Recognition of Initial Members",
+        `RESOLVED, that the following persons are hereby recognized as the initial members of the ${entityLabel}, having made their respective capital contributions as set forth in the Operating Agreement:\n\n${shareholderSource.map((s: any) => s.name).join("; ")}.`);
+    } else {
+      y = addResolutionBlock(doc, y, "Authorization of Stock Issuance",
+        `RESOLVED, that the ${entityLabel} is authorized to issue shares of stock to the following initial shareholders:\n\n${shareholderSource.map((s: any) => s.name + (s.shares ? ` (${s.shares.toLocaleString()} shares)` : "")).join("; ")}.`);
+    }
+  }
+
+  // 7. Operating Agreement / Bylaws
+  y = checkPageBreak(doc, y, 30);
+  y = addSectionTitle(doc, y, isLLC ? "Operating Agreement" : "Bylaws");
+  y = addResolutionBlock(doc, y, isLLC ? "Adoption of Operating Agreement" : "Adoption of Bylaws",
+    isLLC
+      ? `RESOLVED, that the Operating Agreement presented to and reviewed by the members at this meeting is hereby adopted as the Operating Agreement of the ${entityLabel}, and the Secretary is directed to insert a copy of the Operating Agreement in the company's records.`
+      : `RESOLVED, that the Bylaws presented to and reviewed by the ${governingBody} at this meeting are hereby adopted as the Bylaws of the ${entityLabel}, and the Secretary is directed to insert a copy of the Bylaws in the corporate minute book.`);
+
+  // 8. Banking
+  const bankSource = data.companyBanks || [];
+  const signerSource = data.companyBankSigners || [];
+  if (bankSource.length > 0) {
+    y = checkPageBreak(doc, y, 30 + bankSource.length * 7);
+    y = addSectionTitle(doc, y, "Banking Resolutions");
+    bankSource.forEach((bank: any) => {
+      const bankSigners = signerSource.filter((s: any) => s.bank_id === bank.id);
+      const signerNames = bankSigners.map((s: any) => `${s.signer_name}${s.title ? `, ${s.title}` : ""}`).join("; ");
+      y = addResolutionBlock(doc, y, `Authorize Account — ${bank.bank_name}`,
+        `RESOLVED, that the ${entityLabel} is hereby authorized to open and maintain a ${bank.account_type || "checking"} account at ${bank.bank_name}${bank.city ? `, ${bank.city}` : ""}${bank.state ? `, ${bank.state}` : ""}${signerNames ? `, and that the following persons are hereby authorized as signatories on said account: ${signerNames}` : ""}.`);
+    });
+  }
+
+  // 9. S Corp Election
+  if (isSCorp || company?.s_election_date) {
+    y = checkPageBreak(doc, y, 30);
+    y = addSectionTitle(doc, y, "S Corporation Election");
+    const sDate = company?.s_election_date
+      ? new Date(company.s_election_date + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+      : "the earliest permissible date";
+    y = addResolutionBlock(doc, y, "S Corporation Election (IRC § 1362)",
+      `RESOLVED, that the ${entityLabel} hereby elects to be treated as an S Corporation under Subchapter S of the Internal Revenue Code, effective ${sDate}, and the proper officers are authorized and directed to prepare and file IRS Form 2553 and any corresponding state forms, with all shareholders consenting to such election.`);
+  }
+
+  // 10. Business Purpose
+  if (company?.business_purpose) {
+    y = checkPageBreak(doc, y, 30);
+    y = addSectionTitle(doc, y, "Business Purpose");
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(30, 30, 30);
+    const bpLines = doc.splitTextToSize(`The ${entityLabel} is organized for the following purpose: ${company.business_purpose}`, pw - 28);
+    doc.text(bpLines, 14, y);
+    y += bpLines.length * 3.5 + 5;
+  }
+
+  // 11. Seal
+  if (company?.seal_type && company.seal_type !== "no_seal") {
+    y = checkPageBreak(doc, y, 20);
+    y = addResolutionBlock(doc, y, "Adoption of Corporate Seal",
+      `RESOLVED, that the ${entityLabel} shall adopt a corporate seal in the form presented to and approved at this meeting.`);
+  }
+
+  // 12. General Authorization
+  y = checkPageBreak(doc, y, 30);
+  y = addSectionTitle(doc, y, "General Authorization");
+  y = addResolutionBlock(doc, y, "Authorization to Take All Necessary Actions",
+    `RESOLVED, that the ${isLLC ? "managers" : "officers"} of the ${entityLabel} are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.`);
+
+  return y;
+}
+
 export function exportMeetingMinutesPDF(data: MeetingData) {
   const doc = new jsPDF();
   const { meeting, company } = data;
@@ -330,6 +520,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const lines1244 = doc.splitTextToSize(section1244Text, doc.internal.pageSize.getWidth() - 28);
     doc.text(lines1244, 14, y);
     y += lines1244.length * 3.5 + 6;
+  }
+
+  // ── Organizational Meeting Boilerplate (auto-generated from company data) ──
+  if (meeting.meeting_type === "Organizational Meeting") {
+    y = addOrganizationalBoilerplate(doc, y, data);
   }
 
   // Directors
