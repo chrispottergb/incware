@@ -34,6 +34,7 @@ import ConflictOfInterestGenerator from "@/components/company/ConflictOfInterest
 import CounselTab from "@/components/company/CounselTab";
 import BanksTab from "@/components/company/BanksTab";
 import RelationshipsTab from "@/components/company/RelationshipsTab";
+import { getTerminology } from "@/lib/entity-terminology";
 
 export default function CompanyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -196,7 +197,7 @@ export default function CompanyDetail() {
               { value: "incorporation", label: "Incorporation Info" },
               { value: "organization", label: "Organizational Info" },
               { value: "meetings", label: "Meetings" },
-              { value: "shareholders", label: company.entity_type === "LLC" ? "Members & Interest" : "Shareholders & Stock" },
+              { value: "shareholders", label: getTerminology(company.entity_type).shareholdersTab },
               { value: "timeline", label: "Timeline" },
               { value: "counsel", label: "Counsel" },
               { value: "banks", label: "Banks" },

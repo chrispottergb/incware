@@ -23,6 +23,7 @@ import {
   exportResolutionsPDF,
   exportFinancialsPDF,
 } from "@/lib/meeting-pdf-export";
+import { getTerminology } from "@/lib/entity-terminology";
 
 export default function MeetingDetail() {
   const { id, meetingId } = useParams<{ id: string; meetingId: string }>();
@@ -350,10 +351,12 @@ export default function MeetingDetail() {
       companyBankSigners,
     });
 
+  const term = getTerminology(company?.entity_type);
+
   const subTabs = [
     { value: "info", label: "Meeting Info" },
     { value: "financials", label: "Financial" },
-    { value: "shareholders", label: "Shareholders/Members" },
+    { value: "shareholders", label: term.shareholdersSubTab },
     { value: "directors", label: "Directors" },
     { value: "officers", label: "Officers" },
     { value: "counsel", label: "Counsel" },
@@ -437,9 +440,9 @@ export default function MeetingDetail() {
               <PrintPreviewButton
                 label="Print"
                 generatePDF={() => exportSectionPDF(
-                  company?.entity_type === "LLC" ? "Members" : "Shareholders",
+                  term.shareholders,
                   company, meeting,
-                  ["Name", "Common Shares", "Preferred Shares", "Distribution", "Dist. Amount", "Basis", "Add'l Capital"],
+                  ["Name", term.isLLC ? "Membership Units" : "Common Shares", term.isLLC ? "Profits Interest Units" : "Preferred Shares", "Distribution", "Dist. Amount", "Basis", "Add'l Capital"],
                   shareholders.map(s => [
                     s.shareholder_name,
                     s.common_shares?.toLocaleString() ?? "—",
@@ -450,18 +453,18 @@ export default function MeetingDetail() {
                     s.additional_capital_contribution != null ? `$${Number(s.additional_capital_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
                   ]),
                 )}
-                fileName={`shareholders-${meetingFileName}`}
+                fileName={`${term.shareholders.toLowerCase()}-${meetingFileName}`}
               />
             </div>
             <MeetingSubTable meetingId={meeting.id} tableName="meeting_shareholders"
-              title={company?.entity_type === "LLC" ? "Members" : "Shareholders / Members"}
+              title={term.shareholders}
               columns={[
-                { key: "shareholder_name", label: company?.entity_type === "LLC" ? "Member Name" : "Name", required: true },
-                { key: "common_shares", label: company?.entity_type === "LLC" ? "Membership Units" : "Common Shares", type: "number" },
-                { key: "preferred_shares", label: company?.entity_type === "LLC" ? "Profits Interest Units" : "Preferred Shares", type: "number" },
+                { key: "shareholder_name", label: `${term.shareholder} Name`, required: true },
+                { key: "common_shares", label: term.isLLC ? "Membership Units" : "Common Shares", type: "number" },
+                { key: "preferred_shares", label: term.isLLC ? "Profits Interest Units" : "Preferred Shares", type: "number" },
                 { key: "distribution", label: "Distribution" },
                 { key: "distribution_amount", label: "Distribution Amount", type: "number" },
-                { key: "basis", label: company?.entity_type === "LLC" ? "Member Basis" : "Shareholder Basis", type: "number" },
+                { key: "basis", label: `${term.shareholder} Basis`, type: "number" },
                 { key: "additional_capital_contribution", label: "Additional Capital Contribution", type: "number" },
               ]}
             />
