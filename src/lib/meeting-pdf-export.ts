@@ -354,7 +354,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
     y = addSectionTitle(doc, y, isLLC ? "Managers / Officers" : "Election of Officers");
     const officerLines = officerSource.map((o: any) => `${o.name} as ${o.title}`).join("; ");
     y = addResolutionBlock(doc, y, `Initial ${isLLC ? "Managers/Officers" : "Officers"}`,
-      `RESOLVED, that the following persons are hereby elected as the initial ${isLLC ? "managers/officers" : "officers"} of the ${entityLabel}, to serve until their successors are duly elected and qualified:\n\n${officerLines}.`);
+      `RESOLVED, that the following persons are hereby ${isLLC ? "appointed" : "elected"} as the initial ${isLLC ? "managers/officers" : "officers"} of the ${entityLabel}, to serve until their successors are duly ${isLLC ? "appointed" : "elected"} and qualified:\n\n${officerLines}.`);
     autoTable(doc, {
       startY: y,
       head: [["Title", "Name"]],
@@ -428,7 +428,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
       ? new Date(company.s_election_date + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
       : "the earliest permissible date";
     y = addResolutionBlock(doc, y, "S Corporation Election (IRC § 1362)",
-      `RESOLVED, that the ${entityLabel} hereby elects to be treated as an S Corporation under Subchapter S of the Internal Revenue Code, effective ${sDate}, and the proper officers are authorized and directed to prepare and file IRS Form 2553 and any corresponding state forms, with all shareholders consenting to such election.`);
+      `RESOLVED, that the ${entityLabel} hereby elects to be treated as an S Corporation under Subchapter S of the Internal Revenue Code, effective ${sDate}, and the proper ${isLLC ? "managers" : "officers"} are authorized and directed to prepare and file IRS Form 2553 and any corresponding state forms, with all ${isLLC ? "members" : "shareholders"} consenting to such election.`);
   }
 
   // 10. Business Purpose
@@ -466,6 +466,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   const entityType = company?.entity_type || "Corporation";
   const meetingDate = new Date(meeting.meeting_date + "T00:00:00").toLocaleDateString();
   const isWrittenConsent = meeting.meeting_type === "Written Consent";
+  const isLLC = entityType?.toLowerCase().includes("llc") || entityType?.toLowerCase().includes("limited liability");
 
   addDFIHeader(doc, isWrittenConsent ? "Written Consent" : `${meeting.meeting_type} — Minutes`, companyName, entityType, meeting, company);
 
@@ -492,8 +493,8 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   if (meeting.tax_year) y = addLabelValue(doc, y, "Tax Year", String(meeting.tax_year));
   if (meeting.others_present) y = addLabelValue(doc, y, "Others Present", meeting.others_present);
 
-  // Section 1244 Stock Plan - include in Organizational Meeting if checked
-  if (meeting.meeting_type === "Organizational Meeting" && company?.election_1244) {
+  // Section 1244 Stock Plan - include in Organizational Meeting if checked (Corp only, not applicable to LLCs)
+  if (meeting.meeting_type === "Organizational Meeting" && company?.election_1244 && !isLLC) {
     y += 3;
     y = checkPageBreak(doc, y, 60);
     y = addSectionTitle(doc, y, "Section 1244 Stock Plan");
