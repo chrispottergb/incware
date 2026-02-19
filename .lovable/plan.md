@@ -1,15 +1,17 @@
 
 
-## Overwrite IncorporationTab.tsx
+## Enable S-Corp Tax Election for LLCs
 
-Replace the existing `src/components/company/IncorporationTab.tsx` with the user-uploaded version at `user-uploads://IncorporationTab.tsx`.
+### Problem
+The current `IncorporationTab.tsx` hides the S-Election Date field for LLCs (`showSElection: false` on line 76). However, LLCs can elect to be taxed as an S-Corporation by filing IRS Form 2553, so this field must be available.
 
-### Technical Details
-- **File to overwrite**: `src/components/company/IncorporationTab.tsx`
-- **Source**: `user-uploads://IncorporationTab.tsx` (667 lines)
-- The uploaded file uses the same imports and patterns already present in the project (Supabase client, shadcn/ui components, react-query, sonner toasts, date-fns, etc.)
-- No new dependencies are required -- all imports reference packages and components already installed/available in the project.
+### Change (single edit in `src/components/company/IncorporationTab.tsx`)
 
-### Steps
-1. Copy `user-uploads://IncorporationTab.tsx` to `src/components/company/IncorporationTab.tsx`, fully replacing the existing file.
+**Line 76**: Change `showSElection: false` to `showSElection: true` inside the LLC case of `getEquityCardConfig()`.
 
+This will:
+- Show the "S-Election Date" date picker on the Incorporation tab when the entity type is LLC
+- Display it in the read-only summary card as well (already handled by the existing conditional at line 385)
+- Continue to save/load the value via the existing `s_election_date` database field
+
+No other files need to change. The PDF export already supports S-Corp election for LLCs (from the earlier terminology fix).
