@@ -73,7 +73,7 @@ function getEquityCardConfig(entityType: string) {
         description: "LLC membership units and governance structure",
         showAuthorizedShares: false,
         showParValue: false,
-        showSElection: false,
+        showSElection: true,
         show1244: false,
         showSeal: true,
         showMembershipUnits: true,
