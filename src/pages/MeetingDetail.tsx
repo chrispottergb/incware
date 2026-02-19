@@ -56,6 +56,58 @@ export default function MeetingDetail() {
     enabled: !!id,
   });
 
+  const isOrganizational = meeting?.meeting_type === "Organizational Meeting";
+
+  // Fetch company-level data for organizational meeting boilerplate
+  const { data: companyOfficers } = useQuery({
+    queryKey: ["officers", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("officers").select("*").eq("company_id", id!).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id && !!isOrganizational,
+  });
+
+  const { data: companyShareholders = [] } = useQuery({
+    queryKey: ["shareholders", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("shareholders").select("*").eq("company_id", id!).order("created_at");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id && !!isOrganizational,
+  });
+
+  const { data: companyDirectors = [] } = useQuery({
+    queryKey: ["directors", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("directors").select("*").eq("company_id", id!).order("created_at");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id && !!isOrganizational,
+  });
+
+  const { data: companyBanks = [] } = useQuery({
+    queryKey: ["company_banks", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("company_banks").select("*").eq("company_id", id!).order("created_at");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id && !!isOrganizational,
+  });
+
+  const { data: companyBankSigners = [] } = useQuery({
+    queryKey: ["bank_authorized_signers", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("bank_authorized_signers").select("*").eq("company_id", id!).order("created_at");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id && !!isOrganizational,
+  });
   // Fetch prior year meeting for comparison (most recent meeting before this one for same company)
   const { data: priorMeeting } = useQuery({
     queryKey: ["prior_meeting", id, meeting?.meeting_date],
@@ -291,6 +343,11 @@ export default function MeetingDetail() {
         loans: priorLoans,
         authorizedSigners: priorSigners,
       } : undefined,
+      companyOfficers: companyOfficers || undefined,
+      companyShareholders,
+      companyDirectors,
+      companyBanks,
+      companyBankSigners,
     });
 
   const subTabs = [
