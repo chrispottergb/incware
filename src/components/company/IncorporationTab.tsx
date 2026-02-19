@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Save, Shield, Building2, Share2, UserCheck, ChevronDown, CalendarIcon } from "lucide-react";
+import { Loader2, Save, Shield, Building2, Share2, UserCheck, ChevronDown, CalendarIcon, Users, Heart } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import WIComplianceChecklist from "./WIComplianceChecklist";
@@ -62,6 +62,82 @@ const US_STATES = [
   "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
   "VA","WA","WV","WI","WY","DC",
 ];
+
+// ─── Entity-aware card config ────────────────────────────────────────────────
+function getEquityCardConfig(entityType: string) {
+  switch (entityType) {
+    case "LLC":
+      return {
+        title: "Membership Interest",
+        icon: <Users className="h-3.5 w-3.5 text-primary" />,
+        description: "LLC membership units and governance structure",
+        showAuthorizedShares: false,
+        showParValue: false,
+        showSElection: false,
+        show1244: false,
+        showSeal: true,
+        showMembershipUnits: true,
+        showPartnershipInterest: false,
+        authorizedLabel: "Authorized Units",
+      };
+    case "S-Corp":
+      return {
+        title: "Shares & Elections",
+        icon: <Share2 className="h-3.5 w-3.5 text-primary" />,
+        description: "S-Corporation shares, par value, and tax elections",
+        showAuthorizedShares: true,
+        showParValue: true,
+        showSElection: true,
+        show1244: true,
+        showSeal: true,
+        showMembershipUnits: false,
+        showPartnershipInterest: false,
+        authorizedLabel: "Authorized Shares",
+      };
+    case "Partnership":
+      return {
+        title: "Partnership Interests",
+        icon: <Users className="h-3.5 w-3.5 text-primary" />,
+        description: "Partnership unit allocation and interest structure",
+        showAuthorizedShares: false,
+        showParValue: false,
+        showSElection: false,
+        show1244: false,
+        showSeal: false,
+        showMembershipUnits: false,
+        showPartnershipInterest: true,
+        authorizedLabel: "Total Partnership Units",
+      };
+    case "Non-Profit":
+      return {
+        title: "Governance",
+        icon: <Heart className="h-3.5 w-3.5 text-primary" />,
+        description: "Non-profit organizational governance",
+        showAuthorizedShares: false,
+        showParValue: false,
+        showSElection: false,
+        show1244: false,
+        showSeal: true,
+        showMembershipUnits: false,
+        showPartnershipInterest: false,
+        authorizedLabel: "",
+      };
+    default: // Corporation
+      return {
+        title: "Shares & Elections",
+        icon: <Share2 className="h-3.5 w-3.5 text-primary" />,
+        description: "Authorized shares, par value, and corporate elections",
+        showAuthorizedShares: true,
+        showParValue: true,
+        showSElection: false,
+        show1244: true,
+        showSeal: true,
+        showMembershipUnits: false,
+        showPartnershipInterest: false,
+        authorizedLabel: "Authorized Shares",
+      };
+  }
+}
 
 type Company = Tables<"companies">;
 
@@ -112,6 +188,9 @@ export default function IncorporationTab({ company }: Props) {
 
   const { handleZipChange: handleAgentZip } = useZipLookup(handleAgentZipResult);
   const { handleZipChange: handleCompanyZip } = useZipLookup(handleCompanyZipResult);
+
+  // Derive card config reactively from current entity_type
+  const equityCard = getEquityCardConfig(form.entity_type);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -284,76 +363,168 @@ export default function IncorporationTab({ company }: Props) {
         </CardContent>
       </Card>
 
-      {/* Shares & Elections */}
+      {/* ─── Dynamic Equity / Governance Card ─────────────────────────────────── */}
       <Card>
         <CardHeader className="pb-2 pt-4 px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Share2 className="h-3.5 w-3.5 text-primary" />
-              <CardTitle className="card-section-title">Shares & Elections</CardTitle>
+              {equityCard.icon}
+              <CardTitle className="card-section-title">{equityCard.title}</CardTitle>
             </div>
             <SectionPdfActions config={{
-              title: "Shares & Elections",
+              title: equityCard.title,
               companyName: company.name,
               fields: [
-                { label: "Authorized Shares", value: form.authorized_shares },
-                { label: "Par Value Type", value: form.par_value_type === "par" ? "Par Value" : "No Par Value" },
-                { label: "Par Value ($)", value: form.par_value },
-                { label: "S-Election Date", value: form.s_election_date ? new Date(form.s_election_date + "T00:00:00").toLocaleDateString() : "" },
-                { label: "Seal", value: form.seal_type === "seal" ? "Seal" : "No Seal" },
-                { label: "Section 1244 Election", value: form.election_1244 ? "Yes" : "No" },
+                ...(equityCard.showAuthorizedShares || equityCard.showMembershipUnits || equityCard.showPartnershipInterest
+                  ? [{ label: equityCard.authorizedLabel, value: form.authorized_shares }]
+                  : []),
+                ...(equityCard.showParValue ? [
+                  { label: "Par Value Type", value: form.par_value_type === "par" ? "Par Value" : "No Par Value" },
+                  { label: "Par Value ($)", value: form.par_value },
+                ] : []),
+                ...(equityCard.showSElection ? [{ label: "S-Election Date", value: form.s_election_date ? new Date(form.s_election_date + "T00:00:00").toLocaleDateString() : "" }] : []),
+                ...(equityCard.showSeal ? [{ label: "Seal", value: form.seal_type === "seal" ? "Seal" : "No Seal" }] : []),
+                ...(equityCard.show1244 ? [{ label: "Section 1244 Election", value: form.election_1244 ? "Yes" : "No" }] : []),
               ],
             }} />
           </div>
+          {equityCard.description && (
+            <CardDescription className="text-[11px] mt-0.5">{equityCard.description}</CardDescription>
+          )}
         </CardHeader>
         <CardContent className="px-4 pb-4">
           <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="field-group">
-              <Label className="field-label">Authorized Shares</Label>
-              <Input type="number" className="h-8 text-sm" value={form.authorized_shares} onChange={(e) => update("authorized_shares", e.target.value)} />
-            </div>
-            <div className="field-group">
-              <Label className="field-label">Par Value Type</Label>
-              <Select value={form.par_value_type} onValueChange={(v) => update("par_value_type", v)}>
-                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="par">Par Value</SelectItem>
-                  <SelectItem value="no_par">No Par Value</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {form.par_value_type === "par" && (
+
+            {/* LLC: Membership Units */}
+            {equityCard.showMembershipUnits && (
+              <>
+                <div className="field-group">
+                  <Label className="field-label">Total Membership Units</Label>
+                  <Input type="number" className="h-8 text-sm" value={form.authorized_shares} onChange={(e) => update("authorized_shares", e.target.value)} placeholder="e.g. 1000" />
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">Voting Structure</Label>
+                  <Select defaultValue="one_per_unit">
+                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="one_per_unit">One Vote Per Unit</SelectItem>
+                      <SelectItem value="majority_in_interest">Majority in Interest</SelectItem>
+                      <SelectItem value="manager_managed">Manager Managed</SelectItem>
+                      <SelectItem value="member_managed">Member Managed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+
+            {/* Partnership: Partnership Interest */}
+            {equityCard.showPartnershipInterest && (
+              <>
+                <div className="field-group">
+                  <Label className="field-label">Total Partnership Units</Label>
+                  <Input type="number" className="h-8 text-sm" value={form.authorized_shares} onChange={(e) => update("authorized_shares", e.target.value)} placeholder="e.g. 100" />
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">Partnership Type</Label>
+                  <Select defaultValue="general">
+                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">General Partnership</SelectItem>
+                      <SelectItem value="limited">Limited Partnership (LP)</SelectItem>
+                      <SelectItem value="llp">Limited Liability Partnership (LLP)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+
+            {/* Corporation / S-Corp: Authorized Shares */}
+            {equityCard.showAuthorizedShares && (
               <div className="field-group">
-                <Label className="field-label">Par Value ($)</Label>
-                <Input type="number" step="0.01" className="h-8 text-sm" value={form.par_value} onChange={(e) => update("par_value", e.target.value)} />
+                <Label className="field-label">Authorized Shares</Label>
+                <Input type="number" className="h-8 text-sm" value={form.authorized_shares} onChange={(e) => update("authorized_shares", e.target.value)} />
               </div>
             )}
-            <div className="field-group">
-              <Label className="field-label">S-Election Date</Label>
-              <Input type="date" className="h-8 text-sm" value={form.s_election_date} onChange={(e) => update("s_election_date", e.target.value)} />
-            </div>
-            <div className="field-group">
-              <Label className="field-label">Seal</Label>
-              <Select value={form.seal_type} onValueChange={(v) => update("seal_type", v)}>
-                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="seal">Seal</SelectItem>
-                  <SelectItem value="no_seal">No Seal</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
+            {/* Par Value — Corporation & S-Corp only */}
+            {equityCard.showParValue && (
+              <>
+                <div className="field-group">
+                  <Label className="field-label">Par Value Type</Label>
+                  <Select value={form.par_value_type} onValueChange={(v) => update("par_value_type", v)}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="par">Par Value</SelectItem>
+                      <SelectItem value="no_par">No Par Value</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {form.par_value_type === "par" && (
+                  <div className="field-group">
+                    <Label className="field-label">Par Value ($)</Label>
+                    <Input type="number" step="0.01" className="h-8 text-sm" value={form.par_value} onChange={(e) => update("par_value", e.target.value)} />
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* S-Election Date — S-Corp only */}
+            {equityCard.showSElection && (
+              <div className="field-group">
+                <Label className="field-label">S-Election Date</Label>
+                <Input type="date" className="h-8 text-sm" value={form.s_election_date} onChange={(e) => update("s_election_date", e.target.value)} />
+              </div>
+            )}
+
+            {/* Seal — all except Partnership */}
+            {equityCard.showSeal && (
+              <div className="field-group">
+                <Label className="field-label">Seal</Label>
+                <Select value={form.seal_type} onValueChange={(v) => update("seal_type", v)}>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="seal">Seal</SelectItem>
+                    <SelectItem value="no_seal">No Seal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
           </div>
-          <div className="mt-3 flex items-center gap-2.5 rounded-md border border-border bg-muted/30 px-3 py-2.5">
-            <Checkbox
-              id="election_1244"
-              checked={form.election_1244}
-              onCheckedChange={(v) => update("election_1244", !!v)}
-            />
-            <div>
-              <Label htmlFor="election_1244" className="cursor-pointer text-sm font-medium">Section 1244 Election</Label>
-              <p className="text-[11px] text-muted-foreground">A loss on Section 1244 stock is treated as an ordinary loss</p>
+
+          {/* Section 1244 — Corporation & S-Corp only */}
+          {equityCard.show1244 && (
+            <div className="mt-3 flex items-center gap-2.5 rounded-md border border-border bg-muted/30 px-3 py-2.5">
+              <Checkbox
+                id="election_1244"
+                checked={form.election_1244}
+                onCheckedChange={(v) => update("election_1244", !!v)}
+              />
+              <div>
+                <Label htmlFor="election_1244" className="cursor-pointer text-sm font-medium">Section 1244 Election</Label>
+                <p className="text-[11px] text-muted-foreground">A loss on Section 1244 stock is treated as an ordinary loss</p>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* LLC: Membership Interest note */}
+          {equityCard.showMembershipUnits && (
+            <div className="mt-3 rounded-md border border-border bg-muted/30 px-3 py-2.5">
+              <p className="text-[11px] text-muted-foreground">
+                LLC members hold <strong>Membership Interest</strong> — not shares. Interest is expressed as units or percentage of ownership as defined in the Operating Agreement.
+              </p>
+            </div>
+          )}
+
+          {/* Non-Profit: No equity note */}
+          {form.entity_type === "Non-Profit" && (
+            <div className="mt-3 rounded-md border border-border bg-muted/30 px-3 py-2.5">
+              <p className="text-[11px] text-muted-foreground">
+                Non-profit organizations do not issue shares or membership interests. Governance is managed through the Board of Directors and organizational bylaws.
+              </p>
+            </div>
+          )}
+
         </CardContent>
       </Card>
 
