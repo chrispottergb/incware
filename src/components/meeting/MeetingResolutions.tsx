@@ -127,9 +127,11 @@ const RESOLUTION_TYPES: Record<string, { label: string; statute?: string; templa
 interface Props {
   meetingId: string;
   entityType: string;
+  meetingType?: string;
 }
 
-export default function MeetingResolutions({ meetingId, entityType }: Props) {
+export default function MeetingResolutions({ meetingId, entityType, meetingType }: Props) {
+  const isSpecialMeeting = meetingType === "Special Meeting of Board of Directors";
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -259,7 +261,7 @@ export default function MeetingResolutions({ meetingId, entityType }: Props) {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">Purpose / Resolution Type</Label>
+                <Label className="text-xs font-medium text-muted-foreground">Resolution Type</Label>
                 <Select value={purpose} onValueChange={handlePurposeChange}>
                   <SelectTrigger className="bg-background">
                     <SelectValue placeholder="Select resolution type..." />
@@ -313,9 +315,11 @@ export default function MeetingResolutions({ meetingId, entityType }: Props) {
                 <div key={r.id} className="rounded-lg border border-border p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">
-                        {r.purpose}
-                      </p>
+                      {isSpecialMeeting && (
+                        <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">
+                          {r.purpose}
+                        </p>
+                      )}
                       {match?.statute && (
                         <p className="text-[10px] text-muted-foreground mb-2">{match.statute}</p>
                       )}

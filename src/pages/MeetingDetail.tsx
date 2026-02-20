@@ -15,6 +15,7 @@ import MeetingBenefits from "@/components/meeting/MeetingBenefits";
 import MeetingLoans from "@/components/meeting/MeetingLoans";
 import MeetingAgreements from "@/components/meeting/MeetingAgreements";
 import PrintPreviewButton from "@/components/meeting/PrintPreviewButton";
+import DirectorReElection from "@/components/meeting/DirectorReElection";
 import { OFFICER_TITLE_OPTIONS } from "@/components/company/OrganizationTab";
 import {
   exportMeetingMinutesPDF,
@@ -58,7 +59,7 @@ export default function MeetingDetail() {
   });
 
   const isOrganizational = meeting?.meeting_type === "Organizational Meeting";
-
+  const isShareholderMeeting = meeting?.meeting_type === "Shareholder Meeting";
   // Fetch company-level data for organizational meeting boilerplate
   const { data: companyOfficers } = useQuery({
     queryKey: ["officers", id],
@@ -67,7 +68,7 @@ export default function MeetingDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!isOrganizational,
+    enabled: !!id && !!(isOrganizational || isShareholderMeeting),
   });
 
   const { data: companyShareholders = [] } = useQuery({
@@ -77,7 +78,7 @@ export default function MeetingDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!isOrganizational,
+    enabled: !!id && !!(isOrganizational || isShareholderMeeting),
   });
 
   const { data: companyDirectors = [] } = useQuery({
@@ -87,7 +88,7 @@ export default function MeetingDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!isOrganizational,
+    enabled: !!id && !!(isOrganizational || isShareholderMeeting),
   });
 
   const { data: companyBanks = [] } = useQuery({
@@ -97,7 +98,7 @@ export default function MeetingDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!isOrganizational,
+    enabled: !!id && !!(isOrganizational || isShareholderMeeting),
   });
 
   const { data: companyBankSigners = [] } = useQuery({
@@ -107,7 +108,7 @@ export default function MeetingDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!isOrganizational,
+    enabled: !!id && !!(isOrganizational || isShareholderMeeting),
   });
   // Fetch prior year meeting for comparison (most recent meeting before this one for same company)
   const { data: priorMeeting } = useQuery({
@@ -472,6 +473,9 @@ export default function MeetingDetail() {
         </TabsContent>
         <TabsContent value="directors" className="mt-5">
           <div className="space-y-4">
+            {isShareholderMeeting && companyDirectors.length > 0 && (
+              <DirectorReElection directors={companyDirectors} shareholders={companyShareholders} />
+            )}
             <div className="flex justify-end">
               <PrintPreviewButton
                 label="Print"
@@ -568,7 +572,7 @@ export default function MeetingDetail() {
                 fileName={`resolutions-${meetingFileName}`}
               />
             </div>
-            <MeetingResolutions meetingId={meeting.id} entityType={company?.entity_type || "Corporation"} />
+            <MeetingResolutions meetingId={meeting.id} entityType={company?.entity_type || "Corporation"} meetingType={meeting.meeting_type} />
           </div>
         </TabsContent>
         <TabsContent value="benefits" className="mt-5">

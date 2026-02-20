@@ -837,11 +837,17 @@ export type Database = {
           escrow: number | null
           finance_company: string | null
           id: string
+          landlord_address: string | null
+          landlord_name: string | null
           lease_amount: number | null
           lease_date: string | null
+          lease_end_date: string | null
+          lease_start_date: string | null
+          lease_term: string | null
           make: string | null
           manufacturer: string | null
           model: string | null
+          monthly_payment: number | null
           mortgage: number | null
           ownership_type: string | null
           purchase_amount: number | null
@@ -864,11 +870,17 @@ export type Database = {
           escrow?: number | null
           finance_company?: string | null
           id?: string
+          landlord_address?: string | null
+          landlord_name?: string | null
           lease_amount?: number | null
           lease_date?: string | null
+          lease_end_date?: string | null
+          lease_start_date?: string | null
+          lease_term?: string | null
           make?: string | null
           manufacturer?: string | null
           model?: string | null
+          monthly_payment?: number | null
           mortgage?: number | null
           ownership_type?: string | null
           purchase_amount?: number | null
@@ -891,11 +903,17 @@ export type Database = {
           escrow?: number | null
           finance_company?: string | null
           id?: string
+          landlord_address?: string | null
+          landlord_name?: string | null
           lease_amount?: number | null
           lease_date?: string | null
+          lease_end_date?: string | null
+          lease_start_date?: string | null
+          lease_term?: string | null
           make?: string | null
           manufacturer?: string | null
           model?: string | null
+          monthly_payment?: number | null
           mortgage?: number | null
           ownership_type?: string | null
           purchase_amount?: number | null

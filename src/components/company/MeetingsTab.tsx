@@ -12,6 +12,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -69,6 +79,8 @@ export default function MeetingsTab({ companyId, company }: Props) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     meeting_date: "",
@@ -416,7 +428,8 @@ export default function MeetingsTab({ companyId, company }: Props) {
                   className="h-8 w-8 text-destructive/60 hover:text-destructive shrink-0"
                   onClick={(e) => {
                     e.stopPropagation();
-                    deleteMeeting.mutate(m.id);
+                    setDeletingId(m.id);
+                    setDeleteStep(1);
                   }}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -427,6 +440,48 @@ export default function MeetingsTab({ companyId, company }: Props) {
           ))}
         </div>
       )}
+
+      {/* Two-step delete confirmation */}
+      <AlertDialog open={deleteStep === 1} onOpenChange={(open) => { if (!open) { setDeleteStep(0); setDeletingId(null); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to delete this meeting?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will remove the meeting and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setDeleteStep(0); setDeletingId(null); }}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => setDeleteStep(2)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteStep === 2} onOpenChange={(open) => { if (!open) { setDeleteStep(0); setDeletingId(null); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Final Warning</AlertDialogTitle>
+            <AlertDialogDescription>
+              All information will be lost if you delete this meeting. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setDeleteStep(0); setDeletingId(null); }}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deletingId) deleteMeeting.mutate(deletingId);
+                setDeleteStep(0);
+                setDeletingId(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Meeting
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
