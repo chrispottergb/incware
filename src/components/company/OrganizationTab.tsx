@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -170,9 +170,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
     treasurer: "",
   });
 
-  const [lastOfficers, setLastOfficers] = useState<typeof officers>(undefined);
-  if (officers !== lastOfficers) {
-    setLastOfficers(officers);
+  useEffect(() => {
     if (officers) {
       setOfficerForm({
         president: officers.president ?? "",
@@ -181,7 +179,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
         treasurer: officers.treasurer ?? "",
       });
     }
-  }
+  }, [officers]);
 
   const saveOfficers = useMutation({
     mutationFn: async () => {
@@ -231,14 +229,12 @@ export default function OrganizationTab({ companyId, company }: Props) {
   // Maintain a local form state for director names (up to configured count)
   const directorCount = company.initial_directors_count || 3;
   const [directorNames, setDirectorNames] = useState<string[]>([]);
-  const [lastDirectors, setLastDirectorsData] = useState<typeof directors | undefined>(undefined);
-  if (directors !== lastDirectors) {
-    setLastDirectorsData(directors);
-    // Initialize from DB: fill slots with existing names, pad with empty strings
+
+  useEffect(() => {
     const names = directors.map((d) => d.name);
     while (names.length < directorCount) names.push("");
     setDirectorNames(names);
-  }
+  }, [directors, directorCount]);
 
   const saveDirectors = useMutation({
     mutationFn: async () => {
