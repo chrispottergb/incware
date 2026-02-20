@@ -54,7 +54,7 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
   // Form state for each type — updated with new fields
   const [vehicleForm, setVehicleForm] = useState({ year: "", make: "", model: "", cost: "", ownership_type: "owned", description: "", vin: "", purchase_date: "", purchase_amount: "" });
   const [equipmentForm, setEquipmentForm] = useState({ year: "", make: "", model: "", running_hours: "", manufacturer: "", ownership_type: "owned", description: "", purchase_date: "", purchase_amount: "", lease_date: "", lease_amount: "" });
-  const [leaseForm, setLeaseForm] = useState({ description: "", value: "" });
+  const [leaseForm, setLeaseForm] = useState({ description: "", value: "", address: "", landlord_name: "", landlord_address: "", lease_start_date: "", lease_end_date: "", lease_term: "", monthly_payment: "" });
   const [propertyForm, setPropertyForm] = useState({ address: "", address_2: "", finance_company: "", escrow: "", mortgage: "", taxes: "", description: "" });
 
   const { data: allAssets = [] } = useQuery({
@@ -97,7 +97,18 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
           description: equipmentForm.description || `${equipmentForm.manufacturer || ""} ${equipmentForm.make || ""} ${equipmentForm.model || ""}`.trim() || "Equipment",
         };
       } else if (activeTab === "lease") {
-        payload = { ...payload, description: leaseForm.description, value: leaseForm.value ? parseFloat(leaseForm.value) : null };
+        payload = {
+          ...payload,
+          description: leaseForm.description,
+          value: leaseForm.value ? parseFloat(leaseForm.value) : null,
+          address: leaseForm.address || null,
+          landlord_name: (leaseForm as any).landlord_name || null,
+          landlord_address: (leaseForm as any).landlord_address || null,
+          lease_start_date: (leaseForm as any).lease_start_date || null,
+          lease_end_date: (leaseForm as any).lease_end_date || null,
+          lease_term: (leaseForm as any).lease_term || null,
+          monthly_payment: (leaseForm as any).monthly_payment ? parseFloat((leaseForm as any).monthly_payment) : null,
+        } as any;
       } else if (activeTab === "property") {
       payload = {
           ...payload, address: propertyForm.address || null, address_2: propertyForm.address_2 || null,
@@ -141,7 +152,7 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
   const resetForm = () => {
     setVehicleForm({ year: "", make: "", model: "", cost: "", ownership_type: "owned", description: "", vin: "", purchase_date: "", purchase_amount: "" });
     setEquipmentForm({ year: "", make: "", model: "", running_hours: "", manufacturer: "", ownership_type: "owned", description: "", purchase_date: "", purchase_amount: "", lease_date: "", lease_amount: "" });
-    setLeaseForm({ description: "", value: "" });
+    setLeaseForm({ description: "", value: "", address: "", landlord_name: "", landlord_address: "", lease_start_date: "", lease_end_date: "", lease_term: "", monthly_payment: "" });
     setPropertyForm({ address: "", address_2: "", finance_company: "", escrow: "", mortgage: "", taxes: "", description: "" });
     setEditId(null);
   };
@@ -154,7 +165,7 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
     } else if (a.asset_type === "equipment") {
       setEquipmentForm({ year: a.year || "", make: a.make || "", model: a.model || "", running_hours: a.running_hours != null ? String(a.running_hours) : "", manufacturer: a.manufacturer || "", ownership_type: a.ownership_type || "owned", description: a.description || "", purchase_date: a.purchase_date || "", purchase_amount: a.purchase_amount != null ? String(a.purchase_amount) : "", lease_date: a.lease_date || "", lease_amount: a.lease_amount != null ? String(a.lease_amount) : "" });
     } else if (a.asset_type === "lease") {
-      setLeaseForm({ description: a.description || "", value: a.value != null ? String(a.value) : "" });
+      setLeaseForm({ description: a.description || "", value: a.value != null ? String(a.value) : "", address: a.address || "", landlord_name: (a as any).landlord_name || "", landlord_address: (a as any).landlord_address || "", lease_start_date: (a as any).lease_start_date || "", lease_end_date: (a as any).lease_end_date || "", lease_term: (a as any).lease_term || "", monthly_payment: (a as any).monthly_payment != null ? String((a as any).monthly_payment) : "" });
     } else if (a.asset_type === "property") {
       setPropertyForm({ address: a.address || "", address_2: (a as any).address_2 || "", finance_company: a.finance_company || "", escrow: a.escrow != null ? String(a.escrow) : "", mortgage: a.mortgage != null ? String(a.mortgage) : "", taxes: a.taxes != null ? String(a.taxes) : "", description: a.description || "" });
     }
@@ -183,15 +194,15 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
                   ? ["Year", "Make", "Model", "VIN", "Cost", "Ownership"]
                   : activeTab === "equipment"
                   ? ["Year", "Make", "Model", "Manufacturer", "Running Hrs", "Lease/Own"]
-                  : activeTab === "lease"
-                  ? ["Description", "Value"]
+                   : activeTab === "lease"
+                   ? ["Description", "Property Address", "Landlord", "Term", "Monthly", "Value"]
                   : ["Address", "Finance Co.", "Escrow", "Mortgage", "Taxes"],
-                rows: assets.map((a) => {
-                  if (activeTab === "vehicle") return [a.year || "—", a.make || "—", a.model || "—", (a as any).vin || "—", fmt(a.cost), a.ownership_type || "—"];
-                  if (activeTab === "equipment") return [a.year || "—", a.make || "—", a.model || "—", a.manufacturer || "—", a.running_hours?.toString() || "—", a.ownership_type || "—"];
-                  if (activeTab === "lease") return [a.description, fmt(a.value)];
-                  return [a.address || "—", a.finance_company || "—", fmt(a.escrow), fmt(a.mortgage), fmt(a.taxes)];
-                }),
+                 rows: assets.map((a) => {
+                   if (activeTab === "vehicle") return [a.year || "—", a.make || "—", a.model || "—", (a as any).vin || "—", fmt(a.cost), a.ownership_type || "—"];
+                   if (activeTab === "equipment") return [a.year || "—", a.make || "—", a.model || "—", a.manufacturer || "—", a.running_hours?.toString() || "—", a.ownership_type || "—"];
+                   if (activeTab === "lease") return [a.description, a.address || "—", (a as any).landlord_name || "—", (a as any).lease_term || "—", fmt((a as any).monthly_payment), fmt(a.value)];
+                   return [a.address || "—", a.finance_company || "—", fmt(a.escrow), fmt(a.mortgage), fmt(a.taxes)];
+                 }),
               },
             }}
           />
@@ -324,8 +335,42 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
                     <Input className="h-8 text-sm" value={leaseForm.description} onChange={(e) => setLeaseForm((p) => ({ ...p, description: e.target.value }))} required />
                   </div>
                   <div className="field-group">
-                    <Label className="field-label">Value ($)</Label>
-                    <Input type="number" step="0.01" className="h-8 text-sm" value={leaseForm.value} onChange={(e) => setLeaseForm((p) => ({ ...p, value: e.target.value }))} />
+                    <Label className="field-label">Property Address</Label>
+                    <Input className="h-8 text-sm" value={leaseForm.address} onChange={(e) => setLeaseForm((p) => ({ ...p, address: e.target.value }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Landlord Name</Label>
+                      <Input className="h-8 text-sm" value={leaseForm.landlord_name} onChange={(e) => setLeaseForm((p) => ({ ...p, landlord_name: e.target.value }))} />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Landlord Address</Label>
+                      <Input className="h-8 text-sm" value={leaseForm.landlord_address} onChange={(e) => setLeaseForm((p) => ({ ...p, landlord_address: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Lease Start Date</Label>
+                      <Input type="date" className="h-8 text-sm" value={leaseForm.lease_start_date} onChange={(e) => setLeaseForm((p) => ({ ...p, lease_start_date: e.target.value }))} />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Lease End Date</Label>
+                      <Input type="date" className="h-8 text-sm" value={leaseForm.lease_end_date} onChange={(e) => setLeaseForm((p) => ({ ...p, lease_end_date: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Lease Term</Label>
+                      <Input className="h-8 text-sm" value={leaseForm.lease_term} onChange={(e) => setLeaseForm((p) => ({ ...p, lease_term: e.target.value }))} placeholder="e.g. 12 months" />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Monthly Payment ($)</Label>
+                      <Input type="number" step="0.01" className="h-8 text-sm" value={leaseForm.monthly_payment} onChange={(e) => setLeaseForm((p) => ({ ...p, monthly_payment: e.target.value }))} />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Value ($)</Label>
+                      <Input type="number" step="0.01" className="h-8 text-sm" value={leaseForm.value} onChange={(e) => setLeaseForm((p) => ({ ...p, value: e.target.value }))} />
+                    </div>
                   </div>
                 </>
               )}
@@ -432,6 +477,10 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
                   {activeTab === "lease" && (
                     <>
                       <TableHead className="text-xs font-semibold h-8">Description</TableHead>
+                      <TableHead className="text-xs h-8">Property Address</TableHead>
+                      <TableHead className="text-xs h-8">Landlord</TableHead>
+                      <TableHead className="text-xs h-8">Term</TableHead>
+                      <TableHead className="text-xs text-right h-8">Monthly</TableHead>
                       <TableHead className="text-xs text-right h-8">Value</TableHead>
                     </>
                   )}
@@ -485,6 +534,10 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
                     {activeTab === "lease" && (
                       <>
                         <TableCell className="text-sm py-2 font-medium">{a.description}</TableCell>
+                        <TableCell className="text-sm py-2">{a.address || "—"}</TableCell>
+                        <TableCell className="text-sm py-2">{(a as any).landlord_name || "—"}</TableCell>
+                        <TableCell className="text-sm py-2">{(a as any).lease_term || "—"}</TableCell>
+                        <TableCell className="text-right font-mono text-xs py-2">{fmt((a as any).monthly_payment)}</TableCell>
                         <TableCell className="text-right font-mono text-xs py-2">{fmt(a.value)}</TableCell>
                       </>
                     )}
