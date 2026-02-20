@@ -256,9 +256,16 @@ export default function OrganizationTab({ companyId, company }: Props) {
 
   const addDirector = useMutation({
     mutationFn: async () => {
+      // Check for duplicate name (case-insensitive) before inserting
+      const duplicate = directors.find(
+        (d) => d.name.toLowerCase().trim() === newDirector.name.toLowerCase().trim()
+      );
+      if (duplicate) {
+        throw new Error(`A director named "${newDirector.name}" already exists for this company.`);
+      }
       const { error } = await supabase.from("directors").insert({
         company_id: companyId,
-        name: newDirector.name,
+        name: newDirector.name.trim(),
         address: newDirector.address || null,
         address_2: newDirector.address_2 || null,
         city: newDirector.city || null,
