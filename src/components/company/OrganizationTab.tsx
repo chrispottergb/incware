@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -14,27 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Plus, Trash2, Loader2, Save, Users, FileText, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import CompanyAssetsSection from "@/components/company/CompanyAssetsSection";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
-import { useZipLookup } from "@/hooks/useZipLookup";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
@@ -230,7 +214,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  // Directors
+  // Directors - simple name fields like officers
   const { data: directors = [] } = useQuery({
     queryKey: ["directors", companyId],
     queryFn: async () => {
@@ -238,68 +222,69 @@ export default function OrganizationTab({ companyId, company }: Props) {
         .from("directors")
         .select("*")
         .eq("company_id", companyId)
-        .order("name");
+        .order("created_at");
       if (error) throw error;
       return data;
     },
   });
 
-  const [directorDialog, setDirectorDialog] = useState(false);
-  const [newDirector, setNewDirector] = useState({
-    name: "",
-    address: "",
-    address_2: "",
-    city: "",
-    state: "",
-    zip: "",
-  });
+  // Maintain a local form state for director names (up to configured count)
+  const directorCount = company.initial_directors_count || 3;
+  const [directorNames, setDirectorNames] = useState<string[]>([]);
+  const [lastDirectors, setLastDirectorsData] = useState<typeof directors | undefined>(undefined);
+  if (directors !== lastDirectors) {
+    setLastDirectorsData(directors);
+    // Initialize from DB: fill slots with existing names, pad with empty strings
+    const names = directors.map((d) => d.name);
+    while (names.length < directorCount) names.push("");
+    setDirectorNames(names);
+  }
 
-  const addDirector = useMutation({
+  const saveDirectors = useMutation({
     mutationFn: async () => {
-      // Check for duplicate name (case-insensitive) before inserting
-      const duplicate = directors.find(
-        (d) => d.name.toLowerCase().trim() === newDirector.name.toLowerCase().trim()
-      );
-      if (duplicate) {
-        throw new Error(`A director named "${newDirector.name}" already exists for this company.`);
+      const trimmedNames = directorNames.map((n) => n.trim()).filter((n) => n !== "");
+      
+      // Delete all existing directors for this company
+      const { error: delError } = await supabase
+        .from("directors")
+        .delete()
+        .eq("company_id", companyId);
+      if (delError) throw delError;
+
+      // Insert the new list
+      if (trimmedNames.length > 0) {
+        // Deduplicate by lowercase name
+        const seen = new Set<string>();
+        const uniqueNames = trimmedNames.filter((n) => {
+          const lower = n.toLowerCase();
+          if (seen.has(lower)) return false;
+          seen.add(lower);
+          return true;
+        });
+        const { error: insError } = await supabase.from("directors").insert(
+          uniqueNames.map((name) => ({
+            company_id: companyId,
+            name,
+            added_date: new Date().toISOString().split("T")[0],
+          }))
+        );
+        if (insError) throw insError;
       }
-      const { error } = await supabase.from("directors").insert({
-        company_id: companyId,
-        name: newDirector.name.trim(),
-        address: newDirector.address || null,
-        address_2: newDirector.address_2 || null,
-        city: newDirector.city || null,
-        state: newDirector.state || null,
-        zip: newDirector.zip || null,
-        added_date: new Date().toISOString().split("T")[0],
-      });
-      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["directors", companyId] });
-      setDirectorDialog(false);
-      setNewDirector({ name: "", address: "", address_2: "", city: "", state: "", zip: "" });
-      toast.success("Director added!");
+      toast.success("Directors saved!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const handleDirectorZipResult = useCallback((result: { city: string; state: string }) => {
-    setNewDirector(prev => ({ ...prev, city: result.city, state: result.state }));
-  }, []);
-  const { handleZipChange: handleDirectorZipChange } = useZipLookup(handleDirectorZipResult);
+  const addDirectorSlot = () => {
+    setDirectorNames((prev) => [...prev, ""]);
+  };
 
-  const deleteDirector = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("directors").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["directors", companyId] });
-      toast.success("Director removed.");
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
+  const removeDirectorSlot = (index: number) => {
+    setDirectorNames((prev) => prev.filter((_, i) => i !== index));
+  };
 
 
   return (
@@ -416,114 +401,67 @@ export default function OrganizationTab({ companyId, company }: Props) {
         </CollapsibleTrigger>
         <CollapsibleContent className="mt-3">
           <Card>
-            <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between">
-              <CardDescription className="text-[11px] mt-0.5">Directors serve at the organizational meeting until the board is officially elected</CardDescription>
-              <div className="flex items-center gap-1">
+            <CardHeader className="pb-2 pt-4 px-4">
+              <div className="flex items-center justify-between">
+                <CardDescription className="text-[11px] mt-0.5">Enter the names of the initial directors for this company</CardDescription>
                 <SectionPdfActions config={{
                   title: "Initial List of Directors",
                   companyName: company.name,
-                  table: {
-                    headers: ["Director Name", "Business Address", "City", "State", "Zip"],
-                    rows: directors.map((d) => [d.name, d.address || "—", d.city || "—", d.state || "—", d.zip || "—"]),
-                  },
+                  fields: directorNames.filter((n) => n.trim()).map((n, i) => ({
+                    label: `Director ${i + 1}`,
+                    value: n.trim(),
+                  })),
                 }} />
-              <Dialog open={directorDialog} onOpenChange={setDirectorDialog}>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="outline" className="h-7 text-xs">
-                    <Plus className="mr-1 h-3 w-3" /> Add
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle className="font-display text-base">Add Director</DialogTitle>
-                  </DialogHeader>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      addDirector.mutate();
-                    }}
-                    className="space-y-3"
-                  >
-                    <div className="field-group">
-                      <Label className="field-label">Director Name</Label>
-                      <Input className="h-8 text-sm" value={newDirector.name} onChange={(e) => setNewDirector((p) => ({ ...p, name: e.target.value }))} required />
-                    </div>
-                    <div className="field-group">
-                      <Label className="field-label">Business Address</Label>
-                      <Input className="h-8 text-sm" value={newDirector.address} onChange={(e) => setNewDirector((p) => ({ ...p, address: e.target.value }))} />
-                    </div>
-                    <div className="field-group">
-                      <Label className="field-label">Address 2</Label>
-                      <Input className="h-8 text-sm" value={newDirector.address_2} onChange={(e) => setNewDirector((p) => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor, etc." />
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="field-group">
-                        <Label className="field-label">City</Label>
-                        <Input className="h-8 text-sm" value={newDirector.city} onChange={(e) => setNewDirector((p) => ({ ...p, city: e.target.value }))} />
-                      </div>
-                      <div className="field-group">
-                        <Label className="field-label">State</Label>
-                        <Select value={newDirector.state} onValueChange={(v) => setNewDirector((p) => ({ ...p, state: v }))}>
-                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
-                          <SelectContent>
-                            {US_STATES.map((s) => (
-                              <SelectItem key={s} value={s}>{s}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="field-group">
-                        <Label className="field-label">Zip</Label>
-                        <Input className="h-8 text-sm" value={newDirector.zip} onChange={(e) => { setNewDirector((p) => ({ ...p, zip: e.target.value })); handleDirectorZipChange(e.target.value); }} />
-                      </div>
-                    </div>
-                    <Button type="submit" className="w-full" size="sm" disabled={addDirector.isPending}>
-                      {addDirector.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                      Add Director
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
               </div>
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              {directors.length === 0 ? (
-                <div className="rounded-md border border-dashed border-border py-6 text-center">
-                  <Users className="mx-auto mb-1.5 h-6 w-6 text-muted-foreground/30" />
-                  <p className="text-xs text-muted-foreground">No directors added yet</p>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  saveDirectors.mutate();
+                }}
+                className="space-y-3"
+              >
+                <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
+                  {directorNames.map((name, index) => (
+                    <div key={index} className="field-group">
+                      <Label className="field-label">Director {index + 1}</Label>
+                      <div className="flex gap-1">
+                        <Input
+                          className="h-8 text-sm"
+                          value={name}
+                          onChange={(e) =>
+                            setDirectorNames((prev) =>
+                              prev.map((n, i) => (i === index ? e.target.value : n))
+                            )
+                          }
+                          placeholder="Director name"
+                        />
+                        {directorNames.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0 text-destructive/50 hover:text-destructive"
+                            onClick={() => removeDirectorSlot(index)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <div className="rounded-md border border-border overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/40 hover:bg-muted/40">
-                        <TableHead className="text-xs font-semibold h-8">Director Name</TableHead>
-                        <TableHead className="text-xs h-8">Business Address</TableHead>
-                        <TableHead className="text-xs h-8">City</TableHead>
-                        <TableHead className="text-xs h-8">State</TableHead>
-                        <TableHead className="text-xs h-8">Zip</TableHead>
-                        <TableHead className="w-10 h-8"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {directors.map((d) => (
-                        <TableRow key={d.id}>
-                          <TableCell className="font-medium text-sm py-2">{d.name}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground py-2">{d.address || "—"}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground py-2">{d.city || "—"}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground py-2">{d.state || "—"}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground py-2">{d.zip || "—"}</TableCell>
-                          <TableCell className="py-2">
-                            <Button variant="ghost" size="icon" onClick={() => deleteDirector.mutate(d.id)} className="h-6 w-6 text-destructive/50 hover:text-destructive">
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                <div className="flex items-center justify-between">
+                  <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={addDirectorSlot}>
+                    <Plus className="mr-1 h-3 w-3" /> Add Another Director
+                  </Button>
+                  <Button type="submit" disabled={saveDirectors.isPending} size="sm">
+                    {saveDirectors.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
+                    Save Directors
+                  </Button>
                 </div>
-              )}
+              </form>
             </CardContent>
           </Card>
         </CollapsibleContent>
