@@ -1,95 +1,32 @@
 
 
-## Implement 5 Document Changes
+## Fix "Initial List of Directors" -- Clean Up Duplicates and Improve the Section
 
-### 1. Directors Field -- Remove Dropdown (OrganizationTab.tsx)
+### Problem Identified
 
-The "Initial # of Directors" field under Filing and Articles Details is currently a plain number input, so no dropdown exists there. However, the user reports a dropdown "incorrectly pulling every director ever entered across all meetings." I will verify this at implementation time -- if a Select/dropdown exists anywhere in the Initial Directors section, it will be replaced with a plain text Input. If the field is already a text/number input, no change is needed.
+After investigating, the "Initial List of Directors" section is correctly querying only this company's directors (not other companies). However, the Access DB import process created **1,008 director rows** for only **134 unique names** -- massive duplication. This is why the section appears to be pulling "every director ever entered across all meetings." The import likely inserted a director row for every meeting-director combination instead of deduplicating.
 
-**File:** `src/components/company/OrganizationTab.tsx`
+### Changes
 
----
+#### 1. Clean Up Existing Duplicate Data
 
-### 2. Lease Records -- Add Required Fields
+Run a database migration that removes duplicate director entries, keeping only one row per unique name per company. This will reduce the 1,008 rows down to 134 unique directors for this company.
 
-The current Lease form only captures Description and Value. It needs to be expanded with: property address, landlord name, landlord address, lease start date, lease end date, lease term, and monthly payment amount.
+#### 2. Add Duplicate Prevention
 
-**Database migration:** Add columns to `company_assets` table:
-- `landlord_name` (text, nullable)
-- `landlord_address` (text, nullable)
-- `lease_start_date` (date, nullable)
-- `lease_end_date` (date, nullable)
-- `lease_term` (text, nullable)
-- `monthly_payment` (numeric, nullable)
+Add a unique constraint or application-level check so the same director name cannot be added twice to the same company, preventing this from happening again.
 
-**File:** `src/components/company/CompanyAssetsSection.tsx`
-- Expand `leaseForm` state to include all new fields
-- Update the lease form UI with inputs for each field
-- Update `saveAsset` mutation to include new fields in the payload
-- Update the lease table display to show the new columns
-- Use `address` field (already exists on `company_assets`) for the property address
+#### 3. Fix the Import Process
 
----
-
-### 3. Shareholder Annual Meeting -- Director Election Workflow
-
-For "Shareholder Meeting" type meetings, automate the director re-election workflow:
-- Auto-populate current shareholders as attendees
-- Pull in current board of directors
-- Display them as nominated for re-election
-- Show their approval by shareholders
-
-**File:** `src/pages/MeetingDetail.tsx`
-- Fetch shareholders and directors data when meeting type is "Shareholder Meeting"
-- Auto-populate a "Director Re-Election" section showing current directors nominated
-
-**File:** `src/components/meeting/MeetingResolutions.tsx` (or new component)
-- Add auto-generated resolution text for director re-election when meeting type is Shareholder Meeting
-- Pre-fill attendees from shareholders list
-
----
-
-### 4. Delete Meeting -- Two-Step Warning
-
-Replace the current single-click delete with a two-step confirmation dialog.
-
-**File:** `src/components/company/MeetingsTab.tsx`
-- Add state for tracking delete confirmation steps (`deleteStep`, `deletingId`)
-- First AlertDialog: "Are you sure you want to delete this meeting?"
-- On confirm, show second AlertDialog: "All information will be lost if you delete this meeting."
-- Only execute `deleteMeeting.mutate()` after both confirmations
-
----
-
-### 5. Resolutions -- Embed in Meetings and Fix Headers
-
-Resolutions should not appear as a standalone item. They should be embedded within the meeting they belong to. Remove the "Purpose" and "Resolution Text" black header labels from the resolution display. Purpose field should only appear for Special Meetings.
-
-**File:** `src/components/meeting/MeetingResolutions.tsx`
-- Remove the bold black "Purpose" and "Resolution Text" header labels from the resolution card display (lines 316-317)
-- Conditionally show the Purpose/type selector only for Special Meeting types (pass `meetingType` as a new prop)
-- For non-special meetings, still allow selecting a resolution template but don't display "Purpose" as a visible header label
-
-**File:** `src/pages/MeetingDetail.tsx`
-- Pass `meetingType` prop to `MeetingResolutions` component
-- Resolutions already render within the meeting detail page, so they are already "embedded" -- the fix is primarily about the header labels
+Review the Access DB import code (`src/pages/ImportAccess.tsx`) to ensure it deduplicates directors during import -- only inserting a director if one with the same name doesn't already exist for that company.
 
 ### Technical Details
 
-**Database migration required for item 2 only:**
-```sql
-ALTER TABLE company_assets
-  ADD COLUMN IF NOT EXISTS landlord_name text,
-  ADD COLUMN IF NOT EXISTS landlord_address text,
-  ADD COLUMN IF NOT EXISTS lease_start_date date,
-  ADD COLUMN IF NOT EXISTS lease_end_date date,
-  ADD COLUMN IF NOT EXISTS lease_term text,
-  ADD COLUMN IF NOT EXISTS monthly_payment numeric;
-```
+**Database migration:**
+- DELETE duplicate rows from `directors`, keeping the earliest `created_at` entry per (company_id, name) pair
+- Add a unique index on `(company_id, lower(name))` to prevent future duplicates
 
 **Files to modify:**
-- `src/components/company/OrganizationTab.tsx` (item 1 -- verify/fix)
-- `src/components/company/CompanyAssetsSection.tsx` (item 2 -- lease form expansion)
-- `src/pages/MeetingDetail.tsx` (items 3 and 5)
-- `src/components/company/MeetingsTab.tsx` (item 4 -- two-step delete)
-- `src/components/meeting/MeetingResolutions.tsx` (items 3 and 5)
+- `src/pages/ImportAccess.tsx` -- Add deduplication logic during import so directors aren't inserted multiple times
+- `src/components/company/OrganizationTab.tsx` -- Add a check before inserting a new director to warn if one with the same name already exists for this company
+
