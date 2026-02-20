@@ -660,6 +660,7 @@ export default function ImportAccess() {
             const dirTable = activeTables.find((t) => t.name === dirNameMapping.sourceTable);
             if (dirTable) {
               const dirRows = dirNameMapping.sourceTable === mainTable.name ? [row] : dirTable.data;
+              const seenDirectorNames = new Set<string>();
               for (const dirRow of dirRows) {
                 const dirRecord: Record<string, unknown> = { company_id: companyId };
                 for (const m of directorMappings) {
@@ -670,6 +671,9 @@ export default function ImportAccess() {
                   }
                 }
                 if (dirRecord.name) {
+                  const normalizedName = String(dirRecord.name).toLowerCase().trim();
+                  if (seenDirectorNames.has(normalizedName)) continue;
+                  seenDirectorNames.add(normalizedName);
                   await supabase.from("directors").insert(dirRecord as any);
                 }
               }
