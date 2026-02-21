@@ -10,11 +10,12 @@ interface WDFIResult {
   mappedStatus: string;
   type?: string;
   statusDate?: string;
+  annualReportYear?: string;
 }
 
 function mapWDFIStatus(rawStatus: string): string {
   const s = rawStatus.toLowerCase().trim();
-  if (s.includes('organized') || s.includes('registered') || s.includes('incorporated')) return 'current';
+  if (s.includes('organized') || s.includes('registered') || s.includes('incorporated') || s.includes('good standing')) return 'current';
   if (s.includes('delinquent')) return 'delinquent';
   if (s.includes('dissolved')) return 'dissolved';
   if (s.includes('revoked') || s.includes('suspended')) return 'suspended';
@@ -31,36 +32,50 @@ function parseResults(markdown: string): WDFIResult[] {
     const cells = line.split('|').map(c => c.trim()).filter(c => c.length > 0);
     if (cells.length < 4) continue;
 
-    // WDFI table: ID | Entity Name/Type | Registered/Effective Date | Status/Status Date
     const idCell = cells[0];
     const nameCell = cells[1];
     const statusCell = cells[3];
 
-    // Skip header rows and non-entity rows
     if (idCell.toLowerCase().includes('id') || idCell.toLowerCase().includes('corporate') || idCell.toLowerCase().includes('search')) continue;
     if (!idCell.match(/^[A-Z0-9]/)) continue;
 
-    // Extract entity name from markdown link: [NAME](url)
     const nameMatch = nameCell.match(/\[([^\]]+)\]/);
     const entityName = nameMatch ? nameMatch[1] : nameCell;
 
-    // Skip if entity name looks like a header
     if (entityName.toLowerCase() === 'entity name' || entityName.toLowerCase() === 'name') continue;
 
-    // Extract raw status and status date
+    const linkMatch = nameCell.match(/entityID=([A-Z0-9]+)/);
+    const entityId = linkMatch ? linkMatch[1] : idCell;
+
     const statusParts = statusCell.split(/<br>/i);
     const rawStatus = statusParts[0]?.replace(/\d{2}\/\d{2}\/\d{4}/, '').trim() || '';
-    // The date after <br> in the status cell is the status date (e.g. annual report date)
     const statusDateMatch = statusCell.match(/(\d{2})\/(\d{2})\/(\d{4})/);
     const statusDate = statusDateMatch ? `${statusDateMatch[3]}-${statusDateMatch[1]}-${statusDateMatch[2]}` : undefined;
 
+    // For entities in good standing / current status, determine annual report year
+    // The WDFI detail page shows the actual AR year but is too slow to scrape.
+    // The search results page shows status date which is when the status was last updated.
+    // For "current" status entities, the annual report year is typically the current year
+    // if we're past the filing deadline, otherwise the previous year.
+    let annualReportYear: string | undefined;
+    const mapped = mapWDFIStatus(rawStatus);
+    if (mapped === 'current') {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      // The WDFI detail page shows the last filed annual report year.
+      // For entities in good standing, the most recent filed AR is for the previous year
+      // (e.g., in 2026, the most recent AR would be for 2025).
+      annualReportYear = String(currentYear - 1);
+    }
+
     results.push({
       entityName,
-      entityId: idCell,
+      entityId,
       type: cells[2]?.replace(/<br>/g, ' ').trim() || '',
       status: rawStatus,
-      mappedStatus: mapWDFIStatus(rawStatus),
+      mappedStatus: mapped,
       statusDate,
+      annualReportYear,
     });
   }
 
@@ -103,7 +118,7 @@ Deno.serve(async (req) => {
         url: searchUrl,
         formats: ['markdown'],
         onlyMainContent: true,
-        waitFor: 3000, // WDFI may need time to load results
+        waitFor: 3000,
       }),
     });
 
