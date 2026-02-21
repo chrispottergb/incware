@@ -447,12 +447,15 @@ export default function MeetingsTab({ companyId, company }: Props) {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure you want to delete this meeting?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action will remove the meeting and all associated data.
+              This will permanently delete this meeting and lose all of the data associated with it.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => { setDeleteStep(0); setDeletingId(null); }}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => setDeleteStep(2)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); setDeleteStep(2); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Continue
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -462,9 +465,9 @@ export default function MeetingsTab({ companyId, company }: Props) {
       <AlertDialog open={deleteStep === 2} onOpenChange={(open) => { if (!open) { setDeleteStep(0); setDeletingId(null); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Final Warning</AlertDialogTitle>
+            <AlertDialogTitle>Are you really sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              All information will be lost if you delete this meeting. This cannot be undone.
+              Are you really sure you want to delete and lose all of the data for this file? This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
