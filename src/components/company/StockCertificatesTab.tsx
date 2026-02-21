@@ -62,6 +62,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
     share_class: t.defaultClass,
     num_shares: "",
     par_value: "",
+    par_value_type: "par" as "par" | "no_par",
     issue_date: "",
   });
 
@@ -70,7 +71,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
     : 1;
 
   const resetForm = () => {
-    setForm({ certificate_number: "", shareholder_id: "", share_class: t.defaultClass, num_shares: "", par_value: "", issue_date: "" });
+    setForm({ certificate_number: "", shareholder_id: "", share_class: t.defaultClass, num_shares: "", par_value: "", par_value_type: "par", issue_date: "" });
     setEditId(null);
   };
 
@@ -82,6 +83,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
       share_class: c.share_class || t.defaultClass,
       num_shares: String(c.num_shares || ""),
       par_value: c.par_value != null ? String(c.par_value) : "",
+      par_value_type: c.par_value == null ? "no_par" : "par",
       issue_date: c.issue_date || "",
     });
     setDialog(true);
@@ -94,7 +96,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
         shareholder_id: form.shareholder_id || null,
         share_class: form.share_class,
         num_shares: parseInt(form.num_shares) || 0,
-        par_value: form.par_value ? parseFloat(form.par_value) : null,
+        par_value: form.par_value_type === "no_par" ? null : (form.par_value ? parseInt(form.par_value) : null),
         issue_date: form.issue_date || null,
       };
       if (editId) {
@@ -162,7 +164,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                 headers: ["Cert #", t.shareholder, t.classLabel, t.shareUnit, t.parValue, "Issue Date", "Status"],
                 rows: certificates.map((c: any) => [
                   String(c.certificate_number), c.shareholders?.name ?? "—", c.share_class,
-                  c.num_shares?.toLocaleString(), c.par_value != null ? `$${Number(c.par_value).toFixed(2)}` : "—",
+                  c.num_shares?.toLocaleString(), c.par_value != null ? `$${Number(c.par_value).toFixed(0)}` : "No Par",
                   c.issue_date ? new Date(c.issue_date + "T00:00:00").toLocaleDateString() : "—", c.status ?? "—",
                 ]),
               },
@@ -199,7 +201,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <div className="field-group">
                       <Label className="field-label">{t.classLabel}</Label>
                       <Select value={form.share_class} onValueChange={(v) => setForm(p => ({ ...p, share_class: v }))}>
@@ -213,10 +215,24 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                       <Label className="field-label">{t.numUnitsLabel}</Label>
                       <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
                     <div className="field-group">
                       <Label className="field-label">{t.parValue}</Label>
-                      <Input className="h-8 text-sm" type="number" step="0.01" value={form.par_value} onChange={(e) => setForm(p => ({ ...p, par_value: e.target.value }))} />
+                      <Select value={form.par_value_type} onValueChange={(v) => setForm(p => ({ ...p, par_value_type: v as "par" | "no_par", par_value: v === "no_par" ? "" : p.par_value }))}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="par">Par Value</SelectItem>
+                          <SelectItem value="no_par">No Par Value</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
+                    {form.par_value_type === "par" && (
+                      <div className="field-group">
+                        <Label className="field-label">Amount ($)</Label>
+                        <Input className="h-8 text-sm" type="number" step="1" min="0" placeholder="0" value={form.par_value} onChange={(e) => setForm(p => ({ ...p, par_value: e.target.value }))} />
+                      </div>
+                    )}
                   </div>
                   <Button type="submit" className="w-full" size="sm" disabled={save.isPending}>
                     {save.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
@@ -254,7 +270,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                       <TableCell className="text-xs">{c.shareholders?.name ?? "—"}</TableCell>
                       <TableCell className="text-xs">{c.share_class}</TableCell>
                       <TableCell className="text-xs text-right">{c.num_shares?.toLocaleString()}</TableCell>
-                      <TableCell className="text-xs text-right">{c.par_value != null ? `$${Number(c.par_value).toFixed(2)}` : "—"}</TableCell>
+                      <TableCell className="text-xs text-right">{c.par_value != null ? `$${Number(c.par_value).toFixed(0)}` : "No Par"}</TableCell>
                       <TableCell className="text-xs">{c.issue_date ? new Date(c.issue_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${c.status === "active" ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20"}`}>
