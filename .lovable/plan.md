@@ -1,19 +1,17 @@
 
 
-## Pre-populate WDFI Search with Company Name
+## Fix Calendar Interactivity
 
-### What Changes
-When clicking the "Open WI DFI" external link button, the URL will include the company name as a search query parameter so the WDFI search results page loads pre-populated with the company's name.
+The calendar date pickers are not responding properly to clicks. This is a known issue when calendars are rendered inside popovers or dialogs -- pointer events get blocked.
 
-### Technical Details
+### The Fix
 
-**File:** `src/components/company/IncorporationTab.tsx`
+**File:** `src/components/ui/calendar.tsx`
 
-1. Update the WI entry in `STATE_SOS_INFO` to use the search URL format:
-   - From: `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx`
-   - To: `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?type=Simple&q={company_name}`
+Add `pointer-events-auto` to the DayPicker's root className so it remains interactive in all contexts (popovers, dialogs, sheets, etc.):
 
-2. Modify the `window.open` call for the WI "Open WI DFI" button to dynamically append `?type=Simple&q=` with the URL-encoded company name (`form.name`) to the base URL.
+- Change: `cn("p-3", className)`
+- To: `cn("p-3 pointer-events-auto", className)`
 
-This is the same URL format already used by the `verify-wdfi-status` edge function, so it will produce the same search results the user sees when auto-verifying.
+This single change fixes all calendar instances across the app since they all use this shared Calendar component.
 
