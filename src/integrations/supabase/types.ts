@@ -1907,6 +1907,7 @@ export type Database = {
           id: string
           name: string
           ssn_ein: string | null
+          ssn_ein_encrypted: string | null
           state: string | null
           status: string | null
           updated_at: string
@@ -1922,6 +1923,7 @@ export type Database = {
           id?: string
           name: string
           ssn_ein?: string | null
+          ssn_ein_encrypted?: string | null
           state?: string | null
           status?: string | null
           updated_at?: string
@@ -1937,6 +1939,7 @@ export type Database = {
           id?: string
           name?: string
           ssn_ein?: string | null
+          ssn_ein_encrypted?: string | null
           state?: string | null
           status?: string | null
           updated_at?: string
@@ -2076,6 +2079,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrypt_ssn_ein: {
+        Args: { encryption_key: string; shareholder_id: string }
+        Returns: string
+      }
+      encrypt_shareholder_ssn: {
+        Args: {
+          p_encryption_key: string
+          p_shareholder_id: string
+          p_ssn_ein: string
+        }
+        Returns: undefined
+      }
+      encrypt_ssn_ein: {
+        Args: { encryption_key: string; plain_text: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

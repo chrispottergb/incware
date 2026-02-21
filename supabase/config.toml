@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.parse-tax-return]
 verify_jwt = false
+
+[functions.decrypt-ssn]
+verify_jwt = false
+
+[functions.encrypt-ssn]
+verify_jwt = false
