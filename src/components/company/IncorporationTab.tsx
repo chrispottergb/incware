@@ -16,6 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Loader2, Save, Shield, Building2, Share2, UserCheck, ChevronDown, CalendarIcon, Users, Heart, RefreshCw } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
@@ -149,6 +156,9 @@ interface Props {
 
 export default function IncorporationTab({ company }: Props) {
   const [verifying, setVerifying] = useState(false);
+  const [wdfiResults, setWdfiResults] = useState<any[]>([]);
+  const [wdfiVerificationDate, setWdfiVerificationDate] = useState("");
+  const [showWdfiDialog, setShowWdfiDialog] = useState(false);
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
     name: company.name,
@@ -197,6 +207,12 @@ export default function IncorporationTab({ company }: Props) {
   // Derive card config reactively from current entity_type
   const equityCard = getEquityCardConfig(form.entity_type);
 
+  const applyWdfiResult = (result: any, verificationDate: string) => {
+    update("corporate_status", result.mappedStatus);
+    update("verification_date", verificationDate);
+    toast.success(`WDFI Status: ${result.status} → ${result.mappedStatus}${result.entityId ? ` (ID: ${result.entityId})` : ""}`);
+  };
+
   const handleVerifyWDFI = async () => {
     if (!form.name.trim()) {
       toast.error("Company name is required for WDFI verification");
@@ -216,11 +232,14 @@ export default function IncorporationTab({ company }: Props) {
         toast.warning("No matching entities found on WDFI for this company name.");
         return;
       }
-      // Use the first result (best match)
-      const result = data.results[0];
-      update("corporate_status", result.mappedStatus);
-      update("verification_date", data.verificationDate);
-      toast.success(`WDFI Status: ${result.status} → ${result.mappedStatus}${result.entityId ? ` (ID: ${result.entityId})` : ""}`);
+      if (data.results.length === 1) {
+        applyWdfiResult(data.results[0], data.verificationDate);
+      } else {
+        // Multiple results — show selection dialog
+        setWdfiResults(data.results);
+        setWdfiVerificationDate(data.verificationDate);
+        setShowWdfiDialog(true);
+      }
     } catch (err: any) {
       console.error("WDFI verification error:", err);
       toast.error(err.message || "Failed to verify with WDFI");
@@ -730,6 +749,43 @@ export default function IncorporationTab({ company }: Props) {
           Save Changes
         </Button>
       </div>
+      {/* WDFI Entity Selection Dialog */}
+      <Dialog open={showWdfiDialog} onOpenChange={setShowWdfiDialog}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Select Entity</DialogTitle>
+            <DialogDescription>Multiple entities matched "{form.name}". Select the correct one:</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 mt-2">
+            {wdfiResults.map((result, idx) => (
+              <button
+                key={idx}
+                type="button"
+                className="w-full text-left p-3 rounded-md border hover:bg-accent transition-colors"
+                onClick={() => {
+                  applyWdfiResult(result, wdfiVerificationDate);
+                  setShowWdfiDialog(false);
+                }}
+              >
+                <div className="font-medium text-sm">{result.entityName}</div>
+                <div className="text-xs text-muted-foreground flex gap-3 mt-1">
+                  {result.entityId && <span>ID: {result.entityId}</span>}
+                  {result.type && <span>{result.type}</span>}
+                  <span className={cn(
+                    "font-medium",
+                    result.mappedStatus === "current" && "text-green-600",
+                    result.mappedStatus === "delinquent" && "text-yellow-600",
+                    result.mappedStatus === "dissolved" && "text-red-600",
+                    result.mappedStatus === "suspended" && "text-red-600",
+                  )}>
+                    {result.status}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }
