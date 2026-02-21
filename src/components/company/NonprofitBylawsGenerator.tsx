@@ -9,6 +9,7 @@ import {
   FileText, Download, Eye, Loader2, Sparkles, Printer, Copy, Check, Share2,
 } from "lucide-react";
 import { generateNonprofitBylawsPDF, type NonprofitBylawsData } from "@/lib/nonprofit-bylaws-pdf";
+import AIProviderSelect from "@/components/company/AIProviderSelect";
 
 interface Props {
   companyId: string;
@@ -23,6 +24,7 @@ export default function NonprofitBylawsGenerator({ companyId, companyName, compa
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [aiProvider, setAiProvider] = useState(() => localStorage.getItem("ai_provider") || "lovable");
 
   const { data: directors = [] } = useQuery({
     queryKey: ["directors", companyId],
@@ -80,7 +82,7 @@ export default function NonprofitBylawsGenerator({ companyId, companyName, compa
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ company_id: companyId }),
+          body: JSON.stringify({ company_id: companyId, ai_provider: aiProvider }),
         }
       );
 
@@ -188,15 +190,15 @@ export default function NonprofitBylawsGenerator({ companyId, companyName, compa
               <FileText className="h-5 w-5 text-success" />
               <CardTitle className="text-base font-display">Non-Profit Bylaws</CardTitle>
             </div>
-            <Badge variant="outline" className="text-[10px]">
-              Wis. Stat. Ch. 181
-            </Badge>
+            <Badge variant="outline" className="text-[10px]">Wis. Stat. Ch. 181</Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             Generate comprehensive bylaws for your non-profit corporation under the Wisconsin Nonstock Corporation Law. Includes membership, board governance, conflict of interest provisions, dissolution clause, and IRS 501(c)(3) compliance language.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
+          <AIProviderSelect value={aiProvider} onChange={setAiProvider} />
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={handleClientGenerate} disabled={isGenerating || isAiGenerating} variant="outline">
               {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}

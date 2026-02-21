@@ -4,11 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   FileText, Download, Eye, Loader2, Sparkles, Printer, Copy, Check, Share2,
 } from "lucide-react";
 import { generateBylawsPDF, type BylawsData } from "@/lib/bylaws-pdf";
+import AIProviderSelect from "@/components/company/AIProviderSelect";
 
 interface Props {
   companyId: string;
@@ -23,6 +28,7 @@ export default function BylawsGenerator({ companyId, companyName, company }: Pro
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [aiProvider, setAiProvider] = useState(() => localStorage.getItem("ai_provider") || "lovable");
 
   const { data: directors = [] } = useQuery({
     queryKey: ["directors", companyId],
@@ -90,7 +96,7 @@ export default function BylawsGenerator({ companyId, companyName, company }: Pro
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ company_id: companyId }),
+          body: JSON.stringify({ company_id: companyId, ai_provider: aiProvider }),
         }
       );
 
@@ -208,6 +214,8 @@ export default function BylawsGenerator({ companyId, companyName, company }: Pro
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
+          <AIProviderSelect value={aiProvider} onChange={setAiProvider} />
+
           {/* Generation Buttons */}
           <div className="flex flex-wrap gap-2">
             <Button onClick={handleClientGenerate} disabled={isGenerating || isAiGenerating} variant="outline">

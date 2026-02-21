@@ -13,9 +13,9 @@ import {
   FileText, Download, Eye, Loader2, Sparkles, Printer, Copy, Check, Share2,
 } from "lucide-react";
 import {
-  generateOperatingAgreementPDF,
-  type OperatingAgreementData,
+  generateOperatingAgreementPDF, type OperatingAgreementData,
 } from "@/lib/operating-agreement-pdf";
+import AIProviderSelect from "@/components/company/AIProviderSelect";
 
 interface Props {
   companyId: string;
@@ -31,6 +31,7 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [aiProvider, setAiProvider] = useState(() => localStorage.getItem("ai_provider") || "lovable");
 
   const { data: members = [] } = useQuery({
     queryKey: ["shareholders", companyId],
@@ -53,13 +54,7 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
   });
 
   const buildPdf = (aiDraftSections: Record<string, string> | null = null) => {
-    const data: OperatingAgreementData = {
-      company,
-      members,
-      officers,
-      managementType,
-      aiDraftSections,
-    };
+    const data: OperatingAgreementData = { company, members, officers, managementType, aiDraftSections };
     const doc = generateOperatingAgreementPDF(data);
     setPdfDoc(doc);
     const blob = doc.output("blob");
@@ -94,7 +89,7 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ company_id: companyId, management_type: managementType }),
+          body: JSON.stringify({ company_id: companyId, management_type: managementType, ai_provider: aiProvider }),
         }
       );
 
@@ -192,10 +187,7 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
   };
 
   const isLLC = company.entity_type === "LLC" || company.entity_type === "Single Member LLC";
-
-  if (!isLLC) {
-    return null; // Only show for LLCs
-  }
+  if (!isLLC) return null;
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -204,13 +196,9 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2.5">
               <FileText className="h-5 w-5 text-primary" />
-              <CardTitle className="text-base font-display">
-                Operating Agreement
-              </CardTitle>
+              <CardTitle className="text-base font-display">Operating Agreement</CardTitle>
             </div>
-            <Badge variant="outline" className="text-[10px]">
-              Wis. Stat. Ch. 183
-            </Badge>
+            <Badge variant="outline" className="text-[10px]">Wis. Stat. Ch. 183</Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             Generate a comprehensive Wisconsin LLC Operating Agreement. Choose between client-side generation with standard legal language, or AI-assisted drafting customized to your company's specific details.
@@ -231,34 +219,19 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
             </Select>
           </div>
 
+          <AIProviderSelect value={aiProvider} onChange={setAiProvider} />
+
           {/* Generation Buttons */}
           <div className="flex flex-wrap gap-2">
-            <Button
-              onClick={handleClientGenerate}
-              disabled={isGenerating || isAiGenerating}
-              variant="outline"
-            >
-              {isGenerating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <FileText className="h-4 w-4" />
-              )}
+            <Button onClick={handleClientGenerate} disabled={isGenerating || isAiGenerating} variant="outline">
+              {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
               Generate Standard
             </Button>
-            <Button
-              onClick={handleAiGenerate}
-              disabled={isGenerating || isAiGenerating}
-            >
+            <Button onClick={handleAiGenerate} disabled={isGenerating || isAiGenerating}>
               {isAiGenerating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Drafting with AI…
-                </>
+                <><Loader2 className="h-4 w-4 animate-spin" /> Drafting with AI…</>
               ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  AI-Assisted Draft
-                </>
+                <><Sparkles className="h-4 w-4" /> AI-Assisted Draft</>
               )}
             </Button>
           </div>
@@ -267,20 +240,16 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
           {pdfDoc && (
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={handleDownload}>
-                <Download className="h-3.5 w-3.5" />
-                Download PDF
+                <Download className="h-3.5 w-3.5" /> Download PDF
               </Button>
               <Button variant="outline" size="sm" onClick={handlePreview}>
-                <Eye className="h-3.5 w-3.5" />
-                Preview
+                <Eye className="h-3.5 w-3.5" /> Preview
               </Button>
               <Button variant="outline" size="sm" onClick={handlePrint}>
-                <Printer className="h-3.5 w-3.5" />
-                Print
+                <Printer className="h-3.5 w-3.5" /> Print
               </Button>
               <Button variant="secondary" size="sm" onClick={handleShare}>
-                <Share2 className="h-3.5 w-3.5" />
-                Create Share Link
+                <Share2 className="h-3.5 w-3.5" /> Create Share Link
               </Button>
             </div>
           )}
@@ -288,9 +257,7 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
           {/* Share URL */}
           {shareUrl && (
             <div className="rounded-md bg-muted/50 border border-border p-3 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">
-                Shareable Link (30-day expiry):
-              </p>
+              <p className="text-xs font-medium text-muted-foreground">Shareable Link (30-day expiry):</p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 text-[11px] bg-background rounded px-2 py-1.5 border border-border truncate">
                   {shareUrl}
@@ -309,16 +276,11 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-display flex items-center gap-2">
-              <Eye className="h-4 w-4" />
-              Preview
+              <Eye className="h-4 w-4" /> Preview
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <iframe
-              src={previewUrl}
-              className="w-full h-[600px] rounded border border-border"
-              title="Operating Agreement Preview"
-            />
+            <iframe src={previewUrl} className="w-full h-[600px] rounded border border-border" title="Operating Agreement Preview" />
           </CardContent>
         </Card>
       )}
