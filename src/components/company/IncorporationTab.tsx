@@ -23,7 +23,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Loader2, Save, Shield, Building2, Share2, UserCheck, ChevronDown, CalendarIcon, Users, Heart, RefreshCw } from "lucide-react";
+import { Loader2, Save, Shield, Building2, Share2, UserCheck, ChevronDown, CalendarIcon, Users, Heart, RefreshCw, ExternalLink } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import WIComplianceChecklist from "./WIComplianceChecklist";
@@ -70,6 +70,60 @@ const US_STATES = [
   "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
   "VA","WA","WV","WI","WY","DC",
 ];
+
+const STATE_SOS_INFO: Record<string, { name: string; url: string }> = {
+  AL: { name: "AL Secretary of State", url: "https://www.sos.alabama.gov/business-services" },
+  AK: { name: "AK Div. of Corporations", url: "https://www.commerce.alaska.gov/cbp/main/search/entities" },
+  AZ: { name: "AZ Corporation Commission", url: "https://ecorp.azcc.gov/EntitySearch/Index" },
+  AR: { name: "AR Secretary of State", url: "https://www.sos.arkansas.gov/corps/search_all.php" },
+  CA: { name: "CA Secretary of State", url: "https://bizfileonline.sos.ca.gov/search/business" },
+  CO: { name: "CO Secretary of State", url: "https://www.sos.state.co.us/biz/BusinessEntityCriteriaExt.do" },
+  CT: { name: "CT Secretary of State", url: "https://service.ct.gov/business/s/onlinebusinesssearch" },
+  DE: { name: "DE Div. of Corporations", url: "https://icis.corp.delaware.gov/ecorp/entitysearch/namesearch.aspx" },
+  FL: { name: "FL Div. of Corporations", url: "https://search.sunbiz.org/Inquiry/CorporationSearch/ByName" },
+  GA: { name: "GA Secretary of State", url: "https://ecorp.sos.ga.gov/BusinessSearch" },
+  HI: { name: "HI DCCA", url: "https://hbe.ehawaii.gov/documents/search.html" },
+  ID: { name: "ID Secretary of State", url: "https://sosbiz.idaho.gov/search/business" },
+  IL: { name: "IL Secretary of State", url: "https://www.ilsos.gov/corporatellc/" },
+  IN: { name: "IN Secretary of State", url: "https://bsd.sos.in.gov/publicbusinesssearch" },
+  IA: { name: "IA Secretary of State", url: "https://sos.iowa.gov/search/business/(S(search))/search.aspx" },
+  KS: { name: "KS Secretary of State", url: "https://www.kansas.gov/bess/flow/main?execution=e1s1" },
+  KY: { name: "KY Secretary of State", url: "https://web.sos.ky.gov/bussearchnew/search" },
+  LA: { name: "LA Secretary of State", url: "https://coraweb.sos.la.gov/CommercialSearch/CommercialSearch.aspx" },
+  ME: { name: "ME Secretary of State", url: "https://www.maine.gov/sos/cec/corp/corp_search.html" },
+  MD: { name: "MD SDAT", url: "https://egov.maryland.gov/BusinessExpress/EntitySearch" },
+  MA: { name: "MA Secretary of State", url: "https://corp.sec.state.ma.us/corpweb/CorpSearch/CorpSearch.aspx" },
+  MI: { name: "MI LARA", url: "https://cofs.lara.state.mi.us/SearchApi/Search/Search" },
+  MN: { name: "MN Secretary of State", url: "https://mblsportal.sos.state.mn.us/Business/Search" },
+  MS: { name: "MS Secretary of State", url: "https://corp.sos.ms.gov/corp/portal/c/page/corpBusinessIdSearch/portal.aspx" },
+  MO: { name: "MO Secretary of State", url: "https://bsd.sos.mo.gov/BusinessEntity/BESearch.aspx" },
+  MT: { name: "MT Secretary of State", url: "https://sosmt.gov/business/" },
+  NE: { name: "NE Secretary of State", url: "https://www.nebraska.gov/sos/corp/corpsearch.cgi" },
+  NV: { name: "NV Secretary of State", url: "https://esos.nv.gov/EntitySearch/OnlineEntitySearch" },
+  NH: { name: "NH Secretary of State", url: "https://quickstart.sos.nh.gov/online/BusinessInquire" },
+  NJ: { name: "NJ Div. of Revenue", url: "https://www.njportal.com/DOR/BusinessNameSearch/" },
+  NM: { name: "NM Secretary of State", url: "https://portal.sos.state.nm.us/BFS/online/CorporationBusinessSearch" },
+  NY: { name: "NY Div. of Corporations", url: "https://appext20.dos.ny.gov/corp_public/CORPSEARCH.ENTITY_SEARCH_ENTRY" },
+  NC: { name: "NC Secretary of State", url: "https://www.sosnc.gov/online_services/search/by_title/_Business_Registration" },
+  ND: { name: "ND Secretary of State", url: "https://firststop.sos.nd.gov/search/business" },
+  OH: { name: "OH Secretary of State", url: "https://businesssearch.ohiosos.gov/" },
+  OK: { name: "OK Secretary of State", url: "https://www.sos.ok.gov/corp/corpInquiryFind.aspx" },
+  OR: { name: "OR Secretary of State", url: "https://sos.oregon.gov/business/pages/find.aspx" },
+  PA: { name: "PA Dept. of State", url: "https://www.corporations.pa.gov/search/corpsearch" },
+  RI: { name: "RI Secretary of State", url: "https://business.sos.ri.gov/CorpWeb/CorpSearch/CorpSearch.aspx" },
+  SC: { name: "SC Secretary of State", url: "https://businessfilings.sc.gov/businessfiling/Entity/Search" },
+  SD: { name: "SD Secretary of State", url: "https://sosenterprise.sd.gov/BusinessServices/Business/FilingSearch.aspx" },
+  TN: { name: "TN Secretary of State", url: "https://tnbear.tn.gov/ECommerce/FilingSearch.aspx" },
+  TX: { name: "TX Secretary of State", url: "https://mycpa.cpa.state.tx.us/coa/" },
+  UT: { name: "UT Div. of Corporations", url: "https://secure.utah.gov/bes/" },
+  VT: { name: "VT Secretary of State", url: "https://bizfilings.vermont.gov/online/BusinessInquire" },
+  VA: { name: "VA SCC", url: "https://cis.scc.virginia.gov/EntitySearch/Index" },
+  WA: { name: "WA Secretary of State", url: "https://ccfs.sos.wa.gov/" },
+  WV: { name: "WV Secretary of State", url: "https://apps.wv.gov/SOS/BusinessEntity/" },
+  WI: { name: "WI DFI", url: "https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx" },
+  WY: { name: "WY Secretary of State", url: "https://wyobiz.wyo.gov/Business/FilingSearch.aspx" },
+  DC: { name: "DC DCRA", url: "https://corponline.dcra.dc.gov/BizEntity.aspx" },
+};
 
 // ─── Entity-aware card config ────────────────────────────────────────────────
 function getEquityCardConfig(entityType: string) {
@@ -350,23 +404,42 @@ export default function IncorporationTab({ company }: Props) {
                   <Input type="number" className="h-8 text-sm" value={form.annual_report_year} onChange={(e) => update("annual_report_year", e.target.value)} placeholder="2024" />
                 </div>
               </div>
-              {form.state_of_incorporation === "WI" && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                  disabled={verifying}
-                  onClick={handleVerifyWDFI}
-                >
-                  {verifying ? (
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-3 w-3 mr-1" />
-                  )}
-                  Verify with WDFI
-                </Button>
-              )}
+              {form.state_of_incorporation && (() => {
+                const sosInfo = STATE_SOS_INFO[form.state_of_incorporation];
+                const isWI = form.state_of_incorporation === "WI";
+                if (!sosInfo) return null;
+                return (
+                  <div className="flex gap-2">
+                    {isWI && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        disabled={verifying}
+                        onClick={handleVerifyWDFI}
+                      >
+                        {verifying ? (
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                        )}
+                        Auto-Verify with {sosInfo.name}
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => window.open(sosInfo.url, "_blank")}
+                    >
+                      <ExternalLink className="h-3 w-3 mr-1" />
+                      {isWI ? "Open" : "Verify at"} {sosInfo.name}
+                    </Button>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </CollapsibleContent>
