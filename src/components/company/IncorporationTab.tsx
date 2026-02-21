@@ -439,7 +439,13 @@ export default function IncorporationTab({ company }: Props) {
                       variant="ghost"
                       size="sm"
                       className="text-xs"
-                      onClick={() => window.open(sosInfo.url, "_blank")}
+                      onClick={() => {
+                        let url = sosInfo.url;
+                        if (isWI && form.name) {
+                          url = `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?type=Simple&q=${encodeURIComponent(form.name)}`;
+                        }
+                        window.open(url, "_blank");
+                      }}
                     >
                       <ExternalLink className="h-3 w-3 mr-1" />
                       {isWI ? "Open" : "Verify at"} {sosInfo.name}
