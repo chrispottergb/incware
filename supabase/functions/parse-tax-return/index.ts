@@ -108,7 +108,7 @@ Extract these fields:
     "business_purpose": "string or null",
     "entity_type": "Corporation | S-Corp | LLC | Partnership | Non-Profit",
     "accounting_method": "cash basis | accrual basis | other",
-    "sic_code": "string or null"
+    "naics_code": "string or null"
   },
   "financials": {
     "total_sales": number or null,
@@ -241,7 +241,7 @@ Rules:
         fiscal_year_end: c.fiscal_year_end || undefined,
         business_purpose: c.business_purpose || undefined,
         accounting_method: c.accounting_method || undefined,
-        sic_code: c.sic_code || undefined,
+        naics_code: c.naics_code || undefined,
       }).eq("id", companyId);
 
       // Create meeting with financials if we have tax year data

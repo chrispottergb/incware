@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Loader2, Save, Users, FileText, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Loader2, Save, Users, FileText, ChevronDown, ExternalLink } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import CompanyAssetsSection from "@/components/company/CompanyAssetsSection";
 import { toast } from "sonner";
@@ -120,7 +120,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
     delayed_effective_filing_date: company.delayed_effective_filing_date ?? "",
     business_purpose: company.business_purpose ?? "",
     accounting_method: company.accounting_method ?? "cash basis",
-    sic_code: company.sic_code ?? "",
+    naics_code: company.naics_code ?? "",
     first_year_annual_meeting: company.first_year_annual_meeting?.toString() ?? "",
     initial_directors_count: company.initial_directors_count?.toString() ?? "",
     max_directors_allowed: company.max_directors_allowed?.toString() ?? "",
@@ -138,7 +138,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
           delayed_effective_filing_date: filingForm.delayed_effective_filing_date || null,
           business_purpose: filingForm.business_purpose || null,
           accounting_method: filingForm.accounting_method || null,
-          sic_code: filingForm.sic_code || null,
+          naics_code: filingForm.naics_code || null,
           first_year_annual_meeting: filingForm.first_year_annual_meeting ? parseInt(filingForm.first_year_annual_meeting) : null,
           initial_directors_count: filingForm.initial_directors_count ? parseInt(filingForm.initial_directors_count) : null,
           max_directors_allowed: filingForm.max_directors_allowed ? parseInt(filingForm.max_directors_allowed) : null,
@@ -310,7 +310,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 { label: "Filing Date", value: filingForm.filing_date ? new Date(filingForm.filing_date + "T00:00:00").toLocaleDateString() : "" },
                 { label: "Business Purpose", value: filingForm.business_purpose },
                 { label: "Accounting Method", value: filingForm.accounting_method },
-                { label: "SIC Code", value: filingForm.sic_code },
+                { label: "NAICS Code", value: filingForm.naics_code },
                 { label: "First Year Annual Meeting", value: filingForm.first_year_annual_meeting },
                 { label: "Initial # of Directors", value: filingForm.initial_directors_count },
                 { label: "Max Directors Allowed", value: filingForm.max_directors_allowed },
@@ -356,8 +356,13 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 </Select>
               </div>
               <div className="field-group">
-                <Label className="field-label">SIC Code</Label>
-                <Input className="h-8 text-sm" value={filingForm.sic_code} onChange={(e) => setFilingForm((p) => ({ ...p, sic_code: e.target.value }))} />
+                <Label className="field-label flex items-center gap-1.5">
+                  NAICS Code
+                  <a href="https://www.naics.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </Label>
+                <Input className="h-8 text-sm" value={filingForm.naics_code} onChange={(e) => setFilingForm((p) => ({ ...p, naics_code: e.target.value }))} />
               </div>
               <div className="field-group">
                 <Label className="field-label">First Year Annual Meeting</Label>
