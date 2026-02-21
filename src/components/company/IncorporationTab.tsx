@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useZipLookup } from "@/hooks/useZipLookup";
+import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -15,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Save, Shield, Building2, Share2, UserCheck, ChevronDown, CalendarIcon, Users, Heart } from "lucide-react";
+import { Loader2, Save, Shield, Building2, Share2, UserCheck, ChevronDown, CalendarIcon, Users, Heart, RefreshCw } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import WIComplianceChecklist from "./WIComplianceChecklist";
@@ -147,6 +148,7 @@ interface Props {
 }
 
 export default function IncorporationTab({ company }: Props) {
+  const [verifying, setVerifying] = useState(false);
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
     name: company.name,
@@ -194,6 +196,38 @@ export default function IncorporationTab({ company }: Props) {
 
   // Derive card config reactively from current entity_type
   const equityCard = getEquityCardConfig(form.entity_type);
+
+  const handleVerifyWDFI = async () => {
+    if (!form.name.trim()) {
+      toast.error("Company name is required for WDFI verification");
+      return;
+    }
+    setVerifying(true);
+    try {
+      const { data, error } = await supabaseClient.functions.invoke("verify-wdfi-status", {
+        body: { company_name: form.name },
+      });
+      if (error) throw error;
+      if (!data?.success) {
+        toast.error(data?.error || "WDFI verification failed");
+        return;
+      }
+      if (!data.results || data.results.length === 0) {
+        toast.warning("No matching entities found on WDFI for this company name.");
+        return;
+      }
+      // Use the first result (best match)
+      const result = data.results[0];
+      update("corporate_status", result.mappedStatus);
+      update("verification_date", data.verificationDate);
+      toast.success(`WDFI Status: ${result.status} → ${result.mappedStatus}${result.entityId ? ` (ID: ${result.entityId})` : ""}`);
+    } catch (err: any) {
+      console.error("WDFI verification error:", err);
+      toast.error(err.message || "Failed to verify with WDFI");
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const save = useMutation({
     mutationFn: async () => {
@@ -274,27 +308,46 @@ export default function IncorporationTab({ company }: Props) {
                 }} />
               </div>
             </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-3 px-4 pb-4">
-              <div className="field-group">
-                <Label className="field-label">Corporate Status</Label>
-                <Select value={form.corporate_status} onValueChange={(v) => update("corporate_status", v)}>
-                  <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="current">Current</SelectItem>
-                    <SelectItem value="delinquent">Delinquent</SelectItem>
-                    <SelectItem value="dissolved">Dissolved</SelectItem>
-                    <SelectItem value="suspended">Suspended</SelectItem>
-                  </SelectContent>
-                </Select>
+            <CardContent className="space-y-3 px-4 pb-4">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="field-group">
+                  <Label className="field-label">Corporate Status</Label>
+                  <Select value={form.corporate_status} onValueChange={(v) => update("corporate_status", v)}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="current">Current</SelectItem>
+                      <SelectItem value="delinquent">Delinquent</SelectItem>
+                      <SelectItem value="dissolved">Dissolved</SelectItem>
+                      <SelectItem value="suspended">Suspended</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">Verification Date</Label>
+                  <Input type="date" className="h-8 text-sm" value={form.verification_date} onChange={(e) => update("verification_date", e.target.value)} />
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">Annual Report Filed Year</Label>
+                  <Input type="number" className="h-8 text-sm" value={form.annual_report_year} onChange={(e) => update("annual_report_year", e.target.value)} placeholder="2024" />
+                </div>
               </div>
-              <div className="field-group">
-                <Label className="field-label">Verification Date</Label>
-                <Input type="date" className="h-8 text-sm" value={form.verification_date} onChange={(e) => update("verification_date", e.target.value)} />
-              </div>
-              <div className="field-group">
-                <Label className="field-label">Annual Report Filed Year</Label>
-                <Input type="number" className="h-8 text-sm" value={form.annual_report_year} onChange={(e) => update("annual_report_year", e.target.value)} placeholder="2024" />
-              </div>
+              {form.state_of_incorporation === "WI" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  disabled={verifying}
+                  onClick={handleVerifyWDFI}
+                >
+                  {verifying ? (
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                  )}
+                  Verify with WDFI
+                </Button>
+              )}
             </CardContent>
           </Card>
         </CollapsibleContent>
