@@ -40,7 +40,8 @@ serve(async (req) => {
     const userId = claimsData.claims.sub;
 
     const { company_id, ai_provider } = await req.json();
-    const provider: AIProvider = ai_provider || "lovable";
+    const skipAI = ai_provider === "none";
+    const provider: AIProvider = skipAI ? "lovable" : (ai_provider || "lovable");
 
     if (!company_id) {
       return new Response(
@@ -154,6 +155,13 @@ INSTRUCTIONS:
 3. Write brief "Section Introductions" (1 sentence each) for these sections: Articles of ${isLLC ? "Organization" : "Incorporation"}, ${isLLC ? "Managers & Members" : "Officers & Directors"}, ${isLLC ? "Members Registry" : "Shareholders Registry"}, ${isLLC ? "Membership Interest Certificates" : "Stock Certificates"}, ${isLLC ? "Interest Ledger" : "Stock Ledger"}, Meeting Minutes, ${isLLC ? "Interest Transfers" : "Bills of Sale"}, Business Sales, Compliance Checklist, AI Compliance, Corporate Timeline, Document Registry.
 
 Return ONLY a JSON object with keys: executiveSummary, complianceNarrative, sectionIntros (object with keys matching section names above).`;
+
+    if (skipAI) {
+      return new Response(
+        JSON.stringify({ companyData, aiContent: null }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     try {
       const result = await callAI({ provider, prompt });

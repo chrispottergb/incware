@@ -54,18 +54,33 @@ export default function RecordBookGenerator({ companyId, companyName, entityType
         }
       );
 
+      let data: RecordBookData;
+
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        if (response.status === 402) {
-          throw new Error("AI credits exhausted. Please add credits in Settings → Workspace → Usage to continue.");
+        if (response.status === 402 || response.status === 429) {
+          toast({ title: response.status === 402 ? "AI credits exhausted" : "AI rate limited", description: "Generating record book with placeholder narratives instead.", variant: "destructive" });
+          // Fallback: fetch company data without AI
+          const fallbackRes = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-record-book`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+              body: JSON.stringify({ company_id: companyId, ai_provider: "none" }),
+            }
+          );
+          // If fallback also fails, use minimal data
+          if (!fallbackRes.ok) {
+            data = { companyData: { company: { name: companyName, entity_type: "Corporation" } }, aiContent: null } as any;
+          } else {
+            data = await fallbackRes.json();
+          }
+        } else {
+          throw new Error(err.error || `Failed (${response.status})`);
         }
-        if (response.status === 429) {
-          throw new Error("AI rate limit reached. Please wait a moment and try again.");
-        }
-        throw new Error(err.error || `Failed (${response.status})`);
+      } else {
+        data = await response.json();
       }
-
-      const data: RecordBookData = await response.json();
 
       setProgress("Building PDF…");
       const doc = generateRecordBookPDF(data);
