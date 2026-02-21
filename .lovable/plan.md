@@ -1,32 +1,33 @@
 
+## Add "Single Member LLC" to Entity Type Selection
 
-## Fix "Initial List of Directors" -- Clean Up Duplicates and Improve the Section
+### Overview
 
-### Problem Identified
-
-After investigating, the "Initial List of Directors" section is correctly querying only this company's directors (not other companies). However, the Access DB import process created **1,008 director rows** for only **134 unique names** -- massive duplication. This is why the section appears to be pulling "every director ever entered across all meetings." The import likely inserted a director row for every meeting-director combination instead of deduplicating.
+Add "Single Member LLC" as a new option in the entity type dropdown. Since a Single Member LLC follows the same Wisconsin LLC statutes (Ch. 183), it will inherit all LLC behavior throughout the app -- same terminology ("Members", "Units", "Operating Agreement"), same officer titles, same resolution types, and same compliance checklist logic.
 
 ### Changes
 
-#### 1. Clean Up Existing Duplicate Data
+#### 1. Add to Entity Type Arrays (2 files)
+- `src/pages/Dashboard.tsx` line 43 -- add "Single Member LLC" to `ENTITY_TYPES` array
+- `src/components/company/IncorporationTab.tsx` line 58 -- add "Single Member LLC" to `ENTITY_TYPES` array
 
-Run a database migration that removes duplicate director entries, keeping only one row per unique name per company. This will reduce the 1,008 rows down to 134 unique directors for this company.
+#### 2. Update Entity Terminology (1 file)
+- `src/lib/entity-terminology.ts` -- update `getTerminology()` so that `entity_type === "Single Member LLC"` returns the same LLC terminology (already handles this via the `isLLC` check, just need to expand the condition to `entityType === "LLC" || entityType === "Single Member LLC"`)
 
-#### 2. Add Duplicate Prevention
+#### 3. Update All LLC Conditional Checks (~6 files)
+Every place that checks `entity_type === "LLC"` needs to also match `"Single Member LLC"`. Files affected:
+- `src/pages/CompanyDetail.tsx` -- tab visibility (Operating Agreement, etc.)
+- `src/components/company/OrganizationTab.tsx` -- officer labels and statutes
+- `src/components/company/OperatingAgreementGenerator.tsx` -- LLC guard check
+- `src/components/company/BylawsGenerator.tsx` -- LLC exclusion check
+- `src/components/company/WIComplianceChecklist.tsx` -- LLC compliance logic
+- `src/components/AppLayout.tsx` -- sidebar badge abbreviation
 
-Add a unique constraint or application-level check so the same director name cannot be added twice to the same company, preventing this from happening again.
+#### 4. Update Officer Title Options (1 file)
+- `src/components/company/OrganizationTab.tsx` -- add a `"Single Member LLC"` key to `OFFICER_TITLE_OPTIONS` (same values as LLC)
 
-#### 3. Fix the Import Process
+#### 5. Update Resolution Types (1 file)
+- `src/components/meeting/MeetingResolutions.tsx` -- add `"Single Member LLC"` key to `RESOLUTION_TYPES` (same values as LLC) or adjust lookup logic to fall back to LLC
 
-Review the Access DB import code (`src/pages/ImportAccess.tsx`) to ensure it deduplicates directors during import -- only inserting a director if one with the same name doesn't already exist for that company.
-
-### Technical Details
-
-**Database migration:**
-- DELETE duplicate rows from `directors`, keeping the earliest `created_at` entry per (company_id, name) pair
-- Add a unique index on `(company_id, lower(name))` to prevent future duplicates
-
-**Files to modify:**
-- `src/pages/ImportAccess.tsx` -- Add deduplication logic during import so directors aren't inserted multiple times
-- `src/components/company/OrganizationTab.tsx` -- Add a check before inserting a new director to warn if one with the same name already exists for this company
-
+### Approach
+To keep it DRY, I will create a small helper function `isLLCType(entityType)` that returns `true` for both `"LLC"` and `"Single Member LLC"`, then use it across all files instead of updating every individual comparison.
