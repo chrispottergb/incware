@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.encrypt-ssn]
 verify_jwt = false
+
+[functions.verify-wdfi-status]
+verify_jwt = false
