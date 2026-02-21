@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
   FileText, Download, Eye, Loader2, Printer, Copy, Check, Share2,
@@ -26,6 +30,22 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Editable form fields
+  const [formCompanyName, setFormCompanyName] = useState("");
+  const [formMemberName, setFormMemberName] = useState("");
+  const [formFilingDate, setFormFilingDate] = useState("");
+  const [formBusinessPurpose, setFormBusinessPurpose] = useState("");
+  const [formFiscalYearEnd, setFormFiscalYearEnd] = useState("");
+  const [formRAName, setFormRAName] = useState("");
+  const [formRAAddress, setFormRAAddress] = useState("");
+  const [formRACity, setFormRACity] = useState("");
+  const [formRAState, setFormRAState] = useState("");
+  const [formRAZip, setFormRAZip] = useState("");
+  const [formAddress, setFormAddress] = useState("");
+  const [formCity, setFormCity] = useState("");
+  const [formState, setFormState] = useState("");
+  const [formZip, setFormZip] = useState("");
+
   const { data: members = [] } = useQuery({
     queryKey: ["shareholders", companyId],
     queryFn: async () => {
@@ -36,10 +56,52 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
     },
   });
 
+  // Populate form from company + member data
+  useEffect(() => {
+    setFormCompanyName(company.name || "");
+    setFormFilingDate(company.filing_date || "");
+    setFormBusinessPurpose(company.business_purpose || "");
+    setFormFiscalYearEnd(company.fiscal_year_end || "December");
+    setFormRAName(company.registered_agent_name || "");
+    setFormRAAddress(company.registered_agent_address || "");
+    setFormRACity(company.registered_agent_city || "");
+    setFormRAState(company.registered_agent_state || "");
+    setFormRAZip(company.registered_agent_zip || "");
+    setFormAddress(company.address || "");
+    setFormCity(company.city || "");
+    setFormState(company.state || "");
+    setFormZip(company.zip || "");
+  }, [company]);
+
+  useEffect(() => {
+    if (members.length > 0) {
+      setFormMemberName(members[0].name || "");
+    }
+  }, [members]);
+
   const handleGenerate = () => {
     setIsGenerating(true);
     try {
-      const data: SMOperatingAgreementData = { company, members };
+      // Build a merged company object from form fields
+      const mergedCompany = {
+        ...company,
+        name: formCompanyName,
+        filing_date: formFilingDate,
+        business_purpose: formBusinessPurpose,
+        fiscal_year_end: formFiscalYearEnd,
+        registered_agent_name: formRAName,
+        registered_agent_address: formRAAddress,
+        registered_agent_city: formRACity,
+        registered_agent_state: formRAState,
+        registered_agent_zip: formRAZip,
+        address: formAddress,
+        city: formCity,
+        state: formState,
+        zip: formZip,
+      };
+      const mergedMembers = [{ name: formMemberName }];
+
+      const data: SMOperatingAgreementData = { company: mergedCompany, members: mergedMembers };
       const doc = generateSMOperatingAgreementPDF(data);
       setPdfDoc(doc);
       const blob = doc.output("blob");
@@ -55,7 +117,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
 
   const handleDownload = () => {
     if (pdfDoc) {
-      const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_");
+      const safeName = formCompanyName.replace(/[^a-zA-Z0-9]/g, "_") || "SMLLC";
       pdfDoc.save(`${safeName}_SM_Operating_Agreement.pdf`);
     }
   };
@@ -83,7 +145,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
     if (!pdfDoc) return;
     try {
       const blob = pdfDoc.output("blob");
-      const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_");
+      const safeName = formCompanyName.replace(/[^a-zA-Z0-9]/g, "_") || "SMLLC";
       const fileName = `${safeName}_SM_Operating_Agreement_${Date.now()}.pdf`;
 
       const { error: uploadError } = await supabase.storage
@@ -140,10 +202,168 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Generate a Wisconsin Single Member LLC Operating Agreement. This document establishes the sole member's rights, powers, and obligations under Chapter 183 of the Wisconsin Statutes.
+            Review and edit the fields below, then generate the Wisconsin Single Member LLC Operating Agreement. Fields are pre-filled from the company record.
           </p>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
+
+          {/* ── Company Information ── */}
+          <div>
+            <h3 className="text-sm font-semibold text-foreground mb-3">Company Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="field-group">
+                <Label className="field-label">Company Name</Label>
+                <Input
+                  value={formCompanyName}
+                  onChange={(e) => setFormCompanyName(e.target.value)}
+                  placeholder="Company Name, LLC"
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="field-group">
+                <Label className="field-label">Sole Member Name</Label>
+                <Input
+                  value={formMemberName}
+                  onChange={(e) => setFormMemberName(e.target.value)}
+                  placeholder="Full legal name of sole member"
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="field-group">
+                <Label className="field-label">Filing / Effective Date</Label>
+                <Input
+                  type="date"
+                  value={formFilingDate}
+                  onChange={(e) => setFormFilingDate(e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="field-group">
+                <Label className="field-label">Fiscal Year End Month</Label>
+                <Input
+                  value={formFiscalYearEnd}
+                  onChange={(e) => setFormFiscalYearEnd(e.target.value)}
+                  placeholder="December"
+                  className="h-8 text-sm"
+                />
+              </div>
+            </div>
+            <div className="field-group mt-3">
+              <Label className="field-label">Business Purpose</Label>
+              <Textarea
+                value={formBusinessPurpose}
+                onChange={(e) => setFormBusinessPurpose(e.target.value)}
+                placeholder="Describe the purpose of the company…"
+                className="text-sm min-h-[60px]"
+              />
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* ── Company Address ── */}
+          <div>
+            <h3 className="text-sm font-semibold text-foreground mb-3">Principal Office Address</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="field-group sm:col-span-2">
+                <Label className="field-label">Address</Label>
+                <Input
+                  value={formAddress}
+                  onChange={(e) => setFormAddress(e.target.value)}
+                  placeholder="Street address"
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="field-group">
+                <Label className="field-label">City</Label>
+                <Input
+                  value={formCity}
+                  onChange={(e) => setFormCity(e.target.value)}
+                  placeholder="City"
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="field-group">
+                  <Label className="field-label">State</Label>
+                  <Input
+                    value={formState}
+                    onChange={(e) => setFormState(e.target.value)}
+                    placeholder="WI"
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">ZIP</Label>
+                  <Input
+                    value={formZip}
+                    onChange={(e) => setFormZip(e.target.value)}
+                    placeholder="ZIP"
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* ── Registered Agent ── */}
+          <div>
+            <h3 className="text-sm font-semibold text-foreground mb-3">Registered Agent</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="field-group sm:col-span-2">
+                <Label className="field-label">Registered Agent Name</Label>
+                <Input
+                  value={formRAName}
+                  onChange={(e) => setFormRAName(e.target.value)}
+                  placeholder="Registered agent name"
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="field-group sm:col-span-2">
+                <Label className="field-label">Address</Label>
+                <Input
+                  value={formRAAddress}
+                  onChange={(e) => setFormRAAddress(e.target.value)}
+                  placeholder="Street address"
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="field-group">
+                <Label className="field-label">City</Label>
+                <Input
+                  value={formRACity}
+                  onChange={(e) => setFormRACity(e.target.value)}
+                  placeholder="City"
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="field-group">
+                  <Label className="field-label">State</Label>
+                  <Input
+                    value={formRAState}
+                    onChange={(e) => setFormRAState(e.target.value)}
+                    placeholder="WI"
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">ZIP</Label>
+                  <Input
+                    value={formRAZip}
+                    onChange={(e) => setFormRAZip(e.target.value)}
+                    placeholder="ZIP"
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
           {/* Generate Button */}
           <div className="flex flex-wrap gap-2">
             <Button onClick={handleGenerate} disabled={isGenerating}>
