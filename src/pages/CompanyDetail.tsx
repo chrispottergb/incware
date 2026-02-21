@@ -31,6 +31,7 @@ import OperatingAgreementGenerator from "@/components/company/OperatingAgreement
 import BylawsGenerator from "@/components/company/BylawsGenerator";
 import NonprofitBylawsGenerator from "@/components/company/NonprofitBylawsGenerator";
 import ConflictOfInterestGenerator from "@/components/company/ConflictOfInterestGenerator";
+import SMOperatingAgreementGenerator from "@/components/company/SMOperatingAgreementGenerator";
 import CounselTab from "@/components/company/CounselTab";
 import BanksTab from "@/components/company/BanksTab";
 import RelationshipsTab from "@/components/company/RelationshipsTab";
@@ -256,7 +257,11 @@ export default function CompanyDetail() {
         </TabsContent>
         {isLLCType(company.entity_type) && (
           <TabsContent value="operating-agreement" className="mt-5">
-            <OperatingAgreementGenerator companyId={company.id} companyName={company.name} company={company} />
+            {company.entity_type === "Single Member LLC" ? (
+              <SMOperatingAgreementGenerator companyId={company.id} companyName={company.name} company={company} />
+            ) : (
+              <OperatingAgreementGenerator companyId={company.id} companyName={company.name} company={company} />
+            )}
           </TabsContent>
         )}
         {(company.entity_type === "Corporation" || company.entity_type === "S-Corp") && (
