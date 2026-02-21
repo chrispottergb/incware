@@ -34,7 +34,7 @@ import ConflictOfInterestGenerator from "@/components/company/ConflictOfInterest
 import CounselTab from "@/components/company/CounselTab";
 import BanksTab from "@/components/company/BanksTab";
 import RelationshipsTab from "@/components/company/RelationshipsTab";
-import { getTerminology } from "@/lib/entity-terminology";
+import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 
 export default function CompanyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -203,7 +203,7 @@ export default function CompanyDetail() {
               { value: "banks", label: "Banks" },
               { value: "relationships", label: "Relationships" },
               { value: "ai-compliance", label: "AI Compliance" },
-              ...(company.entity_type === "LLC" ? [{ value: "operating-agreement", label: "Operating Agreement" }] : []),
+              ...(isLLCType(company.entity_type) ? [{ value: "operating-agreement", label: "Operating Agreement" }] : []),
               ...((company.entity_type === "Corporation" || company.entity_type === "S-Corp") ? [{ value: "bylaws", label: "Bylaws" }] : []),
               ...(company.entity_type === "Non-Profit" ? [
                 { value: "nonprofit-bylaws", label: "Bylaws" },
@@ -254,7 +254,7 @@ export default function CompanyDetail() {
         <TabsContent value="ai-compliance" className="mt-5">
           <AIComplianceTab companyId={company.id} companyName={company.name} />
         </TabsContent>
-        {company.entity_type === "LLC" && (
+        {isLLCType(company.entity_type) && (
           <TabsContent value="operating-agreement" className="mt-5">
             <OperatingAgreementGenerator companyId={company.id} companyName={company.name} company={company} />
           </TabsContent>

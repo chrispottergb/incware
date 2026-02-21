@@ -29,7 +29,7 @@ interface ChecklistItem {
 
 export default function WIComplianceChecklist({ company }: Props) {
   const companyId = company.id;
-  const isLLC = company.entity_type === "LLC";
+  const isLLC = company.entity_type === "LLC" || company.entity_type === "Single Member LLC";
   const isCorp = !isLLC; // Corporation or S-Corp
 
   // Fetch related data to determine compliance status
