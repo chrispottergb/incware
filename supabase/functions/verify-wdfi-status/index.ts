@@ -9,6 +9,7 @@ interface WDFIResult {
   status: string;
   mappedStatus: string;
   type?: string;
+  statusDate?: string;
 }
 
 function mapWDFIStatus(rawStatus: string): string {
@@ -46,8 +47,12 @@ function parseResults(markdown: string): WDFIResult[] {
     // Skip if entity name looks like a header
     if (entityName.toLowerCase() === 'entity name' || entityName.toLowerCase() === 'name') continue;
 
-    // Extract raw status (before <br> date)
-    const rawStatus = statusCell.replace(/<br>/g, ' ').replace(/\d{2}\/\d{2}\/\d{4}/, '').trim();
+    // Extract raw status and status date
+    const statusParts = statusCell.split(/<br>/i);
+    const rawStatus = statusParts[0]?.replace(/\d{2}\/\d{2}\/\d{4}/, '').trim() || '';
+    // The date after <br> in the status cell is the status date (e.g. annual report date)
+    const statusDateMatch = statusCell.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+    const statusDate = statusDateMatch ? `${statusDateMatch[3]}-${statusDateMatch[1]}-${statusDateMatch[2]}` : undefined;
 
     results.push({
       entityName,
@@ -55,6 +60,7 @@ function parseResults(markdown: string): WDFIResult[] {
       type: cells[2]?.replace(/<br>/g, ' ').trim() || '',
       status: rawStatus,
       mappedStatus: mapWDFIStatus(rawStatus),
+      statusDate,
     });
   }
 

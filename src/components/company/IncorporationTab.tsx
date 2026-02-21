@@ -264,8 +264,9 @@ export default function IncorporationTab({ company }: Props) {
   const applyWdfiResult = (result: any, verificationDate: string) => {
     update("corporate_status", result.mappedStatus);
     update("verification_date", verificationDate);
-    if (result.mappedStatus === "current") {
-      update("annual_report_year", new Date().getFullYear().toString());
+    if (result.mappedStatus === "current" && result.statusDate) {
+      const year = result.statusDate.split("-")[0];
+      if (year) update("annual_report_year", year);
     }
     toast.success(`WDFI Status: ${result.status} → ${result.mappedStatus}${result.entityId ? ` (ID: ${result.entityId})` : ""}`);
   };
