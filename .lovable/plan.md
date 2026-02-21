@@ -7,7 +7,7 @@ Add a "Verify with WDFI" button to the Corporate Status section on the Incorpora
 
 ## How It Works
 1. User clicks "Verify with WDFI" button next to the Corporate Status fields
-2. An edge function uses Firecrawl to scrape `https://www.wdfi.org/apps/CorpSearch/Results.aspx?type=Simple&q={company_name}`
+2. An edge function uses Firecrawl to scrape `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?type=Simple&q={company_name}`
 3. The scraped results are parsed (either via Firecrawl's JSON extraction or simple text matching) to find the entity and its status
 4. The status is mapped to the app's internal values (current, delinquent, dissolved, suspended) and the fields are auto-filled
 

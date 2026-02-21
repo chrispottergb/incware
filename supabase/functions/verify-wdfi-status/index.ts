@@ -22,59 +22,40 @@ function mapWDFIStatus(rawStatus: string): string {
 
 function parseResults(markdown: string): WDFIResult[] {
   const results: WDFIResult[] = [];
-
-  // Try to parse table rows from markdown - WDFI returns results in a table format
-  // Look for patterns like: | Entity Name | Entity ID | Type | Status |
   const lines = markdown.split('\n');
 
   for (const line of lines) {
-    // Skip header/separator lines
-    if (line.includes('---') || !line.includes('|')) continue;
+    if (!line.includes('|') || line.includes('---')) continue;
 
     const cells = line.split('|').map(c => c.trim()).filter(c => c.length > 0);
-    if (cells.length < 2) continue;
+    if (cells.length < 4) continue;
 
-    // Try to identify entity name, ID, and status from cells
-    // WDFI tables typically have: Entity Name, Entity ID, Entity Type, Status
-    const entityName = cells[0];
-    if (!entityName || entityName.toLowerCase() === 'entity name' || entityName.toLowerCase() === 'name') continue;
+    // WDFI table: ID | Entity Name/Type | Registered/Effective Date | Status/Status Date
+    const idCell = cells[0];
+    const nameCell = cells[1];
+    const statusCell = cells[3];
 
-    const entityId = cells.length > 1 ? cells[1] : '';
-    const type = cells.length > 2 ? cells[2] : '';
-    const rawStatus = cells.length > 3 ? cells[3] : (cells.length > 2 ? cells[2] : '');
+    // Skip header rows and non-entity rows
+    if (idCell.toLowerCase().includes('id') || idCell.toLowerCase().includes('corporate') || idCell.toLowerCase().includes('search')) continue;
+    if (!idCell.match(/^[A-Z0-9]/)) continue;
 
-    // Skip if this looks like a header row
-    if (entityId.toLowerCase() === 'entity id' || entityId.toLowerCase() === 'id') continue;
+    // Extract entity name from markdown link: [NAME](url)
+    const nameMatch = nameCell.match(/\[([^\]]+)\]/);
+    const entityName = nameMatch ? nameMatch[1] : nameCell;
+
+    // Skip if entity name looks like a header
+    if (entityName.toLowerCase() === 'entity name' || entityName.toLowerCase() === 'name') continue;
+
+    // Extract raw status (before <br> date)
+    const rawStatus = statusCell.replace(/<br>/g, ' ').replace(/\d{2}\/\d{2}\/\d{4}/, '').trim();
 
     results.push({
       entityName,
-      entityId,
-      type,
+      entityId: idCell,
+      type: cells[2]?.replace(/<br>/g, ' ').trim() || '',
       status: rawStatus,
       mappedStatus: mapWDFIStatus(rawStatus),
     });
-  }
-
-  // Fallback: try to find status keywords in the text if no table rows found
-  if (results.length === 0) {
-    const statusPatterns = [
-      { pattern: /(?:entity|company|corporation)[\s:]*(.+?)[\s]*(?:status|:)[\s]*(\w[\w\s.]*)/gi },
-      { pattern: /status[\s:]+(\w[\w\s.]*)/gi },
-    ];
-
-    // Try to extract entity name and status from free-form text
-    const nameMatch = markdown.match(/(?:entity name|corporation|company)[\s:]+([^\n|]+)/i);
-    const statusMatch = markdown.match(/(?:status|standing)[\s:]+([^\n|]+)/i);
-    const idMatch = markdown.match(/(?:entity id|id number|filing number)[\s:]+([A-Z0-9-]+)/i);
-
-    if (statusMatch) {
-      results.push({
-        entityName: nameMatch ? nameMatch[1].trim() : 'Unknown',
-        entityId: idMatch ? idMatch[1].trim() : '',
-        status: statusMatch[1].trim(),
-        mappedStatus: mapWDFIStatus(statusMatch[1].trim()),
-      });
-    }
   }
 
   return results;
@@ -103,7 +84,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const searchUrl = `https://www.wdfi.org/apps/CorpSearch/Results.aspx?type=Simple&q=${encodeURIComponent(company_name)}`;
+    const searchUrl = `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?type=Simple&q=${encodeURIComponent(company_name)}`;
     console.log('Scraping WDFI:', searchUrl);
 
     const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
