@@ -264,7 +264,10 @@ export default function IncorporationTab({ company }: Props) {
   const applyWdfiResult = (result: any, verificationDate: string) => {
     update("corporate_status", result.mappedStatus);
     update("verification_date", verificationDate);
-    if (result.mappedStatus === "current" && result.statusDate) {
+    if (result.annualReportYear) {
+      update("annual_report_year", result.annualReportYear);
+    } else if (result.mappedStatus === "current" && result.statusDate) {
+      // Fallback to status date year if detail page scrape failed
       const year = result.statusDate.split("-")[0];
       if (year) update("annual_report_year", year);
     }
