@@ -1,67 +1,19 @@
 
 
-# Automated WDFI Corporate Status Verification
+## Pre-populate WDFI Search with Company Name
 
-## Overview
-Add a "Verify with WDFI" button to the Corporate Status section on the Incorporation tab. When clicked, it scrapes the Wisconsin DFI Corporate Search website using Firecrawl, extracts the entity's status, and auto-populates the Corporate Status and Verification Date fields.
+### What Changes
+When clicking the "Open WI DFI" external link button, the URL will include the company name as a search query parameter so the WDFI search results page loads pre-populated with the company's name.
 
-## How It Works
-1. User clicks "Verify with WDFI" button next to the Corporate Status fields
-2. An edge function uses Firecrawl to scrape `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?type=Simple&q={company_name}`
-3. The scraped results are parsed (either via Firecrawl's JSON extraction or simple text matching) to find the entity and its status
-4. The status is mapped to the app's internal values (current, delinquent, dissolved, suspended) and the fields are auto-filled
+### Technical Details
 
-## Prerequisites
-- Link the existing Firecrawl connector to this project (already available in workspace)
+**File:** `src/components/company/IncorporationTab.tsx`
 
-## Implementation Steps
+1. Update the WI entry in `STATE_SOS_INFO` to use the search URL format:
+   - From: `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx`
+   - To: `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?type=Simple&q={company_name}`
 
-### 1. Connect Firecrawl
-Link the existing Firecrawl connection to the project so the `FIRECRAWL_API_KEY` secret becomes available to edge functions.
+2. Modify the `window.open` call for the WI "Open WI DFI" button to dynamically append `?type=Simple&q=` with the URL-encoded company name (`form.name`) to the base URL.
 
-### 2. Create Edge Function: `verify-wdfi-status`
-**File:** `supabase/functions/verify-wdfi-status/index.ts`
-
-- Accepts `company_name` and optionally `entity_id` (the WDFI entity ID if known) in the request body
-- Uses Firecrawl to scrape the WDFI search results page
-- Parses the scraped markdown/text to find matching entity and extract:
-  - Entity status (e.g., "Organized", "Delinquent", "Admin. Dissolved")
-  - Entity ID number
-  - Date of incorporation
-- Maps WDFI statuses to internal statuses:
-  - "Organized" / "Registered" --> `current`
-  - "Delinquent" --> `delinquent`
-  - "Admin. Dissolved" / "Dissolved" --> `dissolved`
-  - "Suspended" / "Revoked" --> `suspended`
-- Returns the mapped status, verification date (today), and raw WDFI data
-
-### 3. Update `supabase/config.toml`
-Register the new `verify-wdfi-status` function with `verify_jwt = false`.
-
-### 4. Update Frontend: `IncorporationTab.tsx`
-- Add a "Verify with WDFI" button (with a Shield/RefreshCw icon) inside the Corporate Status Verification card
-- On click:
-  - Call the `verify-wdfi-status` edge function with the company name
-  - Show a loading spinner during the request
-  - Auto-fill `corporate_status`, `verification_date`, and show a toast with the result
-  - If multiple matches are found, show a small dialog letting the user pick the correct entity
-- Handle errors gracefully (Firecrawl unavailable, no results found, etc.)
-
-## Status Mapping Table
-
-```text
-WDFI Status              -->  App Status
------------------------------------------
-Organized / Registered   -->  current
-Delinquent               -->  delinquent
-Admin. Dissolved         -->  dissolved
-Voluntarily Dissolved    -->  dissolved
-Revoked / Suspended      -->  suspended
-```
-
-## Technical Notes
-- Firecrawl's `onlyMainContent: true` option will help strip navigation/ads from the WDFI page
-- The edge function will use text pattern matching on the scraped markdown rather than AI parsing, keeping it fast and free of AI credit usage
-- The verification date is set to today's date automatically
-- The company name used for search comes from the existing `form.name` field
+This is the same URL format already used by the `verify-wdfi-status` edge function, so it will produce the same search results the user sees when auto-verifying.
 
