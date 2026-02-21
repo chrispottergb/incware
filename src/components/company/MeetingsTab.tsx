@@ -445,9 +445,9 @@ export default function MeetingsTab({ companyId, company }: Props) {
       <AlertDialog open={deleteStep === 1} onOpenChange={(open) => { if (!open) { setDeleteStep(0); setDeletingId(null); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to delete this meeting?</AlertDialogTitle>
+            <AlertDialogTitle>Delete this meeting?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this meeting and lose all of the data associated with it.
+              All data tied to this meeting — officers, financials, resolutions, and more — will be permanently removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -465,9 +465,9 @@ export default function MeetingsTab({ companyId, company }: Props) {
       <AlertDialog open={deleteStep === 2} onOpenChange={(open) => { if (!open) { setDeleteStep(0); setDeletingId(null); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you really sure?</AlertDialogTitle>
+            <AlertDialogTitle>This can't be undone</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you really sure you want to delete and lose all of the data for this file? This cannot be undone.
+              Once deleted, there is no way to recover this meeting or any of its records. Are you sure you want to continue?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
