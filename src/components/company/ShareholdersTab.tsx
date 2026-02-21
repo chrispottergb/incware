@@ -16,7 +16,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, Users, Edit2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology } from "@/lib/entity-terminology";
@@ -40,6 +40,9 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
   const [form, setForm] = useState({
     name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active",
   });
+  const [decryptedSsns, setDecryptedSsns] = useState<Record<string, string | null>>({});
+  const [showSsns, setShowSsns] = useState(false);
+  const [decrypting, setDecrypting] = useState(false);
 
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
@@ -65,24 +68,42 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
 
   const save = useMutation({
     mutationFn: async () => {
+      const ssnValue = form.ssn_ein?.trim() || null;
+      let shareholderId = editId;
+
       if (editId) {
+        // Update without SSN (SSN handled separately via edge function)
         const { error } = await supabase.from("shareholders").update({
           name: form.name, address: form.address || null, address_2: form.address_2 || null, city: form.city || null,
-          state: form.state || null, zip: form.zip || null, ssn_ein: form.ssn_ein || null, status: form.status,
+          state: form.state || null, zip: form.zip || null, status: form.status,
         }).eq("id", editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("shareholders").insert({
+        // Insert without SSN
+        const { data: inserted, error } = await supabase.from("shareholders").insert({
           company_id: companyId, name: form.name, address: form.address || null, address_2: form.address_2 || null,
-          city: form.city || null, state: form.state || null, zip: form.zip || null,
-          ssn_ein: form.ssn_ein || null, status: form.status,
-        });
+          city: form.city || null, state: form.state || null, zip: form.zip || null, status: form.status,
+        }).select("id").single();
         if (error) throw error;
+        shareholderId = inserted.id;
+      }
+
+      // Encrypt SSN/EIN via edge function if provided
+      if (ssnValue && shareholderId) {
+        const { error: encError } = await supabase.functions.invoke("encrypt-ssn", {
+          body: { shareholder_id: shareholderId, ssn_ein: ssnValue },
+        });
+        if (encError) {
+          console.error("SSN encryption error:", encError);
+          toast.error("Shareholder saved but SSN/EIN encryption failed. Please try editing again.");
+        }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shareholders", companyId] });
       setDialog(false); resetForm();
+      setDecryptedSsns({});
+      setShowSsns(false);
       toast.success(editId ? `${t.shareholder} updated!` : `${t.shareholder} added!`);
     },
     onError: (err: Error) => toast.error(err.message),
@@ -102,8 +123,54 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
 
   const openEdit = (s: typeof shareholders[0]) => {
     setEditId(s.id);
-    setForm({ name: s.name, address: s.address ?? "", address_2: (s as any).address_2 ?? "", city: s.city ?? "", state: s.state ?? "", zip: s.zip ?? "", ssn_ein: s.ssn_ein ?? "", status: s.status ?? "active" });
+    // When editing, the SSN field starts empty since it's encrypted in DB
+    // User can enter a new value or leave blank to keep existing
+    setForm({ name: s.name, address: s.address ?? "", address_2: (s as any).address_2 ?? "", city: s.city ?? "", state: s.state ?? "", zip: s.zip ?? "", ssn_ein: decryptedSsns[s.id] ?? "", status: s.status ?? "active" });
     setDialog(true);
+  };
+
+  const toggleDecrypt = async () => {
+    if (showSsns) {
+      setShowSsns(false);
+      setDecryptedSsns({});
+      return;
+    }
+
+    const ids = shareholders.filter(s => (s as any).ssn_ein_encrypted).map(s => s.id);
+    if (ids.length === 0) {
+      toast.info("No encrypted SSN/EIN data found.");
+      setShowSsns(true);
+      return;
+    }
+
+    setDecrypting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("decrypt-ssn", {
+        body: { shareholder_ids: ids },
+      });
+      if (error) throw error;
+      setDecryptedSsns(data.data || {});
+      setShowSsns(true);
+    } catch (err: any) {
+      toast.error("Failed to decrypt SSN/EIN data: " + (err.message || "Unknown error"));
+    } finally {
+      setDecrypting(false);
+    }
+  };
+
+  const getSsnDisplay = (s: typeof shareholders[0]) => {
+    if (showSsns && decryptedSsns[s.id]) {
+      return decryptedSsns[s.id];
+    }
+    // Show masked version - check if encrypted data exists
+    if ((s as any).ssn_ein_encrypted) {
+      return "••••••••";
+    }
+    // Legacy plaintext fallback
+    if (s.ssn_ein) {
+      return "••••" + s.ssn_ein.slice(-4);
+    }
+    return "—";
   };
 
   return (
@@ -127,11 +194,29 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
                 s.name,
                 s.address ?? "—",
                 [s.city, s.state, s.zip].filter(Boolean).join(", ") || "—",
-                s.ssn_ein ? "••••" + s.ssn_ein.slice(-4) : "—",
+                getSsnDisplay(s),
                 s.status ?? "—",
               ]),
             },
           }} />
+          {shareholders.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs"
+              onClick={toggleDecrypt}
+              disabled={decrypting}
+            >
+              {decrypting ? (
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              ) : showSsns ? (
+                <EyeOff className="mr-1 h-3 w-3" />
+              ) : (
+                <Eye className="mr-1 h-3 w-3" />
+              )}
+              {showSsns ? "Hide SSN" : "Show SSN"}
+            </Button>
+          )}
           <Dialog open={dialog} onOpenChange={(o) => { setDialog(o); if (!o) resetForm(); }}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline" className="h-7 text-xs">
@@ -177,7 +262,12 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">SSN / EIN</Label>
-                    <Input className="h-8 text-sm" value={form.ssn_ein} onChange={(e) => setForm(p => ({ ...p, ssn_ein: e.target.value }))} />
+                    <Input
+                      className="h-8 text-sm"
+                      value={form.ssn_ein}
+                      onChange={(e) => setForm(p => ({ ...p, ssn_ein: e.target.value }))}
+                      placeholder={editId ? "Enter new value or leave blank" : ""}
+                    />
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Status</Label>
@@ -223,7 +313,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
                     <TableCell className="text-xs font-medium">{s.name}</TableCell>
                     <TableCell className="text-xs">{s.address ?? "—"}</TableCell>
                     <TableCell className="text-xs">{[s.city, s.state, s.zip].filter(Boolean).join(", ") || "—"}</TableCell>
-                    <TableCell className="text-xs font-mono">{s.ssn_ein ? "••••" + s.ssn_ein.slice(-4) : "—"}</TableCell>
+                    <TableCell className="text-xs font-mono">{getSsnDisplay(s)}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${s.status === "active" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}`}>
                         {s.status}
