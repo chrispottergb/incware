@@ -40,7 +40,7 @@ interface ExtractedData {
     business_purpose: string | null;
     entity_type: string;
     accounting_method: string;
-    sic_code: string | null;
+    naics_code: string | null;
   };
   financials: {
     total_sales: number | null;
@@ -333,7 +333,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
             fiscal_year_end: latest.company.fiscal_year_end || null,
             business_purpose: latest.company.business_purpose || null,
             accounting_method: latest.company.accounting_method || null,
-            sic_code: latest.company.sic_code || null,
+            naics_code: latest.company.naics_code || null,
           })
           .select("id")
           .single();
@@ -351,7 +351,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
           fiscal_year_end: c.fiscal_year_end || undefined,
           business_purpose: c.business_purpose || undefined,
           accounting_method: c.accounting_method || undefined,
-          sic_code: c.sic_code || undefined,
+          naics_code: c.naics_code || undefined,
         }).eq("id", targetCompanyId);
       }
 

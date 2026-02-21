@@ -710,6 +710,7 @@ export type Database = {
           initial_directors_count: number | null
           max_directors_allowed: number | null
           max_vps_allowed: number | null
+          naics_code: string | null
           name: string
           par_value: number | null
           par_value_type: string | null
@@ -724,7 +725,6 @@ export type Database = {
           scheduled_annual_meeting: string | null
           seal_type: string | null
           second_name_choice: string | null
-          sic_code: string | null
           state: string | null
           state_of_incorporation: string | null
           status: string | null
@@ -755,6 +755,7 @@ export type Database = {
           initial_directors_count?: number | null
           max_directors_allowed?: number | null
           max_vps_allowed?: number | null
+          naics_code?: string | null
           name: string
           par_value?: number | null
           par_value_type?: string | null
@@ -769,7 +770,6 @@ export type Database = {
           scheduled_annual_meeting?: string | null
           seal_type?: string | null
           second_name_choice?: string | null
-          sic_code?: string | null
           state?: string | null
           state_of_incorporation?: string | null
           status?: string | null
@@ -800,6 +800,7 @@ export type Database = {
           initial_directors_count?: number | null
           max_directors_allowed?: number | null
           max_vps_allowed?: number | null
+          naics_code?: string | null
           name?: string
           par_value?: number | null
           par_value_type?: string | null
@@ -814,7 +815,6 @@ export type Database = {
           scheduled_annual_meeting?: string | null
           seal_type?: string | null
           second_name_choice?: string | null
-          sic_code?: string | null
           state?: string | null
           state_of_incorporation?: string | null
           status?: string | null

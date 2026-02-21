@@ -1,0 +1,1 @@
+ALTER TABLE public.companies RENAME COLUMN sic_code TO naics_code;
