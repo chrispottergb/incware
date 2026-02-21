@@ -31,6 +31,7 @@ const US_STATES = [
 function getOfficerFields(entityType: string) {
   switch (entityType) {
     case "LLC":
+    case "Single Member LLC":
       return [
         { key: "president", label: "Managing Member / Manager", placeholder: "Name" },
         { key: "vice_president", label: "Assistant Manager", placeholder: "Name" },
@@ -82,6 +83,11 @@ export const OFFICER_TITLE_OPTIONS: Record<string, string[]> = {
     "Executive Vice President", "Senior Vice President",
   ],
   LLC: [
+    "Managing Member", "Manager", "Assistant Manager", "Secretary",
+    "Treasurer", "Financial Manager", "Organizer", "Member-Manager",
+    "Chief Manager", "Operations Manager",
+  ],
+  "Single Member LLC": [
     "Managing Member", "Manager", "Assistant Manager", "Secretary",
     "Treasurer", "Financial Manager", "Organizer", "Member-Manager",
     "Chief Manager", "Operations Manager",

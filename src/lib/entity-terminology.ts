@@ -55,8 +55,13 @@ export interface EntityTerminology {
   isLLC: boolean;
 }
 
+/** Returns true for both "LLC" and "Single Member LLC" entity types. */
+export function isLLCType(entityType?: string): boolean {
+  return entityType === "LLC" || entityType === "Single Member LLC";
+}
+
 export function getTerminology(entityType?: string): EntityTerminology {
-  const isLLC = entityType === "LLC";
+  const isLLC = isLLCType(entityType);
 
   if (isLLC) {
     return {

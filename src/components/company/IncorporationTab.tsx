@@ -55,7 +55,7 @@ function IncorporationDatePicker({ value, onChange }: { value: string; onChange:
   );
 }
 
-const ENTITY_TYPES = ["Corporation", "LLC", "S-Corp", "Non-Profit", "Partnership"];
+const ENTITY_TYPES = ["Corporation", "LLC", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"];
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
   "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
@@ -67,6 +67,7 @@ const US_STATES = [
 function getEquityCardConfig(entityType: string) {
   switch (entityType) {
     case "LLC":
+    case "Single Member LLC":
       return {
         title: "Membership Interest",
         icon: <Users className="h-3.5 w-3.5 text-primary" />,

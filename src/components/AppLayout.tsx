@@ -141,7 +141,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   <Building2 className="h-3 w-3 shrink-0 opacity-50" />
                   <span className="truncate flex-1">{c.name}</span>
                   <span className="shrink-0 rounded bg-sidebar-accent/60 px-1 py-0 text-[9px] font-semibold uppercase text-sidebar-foreground/50">
-                    {c.entity_type === "Corporation" ? "Corp" : c.entity_type === "S-Corp" ? "S-Corp" : c.entity_type === "LLC" ? "LLC" : c.entity_type?.slice(0, 4)}
+                    {c.entity_type === "Corporation" ? "Corp" : c.entity_type === "S-Corp" ? "S-Corp" : c.entity_type === "LLC" ? "LLC" : c.entity_type === "Single Member LLC" ? "SMLLC" : c.entity_type?.slice(0, 4)}
                   </span>
                 </button>
               );
