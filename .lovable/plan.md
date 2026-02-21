@@ -1,27 +1,33 @@
 
 
-## Replace Par Value Free-Text Input with Dollar Amount or No Par Selection
+## Change SIC Code to NAICS Code with Website Link
 
-### What Changes
+### What's changing
+- Every reference to "SIC Code" throughout the app will be renamed to "NAICS Code"
+- The database column `sic_code` will be renamed to `naics_code`
+- A clickable link to the NAICS website (https://www.naics.com) will be added next to the field label
 
-In the Stock Certificate issue/edit dialog, the current par value field is a plain number input. This will be replaced with a two-part control:
+### Files to update
 
-1. A **Select dropdown** to choose between "Par Value" and "No Par Value"
-2. A **Dollar amount input** that only appears when "Par Value" is selected (whole dollar amounts, no decimals)
+**1. Database migration**
+- Rename column `sic_code` to `naics_code` on the `companies` table
 
-### Technical Details
+**2. `src/components/company/OrganizationTab.tsx`**
+- Change label from "SIC Code" to "NAICS Code"
+- Change all `sic_code` references in state/form to `naics_code`
+- Add a clickable link icon or text link to https://www.naics.com next to the label
 
-**File:** `src/components/company/StockCertificatesTab.tsx`
+**3. `src/components/TaxReturnUpload.tsx`**
+- Rename `sic_code` property references to `naics_code` in the type definition and all usage
 
-1. **Add a `par_value_type` field to the form state** -- values: `"par"` or `"no_par"`. Default to `"par"`. When loading an existing certificate for editing, set to `"no_par"` if `par_value` is null, otherwise `"par"`.
+**4. `src/pages/ImportAccess.tsx`**
+- Update label from "SIC Code" to "NAICS Code"
+- Update field mapping keys from `sic_code`/`sic` to `naics_code`/`naics`
 
-2. **Replace the single par value `<Input>` (line 216-219)** with:
-   - A `<Select>` for choosing "Par Value" vs "No Par Value"
-   - A conditional `<Input>` for the dollar amount (type="number", step="1", min="0") that only shows when "Par Value" is selected
+**5. `supabase/functions/parse-tax-return/index.ts`**
+- Update the AI prompt schema and field references from `sic_code` to `naics_code`
 
-3. **Update the save payload (line 97)**: When `par_value_type` is `"no_par"`, send `par_value: null`. When `"par"`, send `parseFloat(form.par_value)`.
-
-4. **Update `resetForm` and `openEdit`** to handle the new `par_value_type` field.
-
-5. **Update the grid layout** from `grid-cols-3` to accommodate the extra field -- use `grid-cols-2` for the class/shares row, then a separate row for par value type and amount.
-
+### Technical details
+- A SQL migration will rename the column: `ALTER TABLE companies RENAME COLUMN sic_code TO naics_code;`
+- The NAICS link will use an `ExternalLink` icon from lucide-react, opening in a new tab
+- The types file (`src/integrations/supabase/types.ts`) will auto-regenerate after the migration
