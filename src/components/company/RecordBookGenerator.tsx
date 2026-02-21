@@ -70,6 +70,12 @@ export default function RecordBookGenerator({
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
+        if (response.status === 402) {
+          throw new Error("AI credits exhausted. Please add credits in Settings → Workspace → Usage to continue.");
+        }
+        if (response.status === 429) {
+          throw new Error("AI rate limit reached. Please wait a moment and try again.");
+        }
         throw new Error(err.error || `Failed (${response.status})`);
       }
 
