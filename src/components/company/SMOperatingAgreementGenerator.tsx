@@ -144,9 +144,13 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   const handleShare = async () => {
     if (!pdfDoc) return;
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) throw new Error("You must be logged in to share documents.");
+
       const blob = pdfDoc.output("blob");
       const safeName = formCompanyName.replace(/[^a-zA-Z0-9]/g, "_") || "SMLLC";
-      const fileName = `${safeName}_SM_Operating_Agreement_${Date.now()}.pdf`;
+      const fileName = `${userId}/${safeName}_SM_Operating_Agreement_${Date.now()}.pdf`;
 
       const { error: uploadError } = await supabase.storage
         .from("generated-documents")

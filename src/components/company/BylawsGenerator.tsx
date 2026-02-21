@@ -141,9 +141,13 @@ export default function BylawsGenerator({ companyId, companyName, company }: Pro
   const handleShare = async () => {
     if (!pdfDoc) return;
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) throw new Error("You must be logged in to share documents.");
+
       const blob = pdfDoc.output("blob");
       const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_");
-      const fileName = `${safeName}_Bylaws_${Date.now()}.pdf`;
+      const fileName = `${userId}/${safeName}_Bylaws_${Date.now()}.pdf`;
 
       const { error: uploadError } = await supabase.storage
         .from("generated-documents")
