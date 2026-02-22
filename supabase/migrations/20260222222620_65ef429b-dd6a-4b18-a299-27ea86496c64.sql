@@ -1,0 +1,1 @@
+ALTER TABLE public.companies ADD COLUMN authorized_binders text;

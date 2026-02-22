@@ -299,6 +299,22 @@ function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string
   return y;
 }
 
+function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: string): number {
+  const pw = doc.internal.pageSize.getWidth();
+  y = checkPageBreak(doc, y, 25);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(30, 30, 30);
+  const whereasLines = doc.splitTextToSize(whereas, pw - 28);
+  doc.text(whereasLines, 14, y);
+  y += whereasLines.length * 3.5 + 2;
+  y = checkPageBreak(doc, y, 15);
+  const resolvedLines = doc.splitTextToSize(resolved, pw - 28);
+  doc.text(resolvedLines, 14, y);
+  y += resolvedLines.length * 3.5 + 5;
+  return y;
+}
+
 function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData): number {
   const { company, meeting } = data;
   const entityType = company?.entity_type || "Corporation";
@@ -536,11 +552,29 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = addOrganizationalBoilerplate(doc, y, data);
   }
 
+  // Ratification of Prior Year Actions (for Annual and Shareholder meetings)
+  const mType = (meeting.meeting_type || "").toLowerCase();
+  if (mType.includes("annual") || mType.includes("shareholder")) {
+    y += 3;
+    y = checkPageBreak(doc, y, 30);
+    y = addSectionTitle(doc, y, "Ratification of Prior Year Actions");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} and ${isLLC ? "members" : "shareholders"} of ${companyName} have taken various actions and made certain decisions during the prior fiscal year in the ordinary course of business; and`,
+      `NOW, THEREFORE, BE IT RESOLVED, that all acts and decisions of the ${isLLC ? "members/managers" : "directors"} and ${isLLC ? "members" : "officers"} of ${companyName} taken or made since the last annual meeting are hereby ratified, confirmed, and approved in all respects.`
+    );
+  }
+
   // Directors
   if (data.directors && data.directors.length > 0) {
     y += 3;
-    y = checkPageBreak(doc, y, 20 + data.directors.length * 7);
-    y = addSectionTitle(doc, y, "Directors Present");
+    y = checkPageBreak(doc, y, 30 + data.directors.length * 7);
+    y = addSectionTitle(doc, y, isLLC ? "Members Present" : "Directors Present");
+    if (!isLLC && (mType.includes("annual") || mType.includes("shareholder"))) {
+      y = addWhereasResolved(doc, y,
+        `WHEREAS, the terms of the current ${isLLC ? "managers" : "directors"} expire at this meeting, and the ${isLLC ? "members" : "shareholders"} are called upon to ${isLLC ? "appoint" : "elect"} the ${isLLC ? "managers" : "Board of Directors"} for the ensuing year; and`,
+        `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby ${isLLC ? "appointed" : "re-elected"} as ${isLLC ? "managers" : "directors"} of ${companyName}, to serve until the next annual meeting and until their successors are duly ${isLLC ? "appointed" : "elected"} and qualified:`
+      );
+    }
     autoTable(doc, {
       startY: y,
       head: [["Director Name"]],
@@ -555,8 +589,13 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
   // Officers (with salary/bonus)
   if (data.officers && data.officers.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.officers.length * 7);
+    y = checkPageBreak(doc, y, 30 + data.officers.length * 7);
     y = addSectionTitle(doc, y, "Officers");
+    const isSCorp = entityType === "S-Corp";
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has reviewed the current ${isLLC ? "management" : "officer"} positions and compensation of ${companyName}${isSCorp ? ", and recognizing the requirement under IRC § 1366 that officer-shareholders receive reasonable compensation" : ""}; and`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby ${isLLC ? "appointed" : "re-elected"} as ${isLLC ? "managers/officers" : "officers"} of ${companyName}, at the compensation levels set forth below, to serve until their successors are duly ${isLLC ? "appointed" : "elected"} and qualified:`
+    );
     const hasSalaryData = data.officers.some(o => o.salary != null || o.bonus != null);
     autoTable(doc, {
       startY: y,
@@ -575,8 +614,13 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
   // Shareholders
   if (data.shareholders && data.shareholders.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.shareholders.length * 7);
-    y = addSectionTitle(doc, y, entityType === "LLC" ? "Members" : "Shareholders");
+    y = checkPageBreak(doc, y, 30 + data.shareholders.length * 7);
+    const memberLabel = isLLC ? "Members" : "Shareholders";
+    y = addSectionTitle(doc, y, memberLabel);
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "members" : "shareholders"} of ${companyName} hold ownership interests as set forth below; and`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following ${isLLC ? "membership interests" : "share ownership"} is hereby acknowledged and confirmed:`
+    );
     autoTable(doc, {
       startY: y,
       head: [["Name", "Common Shares", "Preferred Shares", "Distribution"]],
@@ -599,6 +643,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const f = data.financials;
     y = checkPageBreak(doc, y, 80);
     y = addSectionTitle(doc, y, "Financial Comparison — Year to Year");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has reviewed the financial statements of ${companyName} for the current and prior fiscal years; and`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the financial statements as presented are hereby accepted and approved:`
+    );
 
     const yoy = (cur: number | null | undefined, prev: number | null | undefined): string => {
       if (cur == null || prev == null || prev === 0) return "—";
@@ -687,7 +735,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Counsel
   if (data.counsel && data.counsel.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.counsel.length * 7);
-    y = addSectionTitle(doc, y, "Counsel / Banking / Loans");
+    y = addSectionTitle(doc, y, "Selection of Counsel & Banking");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has reviewed the professional advisors and banking relationships of ${companyName}; and`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following selections of counsel, accountant, and banking institution are hereby approved and confirmed:`
+    );
     autoTable(doc, {
       startY: y,
       head: [["Counsel", "Bank", "Loans"]],
@@ -704,6 +756,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (data.loans && data.loans.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.loans.length * 7);
     y = addSectionTitle(doc, y, "Loans");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has reviewed the borrowing needs and existing loan obligations of ${companyName}; and`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following loans are hereby approved and the proper ${isLLC ? "managers" : "officers"} are authorized to execute all necessary documents:`
+    );
     autoTable(doc, {
       startY: y,
       head: [["Type", "Rate", "Amount", "Date", "Notes"]],
@@ -725,7 +781,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Assets
   if (data.assets && data.assets.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.assets.length * 7);
-    y = addSectionTitle(doc, y, "Assets");
+    y = addSectionTitle(doc, y, "Assets — Vehicles & Equipment");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has reviewed the assets, vehicles, and equipment of ${companyName}; and`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following list of assets is hereby acknowledged and approved:`
+    );
     autoTable(doc, {
       startY: y,
       head: [["Type", "Description", "Value"]],
@@ -742,6 +802,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (data.amendments && data.amendments.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.amendments.length * 12);
     y = addSectionTitle(doc, y, "Amendments");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has determined that certain amendments to the governing documents of ${companyName} are in the best interests of the ${isLLC ? "company" : "corporation"}; and`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following amendments are hereby adopted:`
+    );
     data.amendments.forEach((a) => {
       y = checkPageBreak(doc, y, 20);
       doc.setFontSize(9);
@@ -910,6 +974,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (data.benefits && data.benefits.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.benefits.length * 7);
     y = addSectionTitle(doc, y, "Benefits");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has reviewed the employee benefit plans of ${companyName} for the current plan year; and`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following benefit plans are hereby approved and adopted for the ensuing year:`
+    );
     autoTable(doc, {
       startY: y,
       head: [["Benefit Type", "Provider", "Agent/Admin", "Plan Year", "Contribution"]],
@@ -932,6 +1000,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (data.agreements && data.agreements.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.agreements.length * 7);
     y = addSectionTitle(doc, y, "Agreements");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has reviewed the following agreements entered into by ${companyName}; and`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following agreements are hereby ratified and approved:`
+    );
     autoTable(doc, {
       startY: y,
       head: [["Type", "Date", "With", "Purpose"]],
@@ -969,6 +1041,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (data.authorizedSigners && data.authorizedSigners.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.authorizedSigners.length * 7);
     y = addSectionTitle(doc, y, "Authorized Signatories");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has reviewed the authorized signatories on the banking accounts of ${companyName}; and`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby authorized as signatories on the designated accounts:`
+    );
     autoTable(doc, {
       startY: y,
       head: [["Name", "Title", "Bank"]],
