@@ -520,13 +520,14 @@ export default function MeetingDetail() {
             <div className="flex justify-end">
               <PrintPreviewButton
                 label="Print"
-                generatePDF={() => exportSectionPDF("Counsel / Banking", company, meeting, ["Accountant", "Attorney", "Law Firm", "Bank"], counsel.map(c => [c.accountant_name || "—", c.attorney_name || "—", c.law_firm || "—", c.bank_name || "—"]))}
+                generatePDF={() => exportSectionPDF("Counsel / Banking", company, meeting, ["Accountant", "Accounting Firm", "Attorney", "Law Firm", "Bank"], counsel.map(c => [c.accountant_name || "—", c.counsel_name || "—", c.attorney_name || "—", c.law_firm || "—", c.bank_name || "—"]))}
                 fileName={`counsel-${meetingFileName}`}
               />
             </div>
             <MeetingSubTable meetingId={meeting.id} tableName="meeting_counsel" title="Counsel / Banking"
               columns={[
                 { key: "accountant_name", label: "Accountant" },
+                { key: "counsel_name", label: "Accounting Firm" },
                 { key: "attorney_name", label: "Attorney" },
                 { key: "law_firm", label: "Law Firm" },
                 { key: "bank_name", label: "Bank" },
