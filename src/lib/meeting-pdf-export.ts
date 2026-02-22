@@ -197,14 +197,22 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
       }
       // If no sub_type match or organizational/annual, list all available
       if (participants.length === 0) {
+        const seen = new Set<string>();
+        const addUnique = (name: string) => {
+          const key = name.trim().toLowerCase();
+          if (key && !seen.has(key)) {
+            seen.add(key);
+            participants.push(name.trim());
+          }
+        };
         (meetingData.shareholders || []).forEach(s => {
-          if (s.shareholder_name) participants.push(s.shareholder_name);
+          if (s.shareholder_name) addUnique(s.shareholder_name);
         });
         (meetingData.directors || []).forEach(d => {
-          if (d.director_name && !participants.includes(d.director_name)) participants.push(d.director_name);
+          if (d.director_name) addUnique(d.director_name);
         });
         (meetingData.officers || []).forEach(o => {
-          if (o.name && !participants.includes(o.name)) participants.push(o.name);
+          if (o.name) addUnique(o.name);
         });
       }
 
