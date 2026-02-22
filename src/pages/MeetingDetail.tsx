@@ -17,6 +17,8 @@ import MeetingAgreements from "@/components/meeting/MeetingAgreements";
 import PrintPreviewButton from "@/components/meeting/PrintPreviewButton";
 import DirectorReElection from "@/components/meeting/DirectorReElection";
 import { OFFICER_TITLE_OPTIONS } from "@/components/company/OrganizationTab";
+import CounselTab from "@/components/company/CounselTab";
+import LeasesTab from "@/components/company/LeasesTab";
 import {
   exportMeetingMinutesPDF,
   exportSectionPDF,
@@ -59,7 +61,9 @@ export default function MeetingDetail() {
   });
 
   const isOrganizational = meeting?.meeting_type === "Organizational Meeting";
+  const isAnnualMeeting = meeting?.meeting_type === "Annual Meeting";
   const isShareholderMeeting = meeting?.meeting_type === "Shareholder Meeting";
+  const showCompanyLevelCounselAndLeases = isAnnualMeeting || isOrganizational;
   // Fetch company-level data for organizational meeting boilerplate
   const { data: companyOfficers } = useQuery({
     queryKey: ["officers", id],
@@ -361,6 +365,7 @@ export default function MeetingDetail() {
     { value: "directors", label: "Directors" },
     { value: "officers", label: "Officers" },
     { value: "counsel", label: "Counsel / Banking" },
+    { value: "leases", label: "Leases" },
     { value: "assets", label: "Assets" },
     { value: "amendments", label: "Amendments" },
     { value: "resolutions", label: "Resolutions" },
@@ -406,8 +411,8 @@ export default function MeetingDetail() {
       </div>
 
       <Tabs defaultValue="info" className="w-full">
-        <div className="border-b border-border overflow-x-auto">
-          <TabsList className="h-auto w-max justify-start gap-0 rounded-none bg-transparent p-0">
+        <div className="border-b border-border">
+          <TabsList className="h-auto w-full flex flex-wrap justify-start gap-0 rounded-none bg-transparent p-0">
             {subTabs.map((tab) => (
               <TabsTrigger
                 key={tab.value}
@@ -516,24 +521,35 @@ export default function MeetingDetail() {
           </div>
         </TabsContent>
         <TabsContent value="counsel" className="mt-5">
-          <div className="space-y-4">
-            <div className="flex justify-end">
-              <PrintPreviewButton
-                label="Print"
-                generatePDF={() => exportSectionPDF("Counsel / Banking", company, meeting, ["Accountant", "Accounting Firm", "Attorney", "Law Firm", "Bank"], counsel.map(c => [c.accountant_name || "—", c.counsel_name || "—", c.attorney_name || "—", c.law_firm || "—", c.bank_name || "—"]))}
-                fileName={`counsel-${meetingFileName}`}
+          {showCompanyLevelCounselAndLeases ? (
+            <CounselTab companyId={id!} />
+          ) : (
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <PrintPreviewButton
+                  label="Print"
+                  generatePDF={() => exportSectionPDF("Counsel / Banking", company, meeting, ["Accountant", "Accounting Firm", "Attorney", "Law Firm", "Bank"], counsel.map(c => [c.accountant_name || "—", c.counsel_name || "—", c.attorney_name || "—", c.law_firm || "—", c.bank_name || "—"]))}
+                  fileName={`counsel-${meetingFileName}`}
+                />
+              </div>
+              <MeetingSubTable meetingId={meeting.id} tableName="meeting_counsel" title="Counsel / Banking"
+                columns={[
+                  { key: "accountant_name", label: "Accountant" },
+                  { key: "counsel_name", label: "Accounting Firm" },
+                  { key: "attorney_name", label: "Attorney" },
+                  { key: "law_firm", label: "Law Firm" },
+                  { key: "bank_name", label: "Bank" },
+                ]}
               />
             </div>
-            <MeetingSubTable meetingId={meeting.id} tableName="meeting_counsel" title="Counsel / Banking"
-              columns={[
-                { key: "accountant_name", label: "Accountant" },
-                { key: "counsel_name", label: "Accounting Firm" },
-                { key: "attorney_name", label: "Attorney" },
-                { key: "law_firm", label: "Law Firm" },
-                { key: "bank_name", label: "Bank" },
-              ]}
-            />
-          </div>
+          )}
+        </TabsContent>
+        <TabsContent value="leases" className="mt-5">
+          {showCompanyLevelCounselAndLeases ? (
+            <LeasesTab companyId={id!} companyName={company?.name} />
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-10">Leases are available on Annual and Organizational meetings.</p>
+          )}
         </TabsContent>
         <TabsContent value="assets" className="mt-5">
           <div className="space-y-4">
