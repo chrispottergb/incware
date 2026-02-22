@@ -35,6 +35,7 @@ import SMOperatingAgreementGenerator from "@/components/company/SMOperatingAgree
 import CounselTab from "@/components/company/CounselTab";
 import BanksTab from "@/components/company/BanksTab";
 import RelationshipsTab from "@/components/company/RelationshipsTab";
+import LeasesTab from "@/components/company/LeasesTab";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 
 export default function CompanyDetail() {
@@ -200,6 +201,7 @@ export default function CompanyDetail() {
               { value: "meetings", label: "Meetings" },
               { value: "shareholders", label: getTerminology(company.entity_type).shareholdersTab },
               { value: "timeline", label: "Timeline" },
+              { value: "leases", label: "Leases" },
               { value: "counsel", label: "Counsel" },
               { value: "banks", label: "Banks" },
               { value: "relationships", label: "Relationships" },
@@ -242,6 +244,9 @@ export default function CompanyDetail() {
         </TabsContent>
         <TabsContent value="timeline" className="mt-5">
           <TimelineTab companyId={company.id} company={company} />
+        </TabsContent>
+        <TabsContent value="leases" className="mt-5">
+          <LeasesTab companyId={company.id} companyName={company.name} companyAddress={[company.address, company.city, company.state, company.zip].filter(Boolean).join(", ")} />
         </TabsContent>
         <TabsContent value="counsel" className="mt-5">
           <CounselTab companyId={company.id} />
