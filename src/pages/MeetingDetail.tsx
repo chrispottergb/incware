@@ -19,6 +19,7 @@ import DirectorReElection from "@/components/meeting/DirectorReElection";
 import { OFFICER_TITLE_OPTIONS } from "@/components/company/OrganizationTab";
 import CounselTab from "@/components/company/CounselTab";
 import LeasesTab from "@/components/company/LeasesTab";
+import CompanyAssetsSection from "@/components/company/CompanyAssetsSection";
 import {
   exportMeetingMinutesPDF,
   exportSectionPDF,
@@ -366,6 +367,7 @@ export default function MeetingDetail() {
     { value: "officers", label: "Officers" },
     { value: "counsel", label: "Counsel / Banking" },
     { value: "leases", label: "Leases" },
+    { value: "vehicles", label: "Vehicles & Equipment" },
     { value: "assets", label: "Assets" },
     { value: "amendments", label: "Amendments" },
     { value: "resolutions", label: "Resolutions" },
@@ -549,6 +551,13 @@ export default function MeetingDetail() {
             <LeasesTab companyId={id!} companyName={company?.name} />
           ) : (
             <p className="text-sm text-muted-foreground text-center py-10">Leases are available on Annual and Organizational meetings.</p>
+          )}
+        </TabsContent>
+        <TabsContent value="vehicles" className="mt-5">
+          {showCompanyLevelCounselAndLeases ? (
+            <CompanyAssetsSection companyId={id!} companyName={company?.name} />
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-10">Vehicles & Equipment are available on Annual and Organizational meetings.</p>
           )}
         </TabsContent>
         <TabsContent value="assets" className="mt-5">
