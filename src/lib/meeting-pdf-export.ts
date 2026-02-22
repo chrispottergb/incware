@@ -783,8 +783,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + data.assets.length * 7);
     y = addSectionTitle(doc, y, "Assets — Vehicles & Equipment");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has reviewed the assets, vehicles, and equipment of ${companyName}; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following list of assets is hereby acknowledged and approved:`
+      `WHEREAS it is necessary for the company to obtain or dispose of vehicles for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} decided that it would be in the best interests of the company to acquire or dispose of the following vehicle(s) for the amount listed.`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following list of vehicles and equipment is hereby acknowledged and approved:`
     );
     autoTable(doc, {
       startY: y,
