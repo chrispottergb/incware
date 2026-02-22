@@ -1340,26 +1340,35 @@ export type Database = {
       }
       meeting_counsel: {
         Row: {
+          accountant_name: string | null
+          attorney_name: string | null
           bank_name: string | null
           counsel_name: string | null
           created_at: string
           id: string
+          law_firm: string | null
           loans: string | null
           meeting_id: string
         }
         Insert: {
+          accountant_name?: string | null
+          attorney_name?: string | null
           bank_name?: string | null
           counsel_name?: string | null
           created_at?: string
           id?: string
+          law_firm?: string | null
           loans?: string | null
           meeting_id: string
         }
         Update: {
+          accountant_name?: string | null
+          attorney_name?: string | null
           bank_name?: string | null
           counsel_name?: string | null
           created_at?: string
           id?: string
+          law_firm?: string | null
           loans?: string | null
           meeting_id?: string
         }

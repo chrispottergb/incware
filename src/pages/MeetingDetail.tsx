@@ -360,7 +360,7 @@ export default function MeetingDetail() {
     { value: "shareholders", label: term.shareholdersSubTab },
     { value: "directors", label: "Directors" },
     { value: "officers", label: "Officers" },
-    { value: "counsel", label: "Counsel" },
+    { value: "counsel", label: "Counsel / Banking" },
     { value: "assets", label: "Assets" },
     { value: "amendments", label: "Amendments" },
     { value: "resolutions", label: "Resolutions" },
@@ -520,15 +520,16 @@ export default function MeetingDetail() {
             <div className="flex justify-end">
               <PrintPreviewButton
                 label="Print"
-                generatePDF={() => exportSectionPDF("Counsel / Banking / Loans", company, meeting, ["Counsel", "Bank", "Loans"], counsel.map(c => [c.counsel_name || "—", c.bank_name || "—", c.loans || "—"]))}
+                generatePDF={() => exportSectionPDF("Counsel / Banking", company, meeting, ["Accountant", "Attorney", "Law Firm", "Bank"], counsel.map(c => [c.accountant_name || "—", c.attorney_name || "—", c.law_firm || "—", c.bank_name || "—"]))}
                 fileName={`counsel-${meetingFileName}`}
               />
             </div>
-            <MeetingSubTable meetingId={meeting.id} tableName="meeting_counsel" title="Counsel / Banking / Loans"
+            <MeetingSubTable meetingId={meeting.id} tableName="meeting_counsel" title="Counsel / Banking"
               columns={[
-                { key: "counsel_name", label: "Counsel" },
+                { key: "accountant_name", label: "Accountant" },
+                { key: "attorney_name", label: "Attorney" },
+                { key: "law_firm", label: "Law Firm" },
                 { key: "bank_name", label: "Bank" },
-                { key: "loans", label: "Loans" },
               ]}
             />
           </div>
