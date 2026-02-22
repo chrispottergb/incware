@@ -375,7 +375,7 @@ export default function MeetingDetail() {
     { value: "loans", label: "Loans" },
     { value: "agreements", label: "Agreements" },
     { value: "other", label: "Other" },
-    { value: "auth_signers", label: "Auth. Signatories" },
+    
   ];
 
   const meetingFileName = `${company?.name || "meeting"}-${meeting.meeting_type}-${meeting.meeting_date}.pdf`.replace(/\s+/g, "-").toLowerCase();
@@ -543,6 +543,9 @@ export default function MeetingDetail() {
                   { key: "bank_name", label: "Bank" },
                 ]}
               />
+              <div className="mt-6">
+                <MeetingAuthorizedSigners meetingId={meeting.id} companyId={meeting.company_id} meetingDate={meeting.meeting_date} />
+              </div>
             </div>
           )}
         </TabsContent>
@@ -677,18 +680,6 @@ export default function MeetingDetail() {
             <MeetingSubTable meetingId={meeting.id} tableName="meeting_other" title="Other Notes"
               columns={[{ key: "notes", label: "Notes", required: true, wide: true }]}
             />
-          </div>
-        </TabsContent>
-        <TabsContent value="auth_signers" className="mt-5">
-          <div className="space-y-4">
-            <div className="flex justify-end">
-              <PrintPreviewButton
-                label="Print"
-                generatePDF={() => exportSectionPDF("Authorized Signatories", company, meeting, ["Name", "Title", "Bank"], authorizedSigners.map((s: any) => [s.signer_name, s.title || "—", s.bank_name || "—"]))}
-                fileName={`auth-signatories-${meetingFileName}`}
-              />
-            </div>
-            <MeetingAuthorizedSigners meetingId={meeting.id} companyId={meeting.company_id} meetingDate={meeting.meeting_date} />
           </div>
         </TabsContent>
       </Tabs>
