@@ -694,6 +694,7 @@ export type Database = {
           address: string | null
           address_2: string | null
           annual_report_year: number | null
+          authorized_binders: string | null
           authorized_shares: number | null
           business_purpose: string | null
           city: string | null
@@ -739,6 +740,7 @@ export type Database = {
           address?: string | null
           address_2?: string | null
           annual_report_year?: number | null
+          authorized_binders?: string | null
           authorized_shares?: number | null
           business_purpose?: string | null
           city?: string | null
@@ -784,6 +786,7 @@ export type Database = {
           address?: string | null
           address_2?: string | null
           annual_report_year?: number | null
+          authorized_binders?: string | null
           authorized_shares?: number | null
           business_purpose?: string | null
           city?: string | null

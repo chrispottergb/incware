@@ -242,6 +242,7 @@ export default function IncorporationTab({ company }: Props) {
     state: company.state ?? "",
     zip: company.zip ?? "",
     phone: company.phone ?? "",
+    authorized_binders: (company as any).authorized_binders ?? "",
   });
 
   const update = (field: string, value: string | boolean) =>
@@ -341,7 +342,8 @@ export default function IncorporationTab({ company }: Props) {
           state: form.state || null,
           zip: form.zip || null,
           phone: form.phone || null,
-        })
+          authorized_binders: form.authorized_binders || null,
+        } as any)
         .eq("id", company.id);
       if (error) throw error;
     },
@@ -676,6 +678,15 @@ export default function IncorporationTab({ company }: Props) {
               <p className="text-[11px] text-muted-foreground">
                 LLC members hold <strong>Membership Interest</strong> — not shares. Interest is expressed as units or percentage of ownership as defined in the Operating Agreement.
               </p>
+            </div>
+          )}
+
+          {/* LLC: Authorized Binders */}
+          {equityCard.showMembershipUnits && (
+            <div className="mt-3 field-group">
+              <Label className="field-label">Authorized Binders (Wis. Stat. § 183.0301)</Label>
+              <Input className="h-8 text-sm" placeholder="Names of persons authorized to bind the LLC" value={form.authorized_binders} onChange={(e) => update("authorized_binders", e.target.value)} />
+              <p className="text-[10px] text-muted-foreground mt-0.5">Persons authorized to bind the LLC per the Operating Agreement</p>
             </div>
           )}
 
