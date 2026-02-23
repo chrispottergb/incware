@@ -413,7 +413,6 @@ export default function MeetingDetail() {
     { value: "counsel", label: "Counsel / Banking" },
     { value: "leases", label: "Leases" },
     { value: "vehicles", label: "Vehicles & Equipment" },
-    { value: "assets", label: "Assets" },
     { value: "amendments", label: "Amendments" },
     { value: "resolutions", label: "Resolutions" },
     { value: "benefits", label: "Benefits" },
@@ -611,24 +610,7 @@ export default function MeetingDetail() {
             <p className="text-sm text-muted-foreground text-center py-10">Vehicles & Equipment are available on Annual and Organizational meetings.</p>
           )}
         </TabsContent>
-        <TabsContent value="assets" className="mt-5">
-          <div className="space-y-4">
-            <div className="flex justify-end">
-              <PrintPreviewButton
-                label="Print"
-                generatePDF={() => exportSectionPDF("Assets", company, meeting, ["Type", "Description", "Value"], assets.map(a => [a.asset_type, a.description, a.value != null ? `$${Number(a.value).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"]))}
-                fileName={`assets-${meetingFileName}`}
-              />
-            </div>
-            <MeetingSubTable meetingId={meeting.id} tableName="meeting_assets" title="Vehicles / Equipment / Leases / Property"
-              columns={[
-                { key: "asset_type", label: "Type", required: true },
-                { key: "description", label: "Description", required: true },
-                { key: "value", label: "Value", type: "number" },
-              ]}
-            />
-          </div>
-        </TabsContent>
+        
         <TabsContent value="amendments" className="mt-5">
           <div className="space-y-4">
             <div className="flex justify-end">
