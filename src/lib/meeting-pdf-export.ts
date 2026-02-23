@@ -23,6 +23,8 @@ interface MeetingData {
   authorizedSigners?: any[];
   vehiclePurchases?: any[];
   vehicleLeases?: any[];
+  vehicleSales?: any[];
+  leaseTerminations?: any[];
   priorYear?: {
     officers?: any[];
     benefits?: any[];
@@ -829,6 +831,62 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         v.relationship_to_company || "—",
         v.fmv_verified ? "Yes" : "No",
         v.business_use_description || "—",
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8 },
+      margin: { left: 14, right: 14 },
+      styles: { overflow: "linebreak", cellWidth: "auto" },
+    });
+    y = (doc as any).lastAutoTable.finalY + 6;
+  }
+
+  // Vehicle/Equipment Sales
+  if (data.vehicleSales && data.vehicleSales.length > 0) {
+    y = checkPageBreak(doc, y, 20 + data.vehicleSales.length * 7);
+    y = addSectionTitle(doc, y, "Vehicles & Equipment Sold During the Year");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has reviewed the disposition of vehicles and equipment by ${companyName} during the year, and after discussion;`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following vehicle and equipment sales are hereby ratified and approved:`
+    );
+    autoTable(doc, {
+      startY: y,
+      head: [["Description", "VIN", "Sale Date", "Sale Price", "Buyer", "Reason"]],
+      body: data.vehicleSales.map((v: any) => [
+        v.year_make_model || "—",
+        v.vin || "—",
+        v.sale_date ? new Date(v.sale_date + "T00:00:00").toLocaleDateString() : "—",
+        v.sale_price != null ? fmt(v.sale_price) : "—",
+        v.buyer_name || "—",
+        v.reason_for_sale || "—",
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8 },
+      margin: { left: 14, right: 14 },
+      styles: { overflow: "linebreak", cellWidth: "auto" },
+    });
+    y = (doc as any).lastAutoTable.finalY + 6;
+  }
+
+  // Lease Terminations
+  if (data.leaseTerminations && data.leaseTerminations.length > 0) {
+    y = checkPageBreak(doc, y, 20 + data.leaseTerminations.length * 7);
+    y = addSectionTitle(doc, y, "Leases Ended During the Year");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} has reviewed the leases that have expired or been terminated by ${companyName} during the year; and`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the termination or expiration of the following leases is hereby acknowledged and ratified:`
+    );
+    autoTable(doc, {
+      startY: y,
+      head: [["Property / Vehicle", "Landlord / Lessor", "End Date", "Reason", "Early Term.", "Penalty"]],
+      body: data.leaseTerminations.map((v: any) => [
+        v.property_description || "—",
+        v.landlord_name || "—",
+        v.lease_end_date ? new Date(v.lease_end_date + "T00:00:00").toLocaleDateString() : "—",
+        v.termination_reason || "—",
+        v.early_termination ? "Yes" : "No",
+        v.penalty_amount != null ? fmt(v.penalty_amount) : "—",
       ]),
       theme: "grid",
       headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
