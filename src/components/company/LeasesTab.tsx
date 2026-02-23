@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -213,11 +214,11 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Lease Start Date</Label>
-                    <Input type="date" className="h-8 text-sm" value={form.lease_start_date} onChange={(e) => setForm((p) => ({ ...p, lease_start_date: e.target.value }))} />
+                    <DatePickerField value={form.lease_start_date} onChange={(v) => setForm((p) => ({ ...p, lease_start_date: v }))} />
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Lease End Date</Label>
-                    <Input type="date" className="h-8 text-sm" value={form.lease_end_date} onChange={(e) => setForm((p) => ({ ...p, lease_end_date: e.target.value }))} />
+                    <DatePickerField value={form.lease_end_date} onChange={(v) => setForm((p) => ({ ...p, lease_end_date: v }))} />
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">

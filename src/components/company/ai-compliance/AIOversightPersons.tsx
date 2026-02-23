@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -95,7 +96,7 @@ export default function AIOversightPersons({ companyId }: Props) {
               <div><Label className="text-xs">Competence & Training</Label><Textarea rows={2} value={form.competence_description} onChange={e => setForm(f => ({ ...f, competence_description: e.target.value }))} /></div>
               <div><Label className="text-xs">Authority Scope</Label><Textarea rows={2} value={form.authority_scope} onChange={e => setForm(f => ({ ...f, authority_scope: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Assigned Date</Label><Input type="date" value={form.assigned_date} onChange={e => setForm(f => ({ ...f, assigned_date: e.target.value }))} /></div>
+                <div><Label className="text-xs">Assigned Date</Label><DatePickerField value={form.assigned_date || ""} onChange={v => setForm(f => ({ ...f, assigned_date: v }))} /></div>
                 <div>
                   <Label className="text-xs">Status</Label>
                   <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>

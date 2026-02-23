@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -126,7 +127,7 @@ export default function AIRiskIncidents({ companyId }: Props) {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Incident Date</Label><Input type="date" value={form.incident_date} onChange={e => setForm(f => ({ ...f, incident_date: e.target.value }))} /></div>
+                <div><Label className="text-xs">Incident Date</Label><DatePickerField value={form.incident_date} onChange={v => setForm(f => ({ ...f, incident_date: v }))} /></div>
                 <div><Label className="text-xs">Reported By</Label><Input value={form.reported_by} onChange={e => setForm(f => ({ ...f, reported_by: e.target.value }))} /></div>
               </div>
               <div><Label className="text-xs">Description</Label><Textarea rows={3} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>

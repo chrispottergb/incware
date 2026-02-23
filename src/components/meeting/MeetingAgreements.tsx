@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -192,7 +193,7 @@ export default function MeetingAgreements({ meetingId }: Props) {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Date</Label>
-                  <Input type="date" value={form.agreement_date} onChange={(e) => updateField("agreement_date", e.target.value)} />
+                  <DatePickerField value={form.agreement_date || ""} onChange={(v) => updateField("agreement_date", v)} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">With (Party Name)</Label>
