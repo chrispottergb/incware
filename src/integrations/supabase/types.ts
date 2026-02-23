@@ -1681,6 +1681,112 @@ export type Database = {
           },
         ]
       }
+      meeting_vehicle_leases: {
+        Row: {
+          business_use_description: string | null
+          created_at: string
+          fmv_notes: string | null
+          fmv_verified: boolean | null
+          id: string
+          lease_start_date: string | null
+          lessor_name: string | null
+          meeting_id: string
+          monthly_lease_payment: number | null
+          notes: string | null
+          relationship_to_company: string | null
+          vin: string | null
+          year_make_model: string
+        }
+        Insert: {
+          business_use_description?: string | null
+          created_at?: string
+          fmv_notes?: string | null
+          fmv_verified?: boolean | null
+          id?: string
+          lease_start_date?: string | null
+          lessor_name?: string | null
+          meeting_id: string
+          monthly_lease_payment?: number | null
+          notes?: string | null
+          relationship_to_company?: string | null
+          vin?: string | null
+          year_make_model?: string
+        }
+        Update: {
+          business_use_description?: string | null
+          created_at?: string
+          fmv_notes?: string | null
+          fmv_verified?: boolean | null
+          id?: string
+          lease_start_date?: string | null
+          lessor_name?: string | null
+          meeting_id?: string
+          monthly_lease_payment?: number | null
+          notes?: string | null
+          relationship_to_company?: string | null
+          vin?: string | null
+          year_make_model?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_vehicle_leases_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_vehicle_purchases: {
+        Row: {
+          authorized_drivers: string | null
+          business_use_description: string | null
+          created_at: string
+          id: string
+          meeting_id: string
+          notes: string | null
+          purchase_date: string | null
+          purchase_price: number | null
+          seller: string | null
+          vin: string | null
+          year_make_model: string
+        }
+        Insert: {
+          authorized_drivers?: string | null
+          business_use_description?: string | null
+          created_at?: string
+          id?: string
+          meeting_id: string
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          seller?: string | null
+          vin?: string | null
+          year_make_model?: string
+        }
+        Update: {
+          authorized_drivers?: string | null
+          business_use_description?: string | null
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          seller?: string | null
+          vin?: string | null
+          year_make_model?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_vehicle_purchases_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meetings: {
         Row: {
           chairperson: string | null

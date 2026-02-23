@@ -16,6 +16,7 @@ import MeetingLoans from "@/components/meeting/MeetingLoans";
 import MeetingAgreements from "@/components/meeting/MeetingAgreements";
 import PrintPreviewButton from "@/components/meeting/PrintPreviewButton";
 import DirectorReElection from "@/components/meeting/DirectorReElection";
+import MeetingVehicles from "@/components/meeting/MeetingVehicles";
 import { OFFICER_TITLE_OPTIONS } from "@/components/company/OrganizationTab";
 import CounselTab from "@/components/company/CounselTab";
 import LeasesTab from "@/components/company/LeasesTab";
@@ -558,7 +559,10 @@ export default function MeetingDetail() {
         </TabsContent>
         <TabsContent value="vehicles" className="mt-5">
           {showCompanyLevelCounselAndLeases ? (
-            <CompanyAssetsSection companyId={id!} companyName={company?.name} />
+            <div className="space-y-6">
+              <MeetingVehicles meetingId={meeting.id} />
+              <CompanyAssetsSection companyId={id!} companyName={company?.name} />
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground text-center py-10">Vehicles & Equipment are available on Annual and Organizational meetings.</p>
           )}
