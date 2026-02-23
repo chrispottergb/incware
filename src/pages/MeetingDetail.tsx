@@ -247,6 +247,26 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
+  const { data: vehiclePurchases = [] } = useQuery({
+    queryKey: ["meeting_vehicle_purchases", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_vehicle_purchases").select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!meetingId,
+  });
+
+  const { data: vehicleLeases = [] } = useQuery({
+    queryKey: ["meeting_vehicle_leases", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_vehicle_leases").select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!meetingId,
+  });
+
   const { data: authorizedSigners = [] } = useQuery({
     queryKey: ["meeting_authorized_signers", meetingId],
     queryFn: async () => {
@@ -345,6 +365,8 @@ export default function MeetingDetail() {
       other,
       financials,
       authorizedSigners,
+      vehiclePurchases,
+      vehicleLeases,
       priorYear: priorMeetingId ? {
         officers: priorOfficers,
         benefits: priorBenefits,

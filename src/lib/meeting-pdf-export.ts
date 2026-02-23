@@ -21,6 +21,8 @@ interface MeetingData {
   other?: any[];
   financials?: any;
   authorizedSigners?: any[];
+  vehiclePurchases?: any[];
+  vehicleLeases?: any[];
   priorYear?: {
     officers?: any[];
     benefits?: any[];
@@ -774,6 +776,65 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
       bodyStyles: { fontSize: 8 },
       margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 6;
+  }
+
+  // Vehicle Purchases
+  if (data.vehiclePurchases && data.vehiclePurchases.length > 0) {
+    y = checkPageBreak(doc, y, 20 + data.vehiclePurchases.length * 7);
+    y = addSectionTitle(doc, y, "Vehicle Purchases Entered Into During the Year");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, it is necessary for the company to obtain vehicles for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} decided that it would be in the best interests of the company to acquire the following vehicle(s);`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following vehicle purchases are hereby approved and ratified:`
+    );
+    autoTable(doc, {
+      startY: y,
+      head: [["Year / Make / Model", "VIN", "Purchase Date", "Price", "Seller", "Business Use", "Authorized Drivers"]],
+      body: data.vehiclePurchases.map((v: any) => [
+        v.year_make_model || "—",
+        v.vin || "—",
+        v.purchase_date ? new Date(v.purchase_date + "T00:00:00").toLocaleDateString() : "—",
+        v.purchase_price != null ? fmt(v.purchase_price) : "—",
+        v.seller || "—",
+        v.business_use_description || "—",
+        v.authorized_drivers || "—",
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8 },
+      margin: { left: 14, right: 14 },
+      styles: { overflow: "linebreak", cellWidth: "auto" },
+    });
+    y = (doc as any).lastAutoTable.finalY + 6;
+  }
+
+  // Vehicle Leases
+  if (data.vehicleLeases && data.vehicleLeases.length > 0) {
+    y = checkPageBreak(doc, y, 20 + data.vehicleLeases.length * 7);
+    y = addSectionTitle(doc, y, "Vehicle Leases Entered Into During the Year");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, it is necessary for the company to lease vehicles for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} decided that it would be in the best interests of the company to enter into the following vehicle lease(s);`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following vehicle leases are hereby approved and ratified:`
+    );
+    autoTable(doc, {
+      startY: y,
+      head: [["Year / Make / Model", "VIN", "Lease Start", "Monthly Payment", "Lessor", "Relationship", "FMV Verified", "Business Use"]],
+      body: data.vehicleLeases.map((v: any) => [
+        v.year_make_model || "—",
+        v.vin || "—",
+        v.lease_start_date ? new Date(v.lease_start_date + "T00:00:00").toLocaleDateString() : "—",
+        v.monthly_lease_payment != null ? fmt(v.monthly_lease_payment) : "—",
+        v.lessor_name || "—",
+        v.relationship_to_company || "—",
+        v.fmv_verified ? "Yes" : "No",
+        v.business_use_description || "—",
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8 },
+      margin: { left: 14, right: 14 },
+      styles: { overflow: "linebreak", cellWidth: "auto" },
     });
     y = (doc as any).lastAutoTable.finalY + 6;
   }
