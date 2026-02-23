@@ -839,26 +839,6 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 6;
   }
 
-  // Assets
-  if (data.assets && data.assets.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.assets.length * 7);
-    y = addSectionTitle(doc, y, "Assets — Vehicles & Equipment");
-    y = addWhereasResolved(doc, y,
-      `WHEREAS it is necessary for the company to obtain or dispose of vehicles for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} decided that it would be in the best interests of the company to acquire or dispose of the following vehicle(s) for the amount listed.`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following list of vehicles and equipment is hereby acknowledged and approved:`
-    );
-    autoTable(doc, {
-      startY: y,
-      head: [["Type", "Description", "Value"]],
-      body: data.assets.map(a => [a.asset_type, a.description, a.value != null ? `$${Number(a.value).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"]),
-      theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
-      margin: { left: 14, right: 14 },
-    });
-    y = (doc as any).lastAutoTable.finalY + 6;
-  }
-
   // Amendments
   if (data.amendments && data.amendments.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.amendments.length * 12);
