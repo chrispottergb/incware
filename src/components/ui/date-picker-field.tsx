@@ -57,6 +57,10 @@ export function DatePickerField({
           toYear={2099}
           initialFocus
           className="p-3 pointer-events-auto"
+          onTodayClick={() => {
+            onChange(format(new Date(), "yyyy-MM-dd"));
+            setOpen(false);
+          }}
         />
       </PopoverContent>
     </Popover>
