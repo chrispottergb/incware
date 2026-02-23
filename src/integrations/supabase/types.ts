@@ -1473,6 +1473,53 @@ export type Database = {
           },
         ]
       }
+      meeting_lease_terminations: {
+        Row: {
+          created_at: string
+          early_termination: boolean | null
+          id: string
+          landlord_name: string | null
+          lease_end_date: string | null
+          meeting_id: string
+          notes: string | null
+          penalty_amount: number | null
+          property_description: string
+          termination_reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          early_termination?: boolean | null
+          id?: string
+          landlord_name?: string | null
+          lease_end_date?: string | null
+          meeting_id: string
+          notes?: string | null
+          penalty_amount?: number | null
+          property_description?: string
+          termination_reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          early_termination?: boolean | null
+          id?: string
+          landlord_name?: string | null
+          lease_end_date?: string | null
+          meeting_id?: string
+          notes?: string | null
+          penalty_amount?: number | null
+          property_description?: string
+          termination_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_lease_terminations_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_loans: {
         Row: {
           borrower_name: string | null
@@ -1780,6 +1827,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "meeting_vehicle_purchases_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_vehicle_sales: {
+        Row: {
+          business_use_description: string | null
+          buyer_name: string | null
+          created_at: string
+          id: string
+          meeting_id: string
+          notes: string | null
+          reason_for_sale: string | null
+          sale_date: string | null
+          sale_price: number | null
+          vin: string | null
+          year_make_model: string
+        }
+        Insert: {
+          business_use_description?: string | null
+          buyer_name?: string | null
+          created_at?: string
+          id?: string
+          meeting_id: string
+          notes?: string | null
+          reason_for_sale?: string | null
+          sale_date?: string | null
+          sale_price?: number | null
+          vin?: string | null
+          year_make_model?: string
+        }
+        Update: {
+          business_use_description?: string | null
+          buyer_name?: string | null
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          notes?: string | null
+          reason_for_sale?: string | null
+          sale_date?: string | null
+          sale_price?: number | null
+          vin?: string | null
+          year_make_model?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_vehicle_sales_meeting_id_fkey"
             columns: ["meeting_id"]
             isOneToOne: false
             referencedRelation: "meetings"
