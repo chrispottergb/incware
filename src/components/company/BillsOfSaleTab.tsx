@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -191,7 +192,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
                 </div>
                 <div className="field-group">
                   <Label className="field-label">Sale Date</Label>
-                  <Input className="h-8 text-sm" type="date" value={form.sale_date} onChange={(e) => setForm(p => ({ ...p, sale_date: e.target.value }))} required />
+                  <DatePickerField value={form.sale_date} onChange={(v) => setForm(p => ({ ...p, sale_date: v }))} />
                 </div>
                 <div className="field-group">
                   <Label className="field-label">Description / Terms</Label>

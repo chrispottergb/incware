@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -379,7 +380,7 @@ export default function TimelineTab({ companyId, company }: Props) {
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Date</Label>
-                    <Input className="h-8 text-sm" type="date" value={form.event_date} onChange={(e) => setForm(p => ({ ...p, event_date: e.target.value }))} required />
+                    <DatePickerField value={form.event_date} onChange={(v) => setForm(p => ({ ...p, event_date: v }))} />
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Type</Label>

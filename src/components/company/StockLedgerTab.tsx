@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -309,7 +310,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 </div>
                 <div className="field-group">
                   <Label className="field-label">Date</Label>
-                  <Input className="h-8 text-sm" type="date" value={form.transaction_date} onChange={(e) => setForm(p => ({ ...p, transaction_date: e.target.value }))} required />
+                  <DatePickerField value={form.transaction_date} onChange={(v) => setForm(p => ({ ...p, transaction_date: v }))} />
                 </div>
               </div>
               <div className="field-group">

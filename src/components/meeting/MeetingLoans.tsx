@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -270,15 +271,15 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Loan Date</Label>
-                  <Input type="date" value={form.loan_date} onChange={(e) => updateField("loan_date", e.target.value)} />
+                  <DatePickerField value={form.loan_date || ""} onChange={(v) => updateField("loan_date", v)} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Start Date</Label>
-                  <Input type="date" value={form.start_date} onChange={(e) => updateField("start_date", e.target.value)} />
+                  <DatePickerField value={form.start_date || ""} onChange={(v) => updateField("start_date", v)} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">End Date</Label>
-                  <Input type="date" value={form.end_date} onChange={(e) => updateField("end_date", e.target.value)} />
+                  <DatePickerField value={form.end_date || ""} onChange={(v) => updateField("end_date", v)} />
                 </div>
                 <div className="col-span-2 space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Repayment Terms</Label>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -235,12 +236,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
               </div>
               <div className="field-group">
                 <Label className="field-label">Filing / Effective Date</Label>
-                <Input
-                  type="date"
-                  value={formFilingDate}
-                  onChange={(e) => setFormFilingDate(e.target.value)}
-                  className="h-8 text-sm"
-                />
+                <DatePickerField value={formFilingDate} onChange={(v) => setFormFilingDate(v)} />
               </div>
               <div className="field-group">
                 <Label className="field-label">Fiscal Year End Month</Label>

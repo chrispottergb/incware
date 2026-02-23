@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -240,7 +241,7 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
                   <div className="grid grid-cols-2 gap-2">
                     <div className="field-group">
                       <Label className="field-label">Purchase Date</Label>
-                      <Input type="date" className="h-8 text-sm" value={vehicleForm.purchase_date} onChange={(e) => setVehicleForm((p) => ({ ...p, purchase_date: e.target.value }))} />
+                      <DatePickerField value={vehicleForm.purchase_date || ""} onChange={(v) => setVehicleForm((p) => ({ ...p, purchase_date: v }))} />
                     </div>
                     <div className="field-group">
                       <Label className="field-label">Purchase Amount ($)</Label>
@@ -289,7 +290,7 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
                   <div className="grid grid-cols-2 gap-2">
                     <div className="field-group">
                       <Label className="field-label">Purchase Date</Label>
-                      <Input type="date" className="h-8 text-sm" value={equipmentForm.purchase_date} onChange={(e) => setEquipmentForm((p) => ({ ...p, purchase_date: e.target.value }))} />
+                      <DatePickerField value={equipmentForm.purchase_date || ""} onChange={(v) => setEquipmentForm((p) => ({ ...p, purchase_date: v }))} />
                     </div>
                     <div className="field-group">
                       <Label className="field-label">Purchase Amount ($)</Label>
@@ -299,7 +300,7 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
                   <div className="grid grid-cols-2 gap-2">
                     <div className="field-group">
                       <Label className="field-label">Lease Date</Label>
-                      <Input type="date" className="h-8 text-sm" value={equipmentForm.lease_date} onChange={(e) => setEquipmentForm((p) => ({ ...p, lease_date: e.target.value }))} />
+                      <DatePickerField value={equipmentForm.lease_date || ""} onChange={(v) => setEquipmentForm((p) => ({ ...p, lease_date: v }))} />
                     </div>
                     <div className="field-group">
                       <Label className="field-label">Lease Amount ($)</Label>
