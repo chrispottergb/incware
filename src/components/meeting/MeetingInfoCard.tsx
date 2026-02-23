@@ -6,11 +6,8 @@ import { Tables } from "@/integrations/supabase/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, Clock, MapPin, User, Users, Loader2, Hash } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { DatePickerField } from "@/components/ui/date-picker-field";
+import { Clock, MapPin, User, Users, Loader2, Hash, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 
 type Meeting = Tables<"meetings">;
@@ -19,7 +16,7 @@ interface Props {
   meeting: Meeting;
 }
 
-function DateField({
+function DateFieldWrapper({
   label,
   value,
   onChange,
@@ -30,52 +27,18 @@ function DateField({
   onChange: (val: string | null) => void;
   icon?: React.ElementType;
 }) {
-  const [open, setOpen] = useState(false);
-  const date = value ? parseISO(value) : undefined;
-
   return (
     <div className="space-y-1.5">
       <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
         {Icon && <Icon className="h-3.5 w-3.5" />}
         {label}
       </Label>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className={cn(
-              "w-full h-9 justify-start text-left text-sm font-normal",
-              !date && "text-muted-foreground"
-            )}
-          >
-            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-            {date ? format(date, "PPP") : "Pick a date"}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 bg-white text-black" align="start">
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={(d) => {
-              onChange(d ? format(d, "yyyy-MM-dd") : null);
-              setOpen(false);
-            }}
-            initialFocus
-            className="p-3 pointer-events-auto"
-            classNames={{
-              day_selected: "bg-primary text-white hover:bg-primary hover:text-white focus:bg-primary focus:text-white",
-              day_today: "bg-gray-100 text-black",
-              head_cell: "text-gray-500 rounded-md w-9 font-normal text-[0.8rem]",
-              nav_button: cn(
-                "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 border border-gray-200 rounded-md inline-flex items-center justify-center"
-              ),
-              day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-md hover:bg-gray-100 inline-flex items-center justify-center",
-              day_outside: "day-outside text-gray-400 opacity-50",
-              caption_label: "text-sm font-medium text-black",
-            }}
-          />
-        </PopoverContent>
-      </Popover>
+      <DatePickerField
+        value={value ?? ""}
+        onChange={(val) => onChange(val || null)}
+        placeholder="Pick a date"
+        className="h-9"
+      />
     </div>
   );
 }
@@ -174,7 +137,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <DateField
+            <DateFieldWrapper
               label="Meeting Date"
               value={meeting.meeting_date}
               onChange={(val) => handleDateChange("meeting_date", val)}
@@ -214,12 +177,12 @@ export default function MeetingInfoCard({ meeting }: Props) {
             ))}
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 border-t pt-4">
-            <DateField
+            <DateFieldWrapper
               label="Prior Meeting Date"
               value={meeting.prior_mtg_date}
               onChange={(val) => handleDateChange("prior_mtg_date", val)}
             />
-            <DateField
+            <DateFieldWrapper
               label="Next Annual Meeting"
               value={meeting.next_annual_mtg}
               onChange={(val) => handleDateChange("next_annual_mtg", val)}
