@@ -39,6 +39,7 @@ import LeasesTab from "@/components/company/LeasesTab";
 import BuySellWorkflow from "@/components/company/BuySellWorkflow";
 import TransferLedgerTab from "@/components/company/TransferLedgerTab";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
+import { useShareCalculations } from "@/hooks/useShareCalculations";
 
 export default function CompanyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -111,6 +112,9 @@ export default function CompanyDetail() {
     company.status === "active"
       ? "bg-success/10 text-success border-success/20"
       : "bg-muted text-muted-foreground border-muted";
+
+  const isCorp = company.entity_type === "Corporation" || company.entity_type === "S-Corp";
+  const shareCalc = useShareCalculations(company.id);
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -239,13 +243,29 @@ export default function CompanyDetail() {
         </TabsContent>
         <TabsContent value="shareholders" className="mt-5">
           <div className="space-y-5">
+            {isCorp && shareCalc.authorizedShares != null && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3 flex items-center gap-6 text-xs">
+                <div>
+                  <span className="text-muted-foreground">Authorized:</span>{" "}
+                  <span className="font-semibold">{shareCalc.authorizedShares.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Issued:</span>{" "}
+                  <span className="font-semibold">{shareCalc.totalIssuedShares.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Available to Issue:</span>{" "}
+                  <span className="font-semibold text-primary">{(shareCalc.availableShares ?? 0).toLocaleString()}</span>
+                </div>
+              </div>
+            )}
             <div className="flex justify-end">
               <Button size="sm" onClick={() => setBuySellOpen(true)} className="h-8 text-xs">
                 <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" />
                 {isLLCType(company.entity_type) ? "Buy / Sell Interest" : "Buy / Sell Shares"}
               </Button>
             </div>
-            <ShareholdersTab companyId={company.id} entityType={company.entity_type} />
+            <ShareholdersTab companyId={company.id} entityType={company.entity_type} shareholderHoldings={isCorp ? shareCalc.shareholderHoldings : undefined} />
             <div data-section="certificates">
               <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
             </div>
@@ -258,6 +278,7 @@ export default function CompanyDetail() {
             entityType={company.entity_type}
             open={buySellOpen}
             onOpenChange={setBuySellOpen}
+            availableShares={shareCalc.availableShares}
           />
         </TabsContent>
         <TabsContent value="timeline" className="mt-5">

@@ -11,18 +11,22 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ArrowRight, ArrowLeft, CheckCircle2, Link2, ArrowRightLeft } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, CheckCircle2, Link2, ArrowRightLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
+import { getHoldingsByName } from "@/hooks/useShareCalculations";
 
 const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string }[]> = {
   Corporation: [
+    { value: "initial_issuance", label: "Initial Share Issuance" },
     { value: "transfer", label: "Share Transfer" },
     { value: "redemption", label: "Share Redemption" },
     { value: "share_exchange", label: "Share Exchange" },
     { value: "gift", label: "Gift / Donation of Shares" },
   ],
   "S-Corp": [
+    { value: "initial_issuance", label: "Initial Share Issuance" },
     { value: "transfer", label: "Share Transfer" },
     { value: "redemption", label: "Share Redemption" },
     { value: "gift", label: "Gift / Donation of Shares" },
@@ -49,9 +53,10 @@ interface Props {
   entityType: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  availableShares?: number | null;
 }
 
-export default function BuySellWorkflow({ companyId, entityType, open, onOpenChange }: Props) {
+export default function BuySellWorkflow({ companyId, entityType, open, onOpenChange, availableShares }: Props) {
   const queryClient = useQueryClient();
   const term = getTerminology(entityType);
   const isLLC = isLLCType(entityType);
@@ -60,6 +65,7 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [saving, setSaving] = useState(false);
   const [savedIds, setSavedIds] = useState<{ transactionId: string; billId: string } | null>(null);
+  const [certsSummary, setCertsSummary] = useState<string[]>([]);
 
   const [form, setForm] = useState({
     transaction_type: transactionTypes[0]?.value || "transfer",
@@ -85,9 +91,36 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
     },
   });
 
+  const { data: allTransactions = [] } = useQuery({
+    queryKey: ["share_transactions", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("share_transactions")
+        .select("*, shareholders(name)")
+        .eq("company_id", companyId)
+        .order("transaction_date", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: certificates = [] } = useQuery({
+    queryKey: ["stock_certificates", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stock_certificates")
+        .select("*")
+        .eq("company_id", companyId)
+        .order("certificate_number");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const resetAll = () => {
     setStep(1);
     setSavedIds(null);
+    setCertsSummary([]);
     setForm({
       transaction_type: transactionTypes[0]?.value || "transfer",
       seller_name: "", seller_id: "", buyer_name: "", buyer_id: "",
@@ -102,7 +135,22 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
   const autoTotal = numShares * pricePerShare;
   const totalConsideration = form.total_consideration ? parseFloat(form.total_consideration) : (autoTotal || null);
 
-  const canProceedStep1 = form.seller_name && form.buyer_name && numShares > 0 && form.transaction_date;
+  const isIssuance = form.transaction_type === "initial_issuance";
+  const isTransfer = ["transfer", "share_exchange", "gift", "interest_transfer", "interest_assignment"].includes(form.transaction_type);
+
+  // Validation
+  let validationError: string | null = null;
+  if (isIssuance && availableShares != null && numShares > availableShares) {
+    validationError = `Only ${availableShares.toLocaleString()} shares remain available to issue from the authorized pool.`;
+  }
+  if (isTransfer && form.seller_name && numShares > 0) {
+    const sellerHoldings = getHoldingsByName(allTransactions, form.seller_name, shareholders);
+    if (numShares > sellerHoldings) {
+      validationError = `${form.seller_name} only holds ${sellerHoldings.toLocaleString()} shares. Cannot transfer ${numShares.toLocaleString()}.`;
+    }
+  }
+
+  const canProceedStep1 = form.seller_name && form.buyer_name && numShares > 0 && form.transaction_date && !validationError;
 
   const handleSave = async () => {
     setSaving(true);
@@ -148,6 +196,82 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
         await supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId });
       }
 
+      // 5. Auto-create certificates for transfers
+      const certActions: string[] = [];
+      if (isTransfer && !isLLC) {
+        const nextCertNum = certificates.length > 0
+          ? Math.max(...certificates.map((c: any) => c.certificate_number)) + 1
+          : 1;
+
+        // Cancel seller's active certificate for this share class (if exists)
+        const sellerSh = shareholders.find(s => s.name.toLowerCase().trim() === form.seller_name.toLowerCase().trim());
+        if (sellerSh) {
+          const sellerCert = certificates.find(
+            (c: any) => c.shareholder_id === sellerSh.id && c.share_class === form.share_class && c.status === "active"
+          );
+          if (sellerCert) {
+            await supabase.from("stock_certificates").update({
+              status: "cancelled",
+              cancelled_date: form.transaction_date,
+              cancelled_reason: `Transfer of ${numShares} shares to ${form.buyer_name}`,
+            }).eq("id", (sellerCert as any).id);
+            certActions.push(`Cancelled Cert #${(sellerCert as any).certificate_number} (${form.seller_name})`);
+
+            // Issue new cert with reduced shares if seller retains any
+            const sellerHoldings = getHoldingsByName(allTransactions, form.seller_name, shareholders);
+            const remainingShares = sellerHoldings - numShares;
+            if (remainingShares > 0) {
+              await supabase.from("stock_certificates").insert({
+                company_id: companyId,
+                certificate_number: nextCertNum,
+                shareholder_id: sellerSh.id,
+                share_class: form.share_class,
+                num_shares: remainingShares,
+                issue_date: form.transaction_date,
+                par_value: (sellerCert as any).par_value,
+              });
+              certActions.push(`Issued Cert #${nextCertNum} to ${form.seller_name} for ${remainingShares} shares`);
+            }
+          }
+        }
+
+        // Issue new cert to buyer
+        const buyerSh = shareholders.find(s => s.name.toLowerCase().trim() === form.buyer_name.toLowerCase().trim());
+        const buyerCertNum = certActions.length > 0 ? nextCertNum + 1 : nextCertNum;
+        if (buyerSh) {
+          await supabase.from("stock_certificates").insert({
+            company_id: companyId,
+            certificate_number: buyerCertNum,
+            shareholder_id: buyerSh.id,
+            share_class: form.share_class,
+            num_shares: numShares,
+            issue_date: form.transaction_date,
+            transferred_certificate_id: txn.id,
+          });
+          certActions.push(`Issued Cert #${buyerCertNum} to ${form.buyer_name} for ${numShares} shares`);
+        }
+      }
+
+      // 6. For initial issuance, auto-create certificate
+      if (isIssuance && !isLLC) {
+        const nextCertNum = certificates.length > 0
+          ? Math.max(...certificates.map((c: any) => c.certificate_number)) + 1
+          : 1;
+        const buyerSh = shareholders.find(s => s.name.toLowerCase().trim() === form.buyer_name.toLowerCase().trim());
+        if (buyerSh) {
+          await supabase.from("stock_certificates").insert({
+            company_id: companyId,
+            certificate_number: nextCertNum,
+            shareholder_id: buyerSh.id,
+            share_class: form.share_class,
+            num_shares: numShares,
+            issue_date: form.transaction_date,
+          });
+          certActions.push(`Issued Cert #${nextCertNum} to ${form.buyer_name} for ${numShares} shares`);
+        }
+      }
+
+      setCertsSummary(certActions);
       setSavedIds({ transactionId: txn.id, billId: bill.id });
       setStep(3);
 
@@ -155,8 +279,10 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
       queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
       queryClient.invalidateQueries({ queryKey: ["bills_of_sale", companyId] });
       queryClient.invalidateQueries({ queryKey: ["shareholders", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["company", companyId] });
 
-      toast.success("Transaction and bill of sale recorded successfully!");
+      toast.success("Transaction recorded successfully!");
     } catch (err: any) {
       console.error("BuySellWorkflow save error:", err);
       toast.error(err.message || "Failed to save transaction");
@@ -212,7 +338,7 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
 
             <div className="grid grid-cols-2 gap-2">
               <div className="field-group">
-                <Label className="field-label">Seller</Label>
+                <Label className="field-label">{isIssuance ? "Issuing From (Company)" : "Seller"}</Label>
                 <Input className="h-8 text-sm" value={form.seller_name} onChange={(e) => setForm(p => ({ ...p, seller_name: e.target.value }))} placeholder="Name" required />
                 {shareholders.length > 0 && (
                   <Select value={form.seller_id} onValueChange={(v) => {
@@ -279,6 +405,13 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
               </div>
             </div>
 
+            {validationError && (
+              <Alert variant="destructive" className="py-2">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                <AlertDescription className="text-xs">{validationError}</AlertDescription>
+              </Alert>
+            )}
+
             <DialogFooter>
               <Button size="sm" onClick={() => setStep(2)} disabled={!canProceedStep1}>
                 Review <ArrowRight className="ml-1 h-3 w-3" />
@@ -319,8 +452,9 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
               <p className="font-medium text-foreground">This will create:</p>
               <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> 1 {term.ledgerTitle} entry</p>
               <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> 1 Bill of Sale record</p>
+              {!isLLC && (isTransfer || isIssuance) && <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> Auto-generated certificate(s)</p>}
               {isLLC && <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> Updated ownership percentages</p>}
-              <p className="text-muted-foreground mt-1">Both records will be linked to each other for audit integrity.</p>
+              <p className="text-muted-foreground mt-1">All records will be linked for audit integrity.</p>
             </div>
 
             <DialogFooter className="gap-2">
@@ -335,7 +469,7 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
           </div>
         )}
 
-        {/* Step 3: Success + Certificate Prompt */}
+        {/* Step 3: Success + Certificate Summary */}
         {step === 3 && (
           <div className="space-y-4 text-center py-2">
             <CheckCircle2 className="h-10 w-10 text-success mx-auto" />
@@ -346,28 +480,21 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
               </p>
             </div>
 
-            <div className="rounded-md bg-muted/50 p-3 text-xs text-left">
-              <p className="font-medium mb-1">Would you like to update certificates?</p>
-              <p className="text-muted-foreground">
-                You may want to cancel the seller's certificate and issue a new one to the buyer.
-              </p>
-            </div>
+            {certsSummary.length > 0 && (
+              <div className="rounded-md bg-muted/50 p-3 text-xs text-left space-y-1">
+                <p className="font-medium text-foreground mb-1">Certificate Actions:</p>
+                {certsSummary.map((action, i) => (
+                  <p key={i} className="flex items-center gap-1.5">
+                    <Link2 className="h-3 w-3 text-primary shrink-0" />
+                    {action}
+                  </p>
+                ))}
+              </div>
+            )}
 
-            <div className="flex gap-2 justify-center">
-              <Button size="sm" variant="outline" onClick={handleClose}>
-                Skip for Now
-              </Button>
-              <Button size="sm" onClick={() => {
-                handleClose();
-                // Navigate to certificates section by scrolling
-                setTimeout(() => {
-                  const certSection = document.querySelector('[data-section="certificates"]');
-                  certSection?.scrollIntoView({ behavior: "smooth" });
-                }, 400);
-              }}>
-                Update Certificates
-              </Button>
-            </div>
+            <Button size="sm" onClick={handleClose}>
+              Done
+            </Button>
           </div>
         )}
       </DialogContent>

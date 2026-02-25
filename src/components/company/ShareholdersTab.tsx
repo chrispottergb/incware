@@ -20,6 +20,7 @@ import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology } from "@/lib/entity-terminology";
+import type { ShareholderHoldings } from "@/hooks/useShareCalculations";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
@@ -31,9 +32,10 @@ const US_STATES = [
 interface Props {
   companyId: string;
   entityType?: string;
+  shareholderHoldings?: ShareholderHoldings;
 }
 
-export default function ShareholdersTab({ companyId, entityType = "Corporation" }: Props) {
+export default function ShareholdersTab({ companyId, entityType = "Corporation", shareholderHoldings }: Props) {
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -302,10 +304,11 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
                   <TableHead className="text-[10px] uppercase">Name</TableHead>
                   <TableHead className="text-[10px] uppercase">Address</TableHead>
                   <TableHead className="text-[10px] uppercase">City/State/Zip</TableHead>
-                  <TableHead className="text-[10px] uppercase">SSN/EIN</TableHead>
-                  {t.isLLC && <TableHead className="text-[10px] uppercase text-right">Ownership %</TableHead>}
-                  <TableHead className="text-[10px] uppercase">Status</TableHead>
-                  <TableHead className="text-[10px] uppercase w-20">Actions</TableHead>
+                   <TableHead className="text-[10px] uppercase">SSN/EIN</TableHead>
+                   {shareholderHoldings && <TableHead className="text-[10px] uppercase text-right">Shares Held</TableHead>}
+                   {t.isLLC && <TableHead className="text-[10px] uppercase text-right">Ownership %</TableHead>}
+                   <TableHead className="text-[10px] uppercase">Status</TableHead>
+                   <TableHead className="text-[10px] uppercase w-20">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -314,8 +317,13 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
                     <TableCell className="text-xs font-medium">{s.name}</TableCell>
                     <TableCell className="text-xs">{s.address ?? "—"}</TableCell>
                     <TableCell className="text-xs">{[s.city, s.state, s.zip].filter(Boolean).join(", ") || "—"}</TableCell>
-                    <TableCell className="text-xs font-mono">{getSsnDisplay(s)}</TableCell>
-                    {t.isLLC && (
+                     <TableCell className="text-xs font-mono">{getSsnDisplay(s)}</TableCell>
+                     {shareholderHoldings && (
+                       <TableCell className="text-xs text-right font-medium">
+                         {(shareholderHoldings[s.id] ?? 0).toLocaleString()}
+                       </TableCell>
+                     )}
+                     {t.isLLC && (
                       <TableCell className="text-xs text-right font-medium">
                         {(s as any).ownership_percentage != null ? `${Number((s as any).ownership_percentage).toFixed(2)}%` : "—"}
                       </TableCell>
