@@ -1,58 +1,65 @@
 
 
-## Fix: Share Transfer Fails to Update New Shareholder
+## Fix: Share Transfer Not Creating New Shareholder or Updating Correctly
+
+### Problems Found in Database
+
+Looking at the actual transfer record, three things went wrong:
+
+1. `from_shareholder` (seller name) is **null** -- the seller's name wasn't saved in the transaction
+2. `shareholder_id` points to Kathryn Potter (the original shareholder/seller) instead of the new buyer "Christoher R. Potter"
+3. "Christoher R. Potter" was **never created** as a new shareholder record
+4. No certificate changes occurred -- Kathryn's cert is still active at 100 shares, no cert issued to Christopher
 
 ### Root Cause
 
-When a transfer is recorded in `BuySellWorkflow.tsx`, the workflow does **not** auto-create a new shareholder record if the buyer doesn't already exist in the `shareholders` table. This causes two failures:
+In `BuySellWorkflow.tsx`, the auto-create logic has a flaw:
 
-1. **No shareholder record created** -- The buyer's name is stored as text in `to_shareholder`, but no row is inserted into the `shareholders` table for them.
-2. **No certificate issued to buyer** -- At line 239, `buyerSh` resolves to `null` because the name lookup fails against the shareholders list, so the certificate insert is silently skipped.
-3. **Holdings calculation shows 0** -- `useShareCalculations` tries to match the buyer by name against `shareholders`, but since no record exists, the transfer-in shares are never attributed.
+- Line 195: `let buyerShId = form.buyer_id || null` -- if the user happened to select from the buyer dropdown (or it retained a value), this gets set to the **wrong** shareholder ID
+- Line 196: The name lookup then fails to match (different names), so `buyerSh` is null
+- But `buyerShId` is already set from step 195, so the code at line 214 updates the transaction with the **seller's** ID as the buyer
+- The certificate logic at line 266 checks `if (buyerSh)` which is null, so no cert is issued
 
-### Fix (1 file change)
+### Fix (1 file: `src/components/company/BuySellWorkflow.tsx`)
 
-**File: `src/components/company/BuySellWorkflow.tsx`**
+**Change 1: Fix the buyer resolution logic (lines 194-218)**
 
-In the `handleSave` function, after inserting the transaction and bill of sale (around line 193), add logic to auto-create the buyer as a new shareholder if they don't already exist:
+Replace the current auto-create block so that:
+- Always resolve the buyer by **name match first**, ignoring `form.buyer_id` if the name doesn't match
+- Only use `form.buyer_id` if the linked shareholder's name actually matches `form.buyer_name`
+- If no match, create the new shareholder and use the new ID
 
-```text
-Before certificate logic (line ~200):
-
-1. Check if buyer name matches any existing shareholder (case-insensitive)
-2. If NO match found:
-   a. INSERT into shareholders (company_id, name, status='active')
-   b. Store the new shareholder's ID as buyerSh for certificate creation
-3. Re-fetch/update the local shareholders list so subsequent
-   certificate logic uses the correct shareholder_id
+```
+1. Find existing shareholder by case-insensitive name match on form.buyer_name
+2. If found -> use their ID as buyerShId
+3. If NOT found -> INSERT new shareholder, use new ID
+4. UPDATE share_transactions.shareholder_id = buyerShId
 ```
 
-Similarly, for the seller side -- if the seller is typed manually and doesn't match an existing shareholder, the same auto-create should apply (though this is less common since sellers typically already exist).
+**Change 2: Fix missing `from_shareholder` (line 169)**
 
-After creating the new shareholder, **update the transaction record** to link `shareholder_id` to the newly created buyer:
+The `from_shareholder` field stores the seller name. Ensure it's always populated:
+- If `form.seller_id` is set but `form.seller_name` is empty, resolve the name from the shareholders list before saving
 
-```text
-UPDATE share_transactions SET shareholder_id = new_buyer_id WHERE id = txn.id
-```
+**Change 3: Fix certificate logic to use resolved buyer**
 
-This ensures:
-- The `shareholderHoldings` calculation in `useShareCalculations.ts` correctly attributes shares via `shareholder_id`
-- Certificates are issued to the correct shareholder
-- The Transfer Ledger shows proper linked records
+After the auto-create, store the resolved buyer in a variable that the certificate section can reliably use (currently it references `buyerSh` which may be stale).
 
-### What This Does NOT Change
-- No database schema changes needed
-- No changes to `useShareCalculations.ts` (it already handles both ID-based and name-based matching)
-- No changes to `ShareholdersTab.tsx`
-- Existing standalone ledger/bill entries remain unaffected
+**Change 4: Fix existing bad data**
+
+Run a one-time data correction for the existing transfer record to:
+- Set `from_shareholder = 'Kathryn Potter'`
+- Create "Christoher R. Potter" as a new shareholder
+- Update `shareholder_id` to point to the new buyer
+- Cancel Kathryn's cert #1, issue new cert #2 (50 shares to Kathryn), cert #3 (50 shares to Christopher)
 
 ### Technical Summary
 
-| Step | Action |
-|------|--------|
-| 1 | After saving transaction + bill, check if buyer exists in `shareholders` |
-| 2 | If not, INSERT new shareholder with `name` and `status='active'` |
-| 3 | Update `share_transactions.shareholder_id` to point to the new/existing buyer |
-| 4 | Use the resolved buyer shareholder record for certificate issuance |
-| 5 | Invalidate `shareholders` query cache so the UI reflects the new member |
+| Issue | Fix |
+|-------|-----|
+| `from_shareholder` is null | Resolve seller name from `seller_id` if name is empty before insert |
+| `shareholder_id` points to wrong person | Always resolve buyer by name match, not by `form.buyer_id` alone |
+| New shareholder not created | Fix conditional logic so name mismatch triggers INSERT |
+| No certificate updates | Ensure resolved buyer object (not stale ref) is used for cert creation |
+| Existing bad data | Correct the existing transfer record and create missing shareholder/certs |
 
