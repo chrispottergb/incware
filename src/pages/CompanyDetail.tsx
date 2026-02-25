@@ -88,6 +88,8 @@ export default function CompanyDetail() {
     enabled: !!id,
   });
 
+  const shareCalc = useShareCalculations(id || "");
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -114,7 +116,6 @@ export default function CompanyDetail() {
       : "bg-muted text-muted-foreground border-muted";
 
   const isCorp = company.entity_type === "Corporation" || company.entity_type === "S-Corp";
-  const shareCalc = useShareCalculations(company.id);
 
   return (
     <div className="space-y-5 animate-fade-in">
