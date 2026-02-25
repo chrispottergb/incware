@@ -570,6 +570,7 @@ export type Database = {
           share_class: string
           shareholder_id: string | null
           total_price: number | null
+          transaction_id: string | null
         }
         Insert: {
           buyer_name: string
@@ -585,6 +586,7 @@ export type Database = {
           share_class?: string
           shareholder_id?: string | null
           total_price?: number | null
+          transaction_id?: string | null
         }
         Update: {
           buyer_name?: string
@@ -600,6 +602,7 @@ export type Database = {
           share_class?: string
           shareholder_id?: string | null
           total_price?: number | null
+          transaction_id?: string | null
         }
         Relationships: [
           {
@@ -621,6 +624,13 @@ export type Database = {
             columns: ["shareholder_id"]
             isOneToOne: false
             referencedRelation: "shareholders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_of_sale_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "share_transactions"
             referencedColumns: ["id"]
           },
         ]
@@ -2037,6 +2047,7 @@ export type Database = {
       }
       share_transactions: {
         Row: {
+          bill_of_sale_id: string | null
           certificate_id: string | null
           company_id: string
           consideration_type: string | null
@@ -2052,8 +2063,10 @@ export type Database = {
           total_consideration: number | null
           transaction_date: string
           transaction_type: string
+          transferred_certificate_id: string | null
         }
         Insert: {
+          bill_of_sale_id?: string | null
           certificate_id?: string | null
           company_id: string
           consideration_type?: string | null
@@ -2069,8 +2082,10 @@ export type Database = {
           total_consideration?: number | null
           transaction_date?: string
           transaction_type?: string
+          transferred_certificate_id?: string | null
         }
         Update: {
+          bill_of_sale_id?: string | null
           certificate_id?: string | null
           company_id?: string
           consideration_type?: string | null
@@ -2086,8 +2101,16 @@ export type Database = {
           total_consideration?: number | null
           transaction_date?: string
           transaction_type?: string
+          transferred_certificate_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "share_transactions_bill_of_sale_id_fkey"
+            columns: ["bill_of_sale_id"]
+            isOneToOne: false
+            referencedRelation: "bills_of_sale"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "share_transactions_certificate_id_fkey"
             columns: ["certificate_id"]
@@ -2109,6 +2132,13 @@ export type Database = {
             referencedRelation: "shareholders"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "share_transactions_transferred_certificate_id_fkey"
+            columns: ["transferred_certificate_id"]
+            isOneToOne: false
+            referencedRelation: "stock_certificates"
+            referencedColumns: ["id"]
+          },
         ]
       }
       shareholders: {
@@ -2121,6 +2151,7 @@ export type Database = {
           date_added: string | null
           id: string
           name: string
+          ownership_percentage: number | null
           ssn_ein: string | null
           ssn_ein_encrypted: string | null
           state: string | null
@@ -2137,6 +2168,7 @@ export type Database = {
           date_added?: string | null
           id?: string
           name: string
+          ownership_percentage?: number | null
           ssn_ein?: string | null
           ssn_ein_encrypted?: string | null
           state?: string | null
@@ -2153,6 +2185,7 @@ export type Database = {
           date_added?: string | null
           id?: string
           name?: string
+          ownership_percentage?: number | null
           ssn_ein?: string | null
           ssn_ein_encrypted?: string | null
           state?: string | null
@@ -2316,6 +2349,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      recalculate_ownership_percentages: {
+        Args: { p_company_id: string }
+        Returns: undefined
       }
     }
     Enums: {
