@@ -1,86 +1,100 @@
 
 
-## Verification Plan: Share/Interest Buy/Sell Workflow and Transfer Ledger
+## Corporate Share Tracking: Authorized vs. Individual Holdings
 
-### What Was Built
-- Database migration: 4 new columns + `recalculate_ownership_percentages` function (confirmed deployed)
-- `BuySellWorkflow.tsx`: 3-step guided dialog for recording transactions
-- `TransferLedgerTab.tsx`: Unified chronological view of all ownership activity
-- `CompanyDetail.tsx`: "Buy / Sell" button + Transfer Ledger section added
-- `ShareholdersTab.tsx`: Ownership % column for LLCs
-- `StockLedgerTab.tsx` and `BillsOfSaleTab.tsx`: Linked record indicators (Link2 icons)
+### Problem Statement
+Currently, when shares are issued or transferred, there is no distinction between shares drawn from the corporation's authorized pool vs. shares moving between individual shareholders. The system needs to enforce two separate pools:
+
+1. **Company Authorized Pool** -- e.g., 9,000 authorized shares. Initial issuances draw from this pool, reducing the number of shares available to issue.
+2. **Individual Shareholder Holdings** -- each shareholder holds a specific number of shares. Transfers between shareholders move shares from one person to another without affecting the authorized pool.
+
+Additionally, when a transfer occurs, the seller's certificate should be cancelled (or reduced) and a new certificate issued to the buyer reflecting the correct share counts.
 
 ---
 
-### Step-by-Step Testing Checklist
+### What Changes
 
-**Test 1: Corporation — Buy/Sell Workflow**
-1. Navigate to a Corporation entity (e.g., "Test Corp WI" or "Acme Holdings Corp")
-2. Go to the Shareholders & Stock tab
-3. Verify the "Buy / Sell Shares" button appears at the top
-4. Click it — the 3-step dialog should open at Step 1
-5. Fill in: transaction type, seller name, buyer name, share class, number of shares, price per share, date
-6. Confirm "Total Consideration" auto-calculates (qty x price)
-7. Click "Review" — Step 2 should show a summary with "1 Stock Ledger entry" and "1 Bill of Sale record"
-8. Click "Confirm & Save" — should succeed and show Step 3 with green checkmark
-9. Click "Skip for Now" to close
+**1. Display "Available Shares" on the Shareholders & Stock tab**
+- Calculate: `Available = authorized_shares - total issued shares` (from the stock ledger)
+- Show this prominently at the top of the section alongside "Authorized Shares" from the company profile
+- Example display: `Authorized: 9,000 | Issued: 6,000 | Available to Issue: 3,000`
 
-**Test 2: Verify Linked Records Created**
-1. After Test 1, scroll down to Stock Ledger section — the new transaction should appear with a Link2 icon
-2. Scroll to Bills of Sale section — the new bill should appear with a Link2 icon
-3. Scroll to Transfer Ledger — both entries should appear with "Ledger" source badge and linked indicator
+**2. Add per-shareholder "Shares Held" calculation**
+- In the Shareholders table, add a computed "Shares Held" column (for Corporations)
+- Calculated from the stock ledger: sum of issuances to that shareholder, minus transfers out, plus transfers in, minus redemptions
+- This is separate from the company-level authorized pool
 
-**Test 3: LLC — Buy/Sell with Ownership Recalculation**
-1. Navigate to an LLC entity (e.g., "Badger Brewing LLC" or "Incware")
-2. Verify tab says "Members & Interest" (entity-aware terminology)
-3. Verify the button says "Buy / Sell Interest" (not "Buy / Sell Shares")
-4. Add at least 2 members/shareholders if none exist
-5. Use the Buy/Sell workflow to record a membership interest transfer
-6. After saving, verify Step 2 summary includes "Updated ownership percentages"
-7. Check the Members table — an "Ownership %" column should be visible with calculated values
+**3. Enforce validation in the Buy/Sell Workflow**
+- For **Initial Issuance** type transactions: validate that `num_shares <= available authorized shares`; if not, show an error
+- For **Transfer** type transactions: validate that `num_shares <= seller's current holdings`; if not, show an error ("Seller only holds X shares")
+- Transfers do NOT reduce the company's authorized/available pool
 
-**Test 4: LLC Ownership % Column**
-1. On any LLC entity, go to the Shareholders/Members sub-tab
-2. Verify the "Ownership %" column is visible
-3. For Corporation entities, verify this column does NOT appear
+**4. Auto-create certificates on transfer completion (Step 3 enhancement)**
+- After a transfer is saved, automatically:
+  - Cancel the seller's existing certificate (or create a new one with reduced share count)
+  - Issue a new certificate to the buyer for the transferred shares
+- Show a summary of what happened in Step 3 instead of just prompting
 
-**Test 5: Transfer Ledger View**
-1. On any entity with existing ledger/bill/certificate data, scroll to the Transfer Ledger
-2. Verify it shows entries from all 3 sources with correct source badges (Ledger/Bill/Cert)
-3. Verify entries are sorted by date descending
-4. Verify linked entries show the Link2 icon
-
-**Test 6: Standalone Records Still Work**
-1. Go to Stock Ledger — add a transaction directly (not through workflow)
-2. Verify it saves without a Link2 icon (no bill linked)
-3. Go to Bills of Sale — add a bill directly
-4. Verify it saves without a Link2 icon (no ledger linked)
-5. Both should appear in the Transfer Ledger as standalone entries
-
-**Test 7: Certificate Prompt Navigation**
-1. Run the Buy/Sell workflow again
-2. At Step 3 (success), click "Update Certificates"
-3. Verify the dialog closes and the page scrolls to the Certificates section
+**5. Running balance improvements in Stock Ledger**
+- The "Running Balance" column already exists -- ensure it correctly distinguishes:
+  - Company-level: total shares outstanding (all shareholders combined)
+  - The per-shareholder balance is tracked in the Shareholders table via the new "Shares Held" column
 
 ---
 
 ### Technical Details
 
-**Database columns added (verified in schema):**
-- `shareholders.ownership_percentage` (NUMERIC, nullable)
-- `bills_of_sale.transaction_id` (UUID FK to share_transactions)
-- `share_transactions.bill_of_sale_id` (UUID FK to bills_of_sale)
-- `share_transactions.transferred_certificate_id` (UUID FK to stock_certificates)
+**No database schema changes needed.** All data already exists:
+- `companies.authorized_shares` stores the total authorized
+- `share_transactions` records all issuances, transfers, redemptions
+- `stock_certificates` tracks certificates
+- `shareholders` table already has `ownership_percentage` (for LLCs)
 
-**Database function deployed:**
-- `recalculate_ownership_percentages(p_company_id UUID)` — sums units from ledger by shareholder, calculates ownership % for each member
+**Files to modify:**
 
-**Files created:**
-- `src/components/company/BuySellWorkflow.tsx`
-- `src/components/company/TransferLedgerTab.tsx`
+1. **`src/pages/CompanyDetail.tsx`**
+   - Add a summary bar above the shareholders sub-tabs showing Authorized / Issued / Available counts
+   - Pass `authorizedShares` and computed `issuedShares` to child components
 
-**Files modified:**
-- `src/pages/CompanyDetail.tsx` — added workflow button, TransferLedgerTab, data-section wrapper for certificates
-- `src/components/company/ShareholdersTab.tsx` — ownership % column for LLCs
-- `src/components/company/StockLedgerTab.tsx` — Link2 indicator for linked transactions
-- `src/components/company/BillsOfSaleTab.tsx` — Link2 indicator for linked bills
+2. **`src/components/company/ShareholdersTab.tsx`**
+   - Add a "Shares Held" column for Corporation/S-Corp entities (computed from ledger data)
+   - Query `share_transactions` grouped by shareholder to calculate net holdings
+
+3. **`src/components/company/BuySellWorkflow.tsx`**
+   - Add "Initial Issuance" as a transaction type option (currently only has transfer/redemption types)
+   - Add validation: issuance checks available pool; transfer checks seller's holdings
+   - Show validation errors inline
+   - After save on transfers: auto-cancel seller cert + auto-issue buyer cert
+
+4. **`src/components/company/StockLedgerTab.tsx`**
+   - Update running balance logic to show both per-shareholder and company-level totals
+   - Add an "Available Shares" indicator in the header
+
+5. **`src/components/company/StockCertificatesTab.tsx`**
+   - No structural changes, but certificates created by the workflow will be linked via `transferred_certificate_id`
+
+**Validation logic (in BuySellWorkflow):**
+
+```text
+IF transaction_type is "initial_issuance":
+  available = company.authorized_shares - SUM(issued shares from ledger)
+  IF num_shares > available:
+    ERROR "Only {available} shares remain available to issue"
+
+IF transaction_type is "transfer":
+  seller_holdings = SUM(seller's net shares from ledger)
+  IF num_shares > seller_holdings:
+    ERROR "Seller only holds {seller_holdings} shares"
+```
+
+**Per-shareholder holdings calculation:**
+
+```text
+For each shareholder:
+  + shares from issuances where shareholder_id = this shareholder
+  + shares from transfers IN where to_shareholder matches name
+  - shares from transfers OUT where from_shareholder matches name
+  - shares from redemptions where shareholder_id = this shareholder
+  = net shares held
+```
+
