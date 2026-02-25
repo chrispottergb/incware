@@ -11,7 +11,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ArrowRight, ArrowLeft, CheckCircle2, Link2, ArrowRightLeft, AlertTriangle } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, CheckCircle2, Link2, ArrowRightLeft, AlertTriangle, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
@@ -137,6 +137,11 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
 
   const isIssuance = form.transaction_type === "initial_issuance";
   const isTransfer = ["transfer", "share_exchange", "gift", "interest_transfer", "interest_assignment"].includes(form.transaction_type);
+
+  // Check if buyer is a new (non-existing) shareholder
+  const buyerIsNew = form.buyer_name.trim().length > 0 && !shareholders.some(
+    s => s.name.toLowerCase().trim() === form.buyer_name.toLowerCase().trim()
+  );
 
   // Validation
   let validationError: string | null = null;
@@ -363,7 +368,7 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
             <div className="grid grid-cols-2 gap-2">
               <div className="field-group">
                 <Label className="field-label">{isIssuance ? "Issuing From (Company)" : "Seller"}</Label>
-                <Input className="h-8 text-sm" value={form.seller_name} onChange={(e) => setForm(p => ({ ...p, seller_name: e.target.value }))} placeholder="Name" required />
+                <Input className="h-8 text-sm" value={form.seller_name} onChange={(e) => setForm(p => ({ ...p, seller_name: e.target.value, seller_id: "" }))} placeholder="Name" required />
                 {shareholders.length > 0 && (
                   <Select value={form.seller_id} onValueChange={(v) => {
                     const sh = shareholders.find(s => s.id === v);
@@ -376,7 +381,7 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
               </div>
               <div className="field-group">
                 <Label className="field-label">Buyer</Label>
-                <Input className="h-8 text-sm" value={form.buyer_name} onChange={(e) => setForm(p => ({ ...p, buyer_name: e.target.value }))} placeholder="Name" required />
+                <Input className="h-8 text-sm" value={form.buyer_name} onChange={(e) => setForm(p => ({ ...p, buyer_name: e.target.value, buyer_id: "" }))} placeholder="Name" required />
                 {shareholders.length > 0 && (
                   <Select value={form.buyer_id} onValueChange={(v) => {
                     const sh = shareholders.find(s => s.id === v);
@@ -385,6 +390,12 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
                     <SelectTrigger className="h-7 text-[11px] mt-1"><SelectValue placeholder={`Link ${term.shareholder.toLowerCase()}`} /></SelectTrigger>
                     <SelectContent>{shareholders.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
                   </Select>
+                )}
+                {buyerIsNew && (
+                  <div className="flex items-center gap-1 mt-1 text-[10px] text-primary">
+                    <UserPlus className="h-3 w-3" />
+                    <span>New {term.shareholder.toLowerCase()} will be created</span>
+                  </div>
                 )}
               </div>
             </div>
