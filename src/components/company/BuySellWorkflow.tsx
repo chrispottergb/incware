@@ -191,12 +191,38 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
         .update({ bill_of_sale_id: bill.id })
         .eq("id", txn.id);
 
-      // 4. For LLCs, recalculate ownership percentages
+      // 4. Auto-create buyer as shareholder if they don't exist
+      let buyerShId = form.buyer_id || null;
+      let buyerSh = shareholders.find(s => s.name.toLowerCase().trim() === form.buyer_name.toLowerCase().trim());
+      if (!buyerSh && form.buyer_name.trim()) {
+        const { data: newSh, error: newShErr } = await supabase.from("shareholders").insert({
+          company_id: companyId,
+          name: form.buyer_name.trim(),
+          status: "active",
+        }).select("id, name").single();
+        if (newShErr) {
+          console.error("Failed to auto-create buyer shareholder:", newShErr);
+        } else {
+          buyerSh = newSh;
+          buyerShId = newSh.id;
+        }
+      } else if (buyerSh) {
+        buyerShId = buyerSh.id;
+      }
+
+      // 5. Update transaction to link shareholder_id to buyer
+      if (buyerShId) {
+        await supabase.from("share_transactions")
+          .update({ shareholder_id: buyerShId })
+          .eq("id", txn.id);
+      }
+
+      // 6. For LLCs, recalculate ownership percentages
       if (isLLC) {
         await supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId });
       }
 
-      // 5. Auto-create certificates for transfers
+      // 7. Auto-create certificates for transfers
       const certActions: string[] = [];
       if (isTransfer && !isLLC) {
         const nextCertNum = certificates.length > 0
@@ -236,7 +262,6 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
         }
 
         // Issue new cert to buyer
-        const buyerSh = shareholders.find(s => s.name.toLowerCase().trim() === form.buyer_name.toLowerCase().trim());
         const buyerCertNum = certActions.length > 0 ? nextCertNum + 1 : nextCertNum;
         if (buyerSh) {
           await supabase.from("stock_certificates").insert({
@@ -252,12 +277,11 @@ export default function BuySellWorkflow({ companyId, entityType, open, onOpenCha
         }
       }
 
-      // 6. For initial issuance, auto-create certificate
+      // 8. For initial issuance, auto-create certificate
       if (isIssuance && !isLLC) {
         const nextCertNum = certificates.length > 0
           ? Math.max(...certificates.map((c: any) => c.certificate_number)) + 1
           : 1;
-        const buyerSh = shareholders.find(s => s.name.toLowerCase().trim() === form.buyer_name.toLowerCase().trim());
         if (buyerSh) {
           await supabase.from("stock_certificates").insert({
             company_id: companyId,
