@@ -1,100 +1,58 @@
 
 
-## Corporate Share Tracking: Authorized vs. Individual Holdings
+## Fix: Share Transfer Fails to Update New Shareholder
 
-### Problem Statement
-Currently, when shares are issued or transferred, there is no distinction between shares drawn from the corporation's authorized pool vs. shares moving between individual shareholders. The system needs to enforce two separate pools:
+### Root Cause
 
-1. **Company Authorized Pool** -- e.g., 9,000 authorized shares. Initial issuances draw from this pool, reducing the number of shares available to issue.
-2. **Individual Shareholder Holdings** -- each shareholder holds a specific number of shares. Transfers between shareholders move shares from one person to another without affecting the authorized pool.
+When a transfer is recorded in `BuySellWorkflow.tsx`, the workflow does **not** auto-create a new shareholder record if the buyer doesn't already exist in the `shareholders` table. This causes two failures:
 
-Additionally, when a transfer occurs, the seller's certificate should be cancelled (or reduced) and a new certificate issued to the buyer reflecting the correct share counts.
+1. **No shareholder record created** -- The buyer's name is stored as text in `to_shareholder`, but no row is inserted into the `shareholders` table for them.
+2. **No certificate issued to buyer** -- At line 239, `buyerSh` resolves to `null` because the name lookup fails against the shareholders list, so the certificate insert is silently skipped.
+3. **Holdings calculation shows 0** -- `useShareCalculations` tries to match the buyer by name against `shareholders`, but since no record exists, the transfer-in shares are never attributed.
 
----
+### Fix (1 file change)
 
-### What Changes
+**File: `src/components/company/BuySellWorkflow.tsx`**
 
-**1. Display "Available Shares" on the Shareholders & Stock tab**
-- Calculate: `Available = authorized_shares - total issued shares` (from the stock ledger)
-- Show this prominently at the top of the section alongside "Authorized Shares" from the company profile
-- Example display: `Authorized: 9,000 | Issued: 6,000 | Available to Issue: 3,000`
-
-**2. Add per-shareholder "Shares Held" calculation**
-- In the Shareholders table, add a computed "Shares Held" column (for Corporations)
-- Calculated from the stock ledger: sum of issuances to that shareholder, minus transfers out, plus transfers in, minus redemptions
-- This is separate from the company-level authorized pool
-
-**3. Enforce validation in the Buy/Sell Workflow**
-- For **Initial Issuance** type transactions: validate that `num_shares <= available authorized shares`; if not, show an error
-- For **Transfer** type transactions: validate that `num_shares <= seller's current holdings`; if not, show an error ("Seller only holds X shares")
-- Transfers do NOT reduce the company's authorized/available pool
-
-**4. Auto-create certificates on transfer completion (Step 3 enhancement)**
-- After a transfer is saved, automatically:
-  - Cancel the seller's existing certificate (or create a new one with reduced share count)
-  - Issue a new certificate to the buyer for the transferred shares
-- Show a summary of what happened in Step 3 instead of just prompting
-
-**5. Running balance improvements in Stock Ledger**
-- The "Running Balance" column already exists -- ensure it correctly distinguishes:
-  - Company-level: total shares outstanding (all shareholders combined)
-  - The per-shareholder balance is tracked in the Shareholders table via the new "Shares Held" column
-
----
-
-### Technical Details
-
-**No database schema changes needed.** All data already exists:
-- `companies.authorized_shares` stores the total authorized
-- `share_transactions` records all issuances, transfers, redemptions
-- `stock_certificates` tracks certificates
-- `shareholders` table already has `ownership_percentage` (for LLCs)
-
-**Files to modify:**
-
-1. **`src/pages/CompanyDetail.tsx`**
-   - Add a summary bar above the shareholders sub-tabs showing Authorized / Issued / Available counts
-   - Pass `authorizedShares` and computed `issuedShares` to child components
-
-2. **`src/components/company/ShareholdersTab.tsx`**
-   - Add a "Shares Held" column for Corporation/S-Corp entities (computed from ledger data)
-   - Query `share_transactions` grouped by shareholder to calculate net holdings
-
-3. **`src/components/company/BuySellWorkflow.tsx`**
-   - Add "Initial Issuance" as a transaction type option (currently only has transfer/redemption types)
-   - Add validation: issuance checks available pool; transfer checks seller's holdings
-   - Show validation errors inline
-   - After save on transfers: auto-cancel seller cert + auto-issue buyer cert
-
-4. **`src/components/company/StockLedgerTab.tsx`**
-   - Update running balance logic to show both per-shareholder and company-level totals
-   - Add an "Available Shares" indicator in the header
-
-5. **`src/components/company/StockCertificatesTab.tsx`**
-   - No structural changes, but certificates created by the workflow will be linked via `transferred_certificate_id`
-
-**Validation logic (in BuySellWorkflow):**
+In the `handleSave` function, after inserting the transaction and bill of sale (around line 193), add logic to auto-create the buyer as a new shareholder if they don't already exist:
 
 ```text
-IF transaction_type is "initial_issuance":
-  available = company.authorized_shares - SUM(issued shares from ledger)
-  IF num_shares > available:
-    ERROR "Only {available} shares remain available to issue"
+Before certificate logic (line ~200):
 
-IF transaction_type is "transfer":
-  seller_holdings = SUM(seller's net shares from ledger)
-  IF num_shares > seller_holdings:
-    ERROR "Seller only holds {seller_holdings} shares"
+1. Check if buyer name matches any existing shareholder (case-insensitive)
+2. If NO match found:
+   a. INSERT into shareholders (company_id, name, status='active')
+   b. Store the new shareholder's ID as buyerSh for certificate creation
+3. Re-fetch/update the local shareholders list so subsequent
+   certificate logic uses the correct shareholder_id
 ```
 
-**Per-shareholder holdings calculation:**
+Similarly, for the seller side -- if the seller is typed manually and doesn't match an existing shareholder, the same auto-create should apply (though this is less common since sellers typically already exist).
+
+After creating the new shareholder, **update the transaction record** to link `shareholder_id` to the newly created buyer:
 
 ```text
-For each shareholder:
-  + shares from issuances where shareholder_id = this shareholder
-  + shares from transfers IN where to_shareholder matches name
-  - shares from transfers OUT where from_shareholder matches name
-  - shares from redemptions where shareholder_id = this shareholder
-  = net shares held
+UPDATE share_transactions SET shareholder_id = new_buyer_id WHERE id = txn.id
 ```
+
+This ensures:
+- The `shareholderHoldings` calculation in `useShareCalculations.ts` correctly attributes shares via `shareholder_id`
+- Certificates are issued to the correct shareholder
+- The Transfer Ledger shows proper linked records
+
+### What This Does NOT Change
+- No database schema changes needed
+- No changes to `useShareCalculations.ts` (it already handles both ID-based and name-based matching)
+- No changes to `ShareholdersTab.tsx`
+- Existing standalone ledger/bill entries remain unaffected
+
+### Technical Summary
+
+| Step | Action |
+|------|--------|
+| 1 | After saving transaction + bill, check if buyer exists in `shareholders` |
+| 2 | If not, INSERT new shareholder with `name` and `status='active'` |
+| 3 | Update `share_transactions.shareholder_id` to point to the new/existing buyer |
+| 4 | Use the resolved buyer shareholder record for certificate issuance |
+| 5 | Invalidate `shareholders` query cache so the UI reflects the new member |
 
