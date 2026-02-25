@@ -303,6 +303,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
                   <TableHead className="text-[10px] uppercase">Address</TableHead>
                   <TableHead className="text-[10px] uppercase">City/State/Zip</TableHead>
                   <TableHead className="text-[10px] uppercase">SSN/EIN</TableHead>
+                  {t.isLLC && <TableHead className="text-[10px] uppercase text-right">Ownership %</TableHead>}
                   <TableHead className="text-[10px] uppercase">Status</TableHead>
                   <TableHead className="text-[10px] uppercase w-20">Actions</TableHead>
                 </TableRow>
@@ -314,6 +315,11 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation" 
                     <TableCell className="text-xs">{s.address ?? "—"}</TableCell>
                     <TableCell className="text-xs">{[s.city, s.state, s.zip].filter(Boolean).join(", ") || "—"}</TableCell>
                     <TableCell className="text-xs font-mono">{getSsnDisplay(s)}</TableCell>
+                    {t.isLLC && (
+                      <TableCell className="text-xs text-right font-medium">
+                        {(s as any).ownership_percentage != null ? `${Number((s as any).ownership_percentage).toFixed(2)}%` : "—"}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${s.status === "active" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}`}>
                         {s.status}

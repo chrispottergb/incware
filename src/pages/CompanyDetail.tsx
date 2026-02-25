@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Building2, Loader2, Trash2 } from "lucide-react";
+import { ArrowLeft, Building2, Loader2, Trash2, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import IncorporationTab from "@/components/company/IncorporationTab";
 import OrganizationTab from "@/components/company/OrganizationTab";
@@ -36,6 +36,8 @@ import CounselTab from "@/components/company/CounselTab";
 import BanksTab from "@/components/company/BanksTab";
 import RelationshipsTab from "@/components/company/RelationshipsTab";
 import LeasesTab from "@/components/company/LeasesTab";
+import BuySellWorkflow from "@/components/company/BuySellWorkflow";
+import TransferLedgerTab from "@/components/company/TransferLedgerTab";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 
 export default function CompanyDetail() {
@@ -47,6 +49,7 @@ export default function CompanyDetail() {
 
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
   const [deleting, setDeleting] = useState(false);
+  const [buySellOpen, setBuySellOpen] = useState(false);
 
   const handleTabChange = (value: string) => {
     navigate(`#${value}`, { replace: true });
@@ -236,11 +239,26 @@ export default function CompanyDetail() {
         </TabsContent>
         <TabsContent value="shareholders" className="mt-5">
           <div className="space-y-5">
+            <div className="flex justify-end">
+              <Button size="sm" onClick={() => setBuySellOpen(true)} className="h-8 text-xs">
+                <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" />
+                {isLLCType(company.entity_type) ? "Buy / Sell Interest" : "Buy / Sell Shares"}
+              </Button>
+            </div>
             <ShareholdersTab companyId={company.id} entityType={company.entity_type} />
-            <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
+            <div data-section="certificates">
+              <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
+            </div>
             <StockLedgerTab companyId={company.id} entityType={company.entity_type} />
             <BillsOfSaleTab companyId={company.id} entityType={company.entity_type} />
+            <TransferLedgerTab companyId={company.id} entityType={company.entity_type} />
           </div>
+          <BuySellWorkflow
+            companyId={company.id}
+            entityType={company.entity_type}
+            open={buySellOpen}
+            onOpenChange={setBuySellOpen}
+          />
         </TabsContent>
         <TabsContent value="timeline" className="mt-5">
           <TimelineTab companyId={company.id} company={company} />

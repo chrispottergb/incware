@@ -16,7 +16,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, FileText, Pencil } from "lucide-react";
+import { Plus, Trash2, Loader2, FileText, Pencil, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology } from "@/lib/entity-terminology";
@@ -239,6 +239,11 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
                     <TableCell className="text-xs text-right">{b.total_price != null ? `$${Number(b.total_price).toFixed(2)}` : "—"}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
+                        {(b as any).transaction_id && (
+                          <span className="mt-1.5 mr-0.5" aria-label="Linked to ledger entry">
+                            <Link2 className="h-3 w-3 text-primary" />
+                          </span>
+                        )}
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(b)}>
                           <Pencil className="h-3 w-3" />
                         </Button>

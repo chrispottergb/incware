@@ -30,7 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, BookOpen, Pencil } from "lucide-react";
+import { Plus, Trash2, Loader2, BookOpen, Pencil, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology } from "@/lib/entity-terminology";
@@ -450,6 +450,11 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                       <TableCell className="text-xs text-right font-semibold bg-primary/5">{balanceMap.get(t.id)?.toLocaleString() ?? "—"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-0.5">
+                          {(t as any).bill_of_sale_id && (
+                            <span className="mr-0.5" aria-label="Linked to bill of sale">
+                              <Link2 className="h-3 w-3 text-primary" />
+                            </span>
+                          )}
                           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(t)} title="Edit transaction">
                             <Pencil className="h-3 w-3" />
                           </Button>
