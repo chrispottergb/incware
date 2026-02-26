@@ -1,20 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -33,6 +25,7 @@ import {
 import { Building2, Plus, Search, Loader2, ChevronRight, UserPlus, FolderOpen, CalendarCheck, SearchIcon, Bot, AlertTriangle, ClipboardCheck, Upload } from "lucide-react";
 import { toast } from "sonner";
 import TaxReturnUpload from "@/components/TaxReturnUpload";
+import CreateCompanyWizard from "@/components/CreateCompanyWizard";
 
 import cardNewClient from "@/assets/card-new-client.jpg";
 import cardImportTaxReturn from "@/assets/card-import-tax-return.jpg";
@@ -65,9 +58,7 @@ export default function Dashboard() {
     return () => window.removeEventListener("open-add-company", handler);
   }, []);
 
-  const [newName, setNewName] = useState("");
-  const [newType, setNewType] = useState("Corporation");
-  const [newState, setNewState] = useState("");
+  // Legacy form state removed — now handled by CreateCompanyWizard
 
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ["companies"],
@@ -81,26 +72,7 @@ export default function Dashboard() {
     },
   });
 
-  const createCompany = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from("companies").insert({
-        user_id: user!.id,
-        name: newName,
-        entity_type: newType,
-        state_of_incorporation: newState || null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["companies"] });
-      toast.success("Company created!");
-      setDialogOpen(false);
-      setNewName("");
-      setNewType("Corporation");
-      setNewState("");
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
+  // Company creation now handled by CreateCompanyWizard
 
   const filtered = companies.filter((c) => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
@@ -220,76 +192,11 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Company
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle className="font-display">New Company</DialogTitle>
-            </DialogHeader>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                createCompany.mutate();
-              }}
-              className="space-y-4"
-            >
-              <div className="field-group">
-                <Label className="field-label">Company Name</Label>
-                <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Acme Corp" required />
-              </div>
-              <div className="field-group">
-                <Label className="field-label">Entity Type</Label>
-                <Select value={newType} onValueChange={setNewType}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {ENTITY_TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="field-group">
-                <Label className="field-label">State of Incorporation</Label>
-                <Select value={newState} onValueChange={setNewState}>
-                  <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
-                  <SelectContent>
-                    {US_STATES.map((s) => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" className="w-full" disabled={createCompany.isPending}>
-                {createCompany.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create Company
-              </Button>
+        <Button size="sm" onClick={() => setDialogOpen(true)}>
+          <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Company
+        </Button>
 
-              <div className="relative flex items-center py-2">
-                <div className="flex-1 border-t border-border" />
-                <span className="mx-3 text-xs text-muted-foreground">or</span>
-                <div className="flex-1 border-t border-border" />
-              </div>
-
-              <TaxReturnUpload
-                mode="populate"
-                onCompanyCreated={(id) => {
-                  queryClient.invalidateQueries({ queryKey: ["companies"] });
-                  setDialogOpen(false);
-                  navigate(`/company/${id}`);
-                }}
-                trigger={
-                  <Button variant="outline" className="w-full">
-                    <Upload className="mr-2 h-4 w-4" /> Import from Tax Return
-                  </Button>
-                }
-              />
-            </form>
-          </DialogContent>
-        </Dialog>
+        <CreateCompanyWizard open={dialogOpen} onOpenChange={setDialogOpen} />
       </div>
 
       {/* Filters */}
