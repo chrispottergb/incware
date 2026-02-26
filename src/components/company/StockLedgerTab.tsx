@@ -30,7 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, BookOpen, Pencil, Link2 } from "lucide-react";
+import { Plus, Loader2, BookOpen, Link2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology } from "@/lib/entity-terminology";
@@ -82,7 +82,6 @@ const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string
   ],
 };
 
-// Fallback for other entity types (Non-Profit, Partnership, etc.)
 const DEFAULT_TRANSACTION_TYPES = [
   { value: "issuance", label: "Issuance", statute: "" },
   { value: "transfer", label: "Transfer", statute: "" },
@@ -108,7 +107,6 @@ interface Props {
 export default function StockLedgerTab({ companyId, entityType = "Corporation" }: Props) {
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const transactionTypes = TRANSACTION_TYPES_BY_ENTITY[entityType] || DEFAULT_TRANSACTION_TYPES;
   const term = getTerminology(entityType);
 
@@ -175,70 +173,12 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const update = useMutation({
-    mutationFn: async () => {
-      if (!editingId) return;
-      const { error } = await supabase.from("share_transactions").update({
-        transaction_type: form.transaction_type,
-        shareholder_id: form.shareholder_id || null,
-        share_class: form.share_class,
-        num_shares: parseInt(form.num_shares) || 0,
-        price_per_share: form.price_per_share ? parseFloat(form.price_per_share) : null,
-        total_consideration: form.total_consideration ? parseFloat(form.total_consideration) : null,
-        consideration_type: form.consideration_type,
-        transaction_date: form.transaction_date,
-        from_shareholder: form.from_shareholder || null,
-        to_shareholder: form.to_shareholder || null,
-        notes: form.notes || null,
-      }).eq("id", editingId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
-      setDialog(false);
-      setEditingId(null);
-      resetForm();
-      toast.success("Transaction updated!");
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("share_transactions").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
-      toast.success("Transaction removed.");
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
   const resetForm = () => setForm({
     transaction_type: "issuance", shareholder_id: "", share_class: "Common",
     num_shares: "", price_per_share: "", total_consideration: "",
     consideration_type: "cash", transaction_date: new Date().toISOString().split("T")[0],
     from_shareholder: "", to_shareholder: "", notes: "",
   });
-
-  const openEdit = (t: any) => {
-    setForm({
-      transaction_type: t.transaction_type || "issuance",
-      shareholder_id: t.shareholder_id || "",
-      share_class: t.share_class || "Common",
-      num_shares: t.num_shares?.toString() || "",
-      price_per_share: t.price_per_share?.toString() || "",
-      total_consideration: t.total_consideration?.toString() || "",
-      consideration_type: t.consideration_type || "cash",
-      transaction_date: t.transaction_date || new Date().toISOString().split("T")[0],
-      from_shareholder: t.from_shareholder || "",
-      to_shareholder: t.to_shareholder || "",
-      notes: t.notes || "",
-    });
-    setEditingId(t.id);
-    setDialog(true);
-  };
 
   const isTransfer = ["transfer", "interest_transfer", "interest_assignment", "share_exchange"].includes(form.transaction_type);
 
@@ -257,6 +197,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
             <CardTitle className="card-section-title">
               {term.ledgerTitle}
             </CardTitle>
+            <span title="Permanent record — entries cannot be edited or deleted"><Lock className="h-3 w-3 text-muted-foreground" /></span>
           </div>
           <CardDescription className="text-[11px] mt-0.5">
             {statuteDescription}
@@ -269,30 +210,37 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
             statuteRef: statuteDescription,
             landscape: true,
             table: {
-              headers: ["Date", "Type", term.shareholder, term.classLabel, term.shareUnit, term.pricePerUnit, "Total", "Consideration"],
-              rows: transactions.map((t: any) => [
-                t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—",
-                t.transaction_type?.replace("_", " ") ?? "—",
-                t.shareholders?.name ?? "—",
-                t.share_class,
-                t.num_shares?.toLocaleString(),
-                t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—",
-                t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—",
-                t.consideration_type ?? "—",
-              ]),
+              headers: ["#", "Date", "Type", term.shareholder, term.classLabel, term.shareUnit, term.pricePerUnit, "Total", "Consideration", "Notes"],
+              rows: (() => {
+                const sorted = [...transactions].sort((a, b) =>
+                  (a.transaction_date || "").localeCompare(b.transaction_date || "") || (a.created_at || "").localeCompare(b.created_at || "")
+                );
+                return sorted.map((t: any, i: number) => [
+                  String(i + 1),
+                  t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—",
+                  t.transaction_type?.replace("_", " ") ?? "—",
+                  t.shareholders?.name ?? "—",
+                  t.share_class,
+                  t.num_shares?.toLocaleString(),
+                  t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—",
+                  t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—",
+                  t.consideration_type ?? "—",
+                  t.notes ?? "",
+                ]);
+              })(),
             },
           }} />
-          <Dialog open={dialog} onOpenChange={(open) => { setDialog(open); if (!open) { setEditingId(null); resetForm(); } }}>
+          <Dialog open={dialog} onOpenChange={(open) => { setDialog(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setEditingId(null); resetForm(); }}>
+              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => resetForm()}>
                 <Plus className="mr-1 h-3 w-3" /> Record Transaction
               </Button>
             </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle className="font-display text-base">{editingId ? "Edit Transaction" : term.isLLC ? "Record Interest Transaction" : "Record Share Transaction"}</DialogTitle>
+              <DialogTitle className="font-display text-base">{term.isLLC ? "Record Interest Transaction" : "Record Share Transaction"}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); editingId ? update.mutate() : add.mutate(); }} className="space-y-3">
+            <form onSubmit={(e) => { e.preventDefault(); add.mutate(); }} className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 <div className="field-group">
                   <Label className="field-label">Transaction Type</Label>
@@ -374,9 +322,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 <Label className="field-label">Notes</Label>
                 <Textarea className="text-sm min-h-[50px]" rows={2} value={form.notes} onChange={(e) => setForm(p => ({ ...p, notes: e.target.value }))} />
               </div>
-              <Button type="submit" className="w-full" size="sm" disabled={add.isPending || update.isPending}>
-                {(add.isPending || update.isPending) && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                {editingId ? "Update Transaction" : "Record Transaction"}
+              <Button type="submit" className="w-full" size="sm" disabled={add.isPending}>
+                {add.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                Record Transaction
               </Button>
             </form>
           </DialogContent>
@@ -393,6 +341,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="text-[10px] uppercase w-10">#</TableHead>
                   <TableHead className="text-[10px] uppercase">Date</TableHead>
                   <TableHead className="text-[10px] uppercase">Type</TableHead>
                   <TableHead className="text-[10px] uppercase">{term.shareholder}</TableHead>
@@ -413,8 +362,10 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   );
                   const balances: Record<string, number> = {};
                   const balanceMap = new Map<string, number>();
+                  const entryNumMap = new Map<string, number>();
 
-                  sorted.forEach((t: any) => {
+                  sorted.forEach((t: any, idx: number) => {
+                    entryNumMap.set(t.id, idx + 1);
                     const holderId = t.shareholder_id || t.to_shareholder || "unknown";
                     const isReduction = ["redemption", "reacquisition", "cancellation", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout"].includes(t.transaction_type);
                     const isTransferOut = ["transfer", "interest_transfer", "interest_assignment", "share_exchange"].includes(t.transaction_type);
@@ -437,6 +388,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   // Display in reverse chronological order (original order)
                   return transactions.map((t: any) => (
                     <TableRow key={t.id}>
+                      <TableCell className="text-xs font-mono text-muted-foreground">{entryNumMap.get(t.id)}</TableCell>
                       <TableCell className="text-xs">{t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">{t.transaction_type?.replace("_", " ")}</Badge>
@@ -449,19 +401,11 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                       <TableCell className="text-xs capitalize">{t.consideration_type?.replace("_", " ") ?? "—"}</TableCell>
                       <TableCell className="text-xs text-right font-semibold bg-primary/5">{balanceMap.get(t.id)?.toLocaleString() ?? "—"}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-0.5">
-                          {(t as any).bill_of_sale_id && (
-                            <span className="mr-0.5" aria-label="Linked to bill of sale">
-                              <Link2 className="h-3 w-3 text-primary" />
-                            </span>
-                          )}
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(t)} title="Edit transaction">
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => remove.mutate(t.id)} title="Delete transaction">
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
+                        {(t as any).bill_of_sale_id && (
+                          <span aria-label="Linked to bill of sale">
+                            <Link2 className="h-3 w-3 text-primary" />
+                          </span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ));
@@ -470,6 +414,10 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
             </Table>
           </div>
         )}
+        <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
+          <Lock className="h-3 w-3" />
+          This is a permanent record. Entries cannot be edited or deleted. Corrections are made by adding new entries.
+        </p>
       </CardContent>
     </Card>
   );

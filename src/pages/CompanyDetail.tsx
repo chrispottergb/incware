@@ -272,10 +272,11 @@ export default function CompanyDetail() {
             </div>
             <StockLedgerTab companyId={company.id} entityType={company.entity_type} />
             <BillsOfSaleTab companyId={company.id} entityType={company.entity_type} />
-            <TransferLedgerTab companyId={company.id} entityType={company.entity_type} />
+            <TransferLedgerTab companyId={company.id} entityType={company.entity_type} authorizedShares={shareCalc.authorizedShares} />
           </div>
           <BuySellWorkflow
             companyId={company.id}
+            companyName={company.name}
             entityType={company.entity_type}
             open={buySellOpen}
             onOpenChange={setBuySellOpen}

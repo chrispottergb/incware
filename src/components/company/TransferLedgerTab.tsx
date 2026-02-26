@@ -5,30 +5,56 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ScrollText, Link2 } from "lucide-react";
+import { Loader2, ScrollText, Link2, Lock } from "lucide-react";
 import { getTerminology } from "@/lib/entity-terminology";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import SectionPdfActions from "./SectionPdfActions";
+
+const ISSUANCE_TYPES = [
+  "Issuance", "initial_issuance", "authorized_issuance", "subscription_issuance",
+  "consideration_issuance", "share_dividend", "fractional_shares", "preemptive_rights",
+  "treasury_reissue", "Capital Contribution", "Initial Contribution", "initial_contribution",
+  "additional_contribution", "membership_issuance",
+];
+
+const REDUCTION_TYPES = [
+  "Redemption", "redemption", "Cancellation", "cancellation", "Return of Capital",
+  "reacquisition", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout",
+];
+
+const TRANSFER_TYPES = [
+  "transfer", "interest_transfer", "interest_assignment", "gift",
+  "share_exchange", "Transfer In", "Transfer Out",
+];
 
 interface Props {
   companyId: string;
   entityType?: string;
+  authorizedShares?: number | null;
 }
 
 interface LedgerEntry {
+  entryNum: number;
   date: string;
   type: string;
-  from: string;
-  to: string;
+  certIssued: string;
+  certCancelled: string;
+  transferee: string;
+  transferor: string;
   classLabel: string;
-  units: number;
-  price: number | null;
-  total: number | null;
+  sharesIssued: number;
+  sharesCancelled: number;
+  sharesToTreasury: number;
+  consideration: number | null;
+  shareholderBalance: number;
+  treasuryBalance: number;
+  notes: string;
   source: "ledger" | "bill" | "certificate";
   linked: boolean;
   id: string;
 }
 
-export default function TransferLedgerTab({ companyId, entityType = "Corporation" }: Props) {
+export default function TransferLedgerTab({ companyId, entityType = "Corporation", authorizedShares }: Props) {
   const term = getTerminology(entityType);
 
   const { data: transactions = [] } = useQuery({
@@ -38,17 +64,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
         .from("share_transactions")
         .select("*, shareholders(name)")
         .eq("company_id", companyId)
-        .order("transaction_date", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: bills = [] } = useQuery({
-    queryKey: ["bills_of_sale", companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("bills_of_sale").select("*").eq("company_id", companyId).order("sale_date", { ascending: false });
+        .order("transaction_date", { ascending: true });
       if (error) throw error;
       return data;
     },
@@ -61,88 +77,119 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
         .from("stock_certificates")
         .select("*, shareholders(name)")
         .eq("company_id", companyId)
-        .order("issue_date", { ascending: false });
+        .order("certificate_number");
       if (error) throw error;
       return data;
     },
   });
 
-  const isLoading = !transactions && !bills && !certificates;
+  const { data: shareholders = [] } = useQuery({
+    queryKey: ["shareholders", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shareholders").select("id, name").eq("company_id", companyId).order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
 
-  // Build unified entries
+  const isLoading = !transactions && !certificates;
+
+  // Build unified entries sorted chronologically
+  // Use transactions as the primary source, enrich with cert data
   const entries: LedgerEntry[] = [];
 
-  // Ledger entries
-  transactions.forEach((t: any) => {
+  // Track running balances
+  const holderBalances: Record<string, number> = {};
+  let totalIssued = 0;
+
+  // Helper to find cert by shareholder + date
+  const findCertIssued = (shareholderName: string, date: string) => {
+    return certificates.find((c: any) =>
+      c.issue_date === date &&
+      (c.shareholders?.name || "").toLowerCase().trim() === shareholderName.toLowerCase().trim() &&
+      c.status === "active"
+    );
+  };
+
+  const findCertCancelled = (shareholderName: string, date: string) => {
+    return certificates.find((c: any) =>
+      c.cancelled_date === date &&
+      (c.shareholders?.name || "").toLowerCase().trim() === shareholderName.toLowerCase().trim() &&
+      c.status === "cancelled"
+    );
+  };
+
+  // Process transactions chronologically
+  const sorted = [...transactions].sort((a: any, b: any) =>
+    (a.transaction_date || "").localeCompare(b.transaction_date || "") ||
+    (a.created_at || "").localeCompare(b.created_at || "")
+  );
+
+  sorted.forEach((t: any, idx: number) => {
+    const txType = t.transaction_type || "";
+    const isIss = ISSUANCE_TYPES.includes(txType);
+    const isRed = REDUCTION_TYPES.includes(txType);
+    const isTx = TRANSFER_TYPES.includes(txType);
+
+    const transfereeName = t.shareholders?.name || t.to_shareholder || "";
+    const transferorName = t.from_shareholder || "";
+    const holderKey = transfereeName.toLowerCase().trim();
+    const fromKey = transferorName.toLowerCase().trim();
+
+    let sharesIssued = 0;
+    let sharesCancelled = 0;
+    let sharesToTreasury = 0;
+
+    if (isIss) {
+      sharesIssued = t.num_shares || 0;
+      holderBalances[holderKey] = (holderBalances[holderKey] || 0) + sharesIssued;
+      totalIssued += sharesIssued;
+    } else if (isRed) {
+      sharesToTreasury = t.num_shares || 0;
+      sharesCancelled = t.num_shares || 0;
+      const redKey = holderKey || fromKey;
+      holderBalances[redKey] = (holderBalances[redKey] || 0) - sharesToTreasury;
+      totalIssued -= sharesToTreasury;
+    } else if (isTx) {
+      sharesIssued = t.num_shares || 0;
+      sharesCancelled = t.num_shares || 0;
+      if (fromKey) {
+        holderBalances[fromKey] = (holderBalances[fromKey] || 0) - (t.num_shares || 0);
+      }
+      if (holderKey) {
+        holderBalances[holderKey] = (holderBalances[holderKey] || 0) + (t.num_shares || 0);
+      }
+    }
+
+    // Find linked certs
+    const certIssued = findCertIssued(transfereeName, t.transaction_date);
+    const certCancelled = findCertCancelled(transferorName || transfereeName, t.transaction_date);
+
+    const treasuryBal = (authorizedShares ?? 0) - Math.max(0, totalIssued);
+    const shBal = Math.max(0, holderBalances[holderKey] || 0);
+
     entries.push({
+      entryNum: idx + 1,
       date: t.transaction_date || "",
-      type: t.transaction_type?.replace(/_/g, " ") || "—",
-      from: t.from_shareholder || "—",
-      to: t.shareholders?.name || t.to_shareholder || "—",
+      type: txType.replace(/_/g, " "),
+      certIssued: certIssued ? `#${(certIssued as any).certificate_number}` : "—",
+      certCancelled: certCancelled ? `#${(certCancelled as any).certificate_number}` : "—",
+      transferee: transfereeName || "—",
+      transferor: isTx ? (transferorName || "—") : isRed ? (transferorName || transfereeName || "—") : "—",
       classLabel: t.share_class || "—",
-      units: t.num_shares || 0,
-      price: t.price_per_share,
-      total: t.total_consideration,
+      sharesIssued: isIss || isTx ? sharesIssued : 0,
+      sharesCancelled: isRed || isTx ? sharesCancelled : 0,
+      sharesToTreasury: isRed ? sharesToTreasury : 0,
+      consideration: t.total_consideration,
+      shareholderBalance: shBal,
+      treasuryBalance: Math.max(0, treasuryBal),
+      notes: t.notes || "",
       source: "ledger",
       linked: !!t.bill_of_sale_id,
       id: t.id,
     });
   });
-
-  // Standalone bills (not linked to a transaction)
-  bills.forEach((b: any) => {
-    if (b.transaction_id) return; // Already represented via ledger
-    entries.push({
-      date: b.sale_date || "",
-      type: "Bill of Sale",
-      from: b.seller_name || "—",
-      to: b.buyer_name || "—",
-      classLabel: b.share_class || "—",
-      units: b.num_shares || 0,
-      price: b.price_per_share,
-      total: b.total_price,
-      source: "bill",
-      linked: false,
-      id: b.id,
-    });
-  });
-
-  // Certificate events
-  certificates.forEach((c: any) => {
-    if (c.issue_date) {
-      entries.push({
-        date: c.issue_date,
-        type: `Cert #${c.certificate_number} Issued`,
-        from: "—",
-        to: c.shareholders?.name || "—",
-        classLabel: c.share_class || "—",
-        units: c.num_shares || 0,
-        price: c.par_value,
-        total: null,
-        source: "certificate",
-        linked: false,
-        id: c.id + "-issue",
-      });
-    }
-    if (c.status === "cancelled" && c.cancelled_date) {
-      entries.push({
-        date: c.cancelled_date,
-        type: `Cert #${c.certificate_number} Cancelled`,
-        from: c.shareholders?.name || "—",
-        to: "—",
-        classLabel: c.share_class || "—",
-        units: c.num_shares || 0,
-        price: null,
-        total: null,
-        source: "certificate",
-        linked: false,
-        id: c.id + "-cancel",
-      });
-    }
-  });
-
-  // Sort by date descending
-  entries.sort((a, b) => b.date.localeCompare(a.date));
 
   const sourceColor = (source: string) => {
     switch (source) {
@@ -159,12 +206,37 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
         <div>
           <div className="flex items-center gap-2">
             <ScrollText className="h-3.5 w-3.5 text-primary" />
-            <CardTitle className="card-section-title">Transfer Ledger</CardTitle>
+            <CardTitle className="card-section-title">Stock Transfer Ledger</CardTitle>
+            <span title="Permanent record"><Lock className="h-3 w-3 text-muted-foreground" /></span>
           </div>
           <CardDescription className="text-[11px] mt-0.5">
-            Unified chronological view of all ownership activity
+            Permanent chronological record of all share transactions
           </CardDescription>
         </div>
+        <SectionPdfActions config={{
+          title: "Stock Transfer Ledger",
+          companyName: "",
+          statuteRef: "Permanent record — entries cannot be edited or deleted",
+          landscape: true,
+          table: {
+            headers: ["#", "Date", "Type", "Cert Issued", "Cert Cancelled", "Transferee", "Transferor", "Issued", "Cancelled", "To Treasury", "Consideration", "SH Balance", "Treasury Balance"],
+            rows: entries.map(e => [
+              String(e.entryNum),
+              e.date ? new Date(e.date + "T00:00:00").toLocaleDateString() : "—",
+              e.type,
+              e.certIssued,
+              e.certCancelled,
+              e.transferee,
+              e.transferor,
+              e.sharesIssued > 0 ? e.sharesIssued.toLocaleString() : "—",
+              e.sharesCancelled > 0 ? e.sharesCancelled.toLocaleString() : "—",
+              e.sharesToTreasury > 0 ? e.sharesToTreasury.toLocaleString() : "—",
+              e.consideration != null ? `$${Number(e.consideration).toFixed(2)}` : "—",
+              e.shareholderBalance.toLocaleString(),
+              e.treasuryBalance.toLocaleString(),
+            ]),
+          },
+        }} />
       </CardHeader>
       <CardContent className="px-4 pb-4">
         {isLoading ? (
@@ -176,52 +248,46 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="text-[10px] uppercase w-8">#</TableHead>
                   <TableHead className="text-[10px] uppercase">Date</TableHead>
                   <TableHead className="text-[10px] uppercase">Type</TableHead>
-                  <TableHead className="text-[10px] uppercase">From</TableHead>
-                  <TableHead className="text-[10px] uppercase">To</TableHead>
-                  <TableHead className="text-[10px] uppercase">{term.classLabel}</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">{term.shareUnit}</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">{term.dollarPerUnit}</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">Total</TableHead>
-                  <TableHead className="text-[10px] uppercase">Source</TableHead>
+                  <TableHead className="text-[10px] uppercase">Cert Issued</TableHead>
+                  <TableHead className="text-[10px] uppercase">Cert Canc.</TableHead>
+                  <TableHead className="text-[10px] uppercase">Transferee</TableHead>
+                  <TableHead className="text-[10px] uppercase">Transferor</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right">Issued</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right">Canc.</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right">To Treas.</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right">Consideration</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right bg-primary/5">SH Bal.</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right bg-primary/5">Treasury</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {entries.map((e) => (
                   <TableRow key={e.id}>
+                    <TableCell className="text-xs font-mono text-muted-foreground">{e.entryNum}</TableCell>
                     <TableCell className="text-xs">
                       {e.date ? new Date(e.date + "T00:00:00").toLocaleDateString() : "—"}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">{e.type}</Badge>
                     </TableCell>
-                    <TableCell className="text-xs">{e.from}</TableCell>
-                    <TableCell className="text-xs font-medium">{e.to}</TableCell>
-                    <TableCell className="text-xs">{e.classLabel}</TableCell>
-                    <TableCell className="text-xs text-right">{e.units?.toLocaleString()}</TableCell>
+                    <TableCell className="text-xs font-mono">{e.certIssued}</TableCell>
+                    <TableCell className="text-xs font-mono">{e.certCancelled}</TableCell>
+                    <TableCell className="text-xs font-medium">{e.transferee}</TableCell>
+                    <TableCell className="text-xs">{e.transferor}</TableCell>
+                    <TableCell className="text-xs text-right">{e.sharesIssued > 0 ? e.sharesIssued.toLocaleString() : "—"}</TableCell>
+                    <TableCell className="text-xs text-right">{e.sharesCancelled > 0 ? e.sharesCancelled.toLocaleString() : "—"}</TableCell>
+                    <TableCell className="text-xs text-right">{e.sharesToTreasury > 0 ? e.sharesToTreasury.toLocaleString() : "—"}</TableCell>
                     <TableCell className="text-xs text-right">
-                      {e.price != null ? `$${Number(e.price).toFixed(2)}` : "—"}
+                      {e.consideration != null ? `$${Number(e.consideration).toFixed(2)}` : "—"}
                     </TableCell>
-                    <TableCell className="text-xs text-right">
-                      {e.total != null ? `$${Number(e.total).toFixed(2)}` : "—"}
+                    <TableCell className="text-xs text-right font-semibold bg-primary/5">
+                      {e.shareholderBalance.toLocaleString()}
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Badge variant="outline" className={`text-[9px] px-1 py-0 ${sourceColor(e.source)}`}>
-                          {e.source === "ledger" ? "Ledger" : e.source === "bill" ? "Bill" : "Cert"}
-                        </Badge>
-                        {e.linked && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <Link2 className="h-3 w-3 text-primary" />
-                              </TooltipTrigger>
-                              <TooltipContent><p className="text-xs">Linked to bill of sale</p></TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                      </div>
+                    <TableCell className="text-xs text-right font-semibold bg-primary/5">
+                      {e.treasuryBalance.toLocaleString()}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -229,6 +295,10 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
             </Table>
           </div>
         )}
+        <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
+          <Lock className="h-3 w-3" />
+          Permanent record. Corrections are made by adding new entries only.
+        </p>
       </CardContent>
     </Card>
   );
