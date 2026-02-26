@@ -127,7 +127,7 @@ export function getTerminology(entityType?: string): EntityTerminology {
     election: "Election",
     shareholdersTab: "Shareholders & Stock",
     shareholdersSubTab: "Shareholders/Members",
-    ledgerTitle: "Stock Ledger / Transactions",
+    ledgerTitle: "Transactions",
     billsTitle: "Bills of Sale",
     shareholderStatute: "Wis. Stat. § 180.1601(3) — Record of shareholders by name, address, and shares held",
     certificateStatute: "Wis. Stat. § 180.0625 — Share certificates must state corporate name, shares represented, class & par value",

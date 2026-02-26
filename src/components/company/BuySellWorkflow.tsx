@@ -265,13 +265,28 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
               }).eq("id", (sellerCert as any).id);
               certActions.push(`Cancelled Cert #${(sellerCert as any).certificate_number} (${form.seller_name})`);
 
+              // Create a Cancellation ledger entry for the seller's old cert
+              await supabase.from("share_transactions").insert({
+                company_id: companyId,
+                transaction_type: "cancellation",
+                shareholder_id: sellerSh.id,
+                share_class: form.share_class,
+                num_shares: (sellerCert as any).num_shares || 0,
+                transaction_date: form.transaction_date,
+                from_shareholder: form.seller_name,
+                to_shareholder: null,
+                certificate_id: null,
+                transferred_certificate_id: (sellerCert as any).id,
+                notes: `Cancelled Cert #${(sellerCert as any).certificate_number} — ${isRedemption ? 'treasury repurchase' : `partial transfer to ${form.buyer_name}`}`,
+              });
+
               // Issue new cert with reduced shares if seller retains any
               const sellerHoldings = getHoldingsByName(allTransactions, form.seller_name, shareholders);
               const remainingShares = sellerHoldings - numShares;
               if (remainingShares > 0) {
                 const newCertNum = getNextCertNum(certOffset);
                 certOffset++;
-                await supabase.from("stock_certificates").insert({
+                const { data: sellerNewCert } = await supabase.from("stock_certificates").insert({
                   company_id: companyId,
                   certificate_number: newCertNum,
                   shareholder_id: sellerSh.id,
@@ -279,7 +294,22 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
                   num_shares: remainingShares,
                   issue_date: form.transaction_date,
                   par_value: (sellerCert as any).par_value,
+                }).select("id").single();
+
+                // Create a reissuance ledger entry for the seller's new cert
+                await supabase.from("share_transactions").insert({
+                  company_id: companyId,
+                  transaction_type: "reissuance",
+                  shareholder_id: sellerSh.id,
+                  share_class: form.share_class,
+                  num_shares: remainingShares,
+                  transaction_date: form.transaction_date,
+                  from_shareholder: null,
+                  to_shareholder: form.seller_name,
+                  certificate_id: sellerNewCert?.id || null,
+                  notes: `Reissued Cert #${newCertNum} to ${form.seller_name} for remaining ${remainingShares} shares after transfer`,
                 });
+
                 certActions.push(`Issued Cert #${newCertNum} to ${form.seller_name} for ${remainingShares} shares`);
               } else {
                 // Mark shareholder as inactive if they transferred all shares

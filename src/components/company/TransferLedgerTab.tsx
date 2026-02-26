@@ -13,7 +13,7 @@ import SectionPdfActions from "./SectionPdfActions";
 const ISSUANCE_TYPES = [
   "Issuance", "initial_issuance", "authorized_issuance", "subscription_issuance",
   "consideration_issuance", "share_dividend", "fractional_shares", "preemptive_rights",
-  "treasury_reissue", "Capital Contribution", "Initial Contribution", "initial_contribution",
+  "treasury_reissue", "reissuance", "Capital Contribution", "Initial Contribution", "initial_contribution",
   "additional_contribution", "membership_issuance",
 ];
 
@@ -131,8 +131,10 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     const isIss = ISSUANCE_TYPES.includes(txType);
     const isRed = REDUCTION_TYPES.includes(txType);
     const isTx = TRANSFER_TYPES.includes(txType);
+    const isCancellation = txType === "cancellation";
+    const isReissuance = txType === "reissuance";
 
-    const transfereeName = t.shareholders?.name || t.to_shareholder || "";
+    const transfereeName = t.to_shareholder || t.shareholders?.name || "";
     const transferorName = t.from_shareholder || "";
     const holderKey = transfereeName.toLowerCase().trim();
     const fromKey = transferorName.toLowerCase().trim();
@@ -140,6 +142,73 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     let sharesIssued = 0;
     let sharesCancelled = 0;
     let sharesToTreasury = 0;
+
+    // Cancellation and reissuance are cert lifecycle entries — they don't change net balances
+    // (the actual share movement is handled by the transfer entry)
+    if (isCancellation) {
+      sharesCancelled = t.num_shares || 0;
+      // Don't change balances — this is a cert lifecycle event
+      const certRef = certificates.find((c: any) => c.id === t.transferred_certificate_id);
+      const certIssuedRef = certificates.find((c: any) => c.id === t.certificate_id);
+      const shKey = fromKey || holderKey;
+      entries.push({
+        entryNum: entries.length + 1,
+        date: t.transaction_date || "",
+        type: "Cancellation",
+        certIssued: certIssuedRef ? `#${(certIssuedRef as any).certificate_number}` : "—",
+        certCancelled: certRef ? `#${(certRef as any).certificate_number}` : "—",
+        transferee: "—",
+        transferor: t.from_shareholder || transfereeName || "—",
+        classLabel: t.share_class || "—",
+        sharesIssued: 0,
+        sharesCancelled,
+        sharesToTreasury: 0,
+        consideration: null,
+        shareholderBalance: Math.max(0, holderBalances[shKey] || holderBalances[fromKey] || 0),
+        treasuryBalance: Math.max(0, (authorizedShares ?? 0) - totalIssued),
+        notes: t.notes || "",
+        source: "ledger",
+        linked: !!t.bill_of_sale_id,
+        id: t.id,
+      });
+      return;
+    }
+
+    if (isReissuance) {
+      sharesIssued = t.num_shares || 0;
+      // Don't change balances — this is a cert lifecycle event
+      const certIssuedRef = certificates.find((c: any) => c.id === t.certificate_id);
+      entries.push({
+        entryNum: entries.length + 1,
+        date: t.transaction_date || "",
+        type: "Reissuance",
+        certIssued: certIssuedRef ? `#${(certIssuedRef as any).certificate_number}` : 
+          // Fallback: find cert by shareholder name and date
+          (() => {
+            const c = certificates.find((c: any) =>
+              c.issue_date === t.transaction_date &&
+              (c.shareholders?.name || "").toLowerCase().trim() === holderKey &&
+              c.num_shares === sharesIssued
+            );
+            return c ? `#${(c as any).certificate_number}` : "—";
+          })(),
+        certCancelled: "—",
+        transferee: transfereeName || "—",
+        transferor: "—",
+        classLabel: t.share_class || "—",
+        sharesIssued,
+        sharesCancelled: 0,
+        sharesToTreasury: 0,
+        consideration: null,
+        shareholderBalance: Math.max(0, holderBalances[holderKey] || 0),
+        treasuryBalance: Math.max(0, (authorizedShares ?? 0) - totalIssued),
+        notes: t.notes || "",
+        source: "ledger",
+        linked: !!t.bill_of_sale_id,
+        id: t.id,
+      });
+      return;
+    }
 
     if (isIss) {
       sharesIssued = t.num_shares || 0;
@@ -170,7 +239,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     const shBal = Math.max(0, holderBalances[holderKey] || 0);
 
     entries.push({
-      entryNum: idx + 1,
+      entryNum: entries.length + 1,
       date: t.transaction_date || "",
       type: txType.replace(/_/g, " "),
       certIssued: certIssued ? `#${(certIssued as any).certificate_number}` : "—",
