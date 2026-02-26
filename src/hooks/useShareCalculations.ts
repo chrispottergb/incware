@@ -70,60 +70,39 @@ export function useShareCalculations(companyId: string) {
     },
   });
 
-  // Calculate total issued from authorized pool (only issuances, minus redemptions)
-  let totalIssuedShares = 0;
-  transactions.forEach((t: any) => {
-    if (ISSUANCE_TYPES.includes(t.transaction_type)) {
-      totalIssuedShares += t.num_shares || 0;
-    } else if (REDUCTION_TYPES.includes(t.transaction_type)) {
-      totalIssuedShares -= t.num_shares || 0;
-    }
-    // Transfers don't affect total issued
+  // Fetch active certificates to derive current holdings
+  const { data: activeCertificates = [] } = useQuery({
+    queryKey: ["active_certificates", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stock_certificates")
+        .select("shareholder_id, num_shares")
+        .eq("company_id", companyId)
+        .eq("status", "active");
+      if (error) throw error;
+      return data;
+    },
   });
-  totalIssuedShares = Math.max(0, totalIssuedShares);
+
+  // Calculate total issued shares from active certificates
+  // This equals the sum of all shares on non-cancelled certificates
+  const totalIssuedShares = activeCertificates.reduce(
+    (sum: number, cert: any) => sum + (cert.num_shares || 0), 0
+  );
 
   const authorizedShares = company?.authorized_shares ?? null;
   const availableShares = authorizedShares != null ? authorizedShares - totalIssuedShares : null;
 
-  // Calculate per-shareholder holdings
+  // Calculate per-shareholder holdings from active certificates (single source of truth)
+  // A shareholder's balance = sum of shares on their active (non-cancelled) certificates
   const shareholderHoldings: ShareholderHoldings = {};
   shareholders.forEach((s) => {
     shareholderHoldings[s.id] = 0;
   });
 
-  transactions.forEach((t: any) => {
-    // Issuances add to the linked shareholder
-    if (ISSUANCE_TYPES.includes(t.transaction_type) && t.shareholder_id) {
-      shareholderHoldings[t.shareholder_id] = (shareholderHoldings[t.shareholder_id] || 0) + (t.num_shares || 0);
-    }
-
-    // Redemptions/cancellations remove from the linked shareholder
-    if (REDUCTION_TYPES.includes(t.transaction_type) && t.shareholder_id) {
-      shareholderHoldings[t.shareholder_id] = (shareholderHoldings[t.shareholder_id] || 0) - (t.num_shares || 0);
-    }
-
-    // Transfers: match by name
-    if (TRANSFER_TYPES.includes(t.transaction_type)) {
-      // Deduct from seller (by name match)
-      if (t.from_shareholder) {
-        const seller = shareholders.find(
-          (s) => s.name.toLowerCase().trim() === t.from_shareholder.toLowerCase().trim()
-        );
-        if (seller) {
-          shareholderHoldings[seller.id] = (shareholderHoldings[seller.id] || 0) - (t.num_shares || 0);
-        }
-      }
-      // Add to buyer (by shareholder_id first, then name match)
-      if (t.shareholder_id && shareholderHoldings[t.shareholder_id] !== undefined) {
-        shareholderHoldings[t.shareholder_id] = (shareholderHoldings[t.shareholder_id] || 0) + (t.num_shares || 0);
-      } else if (t.to_shareholder) {
-        const buyer = shareholders.find(
-          (s) => s.name.toLowerCase().trim() === t.to_shareholder.toLowerCase().trim()
-        );
-        if (buyer) {
-          shareholderHoldings[buyer.id] = (shareholderHoldings[buyer.id] || 0) + (t.num_shares || 0);
-        }
-      }
+  activeCertificates.forEach((cert: any) => {
+    if (cert.shareholder_id && shareholderHoldings[cert.shareholder_id] !== undefined) {
+      shareholderHoldings[cert.shareholder_id] += (cert.num_shares || 0);
     }
   });
 
