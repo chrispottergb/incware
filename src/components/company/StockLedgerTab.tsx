@@ -356,7 +356,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
               </TableHeader>
               <TableBody>
                 {(() => {
-                  // Compute running balance per shareholder chronologically
+                  // Compute per-shareholder running balance chronologically
                   const sorted = [...transactions].sort((a, b) =>
                     (a.transaction_date || "").localeCompare(b.transaction_date || "") || (a.created_at || "").localeCompare(b.created_at || "")
                   );
@@ -364,25 +364,34 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   const balanceMap = new Map<string, number>();
                   const entryNumMap = new Map<string, number>();
 
+                  const TRANSFER_SET = new Set(["transfer", "interest_transfer", "interest_assignment", "share_exchange", "gift"]);
+                  const REDUCTION_SET = new Set(["redemption", "reacquisition", "cancellation", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout"]);
+
                   sorted.forEach((t: any, idx: number) => {
                     entryNumMap.set(t.id, idx + 1);
-                    const holderId = t.shareholder_id || t.to_shareholder || "unknown";
-                    const isReduction = ["redemption", "reacquisition", "cancellation", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout"].includes(t.transaction_type);
-                    const isTransferOut = ["transfer", "interest_transfer", "interest_assignment", "share_exchange"].includes(t.transaction_type);
+                    const shName = (t.shareholders?.name || "").toLowerCase().trim();
 
-                    if (isTransferOut && t.from_shareholder) {
-                      const fromId = t.from_shareholder;
-                      balances[fromId] = (balances[fromId] || 0) - (t.num_shares || 0);
-                    }
-
-                    if (isReduction) {
-                      balances[holderId] = (balances[holderId] || 0) - (t.num_shares || 0);
+                    if (REDUCTION_SET.has(t.transaction_type)) {
+                      // Cancellation / redemption — subtract from the linked shareholder
+                      const key = shName || (t.from_shareholder || "unknown").toLowerCase().trim();
+                      balances[key] = (balances[key] || 0) - (t.num_shares || 0);
+                      balanceMap.set(t.id, Math.max(0, balances[key]));
+                    } else if (t.transaction_type === "reissuance") {
+                      // Reissuance — replacement cert adds to shareholder
+                      const key = shName || (t.to_shareholder || "unknown").toLowerCase().trim();
+                      balances[key] = (balances[key] || 0) + (t.num_shares || 0);
+                      balanceMap.set(t.id, Math.max(0, balances[key]));
+                    } else if (TRANSFER_SET.has(t.transaction_type)) {
+                      // Transfer — only credit the buyer; seller side handled by cancellation/reissuance entries
+                      const buyerKey = (t.to_shareholder || shName || "unknown").toLowerCase().trim();
+                      balances[buyerKey] = (balances[buyerKey] || 0) + (t.num_shares || 0);
+                      balanceMap.set(t.id, Math.max(0, balances[buyerKey]));
                     } else {
-                      balances[holderId] = (balances[holderId] || 0) + (t.num_shares || 0);
+                      // Issuance types — add to shareholder
+                      const key = shName || (t.to_shareholder || "unknown").toLowerCase().trim();
+                      balances[key] = (balances[key] || 0) + (t.num_shares || 0);
+                      balanceMap.set(t.id, Math.max(0, balances[key]));
                     }
-
-                    const totalShares = Object.values(balances).reduce((sum, v) => sum + Math.max(0, v), 0);
-                    balanceMap.set(t.id, totalShares);
                   });
 
                   // Display in reverse chronological order (original order)
