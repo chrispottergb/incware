@@ -30,10 +30,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, BookOpen, Link2, Lock } from "lucide-react";
+import { Plus, Loader2, BookOpen, Link2, Lock, Trash2, FileText, Award } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology } from "@/lib/entity-terminology";
+import { downloadStockCertificatePdf } from "@/lib/stock-certificate-pdf";
+import { downloadBillOfSalePdf } from "@/lib/bill-of-sale-pdf";
 
 // Wisconsin statutory stock transaction types by entity type
 const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string; statute: string }[]> = {
@@ -119,6 +121,24 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     },
   });
 
+  const { data: company } = useQuery({
+    queryKey: ["company", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("companies").select("name, par_value, authorized_shares, state_of_incorporation").eq("id", companyId).single();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: certificates = [] } = useQuery({
+    queryKey: ["stock_certificates", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("stock_certificates").select("*").eq("company_id", companyId).order("certificate_number");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ["share_transactions", companyId],
     queryFn: async () => {
@@ -144,11 +164,16 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     from_shareholder: "",
     to_shareholder: "",
     notes: "",
+    par_value: "",
+    issued_certificate_number: "",
+    surrendered_certificate_number: "",
   });
+
+  const [assets, setAssets] = useState<{ description: string; value: string }[]>([]);
 
   const add = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("share_transactions").insert({
+      const { data: txn, error } = await supabase.from("share_transactions").insert({
         company_id: companyId,
         transaction_type: form.transaction_type,
         shareholder_id: form.shareholder_id || null,
@@ -161,8 +186,27 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         from_shareholder: form.from_shareholder || null,
         to_shareholder: form.to_shareholder || null,
         notes: form.notes || null,
-      });
+        par_value: form.par_value ? parseFloat(form.par_value) : null,
+        issued_certificate_number: form.issued_certificate_number ? parseInt(form.issued_certificate_number) : null,
+        surrendered_certificate_number: form.surrendered_certificate_number ? parseInt(form.surrendered_certificate_number) : null,
+      } as any).select("id").single();
       if (error) throw error;
+
+      // Save transaction assets if any
+      if (assets.length > 0 && txn) {
+        const assetRows = assets
+          .filter(a => a.description.trim())
+          .map(a => ({
+            transaction_id: txn.id,
+            company_id: companyId,
+            description: a.description,
+            value: parseFloat(a.value) || 0,
+          }));
+        if (assetRows.length > 0) {
+          const { error: assetErr } = await supabase.from("transaction_assets" as any).insert(assetRows as any);
+          if (assetErr) console.error("Failed to save assets:", assetErr);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
@@ -173,14 +217,53 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const resetForm = () => setForm({
-    transaction_type: "issuance", shareholder_id: "", share_class: "Common",
-    num_shares: "", price_per_share: "", total_consideration: "",
-    consideration_type: "cash", transaction_date: new Date().toISOString().split("T")[0],
-    from_shareholder: "", to_shareholder: "", notes: "",
-  });
+  const resetForm = () => {
+    setForm({
+      transaction_type: "issuance", shareholder_id: "", share_class: "Common",
+      num_shares: "", price_per_share: "", total_consideration: "",
+      consideration_type: "cash", transaction_date: new Date().toISOString().split("T")[0],
+      from_shareholder: "", to_shareholder: "", notes: "",
+      par_value: "", issued_certificate_number: "", surrendered_certificate_number: "",
+    });
+    setAssets([]);
+  };
 
   const isTransfer = ["transfer", "interest_transfer", "interest_assignment", "share_exchange"].includes(form.transaction_type);
+  const showAssetGrid = ["property", "other", "services"].includes(form.consideration_type);
+  const assetTotal = assets.reduce((sum, a) => sum + (parseFloat(a.value) || 0), 0);
+
+  const handlePrintCertificate = (t: any) => {
+    const certNum = (t as any).issued_certificate_number;
+    const cert = certNum ? certificates.find((c: any) => c.certificate_number === certNum) : 
+                 t.certificate_id ? certificates.find((c: any) => c.id === t.certificate_id) : null;
+    if (!cert && !certNum) { toast.error("No certificate linked to this transaction."); return; }
+    downloadStockCertificatePdf({
+      companyName: company?.name || "",
+      stateOfIncorporation: company?.state_of_incorporation || undefined,
+      certificateNumber: certNum || (cert as any)?.certificate_number || 0,
+      shareholderName: t.shareholders?.name || t.to_shareholder || "",
+      numShares: t.num_shares || 0,
+      shareClass: t.share_class || "Common",
+      parValue: (t as any).par_value || (cert as any)?.par_value || company?.par_value,
+      issueDate: t.transaction_date || new Date().toISOString().split("T")[0],
+      authorizedShares: company?.authorized_shares,
+    });
+  };
+
+  const handlePrintBillOfSale = (t: any) => {
+    downloadBillOfSalePdf({
+      companyName: company?.name || "",
+      sellerName: t.from_shareholder || t.shareholders?.name || "",
+      buyerName: t.to_shareholder || "",
+      numShares: t.num_shares || 0,
+      shareClass: t.share_class || "Common",
+      pricePerShare: t.price_per_share,
+      totalPrice: t.total_consideration,
+      saleDate: t.transaction_date || new Date().toISOString().split("T")[0],
+      considerationType: t.consideration_type,
+      certificateNumber: (t as any).issued_certificate_number,
+    });
+  };
 
   const statuteDescription = entityType === "LLC"
     ? "Wis. Stat. Ch. 183 — Uniform Limited Liability Company Law"
@@ -210,7 +293,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
             statuteRef: statuteDescription,
             landscape: true,
             table: {
-              headers: ["#", "Date", "Type", term.shareholder, term.classLabel, term.shareUnit, term.pricePerUnit, "Total", "Consideration", "Notes"],
+              headers: ["#", "Date", "Type", term.shareholder, term.classLabel, term.shareUnit, "Par Value", term.pricePerUnit, "Total", "Consideration", "Cert #", "Notes"],
               rows: (() => {
                 const sorted = [...transactions].sort((a, b) =>
                   (a.transaction_date || "").localeCompare(b.transaction_date || "") || (a.created_at || "").localeCompare(b.created_at || "")
@@ -222,9 +305,11 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   t.shareholders?.name ?? "—",
                   t.share_class,
                   t.num_shares?.toLocaleString(),
+                  t.par_value != null ? `$${Number(t.par_value).toFixed(2)}` : "—",
                   t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—",
                   t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—",
                   t.consideration_type ?? "—",
+                  [t.issued_certificate_number ? `Issued #${t.issued_certificate_number}` : "", t.surrendered_certificate_number ? `Surr #${t.surrendered_certificate_number}` : ""].filter(Boolean).join(", ") || "—",
                   t.notes ?? "",
                 ]);
               })(),
@@ -236,7 +321,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 <Plus className="mr-1 h-3 w-3" /> Record Transaction
               </Button>
             </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="font-display text-base">{term.isLLC ? "Record Interest Transaction" : "Record Share Transaction"}</DialogTitle>
             </DialogHeader>
@@ -282,7 +367,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   </div>
                 </div>
               )}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 <div className="field-group">
                   <Label className="field-label">{term.classLabel}</Label>
                   <Select value={form.share_class} onValueChange={(v) => setForm(p => ({ ...p, share_class: v }))}>
@@ -297,6 +382,10 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 <div className="field-group">
                   <Label className="field-label">{term.numUnitsLabel}</Label>
                   <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">Par Value</Label>
+                  <Input className="h-8 text-sm" type="number" step="0.01" value={form.par_value} onChange={(e) => setForm(p => ({ ...p, par_value: e.target.value }))} placeholder={company?.par_value ? `$${company.par_value}` : ""} />
                 </div>
                 <div className="field-group">
                   <Label className="field-label">{term.pricePerUnit}</Label>
@@ -318,6 +407,56 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   </Select>
                 </div>
               </div>
+
+              {/* Certificate Number Fields */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="field-group">
+                  <Label className="field-label">Issued Cert #</Label>
+                  <Input className="h-8 text-sm" type="number" value={form.issued_certificate_number} onChange={(e) => setForm(p => ({ ...p, issued_certificate_number: e.target.value }))} placeholder="Auto or manual" />
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">Surrendered Cert #</Label>
+                  <Input className="h-8 text-sm" type="number" value={form.surrendered_certificate_number} onChange={(e) => setForm(p => ({ ...p, surrendered_certificate_number: e.target.value }))} placeholder="If applicable" />
+                </div>
+              </div>
+
+              {/* Asset Grid for Property / Other consideration */}
+              {showAssetGrid && (
+                <div className="space-y-2 rounded-md border border-border p-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="field-label font-semibold">Non-Cash Assets</Label>
+                    <Button type="button" size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => setAssets(prev => [...prev, { description: "", value: "" }])}>
+                      <Plus className="h-2.5 w-2.5 mr-1" /> Add Asset
+                    </Button>
+                  </div>
+                  {assets.length === 0 && (
+                    <p className="text-[10px] text-muted-foreground">Click "Add Asset" to list non-cash consideration items.</p>
+                  )}
+                  {assets.map((asset, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_100px_28px] gap-1.5 items-end">
+                      <Input className="h-7 text-xs" placeholder="Description" value={asset.description} onChange={(e) => {
+                        const updated = [...assets];
+                        updated[i] = { ...updated[i], description: e.target.value };
+                        setAssets(updated);
+                      }} />
+                      <Input className="h-7 text-xs" type="number" step="0.01" placeholder="Value" value={asset.value} onChange={(e) => {
+                        const updated = [...assets];
+                        updated[i] = { ...updated[i], value: e.target.value };
+                        setAssets(updated);
+                      }} />
+                      <Button type="button" size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setAssets(prev => prev.filter((_, idx) => idx !== i))}>
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                  {assets.length > 0 && (
+                    <div className="text-right text-xs font-semibold text-foreground">
+                      Asset Total: ${assetTotal.toFixed(2)}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="field-group">
                 <Label className="field-label">Notes</Label>
                 <Textarea className="text-sm min-h-[50px]" rows={2} value={form.notes} onChange={(e) => setForm(p => ({ ...p, notes: e.target.value }))} />
@@ -347,11 +486,13 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   <TableHead className="text-[10px] uppercase">{term.shareholder}</TableHead>
                   <TableHead className="text-[10px] uppercase">{term.classLabel}</TableHead>
                   <TableHead className="text-[10px] uppercase text-right">{term.shareUnit}</TableHead>
+                  <TableHead className="text-[10px] uppercase text-right">Par</TableHead>
                   <TableHead className="text-[10px] uppercase text-right">{term.dollarPerUnit}</TableHead>
                   <TableHead className="text-[10px] uppercase text-right">Total</TableHead>
                   <TableHead className="text-[10px] uppercase">Consideration</TableHead>
+                  <TableHead className="text-[10px] uppercase text-center">Cert #</TableHead>
                   <TableHead className="text-[10px] uppercase text-right bg-primary/5">Running Balance</TableHead>
-                  <TableHead className="text-[10px] uppercase w-10"></TableHead>
+                  <TableHead className="text-[10px] uppercase w-20">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -372,22 +513,18 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                     const shName = (t.shareholders?.name || "").toLowerCase().trim();
 
                     if (REDUCTION_SET.has(t.transaction_type)) {
-                      // Cancellation / redemption — subtract from the linked shareholder
                       const key = shName || (t.from_shareholder || "unknown").toLowerCase().trim();
                       balances[key] = (balances[key] || 0) - (t.num_shares || 0);
                       balanceMap.set(t.id, Math.max(0, balances[key]));
                     } else if (t.transaction_type === "reissuance") {
-                      // Reissuance — replacement cert adds to shareholder
                       const key = shName || (t.to_shareholder || "unknown").toLowerCase().trim();
                       balances[key] = (balances[key] || 0) + (t.num_shares || 0);
                       balanceMap.set(t.id, Math.max(0, balances[key]));
                     } else if (TRANSFER_SET.has(t.transaction_type)) {
-                      // Transfer — only credit the buyer; seller side handled by cancellation/reissuance entries
                       const buyerKey = (t.to_shareholder || shName || "unknown").toLowerCase().trim();
                       balances[buyerKey] = (balances[buyerKey] || 0) + (t.num_shares || 0);
                       balanceMap.set(t.id, Math.max(0, balances[buyerKey]));
                     } else {
-                      // Issuance types — add to shareholder
                       const key = shName || (t.to_shareholder || "unknown").toLowerCase().trim();
                       balances[key] = (balances[key] || 0) + (t.num_shares || 0);
                       balanceMap.set(t.id, Math.max(0, balances[key]));
@@ -405,16 +542,34 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                       <TableCell className="text-xs">{t.shareholders?.name ?? t.to_shareholder ?? "—"}</TableCell>
                       <TableCell className="text-xs">{t.share_class}</TableCell>
                       <TableCell className="text-xs text-right">{t.num_shares?.toLocaleString()}</TableCell>
+                      <TableCell className="text-xs text-right">{(t as any).par_value != null ? `$${Number((t as any).par_value).toFixed(2)}` : "—"}</TableCell>
                       <TableCell className="text-xs text-right">{t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—"}</TableCell>
                       <TableCell className="text-xs text-right">{t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—"}</TableCell>
                       <TableCell className="text-xs capitalize">{t.consideration_type?.replace("_", " ") ?? "—"}</TableCell>
+                      <TableCell className="text-xs text-center">
+                        {(t as any).issued_certificate_number && <span className="text-primary">#{(t as any).issued_certificate_number}</span>}
+                        {(t as any).surrendered_certificate_number && <span className="text-destructive ml-1">✕#{(t as any).surrendered_certificate_number}</span>}
+                        {!(t as any).issued_certificate_number && !(t as any).surrendered_certificate_number && "—"}
+                      </TableCell>
                       <TableCell className="text-xs text-right font-semibold bg-primary/5">{balanceMap.get(t.id)?.toLocaleString() ?? "—"}</TableCell>
                       <TableCell>
-                        {(t as any).bill_of_sale_id && (
-                          <span aria-label="Linked to bill of sale">
-                            <Link2 className="h-3 w-3 text-primary" />
-                          </span>
-                        )}
+                        <div className="flex items-center gap-0.5">
+                          {t.bill_of_sale_id && (
+                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" title="Print Bill of Sale" onClick={() => handlePrintBillOfSale(t)}>
+                              <FileText className="h-3 w-3 text-primary" />
+                            </Button>
+                          )}
+                          {((t as any).issued_certificate_number || t.certificate_id) && (
+                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" title="Print Certificate" onClick={() => handlePrintCertificate(t)}>
+                              <Award className="h-3 w-3 text-primary" />
+                            </Button>
+                          )}
+                          {!t.bill_of_sale_id && !(t as any).issued_certificate_number && !t.certificate_id && (
+                            <span aria-label="No linked documents">
+                              <Link2 className="h-3 w-3 text-muted-foreground/40" />
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ));
