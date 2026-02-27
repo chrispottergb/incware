@@ -1,65 +1,94 @@
 
 
-## Fix: Share Transfer Not Creating New Shareholder or Updating Correctly
+# Upgrade Shareholder Management to Full Transactional Ledger
 
-### Problems Found in Database
+## Overview
+Extend the existing share transaction system with additional fields from the original IncWare design, add a `transaction_assets` table for non-cash consideration tracking, add treasury identification to shareholders, build an enhanced transaction form with an asset grid, and add document generation buttons.
 
-Looking at the actual transfer record, three things went wrong:
+## Important: What Already Exists
+The system already has much of this infrastructure in place:
+- `share_transactions` table with transaction types, from/to shareholder fields, certificate linking
+- `stock_certificates` table with full lifecycle management
+- `bills_of_sale` table linked to transactions
+- `BuySellWorkflow` component handling transfers, issuances, redemptions with cancel-and-reissue logic
+- Balance calculations derived from active certificates (already a calculated sum, not static)
+- PDF generation utilities (jsPDF/jspdf-autotable)
 
-1. `from_shareholder` (seller name) is **null** -- the seller's name wasn't saved in the transaction
-2. `shareholder_id` points to Kathryn Potter (the original shareholder/seller) instead of the new buyer "Christoher R. Potter"
-3. "Christoher R. Potter" was **never created** as a new shareholder record
-4. No certificate changes occurred -- Kathryn's cert is still active at 100 shares, no cert issued to Christopher
+The work focuses on **extending** these systems rather than replacing them.
 
-### Root Cause
+---
 
-In `BuySellWorkflow.tsx`, the auto-create logic has a flaw:
+## 1. Database Schema Changes
 
-- Line 195: `let buyerShId = form.buyer_id || null` -- if the user happened to select from the buyer dropdown (or it retained a value), this gets set to the **wrong** shareholder ID
-- Line 196: The name lookup then fails to match (different names), so `buyerSh` is null
-- But `buyerShId` is already set from step 195, so the code at line 214 updates the transaction with the **seller's** ID as the buyer
-- The certificate logic at line 266 checks `if (buyerSh)` which is null, so no cert is issued
+### Add columns to `share_transactions`
+- `par_value` (numeric, nullable) -- par value at time of transaction
+- `issued_certificate_number` (integer, nullable) -- the cert number issued in this transaction
+- `surrendered_certificate_number` (integer, nullable) -- the cert number surrendered/cancelled
 
-### Fix (1 file: `src/components/company/BuySellWorkflow.tsx`)
+These columns store denormalized certificate numbers directly on the transaction for easy display and reporting, complementing the existing `certificate_id` and `transferred_certificate_id` FK columns.
 
-**Change 1: Fix the buyer resolution logic (lines 194-218)**
+### Add `is_treasury` to `shareholders`
+- `is_treasury` (boolean, default false) -- flags the treasury/company record
 
-Replace the current auto-create block so that:
-- Always resolve the buyer by **name match first**, ignoring `form.buyer_id` if the name doesn't match
-- Only use `form.buyer_id` if the linked shareholder's name actually matches `form.buyer_name`
-- If no match, create the new shareholder and use the new ID
+### Create `transaction_assets` table
+- `id` (uuid, PK, default gen_random_uuid())
+- `transaction_id` (uuid, FK to share_transactions.id, ON DELETE CASCADE)
+- `company_id` (uuid, FK to companies.id) -- for RLS
+- `description` (text, not null)
+- `value` (numeric, not null, default 0)
+- `created_at` (timestamptz, default now())
 
-```
-1. Find existing shareholder by case-insensitive name match on form.buyer_name
-2. If found -> use their ID as buyerShId
-3. If NOT found -> INSERT new shareholder, use new ID
-4. UPDATE share_transactions.shareholder_id = buyerShId
-```
+RLS policies scoped to the company owner, matching existing patterns.
 
-**Change 2: Fix missing `from_shareholder` (line 169)**
+---
 
-The `from_shareholder` field stores the seller name. Ensure it's always populated:
-- If `form.seller_id` is set but `form.seller_name` is empty, resolve the name from the shareholders list before saving
+## 2. UI Changes
 
-**Change 3: Fix certificate logic to use resolved buyer**
+### Enhanced Transaction Form (StockLedgerTab.tsx)
+Upgrade the existing "Record Transaction" dialog to match the original IncWare "Shareholder/Member Transaction Details" screen:
 
-After the auto-create, store the resolved buyer in a variable that the certificate section can reliably use (currently it references `buyerSh` which may be stale).
+- Add a **source selector**: "Issued from Company" vs "Transferred from Shareholder" -- this controls whether the transaction is an issuance or transfer type
+- Add **Par Value** field
+- Add **Issued Certificate #** and **Surrendered Certificate #** display fields (auto-populated from the workflow, also manually enterable for legacy data)
+- Add **Asset Grid** section: when consideration type is "property" or "other", show a dynamic table where the user can add rows with Description and Value columns, with a running total that should match the total consideration
+- Keep existing fields: transaction type, date, shareholder, share class, number of shares, price per share, total consideration, consideration type, notes
 
-**Change 4: Fix existing bad data**
+### Treasury Logic
+- When a transaction type is "redemption", "reacquisition", or "treasury_acquisition":
+  - Auto-set the recipient as "Treasury" 
+  - On save, find or create a shareholder record with `is_treasury = true` and the company name
+  - Link the returned shares to that treasury shareholder
+- The BuySellWorkflow already handles redemptions this way (sets buyer to "Treasury"); this extends it to also flag the shareholder record
 
-Run a one-time data correction for the existing transfer record to:
-- Set `from_shareholder = 'Kathryn Potter'`
-- Create "Christoher R. Potter" as a new shareholder
-- Update `shareholder_id` to point to the new buyer
-- Cancel Kathryn's cert #1, issue new cert #2 (50 shares to Kathryn), cert #3 (50 shares to Christopher)
+### Document Buttons on Transaction Records
+Add two buttons to each transaction row in the Transactions table:
+- **Print Bill of Sale**: Generates a PDF using the linked `bill_of_sale_id` data, leveraging the existing PDF utilities
+- **Print Certificate**: Generates a stock certificate PDF using the `certificate_id` or `issued_certificate_number` data from that transaction
 
-### Technical Summary
+These buttons only appear when the relevant linked record exists.
 
-| Issue | Fix |
-|-------|-----|
-| `from_shareholder` is null | Resolve seller name from `seller_id` if name is empty before insert |
-| `shareholder_id` points to wrong person | Always resolve buyer by name match, not by `form.buyer_id` alone |
-| New shareholder not created | Fix conditional logic so name mismatch triggers INSERT |
-| No certificate updates | Ensure resolved buyer object (not stale ref) is used for cert creation |
-| Existing bad data | Correct the existing transfer record and create missing shareholder/certs |
+### Shareholder Holdings Display
+The system already calculates holdings from active certificates. No changes needed here -- this requirement is already satisfied.
+
+---
+
+## 3. Files to Create/Modify
+
+| File | Action | Description |
+|------|--------|-------------|
+| Migration SQL | Create | Add columns to `share_transactions`, `shareholders`; create `transaction_assets` table with RLS |
+| `src/components/company/StockLedgerTab.tsx` | Modify | Add par_value, cert number fields, asset grid, source selector, and document print buttons to the form and table |
+| `src/components/company/BuySellWorkflow.tsx` | Modify | Populate new `par_value`, `issued_certificate_number`, `surrendered_certificate_number` fields when creating transactions |
+| `src/lib/stock-certificate-pdf.ts` | Create | New PDF generator for individual stock certificates |
+| `src/lib/bill-of-sale-pdf.ts` | Create | PDF generator for bill of sale from transaction data (if not already covered by existing PDF utilities) |
+
+---
+
+## 4. Implementation Order
+
+1. Run database migration (schema changes + RLS)
+2. Update `BuySellWorkflow.tsx` to populate new fields on save
+3. Enhance `StockLedgerTab.tsx` with the upgraded form, asset grid, and print buttons  
+4. Create PDF generation utilities for certificates and bills of sale
+5. Add treasury shareholder auto-creation logic
 
