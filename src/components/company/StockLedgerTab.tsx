@@ -82,6 +82,19 @@ const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string
     { value: "dissociation_buyout", label: "Dissociation Buyout", statute: "§ 183.0701" },
     { value: "gift", label: "Gift of Membership Interest", statute: "§ 183.0706" },
   ],
+  "Single Member LLC": [
+    { value: "initial_contribution", label: "Initial Capital Contribution", statute: "§ 183.0401" },
+    { value: "additional_contribution", label: "Additional Contribution", statute: "§ 183.0401" },
+    { value: "membership_issuance", label: "Membership Interest Issuance", statute: "§ 183.0501" },
+    { value: "interest_transfer", label: "Transfer of Membership Interest", statute: "§ 183.0706" },
+    { value: "interest_assignment", label: "Assignment of Interest", statute: "§ 183.0706" },
+    { value: "distribution", label: "Distribution to Members", statute: "§ 183.0404" },
+    { value: "interim_distribution", label: "Interim Distribution", statute: "§ 183.0404" },
+    { value: "withdrawal_distribution", label: "Withdrawal Distribution", statute: "§ 183.0602" },
+    { value: "redemption", label: "Interest Redemption", statute: "§ 183.0602" },
+    { value: "dissociation_buyout", label: "Dissociation Buyout", statute: "§ 183.0701" },
+    { value: "gift", label: "Gift of Membership Interest", statute: "§ 183.0706" },
+  ],
 };
 
 const DEFAULT_TRANSACTION_TYPES = [
@@ -119,6 +132,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const { data: company } = useQuery({
@@ -128,6 +142,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const { data: certificates = [] } = useQuery({
@@ -137,6 +152,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const { data: transactions = [], isLoading } = useQuery({
@@ -150,6 +166,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const [form, setForm] = useState({

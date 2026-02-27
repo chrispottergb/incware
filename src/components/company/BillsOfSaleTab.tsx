@@ -40,6 +40,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const { data: bills = [], isLoading } = useQuery({
@@ -50,6 +51,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const emptyForm = {

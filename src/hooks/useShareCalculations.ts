@@ -42,6 +42,7 @@ export function useShareCalculations(companyId: string) {
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const { data: transactions = [], isLoading } = useQuery({
@@ -55,6 +56,7 @@ export function useShareCalculations(companyId: string) {
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const { data: shareholders = [] } = useQuery({
@@ -68,6 +70,7 @@ export function useShareCalculations(companyId: string) {
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   // Fetch active certificates to derive current holdings
@@ -82,6 +85,7 @@ export function useShareCalculations(companyId: string) {
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   // Calculate total issued shares from active certificates
