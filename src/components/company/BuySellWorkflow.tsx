@@ -32,6 +32,8 @@ const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string
     { value: "gift", label: "Gift / Donation of Shares" },
   ],
   LLC: [
+    { value: "initial_contribution", label: "Initial Capital Contribution" },
+    { value: "additional_contribution", label: "Additional Contribution" },
     { value: "interest_transfer", label: "Transfer of Membership Interest" },
     { value: "interest_assignment", label: "Assignment of Interest" },
     { value: "redemption", label: "Interest Redemption" },
@@ -137,9 +139,9 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
   const autoTotal = numShares * pricePerShare;
   const totalConsideration = form.total_consideration ? parseFloat(form.total_consideration) : (autoTotal || null);
 
-  const isIssuance = form.transaction_type === "initial_issuance";
+  const isIssuance = ["initial_issuance", "initial_contribution", "additional_contribution"].includes(form.transaction_type);
   const isTransfer = ["transfer", "share_exchange", "gift", "interest_transfer", "interest_assignment"].includes(form.transaction_type);
-  const isRedemption = form.transaction_type === "redemption";
+  const isRedemption = ["redemption", "dissociation_buyout"].includes(form.transaction_type);
 
   // Check if buyer is a new (non-existing) shareholder
   const buyerIsNew = !isRedemption && form.buyer_name.trim().length > 0 && !shareholders.some(
@@ -242,11 +244,11 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
         await supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId });
       }
 
-      // 7. Certificate lifecycle
+      // 7. Certificate lifecycle (applies to both corps AND LLCs — cancel-and-reissue pattern)
       const certActions: string[] = [];
       let certOffset = 0;
 
-      if (!isLLC) {
+      {
         // Find seller's active cert for this share class
         const sellerSh = shareholders.find(s => s.name.toLowerCase().trim() === form.seller_name.toLowerCase().trim());
 
@@ -352,11 +354,11 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
 
           // Redemption: shares return to treasury, no cert issued to treasury
           if (isRedemption) {
-            certActions.push(`${numShares.toLocaleString()} shares returned to treasury`);
+            certActions.push(`${numShares.toLocaleString()} ${term.shareUnit.toLowerCase()} returned to treasury`);
           }
         }
 
-        // For initial issuance, auto-create certificate
+        // For initial issuance / contribution, auto-create certificate
         if (isIssuance && buyerSh) {
           // Cancel any existing active cert for buyer in this share class (one active cert rule)
           const buyerExistingCert = certificates.find(
@@ -383,7 +385,24 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
             num_shares: numShares + existingShares,
             issue_date: form.transaction_date,
           });
-          certActions.push(`Issued Cert #${issueCertNum} to ${form.buyer_name} for ${(numShares + existingShares).toLocaleString()} shares`);
+          certActions.push(`Issued Cert #${issueCertNum} to ${form.buyer_name} for ${(numShares + existingShares).toLocaleString()} ${term.shareUnit.toLowerCase()}`);
+        }
+      }
+
+      // 8. Update capital account balance for LLC members
+      if (isLLC) {
+        const capitalDelta = totalConsideration || 0;
+        if (isIssuance && buyerShId && capitalDelta > 0) {
+          // Contribution increases capital account
+          const { data: sh } = await supabase.from("shareholders").select("capital_account_balance").eq("id", buyerShId).single();
+          const currentBalance = Number((sh as any)?.capital_account_balance || 0);
+          await supabase.from("shareholders").update({ capital_account_balance: currentBalance + capitalDelta } as any).eq("id", buyerShId);
+        }
+        if (isRedemption && form.seller_id && capitalDelta > 0) {
+          // Redemption decreases capital account
+          const { data: sh } = await supabase.from("shareholders").select("capital_account_balance").eq("id", form.seller_id).single();
+          const currentBalance = Number((sh as any)?.capital_account_balance || 0);
+          await supabase.from("shareholders").update({ capital_account_balance: currentBalance - capitalDelta } as any).eq("id", form.seller_id);
         }
       }
 
@@ -509,7 +528,9 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
 
             {isRedemption && (
               <div className="rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
-                Shares will be returned to treasury. The corporation's available-to-issue pool will increase by the repurchased amount.
+                {isLLC 
+                  ? "Membership interest will be returned to the company. The member's capital account will be reduced accordingly."
+                  : "Shares will be returned to treasury. The corporation's available-to-issue pool will increase by the repurchased amount."}
               </div>
             )}
 
@@ -606,9 +627,9 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
               <p className="font-medium text-foreground">This will create:</p>
               <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> 1 {term.ledgerTitle} entry</p>
               <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> 1 Bill of Sale record</p>
-              {!isLLC && (isTransfer || isIssuance) && <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> Auto-generated certificate(s)</p>}
-              {isRedemption && !isLLC && <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> Certificate cancellation + shares returned to treasury</p>}
-              {isLLC && <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> Updated ownership percentages</p>}
+              {(isTransfer || isIssuance) && <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> Auto-generated {term.certificate.toLowerCase()}(s)</p>}
+              {isRedemption && <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> Certificate cancellation + {term.shareUnit.toLowerCase()} returned to treasury</p>}
+              {isLLC && <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> Updated ownership percentages &amp; capital accounts</p>}
               {buyerIsNew && <p className="flex items-center gap-1.5"><UserPlus className="h-3 w-3 text-primary" /> New {term.shareholder.toLowerCase()} record created</p>}
               <p className="text-muted-foreground mt-1">All records will be linked for audit integrity.</p>
             </div>

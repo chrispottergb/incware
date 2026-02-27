@@ -260,13 +260,25 @@ export default function CompanyDetail() {
                 </div>
               </div>
             )}
+            {isLLCType(company.entity_type) && shareCalc.totalIssuedShares > 0 && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3 flex items-center gap-6 text-xs">
+                <div>
+                  <span className="text-muted-foreground">Total Units Outstanding:</span>{" "}
+                  <span className="font-semibold">{shareCalc.totalIssuedShares.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Active Members:</span>{" "}
+                  <span className="font-semibold">{Object.values(shareCalc.shareholderHoldings).filter(v => v > 0).length}</span>
+                </div>
+              </div>
+            )}
             <div className="flex justify-end">
               <Button size="sm" onClick={() => setBuySellOpen(true)} className="h-8 text-xs">
                 <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" />
                 {isLLCType(company.entity_type) ? "Buy / Sell Interest" : "Buy / Sell Shares"}
               </Button>
             </div>
-            <ShareholdersTab companyId={company.id} entityType={company.entity_type} shareholderHoldings={isCorp ? shareCalc.shareholderHoldings : undefined} />
+            <ShareholdersTab companyId={company.id} entityType={company.entity_type} shareholderHoldings={shareCalc.shareholderHoldings} />
             <div data-section="certificates">
               <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
             </div>
