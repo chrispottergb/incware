@@ -187,6 +187,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
         transaction_date: form.transaction_date,
         from_shareholder: form.seller_name,
         to_shareholder: isRedemption ? "Treasury" : form.buyer_name,
+        par_value: null as any, // will be updated below after certs are created
       }).select("id").single();
       if (txnErr) throw txnErr;
 
@@ -383,6 +384,24 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
             issue_date: form.transaction_date,
           });
           certActions.push(`Issued Cert #${issueCertNum} to ${form.buyer_name} for ${(numShares + existingShares).toLocaleString()} shares`);
+        }
+      }
+
+      // Update transaction with denormalized cert numbers for display
+      const issuedCertNum = certActions.find(a => a.includes("Issued Cert #"))?.match(/#(\d+)/)?.[1];
+      const surrenderedCertNum = certActions.find(a => a.includes("Cancelled Cert #"))?.match(/#(\d+)/)?.[1];
+      if (issuedCertNum || surrenderedCertNum) {
+        await supabase.from("share_transactions").update({
+          issued_certificate_number: issuedCertNum ? parseInt(issuedCertNum) : null,
+          surrendered_certificate_number: surrenderedCertNum ? parseInt(surrenderedCertNum) : null,
+        } as any).eq("id", txn.id);
+      }
+
+      // Treasury logic: flag buyer shareholder as treasury for redemptions
+      if (isRedemption) {
+        const treasurySh = shareholders.find(s => s.name.toLowerCase().trim() === (companyName || "treasury").toLowerCase().trim());
+        if (treasurySh) {
+          await supabase.from("shareholders").update({ is_treasury: true } as any).eq("id", treasurySh.id);
         }
       }
 

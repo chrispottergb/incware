@@ -2054,11 +2054,14 @@ export type Database = {
           created_at: string
           from_shareholder: string | null
           id: string
+          issued_certificate_number: number | null
           notes: string | null
           num_shares: number
+          par_value: number | null
           price_per_share: number | null
           share_class: string
           shareholder_id: string | null
+          surrendered_certificate_number: number | null
           to_shareholder: string | null
           total_consideration: number | null
           transaction_date: string
@@ -2073,11 +2076,14 @@ export type Database = {
           created_at?: string
           from_shareholder?: string | null
           id?: string
+          issued_certificate_number?: number | null
           notes?: string | null
           num_shares?: number
+          par_value?: number | null
           price_per_share?: number | null
           share_class?: string
           shareholder_id?: string | null
+          surrendered_certificate_number?: number | null
           to_shareholder?: string | null
           total_consideration?: number | null
           transaction_date?: string
@@ -2092,11 +2098,14 @@ export type Database = {
           created_at?: string
           from_shareholder?: string | null
           id?: string
+          issued_certificate_number?: number | null
           notes?: string | null
           num_shares?: number
+          par_value?: number | null
           price_per_share?: number | null
           share_class?: string
           shareholder_id?: string | null
+          surrendered_certificate_number?: number | null
           to_shareholder?: string | null
           total_consideration?: number | null
           transaction_date?: string
@@ -2150,6 +2159,7 @@ export type Database = {
           created_at: string
           date_added: string | null
           id: string
+          is_treasury: boolean
           name: string
           ownership_percentage: number | null
           ssn_ein: string | null
@@ -2167,6 +2177,7 @@ export type Database = {
           created_at?: string
           date_added?: string | null
           id?: string
+          is_treasury?: boolean
           name: string
           ownership_percentage?: number | null
           ssn_ein?: string | null
@@ -2184,6 +2195,7 @@ export type Database = {
           created_at?: string
           date_added?: string | null
           id?: string
+          is_treasury?: boolean
           name?: string
           ownership_percentage?: number | null
           ssn_ein?: string | null
@@ -2300,6 +2312,48 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transaction_assets: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string
+          id: string
+          transaction_id: string
+          value: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description: string
+          id?: string
+          transaction_id: string
+          value?: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          transaction_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_assets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_assets_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "share_transactions"
             referencedColumns: ["id"]
           },
         ]
