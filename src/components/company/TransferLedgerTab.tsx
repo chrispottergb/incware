@@ -275,7 +275,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
         <div>
           <div className="flex items-center gap-2">
             <ScrollText className="h-3.5 w-3.5 text-primary" />
-            <CardTitle className="card-section-title">{term.isLLC ? "Interest Transfer Ledger" : "Stock Transfer Ledger"}</CardTitle>
+            <CardTitle className="card-section-title">{term.isLLC ? "Membership Interest Ledger" : "Stock Transfer Ledger"}</CardTitle>
             <span title="Permanent record"><Lock className="h-3 w-3 text-muted-foreground" /></span>
           </div>
           <CardDescription className="text-[11px] mt-0.5">
@@ -283,7 +283,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
           </CardDescription>
         </div>
         <SectionPdfActions config={{
-          title: term.isLLC ? "Interest Transfer Ledger" : "Stock Transfer Ledger",
+          title: term.isLLC ? "Membership Interest Ledger" : "Stock Transfer Ledger",
           companyName: "",
           statuteRef: `Permanent record — entries cannot be edited or deleted`,
           landscape: true,
