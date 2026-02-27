@@ -59,6 +59,10 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
     enabled: !!companyId,
   });
 
+  const totalActiveUnits = certificates
+    .filter((c: any) => c.status === "active")
+    .reduce((sum: number, c: any) => sum + (c.num_shares || 0), 0);
+
   const [form, setForm] = useState({
     certificate_number: "",
     shareholder_id: "",
@@ -164,11 +168,12 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
             <SectionPdfActions config={{
               title: t.certificates, companyName: "", statuteRef: t.certificateStatute,
               table: {
-                headers: ["Cert #", t.shareholder, t.classLabel, t.shareUnit, t.parValue, "Issue Date", "Status"],
+                headers: ["Cert #", t.shareholder, t.classLabel, t.shareUnit, t.parValue, "Issue Date", "Status", ...(t.isLLC ? ["Ownership %"] : [])],
                 rows: certificates.map((c: any) => [
                   String(c.certificate_number), c.shareholders?.name ?? "—", c.share_class,
                   c.num_shares?.toLocaleString(), c.par_value != null ? `$${Number(c.par_value).toFixed(0)}` : "No Par",
                   c.issue_date ? new Date(c.issue_date + "T00:00:00").toLocaleDateString() : "—", c.status ?? "—",
+                  ...(t.isLLC ? [c.status === "active" && totalActiveUnits > 0 ? `${((c.num_shares / totalActiveUnits) * 100).toFixed(2)}%` : "—"] : []),
                 ]),
               },
             }} />
@@ -263,6 +268,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                     <TableHead className="text-[10px] uppercase text-right">{t.parValue}</TableHead>
                     <TableHead className="text-[10px] uppercase">Issue Date</TableHead>
                     <TableHead className="text-[10px] uppercase">Status</TableHead>
+                    {t.isLLC && <TableHead className="text-[10px] uppercase text-right">Ownership %</TableHead>}
                     <TableHead className="text-[10px] uppercase w-24">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -280,6 +286,13 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                           {c.status}
                         </Badge>
                       </TableCell>
+                      {t.isLLC && (
+                        <TableCell className="text-xs text-right font-semibold">
+                          {c.status === "active" && totalActiveUnits > 0
+                            ? `${((c.num_shares / totalActiveUnits) * 100).toFixed(2)}%`
+                            : "—"}
+                        </TableCell>
+                      )}
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(c)}>
