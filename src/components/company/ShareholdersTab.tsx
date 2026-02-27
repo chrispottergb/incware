@@ -305,8 +305,9 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                   <TableHead className="text-[10px] uppercase">Address</TableHead>
                   <TableHead className="text-[10px] uppercase">City/State/Zip</TableHead>
                    <TableHead className="text-[10px] uppercase">SSN/EIN</TableHead>
-                   {shareholderHoldings && <TableHead className="text-[10px] uppercase text-right">Shares Held</TableHead>}
+                   {shareholderHoldings && <TableHead className="text-[10px] uppercase text-right">{t.isLLC ? "Units Held" : "Shares Held"}</TableHead>}
                    {t.isLLC && <TableHead className="text-[10px] uppercase text-right">Ownership %</TableHead>}
+                   {t.isLLC && <TableHead className="text-[10px] uppercase text-right">Capital Account</TableHead>}
                    <TableHead className="text-[10px] uppercase">Status</TableHead>
                    <TableHead className="text-[10px] uppercase w-20">Actions</TableHead>
                 </TableRow>
@@ -326,6 +327,13 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                      {t.isLLC && (
                       <TableCell className="text-xs text-right font-medium">
                         {(s as any).ownership_percentage != null ? `${Number((s as any).ownership_percentage).toFixed(2)}%` : "—"}
+                      </TableCell>
+                    )}
+                     {t.isLLC && (
+                      <TableCell className="text-xs text-right font-medium font-mono">
+                        {(s as any).capital_account_balance != null && Number((s as any).capital_account_balance) !== 0
+                          ? `$${Number((s as any).capital_account_balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                          : "—"}
                       </TableCell>
                     )}
                     <TableCell>

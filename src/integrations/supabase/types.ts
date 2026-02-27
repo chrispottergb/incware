@@ -2154,6 +2154,7 @@ export type Database = {
         Row: {
           address: string | null
           address_2: string | null
+          capital_account_balance: number | null
           city: string | null
           company_id: string
           created_at: string
@@ -2172,6 +2173,7 @@ export type Database = {
         Insert: {
           address?: string | null
           address_2?: string | null
+          capital_account_balance?: number | null
           city?: string | null
           company_id: string
           created_at?: string
@@ -2190,6 +2192,7 @@ export type Database = {
         Update: {
           address?: string | null
           address_2?: string | null
+          capital_account_balance?: number | null
           city?: string | null
           company_id?: string
           created_at?: string
