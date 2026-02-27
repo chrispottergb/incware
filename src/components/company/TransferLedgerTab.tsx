@@ -48,6 +48,7 @@ interface LedgerEntry {
   consideration: number | null;
   shareholderBalance: number;
   treasuryBalance: number;
+  ownershipPct: number | null;
   notes: string;
   source: "ledger" | "bill" | "certificate";
   linked: boolean;
@@ -168,6 +169,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
         consideration: null,
         shareholderBalance: Math.max(0, holderBalances[shKey] || holderBalances[fromKey] || 0),
         treasuryBalance: Math.max(0, (authorizedShares ?? 0) - totalIssued),
+        ownershipPct: null,
         notes: t.notes || "",
         source: "ledger",
         linked: !!t.bill_of_sale_id,
@@ -204,6 +206,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
         consideration: null,
         shareholderBalance: Math.max(0, holderBalances[holderKey] || 0),
         treasuryBalance: Math.max(0, (authorizedShares ?? 0) - totalIssued),
+        ownershipPct: null,
         notes: t.notes || "",
         source: "ledger",
         linked: !!t.bill_of_sale_id,
@@ -239,6 +242,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
 
     const treasuryBal = (authorizedShares ?? 0) - Math.max(0, totalIssued);
     const shBal = Math.max(0, holderBalances[holderKey] || 0);
+    const ownershipPct = term.isLLC && totalIssued > 0 ? (shBal / totalIssued) * 100 : null;
 
     entries.push({
       entryNum: entries.length + 1,
@@ -255,6 +259,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
       consideration: t.total_consideration,
       shareholderBalance: shBal,
       treasuryBalance: Math.max(0, treasuryBal),
+      ownershipPct,
       notes: t.notes || "",
       source: "ledger",
       linked: !!t.bill_of_sale_id,
@@ -290,7 +295,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
           statuteRef: `Permanent record — entries cannot be edited or deleted`,
           landscape: true,
           table: {
-            headers: ["#", "Date", "Type", "Cert Issued", "Cert Cancelled", "Transferee", "Transferor", "Issued", "Cancelled", "To Treasury", "Consideration", "SH Balance", "Treasury Balance"],
+            headers: ["#", "Date", "Type", "Cert Issued", "Cert Cancelled", "Transferee", "Transferor", "Issued", "Cancelled", "To Treasury", "Consideration", "SH Balance", ...(term.isLLC ? ["Ownership %"] : []), "Treasury Balance"],
             rows: entries.map(e => [
               String(e.entryNum),
               e.date ? new Date(e.date + "T00:00:00").toLocaleDateString() : "—",
@@ -304,6 +309,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
               e.sharesToTreasury > 0 ? e.sharesToTreasury.toLocaleString() : "—",
               e.consideration != null ? `$${Number(e.consideration).toFixed(2)}` : "—",
               e.shareholderBalance.toLocaleString(),
+              ...(term.isLLC ? [e.ownershipPct != null ? `${e.ownershipPct.toFixed(2)}%` : "—"] : []),
               e.treasuryBalance.toLocaleString(),
             ]),
           },
@@ -331,6 +337,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
                   <TableHead className="text-[10px] uppercase text-right">To Treas.</TableHead>
                   <TableHead className="text-[10px] uppercase text-right">Consideration</TableHead>
                   <TableHead className="text-[10px] uppercase text-right bg-primary/5">SH Bal.</TableHead>
+                  {term.isLLC && <TableHead className="text-[10px] uppercase text-right bg-primary/5">Own. %</TableHead>}
                   <TableHead className="text-[10px] uppercase text-right bg-primary/5">Treasury</TableHead>
                 </TableRow>
               </TableHeader>
@@ -357,6 +364,11 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
                     <TableCell className="text-xs text-right font-semibold bg-primary/5">
                       {e.shareholderBalance.toLocaleString()}
                     </TableCell>
+                    {term.isLLC && (
+                      <TableCell className="text-xs text-right font-semibold bg-primary/5">
+                        {e.ownershipPct != null ? `${e.ownershipPct.toFixed(2)}%` : "—"}
+                      </TableCell>
+                    )}
                     <TableCell className="text-xs text-right font-semibold bg-primary/5">
                       {e.treasuryBalance.toLocaleString()}
                     </TableCell>
