@@ -68,6 +68,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const { data: certificates = [] } = useQuery({
@@ -81,6 +82,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const { data: shareholders = [] } = useQuery({

@@ -40,6 +40,15 @@ const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string
     { value: "dissociation_buyout", label: "Dissociation Buyout" },
     { value: "gift", label: "Gift of Membership Interest" },
   ],
+  "Single Member LLC": [
+    { value: "initial_contribution", label: "Initial Capital Contribution" },
+    { value: "additional_contribution", label: "Additional Contribution" },
+    { value: "interest_transfer", label: "Transfer of Membership Interest" },
+    { value: "interest_assignment", label: "Assignment of Interest" },
+    { value: "redemption", label: "Interest Redemption" },
+    { value: "dissociation_buyout", label: "Dissociation Buyout" },
+    { value: "gift", label: "Gift of Membership Interest" },
+  ],
 };
 
 const CONSIDERATION_TYPES = [
@@ -93,6 +102,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const { data: allTransactions = [] } = useQuery({
@@ -106,6 +116,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const { data: certificates = [] } = useQuery({
@@ -119,6 +130,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const resetAll = () => {

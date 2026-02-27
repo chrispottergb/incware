@@ -42,6 +42,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const { data: certificates = [], isLoading } = useQuery({
@@ -55,6 +56,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const [form, setForm] = useState({
