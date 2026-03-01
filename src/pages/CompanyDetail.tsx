@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -89,9 +89,53 @@ export default function CompanyDetail() {
   });
 
   const shareCalc = useShareCalculations(id || "");
-  const isLLC = isLLCType(company?.entity_type);
+  const entityType = company?.entity_type;
+  const isLLC = isLLCType(entityType);
   const defaultTab = isLLC ? "organization" : "incorporation";
-  const hashTab = (!rawHashTab || (rawHashTab === "incorporation" && isLLC)) ? defaultTab : rawHashTab;
+
+  // Valid tab values for LLC vs non-LLC to prevent reversion
+  const LLC_TABS = ["organization", "meetings", "shareholders", "timeline", "leases", "counsel", "banks", "relationships", "ai-compliance", "record-book"];
+  const validLLCTab = isLLC && rawHashTab && !LLC_TABS.includes(rawHashTab);
+  const hashTab = (!rawHashTab || (rawHashTab === "incorporation" && isLLC) || validLLCTab) ? defaultTab : rawHashTab;
+
+  // Memoize tab configuration to prevent unnecessary re-renders that cause tab reversion
+  const tabConfig = useMemo(() => {
+    if (isLLC) {
+      return [
+        { value: "organization", label: "Organizational Info" },
+        { value: "meetings", label: "Meetings" },
+        { value: "shareholders", label: "Membership Interest/Units" },
+        { value: "timeline", label: "Timeline" },
+        { value: "leases", label: "Leases" },
+        { value: "counsel", label: "Counsel" },
+        { value: "banks", label: "Banks" },
+        { value: "relationships", label: "Relationships" },
+        { value: "ai-compliance", label: "AI Compliance" },
+        { value: "record-book", label: "Record Book" },
+      ];
+    }
+    const tabs = [
+      { value: "incorporation", label: "Incorporation Info" },
+      { value: "organization", label: "Organizational Info" },
+      { value: "meetings", label: "Meetings" },
+      { value: "shareholders", label: getTerminology(entityType).shareholdersTab },
+      { value: "timeline", label: "Timeline" },
+      { value: "leases", label: "Leases" },
+      { value: "counsel", label: "Counsel" },
+      { value: "banks", label: "Banks" },
+      { value: "relationships", label: "Relationships" },
+      { value: "ai-compliance", label: "AI Compliance" },
+    ];
+    if (entityType === "Corporation" || entityType === "S-Corp") {
+      tabs.push({ value: "bylaws", label: "Bylaws" });
+    }
+    if (entityType === "Non-Profit") {
+      tabs.push({ value: "nonprofit-bylaws", label: "Bylaws" });
+      tabs.push({ value: "conflict-of-interest", label: "Conflict of Interest" });
+    }
+    tabs.push({ value: "record-book", label: "Record Book" });
+    return tabs;
+  }, [isLLC, entityType]);
 
   if (isLoading) {
     return (
@@ -206,25 +250,7 @@ export default function CompanyDetail() {
       <Tabs value={hashTab} onValueChange={handleTabChange} className="w-full">
         <div className="border-b border-border">
           <TabsList className="h-auto w-full flex-wrap justify-center gap-0 rounded-none bg-transparent p-0">
-            {[
-              ...(!isLLCType(company.entity_type) ? [{ value: "incorporation", label: "Incorporation Info" }] : []),
-              { value: "organization", label: "Organizational Info" },
-              { value: "meetings", label: "Meetings" },
-              { value: "shareholders", label: isLLCType(company.entity_type) ? "Membership Interest/Units" : getTerminology(company.entity_type).shareholdersTab },
-              { value: "timeline", label: "Timeline" },
-              { value: "leases", label: "Leases" },
-              { value: "counsel", label: "Counsel" },
-              { value: "banks", label: "Banks" },
-              { value: "relationships", label: "Relationships" },
-              { value: "ai-compliance", label: "AI Compliance" },
-              ...(isLLCType(company.entity_type) ? [{ value: "operating-agreement", label: "Operating Agreement" }] : []),
-              ...((company.entity_type === "Corporation" || company.entity_type === "S-Corp") ? [{ value: "bylaws", label: "Bylaws" }] : []),
-              ...(company.entity_type === "Non-Profit" ? [
-                { value: "nonprofit-bylaws", label: "Bylaws" },
-                { value: "conflict-of-interest", label: "Conflict of Interest" },
-              ] : []),
-              { value: "record-book", label: "Record Book" },
-            ].map((tab) => (
+            {tabConfig.map((tab) => (
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
@@ -316,15 +342,7 @@ export default function CompanyDetail() {
         <TabsContent value="ai-compliance" className="mt-5">
           <AIComplianceTab companyId={company.id} companyName={company.name} />
         </TabsContent>
-        {isLLCType(company.entity_type) && (
-          <TabsContent value="operating-agreement" className="mt-5">
-            {company.entity_type === "Single Member LLC" ? (
-              <SMOperatingAgreementGenerator companyId={company.id} companyName={company.name} company={company} />
-            ) : (
-              <OperatingAgreementGenerator companyId={company.id} companyName={company.name} company={company} />
-            )}
-          </TabsContent>
-        )}
+        {/* Operating Agreement is available via Record Book for LLCs — not as a separate tab */}
         {(company.entity_type === "Corporation" || company.entity_type === "S-Corp") && (
           <TabsContent value="bylaws" className="mt-5">
             <BylawsGenerator companyId={company.id} companyName={company.name} company={company} />

@@ -402,18 +402,17 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   checked={!!company.s_election_date}
                   onCheckedChange={(checked) => {
                     if (!checked) {
-                      // Clear s_election_date via save
+                      // Clear s_election_date
                       supabase.from("companies").update({ s_election_date: null }).eq("id", companyId).then(() => {
                         queryClient.invalidateQueries({ queryKey: ["company", companyId] });
                       });
                     }
                   }}
-                  disabled={!!company.s_election_date}
                 />
                 <div className="flex-1">
-                  <Label htmlFor="s_election_llc" className="cursor-pointer text-sm font-medium">Electing S Corporation Tax Status</Label>
+                  <Label htmlFor="s_election_llc" className="cursor-pointer text-sm font-medium">Is this LLC electing S Corporation tax status?</Label>
                   <p className="text-[11px] text-muted-foreground">Check if this LLC is electing to be taxed as an S Corporation</p>
-                  {(!!company.s_election_date || true) && (
+                  {!!company.s_election_date && (
                     <div className="mt-2 field-group max-w-xs">
                       <Label className="field-label">S Election Effective Date</Label>
                       <DatePickerField
@@ -422,6 +421,19 @@ export default function OrganizationTab({ companyId, company }: Props) {
                           await supabase.from("companies").update({ s_election_date: v || null }).eq("id", companyId);
                           queryClient.invalidateQueries({ queryKey: ["company", companyId] });
                         }}
+                      />
+                    </div>
+                  )}
+                  {!company.s_election_date && (
+                    <div className="mt-2 field-group max-w-xs">
+                      <Label className="field-label">S Election Effective Date</Label>
+                      <DatePickerField
+                        value=""
+                        onChange={async (v) => {
+                          await supabase.from("companies").update({ s_election_date: v || null }).eq("id", companyId);
+                          queryClient.invalidateQueries({ queryKey: ["company", companyId] });
+                        }}
+                        placeholder="Select date to enable S election"
                       />
                     </div>
                   )}
