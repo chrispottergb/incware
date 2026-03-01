@@ -32,7 +32,7 @@ export interface ShareCalculations {
 
 export function useShareCalculations(companyId: string) {
   const { data: company } = useQuery({
-    queryKey: ["company", companyId],
+    queryKey: ["company-authorized-shares", companyId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("companies")
