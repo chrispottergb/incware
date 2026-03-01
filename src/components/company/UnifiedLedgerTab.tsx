@@ -370,7 +370,7 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
     });
   };
 
-  const HEADERS = ["#", "Date", "Type", "Member", "Transferor", "Int. Type", "Cert Iss.", "Cert Canc.", "Iss. Units", "Canc. Units", "To Treas.", "$/Unit", "Total", "Consid.", "SH Bal.", "Own. %", "Treas.", "Notes"];
+  const HEADERS = ["#", "Date", "Type", "Member", "Transferor", "Cert Iss.", "Cert Canc.", "Iss. Units", "Canc. Units", "$/Unit", "Total", "Consid.", "SH Bal.", "Own. %", "Notes"];
 
   return (
     <Card>
@@ -399,18 +399,15 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
                 e.type,
                 e.transferee,
                 e.transferor,
-                e.interestType,
                 e.certIssued,
                 e.certCancelled,
                 e.unitsIssued > 0 ? e.unitsIssued.toLocaleString() : "—",
                 e.unitsCancelled > 0 ? e.unitsCancelled.toLocaleString() : "—",
-                e.toTreasury > 0 ? e.toTreasury.toLocaleString() : "—",
                 e.pricePerUnit,
                 e.total,
                 e.consideration,
                 e.shBalance.toLocaleString(),
                 e.ownershipPct != null ? `${e.ownershipPct.toFixed(2)}%` : "—",
-                e.treasuryBalance.toLocaleString(),
                 e.notes || "—",
               ]),
             },
@@ -467,16 +464,7 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
                     </div>
                   </div>
                 )}
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label">Interest Type</Label>
-                    <Select value={form.share_class} onValueChange={(v) => setForm(p => ({ ...p, share_class: v }))}>
-                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {term.classOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label"># Units</Label>
                     <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
@@ -552,7 +540,7 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
           <p className="text-xs text-muted-foreground text-center py-6">No membership activity recorded yet.</p>
         ) : (
           <div className="rounded-md border border-border overflow-x-auto">
-            <Table className="min-w-[1400px]">
+            <Table className="min-w-[1200px]">
               <TableHeader>
                 <TableRow className="bg-foreground/5">
                   <TableHead className="text-[10px] uppercase whitespace-nowrap w-8">#</TableHead>
@@ -560,18 +548,15 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
                   <TableHead className="text-[10px] uppercase whitespace-nowrap">Type</TableHead>
                   <TableHead className="text-[10px] uppercase whitespace-nowrap">Member</TableHead>
                   <TableHead className="text-[10px] uppercase whitespace-nowrap">Transferor</TableHead>
-                  <TableHead className="text-[10px] uppercase whitespace-nowrap">Int. Type</TableHead>
                   <TableHead className="text-[10px] uppercase whitespace-nowrap">Cert Iss.</TableHead>
                   <TableHead className="text-[10px] uppercase whitespace-nowrap">Cert Canc.</TableHead>
                   <TableHead className="text-[10px] uppercase whitespace-nowrap text-right">Iss. Units</TableHead>
                   <TableHead className="text-[10px] uppercase whitespace-nowrap text-right">Canc. Units</TableHead>
-                  <TableHead className="text-[10px] uppercase whitespace-nowrap text-right">To Treas.</TableHead>
                   <TableHead className="text-[10px] uppercase whitespace-nowrap text-right">$/Unit</TableHead>
                   <TableHead className="text-[10px] uppercase whitespace-nowrap text-right">Total</TableHead>
                   <TableHead className="text-[10px] uppercase whitespace-nowrap">Consid.</TableHead>
                   <TableHead className="text-[10px] uppercase whitespace-nowrap text-right bg-primary/5">SH Bal.</TableHead>
                   <TableHead className="text-[10px] uppercase whitespace-nowrap text-right bg-primary/5">Own. %</TableHead>
-                  <TableHead className="text-[10px] uppercase whitespace-nowrap text-right bg-primary/5">Treasury</TableHead>
                   <TableHead className="text-[10px] uppercase whitespace-nowrap">Notes</TableHead>
                   <TableHead className="text-[10px] uppercase whitespace-nowrap w-16">Actions</TableHead>
                 </TableRow>
@@ -584,18 +569,15 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
                     <TableCell><Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize whitespace-nowrap">{e.type}</Badge></TableCell>
                     <TableCell className="text-xs font-medium whitespace-nowrap">{e.transferee}</TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{e.transferor}</TableCell>
-                    <TableCell className="text-xs">{e.interestType}</TableCell>
                     <TableCell className="text-xs font-mono">{e.certIssued}</TableCell>
                     <TableCell className="text-xs font-mono">{e.certCancelled}</TableCell>
                     <TableCell className="text-xs text-right">{e.unitsIssued > 0 ? e.unitsIssued.toLocaleString() : "—"}</TableCell>
                     <TableCell className="text-xs text-right">{e.unitsCancelled > 0 ? e.unitsCancelled.toLocaleString() : "—"}</TableCell>
-                    <TableCell className="text-xs text-right">{e.toTreasury > 0 ? e.toTreasury.toLocaleString() : "—"}</TableCell>
                     <TableCell className="text-xs text-right">{e.pricePerUnit}</TableCell>
                     <TableCell className="text-xs text-right">{e.total}</TableCell>
                     <TableCell className="text-xs capitalize">{e.consideration}</TableCell>
                     <TableCell className="text-xs text-right font-semibold bg-primary/5">{e.shBalance.toLocaleString()}</TableCell>
                     <TableCell className="text-xs text-right font-semibold bg-primary/5">{e.ownershipPct != null ? `${e.ownershipPct.toFixed(2)}%` : "—"}</TableCell>
-                    <TableCell className="text-xs text-right font-semibold bg-primary/5">{e.treasuryBalance.toLocaleString()}</TableCell>
                     <TableCell className="text-xs text-muted-foreground max-w-[120px] truncate" title={e.notes}>{e.notes || "—"}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-0.5">
