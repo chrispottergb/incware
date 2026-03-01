@@ -38,6 +38,7 @@ import RelationshipsTab from "@/components/company/RelationshipsTab";
 import LeasesTab from "@/components/company/LeasesTab";
 import BuySellWorkflow from "@/components/company/BuySellWorkflow";
 import TransferLedgerTab from "@/components/company/TransferLedgerTab";
+import UnifiedLedgerTab from "@/components/company/UnifiedLedgerTab";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { useShareCalculations } from "@/hooks/useShareCalculations";
 
@@ -318,9 +319,18 @@ export default function CompanyDetail() {
             <div data-section="certificates">
               <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
             </div>
-            <StockLedgerTab companyId={company.id} entityType={company.entity_type} />
-            <BillsOfSaleTab companyId={company.id} entityType={company.entity_type} />
-            <TransferLedgerTab companyId={company.id} entityType={company.entity_type} authorizedShares={shareCalc.authorizedShares} />
+            {isLLCType(company.entity_type) ? (
+              <>
+                <BillsOfSaleTab companyId={company.id} entityType={company.entity_type} />
+                <UnifiedLedgerTab companyId={company.id} entityType={company.entity_type} authorizedShares={shareCalc.authorizedShares} />
+              </>
+            ) : (
+              <>
+                <StockLedgerTab companyId={company.id} entityType={company.entity_type} />
+                <BillsOfSaleTab companyId={company.id} entityType={company.entity_type} />
+                <TransferLedgerTab companyId={company.id} entityType={company.entity_type} authorizedShares={shareCalc.authorizedShares} />
+              </>
+            )}
           </div>
           <BuySellWorkflow
             companyId={company.id}
