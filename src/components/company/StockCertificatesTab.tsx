@@ -103,7 +103,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
         shareholder_id: form.shareholder_id || null,
         share_class: form.share_class,
         num_shares: parseInt(form.num_shares) || 0,
-        par_value: form.par_value_type === "no_par" ? null : (form.par_value ? parseInt(form.par_value) : null),
+        par_value: t.isLLC ? null : (form.par_value_type === "no_par" ? null : (form.par_value ? parseInt(form.par_value) : null)),
         issue_date: form.issue_date || null,
       };
       if (editId) {
@@ -168,10 +168,10 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
             <SectionPdfActions config={{
               title: t.certificates, companyName: "", statuteRef: t.certificateStatute,
               table: {
-                headers: ["Cert #", t.shareholder, t.classLabel, t.shareUnit, t.parValue, "Issue Date", "Status", ...(t.isLLC ? ["Ownership %"] : [])],
+                headers: ["Cert #", t.shareholder, t.classLabel, t.shareUnit, ...(t.isLLC ? [] : [t.parValue]), "Issue Date", "Status", ...(t.isLLC ? ["Ownership %"] : [])],
                 rows: certificates.map((c: any) => [
                   String(c.certificate_number), c.shareholders?.name ?? "—", c.share_class,
-                  c.num_shares?.toLocaleString(), c.par_value != null ? `$${Number(c.par_value).toFixed(0)}` : "No Par",
+                  c.num_shares?.toLocaleString(), ...(t.isLLC ? [] : [c.par_value != null ? `$${Number(c.par_value).toFixed(0)}` : "No Par"]),
                   c.issue_date ? new Date(c.issue_date + "T00:00:00").toLocaleDateString() : "—", c.status ?? "—",
                   ...(t.isLLC ? [c.status === "active" && totalActiveUnits > 0 ? `${((c.num_shares / totalActiveUnits) * 100).toFixed(2)}%` : "—"] : []),
                 ]),
@@ -224,6 +224,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                       <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
                     </div>
                   </div>
+                  {!t.isLLC && (
                   <div className="grid grid-cols-2 gap-2">
                     <div className="field-group">
                       <Label className="field-label">{t.parValue}</Label>
@@ -242,6 +243,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                       </div>
                     )}
                   </div>
+                  )}
                   <Button type="submit" className="w-full" size="sm" disabled={save.isPending}>
                     {save.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
                     {editId ? "Save Changes" : "Issue Certificate"}
@@ -265,7 +267,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                     <TableHead className="text-[10px] uppercase">{t.shareholder}</TableHead>
                     <TableHead className="text-[10px] uppercase">{t.classLabel}</TableHead>
                     <TableHead className="text-[10px] uppercase text-right">{t.shareUnit}</TableHead>
-                    <TableHead className="text-[10px] uppercase text-right">{t.parValue}</TableHead>
+                    {!t.isLLC && <TableHead className="text-[10px] uppercase text-right">{t.parValue}</TableHead>}
                     <TableHead className="text-[10px] uppercase">Issue Date</TableHead>
                     <TableHead className="text-[10px] uppercase">Status</TableHead>
                     {t.isLLC && <TableHead className="text-[10px] uppercase text-right">Ownership %</TableHead>}
@@ -279,7 +281,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                       <TableCell className="text-xs">{c.shareholders?.name ?? "—"}</TableCell>
                       <TableCell className="text-xs">{c.share_class}</TableCell>
                       <TableCell className="text-xs text-right">{c.num_shares?.toLocaleString()}</TableCell>
-                      <TableCell className="text-xs text-right">{c.par_value != null ? `$${Number(c.par_value).toFixed(0)}` : "No Par"}</TableCell>
+                      {!t.isLLC && <TableCell className="text-xs text-right">{c.par_value != null ? `$${Number(c.par_value).toFixed(0)}` : "No Par"}</TableCell>}
                       <TableCell className="text-xs">{c.issue_date ? new Date(c.issue_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${c.status === "active" ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20"}`}>
