@@ -15,7 +15,6 @@ import { Loader2, ArrowRight, ArrowLeft, CheckCircle2, Link2, ArrowRightLeft, Al
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
-import { getHoldingsByName } from "@/hooks/useShareCalculations";
 
 const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string }[]> = {
   Corporation: [
@@ -74,6 +73,10 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
   const term = getTerminology(entityType);
   const isLLC = isLLCType(entityType);
   const transactionTypes = TRANSACTION_TYPES_BY_ENTITY[entityType] || TRANSACTION_TYPES_BY_ENTITY["Corporation"];
+  const defaultTransactionType = isLLC ? "interest_transfer" : "transfer";
+  const initialTransactionType = transactionTypes.some((t) => t.value === defaultTransactionType)
+    ? defaultTransactionType
+    : (transactionTypes[0]?.value || "transfer");
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [saving, setSaving] = useState(false);
@@ -81,7 +84,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
   const [certsSummary, setCertsSummary] = useState<string[]>([]);
 
   const [form, setForm] = useState({
-    transaction_type: transactionTypes[0]?.value || "transfer",
+    transaction_type: initialTransactionType,
     seller_name: "",
     seller_id: "",
     buyer_name: "",
@@ -105,19 +108,6 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
     enabled: !!companyId,
   });
 
-  const { data: allTransactions = [] } = useQuery({
-    queryKey: ["share_transactions", companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("share_transactions")
-        .select("*, shareholders(name)")
-        .eq("company_id", companyId)
-        .order("transaction_date", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
 
   const { data: certificates = [] } = useQuery({
     queryKey: ["stock_certificates", companyId],
@@ -138,7 +128,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
     setSavedIds(null);
     setCertsSummary([]);
     setForm({
-      transaction_type: transactionTypes[0]?.value || "transfer",
+      transaction_type: initialTransactionType,
       seller_name: "", seller_id: "", buyer_name: "", buyer_id: "",
       share_class: term.defaultClass, num_shares: "", price_per_share: "",
       total_consideration: "", consideration_type: "cash",
@@ -304,7 +294,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
               });
 
               // Issue new cert with reduced shares if seller retains any
-              const sellerHoldings = getHoldingsByName(allTransactions, form.seller_name, shareholders);
+              const sellerHoldings = (sellerCert as any).num_shares || 0;
               const remainingShares = sellerHoldings - numShares;
               if (remainingShares > 0) {
                 const newCertNum = getNextCertNum(certOffset);

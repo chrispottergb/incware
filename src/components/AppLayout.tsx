@@ -24,7 +24,9 @@ import {
   Plus,
   Scale,
   GitBranch,
+  UserCheck,
 } from "lucide-react";
+import { isLLCType } from "@/lib/entity-terminology";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
@@ -52,6 +54,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   // Detect if we're in a company context
   const companyMatch = location.pathname.match(/^\/company\/([^/]+)/);
   const companyId = companyMatch ? companyMatch[1] : null;
+  const currentCompany = companyId ? companies.find((c) => c.id === companyId) : null;
+  const currentCompanyIsLLC = isLLCType(currentCompany?.entity_type);
 
   const mainNav = [
     { label: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -61,16 +65,29 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   ];
 
   const companyNav = companyId
-    ? [
-        { label: "Overview", href: `/company/${companyId}#incorporation`, icon: Building2 },
-        { label: "Organization", href: `/company/${companyId}#organization`, icon: Landmark },
-        { label: "Meetings", href: `/company/${companyId}#meetings`, icon: Calendar },
-        { label: "Shareholders", href: `/company/${companyId}#shareholders`, icon: UsersRound },
-        { label: "Timeline", href: `/company/${companyId}#timeline`, icon: Clock },
-        { label: "Counsel", href: `/company/${companyId}#counsel`, icon: Scale },
-        { label: "Banks", href: `/company/${companyId}#banks`, icon: Landmark },
-        { label: "Relationships", href: `/company/${companyId}#relationships`, icon: GitBranch },
-      ]
+    ? currentCompanyIsLLC
+      ? [
+          { label: "Organizational Info", href: `/company/${companyId}#organization`, icon: Landmark },
+          { label: "Meetings", href: `/company/${companyId}#meetings`, icon: Calendar },
+          { label: "Membership Interest/Units", href: `/company/${companyId}#shareholders`, icon: UsersRound },
+          { label: "Timeline", href: `/company/${companyId}#timeline`, icon: Clock },
+          { label: "Leases", href: `/company/${companyId}#leases`, icon: FileText },
+          { label: "Counsel", href: `/company/${companyId}#counsel`, icon: Scale },
+          { label: "Bank", href: `/company/${companyId}#banks`, icon: Landmark },
+          { label: "Relationships", href: `/company/${companyId}#relationships`, icon: GitBranch },
+          { label: "AI Compliance", href: `/company/${companyId}#ai-compliance`, icon: UserCheck },
+          { label: "Record Book", href: `/company/${companyId}#record-book`, icon: FileText },
+        ]
+      : [
+          { label: "Overview", href: `/company/${companyId}#incorporation`, icon: Building2 },
+          { label: "Organization", href: `/company/${companyId}#organization`, icon: Landmark },
+          { label: "Meetings", href: `/company/${companyId}#meetings`, icon: Calendar },
+          { label: "Shareholders", href: `/company/${companyId}#shareholders`, icon: UsersRound },
+          { label: "Timeline", href: `/company/${companyId}#timeline`, icon: Clock },
+          { label: "Counsel", href: `/company/${companyId}#counsel`, icon: Scale },
+          { label: "Banks", href: `/company/${companyId}#banks`, icon: Landmark },
+          { label: "Relationships", href: `/company/${companyId}#relationships`, icon: GitBranch },
+        ]
     : [];
 
   return (
@@ -170,7 +187,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               </p>
               {companyNav.map((item) => {
                 const itemHash = item.href.split("#")[1] || "";
-                const currentHash = location.hash.replace("#", "") || "incorporation";
+                const currentHash = location.hash.replace("#", "") || (currentCompanyIsLLC ? "organization" : "incorporation");
                 const active = companyId && itemHash === currentHash;
                 return (
                   <Link

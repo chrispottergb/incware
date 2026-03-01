@@ -55,9 +55,16 @@ export interface EntityTerminology {
   isLLC: boolean;
 }
 
-/** Returns true for both "LLC" and "Single Member LLC" entity types. */
+/** Returns true for LLC variants (e.g., "LLC", "Single Member LLC", "Single-Member LLC"). */
 export function isLLCType(entityType?: string): boolean {
-  return entityType === "LLC" || entityType === "Single Member LLC";
+  const normalized = (entityType || "")
+    .toLowerCase()
+    .replace(/[.]/g, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return normalized === "llc" || normalized === "single member llc";
 }
 
 export function getTerminology(entityType?: string): EntityTerminology {
@@ -89,7 +96,7 @@ export function getTerminology(entityType?: string): EntityTerminology {
       equity: "Member's Equity",
       elected: "appointed",
       election: "Appointment",
-      shareholdersTab: "Members & Interest",
+      shareholdersTab: "Membership Interest/Units",
       shareholdersSubTab: "Members",
       ledgerTitle: "Capital & Interest Ledger",
       billsTitle: "Bills of Sale / Interest Transfers",
