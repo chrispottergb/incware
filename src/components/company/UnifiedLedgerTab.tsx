@@ -555,25 +555,25 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
             <Table className="min-w-[1400px]">
               <TableHeader>
                 <TableRow className="bg-foreground/5">
-                  <TableHead className="text-[10px] uppercase w-8">#</TableHead>
-                  <TableHead className="text-[10px] uppercase">Date</TableHead>
-                  <TableHead className="text-[10px] uppercase">Type</TableHead>
-                  <TableHead className="text-[10px] uppercase">Member / Transferee</TableHead>
-                  <TableHead className="text-[10px] uppercase">Transferor</TableHead>
-                  <TableHead className="text-[10px] uppercase">Interest Type</TableHead>
-                  <TableHead className="text-[10px] uppercase">Cert Issued</TableHead>
-                  <TableHead className="text-[10px] uppercase">Cert Canc.</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">Units Issued</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">Units Canc.</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">To Treasury</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">Price/Unit</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">Total</TableHead>
-                  <TableHead className="text-[10px] uppercase">Consideration</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right bg-primary/5">SH Balance</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right bg-primary/5">Own. %</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right bg-primary/5">Treasury</TableHead>
-                  <TableHead className="text-[10px] uppercase">Notes</TableHead>
-                  <TableHead className="text-[10px] uppercase w-16">Actions</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap w-8">#</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap">Date</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap">Type</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap">Member</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap">Transferor</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap">Int. Type</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap">Cert Iss.</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap">Cert Canc.</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap text-right">Iss. Units</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap text-right">Canc. Units</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap text-right">To Treas.</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap text-right">$/Unit</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap text-right">Total</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap">Consid.</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap text-right bg-primary/5">SH Bal.</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap text-right bg-primary/5">Own. %</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap text-right bg-primary/5">Treasury</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap">Notes</TableHead>
+                  <TableHead className="text-[10px] uppercase whitespace-nowrap w-16">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
