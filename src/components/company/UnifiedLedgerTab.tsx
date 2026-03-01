@@ -370,7 +370,7 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
     });
   };
 
-  const HEADERS = ["#", "Date", "Type", "Member / Transferee", "Transferor", "Interest Type", "Cert Issued", "Cert Cancelled", "Units Issued", "Units Cancelled", "To Treasury", "Price/Unit", "Total", "Consideration", "SH Balance", "Ownership %", "Treasury Balance", "Notes"];
+  const HEADERS = ["#", "Date", "Type", "Member", "Transferor", "Int. Type", "Cert Iss.", "Cert Canc.", "Iss. Units", "Canc. Units", "To Treas.", "$/Unit", "Total", "Consid.", "SH Bal.", "Own. %", "Treas.", "Notes"];
 
   return (
     <Card>
