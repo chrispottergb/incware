@@ -72,8 +72,8 @@ export function getTerminology(entityType?: string): EntityTerminology {
       shareUnit: "Units",
       shareUnits: "Units",
       stock: "Membership Interest",
-      certificate: "Membership Interest Certificate",
-      certificates: "Membership Interest Certificates",
+      certificate: "Membership Unit Certificate",
+      certificates: "Membership Unit Certificates",
       classLabel: "Interest Type",
       classOptions: [
         { value: "Membership", label: "Membership" },

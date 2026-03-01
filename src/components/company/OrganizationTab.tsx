@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { isLLCType } from "@/lib/entity-terminology";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -19,6 +20,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import CompanyAssetsSection from "@/components/company/CompanyAssetsSection";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
@@ -312,9 +315,11 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 { label: "Accounting Method", value: filingForm.accounting_method },
                 { label: "NAICS Code", value: filingForm.naics_code },
                 { label: "First Year Annual Meeting", value: filingForm.first_year_annual_meeting },
-                { label: "Initial # of Directors", value: filingForm.initial_directors_count },
-                { label: "Max Directors Allowed", value: filingForm.max_directors_allowed },
-                { label: "Max VPs Allowed", value: filingForm.max_vps_allowed },
+                ...(!isLLCType(company.entity_type) ? [
+                  { label: "Initial # of Directors", value: filingForm.initial_directors_count },
+                  { label: "Max Directors Allowed", value: filingForm.max_directors_allowed },
+                  { label: "Max VPs Allowed", value: filingForm.max_vps_allowed },
+                ] : []),
                 { label: "Additional Provisions", value: filingForm.additional_provisions },
               ],
             }} />
@@ -368,23 +373,61 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <Label className="field-label">First Year Annual Meeting</Label>
                 <Input type="number" className="h-8 text-sm" value={filingForm.first_year_annual_meeting} onChange={(e) => setFilingForm((p) => ({ ...p, first_year_annual_meeting: e.target.value }))} />
               </div>
-              <div className="field-group">
-                <Label className="field-label">Initial # of Directors</Label>
-                <Input type="number" className="h-8 text-sm" value={filingForm.initial_directors_count} onChange={(e) => setFilingForm((p) => ({ ...p, initial_directors_count: e.target.value }))} />
-              </div>
-              <div className="field-group">
-                <Label className="field-label">Max Directors Allowed</Label>
-                <Input type="number" className="h-8 text-sm" value={filingForm.max_directors_allowed} onChange={(e) => setFilingForm((p) => ({ ...p, max_directors_allowed: e.target.value }))} />
-              </div>
-              <div className="field-group">
-                <Label className="field-label">Max VPs Allowed</Label>
-                <Input type="number" className="h-8 text-sm" value={filingForm.max_vps_allowed} onChange={(e) => setFilingForm((p) => ({ ...p, max_vps_allowed: e.target.value }))} />
-              </div>
+              {!isLLCType(company.entity_type) && (
+                <>
+                  <div className="field-group">
+                    <Label className="field-label">Initial # of Directors</Label>
+                    <Input type="number" className="h-8 text-sm" value={filingForm.initial_directors_count} onChange={(e) => setFilingForm((p) => ({ ...p, initial_directors_count: e.target.value }))} />
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">Max Directors Allowed</Label>
+                    <Input type="number" className="h-8 text-sm" value={filingForm.max_directors_allowed} onChange={(e) => setFilingForm((p) => ({ ...p, max_directors_allowed: e.target.value }))} />
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">Max VPs Allowed</Label>
+                    <Input type="number" className="h-8 text-sm" value={filingForm.max_vps_allowed} onChange={(e) => setFilingForm((p) => ({ ...p, max_vps_allowed: e.target.value }))} />
+                  </div>
+                </>
+              )}
             </div>
             <div className="field-group">
               <Label className="field-label">Additional Provisions</Label>
               <Textarea className="text-sm min-h-[60px]" value={filingForm.additional_provisions} onChange={(e) => setFilingForm((p) => ({ ...p, additional_provisions: e.target.value }))} rows={2} />
             </div>
+            {/* S Corporation Tax Status — LLC only */}
+            {isLLCType(company.entity_type) && (
+              <div className="mt-3 flex items-start gap-2.5 rounded-md border border-border bg-muted/30 px-3 py-2.5">
+                <Checkbox
+                  id="s_election_llc"
+                  checked={!!company.s_election_date}
+                  onCheckedChange={(checked) => {
+                    if (!checked) {
+                      // Clear s_election_date via save
+                      supabase.from("companies").update({ s_election_date: null }).eq("id", companyId).then(() => {
+                        queryClient.invalidateQueries({ queryKey: ["company", companyId] });
+                      });
+                    }
+                  }}
+                  disabled={!!company.s_election_date}
+                />
+                <div className="flex-1">
+                  <Label htmlFor="s_election_llc" className="cursor-pointer text-sm font-medium">Electing S Corporation Tax Status</Label>
+                  <p className="text-[11px] text-muted-foreground">Check if this LLC is electing to be taxed as an S Corporation</p>
+                  {(!!company.s_election_date || true) && (
+                    <div className="mt-2 field-group max-w-xs">
+                      <Label className="field-label">S Election Effective Date</Label>
+                      <DatePickerField
+                        value={company.s_election_date ?? ""}
+                        onChange={async (v) => {
+                          await supabase.from("companies").update({ s_election_date: v || null }).eq("id", companyId);
+                          queryClient.invalidateQueries({ queryKey: ["company", companyId] });
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="flex justify-end">
               <Button type="submit" disabled={saveFiling.isPending} size="sm">
                 {saveFiling.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
@@ -398,10 +441,10 @@ export default function OrganizationTab({ companyId, company }: Props) {
       {/* Initial List of Directors - Collapsible */}
       <Collapsible>
         <CollapsibleTrigger asChild>
-          <Button variant="outline" className="w-full justify-between text-sm font-medium">
+           <Button variant="outline" className="w-full justify-between text-sm font-medium">
             <span className="flex items-center gap-2">
               <Users className="h-3.5 w-3.5 text-primary" />
-              Initial List of Directors
+              {isLLCType(company.entity_type) ? "Initial List of Members" : "Initial List of Directors"}
             </span>
             <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
           </Button>
@@ -410,12 +453,14 @@ export default function OrganizationTab({ companyId, company }: Props) {
           <Card>
             <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-[11px] mt-0.5">Enter the names of the initial directors for this company</CardDescription>
+                <CardDescription className="text-[11px] mt-0.5">
+                  {isLLCType(company.entity_type) ? "Enter the names of the initial members for this company" : "Enter the names of the initial directors for this company"}
+                </CardDescription>
                 <SectionPdfActions config={{
-                  title: "Initial List of Directors",
+                  title: isLLCType(company.entity_type) ? "Initial List of Members" : "Initial List of Directors",
                   companyName: company.name,
                   fields: directorNames.filter((n) => n.trim()).map((n, i) => ({
-                    label: `Director ${i + 1}`,
+                    label: isLLCType(company.entity_type) ? `Member ${i + 1}` : `Director ${i + 1}`,
                     value: n.trim(),
                   })),
                 }} />
@@ -432,7 +477,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
                   {directorNames.map((name, index) => (
                     <div key={index} className="field-group">
-                      <Label className="field-label">Director {index + 1}</Label>
+                      <Label className="field-label">{isLLCType(company.entity_type) ? `Member ${index + 1}` : `Director ${index + 1}`}</Label>
                       <div className="flex gap-1">
                         <Input
                           className="h-8 text-sm"
@@ -442,7 +487,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                               prev.map((n, i) => (i === index ? e.target.value : n))
                             )
                           }
-                          placeholder="Director name"
+                          placeholder={isLLCType(company.entity_type) ? "Member name" : "Director name"}
                         />
                         {directorNames.length > 1 && (
                           <Button
@@ -461,11 +506,11 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 </div>
                 <div className="flex items-center justify-between">
                   <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={addDirectorSlot}>
-                    <Plus className="mr-1 h-3 w-3" /> Add Another Director
+                    <Plus className="mr-1 h-3 w-3" /> {isLLCType(company.entity_type) ? "Add Another Member" : "Add Another Director"}
                   </Button>
                   <Button type="submit" disabled={saveDirectors.isPending} size="sm">
                     {saveDirectors.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-                    Save Directors
+                    {isLLCType(company.entity_type) ? "Save Members" : "Save Directors"}
                   </Button>
                 </div>
               </form>
