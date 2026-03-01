@@ -163,12 +163,20 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
   // Validation
   let validationError: string | null = null;
   if (isIssuance && availableShares != null && numShares > availableShares) {
-    validationError = `Only ${availableShares.toLocaleString()} shares remain available to issue from the authorized pool.`;
+    validationError = `Only ${availableShares.toLocaleString()} ${term.shareUnit.toLowerCase()} remain available to issue from the authorized pool.`;
   }
   if ((isTransfer || isRedemption) && form.seller_name && numShares > 0) {
-    const sellerHoldings = getHoldingsByName(allTransactions, form.seller_name, shareholders);
+    // Use certificate-based holdings (single source of truth) instead of transaction-based
+    const sellerSh = shareholders.find(s => s.name.toLowerCase().trim() === form.seller_name.toLowerCase().trim());
+    let sellerHoldings = 0;
+    if (sellerSh) {
+      const sellerActiveCerts = certificates.filter(
+        (c: any) => c.shareholder_id === sellerSh.id && c.status === "active"
+      );
+      sellerHoldings = sellerActiveCerts.reduce((sum: number, c: any) => sum + (c.num_shares || 0), 0);
+    }
     if (numShares > sellerHoldings) {
-      validationError = `${form.seller_name} only holds ${sellerHoldings.toLocaleString()} shares. Cannot ${isRedemption ? "repurchase" : "transfer"} ${numShares.toLocaleString()}.`;
+      validationError = `${form.seller_name} only holds ${sellerHoldings.toLocaleString()} ${term.shareUnit.toLowerCase()}. Cannot ${isRedemption ? "repurchase" : "transfer"} ${numShares.toLocaleString()}.`;
     }
   }
 
