@@ -46,7 +46,7 @@ export default function CompanyDetail() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const hashTab = location.hash.replace("#", "") || "incorporation";
+  const rawHashTab = location.hash.replace("#", "");
 
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
   const [deleting, setDeleting] = useState(false);
@@ -89,6 +89,9 @@ export default function CompanyDetail() {
   });
 
   const shareCalc = useShareCalculations(id || "");
+  const isLLC = isLLCType(company?.entity_type);
+  const defaultTab = isLLC ? "organization" : "incorporation";
+  const hashTab = (!rawHashTab || (rawHashTab === "incorporation" && isLLC)) ? defaultTab : rawHashTab;
 
   if (isLoading) {
     return (
@@ -204,10 +207,10 @@ export default function CompanyDetail() {
         <div className="border-b border-border">
           <TabsList className="h-auto w-full flex-wrap justify-center gap-0 rounded-none bg-transparent p-0">
             {[
-              { value: "incorporation", label: "Incorporation Info" },
+              ...(!isLLCType(company.entity_type) ? [{ value: "incorporation", label: "Incorporation Info" }] : []),
               { value: "organization", label: "Organizational Info" },
               { value: "meetings", label: "Meetings" },
-              { value: "shareholders", label: getTerminology(company.entity_type).shareholdersTab },
+              { value: "shareholders", label: isLLCType(company.entity_type) ? "Membership Interest/Units" : getTerminology(company.entity_type).shareholdersTab },
               { value: "timeline", label: "Timeline" },
               { value: "leases", label: "Leases" },
               { value: "counsel", label: "Counsel" },
@@ -275,7 +278,7 @@ export default function CompanyDetail() {
             <div className="flex justify-end">
               <Button size="sm" onClick={() => setBuySellOpen(true)} className="h-8 text-xs">
                 <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" />
-                {isLLCType(company.entity_type) ? "Buy / Sell Interest" : "Buy / Sell Shares"}
+                {isLLCType(company.entity_type) ? "Buy / Sell Interest/Units" : "Buy / Sell Shares"}
               </Button>
             </div>
             <ShareholdersTab companyId={company.id} entityType={company.entity_type} shareholderHoldings={shareCalc.shareholderHoldings} />

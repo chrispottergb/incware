@@ -636,6 +636,37 @@ export default function IncorporationTab({ company }: Props) {
             </div>
           )}
 
+          {/* S Corporation Tax Status — Corporation only (S-Corp & LLC have it elsewhere) */}
+          {form.entity_type === "Corporation" && (
+            <div className="mt-3 flex items-start gap-2.5 rounded-md border border-border bg-muted/30 px-3 py-2.5">
+              <Checkbox
+                id="s_election_corp"
+                checked={!!form.s_election_date}
+                onCheckedChange={(checked) => {
+                  if (!checked) {
+                    update("s_election_date", "");
+                  }
+                }}
+              />
+              <div className="flex-1">
+                <Label htmlFor="s_election_corp" className="cursor-pointer text-sm font-medium">Is the corporation electing S Corporation tax status?</Label>
+                <p className="text-[11px] text-muted-foreground">Check if this corporation is making an S Corporation election with the IRS</p>
+                {!!form.s_election_date && (
+                  <div className="mt-2 field-group max-w-xs">
+                    <Label className="field-label">Date of S Election</Label>
+                    <DatePickerField value={form.s_election_date} onChange={(v) => update("s_election_date", v)} />
+                  </div>
+                )}
+                {!form.s_election_date && (
+                  <div className="mt-2 field-group max-w-xs">
+                    <Label className="field-label">Date of S Election</Label>
+                    <DatePickerField value="" onChange={(v) => update("s_election_date", v)} />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* LLC: Membership Interest note */}
           {equityCard.showMembershipUnits && (
             <div className="mt-3 rounded-md border border-border bg-muted/30 px-3 py-2.5">
