@@ -129,10 +129,21 @@ export default function OrganizationTab({ companyId, company }: Props) {
     max_directors_allowed: company.max_directors_allowed?.toString() ?? "",
     max_vps_allowed: company.max_vps_allowed?.toString() ?? "",
     additional_provisions: company.additional_provisions ?? "",
+    s_election_date: company.s_election_date ?? "",
   });
+  const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(!!company.s_election_date);
+
+  useEffect(() => {
+    setLlcSElectionEnabled(!!company.s_election_date);
+    setFilingForm((prev) => ({ ...prev, s_election_date: company.s_election_date ?? "" }));
+  }, [company.id, company.s_election_date]);
 
   const saveFiling = useMutation({
     mutationFn: async () => {
+      if (isLLCType(company.entity_type) && llcSElectionEnabled && !filingForm.s_election_date) {
+        throw new Error("S Election Effective Date is required when LLC S Corporation tax status is enabled.");
+      }
+
       const { error } = await supabase
         .from("companies")
         .update({
@@ -147,6 +158,9 @@ export default function OrganizationTab({ companyId, company }: Props) {
           max_directors_allowed: filingForm.max_directors_allowed ? parseInt(filingForm.max_directors_allowed) : null,
           max_vps_allowed: filingForm.max_vps_allowed ? parseInt(filingForm.max_vps_allowed) : null,
           additional_provisions: filingForm.additional_provisions || null,
+          s_election_date: isLLCType(company.entity_type)
+            ? (llcSElectionEnabled ? (filingForm.s_election_date || null) : null)
+            : company.s_election_date,
         })
         .eq("id", companyId);
       if (error) throw error;
@@ -399,42 +413,29 @@ export default function OrganizationTab({ companyId, company }: Props) {
               <div className="mt-3 flex items-start gap-2.5 rounded-md border border-border bg-muted/30 px-3 py-2.5">
                 <Checkbox
                   id="s_election_llc"
-                  checked={!!company.s_election_date}
+                  checked={llcSElectionEnabled}
                   onCheckedChange={(checked) => {
-                    if (!checked) {
-                      // Clear s_election_date
-                      supabase.from("companies").update({ s_election_date: null }).eq("id", companyId).then(() => {
-                        queryClient.invalidateQueries({ queryKey: ["company", companyId] });
-                      });
+                    const enabled = !!checked;
+                    setLlcSElectionEnabled(enabled);
+                    if (!enabled) {
+                      setFilingForm((p) => ({ ...p, s_election_date: "" }));
                     }
                   }}
                 />
                 <div className="flex-1">
                   <Label htmlFor="s_election_llc" className="cursor-pointer text-sm font-medium">Is this LLC electing S Corporation tax status?</Label>
-                  <p className="text-[11px] text-muted-foreground">Check if this LLC is electing to be taxed as an S Corporation</p>
-                  {!!company.s_election_date && (
+                  <p className="text-[11px] text-muted-foreground">Check if this LLC is electing to be taxed as an S Corporation.</p>
+                  {llcSElectionEnabled && (
                     <div className="mt-2 field-group max-w-xs">
                       <Label className="field-label">S Election Effective Date</Label>
                       <DatePickerField
-                        value={company.s_election_date ?? ""}
-                        onChange={async (v) => {
-                          await supabase.from("companies").update({ s_election_date: v || null }).eq("id", companyId);
-                          queryClient.invalidateQueries({ queryKey: ["company", companyId] });
-                        }}
+                        value={filingForm.s_election_date}
+                        onChange={(v) => setFilingForm((p) => ({ ...p, s_election_date: v || "" }))}
+                        placeholder="Select effective date"
                       />
-                    </div>
-                  )}
-                  {!company.s_election_date && (
-                    <div className="mt-2 field-group max-w-xs">
-                      <Label className="field-label">S Election Effective Date</Label>
-                      <DatePickerField
-                        value=""
-                        onChange={async (v) => {
-                          await supabase.from("companies").update({ s_election_date: v || null }).eq("id", companyId);
-                          queryClient.invalidateQueries({ queryKey: ["company", companyId] });
-                        }}
-                        placeholder="Select date to enable S election"
-                      />
+                      {!filingForm.s_election_date && (
+                        <p className="mt-1 text-[11px] text-destructive">S Election Effective Date is required when enabled.</p>
+                      )}
                     </div>
                   )}
                 </div>

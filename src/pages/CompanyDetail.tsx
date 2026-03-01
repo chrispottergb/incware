@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -98,6 +98,13 @@ export default function CompanyDetail() {
   const validLLCTab = isLLC && rawHashTab && !LLC_TABS.includes(rawHashTab);
   const hashTab = (!rawHashTab || (rawHashTab === "incorporation" && isLLC) || validLLCTab) ? defaultTab : rawHashTab;
 
+  useEffect(() => {
+    if (!isLLC) return;
+    if (!rawHashTab || rawHashTab === "incorporation" || !LLC_TABS.includes(rawHashTab)) {
+      navigate("#organization", { replace: true });
+    }
+  }, [isLLC, rawHashTab, navigate]);
+
   // Memoize tab configuration to prevent unnecessary re-renders that cause tab reversion
   const tabConfig = useMemo(() => {
     if (isLLC) {
@@ -108,7 +115,7 @@ export default function CompanyDetail() {
         { value: "timeline", label: "Timeline" },
         { value: "leases", label: "Leases" },
         { value: "counsel", label: "Counsel" },
-        { value: "banks", label: "Banks" },
+        { value: "banks", label: "Bank" },
         { value: "relationships", label: "Relationships" },
         { value: "ai-compliance", label: "AI Compliance" },
         { value: "record-book", label: "Record Book" },
@@ -304,7 +311,7 @@ export default function CompanyDetail() {
             <div className="flex justify-end">
               <Button size="sm" onClick={() => setBuySellOpen(true)} className="h-8 text-xs">
                 <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" />
-                {isLLCType(company.entity_type) ? "Buy / Sell Interest/Units" : "Buy / Sell Shares"}
+                {isLLCType(company.entity_type) ? "Buy/Sell Interest/Units" : "Buy / Sell Shares"}
               </Button>
             </div>
             <ShareholdersTab companyId={company.id} entityType={company.entity_type} shareholderHoldings={shareCalc.shareholderHoldings} />

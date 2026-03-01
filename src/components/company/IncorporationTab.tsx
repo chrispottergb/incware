@@ -30,6 +30,7 @@ import WIComplianceChecklist from "./WIComplianceChecklist";
 import SectionPdfActions from "./SectionPdfActions";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { cn } from "@/lib/utils";
+import { isLLCType } from "@/lib/entity-terminology";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"];
 const US_STATES = [
@@ -212,6 +213,7 @@ export default function IncorporationTab({ company }: Props) {
     phone: company.phone ?? "",
     authorized_binders: (company as any).authorized_binders ?? "",
   });
+  const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(isLLCType(company.entity_type) ? !!company.s_election_date : false);
 
   const update = (field: string, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -280,6 +282,10 @@ export default function IncorporationTab({ company }: Props) {
 
   const save = useMutation({
     mutationFn: async () => {
+      if (isLLCType(form.entity_type) && llcSElectionEnabled && !form.s_election_date) {
+        throw new Error("S Election Effective Date is required when LLC S Corporation tax status is enabled.");
+      }
+
       const { error } = await supabase
         .from("companies")
         .update({
@@ -291,7 +297,9 @@ export default function IncorporationTab({ company }: Props) {
           authorized_shares: form.authorized_shares ? parseInt(form.authorized_shares) : null,
           par_value_type: form.par_value_type,
           par_value: form.par_value ? parseFloat(form.par_value) : null,
-          s_election_date: form.s_election_date || null,
+          s_election_date: isLLCType(form.entity_type)
+            ? (llcSElectionEnabled ? (form.s_election_date || null) : null)
+            : (form.s_election_date || null),
           scheduled_annual_meeting: form.scheduled_annual_meeting || null,
           election_1244: form.election_1244,
           seal_type: form.seal_type,
@@ -597,11 +605,39 @@ export default function IncorporationTab({ company }: Props) {
               </>
             )}
 
-            {/* S-Election Date — S-Corp only */}
-            {equityCard.showSElection && (
+            {/* S-election controls */}
+            {equityCard.showSElection && !isLLCType(form.entity_type) && (
               <div className="field-group">
                 <Label className="field-label">S-Election Date</Label>
                 <DatePickerField value={form.s_election_date || ""} onChange={(v) => update("s_election_date", v)} />
+              </div>
+            )}
+            {equityCard.showSElection && isLLCType(form.entity_type) && (
+              <div className="col-span-full mt-1 rounded-md border border-border bg-muted/30 px-3 py-2.5">
+                <div className="flex items-start gap-2.5">
+                  <Checkbox
+                    id="s_election_llc_incorp"
+                    checked={llcSElectionEnabled}
+                    onCheckedChange={(checked) => {
+                      const enabled = !!checked;
+                      setLlcSElectionEnabled(enabled);
+                      if (!enabled) update("s_election_date", "");
+                    }}
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="s_election_llc_incorp" className="cursor-pointer text-sm font-medium">Is this LLC electing S Corporation tax status?</Label>
+                    <p className="text-[11px] text-muted-foreground">When enabled, set the effective date below.</p>
+                    {llcSElectionEnabled && (
+                      <div className="mt-2 max-w-xs">
+                        <Label className="field-label">S Election Effective Date</Label>
+                        <DatePickerField value={form.s_election_date || ""} onChange={(v) => update("s_election_date", v)} />
+                        {!form.s_election_date && (
+                          <p className="mt-1 text-[11px] text-destructive">S Election Effective Date is required when enabled.</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 

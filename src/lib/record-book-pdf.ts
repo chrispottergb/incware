@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { isLLCType } from "@/lib/entity-terminology";
 
 const DFI_HEADER = "STATE OF WISCONSIN";
 const DFI_SUB = "DEPARTMENT OF FINANCIAL INSTITUTIONS";
@@ -107,7 +108,7 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
   const doc = new jsPDF();
   const { companyData, aiContent } = data;
   const company = companyData.company;
-  const isLLC = company.entity_type === "LLC";
+  const isLLC = isLLCType(company.entity_type);
   const pw = getPageWidth(doc);
   const cx = pw / 2;
   const intros = aiContent?.sectionIntros || {};
@@ -224,7 +225,9 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
   if (!isLLC) {
     y = addLabelValue(doc, y, "Authorized Shares", company.authorized_shares ? company.authorized_shares.toLocaleString() : "—");
     y = addLabelValue(doc, y, "Par Value", company.par_value != null ? `$${company.par_value}` : "—");
-    y = addLabelValue(doc, y, "S-Election Date", company.s_election_date ? new Date(company.s_election_date + "T00:00:00").toLocaleDateString() : "—");
+  }
+  if (company.s_election_date) {
+    y = addLabelValue(doc, y, isLLC ? "S Election Effective Date" : "S-Election Date", new Date(company.s_election_date + "T00:00:00").toLocaleDateString());
   }
   y = addLabelValue(doc, y, "Registered Agent", company.registered_agent_name || "—");
   const raAddr = [company.registered_agent_address, company.registered_agent_city, company.registered_agent_state, company.registered_agent_zip].filter(Boolean).join(", ");
