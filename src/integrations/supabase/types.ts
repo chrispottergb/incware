@@ -708,6 +708,7 @@ export type Database = {
           authorized_shares: number | null
           business_purpose: string | null
           city: string | null
+          contact_email: string | null
           corporate_status: string | null
           created_at: string
           delayed_effective_filing_date: string | null
@@ -733,6 +734,7 @@ export type Database = {
           registered_agent_state: string | null
           registered_agent_zip: string | null
           s_election_date: string | null
+          salutation_name: string | null
           scheduled_annual_meeting: string | null
           seal_type: string | null
           second_name_choice: string | null
@@ -754,6 +756,7 @@ export type Database = {
           authorized_shares?: number | null
           business_purpose?: string | null
           city?: string | null
+          contact_email?: string | null
           corporate_status?: string | null
           created_at?: string
           delayed_effective_filing_date?: string | null
@@ -779,6 +782,7 @@ export type Database = {
           registered_agent_state?: string | null
           registered_agent_zip?: string | null
           s_election_date?: string | null
+          salutation_name?: string | null
           scheduled_annual_meeting?: string | null
           seal_type?: string | null
           second_name_choice?: string | null
@@ -800,6 +804,7 @@ export type Database = {
           authorized_shares?: number | null
           business_purpose?: string | null
           city?: string | null
+          contact_email?: string | null
           corporate_status?: string | null
           created_at?: string
           delayed_effective_filing_date?: string | null
@@ -825,6 +830,7 @@ export type Database = {
           registered_agent_state?: string | null
           registered_agent_zip?: string | null
           s_election_date?: string | null
+          salutation_name?: string | null
           scheduled_annual_meeting?: string | null
           seal_type?: string | null
           second_name_choice?: string | null
