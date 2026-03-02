@@ -82,7 +82,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const [form, setForm] = useState({
+  const defaultForm = () => ({
     meeting_date: "",
     meeting_time: "10:00 AM",
     tax_year: new Date().getFullYear().toString(),
@@ -103,6 +103,9 @@ export default function MeetingsTab({ companyId, company }: Props) {
     company_zip_at_meeting: company.zip ?? "",
   });
 
+  const [form, setForm] = useState(defaultForm());
+  const [prefilled, setPrefilled] = useState(false);
+
   const { data: meetings = [], isLoading } = useQuery({
     queryKey: ["meetings", companyId],
     queryFn: async () => {
@@ -116,9 +119,137 @@ export default function MeetingsTab({ companyId, company }: Props) {
     },
   });
 
+  // When dialog opens or meeting type changes to Annual, try to prefill from last annual meeting
+  const prefillFromLastAnnual = async () => {
+    const { data: lastAnnual } = await supabase
+      .from("meetings")
+      .select("*")
+      .eq("company_id", companyId)
+      .eq("meeting_type", "Annual Meeting")
+      .order("meeting_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (lastAnnual) {
+      setForm(prev => ({
+        ...prev,
+        // Don't copy date — leave blank for user
+        meeting_time: lastAnnual.meeting_time || prev.meeting_time,
+        meeting_location: lastAnnual.meeting_location || prev.meeting_location,
+        chairperson: lastAnnual.chairperson || "",
+        mtg_secretary: lastAnnual.mtg_secretary || "",
+        others_present: lastAnnual.others_present || "",
+        prior_mtg_date: lastAnnual.meeting_date || "",
+        next_annual_mtg: "",
+        company_name_at_meeting: lastAnnual.company_name_at_meeting || company.name,
+        company_address_at_meeting: lastAnnual.company_address_at_meeting || company.address || "",
+        company_city_at_meeting: lastAnnual.company_city_at_meeting || company.city || "",
+        company_state_at_meeting: lastAnnual.company_state_at_meeting || company.state || "",
+        company_zip_at_meeting: lastAnnual.company_zip_at_meeting || company.zip || "",
+      }));
+      setPrefilled(true);
+    } else {
+      setPrefilled(false);
+    }
+  };
+
+  const handleStartFresh = () => {
+    setForm(prev => ({
+      ...defaultForm(),
+      meeting_type: prev.meeting_type,
+      tax_year: prev.tax_year,
+    }));
+    setPrefilled(false);
+  };
+
+  const handleDialogOpen = (open: boolean) => {
+    setDialogOpen(open);
+    if (open) {
+      const fresh = defaultForm();
+      setForm(fresh);
+      setPrefilled(false);
+      // Auto-prefill for Annual Meeting
+      if (fresh.meeting_type === "Annual Meeting") {
+        prefillFromLastAnnual();
+      }
+    }
+  };
+
+  const handleMeetingTypeChange = (v: string) => {
+    setForm(p => ({ ...p, meeting_type: v, sub_type: "" }));
+    setPrefilled(false);
+    if (v === "Annual Meeting") {
+      prefillFromLastAnnual();
+    }
+  };
+
+  // Clone sub-table data from prior annual meeting (excluding vehicles/equipment)
+  const cloneSubTables = async (newMeetingId: string, priorMeetingId: string) => {
+    // Tables to clone and their key columns (excluding id, meeting_id, created_at)
+    const cloneTasks = [
+      { table: "meeting_officers", fields: ["name", "title", "salary", "bonus"] },
+      { table: "meeting_directors", fields: ["director_name"] },
+      { table: "meeting_shareholders", fields: ["shareholder_name", "common_shares", "preferred_shares", "distribution", "distribution_amount", "basis", "additional_capital_contribution"] },
+      { table: "meeting_counsel", fields: ["counsel_name", "bank_name", "accountant_name", "attorney_name", "law_firm"] },
+      { table: "meeting_authorized_signers", fields: ["signer_name", "title", "bank_name", "signer_id"] },
+      { table: "meeting_benefits", fields: ["benefit_description", "benefit_type", "provider", "plan_year", "transaction_type", "agent_administrator", "insurance_agency", "eligibility_comments", "new_plan_effective_date", "retirement_contribution"] },
+      { table: "meeting_loans", fields: ["loan_type", "loan_amount", "loan_rate", "loan_duration", "loan_date", "start_date", "end_date", "lender_name", "borrower_name", "loan_direction", "repayment_terms", "notes"] },
+      { table: "agreements", fields: ["agreement_type", "agreement_with", "agreement_date", "agreement_purpose"] },
+      { table: "meeting_other", fields: ["notes"] },
+      // Explicitly NOT cloning: meeting_vehicle_purchases, meeting_vehicle_leases, meeting_vehicle_sales, meeting_assets (equipment), meeting_lease_terminations
+    ];
+
+    for (const task of cloneTasks) {
+      const { data: rows } = await supabase
+        .from(task.table as any)
+        .select("*")
+        .eq("meeting_id", priorMeetingId);
+
+      if (rows && rows.length > 0) {
+        const newRows = rows.map((row: any) => {
+          const newRow: any = { meeting_id: newMeetingId };
+          for (const field of task.fields) {
+            if (row[field] !== undefined) newRow[field] = row[field];
+          }
+          return newRow;
+        });
+        await supabase.from(task.table as any).insert(newRows as any);
+      }
+    }
+
+    // Clone financials (one-to-one relationship)
+    const { data: priorFinancials } = await supabase
+      .from("meeting_financials")
+      .select("*")
+      .eq("meeting_id", priorMeetingId)
+      .maybeSingle();
+
+    if (priorFinancials) {
+      const { id: _id, meeting_id: _mid, created_at: _ca, updated_at: _ua, ...finData } = priorFinancials;
+      await supabase.from("meeting_financials").insert({
+        meeting_id: newMeetingId,
+        ...finData,
+      });
+    }
+  };
+
   const createMeeting = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("meetings").insert({
+      // Find most recent annual meeting for cloning (if creating Annual Meeting)
+      let priorAnnualId: string | null = null;
+      if (form.meeting_type === "Annual Meeting") {
+        const { data: lastAnnual } = await supabase
+          .from("meetings")
+          .select("id")
+          .eq("company_id", companyId)
+          .eq("meeting_type", "Annual Meeting")
+          .order("meeting_date", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        priorAnnualId = lastAnnual?.id || null;
+      }
+
+      const { data: newMeeting, error } = await supabase.from("meetings").insert({
         company_id: companyId,
         meeting_date: form.meeting_date,
         meeting_time: form.meeting_time || null,
@@ -136,13 +267,28 @@ export default function MeetingsTab({ companyId, company }: Props) {
         company_city_at_meeting: form.company_city_at_meeting || null,
         company_state_at_meeting: form.company_state_at_meeting || null,
         company_zip_at_meeting: form.company_zip_at_meeting || null,
-      });
+      }).select("id").single();
       if (error) throw error;
+
+      // Clone sub-tables if creating annual meeting with prior data
+      if (priorAnnualId && newMeeting && prefilled) {
+        await cloneSubTables(newMeeting.id, priorAnnualId);
+      }
+
+      return newMeeting;
     },
-    onSuccess: () => {
+    onSuccess: (newMeeting) => {
       queryClient.invalidateQueries({ queryKey: ["meetings", companyId] });
       setDialogOpen(false);
-      toast.success("Meeting created!");
+      if (prefilled) {
+        toast.success("Annual Meeting created with data from your last annual meeting!");
+      } else {
+        toast.success("Meeting created!");
+      }
+      // Navigate directly to the new meeting
+      if (newMeeting?.id) {
+        navigate(`/company/${companyId}/meetings/${newMeeting.id}`);
+      }
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -190,7 +336,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
               </Button>
             }
           />
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog open={dialogOpen} onOpenChange={handleDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" /> New Meeting
@@ -207,6 +353,17 @@ export default function MeetingsTab({ companyId, company }: Props) {
               }}
               className="space-y-4"
             >
+              {/* Prefilled notice */}
+              {prefilled && (
+                <div className="flex items-center justify-between rounded-md border border-primary/20 bg-primary/5 px-3 py-2">
+                  <p className="text-xs text-primary">
+                    📋 Data pre-filled from your last annual meeting — please review and update as needed.
+                  </p>
+                  <Button type="button" variant="ghost" size="sm" className="h-6 text-[10px] text-muted-foreground hover:text-destructive shrink-0 ml-2" onClick={handleStartFresh}>
+                    Start Fresh
+                  </Button>
+                </div>
+              )}
               {/* Meeting Info Section */}
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-1.5">
@@ -241,7 +398,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
                   <Label className="text-xs font-medium text-muted-foreground">Meeting Type</Label>
                   <Select
                     value={form.meeting_type}
-                    onValueChange={(v) => setForm((p) => ({ ...p, meeting_type: v, sub_type: "" }))}
+                    onValueChange={handleMeetingTypeChange}
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
