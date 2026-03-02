@@ -54,6 +54,23 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     },
   });
 
+  // Fetch all unique bank names across all user's companies for the dropdown
+  const { data: allBankNames = [] } = useQuery({
+    queryKey: ["all_bank_names"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("company_banks").select("bank_name, address, address_2, city, state, zip, phone").order("bank_name");
+      if (error) throw error;
+      // Deduplicate by bank_name
+      const seen = new Set<string>();
+      return (data || []).filter((b: any) => {
+        const key = b.bank_name?.toLowerCase().trim();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    },
+  });
+
   const { data: signers = [] } = useQuery({
     queryKey: ["bank_authorized_signers", companyId],
     queryFn: async () => {
@@ -136,7 +153,29 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const openNew = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
+  const [bankNameSearch, setBankNameSearch] = useState("");
+  const [showBankDropdown, setShowBankDropdown] = useState(false);
+
+  const filteredBankNames = allBankNames.filter((b: any) =>
+    b.bank_name.toLowerCase().includes(bankNameSearch.toLowerCase())
+  );
+
+  const selectExistingBank = (b: any) => {
+    setForm(p => ({
+      ...p,
+      bank_name: b.bank_name,
+      address: b.address || p.address,
+      address_2: b.address_2 || p.address_2,
+      city: b.city || p.city,
+      state: b.state || p.state,
+      zip: b.zip || p.zip,
+      phone: b.phone || p.phone,
+    }));
+    setShowBankDropdown(false);
+    setBankNameSearch("");
+  };
+
+  const openNew = () => { setEditing(null); setForm(emptyForm); setBankNameSearch(""); setOpen(true); };
   const openEdit = (b: any) => {
     setEditing(b);
     setForm({
@@ -144,6 +183,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
       routing_number: b.routing_number || "", contact_name: b.contact_name || "", contact_title: b.contact_title || "",
       phone: b.phone || "", address: b.address || "", address_2: (b as any).address_2 || "", city: b.city || "", state: b.state || "", zip: b.zip || "", notes: b.notes || "",
     });
+    setBankNameSearch("");
     setOpen(true);
   };
 
@@ -271,10 +311,37 @@ export default function BanksTab({ companyId }: BanksTabProps) {
 
         {/* Bank Dialog */}
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing ? "Edit" : "Add"} Bank Account</DialogTitle></DialogHeader>
             <div className="grid gap-3">
-              <div><Label className="text-xs">Bank Name *</Label><Input value={form.bank_name} onChange={e => setForm(p => ({ ...p, bank_name: e.target.value }))} /></div>
+              <div className="relative">
+                <Label className="text-xs">Bank Name *</Label>
+                <Input
+                  value={form.bank_name}
+                  onChange={e => {
+                    setForm(p => ({ ...p, bank_name: e.target.value }));
+                    setBankNameSearch(e.target.value);
+                    setShowBankDropdown(true);
+                  }}
+                  onFocus={() => { if (allBankNames.length > 0) setShowBankDropdown(true); }}
+                  onBlur={() => setTimeout(() => setShowBankDropdown(false), 200)}
+                  placeholder="Type or select from existing banks"
+                />
+                {showBankDropdown && filteredBankNames.length > 0 && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                    {filteredBankNames.map((b: any, i: number) => (
+                      <button
+                        key={i}
+                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors"
+                        onMouseDown={(e) => { e.preventDefault(); selectExistingBank(b); }}
+                      >
+                        {b.bank_name}
+                        {b.city && b.state && <span className="text-muted-foreground ml-2">— {b.city}, {b.state}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <Label className="text-xs">Account Type</Label>
@@ -301,6 +368,47 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                 <div><Label className="text-xs">Zip</Label><Input value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} /></div>
               </div>
               <div><Label className="text-xs">Notes</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
+
+              {/* Authorized Signatories section (only when editing) */}
+              {editing && (
+                <div className="border-t border-border pt-3 mt-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-xs font-semibold flex items-center gap-1.5"><PenTool className="h-3 w-3" /> Authorized Signatories</Label>
+                    <Button size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => { openNewSigner(editing.id); }}>
+                      <Plus className="h-2.5 w-2.5 mr-1" />Add
+                    </Button>
+                  </div>
+                  {(() => {
+                    const editSigners = getSignersForBank(editing.id);
+                    if (editSigners.length === 0) return (
+                      <p className="text-[10px] text-muted-foreground text-center py-2">No signatories yet</p>
+                    );
+                    return (
+                      <div className="space-y-1">
+                        {editSigners.map((s: any) => (
+                          <div key={s.id} className="flex items-center justify-between bg-muted/40 rounded px-2 py-1.5">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-xs font-medium truncate">{s.signer_name}</span>
+                              {s.title && <span className="text-[10px] text-muted-foreground">{s.title}</span>}
+                              <Badge variant={isActive(s) ? "default" : "secondary"} className="text-[9px] px-1 py-0">
+                                {isActive(s) ? "Active" : "Inactive"}
+                              </Badge>
+                            </div>
+                            <div className="flex gap-1 shrink-0">
+                              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openEditSigner(s)}>
+                                <Pencil className="h-2.5 w-2.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => delSigner.mutate(s.id)}>
+                                <Trash2 className="h-2.5 w-2.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
             <DialogFooter className="gap-2"><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={() => save.mutate()} disabled={!form.bank_name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
           </DialogContent>
