@@ -473,7 +473,7 @@ export default function IncorporationTab({ company }: Props) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Building2 className="h-3.5 w-3.5 text-primary" />
-              <CardTitle className="card-section-title">Company</CardTitle>
+              <CardTitle className="card-section-title">Company &amp; Contact Information</CardTitle>
             </div>
             <SectionPdfActions config={{
               title: "Company",
