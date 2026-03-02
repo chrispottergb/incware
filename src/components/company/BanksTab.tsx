@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useMasterFirms } from "@/hooks/useMasterDirectory";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,6 +28,7 @@ const ACCOUNT_TYPES = ["checking", "savings", "money_market", "cd", "line_of_cre
 
 export default function BanksTab({ companyId }: BanksTabProps) {
   const qc = useQueryClient();
+  const { masterFirms: masterBanks, upsertMasterFirm: upsertMasterBank } = useMasterFirms("bank");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const emptyForm = { bank_name: "", account_type: "checking", account_number: "", routing_number: "", contact_name: "", contact_title: "", phone: "", address: "", address_2: "", city: "", state: "", zip: "", notes: "" };
@@ -54,22 +56,8 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     },
   });
 
-  // Fetch all unique bank names across all user's companies for the dropdown
-  const { data: allBankNames = [] } = useQuery({
-    queryKey: ["all_bank_names"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("company_banks").select("bank_name, address, address_2, city, state, zip, phone").order("bank_name");
-      if (error) throw error;
-      // Deduplicate by bank_name
-      const seen = new Set<string>();
-      return (data || []).filter((b: any) => {
-        const key = b.bank_name?.toLowerCase().trim();
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-    },
-  });
+  // Use master directory for bank suggestions instead of querying across companies
+  const allBankNames = masterBanks;
 
   const { data: signers = [] } = useQuery({
     queryKey: ["bank_authorized_signers", companyId],
@@ -104,6 +92,13 @@ export default function BanksTab({ companyId }: BanksTabProps) {
         const { error } = await supabase.from("company_banks").insert({ ...form, company_id: companyId });
         if (error) throw error;
       }
+      // Sync to master directory
+      upsertMasterBank.mutate({
+        firm_name: form.bank_name, address: form.address, address_2: form.address_2,
+        city: form.city, state: form.state, zip: form.zip, phone: form.phone,
+        account_number: form.account_number, routing_number: form.routing_number,
+        account_type: form.account_type, contact_name: form.contact_name, contact_title: form.contact_title,
+      });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["company_banks", companyId] }); setOpen(false); toast.success("Bank saved"); },
     onError: (e: any) => toast.error(e.message),
@@ -157,19 +152,24 @@ export default function BanksTab({ companyId }: BanksTabProps) {
   const [showBankDropdown, setShowBankDropdown] = useState(false);
 
   const filteredBankNames = allBankNames.filter((b: any) =>
-    b.bank_name.toLowerCase().includes(bankNameSearch.toLowerCase())
+    (b.firm_name || b.bank_name || "").toLowerCase().includes(bankNameSearch.toLowerCase())
   );
 
   const selectExistingBank = (b: any) => {
     setForm(p => ({
       ...p,
-      bank_name: b.bank_name,
+      bank_name: b.firm_name || b.bank_name,
       address: b.address || p.address,
       address_2: b.address_2 || p.address_2,
       city: b.city || p.city,
       state: b.state || p.state,
       zip: b.zip || p.zip,
       phone: b.phone || p.phone,
+      account_number: b.account_number || p.account_number,
+      routing_number: b.routing_number || p.routing_number,
+      account_type: b.account_type || p.account_type,
+      contact_name: b.contact_name || p.contact_name,
+      contact_title: b.contact_title || p.contact_title,
     }));
     setShowBankDropdown(false);
     setBankNameSearch("");
@@ -329,13 +329,14 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                 />
                 {showBankDropdown && filteredBankNames.length > 0 && (
                   <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                    <div className="px-3 py-1 text-[10px] text-muted-foreground font-medium border-b flex items-center gap-1">📖 Master Directory</div>
                     {filteredBankNames.map((b: any, i: number) => (
                       <button
                         key={i}
                         className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors"
                         onMouseDown={(e) => { e.preventDefault(); selectExistingBank(b); }}
                       >
-                        {b.bank_name}
+                        {b.firm_name || b.bank_name}
                         {b.city && b.state && <span className="text-muted-foreground ml-2">— {b.city}, {b.state}</span>}
                       </button>
                     ))}
