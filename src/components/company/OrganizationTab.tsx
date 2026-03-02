@@ -347,59 +347,59 @@ export default function OrganizationTab({ companyId, company }: Props) {
             }}
             className="space-y-3"
           >
-            <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="field-group">
+            <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+              <div className="field-group col-span-12 sm:col-span-5">
                 <Label className="field-label">2nd Name Choice</Label>
-                <Input className="h-8 text-sm" value={filingForm.second_name_choice} onChange={(e) => setFilingForm((p) => ({ ...p, second_name_choice: e.target.value }))} />
+                <Input className="h-7 text-sm" value={filingForm.second_name_choice} onChange={(e) => setFilingForm((p) => ({ ...p, second_name_choice: e.target.value }))} />
               </div>
-              <div className="field-group">
+              <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label">Filing Date</Label>
-                <Input type="date" className="h-8 text-sm" value={filingForm.filing_date} onChange={(e) => setFilingForm((p) => ({ ...p, filing_date: e.target.value }))} />
+                <Input type="date" className="h-7 text-sm" value={filingForm.filing_date} onChange={(e) => setFilingForm((p) => ({ ...p, filing_date: e.target.value }))} />
               </div>
-              <div className="field-group">
-                <Label className="field-label">Delayed Effective Filing Date</Label>
-                <Input type="date" className="h-8 text-sm" value={filingForm.delayed_effective_filing_date} onChange={(e) => setFilingForm((p) => ({ ...p, delayed_effective_filing_date: e.target.value }))} />
+              <div className="field-group col-span-6 sm:col-span-4">
+                <Label className="field-label">Delayed Effective Date</Label>
+                <Input type="date" className="h-7 text-sm" value={filingForm.delayed_effective_filing_date} onChange={(e) => setFilingForm((p) => ({ ...p, delayed_effective_filing_date: e.target.value }))} />
               </div>
-              <div className="field-group">
+              <div className="field-group col-span-12 sm:col-span-5">
                 <Label className="field-label">Business Purpose</Label>
-                <Input className="h-8 text-sm" value={filingForm.business_purpose} onChange={(e) => setFilingForm((p) => ({ ...p, business_purpose: e.target.value }))} />
+                <Input className="h-7 text-sm" value={filingForm.business_purpose} onChange={(e) => setFilingForm((p) => ({ ...p, business_purpose: e.target.value }))} />
               </div>
-              <div className="field-group">
+              <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label">Accounting Method</Label>
                 <Select value={filingForm.accounting_method} onValueChange={(v) => setFilingForm((p) => ({ ...p, accounting_method: v }))}>
-                  <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cash basis">Cash Basis</SelectItem>
                     <SelectItem value="accrual">Accrual</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="field-group">
-                <Label className="field-label flex items-center gap-1.5">
-                  NAICS Code
+              <div className="field-group col-span-6 sm:col-span-2">
+                <Label className="field-label flex items-center gap-1">
+                  NAICS
                   <a href="https://www.naics.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </Label>
-                <Input className="h-8 text-sm" value={filingForm.naics_code} onChange={(e) => setFilingForm((p) => ({ ...p, naics_code: e.target.value }))} />
+                <Input className="h-7 text-sm" value={filingForm.naics_code} onChange={(e) => setFilingForm((p) => ({ ...p, naics_code: e.target.value }))} />
               </div>
-              <div className="field-group">
-                <Label className="field-label">First Year Annual Meeting</Label>
-                <Input type="number" className="h-8 text-sm" value={filingForm.first_year_annual_meeting} onChange={(e) => setFilingForm((p) => ({ ...p, first_year_annual_meeting: e.target.value }))} />
+              <div className="field-group col-span-6 sm:col-span-2">
+                <Label className="field-label">1st Yr Annual Mtg</Label>
+                <Input type="number" className="h-7 text-sm" value={filingForm.first_year_annual_meeting} onChange={(e) => setFilingForm((p) => ({ ...p, first_year_annual_meeting: e.target.value }))} />
               </div>
               {!isLLCType(company.entity_type) && (
                 <>
-                  <div className="field-group">
-                    <Label className="field-label">Initial # of Directors</Label>
-                    <Input type="number" className="h-8 text-sm" value={filingForm.initial_directors_count} onChange={(e) => setFilingForm((p) => ({ ...p, initial_directors_count: e.target.value }))} />
+                  <div className="field-group col-span-4 sm:col-span-2">
+                    <Label className="field-label">Init. Directors</Label>
+                    <Input type="number" className="h-7 text-sm" value={filingForm.initial_directors_count} onChange={(e) => setFilingForm((p) => ({ ...p, initial_directors_count: e.target.value }))} />
                   </div>
-                  <div className="field-group">
-                    <Label className="field-label">Max Directors Allowed</Label>
-                    <Input type="number" className="h-8 text-sm" value={filingForm.max_directors_allowed} onChange={(e) => setFilingForm((p) => ({ ...p, max_directors_allowed: e.target.value }))} />
+                  <div className="field-group col-span-4 sm:col-span-2">
+                    <Label className="field-label">Max Directors</Label>
+                    <Input type="number" className="h-7 text-sm" value={filingForm.max_directors_allowed} onChange={(e) => setFilingForm((p) => ({ ...p, max_directors_allowed: e.target.value }))} />
                   </div>
-                  <div className="field-group">
-                    <Label className="field-label">Max VPs Allowed</Label>
-                    <Input type="number" className="h-8 text-sm" value={filingForm.max_vps_allowed} onChange={(e) => setFilingForm((p) => ({ ...p, max_vps_allowed: e.target.value }))} />
+                  <div className="field-group col-span-4 sm:col-span-2">
+                    <Label className="field-label">Max VPs</Label>
+                    <Input type="number" className="h-7 text-sm" value={filingForm.max_vps_allowed} onChange={(e) => setFilingForm((p) => ({ ...p, max_vps_allowed: e.target.value }))} />
                   </div>
                 </>
               )}
