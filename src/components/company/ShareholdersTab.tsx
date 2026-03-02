@@ -231,50 +231,48 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                   {editId ? `Edit ${t.shareholder}` : `Add ${t.shareholder}`}
                 </DialogTitle>
               </DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-3">
+              <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-2">
                 <div className="field-group">
                   <Label className="field-label">{t.shareholder} Name</Label>
-                  <Input className="h-8 text-sm" value={form.name} onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))} required />
+                  <Input className="h-7 text-sm" value={form.name} onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))} required />
                 </div>
-                <div className="field-group">
-                  <Label className="field-label">Address</Label>
-                  <Input className="h-8 text-sm" value={form.address} onChange={(e) => setForm(p => ({ ...p, address: e.target.value }))} />
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Address 2</Label>
-                  <Input className="h-8 text-sm" value={form.address_2} onChange={(e) => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor, etc." />
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label">City</Label>
-                    <Input className="h-8 text-sm" value={form.city} onChange={(e) => setForm(p => ({ ...p, city: e.target.value }))} />
+                <div className="grid grid-cols-12 gap-x-2 gap-y-2">
+                  <div className="field-group col-span-7">
+                    <Label className="field-label">Address</Label>
+                    <Input className="h-7 text-sm" value={form.address} onChange={(e) => setForm(p => ({ ...p, address: e.target.value }))} />
                   </div>
-                  <div className="field-group">
+                  <div className="field-group col-span-5">
+                    <Label className="field-label">Address 2</Label>
+                    <Input className="h-7 text-sm" value={form.address_2} onChange={(e) => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit" />
+                  </div>
+                  <div className="field-group col-span-5">
+                    <Label className="field-label">City</Label>
+                    <Input className="h-7 text-sm" value={form.city} onChange={(e) => setForm(p => ({ ...p, city: e.target.value }))} />
+                  </div>
+                  <div className="field-group col-span-3">
                     <Label className="field-label">State</Label>
                     <Select value={form.state} onValueChange={(v) => setForm(p => ({ ...p, state: v }))}>
-                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
+                      <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
                       <SelectContent>{US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <div className="field-group">
+                  <div className="field-group col-span-4">
                     <Label className="field-label">Zip</Label>
-                    <Input className="h-8 text-sm" value={form.zip} onChange={(e) => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} />
+                    <Input className="h-7 text-sm" value={form.zip} onChange={(e) => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} />
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="field-group">
+                  <div className="field-group col-span-5">
                     <Label className="field-label">SSN / EIN</Label>
                     <Input
-                      className="h-8 text-sm"
+                      className="h-7 text-sm"
                       value={form.ssn_ein}
                       onChange={(e) => setForm(p => ({ ...p, ssn_ein: e.target.value }))}
-                      placeholder={editId ? "Enter new value or leave blank" : ""}
+                      placeholder={editId ? "New or blank" : ""}
                     />
                   </div>
-                  <div className="field-group">
+                  <div className="field-group col-span-4">
                     <Label className="field-label">Status</Label>
                     <Select value={form.status} onValueChange={(v) => setForm(p => ({ ...p, status: v }))}>
-                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="active">Active</SelectItem>
                         <SelectItem value="inactive">Inactive</SelectItem>

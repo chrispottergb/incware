@@ -398,11 +398,11 @@ export default function IncorporationTab({ company }: Props) {
               </div>
             </CardHeader>
             <CardContent className="space-y-3 px-4 pb-4">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="field-group">
+              <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+                <div className="field-group col-span-4">
                   <Label className="field-label">Corporate Status</Label>
                   <Select value={form.corporate_status} onValueChange={(v) => update("corporate_status", v)}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="current">Current</SelectItem>
                       <SelectItem value="delinquent">Delinquent</SelectItem>
@@ -411,13 +411,13 @@ export default function IncorporationTab({ company }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="field-group">
+                <div className="field-group col-span-4">
                   <Label className="field-label">Verification Date</Label>
-                  <DatePickerField value={form.verification_date || ""} onChange={(v) => update("verification_date", v)} />
+                  <DatePickerField value={form.verification_date || ""} onChange={(v) => update("verification_date", v)} className="h-7" />
                 </div>
-                <div className="field-group">
-                  <Label className="field-label">Annual Report Filed Year</Label>
-                  <Input type="number" className="h-8 text-sm" value={form.annual_report_year} onChange={(e) => update("annual_report_year", e.target.value)} placeholder="2024" />
+                <div className="field-group col-span-4">
+                  <Label className="field-label">Annual Report Year</Label>
+                  <Input type="number" className="h-7 text-sm" value={form.annual_report_year} onChange={(e) => update("annual_report_year", e.target.value)} placeholder="2024" />
                 </div>
               </div>
               {form.state_of_incorporation && (() => {
@@ -499,15 +499,16 @@ export default function IncorporationTab({ company }: Props) {
           </div>
         </CardHeader>
         <CardContent className="px-4 pb-4 space-y-5">
-          <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="field-group">
+          {/* Company Details - compact grid */}
+          <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+            <div className="field-group col-span-12 sm:col-span-5">
               <Label className="field-label">Company Name</Label>
-              <Input className="h-8 text-sm" value={form.name} onChange={(e) => update("name", e.target.value)} required />
+              <Input className="h-7 text-sm" value={form.name} onChange={(e) => update("name", e.target.value)} required />
             </div>
-            <div className="field-group">
+            <div className="field-group col-span-6 sm:col-span-3">
               <Label className="field-label">Entity Type</Label>
               <Select value={form.entity_type} onValueChange={(v) => update("entity_type", v)}>
-                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ENTITY_TYPES.map((t) => (
                     <SelectItem key={t} value={t}>{t}</SelectItem>
@@ -515,10 +516,10 @@ export default function IncorporationTab({ company }: Props) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="field-group">
-              <Label className="field-label">State of Incorporation</Label>
+            <div className="field-group col-span-6 sm:col-span-2">
+              <Label className="field-label">State of Inc.</Label>
               <Select value={form.state_of_incorporation} onValueChange={(v) => update("state_of_incorporation", v)}>
-                <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
                 <SelectContent>
                   {US_STATES.map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
@@ -526,84 +527,96 @@ export default function IncorporationTab({ company }: Props) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="field-group">
+            <div className="field-group col-span-6 sm:col-span-2">
+              <Label className="field-label">Status</Label>
+              <Select value={form.corporate_status} onValueChange={(v) => update("corporate_status", v)}>
+                <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current">Current</SelectItem>
+                  <SelectItem value="delinquent">Delinquent</SelectItem>
+                  <SelectItem value="dissolved">Dissolved</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="field-group col-span-6 sm:col-span-3">
               <Label className="field-label">Incorporation Date</Label>
-              <DatePickerField value={form.incorporation_date || ""} onChange={(v) => update("incorporation_date", v)} />
+              <DatePickerField value={form.incorporation_date || ""} onChange={(v) => update("incorporation_date", v)} className="h-7" />
             </div>
-            <div className="field-group">
+            <div className="field-group col-span-6 sm:col-span-3">
               <Label className="field-label">Fiscal Year End</Label>
-              <Input className="h-8 text-sm" value={form.fiscal_year_end} onChange={(e) => update("fiscal_year_end", e.target.value)} placeholder="December 31" />
+              <Input className="h-7 text-sm" value={form.fiscal_year_end} onChange={(e) => update("fiscal_year_end", e.target.value)} placeholder="December 31" />
             </div>
-            <div className="field-group">
+            <div className="field-group col-span-12 sm:col-span-4">
               <Label className="field-label">Scheduled Annual Meeting</Label>
-              <Input className="h-8 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
+              <Input className="h-7 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
             </div>
           </div>
 
-          {/* Primary Contact */}
-          <div className="border-t border-border pt-4">
-            <div className="flex items-center gap-2 mb-3">
+          {/* Primary Contact - compact */}
+          <div className="border-t border-border pt-3">
+            <div className="flex items-center gap-2 mb-2">
               <User className="h-3.5 w-3.5 text-primary" />
               <h3 className="text-sm font-semibold text-foreground">Primary Contact</h3>
             </div>
-            <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="field-group">
+            <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+              <div className="field-group col-span-12 sm:col-span-5">
                 <Label className="field-label">Full Name</Label>
-                <Input className="h-8 text-sm" value={form.contact_full_name} onChange={(e) => update("contact_full_name", e.target.value)} placeholder="First and Last Name" />
+                <Input className="h-7 text-sm" value={form.contact_full_name} onChange={(e) => update("contact_full_name", e.target.value)} placeholder="First and Last Name" />
               </div>
-              <div className="field-group">
+              <div className="field-group col-span-6 sm:col-span-2">
                 <Label className="field-label">Salutation</Label>
-                <Input className="h-8 text-sm" value={form.salutation_name} onChange={(e) => update("salutation_name", e.target.value)} placeholder='e.g. "John" or "Dr. Smith"' />
-                <p className="text-[10px] text-muted-foreground mt-0.5">Used as greeting in emails &amp; documents</p>
+                <Input className="h-7 text-sm" value={form.salutation_name} onChange={(e) => update("salutation_name", e.target.value)} placeholder='"John"' />
               </div>
-              <div className="field-group">
+              <div className="field-group col-span-12 sm:col-span-5">
                 <Label className="field-label">Email</Label>
-                <Input className="h-8 text-sm" type="email" value={form.contact_email} onChange={(e) => update("contact_email", e.target.value)} placeholder="client@example.com" />
-                <p className="text-[10px] text-muted-foreground mt-0.5">Used as the "To" in Annual Update emails</p>
+                <Input className="h-7 text-sm" type="email" value={form.contact_email} onChange={(e) => update("contact_email", e.target.value)} placeholder="client@example.com" />
               </div>
-              <div className="field-group">
+              <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label flex items-center gap-1"><Phone className="h-3 w-3" /> Main Phone</Label>
-                <Input className="h-8 text-sm" value={form.contact_phone} onChange={(e) => handlePhoneChange("contact_phone", e.target.value)} placeholder="(555) 555-5555" />
+                <Input className="h-7 text-sm" value={form.contact_phone} onChange={(e) => handlePhoneChange("contact_phone", e.target.value)} placeholder="(555) 555-5555" />
               </div>
-              <div className="field-group">
+              <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label flex items-center gap-1"><Phone className="h-3 w-3" /> Cell Phone</Label>
-                <Input className="h-8 text-sm" value={form.contact_cell} onChange={(e) => handlePhoneChange("contact_cell", e.target.value)} placeholder="(555) 555-5555" />
+                <Input className="h-7 text-sm" value={form.contact_cell} onChange={(e) => handlePhoneChange("contact_cell", e.target.value)} placeholder="(555) 555-5555" />
               </div>
-              <div className="field-group">
+              <div className="field-group col-span-12 sm:col-span-6">
                 <Label className="field-label flex items-center gap-1"><Globe className="h-3 w-3" /> Webpage</Label>
-                <Input className="h-8 text-sm" type="url" value={form.contact_webpage} onChange={(e) => update("contact_webpage", e.target.value)} placeholder="www.example.com" onBlur={(e) => { if (e.target.value) update("contact_webpage", formatWebpage(e.target.value)); }} />
-                {form.contact_webpage && (
-                  <a href={formatWebpage(form.contact_webpage)} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline mt-0.5 inline-flex items-center gap-0.5">
-                    <ExternalLink className="h-2.5 w-2.5" /> Visit site
-                  </a>
-                )}
+                <div className="flex items-center gap-2">
+                  <Input className="h-7 text-sm" type="url" value={form.contact_webpage} onChange={(e) => update("contact_webpage", e.target.value)} placeholder="www.example.com" onBlur={(e) => { if (e.target.value) update("contact_webpage", formatWebpage(e.target.value)); }} />
+                  {form.contact_webpage && (
+                    <a href={formatWebpage(form.contact_webpage)} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline shrink-0 inline-flex items-center gap-0.5">
+                      <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Company Address */}
-          <div className="border-t border-border pt-4">
-            <div className="flex items-center gap-2 mb-3">
+          {/* Company Address - compact */}
+          <div className="border-t border-border pt-3">
+            <div className="flex items-center gap-2 mb-2">
               <Building2 className="h-3.5 w-3.5 text-primary" />
               <h3 className="text-sm font-semibold text-foreground">Company Address</h3>
             </div>
-            <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="field-group sm:col-span-2 lg:col-span-3">
+            <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+              <div className="field-group col-span-12 sm:col-span-7">
                 <Label className="field-label">Address Line 1</Label>
-                <Input className="h-8 text-sm" value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="Street address" />
+                <Input className="h-7 text-sm" value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="Street address" />
               </div>
-              <div className="field-group sm:col-span-2 lg:col-span-3">
+              <div className="field-group col-span-12 sm:col-span-5">
                 <Label className="field-label">Address Line 2</Label>
-                <Input className="h-8 text-sm" value={form.address_2} onChange={(e) => update("address_2", e.target.value)} placeholder="Suite, Unit, Floor, etc." />
+                <Input className="h-7 text-sm" value={form.address_2} onChange={(e) => update("address_2", e.target.value)} placeholder="Suite, Unit, Floor" />
               </div>
-              <div className="field-group">
+              <div className="field-group col-span-6 sm:col-span-4">
                 <Label className="field-label">City</Label>
-                <Input className="h-8 text-sm" value={form.city} onChange={(e) => update("city", e.target.value)} />
+                <Input className="h-7 text-sm" value={form.city} onChange={(e) => update("city", e.target.value)} />
               </div>
-              <div className="field-group">
+              <div className="field-group col-span-3 sm:col-span-2">
                 <Label className="field-label">State</Label>
                 <Select value={form.state} onValueChange={(v) => update("state", v)}>
-                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select state" /></SelectTrigger>
+                  <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
                   <SelectContent>
                     {US_STATES.map((s) => (
                       <SelectItem key={s} value={s}>{s}</SelectItem>
@@ -611,17 +624,13 @@ export default function IncorporationTab({ company }: Props) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="field-group">
-                <Label className="field-label">Zip Code</Label>
-                <Input className="h-8 text-sm" value={form.zip} onChange={(e) => { const v = e.target.value.replace(/[^\d-]/g, "").slice(0, 10); update("zip", v); handleCompanyZip(v); }} placeholder="55555 or 55555-1234" />
+              <div className="field-group col-span-3 sm:col-span-2">
+                <Label className="field-label">Zip</Label>
+                <Input className="h-7 text-sm" value={form.zip} onChange={(e) => { const v = e.target.value.replace(/[^\d-]/g, "").slice(0, 10); update("zip", v); handleCompanyZip(v); }} placeholder="55555" />
               </div>
-              <div className="field-group">
-                <Label className="field-label">Country</Label>
-                <Input className="h-8 text-sm" value="United States" disabled />
-              </div>
-              <div className="field-group">
+              <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label">Company Phone</Label>
-                <Input className="h-8 text-sm" value={form.phone} onChange={(e) => update("phone", e.target.value)} placeholder="(555) 555-5555" />
+                <Input className="h-7 text-sm" value={form.phone} onChange={(e) => handlePhoneChange("phone", e.target.value)} placeholder="(555) 555-5555" />
               </div>
             </div>
           </div>
@@ -886,28 +895,29 @@ export default function IncorporationTab({ company }: Props) {
             }} />
           </div>
         </CardHeader>
-        <CardContent className="grid gap-x-4 gap-y-3 sm:grid-cols-2 px-4 pb-4">
-          <div className="field-group sm:col-span-2">
-            <Label className="field-label">Agent Name</Label>
-            <Input className="h-8 text-sm" value={form.registered_agent_name} onChange={(e) => update("registered_agent_name", e.target.value)} />
-          </div>
-          <div className="field-group sm:col-span-2">
-            <Label className="field-label">Address</Label>
-            <Input className="h-8 text-sm" value={form.registered_agent_address} onChange={(e) => update("registered_agent_address", e.target.value)} />
-          </div>
-          <div className="field-group sm:col-span-2">
-            <Label className="field-label">Address 2</Label>
-            <Input className="h-8 text-sm" value={form.registered_agent_address_2} onChange={(e) => update("registered_agent_address_2", e.target.value)} placeholder="Suite, Unit, Floor, etc." />
-          </div>
-          <div className="field-group">
-            <Label className="field-label">City</Label>
-            <Input className="h-8 text-sm" value={form.registered_agent_city} onChange={(e) => update("registered_agent_city", e.target.value)} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="field-group">
+        <CardContent className="px-4 pb-4">
+          <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+            <div className="field-group col-span-12 sm:col-span-5">
+              <Label className="field-label">Agent Name</Label>
+              <Input className="h-7 text-sm" value={form.registered_agent_name} onChange={(e) => update("registered_agent_name", e.target.value)} />
+            </div>
+            <div className="field-group col-span-12 sm:col-span-7" />
+            <div className="field-group col-span-12 sm:col-span-7">
+              <Label className="field-label">Address</Label>
+              <Input className="h-7 text-sm" value={form.registered_agent_address} onChange={(e) => update("registered_agent_address", e.target.value)} />
+            </div>
+            <div className="field-group col-span-12 sm:col-span-5">
+              <Label className="field-label">Address 2</Label>
+              <Input className="h-7 text-sm" value={form.registered_agent_address_2} onChange={(e) => update("registered_agent_address_2", e.target.value)} placeholder="Suite, Unit, Floor" />
+            </div>
+            <div className="field-group col-span-6 sm:col-span-4">
+              <Label className="field-label">City</Label>
+              <Input className="h-7 text-sm" value={form.registered_agent_city} onChange={(e) => update("registered_agent_city", e.target.value)} />
+            </div>
+            <div className="field-group col-span-3 sm:col-span-2">
               <Label className="field-label">State</Label>
               <Select value={form.registered_agent_state} onValueChange={(v) => update("registered_agent_state", v)}>
-                <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
+                <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
                 <SelectContent>
                   {US_STATES.map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
@@ -915,9 +925,9 @@ export default function IncorporationTab({ company }: Props) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="field-group">
+            <div className="field-group col-span-3 sm:col-span-2">
               <Label className="field-label">Zip</Label>
-              <Input className="h-8 text-sm" value={form.registered_agent_zip} onChange={(e) => { update("registered_agent_zip", e.target.value); handleAgentZip(e.target.value); }} />
+              <Input className="h-7 text-sm" value={form.registered_agent_zip} onChange={(e) => { update("registered_agent_zip", e.target.value); handleAgentZip(e.target.value); }} />
             </div>
           </div>
         </CardContent>

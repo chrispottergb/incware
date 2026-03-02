@@ -343,32 +343,28 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div>
+              <div className="grid grid-cols-12 gap-x-2 gap-y-2">
+                <div className="col-span-4">
                   <Label className="text-xs">Account Type</Label>
                   <Select value={form.account_type} onValueChange={v => setForm(p => ({ ...p, account_type: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent className="bg-popover z-50">
                       {ACCOUNT_TYPES.map(t => <SelectItem key={t} value={t}>{formatType(t)}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-                <div><Label className="text-xs">Account #</Label><Input value={form.account_number} onChange={e => setForm(p => ({ ...p, account_number: e.target.value }))} /></div>
-                <div><Label className="text-xs">Routing #</Label><Input value={form.routing_number} onChange={e => setForm(p => ({ ...p, routing_number: e.target.value }))} /></div>
+                <div className="col-span-4"><Label className="text-xs">Account #</Label><Input className="h-7 text-sm" value={form.account_number} onChange={e => setForm(p => ({ ...p, account_number: e.target.value }))} /></div>
+                <div className="col-span-4"><Label className="text-xs">Routing #</Label><Input className="h-7 text-sm" value={form.routing_number} onChange={e => setForm(p => ({ ...p, routing_number: e.target.value }))} /></div>
+                <div className="col-span-5"><Label className="text-xs">Contact Name</Label><Input className="h-7 text-sm" value={form.contact_name} onChange={e => setForm(p => ({ ...p, contact_name: e.target.value }))} /></div>
+                <div className="col-span-4"><Label className="text-xs">Contact Title</Label><Input className="h-7 text-sm" value={form.contact_title} onChange={e => setForm(p => ({ ...p, contact_title: e.target.value }))} /></div>
+                <div className="col-span-3"><Label className="text-xs">Phone</Label><Input className="h-7 text-sm" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
+                <div className="col-span-7"><Label className="text-xs">Address</Label><Input className="h-7 text-sm" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
+                <div className="col-span-5"><Label className="text-xs">Address 2</Label><Input className="h-7 text-sm" value={form.address_2} onChange={e => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit" /></div>
+                <div className="col-span-5"><Label className="text-xs">City</Label><Input className="h-7 text-sm" value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
+                <div className="col-span-3"><Label className="text-xs">State</Label><Input className="h-7 text-sm" value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
+                <div className="col-span-4"><Label className="text-xs">Zip</Label><Input className="h-7 text-sm" value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-xs">Contact Name</Label><Input value={form.contact_name} onChange={e => setForm(p => ({ ...p, contact_name: e.target.value }))} /></div>
-                <div><Label className="text-xs">Contact Title</Label><Input value={form.contact_title} onChange={e => setForm(p => ({ ...p, contact_title: e.target.value }))} /></div>
-              </div>
-              <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
-              <div><Label className="text-xs">Address</Label><Input value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
-              <div><Label className="text-xs">Address 2</Label><Input value={form.address_2} onChange={e => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor, etc." /></div>
-              <div className="grid grid-cols-3 gap-2">
-                <div><Label className="text-xs">City</Label><Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
-                <div><Label className="text-xs">State</Label><Input value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
-                <div><Label className="text-xs">Zip</Label><Input value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} /></div>
-              </div>
-              <div><Label className="text-xs">Notes</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
+              <div><Label className="text-xs">Notes</Label><Textarea className="text-sm min-h-[50px]" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
 
               {/* Authorized Signatories section (only when editing) */}
               {editing && (
