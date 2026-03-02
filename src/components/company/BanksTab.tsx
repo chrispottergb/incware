@@ -13,7 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Pencil, Trash2, Landmark, PenTool, CalendarIcon } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Plus, Pencil, Trash2, Landmark, PenTool, CalendarIcon, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -24,221 +25,20 @@ interface BanksTabProps {
 
 const ACCOUNT_TYPES = ["checking", "savings", "money_market", "cd", "line_of_credit", "loan", "other"];
 
-// ─── Authorized Signers Section ───
-function AuthorizedSignersSection({ companyId, banks }: { companyId: string; banks: any[] }) {
-  const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ signer_name: "", title: "", bank_id: "", effective_date: new Date().toISOString().split("T")[0], end_date: "" });
-
-  const { data: signers = [] } = useQuery({
-    queryKey: ["bank_authorized_signers", companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("bank_authorized_signers")
-        .select("*, company_banks(bank_name)")
-        .eq("company_id", companyId)
-        .order("signer_name");
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const save = useMutation({
-    mutationFn: async () => {
-      const payload: any = {
-        signer_name: form.signer_name,
-        title: form.title || null,
-        bank_id: form.bank_id,
-        effective_date: form.effective_date || null,
-        end_date: form.end_date || null,
-      };
-      if (editingId) {
-        const { error } = await supabase.from("bank_authorized_signers" as any).update(payload as any).eq("id", editingId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("bank_authorized_signers" as any).insert({ ...payload, company_id: companyId } as any);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["bank_authorized_signers", companyId] });
-      setOpen(false);
-      resetSignerForm();
-      toast.success(editingId ? "Signatory updated" : "Authorized signatory added");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const del = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("bank_authorized_signers").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["bank_authorized_signers", companyId] });
-      toast.success("Signatory removed");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const resetSignerForm = () => {
-    setForm({ signer_name: "", title: "", bank_id: banks.length === 1 ? banks[0].id : "", effective_date: new Date().toISOString().split("T")[0], end_date: "" });
-    setEditingId(null);
-  };
-
-  const openNew = () => {
-    resetSignerForm();
-    if (banks.length === 1) setForm(p => ({ ...p, bank_id: banks[0].id }));
-    setOpen(true);
-  };
-
-  const openEditSigner = (s: any) => {
-    setEditingId(s.id);
-    setForm({
-      signer_name: s.signer_name || "", title: s.title || "", bank_id: s.bank_id || "",
-      effective_date: s.effective_date || "", end_date: s.end_date || "",
-    });
-    setOpen(true);
-  };
-
-  const isActive = (s: any) => {
-    const today = new Date().toISOString().split("T")[0];
-    const eff = s.effective_date;
-    const end = s.end_date;
-    if (!eff) return true;
-    if (eff > today) return false;
-    if (end && end < today) return false;
-    return true;
-  };
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          <PenTool className="h-4 w-4" /> Authorized Signatories
-        </CardTitle>
-        <Button size="sm" variant="outline" onClick={openNew} className="h-7 text-xs" disabled={banks.length === 0}>
-          <Plus className="h-3 w-3 mr-1" />Add Signatory
-        </Button>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead className="hidden sm:table-cell">Title</TableHead>
-              <TableHead>Bank</TableHead>
-              <TableHead className="hidden md:table-cell">Effective</TableHead>
-              <TableHead className="hidden md:table-cell">End</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-12" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {signers.map((s: any) => (
-              <TableRow key={s.id}>
-                <TableCell className="font-medium text-xs">{s.signer_name}</TableCell>
-                <TableCell className="hidden sm:table-cell text-xs">{s.title}</TableCell>
-                <TableCell className="text-xs">{s.company_banks?.bank_name}</TableCell>
-                <TableCell className="hidden md:table-cell text-xs">{s.effective_date ? new Date(s.effective_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
-                <TableCell className="hidden md:table-cell text-xs">{s.end_date ? new Date(s.end_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
-                <TableCell>
-                  <Badge variant={isActive(s) ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
-                    {isActive(s) ? "Active" : "Inactive"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditSigner(s)}>
-                      <Pencil className="h-3 w-3" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(s.id)}>
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {signers.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-6">
-                  {banks.length === 0 ? "Add a bank account first" : "No authorized signatories yet"}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{editingId ? "Edit" : "Add"} Authorized Signatory</DialogTitle></DialogHeader>
-          <div className="grid gap-3">
-            <div>
-              <Label className="text-xs">Bank Account *</Label>
-              <Select value={form.bank_id} onValueChange={v => setForm(p => ({ ...p, bank_id: v }))}>
-                <SelectTrigger className="bg-popover"><SelectValue placeholder="Select bank account" /></SelectTrigger>
-                <SelectContent className="bg-popover z-50">
-                  {banks.map((b: any) => (
-                    <SelectItem key={b.id} value={b.id}>{b.bank_name} ({b.account_type?.replace(/_/g, " ")})</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Signatory Name *</Label><Input value={form.signer_name} onChange={e => setForm(p => ({ ...p, signer_name: e.target.value }))} /></div>
-              <div><Label className="text-xs">Title</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. President, Treasurer" /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label className="text-xs">Effective Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal text-xs", !form.effective_date && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-2 h-3 w-3" />
-                      {form.effective_date ? format(new Date(form.effective_date + "T00:00:00"), "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={form.effective_date ? new Date(form.effective_date + "T00:00:00") : undefined} onSelect={d => setForm(p => ({ ...p, effective_date: d ? d.toISOString().split("T")[0] : "" }))} initialFocus className="p-3 pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div>
-                <Label className="text-xs">End Date (optional)</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal text-xs", !form.end_date && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-2 h-3 w-3" />
-                      {form.end_date ? format(new Date(form.end_date + "T00:00:00"), "PPP") : "Still active"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={form.end_date ? new Date(form.end_date + "T00:00:00") : undefined} onSelect={d => setForm(p => ({ ...p, end_date: d ? d.toISOString().split("T")[0] : "" }))} initialFocus className="p-3 pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={() => save.mutate()} disabled={!form.signer_name.trim() || !form.bank_id || save.isPending}>
-              {save.isPending ? "Saving…" : editingId ? "Save Changes" : "Add Signatory"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
-  );
-}
-
-// ─── Main BanksTab ───
 export default function BanksTab({ companyId }: BanksTabProps) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const emptyForm = { bank_name: "", account_type: "checking", account_number: "", routing_number: "", contact_name: "", contact_title: "", phone: "", address: "", address_2: "", city: "", state: "", zip: "", notes: "" };
   const [form, setForm] = useState(emptyForm);
+
+  // Signer dialog state
+  const [signerOpen, setSignerOpen] = useState(false);
+  const [signerEditingId, setSignerEditingId] = useState<string | null>(null);
+  const [signerForm, setSignerForm] = useState({ signer_name: "", title: "", bank_id: "", effective_date: new Date().toISOString().split("T")[0], end_date: "" });
+
+  // Track which bank rows are expanded
+  const [expandedBanks, setExpandedBanks] = useState<Record<string, boolean>>({});
 
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
@@ -254,6 +54,30 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     },
   });
 
+  const { data: signers = [] } = useQuery({
+    queryKey: ["bank_authorized_signers", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("bank_authorized_signers")
+        .select("*")
+        .eq("company_id", companyId)
+        .order("signer_name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const getSignersForBank = (bankId: string) => signers.filter((s: any) => s.bank_id === bankId);
+
+  const isActive = (s: any) => {
+    const today = new Date().toISOString().split("T")[0];
+    if (!s.effective_date) return true;
+    if (s.effective_date > today) return false;
+    if (s.end_date && s.end_date < today) return false;
+    return true;
+  };
+
+  // Bank CRUD
   const save = useMutation({
     mutationFn: async () => {
       if (editing) {
@@ -274,6 +98,44 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Signer CRUD
+  const saveSigner = useMutation({
+    mutationFn: async () => {
+      const payload: any = {
+        signer_name: signerForm.signer_name,
+        title: signerForm.title || null,
+        bank_id: signerForm.bank_id,
+        effective_date: signerForm.effective_date || null,
+        end_date: signerForm.end_date || null,
+      };
+      if (signerEditingId) {
+        const { error } = await supabase.from("bank_authorized_signers" as any).update(payload as any).eq("id", signerEditingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("bank_authorized_signers" as any).insert({ ...payload, company_id: companyId } as any);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bank_authorized_signers", companyId] });
+      setSignerOpen(false);
+      toast.success(signerEditingId ? "Signatory updated" : "Authorized signatory added");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const delSigner = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("bank_authorized_signers").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bank_authorized_signers", companyId] });
+      toast.success("Signatory removed");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const openNew = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
   const openEdit = (b: any) => {
     setEditing(b);
@@ -285,49 +147,129 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     setOpen(true);
   };
 
+  const openNewSigner = (bankId: string) => {
+    setSignerEditingId(null);
+    setSignerForm({ signer_name: "", title: "", bank_id: bankId, effective_date: new Date().toISOString().split("T")[0], end_date: "" });
+    setSignerOpen(true);
+  };
+
+  const openEditSigner = (s: any) => {
+    setSignerEditingId(s.id);
+    setSignerForm({
+      signer_name: s.signer_name || "", title: s.title || "", bank_id: s.bank_id || "",
+      effective_date: s.effective_date || "", end_date: s.end_date || "",
+    });
+    setSignerOpen(true);
+  };
+
   const formatType = (t: string) => t.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+  const toggleBank = (bankId: string) => {
+    setExpandedBanks(prev => ({ ...prev, [bankId]: !prev[bankId] }));
+  };
 
   return (
     <div className="space-y-5">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2"><Landmark className="h-4 w-4" /> Bank Accounts</CardTitle>
+          <CardTitle className="text-sm font-semibold flex items-center gap-2"><Landmark className="h-4 w-4" /> Bank Accounts & Authorized Signatories</CardTitle>
           <Button size="sm" variant="outline" onClick={openNew} className="h-7 text-xs"><Plus className="h-3 w-3 mr-1" />Add Bank</Button>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Bank Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="hidden sm:table-cell">Account #</TableHead>
-                <TableHead className="hidden md:table-cell">Routing #</TableHead>
-                <TableHead className="hidden lg:table-cell">Contact</TableHead>
-                <TableHead className="hidden md:table-cell">Phone</TableHead>
-                <TableHead className="w-16" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {banks.map((b: any) => (
-                <TableRow key={b.id}>
-                  <TableCell className="font-medium text-xs">{b.bank_name}</TableCell>
-                  <TableCell className="text-xs">{formatType(b.account_type || "")}</TableCell>
-                  <TableCell className="hidden sm:table-cell text-xs font-mono">{b.account_number ? `••••${b.account_number.slice(-4)}` : ""}</TableCell>
-                  <TableCell className="hidden md:table-cell text-xs font-mono">{b.routing_number}</TableCell>
-                  <TableCell className="hidden lg:table-cell text-xs">{[b.contact_name, b.contact_title].filter(Boolean).join(", ")}</TableCell>
-                  <TableCell className="hidden md:table-cell text-xs">{b.phone}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(b)}><Pencil className="h-3 w-3" /></Button>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(b.id)}><Trash2 className="h-3 w-3" /></Button>
+          {banks.length === 0 ? (
+            <div className="text-center text-xs text-muted-foreground py-6">No bank accounts yet</div>
+          ) : (
+            <div className="divide-y divide-border">
+              {banks.map((b: any) => {
+                const bankSigners = getSignersForBank(b.id);
+                const isExpanded = expandedBanks[b.id] ?? false;
+                return (
+                  <Collapsible key={b.id} open={isExpanded} onOpenChange={() => toggleBank(b.id)}>
+                    <div className="flex items-center px-4 py-2 hover:bg-muted/50 transition-colors">
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 mr-2 shrink-0">
+                          <ChevronRight className={cn("h-3.5 w-3.5 transition-transform duration-200", isExpanded && "rotate-90")} />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleTrigger asChild>
+                        <button className="flex-1 text-left flex items-center gap-3 min-w-0">
+                          <span className="font-medium text-xs truncate">{b.bank_name}</span>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">{formatType(b.account_type || "")}</Badge>
+                          {b.account_number && <span className="text-[10px] text-muted-foreground font-mono hidden sm:inline">••••{b.account_number.slice(-4)}</span>}
+                          <span className="text-[10px] text-muted-foreground hidden md:inline">{b.routing_number}</span>
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0 ml-auto mr-2">
+                            <PenTool className="h-2.5 w-2.5 mr-1" />{bankSigners.length}
+                          </Badge>
+                        </button>
+                      </CollapsibleTrigger>
+                      <div className="flex gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openNewSigner(b.id); }}>
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openEdit(b); }}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => { e.stopPropagation(); del.mutate(b.id); }}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {banks.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-6">No bank accounts yet</TableCell></TableRow>}
-            </TableBody>
-          </Table>
+                    <CollapsibleContent>
+                      <div className="bg-muted/30 border-t border-border">
+                        {bankSigners.length === 0 ? (
+                          <div className="px-8 py-4 text-center text-xs text-muted-foreground">
+                            No authorized signatories yet.{" "}
+                            <button className="text-primary hover:underline" onClick={() => openNewSigner(b.id)}>Add one</button>
+                          </div>
+                        ) : (
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="hover:bg-transparent">
+                                <TableHead className="pl-10 text-xs">Signatory Name</TableHead>
+                                <TableHead className="text-xs hidden sm:table-cell">Title</TableHead>
+                                <TableHead className="text-xs hidden md:table-cell">Effective</TableHead>
+                                <TableHead className="text-xs hidden md:table-cell">End</TableHead>
+                                <TableHead className="text-xs">Status</TableHead>
+                                <TableHead className="w-16" />
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {bankSigners.map((s: any) => (
+                                <TableRow key={s.id} className="hover:bg-muted/50">
+                                  <TableCell className="pl-10 font-medium text-xs">{s.signer_name}</TableCell>
+                                  <TableCell className="hidden sm:table-cell text-xs">{s.title}</TableCell>
+                                  <TableCell className="hidden md:table-cell text-xs">{s.effective_date ? new Date(s.effective_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
+                                  <TableCell className="hidden md:table-cell text-xs">{s.end_date ? new Date(s.end_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
+                                  <TableCell>
+                                    <Badge variant={isActive(s) ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
+                                      {isActive(s) ? "Active" : "Inactive"}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex gap-1">
+                                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditSigner(s)}>
+                                        <Pencil className="h-3 w-3" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => delSigner.mutate(s.id)}>
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
+
+        {/* Bank Dialog */}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="max-w-lg">
             <DialogHeader><DialogTitle>{editing ? "Edit" : "Add"} Bank Account</DialogTitle></DialogHeader>
@@ -363,9 +305,67 @@ export default function BanksTab({ companyId }: BanksTabProps) {
             <DialogFooter className="gap-2"><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={() => save.mutate()} disabled={!form.bank_name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
           </DialogContent>
         </Dialog>
-      </Card>
 
-      <AuthorizedSignersSection companyId={companyId} banks={banks} />
+        {/* Signer Dialog */}
+        <Dialog open={signerOpen} onOpenChange={setSignerOpen}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>{signerEditingId ? "Edit" : "Add"} Authorized Signatory</DialogTitle></DialogHeader>
+            <div className="grid gap-3">
+              <div>
+                <Label className="text-xs">Bank Account *</Label>
+                <Select value={signerForm.bank_id} onValueChange={v => setSignerForm(p => ({ ...p, bank_id: v }))}>
+                  <SelectTrigger className="bg-popover"><SelectValue placeholder="Select bank account" /></SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {banks.map((b: any) => (
+                      <SelectItem key={b.id} value={b.id}>{b.bank_name} ({formatType(b.account_type || "")})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div><Label className="text-xs">Signatory Name *</Label><Input value={signerForm.signer_name} onChange={e => setSignerForm(p => ({ ...p, signer_name: e.target.value }))} /></div>
+                <div><Label className="text-xs">Title</Label><Input value={signerForm.title} onChange={e => setSignerForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. President, Treasurer" /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">Effective Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal text-xs", !signerForm.effective_date && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-3 w-3" />
+                        {signerForm.effective_date ? format(new Date(signerForm.effective_date + "T00:00:00"), "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={signerForm.effective_date ? new Date(signerForm.effective_date + "T00:00:00") : undefined} onSelect={d => setSignerForm(p => ({ ...p, effective_date: d ? d.toISOString().split("T")[0] : "" }))} initialFocus className="p-3 pointer-events-auto" />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div>
+                  <Label className="text-xs">End Date (optional)</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal text-xs", !signerForm.end_date && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-3 w-3" />
+                        {signerForm.end_date ? format(new Date(signerForm.end_date + "T00:00:00"), "PPP") : "Still active"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={signerForm.end_date ? new Date(signerForm.end_date + "T00:00:00") : undefined} onSelect={d => setSignerForm(p => ({ ...p, end_date: d ? d.toISOString().split("T")[0] : "" }))} initialFocus className="p-3 pointer-events-auto" />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setSignerOpen(false)}>Cancel</Button>
+              <Button onClick={() => saveSigner.mutate()} disabled={!signerForm.signer_name.trim() || !signerForm.bank_id || saveSigner.isPending}>
+                {saveSigner.isPending ? "Saving…" : signerEditingId ? "Save Changes" : "Add Signatory"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </Card>
     </div>
   );
 }
