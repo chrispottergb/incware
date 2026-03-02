@@ -115,7 +115,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 onClick={() => setMobileOpen(false)}
                 className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
                   active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
                     : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                 }`}
               >
@@ -151,7 +151,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   }}
                   className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors text-left ${
                     isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
                       : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                   }`}
                 >
@@ -196,7 +196,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     onClick={() => setMobileOpen(false)}
                     className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
                       active
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
                         : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                     }`}
                   >
