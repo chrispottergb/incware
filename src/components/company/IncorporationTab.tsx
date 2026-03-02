@@ -23,7 +23,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Loader2, Save, Shield, Building2, Share2, UserCheck, ChevronDown, Users, Heart, RefreshCw, ExternalLink } from "lucide-react";
+import { Loader2, Save, Shield, Building2, Share2, UserCheck, ChevronDown, Users, Heart, RefreshCw, ExternalLink, User, Phone, Globe } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import WIComplianceChecklist from "./WIComplianceChecklist";
@@ -211,10 +211,33 @@ export default function IncorporationTab({ company }: Props) {
     state: company.state ?? "",
     zip: company.zip ?? "",
     phone: company.phone ?? "",
+    contact_full_name: (company as any).contact_full_name ?? "",
     contact_email: (company as any).contact_email ?? "",
     salutation_name: (company as any).salutation_name ?? "",
+    contact_phone: (company as any).contact_phone ?? "",
+    contact_cell: (company as any).contact_cell ?? "",
+    contact_webpage: (company as any).contact_webpage ?? "",
     authorized_binders: (company as any).authorized_binders ?? "",
   });
+
+  // Phone formatting helper
+  const formatPhone = (value: string): string => {
+    const digits = value.replace(/\D/g, "").slice(0, 10);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  };
+
+  const handlePhoneChange = (field: string, value: string) => {
+    update(field, formatPhone(value));
+  };
+
+  const formatWebpage = (value: string): string => {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+  };
   const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(isLLCType(company.entity_type) ? !!company.s_election_date : false);
 
   const update = (field: string, value: string | boolean) =>
@@ -320,8 +343,12 @@ export default function IncorporationTab({ company }: Props) {
           state: form.state || null,
           zip: form.zip || null,
           phone: form.phone || null,
+          contact_full_name: form.contact_full_name || null,
           contact_email: form.contact_email || null,
           salutation_name: form.salutation_name || null,
+          contact_phone: form.contact_phone || null,
+          contact_cell: form.contact_cell || null,
+          contact_webpage: form.contact_webpage ? formatWebpage(form.contact_webpage) : null,
           authorized_binders: form.authorized_binders || null,
         } as any)
         .eq("id", company.id);
@@ -440,16 +467,16 @@ export default function IncorporationTab({ company }: Props) {
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Company Information */}
+      {/* Company */}
       <Card>
         <CardHeader className="pb-2 pt-4 px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Building2 className="h-3.5 w-3.5 text-primary" />
-              <CardTitle className="card-section-title">Company Information</CardTitle>
+              <CardTitle className="card-section-title">Company</CardTitle>
             </div>
             <SectionPdfActions config={{
-              title: "Company Information",
+              title: "Company",
               companyName: company.name,
               fields: [
                 { label: "Company Name", value: form.name },
@@ -462,44 +489,87 @@ export default function IncorporationTab({ company }: Props) {
             }} />
           </div>
         </CardHeader>
-        <CardContent className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 px-4 pb-4">
-          <div className="field-group">
-            <Label className="field-label">Company Name</Label>
-            <Input className="h-8 text-sm" value={form.name} onChange={(e) => update("name", e.target.value)} required />
+        <CardContent className="px-4 pb-4 space-y-5">
+          <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="field-group">
+              <Label className="field-label">Company Name</Label>
+              <Input className="h-8 text-sm" value={form.name} onChange={(e) => update("name", e.target.value)} required />
+            </div>
+            <div className="field-group">
+              <Label className="field-label">Entity Type</Label>
+              <Select value={form.entity_type} onValueChange={(v) => update("entity_type", v)}>
+                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ENTITY_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="field-group">
+              <Label className="field-label">State of Incorporation</Label>
+              <Select value={form.state_of_incorporation} onValueChange={(v) => update("state_of_incorporation", v)}>
+                <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {US_STATES.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="field-group">
+              <Label className="field-label">Incorporation Date</Label>
+              <DatePickerField value={form.incorporation_date || ""} onChange={(v) => update("incorporation_date", v)} />
+            </div>
+            <div className="field-group">
+              <Label className="field-label">Fiscal Year End</Label>
+              <Input className="h-8 text-sm" value={form.fiscal_year_end} onChange={(e) => update("fiscal_year_end", e.target.value)} placeholder="December 31" />
+            </div>
+            <div className="field-group">
+              <Label className="field-label">Scheduled Annual Meeting</Label>
+              <Input className="h-8 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
+            </div>
           </div>
-          <div className="field-group">
-            <Label className="field-label">Entity Type</Label>
-            <Select value={form.entity_type} onValueChange={(v) => update("entity_type", v)}>
-              <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {ENTITY_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="field-group">
-            <Label className="field-label">State of Incorporation</Label>
-            <Select value={form.state_of_incorporation} onValueChange={(v) => update("state_of_incorporation", v)}>
-              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>
-                {US_STATES.map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="field-group">
-            <Label className="field-label">Incorporation Date</Label>
-            <DatePickerField value={form.incorporation_date || ""} onChange={(v) => update("incorporation_date", v)} />
-          </div>
-          <div className="field-group">
-            <Label className="field-label">Fiscal Year End</Label>
-            <Input className="h-8 text-sm" value={form.fiscal_year_end} onChange={(e) => update("fiscal_year_end", e.target.value)} placeholder="December 31" />
-          </div>
-          <div className="field-group">
-            <Label className="field-label">Scheduled Annual Meeting</Label>
-            <Input className="h-8 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
+
+          {/* Primary Contact */}
+          <div className="border-t border-border pt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <User className="h-3.5 w-3.5 text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">Primary Contact</h3>
+            </div>
+            <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="field-group">
+                <Label className="field-label">Full Name</Label>
+                <Input className="h-8 text-sm" value={form.contact_full_name} onChange={(e) => update("contact_full_name", e.target.value)} placeholder="First and Last Name" />
+              </div>
+              <div className="field-group">
+                <Label className="field-label">Salutation</Label>
+                <Input className="h-8 text-sm" value={form.salutation_name} onChange={(e) => update("salutation_name", e.target.value)} placeholder='e.g. "John" or "Dr. Smith"' />
+                <p className="text-[10px] text-muted-foreground mt-0.5">Used as greeting in emails &amp; documents</p>
+              </div>
+              <div className="field-group">
+                <Label className="field-label">Email</Label>
+                <Input className="h-8 text-sm" type="email" value={form.contact_email} onChange={(e) => update("contact_email", e.target.value)} placeholder="client@example.com" />
+                <p className="text-[10px] text-muted-foreground mt-0.5">Used as the "To" in Annual Update emails</p>
+              </div>
+              <div className="field-group">
+                <Label className="field-label flex items-center gap-1"><Phone className="h-3 w-3" /> Main Phone</Label>
+                <Input className="h-8 text-sm" value={form.contact_phone} onChange={(e) => handlePhoneChange("contact_phone", e.target.value)} placeholder="(555) 555-5555" />
+              </div>
+              <div className="field-group">
+                <Label className="field-label flex items-center gap-1"><Phone className="h-3 w-3" /> Cell Phone</Label>
+                <Input className="h-8 text-sm" value={form.contact_cell} onChange={(e) => handlePhoneChange("contact_cell", e.target.value)} placeholder="(555) 555-5555" />
+              </div>
+              <div className="field-group">
+                <Label className="field-label flex items-center gap-1"><Globe className="h-3 w-3" /> Webpage</Label>
+                <Input className="h-8 text-sm" type="url" value={form.contact_webpage} onChange={(e) => update("contact_webpage", e.target.value)} placeholder="www.example.com" onBlur={(e) => { if (e.target.value) update("contact_webpage", formatWebpage(e.target.value)); }} />
+                {form.contact_webpage && (
+                  <a href={formatWebpage(form.contact_webpage)} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline mt-0.5 inline-flex items-center gap-0.5">
+                    <ExternalLink className="h-2.5 w-2.5" /> Visit site
+                  </a>
+                )}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -817,8 +887,6 @@ export default function IncorporationTab({ company }: Props) {
                 { label: "State", value: form.state },
                 { label: "Zip", value: form.zip },
                 { label: "Phone", value: form.phone },
-                { label: "Contact Email", value: form.contact_email },
-                { label: "Salutation Name", value: form.salutation_name },
               ],
             }} />
           </div>
@@ -856,16 +924,6 @@ export default function IncorporationTab({ company }: Props) {
           <div className="field-group">
             <Label className="field-label">Phone</Label>
             <Input className="h-8 text-sm" value={form.phone} onChange={(e) => update("phone", e.target.value)} />
-          </div>
-          <div className="field-group">
-            <Label className="field-label">Contact Email</Label>
-            <Input className="h-8 text-sm" type="email" placeholder="client@example.com" value={form.contact_email} onChange={(e) => update("contact_email", e.target.value)} />
-            <p className="text-[10px] text-muted-foreground mt-0.5">Used for Annual Update emails</p>
-          </div>
-          <div className="field-group">
-            <Label className="field-label">Salutation / Preferred Name</Label>
-            <Input className="h-8 text-sm" placeholder="e.g. John" value={form.salutation_name} onChange={(e) => update("salutation_name", e.target.value)} />
-            <p className="text-[10px] text-muted-foreground mt-0.5">Used as greeting in client correspondence</p>
           </div>
         </CardContent>
       </Card>

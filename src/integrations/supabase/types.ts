@@ -708,7 +708,11 @@ export type Database = {
           authorized_shares: number | null
           business_purpose: string | null
           city: string | null
+          contact_cell: string | null
           contact_email: string | null
+          contact_full_name: string | null
+          contact_phone: string | null
+          contact_webpage: string | null
           corporate_status: string | null
           created_at: string
           delayed_effective_filing_date: string | null
@@ -756,7 +760,11 @@ export type Database = {
           authorized_shares?: number | null
           business_purpose?: string | null
           city?: string | null
+          contact_cell?: string | null
           contact_email?: string | null
+          contact_full_name?: string | null
+          contact_phone?: string | null
+          contact_webpage?: string | null
           corporate_status?: string | null
           created_at?: string
           delayed_effective_filing_date?: string | null
@@ -804,7 +812,11 @@ export type Database = {
           authorized_shares?: number | null
           business_purpose?: string | null
           city?: string | null
+          contact_cell?: string | null
           contact_email?: string | null
+          contact_full_name?: string | null
+          contact_phone?: string | null
+          contact_webpage?: string | null
           corporate_status?: string | null
           created_at?: string
           delayed_effective_filing_date?: string | null
