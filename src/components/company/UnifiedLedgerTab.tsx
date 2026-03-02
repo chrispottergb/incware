@@ -161,14 +161,63 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
 
   const [assets, setAssets] = useState<{ description: string; value: string }[]>([]);
 
+  const getNextCertNumber = async (): Promise<number> => {
+    const { data } = await supabase
+      .from("stock_certificates")
+      .select("certificate_number")
+      .eq("company_id", companyId)
+      .order("certificate_number", { ascending: false })
+      .limit(1);
+    return ((data?.[0] as any)?.certificate_number || 0) + 1;
+  };
+
+  const createCertificate = async (certNumber: number, shareholderId: string | null, numShares: number, shareClass: string, issueDate: string) => {
+    const { data, error } = await supabase.from("stock_certificates").insert({
+      company_id: companyId,
+      certificate_number: certNumber,
+      shareholder_id: shareholderId,
+      num_shares: numShares,
+      share_class: shareClass,
+      issue_date: issueDate,
+      status: "active",
+    }).select("id").single();
+    if (error) throw error;
+    return data;
+  };
+
+  const ISSUANCE_SET_LOCAL = new Set([
+    "initial_contribution", "additional_contribution", "membership_issuance",
+    "Issuance", "initial_issuance", "authorized_issuance", "subscription_issuance",
+    "consideration_issuance", "share_dividend", "fractional_shares", "preemptive_rights",
+    "treasury_reissue", "reissuance", "Capital Contribution", "Initial Contribution",
+  ]);
+  const TRANSFER_SET_LOCAL = new Set(["transfer", "interest_transfer", "interest_assignment", "gift", "share_exchange"]);
+
   const add = useMutation({
     mutationFn: async () => {
+      const txType = form.transaction_type;
+      const numShares = parseInt(form.num_shares) || 0;
+      let issuedCertNum: number | null = form.issued_certificate_number ? parseInt(form.issued_certificate_number) : null;
+      let surrenderedCertNum: number | null = form.surrendered_certificate_number ? parseInt(form.surrendered_certificate_number) : null;
+      let certId: string | null = null;
+
+      // Auto-issue certificate for issuance/transfer/reissuance types
+      if (!issuedCertNum && (ISSUANCE_SET_LOCAL.has(txType) || TRANSFER_SET_LOCAL.has(txType))) {
+        const nextNum = await getNextCertNumber();
+        const shareholderId = TRANSFER_SET_LOCAL.has(txType)
+          ? (shareholders.find(s => s.name === form.to_shareholder)?.id || form.shareholder_id || null)
+          : (form.shareholder_id || null);
+        const cert = await createCertificate(nextNum, shareholderId, numShares, form.share_class, form.transaction_date);
+        issuedCertNum = nextNum;
+        certId = cert.id;
+      }
+
       const { data: txn, error } = await supabase.from("share_transactions").insert({
         company_id: companyId,
-        transaction_type: form.transaction_type,
+        transaction_type: txType,
         shareholder_id: form.shareholder_id || null,
         share_class: form.share_class,
-        num_shares: parseInt(form.num_shares) || 0,
+        num_shares: numShares,
         price_per_share: form.price_per_share ? parseFloat(form.price_per_share) : null,
         total_consideration: form.total_consideration ? parseFloat(form.total_consideration) : null,
         consideration_type: form.consideration_type,
@@ -177,8 +226,9 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
         to_shareholder: form.to_shareholder || null,
         notes: form.notes || null,
         par_value: null,
-        issued_certificate_number: form.issued_certificate_number ? parseInt(form.issued_certificate_number) : null,
-        surrendered_certificate_number: form.surrendered_certificate_number ? parseInt(form.surrendered_certificate_number) : null,
+        issued_certificate_number: issuedCertNum,
+        surrendered_certificate_number: surrenderedCertNum,
+        certificate_id: certId,
       } as any).select("id").single();
       if (error) throw error;
 
@@ -193,6 +243,7 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] });
       setDialog(false);
       resetForm();
       toast.success("Transaction recorded!");
