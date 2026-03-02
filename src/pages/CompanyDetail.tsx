@@ -122,9 +122,10 @@ export default function CompanyDetail() {
         { value: "record-book", label: "Record Book" },
       ];
     }
+    const isCorp = entityType === "Corporation" || entityType === "S-Corp";
     const tabs = [
       { value: "incorporation", label: "Incorporation Info" },
-      { value: "organization", label: "Organizational Info" },
+      ...(!isCorp ? [{ value: "organization", label: "Organizational Info" }] : []),
       { value: "meetings", label: "Meetings" },
       { value: "shareholders", label: getTerminology(entityType).shareholdersTab },
       { value: "timeline", label: "Timeline" },
