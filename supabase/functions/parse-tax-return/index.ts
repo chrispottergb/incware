@@ -323,16 +323,25 @@ Rules:
 
       // Add shareholders to company
       if (extracted.shareholders?.length > 0) {
+        const encryptionKey = Deno.env.get("SSN_ENCRYPTION_KEY");
         for (const s of extracted.shareholders) {
-          await admin.from("shareholders").insert({
+          const { data: newShareholder } = await admin.from("shareholders").insert({
             company_id: companyId,
             name: s.name,
-            ssn_ein: s.ssn_ein || null,
             address: s.address || null,
             city: s.city || null,
             state: s.state || null,
             zip: s.zip || null,
-          });
+          }).select("id").single();
+
+          // Encrypt SSN/EIN if provided
+          if (newShareholder && s.ssn_ein && encryptionKey) {
+            await admin.rpc("encrypt_shareholder_ssn", {
+              p_shareholder_id: newShareholder.id,
+              p_ssn_ein: s.ssn_ein,
+              p_encryption_key: encryptionKey,
+            });
+          }
         }
       }
 
