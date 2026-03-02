@@ -10,24 +10,68 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, Pencil, Trash2, Building, Scale, Calculator } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Plus, Pencil, Trash2, Building, Scale, Calculator, ChevronDown, ChevronRight, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface CounselTabProps {
   companyId: string;
 }
 
-// ─── Attorney Firms Section ───
-function AttorneyFirmsSection({ companyId }: { companyId: string }) {
-  const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ firm_name: "", address: "", address_2: "", city: "", state: "", zip: "", phone: "", email: "", website: "" });
-
+// ─── Firm Dialog (shared for both attorney and accountant firms) ───
+function FirmDialog({
+  open, onOpenChange, editing, form, setForm, onSave, isPending, type,
+}: {
+  open: boolean; onOpenChange: (v: boolean) => void; editing: any;
+  form: any; setForm: (fn: (prev: any) => any) => void;
+  onSave: () => void; isPending: boolean; type: "Attorney" | "Accountant";
+}) {
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
-  }, []);
+  }, [setForm]);
   const { handleZipChange } = useZipLookup(handleZipResult);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>{editing ? "Edit" : "Add New"} {type} Firm</DialogTitle></DialogHeader>
+        <div className="grid gap-3">
+          <div><Label className="text-xs">Firm Name *</Label><Input value={form.firm_name} onChange={e => setForm(p => ({ ...p, firm_name: e.target.value }))} /></div>
+          <div><Label className="text-xs">Address</Label><Input value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
+          <div><Label className="text-xs">Address 2</Label><Input value={form.address_2} onChange={e => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor, etc." /></div>
+          <div className="grid grid-cols-3 gap-2">
+            <div><Label className="text-xs">City</Label><Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
+            <div><Label className="text-xs">State</Label><Input value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
+            <div><Label className="text-xs">Zip</Label><Input value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
+            <div><Label className="text-xs">Email</Label><Input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
+          </div>
+          <div><Label className="text-xs">Website</Label><Input value={form.website} onChange={e => setForm(p => ({ ...p, website: e.target.value }))} /></div>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={onSave} disabled={!form.firm_name.trim() || isPending}>{isPending ? "Saving…" : "Save"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const emptyFirmForm = () => ({ firm_name: "", address: "", address_2: "", city: "", state: "", zip: "", phone: "", email: "", website: "" });
+
+// ─── Attorney Firms + Nested Attorneys ───
+function AttorneySection({ companyId }: { companyId: string }) {
+  const qc = useQueryClient();
+  const [firmDialogOpen, setFirmDialogOpen] = useState(false);
+  const [editingFirm, setEditingFirm] = useState<any>(null);
+  const [firmForm, setFirmForm] = useState(emptyFirmForm());
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<any>(null);
+  const [contactForm, setContactForm] = useState({ attorney_name: "", title: "", bar_number: "", specialty: "", phone: "", email: "", notes: "" });
+  const [contactFirmId, setContactFirmId] = useState<string | null>(null);
+  const [expandedFirms, setExpandedFirms] = useState<Set<string>>(new Set());
 
   const { data: firms = [] } = useQuery({
     queryKey: ["attorney_firms", companyId],
@@ -38,89 +82,6 @@ function AttorneyFirmsSection({ companyId }: { companyId: string }) {
     },
   });
 
-  const save = useMutation({
-    mutationFn: async () => {
-      if (editing) {
-        const { error } = await supabase.from("attorney_firms").update({ ...form }).eq("id", editing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("attorney_firms").insert({ ...form, company_id: companyId });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["attorney_firms", companyId] }); setOpen(false); toast.success("Attorney firm saved"); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const del = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("attorney_firms").delete().eq("id", id); if (error) throw error; },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["attorney_firms", companyId] }); toast.success("Firm deleted"); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const openNew = () => { setEditing(null); setForm({ firm_name: "", address: "", address_2: "", city: "", state: "", zip: "", phone: "", email: "", website: "" }); setOpen(true); };
-  const openEdit = (f: any) => { setEditing(f); setForm({ firm_name: f.firm_name, address: f.address || "", address_2: f.address_2 || "", city: f.city || "", state: f.state || "", zip: f.zip || "", phone: f.phone || "", email: f.email || "", website: f.website || "" }); setOpen(true); };
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2"><Building className="h-4 w-4" /> Attorney Firms</CardTitle>
-        <Button size="sm" variant="outline" onClick={openNew} className="h-7 text-xs"><Plus className="h-3 w-3 mr-1" />Add Firm</Button>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader><TableRow><TableHead>Firm Name</TableHead><TableHead className="hidden sm:table-cell">City/State</TableHead><TableHead className="hidden md:table-cell">Phone</TableHead><TableHead className="hidden md:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow></TableHeader>
-          <TableBody>
-            {firms.map((f: any) => (
-              <TableRow key={f.id}>
-                <TableCell className="font-medium text-xs">{f.firm_name}</TableCell>
-                <TableCell className="hidden sm:table-cell text-xs">{[f.city, f.state].filter(Boolean).join(", ")}</TableCell>
-                <TableCell className="hidden md:table-cell text-xs">{f.phone}</TableCell>
-                <TableCell className="hidden md:table-cell text-xs">{f.email}</TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(f)}><Pencil className="h-3 w-3" /></Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(f.id)}><Trash2 className="h-3 w-3" /></Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {firms.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No attorney firms yet</TableCell></TableRow>}
-          </TableBody>
-        </Table>
-      </CardContent>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{editing ? "Edit" : "Add"} Attorney Firm</DialogTitle></DialogHeader>
-          <div className="grid gap-3">
-            <div><Label className="text-xs">Firm Name *</Label><Input value={form.firm_name} onChange={e => setForm(p => ({ ...p, firm_name: e.target.value }))} /></div>
-            <div><Label className="text-xs">Address</Label><Input value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
-            <div><Label className="text-xs">Address 2</Label><Input value={form.address_2} onChange={e => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor, etc." /></div>
-            <div className="grid grid-cols-3 gap-2">
-              <div><Label className="text-xs">City</Label><Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
-              <div><Label className="text-xs">State</Label><Input value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
-              <div><Label className="text-xs">Zip</Label><Input value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
-              <div><Label className="text-xs">Email</Label><Input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
-            </div>
-            <div><Label className="text-xs">Website</Label><Input value={form.website} onChange={e => setForm(p => ({ ...p, website: e.target.value }))} /></div>
-          </div>
-          <DialogFooter className="gap-2"><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={() => save.mutate()} disabled={!form.firm_name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
-  );
-}
-
-// ─── Attorneys Section ───
-function AttorneysSection({ companyId }: { companyId: string }) {
-  const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ attorney_name: "", title: "", firm_id: "", bar_number: "", specialty: "", phone: "", email: "", notes: "" });
-
   const { data: attorneys = [] } = useQuery({
     queryKey: ["attorneys", companyId],
     queryFn: async () => {
@@ -130,114 +91,213 @@ function AttorneysSection({ companyId }: { companyId: string }) {
     },
   });
 
-  const { data: firms = [] } = useQuery({
-    queryKey: ["attorney_firms", companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("attorney_firms").select("id, firm_name").eq("company_id", companyId).order("firm_name");
-      if (error) throw error;
-      return data;
+  const saveFirm = useMutation({
+    mutationFn: async () => {
+      if (editingFirm) {
+        const { error } = await supabase.from("attorney_firms").update({ ...firmForm }).eq("id", editingFirm.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("attorney_firms").insert({ ...firmForm, company_id: companyId });
+        if (error) throw error;
+      }
     },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["attorney_firms", companyId] }); setFirmDialogOpen(false); toast.success("Attorney firm saved"); },
+    onError: (e: any) => toast.error(e.message),
   });
 
-  const save = useMutation({
+  const delFirm = useMutation({
+    mutationFn: async (id: string) => { const { error } = await supabase.from("attorney_firms").delete().eq("id", id); if (error) throw error; },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["attorney_firms", companyId] }); qc.invalidateQueries({ queryKey: ["attorneys", companyId] }); toast.success("Firm deleted"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const saveContact = useMutation({
     mutationFn: async () => {
-      const payload = { ...form, firm_id: form.firm_id || null };
-      if (editing) {
-        const { error } = await supabase.from("attorneys").update(payload).eq("id", editing.id);
+      const payload = { ...contactForm, firm_id: contactFirmId };
+      if (editingContact) {
+        const { error } = await supabase.from("attorneys").update(payload).eq("id", editingContact.id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("attorneys").insert({ ...payload, company_id: companyId });
         if (error) throw error;
       }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["attorneys", companyId] }); setOpen(false); toast.success("Attorney saved"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["attorneys", companyId] }); setContactDialogOpen(false); toast.success("Attorney saved"); },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const del = useMutation({
+  const delContact = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from("attorneys").delete().eq("id", id); if (error) throw error; },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["attorneys", companyId] }); toast.success("Attorney deleted"); },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const openNew = () => { setEditing(null); setForm({ attorney_name: "", title: "", firm_id: "", bar_number: "", specialty: "", phone: "", email: "", notes: "" }); setOpen(true); };
-  const openEdit = (a: any) => { setEditing(a); setForm({ attorney_name: a.attorney_name, title: a.title || "", firm_id: a.firm_id || "", bar_number: a.bar_number || "", specialty: a.specialty || "", phone: a.phone || "", email: a.email || "", notes: a.notes || "" }); setOpen(true); };
+  const openNewFirm = () => { setEditingFirm(null); setFirmForm(emptyFirmForm()); setFirmDialogOpen(true); };
+  const openEditFirm = (f: any) => { setEditingFirm(f); setFirmForm({ firm_name: f.firm_name, address: f.address || "", address_2: f.address_2 || "", city: f.city || "", state: f.state || "", zip: f.zip || "", phone: f.phone || "", email: f.email || "", website: f.website || "" }); setFirmDialogOpen(true); };
+
+  const openNewContact = (firmId: string) => { setEditingContact(null); setContactFirmId(firmId); setContactForm({ attorney_name: "", title: "", bar_number: "", specialty: "", phone: "", email: "", notes: "" }); setContactDialogOpen(true); };
+  const openEditContact = (a: any) => { setEditingContact(a); setContactFirmId(a.firm_id); setContactForm({ attorney_name: a.attorney_name, title: a.title || "", bar_number: a.bar_number || "", specialty: a.specialty || "", phone: a.phone || "", email: a.email || "", notes: a.notes || "" }); setContactDialogOpen(true); };
+
+  const toggleFirm = (id: string) => {
+    setExpandedFirms(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const getAttorneysForFirm = (firmId: string) => attorneys.filter((a: any) => a.firm_id === firmId);
+  const unassignedAttorneys = attorneys.filter((a: any) => !a.firm_id);
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2"><Scale className="h-4 w-4" /> Attorneys</CardTitle>
-        <Button size="sm" variant="outline" onClick={openNew} className="h-7 text-xs"><Plus className="h-3 w-3 mr-1" />Add Attorney</Button>
+        <CardTitle className="text-sm font-semibold flex items-center gap-2"><Scale className="h-4 w-4" /> Attorney Firms & Attorneys</CardTitle>
+        <Button size="sm" variant="outline" onClick={openNewFirm} className="h-7 text-xs"><Plus className="h-3 w-3 mr-1" />Add Firm</Button>
       </CardHeader>
       <CardContent className="p-0">
-        <Table>
-          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead className="hidden sm:table-cell">Title</TableHead><TableHead className="hidden sm:table-cell">Firm</TableHead><TableHead className="hidden md:table-cell">Bar #</TableHead><TableHead className="hidden lg:table-cell">Phone</TableHead><TableHead className="hidden lg:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow></TableHeader>
-          <TableBody>
-            {attorneys.map((a: any) => (
-              <TableRow key={a.id}>
-                <TableCell className="font-medium text-xs">{a.attorney_name}</TableCell>
-                <TableCell className="hidden sm:table-cell text-xs">{a.title}</TableCell>
-                <TableCell className="hidden sm:table-cell text-xs">{a.attorney_firms?.firm_name}</TableCell>
-                <TableCell className="hidden md:table-cell text-xs">{a.bar_number}</TableCell>
-                <TableCell className="hidden lg:table-cell text-xs">{a.phone}</TableCell>
-                <TableCell className="hidden lg:table-cell text-xs">{a.email}</TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(a)}><Pencil className="h-3 w-3" /></Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(a.id)}><Trash2 className="h-3 w-3" /></Button>
+        {firms.length === 0 && unassignedAttorneys.length === 0 && (
+          <div className="text-center text-xs text-muted-foreground py-6">No attorney firms yet. Add a firm to get started.</div>
+        )}
+        {firms.map((f: any) => {
+          const firmAttorneys = getAttorneysForFirm(f.id);
+          const isExpanded = expandedFirms.has(f.id);
+          return (
+            <Collapsible key={f.id} open={isExpanded} onOpenChange={() => toggleFirm(f.id)}>
+              <div className="border-b last:border-b-0">
+                <div className="flex items-center justify-between px-4 py-2 hover:bg-muted/50">
+                  <CollapsibleTrigger asChild>
+                    <button className="flex items-center gap-2 text-left flex-1 min-w-0">
+                      {isExpanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+                      <Building className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <span className="text-xs font-medium truncate">{f.firm_name}</span>
+                      <span className="text-[10px] text-muted-foreground ml-1">({firmAttorneys.length} attorney{firmAttorneys.length !== 1 ? "s" : ""})</span>
+                      {f.city && f.state && <span className="text-[10px] text-muted-foreground ml-2 hidden sm:inline">· {f.city}, {f.state}</span>}
+                    </button>
+                  </CollapsibleTrigger>
+                  <div className="flex gap-1 shrink-0 ml-2">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openNewContact(f.id); }}><Plus className="h-3 w-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openEditFirm(f); }}><Pencil className="h-3 w-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => { e.stopPropagation(); delFirm.mutate(f.id); }}><Trash2 className="h-3 w-3" /></Button>
                   </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {attorneys.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-6">No attorneys yet</TableCell></TableRow>}
-          </TableBody>
-        </Table>
+                </div>
+                <CollapsibleContent>
+                  <div className="bg-muted/30 border-t">
+                    {firmAttorneys.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow><TableHead className="pl-10">Name</TableHead><TableHead className="hidden sm:table-cell">Title</TableHead><TableHead className="hidden md:table-cell">Bar #</TableHead><TableHead className="hidden lg:table-cell">Phone</TableHead><TableHead className="hidden lg:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {firmAttorneys.map((a: any) => (
+                            <TableRow key={a.id}>
+                              <TableCell className="font-medium text-xs pl-10">{a.attorney_name}</TableCell>
+                              <TableCell className="hidden sm:table-cell text-xs">{a.title}</TableCell>
+                              <TableCell className="hidden md:table-cell text-xs">{a.bar_number}</TableCell>
+                              <TableCell className="hidden lg:table-cell text-xs">{a.phone}</TableCell>
+                              <TableCell className="hidden lg:table-cell text-xs">{a.email}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditContact(a)}><Pencil className="h-3 w-3" /></Button>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => delContact.mutate(a.id)}><Trash2 className="h-3 w-3" /></Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center text-[11px] text-muted-foreground py-4">
+                        No attorneys in this firm.{" "}
+                        <button className="text-primary underline" onClick={() => openNewContact(f.id)}>Add one</button>
+                      </div>
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
+          );
+        })}
+        {/* Unassigned attorneys */}
+        {unassignedAttorneys.length > 0 && (
+          <div className="border-t">
+            <div className="px-4 py-2 text-xs font-medium text-muted-foreground bg-muted/20">Unassigned Attorneys</div>
+            <Table>
+              <TableBody>
+                {unassignedAttorneys.map((a: any) => (
+                  <TableRow key={a.id}>
+                    <TableCell className="font-medium text-xs pl-4">{a.attorney_name}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-xs">{a.title}</TableCell>
+                    <TableCell className="hidden md:table-cell text-xs">{a.bar_number}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-xs">{a.phone}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditContact(a)}><Pencil className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => delContact.mutate(a.id)}><Trash2 className="h-3 w-3" /></Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </CardContent>
-      <Dialog open={open} onOpenChange={setOpen}>
+
+      <FirmDialog open={firmDialogOpen} onOpenChange={setFirmDialogOpen} editing={editingFirm} form={firmForm} setForm={setFirmForm} onSave={() => saveFirm.mutate()} isPending={saveFirm.isPending} type="Attorney" />
+
+      {/* Contact Dialog */}
+      <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editing ? "Edit" : "Add"} Attorney</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingContact ? "Edit" : "Add"} Attorney</DialogTitle></DialogHeader>
           <div className="grid gap-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Attorney Name *</Label><Input value={form.attorney_name} onChange={e => setForm(p => ({ ...p, attorney_name: e.target.value }))} /></div>
-              <div><Label className="text-xs">Title</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Partner, Associate" /></div>
-            </div>
             <div>
               <Label className="text-xs">Firm</Label>
-              <Select value={form.firm_id} onValueChange={v => setForm(p => ({ ...p, firm_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Select firm (optional)" /></SelectTrigger>
-                <SelectContent>
-                  {firms.map((f: any) => <SelectItem key={f.id} value={f.id}>{f.firm_name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2 items-center">
+                <Select value={contactFirmId || ""} onValueChange={v => setContactFirmId(v || null)}>
+                  <SelectTrigger className="flex-1"><SelectValue placeholder="Select firm" /></SelectTrigger>
+                  <SelectContent>
+                    {firms.map((f: any) => <SelectItem key={f.id} value={f.id}>{f.firm_name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {contactFirmId && <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setContactFirmId(null)}><X className="h-3 w-3" /></Button>}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Bar Number</Label><Input value={form.bar_number} onChange={e => setForm(p => ({ ...p, bar_number: e.target.value }))} /></div>
-              <div><Label className="text-xs">Specialty</Label><Input value={form.specialty} onChange={e => setForm(p => ({ ...p, specialty: e.target.value }))} /></div>
+              <div><Label className="text-xs">Attorney Name *</Label><Input value={contactForm.attorney_name} onChange={e => setContactForm(p => ({ ...p, attorney_name: e.target.value }))} /></div>
+              <div><Label className="text-xs">Title</Label><Input value={contactForm.title} onChange={e => setContactForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Partner, Associate" /></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
-              <div><Label className="text-xs">Email</Label><Input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
+              <div><Label className="text-xs">Bar Number</Label><Input value={contactForm.bar_number} onChange={e => setContactForm(p => ({ ...p, bar_number: e.target.value }))} /></div>
+              <div><Label className="text-xs">Specialty</Label><Input value={contactForm.specialty} onChange={e => setContactForm(p => ({ ...p, specialty: e.target.value }))} /></div>
             </div>
-            <div><Label className="text-xs">Notes</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
+            <div className="grid grid-cols-2 gap-2">
+              <div><Label className="text-xs">Phone</Label><Input value={contactForm.phone} onChange={e => setContactForm(p => ({ ...p, phone: e.target.value }))} /></div>
+              <div><Label className="text-xs">Email</Label><Input value={contactForm.email} onChange={e => setContactForm(p => ({ ...p, email: e.target.value }))} /></div>
+            </div>
+            <div><Label className="text-xs">Notes</Label><Textarea value={contactForm.notes} onChange={e => setContactForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
           </div>
-          <DialogFooter className="gap-2"><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={() => save.mutate()} disabled={!form.attorney_name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setContactDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => saveContact.mutate()} disabled={!contactForm.attorney_name.trim() || saveContact.isPending}>{saveContact.isPending ? "Saving…" : "Save"}</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
   );
 }
 
-// ─── Accountant Firms Section ───
-function AccountantFirmsSection({ companyId }: { companyId: string }) {
+// ─── Accountant Firms + Nested Accountants ───
+function AccountantSection({ companyId }: { companyId: string }) {
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ firm_name: "", address: "", address_2: "", city: "", state: "", zip: "", phone: "", email: "", website: "" });
-
-  const handleZipResult = useCallback((result: { city: string; state: string }) => {
-    setForm(prev => ({ ...prev, city: result.city, state: result.state }));
-  }, []);
-  const { handleZipChange } = useZipLookup(handleZipResult);
+  const [firmDialogOpen, setFirmDialogOpen] = useState(false);
+  const [editingFirm, setEditingFirm] = useState<any>(null);
+  const [firmForm, setFirmForm] = useState(emptyFirmForm());
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<any>(null);
+  const [contactForm, setContactForm] = useState({ accountant_name: "", title: "", cpa_number: "", specialty: "", phone: "", email: "", notes: "" });
+  const [contactFirmId, setContactFirmId] = useState<string | null>(null);
+  const [expandedFirms, setExpandedFirms] = useState<Set<string>>(new Set());
 
   const { data: firms = [] } = useQuery({
     queryKey: ["accountant_firms", companyId],
@@ -248,89 +308,6 @@ function AccountantFirmsSection({ companyId }: { companyId: string }) {
     },
   });
 
-  const save = useMutation({
-    mutationFn: async () => {
-      if (editing) {
-        const { error } = await supabase.from("accountant_firms").update({ ...form }).eq("id", editing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("accountant_firms").insert({ ...form, company_id: companyId });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["accountant_firms", companyId] }); setOpen(false); toast.success("Accountant firm saved"); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const del = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("accountant_firms").delete().eq("id", id); if (error) throw error; },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["accountant_firms", companyId] }); toast.success("Firm deleted"); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const openNew = () => { setEditing(null); setForm({ firm_name: "", address: "", address_2: "", city: "", state: "", zip: "", phone: "", email: "", website: "" }); setOpen(true); };
-  const openEdit = (f: any) => { setEditing(f); setForm({ firm_name: f.firm_name, address: f.address || "", address_2: f.address_2 || "", city: f.city || "", state: f.state || "", zip: f.zip || "", phone: f.phone || "", email: f.email || "", website: f.website || "" }); setOpen(true); };
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2"><Building className="h-4 w-4" /> Accountant / CPA Firms</CardTitle>
-        <Button size="sm" variant="outline" onClick={openNew} className="h-7 text-xs"><Plus className="h-3 w-3 mr-1" />Add Firm</Button>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader><TableRow><TableHead>Firm Name</TableHead><TableHead className="hidden sm:table-cell">City/State</TableHead><TableHead className="hidden md:table-cell">Phone</TableHead><TableHead className="hidden md:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow></TableHeader>
-          <TableBody>
-            {firms.map((f: any) => (
-              <TableRow key={f.id}>
-                <TableCell className="font-medium text-xs">{f.firm_name}</TableCell>
-                <TableCell className="hidden sm:table-cell text-xs">{[f.city, f.state].filter(Boolean).join(", ")}</TableCell>
-                <TableCell className="hidden md:table-cell text-xs">{f.phone}</TableCell>
-                <TableCell className="hidden md:table-cell text-xs">{f.email}</TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(f)}><Pencil className="h-3 w-3" /></Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(f.id)}><Trash2 className="h-3 w-3" /></Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {firms.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No accountant firms yet</TableCell></TableRow>}
-          </TableBody>
-        </Table>
-      </CardContent>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{editing ? "Edit" : "Add"} Accountant Firm</DialogTitle></DialogHeader>
-          <div className="grid gap-3">
-            <div><Label className="text-xs">Firm Name *</Label><Input value={form.firm_name} onChange={e => setForm(p => ({ ...p, firm_name: e.target.value }))} /></div>
-            <div><Label className="text-xs">Address</Label><Input value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
-            <div><Label className="text-xs">Address 2</Label><Input value={form.address_2} onChange={e => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor, etc." /></div>
-            <div className="grid grid-cols-3 gap-2">
-              <div><Label className="text-xs">City</Label><Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
-              <div><Label className="text-xs">State</Label><Input value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
-              <div><Label className="text-xs">Zip</Label><Input value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
-              <div><Label className="text-xs">Email</Label><Input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
-            </div>
-            <div><Label className="text-xs">Website</Label><Input value={form.website} onChange={e => setForm(p => ({ ...p, website: e.target.value }))} /></div>
-          </div>
-          <DialogFooter className="gap-2"><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={() => save.mutate()} disabled={!form.firm_name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
-  );
-}
-
-// ─── Accountants Section ───
-function AccountantsSection({ companyId }: { companyId: string }) {
-  const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ accountant_name: "", title: "", firm_id: "", cpa_number: "", specialty: "", phone: "", email: "", notes: "" });
-
   const { data: accountants = [] } = useQuery({
     queryKey: ["accountants", companyId],
     queryFn: async () => {
@@ -340,97 +317,196 @@ function AccountantsSection({ companyId }: { companyId: string }) {
     },
   });
 
-  const { data: firms = [] } = useQuery({
-    queryKey: ["accountant_firms", companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("accountant_firms").select("id, firm_name").eq("company_id", companyId).order("firm_name");
-      if (error) throw error;
-      return data;
+  const saveFirm = useMutation({
+    mutationFn: async () => {
+      if (editingFirm) {
+        const { error } = await supabase.from("accountant_firms").update({ ...firmForm }).eq("id", editingFirm.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("accountant_firms").insert({ ...firmForm, company_id: companyId });
+        if (error) throw error;
+      }
     },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["accountant_firms", companyId] }); setFirmDialogOpen(false); toast.success("Accountant firm saved"); },
+    onError: (e: any) => toast.error(e.message),
   });
 
-  const save = useMutation({
+  const delFirm = useMutation({
+    mutationFn: async (id: string) => { const { error } = await supabase.from("accountant_firms").delete().eq("id", id); if (error) throw error; },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["accountant_firms", companyId] }); qc.invalidateQueries({ queryKey: ["accountants", companyId] }); toast.success("Firm deleted"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const saveContact = useMutation({
     mutationFn: async () => {
-      const payload = { ...form, firm_id: form.firm_id || null };
-      if (editing) {
-        const { error } = await supabase.from("accountants").update(payload).eq("id", editing.id);
+      const payload = { ...contactForm, firm_id: contactFirmId };
+      if (editingContact) {
+        const { error } = await supabase.from("accountants").update(payload).eq("id", editingContact.id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("accountants").insert({ ...payload, company_id: companyId });
         if (error) throw error;
       }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["accountants", companyId] }); setOpen(false); toast.success("Accountant saved"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["accountants", companyId] }); setContactDialogOpen(false); toast.success("Accountant saved"); },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const del = useMutation({
+  const delContact = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from("accountants").delete().eq("id", id); if (error) throw error; },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["accountants", companyId] }); toast.success("Accountant deleted"); },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const openNew = () => { setEditing(null); setForm({ accountant_name: "", title: "", firm_id: "", cpa_number: "", specialty: "", phone: "", email: "", notes: "" }); setOpen(true); };
-  const openEdit = (a: any) => { setEditing(a); setForm({ accountant_name: a.accountant_name, title: a.title || "", firm_id: a.firm_id || "", cpa_number: a.cpa_number || "", specialty: a.specialty || "", phone: a.phone || "", email: a.email || "", notes: a.notes || "" }); setOpen(true); };
+  const openNewFirm = () => { setEditingFirm(null); setFirmForm(emptyFirmForm()); setFirmDialogOpen(true); };
+  const openEditFirm = (f: any) => { setEditingFirm(f); setFirmForm({ firm_name: f.firm_name, address: f.address || "", address_2: f.address_2 || "", city: f.city || "", state: f.state || "", zip: f.zip || "", phone: f.phone || "", email: f.email || "", website: f.website || "" }); setFirmDialogOpen(true); };
+
+  const openNewContact = (firmId: string) => { setEditingContact(null); setContactFirmId(firmId); setContactForm({ accountant_name: "", title: "", cpa_number: "", specialty: "", phone: "", email: "", notes: "" }); setContactDialogOpen(true); };
+  const openEditContact = (a: any) => { setEditingContact(a); setContactFirmId(a.firm_id); setContactForm({ accountant_name: a.accountant_name, title: a.title || "", cpa_number: a.cpa_number || "", specialty: a.specialty || "", phone: a.phone || "", email: a.email || "", notes: a.notes || "" }); setContactDialogOpen(true); };
+
+  const toggleFirm = (id: string) => {
+    setExpandedFirms(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const getAccountantsForFirm = (firmId: string) => accountants.filter((a: any) => a.firm_id === firmId);
+  const unassignedAccountants = accountants.filter((a: any) => !a.firm_id);
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2"><Calculator className="h-4 w-4" /> Accountants / CPAs</CardTitle>
-        <Button size="sm" variant="outline" onClick={openNew} className="h-7 text-xs"><Plus className="h-3 w-3 mr-1" />Add Accountant</Button>
+        <CardTitle className="text-sm font-semibold flex items-center gap-2"><Calculator className="h-4 w-4" /> Accountant / CPA Firms & Accountants</CardTitle>
+        <Button size="sm" variant="outline" onClick={openNewFirm} className="h-7 text-xs"><Plus className="h-3 w-3 mr-1" />Add Firm</Button>
       </CardHeader>
       <CardContent className="p-0">
-        <Table>
-          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead className="hidden sm:table-cell">Title</TableHead><TableHead className="hidden sm:table-cell">Firm</TableHead><TableHead className="hidden md:table-cell">CPA #</TableHead><TableHead className="hidden lg:table-cell">Phone</TableHead><TableHead className="hidden lg:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow></TableHeader>
-          <TableBody>
-            {accountants.map((a: any) => (
-              <TableRow key={a.id}>
-                <TableCell className="font-medium text-xs">{a.accountant_name}</TableCell>
-                <TableCell className="hidden sm:table-cell text-xs">{a.title}</TableCell>
-                <TableCell className="hidden sm:table-cell text-xs">{a.accountant_firms?.firm_name}</TableCell>
-                <TableCell className="hidden md:table-cell text-xs">{a.cpa_number}</TableCell>
-                <TableCell className="hidden lg:table-cell text-xs">{a.phone}</TableCell>
-                <TableCell className="hidden lg:table-cell text-xs">{a.email}</TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(a)}><Pencil className="h-3 w-3" /></Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(a.id)}><Trash2 className="h-3 w-3" /></Button>
+        {firms.length === 0 && unassignedAccountants.length === 0 && (
+          <div className="text-center text-xs text-muted-foreground py-6">No accountant firms yet. Add a firm to get started.</div>
+        )}
+        {firms.map((f: any) => {
+          const firmAccountants = getAccountantsForFirm(f.id);
+          const isExpanded = expandedFirms.has(f.id);
+          return (
+            <Collapsible key={f.id} open={isExpanded} onOpenChange={() => toggleFirm(f.id)}>
+              <div className="border-b last:border-b-0">
+                <div className="flex items-center justify-between px-4 py-2 hover:bg-muted/50">
+                  <CollapsibleTrigger asChild>
+                    <button className="flex items-center gap-2 text-left flex-1 min-w-0">
+                      {isExpanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+                      <Building className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <span className="text-xs font-medium truncate">{f.firm_name}</span>
+                      <span className="text-[10px] text-muted-foreground ml-1">({firmAccountants.length} accountant{firmAccountants.length !== 1 ? "s" : ""})</span>
+                      {f.city && f.state && <span className="text-[10px] text-muted-foreground ml-2 hidden sm:inline">· {f.city}, {f.state}</span>}
+                    </button>
+                  </CollapsibleTrigger>
+                  <div className="flex gap-1 shrink-0 ml-2">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openNewContact(f.id); }}><Plus className="h-3 w-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openEditFirm(f); }}><Pencil className="h-3 w-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => { e.stopPropagation(); delFirm.mutate(f.id); }}><Trash2 className="h-3 w-3" /></Button>
                   </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {accountants.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-6">No accountants yet</TableCell></TableRow>}
-          </TableBody>
-        </Table>
+                </div>
+                <CollapsibleContent>
+                  <div className="bg-muted/30 border-t">
+                    {firmAccountants.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow><TableHead className="pl-10">Name</TableHead><TableHead className="hidden sm:table-cell">Title</TableHead><TableHead className="hidden md:table-cell">CPA #</TableHead><TableHead className="hidden lg:table-cell">Phone</TableHead><TableHead className="hidden lg:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {firmAccountants.map((a: any) => (
+                            <TableRow key={a.id}>
+                              <TableCell className="font-medium text-xs pl-10">{a.accountant_name}</TableCell>
+                              <TableCell className="hidden sm:table-cell text-xs">{a.title}</TableCell>
+                              <TableCell className="hidden md:table-cell text-xs">{a.cpa_number}</TableCell>
+                              <TableCell className="hidden lg:table-cell text-xs">{a.phone}</TableCell>
+                              <TableCell className="hidden lg:table-cell text-xs">{a.email}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditContact(a)}><Pencil className="h-3 w-3" /></Button>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => delContact.mutate(a.id)}><Trash2 className="h-3 w-3" /></Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center text-[11px] text-muted-foreground py-4">
+                        No accountants in this firm.{" "}
+                        <button className="text-primary underline" onClick={() => openNewContact(f.id)}>Add one</button>
+                      </div>
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
+          );
+        })}
+        {/* Unassigned accountants */}
+        {unassignedAccountants.length > 0 && (
+          <div className="border-t">
+            <div className="px-4 py-2 text-xs font-medium text-muted-foreground bg-muted/20">Unassigned Accountants</div>
+            <Table>
+              <TableBody>
+                {unassignedAccountants.map((a: any) => (
+                  <TableRow key={a.id}>
+                    <TableCell className="font-medium text-xs pl-4">{a.accountant_name}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-xs">{a.title}</TableCell>
+                    <TableCell className="hidden md:table-cell text-xs">{a.cpa_number}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-xs">{a.phone}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditContact(a)}><Pencil className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => delContact.mutate(a.id)}><Trash2 className="h-3 w-3" /></Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </CardContent>
-      <Dialog open={open} onOpenChange={setOpen}>
+
+      <FirmDialog open={firmDialogOpen} onOpenChange={setFirmDialogOpen} editing={editingFirm} form={firmForm} setForm={setFirmForm} onSave={() => saveFirm.mutate()} isPending={saveFirm.isPending} type="Accountant" />
+
+      {/* Contact Dialog */}
+      <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editing ? "Edit" : "Add"} Accountant</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingContact ? "Edit" : "Add"} Accountant</DialogTitle></DialogHeader>
           <div className="grid gap-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Accountant Name *</Label><Input value={form.accountant_name} onChange={e => setForm(p => ({ ...p, accountant_name: e.target.value }))} /></div>
-              <div><Label className="text-xs">Title</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Partner, Staff CPA" /></div>
-            </div>
             <div>
               <Label className="text-xs">Firm</Label>
-              <Select value={form.firm_id} onValueChange={v => setForm(p => ({ ...p, firm_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Select firm (optional)" /></SelectTrigger>
-                <SelectContent>
-                  {firms.map((f: any) => <SelectItem key={f.id} value={f.id}>{f.firm_name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2 items-center">
+                <Select value={contactFirmId || ""} onValueChange={v => setContactFirmId(v || null)}>
+                  <SelectTrigger className="flex-1"><SelectValue placeholder="Select firm" /></SelectTrigger>
+                  <SelectContent>
+                    {firms.map((f: any) => <SelectItem key={f.id} value={f.id}>{f.firm_name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {contactFirmId && <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setContactFirmId(null)}><X className="h-3 w-3" /></Button>}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">CPA Number</Label><Input value={form.cpa_number} onChange={e => setForm(p => ({ ...p, cpa_number: e.target.value }))} /></div>
-              <div><Label className="text-xs">Specialty</Label><Input value={form.specialty} onChange={e => setForm(p => ({ ...p, specialty: e.target.value }))} /></div>
+              <div><Label className="text-xs">Accountant Name *</Label><Input value={contactForm.accountant_name} onChange={e => setContactForm(p => ({ ...p, accountant_name: e.target.value }))} /></div>
+              <div><Label className="text-xs">Title</Label><Input value={contactForm.title} onChange={e => setContactForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Partner, Staff CPA" /></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
-              <div><Label className="text-xs">Email</Label><Input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
+              <div><Label className="text-xs">CPA Number</Label><Input value={contactForm.cpa_number} onChange={e => setContactForm(p => ({ ...p, cpa_number: e.target.value }))} /></div>
+              <div><Label className="text-xs">Specialty</Label><Input value={contactForm.specialty} onChange={e => setContactForm(p => ({ ...p, specialty: e.target.value }))} /></div>
             </div>
-            <div><Label className="text-xs">Notes</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
+            <div className="grid grid-cols-2 gap-2">
+              <div><Label className="text-xs">Phone</Label><Input value={contactForm.phone} onChange={e => setContactForm(p => ({ ...p, phone: e.target.value }))} /></div>
+              <div><Label className="text-xs">Email</Label><Input value={contactForm.email} onChange={e => setContactForm(p => ({ ...p, email: e.target.value }))} /></div>
+            </div>
+            <div><Label className="text-xs">Notes</Label><Textarea value={contactForm.notes} onChange={e => setContactForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
           </div>
-          <DialogFooter className="gap-2"><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={() => save.mutate()} disabled={!form.accountant_name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setContactDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => saveContact.mutate()} disabled={!contactForm.accountant_name.trim() || saveContact.isPending}>{saveContact.isPending ? "Saving…" : "Save"}</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
@@ -441,10 +517,8 @@ function AccountantsSection({ companyId }: { companyId: string }) {
 export default function CounselTab({ companyId }: CounselTabProps) {
   return (
     <div className="space-y-5">
-      <AttorneyFirmsSection companyId={companyId} />
-      <AttorneysSection companyId={companyId} />
-      <AccountantFirmsSection companyId={companyId} />
-      <AccountantsSection companyId={companyId} />
+      <AttorneySection companyId={companyId} />
+      <AccountantSection companyId={companyId} />
     </div>
   );
 }
