@@ -476,7 +476,7 @@ export default function IncorporationTab({ company }: Props) {
               <CardTitle className="card-section-title">Company &amp; Contact Information</CardTitle>
             </div>
             <SectionPdfActions config={{
-              title: "Company",
+              title: "Company & Contact Information",
               companyName: company.name,
               fields: [
                 { label: "Company Name", value: form.name },
@@ -485,6 +485,15 @@ export default function IncorporationTab({ company }: Props) {
                 { label: "Incorporation Date", value: form.incorporation_date ? new Date(form.incorporation_date + "T00:00:00").toLocaleDateString() : "" },
                 { label: "Fiscal Year End", value: form.fiscal_year_end },
                 { label: "Scheduled Annual Meeting", value: form.scheduled_annual_meeting },
+                { label: "Contact Name", value: form.contact_full_name },
+                { label: "Salutation", value: form.salutation_name },
+                { label: "Email", value: form.contact_email },
+                { label: "Main Phone", value: form.contact_phone },
+                { label: "Cell Phone", value: form.contact_cell },
+                { label: "Webpage", value: form.contact_webpage },
+                { label: "Address", value: [form.address, form.address_2].filter(Boolean).join(", ") },
+                { label: "City / State / Zip", value: [form.city, form.state, form.zip].filter(Boolean).join(", ") },
+                { label: "Company Phone", value: form.phone },
               ],
             }} />
           </div>
@@ -568,6 +577,51 @@ export default function IncorporationTab({ company }: Props) {
                     <ExternalLink className="h-2.5 w-2.5" /> Visit site
                   </a>
                 )}
+              </div>
+            </div>
+          </div>
+
+          {/* Company Address */}
+          <div className="border-t border-border pt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Building2 className="h-3.5 w-3.5 text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">Company Address</h3>
+            </div>
+            <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="field-group sm:col-span-2 lg:col-span-3">
+                <Label className="field-label">Address Line 1</Label>
+                <Input className="h-8 text-sm" value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="Street address" />
+              </div>
+              <div className="field-group sm:col-span-2 lg:col-span-3">
+                <Label className="field-label">Address Line 2</Label>
+                <Input className="h-8 text-sm" value={form.address_2} onChange={(e) => update("address_2", e.target.value)} placeholder="Suite, Unit, Floor, etc." />
+              </div>
+              <div className="field-group">
+                <Label className="field-label">City</Label>
+                <Input className="h-8 text-sm" value={form.city} onChange={(e) => update("city", e.target.value)} />
+              </div>
+              <div className="field-group">
+                <Label className="field-label">State</Label>
+                <Select value={form.state} onValueChange={(v) => update("state", v)}>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select state" /></SelectTrigger>
+                  <SelectContent>
+                    {US_STATES.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="field-group">
+                <Label className="field-label">Zip Code</Label>
+                <Input className="h-8 text-sm" value={form.zip} onChange={(e) => { const v = e.target.value.replace(/[^\d-]/g, "").slice(0, 10); update("zip", v); handleCompanyZip(v); }} placeholder="55555 or 55555-1234" />
+              </div>
+              <div className="field-group">
+                <Label className="field-label">Country</Label>
+                <Input className="h-8 text-sm" value="United States" disabled />
+              </div>
+              <div className="field-group">
+                <Label className="field-label">Company Phone</Label>
+                <Input className="h-8 text-sm" value={form.phone} onChange={(e) => update("phone", e.target.value)} placeholder="(555) 555-5555" />
               </div>
             </div>
           </div>
@@ -869,64 +923,6 @@ export default function IncorporationTab({ company }: Props) {
         </CardContent>
       </Card>
 
-      {/* Company Address */}
-      <Card>
-        <CardHeader className="pb-2 pt-4 px-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-3.5 w-3.5 text-primary" />
-              <CardTitle className="card-section-title">Company Address</CardTitle>
-            </div>
-            <SectionPdfActions config={{
-              title: "Company Address",
-              companyName: company.name,
-              fields: [
-                { label: "Address", value: form.address },
-                { label: "Address 2", value: form.address_2 },
-                { label: "City", value: form.city },
-                { label: "State", value: form.state },
-                { label: "Zip", value: form.zip },
-                { label: "Phone", value: form.phone },
-              ],
-            }} />
-          </div>
-        </CardHeader>
-        <CardContent className="grid gap-x-4 gap-y-3 sm:grid-cols-2 px-4 pb-4">
-          <div className="field-group sm:col-span-2">
-            <Label className="field-label">Address</Label>
-            <Input className="h-8 text-sm" value={form.address} onChange={(e) => update("address", e.target.value)} />
-          </div>
-          <div className="field-group sm:col-span-2">
-            <Label className="field-label">Address 2</Label>
-            <Input className="h-8 text-sm" value={form.address_2} onChange={(e) => update("address_2", e.target.value)} placeholder="Suite, Unit, Floor, etc." />
-          </div>
-          <div className="field-group">
-            <Label className="field-label">City</Label>
-            <Input className="h-8 text-sm" value={form.city} onChange={(e) => update("city", e.target.value)} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="field-group">
-              <Label className="field-label">State</Label>
-              <Select value={form.state} onValueChange={(v) => update("state", v)}>
-                <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
-                <SelectContent>
-                  {US_STATES.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="field-group">
-              <Label className="field-label">Zip</Label>
-              <Input className="h-8 text-sm" value={form.zip} onChange={(e) => { update("zip", e.target.value); handleCompanyZip(e.target.value); }} />
-            </div>
-          </div>
-          <div className="field-group">
-            <Label className="field-label">Phone</Label>
-            <Input className="h-8 text-sm" value={form.phone} onChange={(e) => update("phone", e.target.value)} />
-          </div>
-        </CardContent>
-      </Card>
 
       {/* WI Compliance Checklist - Collapsible */}
       <Collapsible>
