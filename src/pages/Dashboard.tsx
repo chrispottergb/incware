@@ -26,6 +26,7 @@ import { Building2, Plus, Search, Loader2, ChevronRight, UserPlus, FolderOpen, C
 import { toast } from "sonner";
 import TaxReturnUpload from "@/components/TaxReturnUpload";
 import CreateCompanyWizard from "@/components/CreateCompanyWizard";
+import AnnualUpdateWorkflow from "@/components/AnnualUpdateWorkflow";
 
 import cardNewClient from "@/assets/card-new-client.jpg";
 import cardImportTaxReturn from "@/assets/card-import-tax-return.jpg";
@@ -51,6 +52,7 @@ export default function Dashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [taxReturnOpen, setTaxReturnOpen] = useState(false);
+  const [annualUpdateOpen, setAnnualUpdateOpen] = useState(false);
   
   useEffect(() => {
     const handler = () => setDialogOpen(true);
@@ -117,14 +119,14 @@ export default function Dashboard() {
           },
           {
             title: "Annual Update",
-            description: "Schedule annual meetings",
+            description: "Generate review & email",
             image: cardAnnualUpdate,
             icon: CalendarCheck,
             onClick: () => {
               if (companies.length > 0) {
-                navigate(`/company/${companies[0].id}#meetings`);
+                setAnnualUpdateOpen(true);
               } else {
-                toast.info("Add a company first to manage annual meetings.");
+                toast.info("Add a company first to generate an annual update.");
               }
             },
           },
@@ -179,6 +181,9 @@ export default function Dashboard() {
         externalOpen={taxReturnOpen}
         onExternalOpenChange={setTaxReturnOpen}
       />
+
+      {/* Annual Update Workflow */}
+      <AnnualUpdateWorkflow open={annualUpdateOpen} onOpenChange={setAnnualUpdateOpen} companies={companies} />
 
       {/* AI Compliance Summary */}
       <AIComplianceSummary />

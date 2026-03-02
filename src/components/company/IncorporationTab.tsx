@@ -211,6 +211,8 @@ export default function IncorporationTab({ company }: Props) {
     state: company.state ?? "",
     zip: company.zip ?? "",
     phone: company.phone ?? "",
+    contact_email: (company as any).contact_email ?? "",
+    salutation_name: (company as any).salutation_name ?? "",
     authorized_binders: (company as any).authorized_binders ?? "",
   });
   const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(isLLCType(company.entity_type) ? !!company.s_election_date : false);
@@ -318,6 +320,8 @@ export default function IncorporationTab({ company }: Props) {
           state: form.state || null,
           zip: form.zip || null,
           phone: form.phone || null,
+          contact_email: form.contact_email || null,
+          salutation_name: form.salutation_name || null,
           authorized_binders: form.authorized_binders || null,
         } as any)
         .eq("id", company.id);
@@ -813,6 +817,8 @@ export default function IncorporationTab({ company }: Props) {
                 { label: "State", value: form.state },
                 { label: "Zip", value: form.zip },
                 { label: "Phone", value: form.phone },
+                { label: "Contact Email", value: form.contact_email },
+                { label: "Salutation Name", value: form.salutation_name },
               ],
             }} />
           </div>
@@ -850,6 +856,16 @@ export default function IncorporationTab({ company }: Props) {
           <div className="field-group">
             <Label className="field-label">Phone</Label>
             <Input className="h-8 text-sm" value={form.phone} onChange={(e) => update("phone", e.target.value)} />
+          </div>
+          <div className="field-group">
+            <Label className="field-label">Contact Email</Label>
+            <Input className="h-8 text-sm" type="email" placeholder="client@example.com" value={form.contact_email} onChange={(e) => update("contact_email", e.target.value)} />
+            <p className="text-[10px] text-muted-foreground mt-0.5">Used for Annual Update emails</p>
+          </div>
+          <div className="field-group">
+            <Label className="field-label">Salutation / Preferred Name</Label>
+            <Input className="h-8 text-sm" placeholder="e.g. John" value={form.salutation_name} onChange={(e) => update("salutation_name", e.target.value)} />
+            <p className="text-[10px] text-muted-foreground mt-0.5">Used as greeting in client correspondence</p>
           </div>
         </CardContent>
       </Card>
