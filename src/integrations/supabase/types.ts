@@ -1183,6 +1183,131 @@ export type Database = {
           },
         ]
       }
+      master_contacts: {
+        Row: {
+          bar_number: string | null
+          contact_name: string
+          contact_type: string
+          cpa_number: string | null
+          created_at: string
+          email: string | null
+          firm_id: string | null
+          id: string
+          notes: string | null
+          phone: string | null
+          specialty: string | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bar_number?: string | null
+          contact_name: string
+          contact_type?: string
+          cpa_number?: string | null
+          created_at?: string
+          email?: string | null
+          firm_id?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          specialty?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bar_number?: string | null
+          contact_name?: string
+          contact_type?: string
+          cpa_number?: string | null
+          created_at?: string
+          email?: string | null
+          firm_id?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          specialty?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_contacts_firm_id_fkey"
+            columns: ["firm_id"]
+            isOneToOne: false
+            referencedRelation: "master_firms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      master_firms: {
+        Row: {
+          account_number: string | null
+          account_type: string | null
+          address: string | null
+          address_2: string | null
+          city: string | null
+          contact_name: string | null
+          contact_title: string | null
+          created_at: string
+          email: string | null
+          firm_name: string
+          firm_type: string
+          id: string
+          phone: string | null
+          routing_number: string | null
+          state: string | null
+          updated_at: string
+          user_id: string
+          website: string | null
+          zip: string | null
+        }
+        Insert: {
+          account_number?: string | null
+          account_type?: string | null
+          address?: string | null
+          address_2?: string | null
+          city?: string | null
+          contact_name?: string | null
+          contact_title?: string | null
+          created_at?: string
+          email?: string | null
+          firm_name: string
+          firm_type?: string
+          id?: string
+          phone?: string | null
+          routing_number?: string | null
+          state?: string | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+          zip?: string | null
+        }
+        Update: {
+          account_number?: string | null
+          account_type?: string | null
+          address?: string | null
+          address_2?: string | null
+          city?: string | null
+          contact_name?: string | null
+          contact_title?: string | null
+          created_at?: string
+          email?: string | null
+          firm_name?: string
+          firm_type?: string
+          id?: string
+          phone?: string | null
+          routing_number?: string | null
+          state?: string | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+          zip?: string | null
+        }
+        Relationships: []
+      }
       meeting_amendments: {
         Row: {
           amendment_text: string

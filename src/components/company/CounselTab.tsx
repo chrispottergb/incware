@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useMasterFirms, useMasterContacts } from "@/hooks/useMasterDirectory";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Plus, Pencil, Trash2, Building, Scale, Calculator, ChevronDown, ChevronRight, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Building, Scale, Calculator, ChevronDown, ChevronRight, X, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 interface CounselTabProps {
@@ -21,22 +22,59 @@ interface CounselTabProps {
 // ─── Firm Dialog (shared for both attorney and accountant firms) ───
 function FirmDialog({
   open, onOpenChange, editing, form, setForm, onSave, isPending, type,
+  masterFirms, onSelectMaster,
 }: {
   open: boolean; onOpenChange: (v: boolean) => void; editing: any;
   form: any; setForm: (fn: (prev: any) => any) => void;
   onSave: () => void; isPending: boolean; type: "Attorney" | "Accountant";
+  masterFirms: any[]; onSelectMaster: (f: any) => void;
 }) {
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
   }, [setForm]);
   const { handleZipChange } = useZipLookup(handleZipResult);
 
+  const [search, setSearch] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const filtered = masterFirms.filter((f: any) =>
+    f.firm_name.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) { setSearch(""); setShowDropdown(false); } }}>
       <DialogContent>
         <DialogHeader><DialogTitle>{editing ? "Edit" : "Add New"} {type} Firm</DialogTitle></DialogHeader>
         <div className="grid gap-3">
-          <div><Label className="text-xs">Firm Name *</Label><Input value={form.firm_name} onChange={e => setForm(p => ({ ...p, firm_name: e.target.value }))} /></div>
+          <div className="relative">
+            <Label className="text-xs">Firm Name *</Label>
+            <Input
+              value={form.firm_name}
+              onChange={e => {
+                setForm(p => ({ ...p, firm_name: e.target.value }));
+                setSearch(e.target.value);
+                setShowDropdown(true);
+              }}
+              onFocus={() => { if (masterFirms.length > 0 && !editing) setShowDropdown(true); }}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+              placeholder={!editing && masterFirms.length > 0 ? "Type or select from directory" : "Firm name"}
+            />
+            {showDropdown && !editing && filtered.length > 0 && (
+              <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                <div className="px-3 py-1 text-[10px] text-muted-foreground font-medium border-b flex items-center gap-1"><BookOpen className="h-2.5 w-2.5" /> Master Directory</div>
+                {filtered.map((f: any) => (
+                  <button
+                    key={f.id}
+                    className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors"
+                    onMouseDown={(e) => { e.preventDefault(); onSelectMaster(f); setShowDropdown(false); setSearch(""); }}
+                  >
+                    {f.firm_name}
+                    {f.city && f.state && <span className="text-muted-foreground ml-2">— {f.city}, {f.state}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <div><Label className="text-xs">Address</Label><Input value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
           <div><Label className="text-xs">Address 2</Label><Input value={form.address_2} onChange={e => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor, etc." /></div>
           <div className="grid grid-cols-3 gap-2">
@@ -64,6 +102,8 @@ const emptyFirmForm = () => ({ firm_name: "", address: "", address_2: "", city: 
 // ─── Attorney Firms + Nested Attorneys ───
 function AttorneySection({ companyId }: { companyId: string }) {
   const qc = useQueryClient();
+  const { masterFirms, upsertMasterFirm } = useMasterFirms("law");
+  const { masterContacts, upsertMasterContact } = useMasterContacts("attorney");
   const [firmDialogOpen, setFirmDialogOpen] = useState(false);
   const [editingFirm, setEditingFirm] = useState<any>(null);
   const [firmForm, setFirmForm] = useState(emptyFirmForm());
@@ -72,6 +112,28 @@ function AttorneySection({ companyId }: { companyId: string }) {
   const [contactForm, setContactForm] = useState({ attorney_name: "", title: "", bar_number: "", specialty: "", phone: "", email: "", notes: "" });
   const [contactFirmId, setContactFirmId] = useState<string | null>(null);
   const [expandedFirms, setExpandedFirms] = useState<Set<string>>(new Set());
+
+  // Contact search state
+  const [contactSearch, setContactSearch] = useState("");
+  const [showContactDropdown, setShowContactDropdown] = useState(false);
+
+  const filteredMasterContacts = masterContacts.filter((c: any) =>
+    c.contact_name.toLowerCase().includes(contactSearch.toLowerCase())
+  );
+
+  const selectMasterContact = (c: any) => {
+    setContactForm({
+      attorney_name: c.contact_name || "",
+      title: c.title || "",
+      bar_number: c.bar_number || "",
+      specialty: c.specialty || "",
+      phone: c.phone || "",
+      email: c.email || "",
+      notes: c.notes || "",
+    });
+    setShowContactDropdown(false);
+    setContactSearch("");
+  };
 
   const { data: firms = [] } = useQuery({
     queryKey: ["attorney_firms", companyId],
@@ -100,6 +162,8 @@ function AttorneySection({ companyId }: { companyId: string }) {
         const { error } = await supabase.from("attorney_firms").insert({ ...firmForm, company_id: companyId });
         if (error) throw error;
       }
+      // Sync to master directory
+      upsertMasterFirm.mutate({ firm_name: firmForm.firm_name, address: firmForm.address, address_2: firmForm.address_2, city: firmForm.city, state: firmForm.state, zip: firmForm.zip, phone: firmForm.phone, email: firmForm.email, website: firmForm.website });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["attorney_firms", companyId] }); setFirmDialogOpen(false); toast.success("Attorney firm saved"); },
     onError: (e: any) => toast.error(e.message),
@@ -121,6 +185,8 @@ function AttorneySection({ companyId }: { companyId: string }) {
         const { error } = await supabase.from("attorneys").insert({ ...payload, company_id: companyId });
         if (error) throw error;
       }
+      // Sync to master directory
+      upsertMasterContact.mutate({ contact_name: contactForm.attorney_name, title: contactForm.title, bar_number: contactForm.bar_number, specialty: contactForm.specialty, phone: contactForm.phone, email: contactForm.email, notes: contactForm.notes });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["attorneys", companyId] }); setContactDialogOpen(false); toast.success("Attorney saved"); },
     onError: (e: any) => toast.error(e.message),
@@ -135,8 +201,22 @@ function AttorneySection({ companyId }: { companyId: string }) {
   const openNewFirm = () => { setEditingFirm(null); setFirmForm(emptyFirmForm()); setFirmDialogOpen(true); };
   const openEditFirm = (f: any) => { setEditingFirm(f); setFirmForm({ firm_name: f.firm_name, address: f.address || "", address_2: f.address_2 || "", city: f.city || "", state: f.state || "", zip: f.zip || "", phone: f.phone || "", email: f.email || "", website: f.website || "" }); setFirmDialogOpen(true); };
 
-  const openNewContact = (firmId: string) => { setEditingContact(null); setContactFirmId(firmId); setContactForm({ attorney_name: "", title: "", bar_number: "", specialty: "", phone: "", email: "", notes: "" }); setContactDialogOpen(true); };
-  const openEditContact = (a: any) => { setEditingContact(a); setContactFirmId(a.firm_id); setContactForm({ attorney_name: a.attorney_name, title: a.title || "", bar_number: a.bar_number || "", specialty: a.specialty || "", phone: a.phone || "", email: a.email || "", notes: a.notes || "" }); setContactDialogOpen(true); };
+  const openNewContact = (firmId: string) => { setEditingContact(null); setContactFirmId(firmId); setContactForm({ attorney_name: "", title: "", bar_number: "", specialty: "", phone: "", email: "", notes: "" }); setContactSearch(""); setContactDialogOpen(true); };
+  const openEditContact = (a: any) => { setEditingContact(a); setContactFirmId(a.firm_id); setContactForm({ attorney_name: a.attorney_name, title: a.title || "", bar_number: a.bar_number || "", specialty: a.specialty || "", phone: a.phone || "", email: a.email || "", notes: a.notes || "" }); setContactSearch(""); setContactDialogOpen(true); };
+
+  const selectMasterFirm = (mf: any) => {
+    setFirmForm({
+      firm_name: mf.firm_name || "",
+      address: mf.address || "",
+      address_2: mf.address_2 || "",
+      city: mf.city || "",
+      state: mf.state || "",
+      zip: mf.zip || "",
+      phone: mf.phone || "",
+      email: mf.email || "",
+      website: mf.website || "",
+    });
+  };
 
   const toggleFirm = (id: string) => {
     setExpandedFirms(prev => {
@@ -244,10 +324,10 @@ function AttorneySection({ companyId }: { companyId: string }) {
         )}
       </CardContent>
 
-      <FirmDialog open={firmDialogOpen} onOpenChange={setFirmDialogOpen} editing={editingFirm} form={firmForm} setForm={setFirmForm} onSave={() => saveFirm.mutate()} isPending={saveFirm.isPending} type="Attorney" />
+      <FirmDialog open={firmDialogOpen} onOpenChange={setFirmDialogOpen} editing={editingFirm} form={firmForm} setForm={setFirmForm} onSave={() => saveFirm.mutate()} isPending={saveFirm.isPending} type="Attorney" masterFirms={masterFirms} onSelectMaster={selectMasterFirm} />
 
       {/* Contact Dialog */}
-      <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
+      <Dialog open={contactDialogOpen} onOpenChange={(v) => { setContactDialogOpen(v); if (!v) { setContactSearch(""); setShowContactDropdown(false); } }}>
         <DialogContent>
           <DialogHeader><DialogTitle>{editingContact ? "Edit" : "Add"} Attorney</DialogTitle></DialogHeader>
           <div className="grid gap-3">
@@ -264,7 +344,35 @@ function AttorneySection({ companyId }: { companyId: string }) {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Attorney Name *</Label><Input value={contactForm.attorney_name} onChange={e => setContactForm(p => ({ ...p, attorney_name: e.target.value }))} /></div>
+              <div className="relative">
+                <Label className="text-xs">Attorney Name *</Label>
+                <Input
+                  value={contactForm.attorney_name}
+                  onChange={e => {
+                    setContactForm(p => ({ ...p, attorney_name: e.target.value }));
+                    setContactSearch(e.target.value);
+                    setShowContactDropdown(true);
+                  }}
+                  onFocus={() => { if (masterContacts.length > 0 && !editingContact) setShowContactDropdown(true); }}
+                  onBlur={() => setTimeout(() => setShowContactDropdown(false), 200)}
+                  placeholder={!editingContact && masterContacts.length > 0 ? "Type or select from directory" : ""}
+                />
+                {showContactDropdown && !editingContact && filteredMasterContacts.length > 0 && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                    <div className="px-3 py-1 text-[10px] text-muted-foreground font-medium border-b flex items-center gap-1"><BookOpen className="h-2.5 w-2.5" /> Directory</div>
+                    {filteredMasterContacts.map((c: any) => (
+                      <button
+                        key={c.id}
+                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors"
+                        onMouseDown={(e) => { e.preventDefault(); selectMasterContact(c); }}
+                      >
+                        {c.contact_name}
+                        {c.specialty && <span className="text-muted-foreground ml-2">— {c.specialty}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div><Label className="text-xs">Title</Label><Input value={contactForm.title} onChange={e => setContactForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Partner, Associate" /></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -290,6 +398,8 @@ function AttorneySection({ companyId }: { companyId: string }) {
 // ─── Accountant Firms + Nested Accountants ───
 function AccountantSection({ companyId }: { companyId: string }) {
   const qc = useQueryClient();
+  const { masterFirms, upsertMasterFirm } = useMasterFirms("accounting");
+  const { masterContacts, upsertMasterContact } = useMasterContacts("accountant");
   const [firmDialogOpen, setFirmDialogOpen] = useState(false);
   const [editingFirm, setEditingFirm] = useState<any>(null);
   const [firmForm, setFirmForm] = useState(emptyFirmForm());
@@ -298,6 +408,28 @@ function AccountantSection({ companyId }: { companyId: string }) {
   const [contactForm, setContactForm] = useState({ accountant_name: "", title: "", cpa_number: "", specialty: "", phone: "", email: "", notes: "" });
   const [contactFirmId, setContactFirmId] = useState<string | null>(null);
   const [expandedFirms, setExpandedFirms] = useState<Set<string>>(new Set());
+
+  // Contact search state
+  const [contactSearch, setContactSearch] = useState("");
+  const [showContactDropdown, setShowContactDropdown] = useState(false);
+
+  const filteredMasterContacts = masterContacts.filter((c: any) =>
+    c.contact_name.toLowerCase().includes(contactSearch.toLowerCase())
+  );
+
+  const selectMasterContact = (c: any) => {
+    setContactForm({
+      accountant_name: c.contact_name || "",
+      title: c.title || "",
+      cpa_number: c.cpa_number || "",
+      specialty: c.specialty || "",
+      phone: c.phone || "",
+      email: c.email || "",
+      notes: c.notes || "",
+    });
+    setShowContactDropdown(false);
+    setContactSearch("");
+  };
 
   const { data: firms = [] } = useQuery({
     queryKey: ["accountant_firms", companyId],
@@ -326,6 +458,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
         const { error } = await supabase.from("accountant_firms").insert({ ...firmForm, company_id: companyId });
         if (error) throw error;
       }
+      upsertMasterFirm.mutate({ firm_name: firmForm.firm_name, address: firmForm.address, address_2: firmForm.address_2, city: firmForm.city, state: firmForm.state, zip: firmForm.zip, phone: firmForm.phone, email: firmForm.email, website: firmForm.website });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["accountant_firms", companyId] }); setFirmDialogOpen(false); toast.success("Accountant firm saved"); },
     onError: (e: any) => toast.error(e.message),
@@ -347,6 +480,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
         const { error } = await supabase.from("accountants").insert({ ...payload, company_id: companyId });
         if (error) throw error;
       }
+      upsertMasterContact.mutate({ contact_name: contactForm.accountant_name, title: contactForm.title, cpa_number: contactForm.cpa_number, specialty: contactForm.specialty, phone: contactForm.phone, email: contactForm.email, notes: contactForm.notes });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["accountants", companyId] }); setContactDialogOpen(false); toast.success("Accountant saved"); },
     onError: (e: any) => toast.error(e.message),
@@ -361,8 +495,22 @@ function AccountantSection({ companyId }: { companyId: string }) {
   const openNewFirm = () => { setEditingFirm(null); setFirmForm(emptyFirmForm()); setFirmDialogOpen(true); };
   const openEditFirm = (f: any) => { setEditingFirm(f); setFirmForm({ firm_name: f.firm_name, address: f.address || "", address_2: f.address_2 || "", city: f.city || "", state: f.state || "", zip: f.zip || "", phone: f.phone || "", email: f.email || "", website: f.website || "" }); setFirmDialogOpen(true); };
 
-  const openNewContact = (firmId: string) => { setEditingContact(null); setContactFirmId(firmId); setContactForm({ accountant_name: "", title: "", cpa_number: "", specialty: "", phone: "", email: "", notes: "" }); setContactDialogOpen(true); };
-  const openEditContact = (a: any) => { setEditingContact(a); setContactFirmId(a.firm_id); setContactForm({ accountant_name: a.accountant_name, title: a.title || "", cpa_number: a.cpa_number || "", specialty: a.specialty || "", phone: a.phone || "", email: a.email || "", notes: a.notes || "" }); setContactDialogOpen(true); };
+  const openNewContact = (firmId: string) => { setEditingContact(null); setContactFirmId(firmId); setContactForm({ accountant_name: "", title: "", cpa_number: "", specialty: "", phone: "", email: "", notes: "" }); setContactSearch(""); setContactDialogOpen(true); };
+  const openEditContact = (a: any) => { setEditingContact(a); setContactFirmId(a.firm_id); setContactForm({ accountant_name: a.accountant_name, title: a.title || "", cpa_number: a.cpa_number || "", specialty: a.specialty || "", phone: a.phone || "", email: a.email || "", notes: a.notes || "" }); setContactSearch(""); setContactDialogOpen(true); };
+
+  const selectMasterFirm = (mf: any) => {
+    setFirmForm({
+      firm_name: mf.firm_name || "",
+      address: mf.address || "",
+      address_2: mf.address_2 || "",
+      city: mf.city || "",
+      state: mf.state || "",
+      zip: mf.zip || "",
+      phone: mf.phone || "",
+      email: mf.email || "",
+      website: mf.website || "",
+    });
+  };
 
   const toggleFirm = (id: string) => {
     setExpandedFirms(prev => {
@@ -470,10 +618,10 @@ function AccountantSection({ companyId }: { companyId: string }) {
         )}
       </CardContent>
 
-      <FirmDialog open={firmDialogOpen} onOpenChange={setFirmDialogOpen} editing={editingFirm} form={firmForm} setForm={setFirmForm} onSave={() => saveFirm.mutate()} isPending={saveFirm.isPending} type="Accountant" />
+      <FirmDialog open={firmDialogOpen} onOpenChange={setFirmDialogOpen} editing={editingFirm} form={firmForm} setForm={setFirmForm} onSave={() => saveFirm.mutate()} isPending={saveFirm.isPending} type="Accountant" masterFirms={masterFirms} onSelectMaster={selectMasterFirm} />
 
       {/* Contact Dialog */}
-      <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
+      <Dialog open={contactDialogOpen} onOpenChange={(v) => { setContactDialogOpen(v); if (!v) { setContactSearch(""); setShowContactDropdown(false); } }}>
         <DialogContent>
           <DialogHeader><DialogTitle>{editingContact ? "Edit" : "Add"} Accountant</DialogTitle></DialogHeader>
           <div className="grid gap-3">
@@ -490,7 +638,35 @@ function AccountantSection({ companyId }: { companyId: string }) {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Accountant Name *</Label><Input value={contactForm.accountant_name} onChange={e => setContactForm(p => ({ ...p, accountant_name: e.target.value }))} /></div>
+              <div className="relative">
+                <Label className="text-xs">Accountant Name *</Label>
+                <Input
+                  value={contactForm.accountant_name}
+                  onChange={e => {
+                    setContactForm(p => ({ ...p, accountant_name: e.target.value }));
+                    setContactSearch(e.target.value);
+                    setShowContactDropdown(true);
+                  }}
+                  onFocus={() => { if (masterContacts.length > 0 && !editingContact) setShowContactDropdown(true); }}
+                  onBlur={() => setTimeout(() => setShowContactDropdown(false), 200)}
+                  placeholder={!editingContact && masterContacts.length > 0 ? "Type or select from directory" : ""}
+                />
+                {showContactDropdown && !editingContact && filteredMasterContacts.length > 0 && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                    <div className="px-3 py-1 text-[10px] text-muted-foreground font-medium border-b flex items-center gap-1"><BookOpen className="h-2.5 w-2.5" /> Directory</div>
+                    {filteredMasterContacts.map((c: any) => (
+                      <button
+                        key={c.id}
+                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors"
+                        onMouseDown={(e) => { e.preventDefault(); selectMasterContact(c); }}
+                      >
+                        {c.contact_name}
+                        {c.specialty && <span className="text-muted-foreground ml-2">— {c.specialty}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div><Label className="text-xs">Title</Label><Input value={contactForm.title} onChange={e => setContactForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Partner, Staff CPA" /></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
