@@ -124,9 +124,11 @@ export default function AnnualUpdateWorkflow({ open, onOpenChange, companies }: 
       return;
     }
 
-    // Determine salutation
+    // Determine salutation: salutation_name → first word of contact_full_name → first word of company name
     const salutation = company.salutation_name
-      || (company.contact_email ? company.name.split(" ")[0] : "Client");
+      || (company.contact_full_name ? company.contact_full_name.split(" ")[0] : null)
+      || company.name.split(" ")[0]
+      || "Client";
 
     const subject = encodeURIComponent(`Your Annual Update Review — ${company.name}`);
     const body = encodeURIComponent(

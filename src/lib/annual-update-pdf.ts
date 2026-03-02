@@ -140,13 +140,23 @@ export function generateAnnualUpdatePdf(data: AnnualUpdateData): jsPDF {
     ["Address", [c.address, c.address_2].filter(Boolean).join(", ") || "—"],
     ["City / State / Zip", [c.city, c.state, c.zip].filter(Boolean).join(", ") || "—"],
     ["Phone", c.phone || "—"],
-    ["Contact Email", c.contact_email || "—"],
     ["Fiscal Year End", c.fiscal_year_end || "—"],
     ["NAICS Code", c.naics_code || "—"],
     ["Business Purpose", c.business_purpose || "—"],
     ["Status", c.corporate_status || c.status || "—"],
     ["S-Election Date", c.s_election_date ? new Date(c.s_election_date + "T00:00:00").toLocaleDateString() : "—"],
     ["Accounting Method", c.accounting_method || "—"],
+  ], y);
+
+  // --- Section 1b: Primary Contact ---
+  y = addSectionTitle(doc, "Primary Contact", y);
+  y = addKeyValueTable(doc, [
+    ["Full Name", c.contact_full_name || "—"],
+    ["Salutation", c.salutation_name || "—"],
+    ["Email", c.contact_email || "—"],
+    ["Main Phone", c.contact_phone || "—"],
+    ["Cell Phone", c.contact_cell || "—"],
+    ["Webpage", c.contact_webpage || "—"],
   ], y);
 
   // --- Section 2: Registered Agent ---
