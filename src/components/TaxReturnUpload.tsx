@@ -427,11 +427,17 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
           const key = s.name.toLowerCase().trim();
           if (!seenShareholders.has(key)) {
             seenShareholders.add(key);
-            await supabase.from("shareholders").insert({
+            const { data: newShareholder } = await supabase.from("shareholders").insert({
               company_id: targetCompanyId,
               name: s.name,
-              ssn_ein: s.ssn_ein || null,
-            });
+            }).select("id").single();
+
+            // Encrypt SSN/EIN via edge function if provided
+            if (newShareholder && s.ssn_ein) {
+              await supabase.functions.invoke("encrypt-ssn", {
+                body: { shareholder_id: newShareholder.id, ssn_ein: s.ssn_ein },
+              });
+            }
           }
         }
       }
