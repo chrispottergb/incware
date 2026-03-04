@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Trash2, Loader2, Save, Users, FileText, ChevronDown, ExternalLink, Shield, History } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import CompanyAssetsSection from "@/components/company/CompanyAssetsSection";
+
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -855,9 +855,6 @@ export default function OrganizationTab({ companyId, company }: Props) {
           </Card>
         </CollapsibleContent>
       </Collapsible>
-
-      {/* Company Assets */}
-      <CompanyAssetsSection companyId={companyId} companyName={company.name} />
     </div>
   );
 }

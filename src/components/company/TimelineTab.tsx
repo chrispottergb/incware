@@ -25,7 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   Plus, Trash2, Loader2, Clock, Building2, CalendarDays, Gavel,
-  Users, Award, BookOpen, FileText, DollarSign, Flag, Pencil,
+  Users, Award, BookOpen, FileText, DollarSign, Flag, Pencil, Car, Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
@@ -72,6 +72,8 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string }> = {
   compliance: { icon: Flag, color: "bg-destructive/10 text-destructive border-destructive/20" },
   annual_review: { icon: CalendarDays, color: "bg-primary/10 text-primary border-primary/20" },
   officer: { icon: Users, color: "bg-accent/10 text-accent border-accent/20" },
+  vehicle: { icon: Car, color: "bg-warning/10 text-warning border-warning/20" },
+  equipment: { icon: Wrench, color: "bg-accent/10 text-accent border-accent/20" },
   general: { icon: Clock, color: "bg-muted text-muted-foreground border-border" },
   other: { icon: Clock, color: "bg-muted text-muted-foreground border-border" },
 };
@@ -127,6 +129,19 @@ export default function TimelineTab({ companyId, company }: Props) {
       const { data, error } = await supabase
         .from("share_transactions").select("id, transaction_type, share_class, num_shares, transaction_date, shareholders(name), from_shareholder, to_shareholder")
         .eq("company_id", companyId).order("transaction_date");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: companyAssets = [] } = useQuery({
+    queryKey: ["company_assets", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("company_assets").select("*")
+        .eq("company_id", companyId)
+        .in("asset_type", ["vehicle", "equipment"])
+        .order("purchase_date");
       if (error) throw error;
       return data;
     },
@@ -306,6 +321,32 @@ export default function TimelineTab({ companyId, company }: Props) {
       });
     });
 
+    // Vehicles & Equipment
+    companyAssets.forEach((a) => {
+      const eventDate = a.purchase_date || a.created_at?.split("T")[0];
+      if (!eventDate) return;
+      const isVehicle = a.asset_type === "vehicle";
+      const typeCfg = typeConfig[isVehicle ? "vehicle" : "equipment"];
+      const fmt = (v: number | null | undefined) =>
+        v != null ? `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : null;
+      const parts: string[] = [];
+      if (isVehicle && a.vin) parts.push(`VIN: ${a.vin}`);
+      if (a.purchase_amount) parts.push(`Purchase price: ${fmt(a.purchase_amount)}`);
+      if (!isVehicle && a.manufacturer) parts.push(`Mfr: ${a.manufacturer}`);
+
+      entries.push({
+        id: `asset_${a.id}`,
+        date: eventDate,
+        sortDate: new Date(eventDate + "T00:00:00").getTime(),
+        title: `${isVehicle ? "Vehicle" : "Equipment"} — ${a.description || "Unknown"}`,
+        description: parts.length > 0 ? parts.join(" · ") : undefined,
+        type: isVehicle ? "vehicle" : "equipment",
+        source: "auto",
+        icon: typeCfg.icon,
+        color: typeCfg.color,
+      });
+    });
+
     // Manual events
     manualEvents.forEach((e) => {
       const cfg = typeConfig[e.event_type] || typeConfig.general;
@@ -323,7 +364,7 @@ export default function TimelineTab({ companyId, company }: Props) {
     });
 
     return entries.sort((a, b) => a.sortDate - b.sortDate);
-  }, [company, meetings, certificates, transactions, manualEvents]);
+  }, [company, meetings, certificates, transactions, companyAssets, manualEvents]);
 
   // Group by year
   const groupedByYear = useMemo(() => {
