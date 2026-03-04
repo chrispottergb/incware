@@ -48,6 +48,8 @@ export function DatePickerField({
         <Calendar
           mode="single"
           selected={date}
+          defaultMonth={date ?? new Date()}
+          today={new Date()}
           onSelect={(d) => {
             if (d) onChange(format(d, "yyyy-MM-dd"));
             setOpen(false);
@@ -57,10 +59,6 @@ export function DatePickerField({
           toYear={2099}
           initialFocus
           className="p-3 pointer-events-auto"
-          onTodayClick={() => {
-            onChange(format(new Date(), "yyyy-MM-dd"));
-            setOpen(false);
-          }}
         />
       </PopoverContent>
     </Popover>
