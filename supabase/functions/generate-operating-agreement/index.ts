@@ -39,7 +39,7 @@ serve(async (req) => {
     }
     const userId = claimsData.claims.sub;
 
-    const { company_id, management_type, ai_provider } = await req.json();
+    const { company_id, management_type, ai_provider, is_single_member, form_overrides } = await req.json();
     const provider: AIProvider = ai_provider || "lovable";
 
     if (!company_id) {
@@ -74,24 +74,62 @@ serve(async (req) => {
     const officers = officersRes.data || [];
     const mgmtType = management_type || "member-managed";
     const isManagerManaged = mgmtType === "manager-managed";
+    const isSM = is_single_member === true;
 
-    const membersList = members.map((m: any) => `${m.name} (${m.status || "active"})`).join(", ") || "No members on record";
+    // Use form overrides if provided (for SM LLC)
+    const companyName = form_overrides?.company_name || company.name;
+    const memberName = form_overrides?.member_name || (members.length > 0 ? members[0].name : "Not specified");
+    const filingDate = form_overrides?.filing_date || company.filing_date || "Not specified";
+    const businessPurpose = form_overrides?.business_purpose || company.business_purpose || "General business";
+    const fiscalYearEnd = form_overrides?.fiscal_year_end || company.fiscal_year_end || "December 31";
+
+    const membersList = members.map((m: any) => `${m.name} (${m.ownership_percentage || "N/A"}%)`).join(", ") || "No members on record";
     const officerInfo = officers.length > 0
       ? `President: ${officers[0].president || "N/A"}, Secretary: ${officers[0].secretary || "N/A"}, Treasurer: ${officers[0].treasurer || "N/A"}`
       : "No officers designated";
 
-    const prompt = `You are a Wisconsin corporate attorney drafting an Operating Agreement for a Wisconsin LLC under Wis. Stat. Ch. 183.
+    let prompt: string;
+
+    if (isSM) {
+      prompt = `You are a Wisconsin corporate attorney drafting a Sole Member Operating Agreement for a Wisconsin Single Member LLC under Wis. Stat. Ch. 183.
 
 COMPANY INFORMATION:
-- Name: ${company.name}
+- Name: ${companyName}
+- Entity Type: Single Member LLC
+- Sole Member: ${memberName}
+- State: ${company.state_of_incorporation || "Wisconsin"}
+- Filing Date: ${filingDate}
+- Business Purpose: ${businessPurpose}
+- Registered Agent: ${company.registered_agent_name || "Not specified"}
+- Address: ${[company.address, company.city, company.state, company.zip].filter(Boolean).join(", ") || "Not specified"}
+- Fiscal Year End: ${fiscalYearEnd}
+
+INSTRUCTIONS:
+Draft customized language for each section of the Sole Member Operating Agreement. Each section should be professional legal language specific to a single-member LLC, referencing Wisconsin statutes where applicable.
+
+Return ONLY a JSON object with these keys (each value is a string):
+- preamble
+- formation
+- purpose
+- capitalContributions
+- booksAndRecords
+- memberRights
+- indemnification
+- dissolution
+- miscellaneous`;
+    } else {
+      prompt = `You are a Wisconsin corporate attorney drafting an Operating Agreement for a Wisconsin LLC under Wis. Stat. Ch. 183.
+
+COMPANY INFORMATION:
+- Name: ${companyName}
 - Entity Type: ${company.entity_type}
 - Management Type: ${isManagerManaged ? "Manager-Managed" : "Member-Managed"} (Wis. Stat. § 183.0401)
 - State: ${company.state_of_incorporation || "Wisconsin"}
-- Filing Date: ${company.filing_date || "Not specified"}
-- Business Purpose: ${company.business_purpose || "General business"}
+- Filing Date: ${filingDate}
+- Business Purpose: ${businessPurpose}
 - Registered Agent: ${company.registered_agent_name || "Not specified"}
 - Address: ${[company.address, company.city, company.state, company.zip].filter(Boolean).join(", ") || "Not specified"}
-- Fiscal Year End: ${company.fiscal_year_end || "December 31"}
+- Fiscal Year End: ${fiscalYearEnd}
 - Members: ${membersList}
 - Officers: ${officerInfo}
 
@@ -113,6 +151,7 @@ Return ONLY a JSON object with these keys (each value is a string):
 - booksAndRecords
 - tax
 - indemnification`;
+    }
 
     try {
       const result = await callAI({ provider, prompt });

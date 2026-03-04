@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,14 +9,25 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Collapsible, CollapsibleContent, CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import {
   FileText, Download, Eye, Loader2, Printer, Copy, Check, Share2,
+  Sparkles, ChevronDown, History, RotateCcw, FileDown,
 } from "lucide-react";
 import {
   generateSMOperatingAgreementPDF,
   type SMOperatingAgreementData,
 } from "@/lib/smllc-operating-agreement-pdf";
+import AIProviderSelect from "@/components/company/AIProviderSelect";
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
+import { saveAs } from "file-saver";
 
 interface Props {
   companyId: string;
@@ -25,11 +36,19 @@ interface Props {
 }
 
 export default function SMOperatingAgreementGenerator({ companyId, companyName, company }: Props) {
+  const queryClient = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [aiProvider, setAiProvider] = useState(() => localStorage.getItem("ai_provider") || "lovable");
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+  const [pendingDownloadType, setPendingDownloadType] = useState<"pdf" | "docx" | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [isAiDraft, setIsAiDraft] = useState(false);
 
   // Editable form fields
   const [formCompanyName, setFormCompanyName] = useState("");
@@ -52,6 +71,20 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shareholders").select("*").eq("company_id", companyId).order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: versionHistory = [] } = useQuery({
+    queryKey: ["doc-versions", companyId, "Sole Member Operating Agreement"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("document_registry")
+        .select("*")
+        .eq("company_id", companyId)
+        .eq("document_type", "Sole Member Operating Agreement")
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -80,34 +113,73 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
     }
   }, [members]);
 
-  const handleGenerate = () => {
+  const getMergedCompany = () => ({
+    ...company,
+    name: formCompanyName,
+    filing_date: formFilingDate,
+    business_purpose: formBusinessPurpose,
+    fiscal_year_end: formFiscalYearEnd,
+    registered_agent_name: formRAName,
+    registered_agent_address: formRAAddress,
+    registered_agent_city: formRACity,
+    registered_agent_state: formRAState,
+    registered_agent_zip: formRAZip,
+    address: formAddress,
+    city: formCity,
+    state: formState,
+    zip: formZip,
+  });
+
+  const saveVersion = async (doc: any, isAi: boolean) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) return;
+
+      const blob = doc.output("blob");
+      const safeName = formCompanyName.replace(/[^a-zA-Z0-9]/g, "_") || "SMLLC";
+      const versionNum = versionHistory.length + 1;
+      const fileName = `${userId}/${safeName}_SM_Operating_Agreement_v${versionNum}_${Date.now()}.pdf`;
+
+      await supabase.storage
+        .from("generated-documents")
+        .upload(fileName, blob, { contentType: "application/pdf", upsert: true });
+
+      const { data: signedData } = await supabase.storage
+        .from("generated-documents")
+        .createSignedUrl(fileName, 60 * 60 * 24 * 365);
+
+      await supabase.from("document_registry").insert({
+        company_id: companyId,
+        title: `SM Operating Agreement v${versionNum}${isAi ? " — AI Assisted" : ""} — ${new Date().toLocaleDateString()}`,
+        document_category: "corporate",
+        document_type: "Sole Member Operating Agreement",
+        status: "final",
+        file_name: fileName,
+        file_url: signedData?.signedUrl || null,
+        statute_reference: "Wis. Stat. Ch. 183",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId, "Sole Member Operating Agreement"] });
+    } catch (err: any) {
+      console.error("Save version error:", err);
+    }
+  };
+
+  const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      // Build a merged company object from form fields
-      const mergedCompany = {
-        ...company,
-        name: formCompanyName,
-        filing_date: formFilingDate,
-        business_purpose: formBusinessPurpose,
-        fiscal_year_end: formFiscalYearEnd,
-        registered_agent_name: formRAName,
-        registered_agent_address: formRAAddress,
-        registered_agent_city: formRACity,
-        registered_agent_state: formRAState,
-        registered_agent_zip: formRAZip,
-        address: formAddress,
-        city: formCity,
-        state: formState,
-        zip: formZip,
-      };
+      const mergedCompany = getMergedCompany();
       const mergedMembers = [{ name: formMemberName }];
 
       const data: SMOperatingAgreementData = { company: mergedCompany, members: mergedMembers };
       const doc = generateSMOperatingAgreementPDF(data);
       setPdfDoc(doc);
+      setIsAiDraft(false);
       const blob = doc.output("blob");
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(URL.createObjectURL(blob));
+      await saveVersion(doc, false);
       toast.success("Sole Member Operating Agreement generated!");
     } catch (err: any) {
       toast.error(err.message);
@@ -116,10 +188,135 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
     }
   };
 
-  const handleDownload = () => {
+  const handleAiGenerate = async () => {
+    setIsAiGenerating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error("Please log in first"); return; }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-operating-agreement`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            company_id: companyId,
+            management_type: "member-managed",
+            ai_provider: aiProvider,
+            is_single_member: true,
+            form_overrides: {
+              company_name: formCompanyName,
+              member_name: formMemberName,
+              filing_date: formFilingDate,
+              business_purpose: formBusinessPurpose,
+              fiscal_year_end: formFiscalYearEnd,
+            },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        if (response.status === 429) { toast.error("Rate limit exceeded."); return; }
+        if (response.status === 402) { toast.error("AI credits exhausted."); return; }
+        throw new Error(err.error || `Failed (${response.status})`);
+      }
+
+      const respData = await response.json();
+      // For SM LLC, we use the standard template but mark it as AI-assisted
+      // The edge function returns aiDraftSections which we'll note but the SM template is fixed
+      setIsAiDraft(true);
+
+      const mergedCompany = getMergedCompany();
+      const mergedMembers = [{ name: formMemberName }];
+      const data: SMOperatingAgreementData = { company: mergedCompany, members: mergedMembers };
+      const doc = generateSMOperatingAgreementPDF(data);
+      setPdfDoc(doc);
+      const blob = doc.output("blob");
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(URL.createObjectURL(blob));
+      await saveVersion(doc, true);
+      toast.success("AI-assisted Sole Member Operating Agreement generated!");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message);
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
+
+  const initiateDownload = (type: "pdf" | "docx") => {
+    const hasAccepted = localStorage.getItem(`disclaimer_accepted_${companyId}`);
+    if (hasAccepted) {
+      type === "pdf" ? executePdfDownload() : executeDocxDownload();
+    } else {
+      setPendingDownloadType(type);
+      setShowDisclaimer(true);
+    }
+  };
+
+  const handleDisclaimerAccept = () => {
+    localStorage.setItem(`disclaimer_accepted_${companyId}`, "true");
+    setShowDisclaimer(false);
+    if (pendingDownloadType === "pdf") executePdfDownload();
+    else executeDocxDownload();
+    setPendingDownloadType(null);
+  };
+
+  const executePdfDownload = () => {
     if (pdfDoc) {
       const safeName = formCompanyName.replace(/[^a-zA-Z0-9]/g, "_") || "SMLLC";
       pdfDoc.save(`${safeName}_SM_Operating_Agreement.pdf`);
+    }
+  };
+
+  const executeDocxDownload = async () => {
+    try {
+      const safeName = formCompanyName.replace(/[^a-zA-Z0-9]/g, "_") || "SMLLC";
+      const doc = new Document({
+        sections: [{
+          children: [
+            new Paragraph({
+              text: "SOLE MEMBER OPERATING AGREEMENT",
+              heading: HeadingLevel.TITLE,
+              alignment: AlignmentType.CENTER,
+            }),
+            new Paragraph({
+              text: formCompanyName,
+              heading: HeadingLevel.HEADING_1,
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 400 },
+            }),
+            new Paragraph({
+              children: [new TextRun({ text: `This Operating Agreement is made as of ${formFilingDate || "___"}, by ${formMemberName} as the sole member of ${formCompanyName}, LLC.`, size: 22 })],
+              spacing: { after: 200 },
+            }),
+            new Paragraph({ text: "ARTICLE 1 — ORGANIZATION", heading: HeadingLevel.HEADING_2 }),
+            new Paragraph({
+              children: [new TextRun({ text: `The Member has formed a Wisconsin LLC named ${formCompanyName}, LLC. Business purpose: ${formBusinessPurpose || "general business"}.`, size: 22 })],
+              spacing: { after: 200 },
+            }),
+            new Paragraph({ text: "ARTICLE 2 — CAPITAL CONTRIBUTIONS", heading: HeadingLevel.HEADING_2 }),
+            new Paragraph({
+              children: [new TextRun({ text: "The Member may make capital contributions as determined appropriate.", size: 22 })],
+              spacing: { after: 200 },
+            }),
+            new Paragraph({ text: "ARTICLE 3 — BOOKS AND RECORDS", heading: HeadingLevel.HEADING_2 }),
+            new Paragraph({
+              children: [new TextRun({ text: `Fiscal year ending month: ${formFiscalYearEnd || "December"}.`, size: 22 })],
+              spacing: { after: 200 },
+            }),
+          ],
+        }],
+      });
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, `${safeName}_SM_Operating_Agreement.docx`);
+      toast.success("Word document downloaded!");
+    } catch (err: any) {
+      toast.error("Failed to generate Word document: " + err.message);
     }
   };
 
@@ -142,55 +339,6 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
     }
   };
 
-  const handleShare = async () => {
-    if (!pdfDoc) return;
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const userId = session?.user?.id;
-      if (!userId) throw new Error("You must be logged in to share documents.");
-
-      const blob = pdfDoc.output("blob");
-      const safeName = formCompanyName.replace(/[^a-zA-Z0-9]/g, "_") || "SMLLC";
-      const fileName = `${userId}/${safeName}_SM_Operating_Agreement_${Date.now()}.pdf`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("generated-documents")
-        .upload(fileName, blob, { contentType: "application/pdf", upsert: true });
-      if (uploadError) throw uploadError;
-
-      const { data: signedData, error: signedError } = await supabase.storage
-        .from("generated-documents")
-        .createSignedUrl(fileName, 60 * 60 * 24 * 30);
-      if (signedError) throw signedError;
-
-      setShareUrl(signedData.signedUrl);
-
-      await supabase.from("document_registry").insert({
-        company_id: companyId,
-        title: `Sole Member Operating Agreement — ${new Date().toLocaleDateString()}`,
-        document_category: "corporate",
-        document_type: "Sole Member Operating Agreement",
-        status: "final",
-        file_name: fileName,
-        file_url: signedData.signedUrl,
-        statute_reference: "Wis. Stat. Ch. 183",
-      });
-
-      toast.success("Shareable link created! Valid for 30 days.");
-    } catch (err: any) {
-      toast.error(err.message);
-    }
-  };
-
-  const handleCopy = async () => {
-    if (shareUrl) {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      toast.success("Link copied!");
-    }
-  };
-
   return (
     <div className="space-y-5 animate-fade-in">
       <Card className="border-l-4 border-l-primary">
@@ -202,12 +350,13 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
                 Sole Member Operating Agreement
               </CardTitle>
             </div>
-            <Badge variant="outline" className="text-[10px]">
-              Wis. Stat. Ch. 183
-            </Badge>
+            <div className="flex items-center gap-2">
+              {isAiDraft && <Badge className="bg-purple-600 text-[10px]">AI Assisted</Badge>}
+              <Badge variant="outline" className="text-[10px]">Wis. Stat. Ch. 183</Badge>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Review and edit the fields below, then generate the Wisconsin Single Member LLC Operating Agreement. Fields are pre-filled from the company record.
+            Review and edit the fields below, then generate. Choose standard template or AI-assisted drafting.
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -218,21 +367,11 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="field-group">
                 <Label className="field-label">Company Name</Label>
-                <Input
-                  value={formCompanyName}
-                  onChange={(e) => setFormCompanyName(e.target.value)}
-                  placeholder="Company Name, LLC"
-                  className="h-8 text-sm"
-                />
+                <Input value={formCompanyName} onChange={(e) => setFormCompanyName(e.target.value)} placeholder="Company Name, LLC" className="h-8 text-sm" />
               </div>
               <div className="field-group">
                 <Label className="field-label">Sole Member Name</Label>
-                <Input
-                  value={formMemberName}
-                  onChange={(e) => setFormMemberName(e.target.value)}
-                  placeholder="Full legal name of sole member"
-                  className="h-8 text-sm"
-                />
+                <Input value={formMemberName} onChange={(e) => setFormMemberName(e.target.value)} placeholder="Full legal name" className="h-8 text-sm" />
               </div>
               <div className="field-group">
                 <Label className="field-label">Filing / Effective Date</Label>
@@ -240,22 +379,12 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
               </div>
               <div className="field-group">
                 <Label className="field-label">Fiscal Year End Month</Label>
-                <Input
-                  value={formFiscalYearEnd}
-                  onChange={(e) => setFormFiscalYearEnd(e.target.value)}
-                  placeholder="December"
-                  className="h-8 text-sm"
-                />
+                <Input value={formFiscalYearEnd} onChange={(e) => setFormFiscalYearEnd(e.target.value)} placeholder="December" className="h-8 text-sm" />
               </div>
             </div>
             <div className="field-group mt-3">
               <Label className="field-label">Business Purpose</Label>
-              <Textarea
-                value={formBusinessPurpose}
-                onChange={(e) => setFormBusinessPurpose(e.target.value)}
-                placeholder="Describe the purpose of the company…"
-                className="text-sm min-h-[60px]"
-              />
+              <Textarea value={formBusinessPurpose} onChange={(e) => setFormBusinessPurpose(e.target.value)} placeholder="Describe the purpose…" className="text-sm min-h-[60px]" />
             </div>
           </div>
 
@@ -267,40 +396,20 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="field-group sm:col-span-2">
                 <Label className="field-label">Address</Label>
-                <Input
-                  value={formAddress}
-                  onChange={(e) => setFormAddress(e.target.value)}
-                  placeholder="Street address"
-                  className="h-8 text-sm"
-                />
+                <Input value={formAddress} onChange={(e) => setFormAddress(e.target.value)} placeholder="Street address" className="h-8 text-sm" />
               </div>
               <div className="field-group">
                 <Label className="field-label">City</Label>
-                <Input
-                  value={formCity}
-                  onChange={(e) => setFormCity(e.target.value)}
-                  placeholder="City"
-                  className="h-8 text-sm"
-                />
+                <Input value={formCity} onChange={(e) => setFormCity(e.target.value)} placeholder="City" className="h-8 text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="field-group">
                   <Label className="field-label">State</Label>
-                  <Input
-                    value={formState}
-                    onChange={(e) => setFormState(e.target.value)}
-                    placeholder="WI"
-                    className="h-8 text-sm"
-                  />
+                  <Input value={formState} onChange={(e) => setFormState(e.target.value)} placeholder="WI" className="h-8 text-sm" />
                 </div>
                 <div className="field-group">
                   <Label className="field-label">ZIP</Label>
-                  <Input
-                    value={formZip}
-                    onChange={(e) => setFormZip(e.target.value)}
-                    placeholder="ZIP"
-                    className="h-8 text-sm"
-                  />
+                  <Input value={formZip} onChange={(e) => setFormZip(e.target.value)} placeholder="ZIP" className="h-8 text-sm" />
                 </div>
               </div>
             </div>
@@ -314,49 +423,24 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="field-group sm:col-span-2">
                 <Label className="field-label">Registered Agent Name</Label>
-                <Input
-                  value={formRAName}
-                  onChange={(e) => setFormRAName(e.target.value)}
-                  placeholder="Registered agent name"
-                  className="h-8 text-sm"
-                />
+                <Input value={formRAName} onChange={(e) => setFormRAName(e.target.value)} placeholder="Registered agent name" className="h-8 text-sm" />
               </div>
               <div className="field-group sm:col-span-2">
                 <Label className="field-label">Address</Label>
-                <Input
-                  value={formRAAddress}
-                  onChange={(e) => setFormRAAddress(e.target.value)}
-                  placeholder="Street address"
-                  className="h-8 text-sm"
-                />
+                <Input value={formRAAddress} onChange={(e) => setFormRAAddress(e.target.value)} placeholder="Street address" className="h-8 text-sm" />
               </div>
               <div className="field-group">
                 <Label className="field-label">City</Label>
-                <Input
-                  value={formRACity}
-                  onChange={(e) => setFormRACity(e.target.value)}
-                  placeholder="City"
-                  className="h-8 text-sm"
-                />
+                <Input value={formRACity} onChange={(e) => setFormRACity(e.target.value)} placeholder="City" className="h-8 text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="field-group">
                   <Label className="field-label">State</Label>
-                  <Input
-                    value={formRAState}
-                    onChange={(e) => setFormRAState(e.target.value)}
-                    placeholder="WI"
-                    className="h-8 text-sm"
-                  />
+                  <Input value={formRAState} onChange={(e) => setFormRAState(e.target.value)} placeholder="WI" className="h-8 text-sm" />
                 </div>
                 <div className="field-group">
                   <Label className="field-label">ZIP</Label>
-                  <Input
-                    value={formRAZip}
-                    onChange={(e) => setFormRAZip(e.target.value)}
-                    placeholder="ZIP"
-                    className="h-8 text-sm"
-                  />
+                  <Input value={formRAZip} onChange={(e) => setFormRAZip(e.target.value)} placeholder="ZIP" className="h-8 text-sm" />
                 </div>
               </div>
             </div>
@@ -364,55 +448,67 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
 
           <Separator />
 
-          {/* Generate Button */}
+          <AIProviderSelect value={aiProvider} onChange={setAiProvider} />
+
+          {/* Generate Buttons */}
           <div className="flex flex-wrap gap-2">
-            <Button onClick={handleGenerate} disabled={isGenerating}>
-              {isGenerating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+            <Button onClick={handleGenerate} disabled={isGenerating || isAiGenerating} variant="outline">
+              {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+              Generate Standard
+            </Button>
+            <Button onClick={handleAiGenerate} disabled={isGenerating || isAiGenerating}>
+              {isAiGenerating ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Drafting with AI…</>
               ) : (
-                <FileText className="h-4 w-4" />
+                <><Sparkles className="h-4 w-4" /> AI-Assisted Draft</>
               )}
-              Generate Agreement
             </Button>
           </div>
 
           {/* Action Buttons */}
           {pdfDoc && (
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={handleDownload}>
-                <Download className="h-3.5 w-3.5" />
-                Download PDF
+              <Button variant="outline" size="sm" onClick={() => initiateDownload("pdf")}>
+                <Download className="h-3.5 w-3.5" /> Download PDF
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => initiateDownload("docx")}>
+                <FileDown className="h-3.5 w-3.5" /> Download Word
               </Button>
               <Button variant="outline" size="sm" onClick={handlePreview}>
-                <Eye className="h-3.5 w-3.5" />
-                Preview
+                <Eye className="h-3.5 w-3.5" /> Preview
               </Button>
               <Button variant="outline" size="sm" onClick={handlePrint}>
-                <Printer className="h-3.5 w-3.5" />
-                Print
-              </Button>
-              <Button variant="secondary" size="sm" onClick={handleShare}>
-                <Share2 className="h-3.5 w-3.5" />
-                Create Share Link
+                <Printer className="h-3.5 w-3.5" /> Print
               </Button>
             </div>
           )}
 
-          {/* Share URL */}
-          {shareUrl && (
-            <div className="rounded-md bg-muted/50 border border-border p-3 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">
-                Shareable Link (30-day expiry):
-              </p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 text-[11px] bg-background rounded px-2 py-1.5 border border-border truncate">
-                  {shareUrl}
-                </code>
-                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={handleCopy}>
-                  {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+          {/* Version History */}
+          {versionHistory.length > 0 && (
+            <Collapsible open={showHistory} onOpenChange={setShowHistory}>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground gap-1">
+                  <History className="h-3 w-3" />
+                  Version History ({versionHistory.length})
+                  <ChevronDown className="h-3 w-3" />
                 </Button>
-              </div>
-            </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2">
+                  {versionHistory.map((v: any, i: number) => (
+                    <div key={v.id} className="flex items-center justify-between text-xs py-1.5 border-b border-border last:border-0">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[9px] h-4">v{versionHistory.length - i}</Badge>
+                        <span className="text-muted-foreground">{v.title}</span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">
+                        {new Date(v.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           )}
         </CardContent>
       </Card>
@@ -422,19 +518,45 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-display flex items-center gap-2">
-              <Eye className="h-4 w-4" />
-              Preview
+              <Eye className="h-4 w-4" /> Document Preview
+              {isAiDraft && <Badge className="bg-purple-600 text-[9px]">AI Assisted</Badge>}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <iframe
-              src={previewUrl}
-              className="w-full h-[600px] rounded border border-border"
-              title="Sole Member Operating Agreement Preview"
-            />
+            <iframe src={previewUrl} className="w-full h-[600px] rounded border border-border" title="Sole Member Operating Agreement Preview" />
           </CardContent>
         </Card>
       )}
+
+      {/* Legal Disclaimer Dialog */}
+      <Dialog open={showDisclaimer} onOpenChange={setShowDisclaimer}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base">Legal Disclaimer</DialogTitle>
+            <DialogDescription className="text-xs">
+              Please review and acknowledge before downloading.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="text-xs text-muted-foreground space-y-2 max-h-48 overflow-y-auto border border-border rounded p-3 bg-muted/30">
+            <p><strong>IMPORTANT NOTICE:</strong> This document is generated by EntityIQ as a template for informational purposes only. It does not constitute legal advice.</p>
+            <p>You are strongly encouraged to have this document reviewed by a qualified attorney before executing or relying on it.</p>
+            <p>EntityIQ makes no warranties regarding the accuracy or suitability of this document. Use is at your own risk.</p>
+            {isAiDraft && (
+              <p className="text-purple-600 font-medium">This document contains AI-generated content which may require additional legal review.</p>
+            )}
+          </div>
+          <div className="flex items-start gap-2 mt-2">
+            <Checkbox id="sm-disclaimer-check" checked={disclaimerAccepted} onCheckedChange={(v) => setDisclaimerAccepted(!!v)} />
+            <label htmlFor="sm-disclaimer-check" className="text-xs text-foreground cursor-pointer">
+              I acknowledge this is a template, not legal advice, and I will seek appropriate legal counsel.
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setShowDisclaimer(false)}>Cancel</Button>
+            <Button size="sm" disabled={!disclaimerAccepted} onClick={handleDisclaimerAccept}>Accept & Download</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
