@@ -49,6 +49,25 @@ function addSectionTitle(doc: jsPDF, y: number, label: string): number {
   return y + 5;
 }
 
+function addAiBadge(doc: jsPDF, y: number): number {
+  y = checkBreak(doc, y, 8);
+  const badgeText = "AI ASSISTED";
+  doc.setFontSize(6.5);
+  doc.setFont("helvetica", "bold");
+  const textWidth = doc.getTextWidth(badgeText);
+  const badgeWidth = textWidth + 6;
+  const badgeHeight = 4.5;
+  const badgeX = pw(doc) - MARGIN - badgeWidth;
+  // Badge background
+  doc.setFillColor(139, 92, 246); // purple
+  doc.roundedRect(badgeX, y - 3.2, badgeWidth, badgeHeight, 1.2, 1.2, "F");
+  // Badge text
+  doc.setTextColor(255, 255, 255);
+  doc.text(badgeText, badgeX + 3, y);
+  doc.setTextColor(30, 30, 30);
+  return y + 3;
+}
+
 function addFooters(doc: jsPDF, companyName: string) {
   const count = doc.getNumberOfPages();
   for (let i = 2; i <= count; i++) {
@@ -73,6 +92,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   const { company, members, officers, managementType, aiDraftSections } = data;
   const cx = pw(doc) / 2;
   const ai = aiDraftSections || {};
+  const hasAi = !!aiDraftSections && Object.keys(aiDraftSections).length > 0;
   const isManagerManaged = managementType === "manager-managed";
 
   const companyName = company.name || "_______________";
@@ -125,6 +145,12 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   doc.text(`Effective Date: ${filingDate}`, cx, cy + 20, { align: "center" });
   doc.text(`Prepared by ${BRAND}`, cx, cy + 27, { align: "center" });
 
+  if (hasAi) {
+    doc.setFontSize(8);
+    doc.setTextColor(180, 140, 220);
+    doc.text("Contains AI-Assisted Sections", cx, cy + 35, { align: "center" });
+  }
+
   doc.setFontSize(7);
   doc.setTextColor(100, 100, 100);
   doc.text("CONFIDENTIAL — FOR AUTHORIZED USE ONLY", cx, ph(doc) - 20, { align: "center" });
@@ -174,6 +200,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   doc.text(`OF ${companyName.toUpperCase()}`, cx, y + 6, { align: "center" });
   y += 15;
 
+  if (ai.preamble) y = addAiBadge(doc, y);
   const preamble = ai.preamble || `This Operating Agreement ("Agreement") of ${companyName}, a Wisconsin limited liability company (the "Company"), is entered into effective as of ${filingDate}, by and among the Members identified herein, pursuant to the Wisconsin Uniform Limited Liability Company Law, Wis. Stat. Ch. 183.`;
   y = addParagraph(doc, y, preamble);
 
@@ -184,6 +211,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   // ── ARTICLE I: FORMATION ──
   y = addArticleTitle(doc, y, "I", "Formation");
   y = addSectionTitle(doc, y, "Section 1.1 — Formation");
+  if (ai.formation) y = addAiBadge(doc, y);
   y = addParagraph(doc, y, ai.formation || `The Company was formed as a Wisconsin limited liability company pursuant to Wis. Stat. § 183.0202 by filing Articles of Organization with the Wisconsin Department of Financial Institutions on ${filingDate}.`);
   y = addSectionTitle(doc, y, "Section 1.2 — Registered Agent");
   y = addParagraph(doc, y, `The Company's registered agent is ${raName}, with a registered office address at ${raAddress}, as required by Wis. Stat. § 183.0105.`);
@@ -198,15 +226,18 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
 
   // ── ARTICLE III: PURPOSE AND POWERS ──
   y = addArticleTitle(doc, y, "III", "Purpose and Powers");
+  if (ai.purpose) y = addAiBadge(doc, y);
   y = addParagraph(doc, y, ai.purpose || `The Company is organized for the purpose of ${purpose}, and to engage in any and all activities necessary, customary, convenient, or incident thereto, as permitted under Wis. Stat. § 183.0106.`);
 
   // ── ARTICLE IV: TERM ──
   y = addArticleTitle(doc, y, "IV", "Term");
+  if (ai.term) y = addAiBadge(doc, y);
   y = addParagraph(doc, y, ai.term || `The term of the Company shall be perpetual, commencing on the date the Articles of Organization were filed with the Wisconsin Department of Financial Institutions, unless sooner dissolved in accordance with this Agreement or Wis. Stat. § 183.0901.`);
 
   // ── ARTICLE V: MEMBERS AND MEMBERSHIP INTERESTS ──
   y = addArticleTitle(doc, y, "V", "Members and Membership Interests");
   y = addSectionTitle(doc, y, "Section 5.1 — Members");
+  if (ai.members) y = addAiBadge(doc, y);
   y = addParagraph(doc, y, ai.members || `The names, addresses, and membership interests of the Members are as set forth in the attached Schedule A. Each Member's interest in the Company shall be personal property as provided in Wis. Stat. § 183.0701.`);
 
   // Members table
@@ -235,12 +266,14 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   // ── ARTICLE VI: CAPITAL CONTRIBUTIONS ──
   y = addArticleTitle(doc, y, "VI", "Capital Contributions");
   y = addSectionTitle(doc, y, "Section 6.1 — Initial Contributions");
+  if (ai.capitalContributions) y = addAiBadge(doc, y);
   y = addParagraph(doc, y, ai.capitalContributions || `Each Member shall make an initial capital contribution to the Company in the amount and form set forth opposite such Member's name in Schedule A. No Member shall be required to make any additional capital contributions without the Member's consent, as provided by Wis. Stat. § 183.0402.`);
   y = addSectionTitle(doc, y, "Section 6.2 — Return of Contributions");
   y = addParagraph(doc, y, `No Member shall have the right to withdraw or receive any return of such Member's capital contribution, except as may be specifically provided in this Agreement or required by Wis. Stat. § 183.0404.`);
 
   // ── ARTICLE VII: DISTRIBUTIONS ──
   y = addArticleTitle(doc, y, "VII", "Distributions");
+  if (ai.distributions) y = addAiBadge(doc, y);
   y = addParagraph(doc, y, ai.distributions || `Distributions shall be made to the Members in proportion to their respective membership interests at such times and in such amounts as the ${isManagerManaged ? "Managers" : "Members"} shall determine, subject to the limitations set forth in Wis. Stat. § 183.0404. No distribution shall be made if, after giving effect to the distribution, the Company would be unable to pay its debts as they become due in the ordinary course of business.`);
 
   // ── ARTICLE VIII: MANAGEMENT ──
@@ -248,6 +281,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
 
   if (isManagerManaged) {
     y = addSectionTitle(doc, y, "Section 8.1 — Manager-Managed");
+    if (ai.management) y = addAiBadge(doc, y);
     y = addParagraph(doc, y, ai.management || `The Company shall be managed by one or more Managers as designated by a majority vote of the Members, pursuant to Wis. Stat. § 183.0401(2). The Managers shall have full and exclusive authority to manage and control the business and affairs of the Company.`);
     y = addSectionTitle(doc, y, "Section 8.2 — Powers of Managers");
     y = addParagraph(doc, y, `The Managers shall have the power and authority to take all actions necessary, appropriate, or advisable to carry out the purposes of the Company, including but not limited to: (a) entering into contracts; (b) opening bank accounts; (c) borrowing money; (d) hiring employees; and (e) acquiring, holding, and disposing of property. Each Manager shall be an agent of the Company per Wis. Stat. § 183.0301.`);
@@ -269,6 +303,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
     }
   } else {
     y = addSectionTitle(doc, y, "Section 8.1 — Member-Managed");
+    if (ai.management) y = addAiBadge(doc, y);
     y = addParagraph(doc, y, ai.management || `The Company shall be managed by its Members in proportion to their membership interests, pursuant to Wis. Stat. § 183.0401(1). Each Member shall be an agent of the Company per Wis. Stat. § 183.0301.`);
     y = addSectionTitle(doc, y, "Section 8.2 — Voting");
     y = addParagraph(doc, y, `Except as otherwise provided in this Agreement, decisions shall be made by a majority vote of the Members based on their respective membership interests. The following actions shall require the unanimous consent of all Members: (a) amendment of this Agreement; (b) admission of new Members; (c) any action that would make it impossible to carry on the ordinary business of the Company.`);
@@ -278,11 +313,13 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
 
   // ── ARTICLE IX: MEETINGS ──
   y = addArticleTitle(doc, y, "IX", "Meetings of Members");
+  if (ai.meetings) y = addAiBadge(doc, y);
   y = addParagraph(doc, y, ai.meetings || `The Members shall hold an annual meeting at such time and place as may be determined by the ${isManagerManaged ? "Managers" : "Members"}. Special meetings may be called by any Member upon not less than ten (10) days' prior written notice to all other Members. Members may participate in meetings by telephone or electronic communication as permitted by Wis. Stat. § 183.0404. Any action required or permitted to be taken at a meeting of Members may be taken without a meeting if a written consent setting forth the action is signed by Members having not less than the minimum number of votes necessary to authorize or take such action at a meeting.`);
 
   // ── ARTICLE X: TRANSFER OF INTERESTS ──
   y = addArticleTitle(doc, y, "X", "Transfer of Membership Interests");
   y = addSectionTitle(doc, y, "Section 10.1 — Restrictions on Transfer");
+  if (ai.transfer) y = addAiBadge(doc, y);
   y = addParagraph(doc, y, ai.transfer || `No Member may transfer, sell, assign, pledge, or otherwise dispose of all or any part of such Member's membership interest in the Company without the prior written consent of ${isManagerManaged ? "the Managers and " : ""}all other Members, pursuant to Wis. Stat. § 183.0706. Any attempted transfer in violation of this Section shall be void and of no effect.`);
   y = addSectionTitle(doc, y, "Section 10.2 — Effect of Transfer");
   y = addParagraph(doc, y, `A transferee of a membership interest who has not been admitted as a Member shall have only the rights of an assignee as provided in Wis. Stat. § 183.0706, including the right to receive distributions to which the transferor would otherwise be entitled.`);
@@ -290,20 +327,24 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   // ── ARTICLE XI: DISSOLUTION ──
   y = addArticleTitle(doc, y, "XI", "Dissolution and Winding Up");
   y = addSectionTitle(doc, y, "Section 11.1 — Events of Dissolution");
+  if (ai.dissolution) y = addAiBadge(doc, y);
   y = addParagraph(doc, y, ai.dissolution || `The Company shall be dissolved upon the first to occur of: (a) the unanimous written agreement of all Members; (b) the entry of a decree of judicial dissolution under Wis. Stat. § 183.0902; (c) any event that makes it unlawful for the business of the Company to be carried on; or (d) as otherwise provided in Wis. Stat. § 183.0901.`);
   y = addSectionTitle(doc, y, "Section 11.2 — Winding Up");
   y = addParagraph(doc, y, `Upon dissolution, the Company's affairs shall be wound up pursuant to Wis. Stat. § 183.0903. The assets shall be distributed in the following order: (a) to creditors of the Company; (b) to Members for unpaid distributions; (c) to Members in proportion to their membership interests.`);
 
   // ── ARTICLE XII: BOOKS AND RECORDS ──
   y = addArticleTitle(doc, y, "XII", "Books and Records");
+  if (ai.booksAndRecords) y = addAiBadge(doc, y);
   y = addParagraph(doc, y, ai.booksAndRecords || `The Company shall maintain at its principal office all books and records required by Wis. Stat. § 183.0405, including: (a) a current list of the full name and last known address of each Member; (b) copies of all federal, state, and local tax returns; (c) copies of the Articles of Organization, this Operating Agreement, and all amendments; and (d) financial statements for the three most recent fiscal years.`);
 
   // ── ARTICLE XIII: TAX MATTERS ──
   y = addArticleTitle(doc, y, "XIII", "Tax Matters");
+  if (ai.tax) y = addAiBadge(doc, y);
   y = addParagraph(doc, y, ai.tax || `The Company shall be classified as a partnership for federal income tax purposes (or as a disregarded entity if there is only one Member). The fiscal year of the Company shall end on ${fiscalYearEnd}. The ${isManagerManaged ? "Managers" : "Members"} shall cause all required tax returns to be prepared and filed in a timely manner. Each Member shall be provided with a Schedule K-1 or equivalent within ninety (90) days following the end of each fiscal year.`);
 
   // ── ARTICLE XIV: INDEMNIFICATION ──
   y = addArticleTitle(doc, y, "XIV", "Indemnification");
+  if (ai.indemnification) y = addAiBadge(doc, y);
   y = addParagraph(doc, y, ai.indemnification || `The Company shall indemnify and hold harmless each Member${isManagerManaged ? ", Manager," : ""} and officer from and against any and all claims, losses, damages, liabilities, and expenses arising out of or in connection with the management of the Company's affairs, to the fullest extent permitted by Wis. Stat. § 183.0408, provided that such person acted in good faith and in a manner reasonably believed to be in or not opposed to the best interests of the Company.`);
 
   // ── ARTICLE XV: AMENDMENTS ──
