@@ -25,9 +25,8 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     setLoading(true);
     try {
       const doc = generatePDF();
-      const blob = doc.output("blob");
-      const url = URL.createObjectURL(blob);
-      setPreviewUrl(url);
+      const dataUri = doc.output("datauristring");
+      setPreviewUrl(dataUri);
       setPreviewOpen(true);
     } catch (err: any) {
       console.error("PDF preview error:", err);
@@ -75,25 +74,13 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
   };
 
   const handlePrintFromPreview = () => {
-    const iframe = document.querySelector<HTMLIFrameElement>('iframe[title="PDF Preview"]');
-    if (iframe?.contentWindow) {
-      try {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-      } catch {
-        handlePrint();
-      }
-    } else {
-      handlePrint();
-    }
+    // With data URIs in object tags, direct print isn't possible — fall back to open-in-tab
+    handlePrint();
   };
 
   const handleClosePreview = () => {
     setPreviewOpen(false);
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    }
+    setPreviewUrl(null);
   };
 
   return (
@@ -132,11 +119,17 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
           </DialogHeader>
           <div className="flex-1 overflow-hidden">
             {previewUrl && (
-              <iframe
-                src={previewUrl}
+              <object
+                data={previewUrl}
+                type="application/pdf"
                 className="w-full h-full border-0"
                 title="PDF Preview"
-              />
+              >
+                <p className="p-8 text-center text-muted-foreground">
+                  PDF preview not supported in this browser.{" "}
+                  <button onClick={handleDownload} className="underline text-primary">Download instead</button>.
+                </p>
+              </object>
             )}
           </div>
         </DialogContent>
