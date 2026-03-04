@@ -95,7 +95,7 @@ export default function CompanyDetail() {
   const defaultTab = isLLC ? "organization" : "incorporation";
 
   // Valid tab values for LLC vs non-LLC to prevent reversion
-  const LLC_TABS = ["organization", "meetings", "shareholders", "timeline", "leases", "counsel", "banks", "relationships", "ai-compliance", "record-book"];
+  const LLC_TABS = ["organization", "meetings", "shareholders", "timeline", "leases", "counsel", "banks", "relationships", "ai-compliance", "operating-agreement", "record-book"];
   const validLLCTab = isLLC && rawHashTab && !LLC_TABS.includes(rawHashTab);
   const hashTab = (!rawHashTab || (rawHashTab === "incorporation" && isLLC) || validLLCTab) ? defaultTab : rawHashTab;
 
@@ -119,6 +119,7 @@ export default function CompanyDetail() {
         { value: "banks", label: "Bank" },
         { value: "relationships", label: "Relationships" },
         { value: "ai-compliance", label: "AI Compliance" },
+        { value: "operating-agreement", label: "Operating Agreement" },
         { value: "record-book", label: "Record Book" },
       ];
     }
@@ -360,7 +361,15 @@ export default function CompanyDetail() {
         <TabsContent value="ai-compliance" className="mt-5">
           <AIComplianceTab companyId={company.id} companyName={company.name} />
         </TabsContent>
-        {/* Operating Agreement is available via Record Book for LLCs — not as a separate tab */}
+        {isLLC && (
+          <TabsContent value="operating-agreement" className="mt-5">
+            {company.entity_type === "Single Member LLC" ? (
+              <SMOperatingAgreementGenerator companyId={company.id} companyName={company.name} company={company} />
+            ) : (
+              <OperatingAgreementGenerator companyId={company.id} companyName={company.name} company={company} />
+            )}
+          </TabsContent>
+        )}
         {(company.entity_type === "Corporation" || company.entity_type === "S-Corp") && (
           <TabsContent value="bylaws" className="mt-5">
             <BylawsGenerator companyId={company.id} companyName={company.name} company={company} />
