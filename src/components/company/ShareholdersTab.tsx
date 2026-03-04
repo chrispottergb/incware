@@ -294,67 +294,109 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
           <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : shareholders.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-6">No {t.shareholders.toLowerCase()} recorded yet.</p>
-        ) : (
-          <div className="rounded-md border border-border overflow-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-[10px] uppercase">Name</TableHead>
-                  <TableHead className="text-[10px] uppercase">Address</TableHead>
-                  <TableHead className="text-[10px] uppercase">City/State/Zip</TableHead>
-                   <TableHead className="text-[10px] uppercase">SSN/EIN</TableHead>
-                   {shareholderHoldings && <TableHead className="text-[10px] uppercase text-right">{t.isLLC ? "Units Held" : "Shares Held"}</TableHead>}
-                   {t.isLLC && <TableHead className="text-[10px] uppercase text-right">Ownership %</TableHead>}
-                   {t.isLLC && <TableHead className="text-[10px] uppercase text-right">Capital Account</TableHead>}
-                   <TableHead className="text-[10px] uppercase">Status</TableHead>
-                   <TableHead className="text-[10px] uppercase w-20">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {shareholders.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="text-xs font-medium">{s.name}</TableCell>
-                    <TableCell className="text-xs">{s.address ?? "—"}</TableCell>
-                    <TableCell className="text-xs">{[s.city, s.state, s.zip].filter(Boolean).join(", ") || "—"}</TableCell>
-                     <TableCell className="text-xs font-mono">{getSsnDisplay(s)}</TableCell>
-                     {shareholderHoldings && (
-                       <TableCell className="text-xs text-right font-medium">
-                         {(shareholderHoldings[s.id] ?? 0).toLocaleString()}
-                       </TableCell>
-                     )}
-                     {t.isLLC && (
-                      <TableCell className="text-xs text-right font-medium">
-                        {(s as any).ownership_percentage != null ? `${Number((s as any).ownership_percentage).toFixed(2)}%` : "—"}
-                      </TableCell>
-                    )}
-                     {t.isLLC && (
-                      <TableCell className="text-xs text-right font-medium font-mono">
-                        {(s as any).capital_account_balance != null && Number((s as any).capital_account_balance) !== 0
-                          ? `$${Number((s as any).capital_account_balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                          : "—"}
-                      </TableCell>
-                    )}
-                    <TableCell>
-                      <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${s.status === "active" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}`}>
-                        {s.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(s)}>
-                          <Edit2 className="h-3 w-3" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => remove.mutate(s.id)}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
+        ) : (() => {
+          // Calculate total units for membership interest %
+          const activeShareholders = shareholders.filter(s => s.status === "active" && !s.is_treasury);
+          const totalUnits = shareholderHoldings
+            ? activeShareholders.reduce((sum, s) => sum + (shareholderHoldings[s.id] ?? 0), 0)
+            : 0;
+          const getInterestPct = (s: typeof shareholders[0]) => {
+            if (!shareholderHoldings || totalUnits === 0) return null;
+            const units = shareholderHoldings[s.id] ?? 0;
+            if (units === 0) return 0;
+            return (units / totalUnits) * 100;
+          };
+          const totalPct = t.isLLC && shareholderHoldings
+            ? activeShareholders.reduce((sum, s) => sum + (getInterestPct(s) ?? 0), 0)
+            : null;
+
+          return (
+            <div className="rounded-md border border-border overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-[10px] uppercase">Name</TableHead>
+                    <TableHead className="text-[10px] uppercase">Address</TableHead>
+                    <TableHead className="text-[10px] uppercase">City/State/Zip</TableHead>
+                    <TableHead className="text-[10px] uppercase">SSN/EIN</TableHead>
+                    {shareholderHoldings && <TableHead className="text-[10px] uppercase text-right">{t.isLLC ? "Units Held" : "Shares Held"}</TableHead>}
+                    {t.isLLC && shareholderHoldings && <TableHead className="text-[10px] uppercase text-right">Interest %</TableHead>}
+                    {t.isLLC && <TableHead className="text-[10px] uppercase text-right">Capital Account</TableHead>}
+                    <TableHead className="text-[10px] uppercase">Status</TableHead>
+                    <TableHead className="text-[10px] uppercase w-20">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+                </TableHeader>
+                <TableBody>
+                  {shareholders.map((s) => {
+                    const pct = getInterestPct(s);
+                    return (
+                      <TableRow key={s.id}>
+                        <TableCell className="text-xs font-medium">{s.name}</TableCell>
+                        <TableCell className="text-xs">{s.address ?? "—"}</TableCell>
+                        <TableCell className="text-xs">{[s.city, s.state, s.zip].filter(Boolean).join(", ") || "—"}</TableCell>
+                        <TableCell className="text-xs font-mono">{getSsnDisplay(s)}</TableCell>
+                        {shareholderHoldings && (
+                          <TableCell className="text-xs text-right font-medium">
+                            {(shareholderHoldings[s.id] ?? 0).toLocaleString()}
+                          </TableCell>
+                        )}
+                        {t.isLLC && shareholderHoldings && (
+                          <TableCell className="text-xs text-right font-medium">
+                            {s.status === "active" && !s.is_treasury && pct != null
+                              ? `${pct.toFixed(2)}%`
+                              : "—"}
+                          </TableCell>
+                        )}
+                        {t.isLLC && (
+                          <TableCell className="text-xs text-right font-medium font-mono">
+                            {(s as any).capital_account_balance != null && Number((s as any).capital_account_balance) !== 0
+                              ? `$${Number((s as any).capital_account_balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                              : "—"}
+                          </TableCell>
+                        )}
+                        <TableCell>
+                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${s.status === "active" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}`}>
+                            {s.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(s)}>
+                              <Edit2 className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => remove.mutate(s.id)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {/* Total validation row for LLC interest % */}
+                  {t.isLLC && shareholderHoldings && totalUnits > 0 && (
+                    <TableRow className="bg-muted/30 border-t-2">
+                      <TableCell colSpan={4} className="text-xs font-semibold text-right">
+                        Totals
+                      </TableCell>
+                      <TableCell className="text-xs text-right font-semibold">
+                        {totalUnits.toLocaleString()}
+                      </TableCell>
+                      <TableCell className={`text-xs text-right font-semibold ${totalPct != null && Math.abs(totalPct - 100) > 0.01 ? "text-destructive" : "text-success"}`}>
+                        {totalPct != null ? `${totalPct.toFixed(2)}%` : "—"}
+                        {totalPct != null && Math.abs(totalPct - 100) > 0.01 && (
+                          <span className="block text-[10px] text-destructive font-normal">≠ 100%</span>
+                        )}
+                      </TableCell>
+                      <TableCell />
+                      <TableCell />
+                      <TableCell />
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          );
+        })()}
       </CardContent>
     </Card>
   );
