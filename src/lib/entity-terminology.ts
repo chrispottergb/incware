@@ -9,6 +9,11 @@ export interface EntityTerminology {
   shareholder: string;        // "Shareholder" | "Member"
   shareholders: string;       // "Shareholders" | "Members"
   
+  // Director / Authorized Binder labels
+  director: string;           // "Director" | "Authorized Binder"
+  directors: string;          // "Directors" | "Authorized Binders"
+  directorName: string;       // "Director Name" | "Authorized Binder Name"
+  
   // Equity labels
   share: string;              // "Share" | "Membership Interest"
   shares: string;             // "Shares" | "Membership Interests"
@@ -74,6 +79,9 @@ export function getTerminology(entityType?: string): EntityTerminology {
     return {
       shareholder: "Member",
       shareholders: "Members",
+      director: "Authorized Binder",
+      directors: "Authorized Binders",
+      directorName: "Authorized Binder Name",
       share: "Membership Interest",
       shares: "Membership Interests",
       shareUnit: "Units",
@@ -110,6 +118,9 @@ export function getTerminology(entityType?: string): EntityTerminology {
   return {
     shareholder: "Shareholder",
     shareholders: "Shareholders",
+    director: "Director",
+    directors: "Directors",
+    directorName: "Director Name",
     share: "Share",
     shares: "Shares",
     shareUnit: "Shares",

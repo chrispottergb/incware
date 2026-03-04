@@ -180,7 +180,7 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
   const sections = [
     "Executive Summary",
     `Articles of ${isLLC ? "Organization" : "Incorporation"}`,
-    isLLC ? "Managers & Members" : "Officers & Directors",
+    isLLC ? "Authorized Binders & Members" : "Officers & Directors",
     isLLC ? "Members Registry" : "Shareholders Registry",
     isLLC ? "Membership Interest Certificates" : "Stock Certificates",
     isLLC ? "Interest Ledger" : "Stock Ledger",
@@ -241,7 +241,7 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
   // ── SECTION 3: OFFICERS & DIRECTORS ──
   doc.addPage();
   y = 20;
-  const sec3Title = isLLC ? "Managers & Members" : "Officers & Directors";
+  const sec3Title = isLLC ? "Authorized Binders & Members" : "Officers & Directors";
   y = addSectionTitle(doc, y, 3, sec3Title);
   if (intros[sec3Title]) y = addNarrative(doc, y, intros[sec3Title]);
 
@@ -259,7 +259,7 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
   }
 
   // Directors
-  y = addSubSection(doc, y, isLLC ? "Managers" : "Directors");
+  y = addSubSection(doc, y, isLLC ? "Authorized Binders" : "Directors");
   const directors = companyData.directors;
   y = addTableSafe(doc, y,
     ["Name", "Address", "City", "State", "Added"],

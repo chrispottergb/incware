@@ -409,7 +409,7 @@ export default function MeetingDetail() {
     { value: "info", label: "Meeting Info" },
     { value: "financials", label: "Financial" },
     { value: "shareholders", label: term.shareholdersSubTab },
-    { value: "directors", label: "Directors" },
+    { value: "directors", label: term.directors },
     { value: "officers", label: "Officers" },
     { value: "counsel", label: "Counsel / Banking" },
     { value: "leases", label: "Leases" },
@@ -542,7 +542,7 @@ export default function MeetingDetail() {
         <TabsContent value="directors" className="mt-5">
           <div className="space-y-4">
             {isShareholderMeeting && companyDirectors.length > 0 && (
-              <DirectorReElection directors={companyDirectors} shareholders={companyShareholders} />
+              <DirectorReElection directors={companyDirectors} shareholders={companyShareholders} directorLabel={term.director} directorsLabel={term.directors} shareholdersLabel={term.shareholders} />
             )}
             <MeetingAttendanceSelector
               meetingId={meeting.id}
@@ -553,20 +553,20 @@ export default function MeetingDetail() {
                 startDate: d.added_date,
               }))}
               existingNames={directors.map((d: any) => d.director_name)}
-              roleLabel="Director"
-              roleLabelPlural="Directors"
+              roleLabel={term.director}
+              roleLabelPlural={term.directors}
               tableName="meeting_directors"
               nameColumn="director_name"
             />
             <div className="flex justify-end">
               <PrintPreviewButton
                 label="Print"
-                generatePDF={() => exportSectionPDF("Directors", company, meeting, ["Director Name"], directors.map(d => [d.director_name]))}
+                generatePDF={() => exportSectionPDF(term.directors, company, meeting, [term.directorName], directors.map(d => [d.director_name]))}
                 fileName={`directors-${meetingFileName}`}
               />
             </div>
-            <MeetingSubTable meetingId={meeting.id} tableName="meeting_directors" title="Directors"
-              columns={[{ key: "director_name", label: "Director Name", required: true }]}
+            <MeetingSubTable meetingId={meeting.id} tableName="meeting_directors" title={term.directors}
+              columns={[{ key: "director_name", label: term.directorName, required: true }]}
             />
           </div>
         </TabsContent>
