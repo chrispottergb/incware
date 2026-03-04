@@ -16,6 +16,7 @@ import MeetingLoans from "@/components/meeting/MeetingLoans";
 import MeetingAgreements from "@/components/meeting/MeetingAgreements";
 import PrintPreviewButton from "@/components/meeting/PrintPreviewButton";
 import DirectorReElection from "@/components/meeting/DirectorReElection";
+import MeetingAttendanceSelector from "@/components/meeting/MeetingAttendanceSelector";
 import MeetingVehicles from "@/components/meeting/MeetingVehicles";
 import { OFFICER_TITLE_OPTIONS } from "@/components/company/OrganizationTab";
 import CounselTab from "@/components/company/CounselTab";
@@ -84,7 +85,7 @@ export default function MeetingDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!(isOrganizational || isShareholderMeeting),
+    enabled: !!id,
   });
 
   const { data: companyDirectors = [] } = useQuery({
@@ -94,7 +95,7 @@ export default function MeetingDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!(isOrganizational || isShareholderMeeting),
+    enabled: !!id,
   });
 
   const { data: companyBanks = [] } = useQuery({
@@ -488,6 +489,22 @@ export default function MeetingDetail() {
         </TabsContent>
         <TabsContent value="shareholders" className="mt-5">
           <div className="space-y-4">
+            <MeetingAttendanceSelector
+              meetingId={meeting.id}
+              meetingDate={meeting.meeting_date}
+              roster={companyShareholders.map((s) => ({
+                id: s.id,
+                name: s.name,
+                startDate: s.date_added,
+                status: s.status,
+                isTreasury: s.is_treasury,
+              }))}
+              existingNames={shareholders.map((s) => s.shareholder_name)}
+              roleLabel={term.shareholder}
+              roleLabelPlural={term.shareholders}
+              tableName="meeting_shareholders"
+              nameColumn="shareholder_name"
+            />
             <div className="flex justify-end">
               <PrintPreviewButton
                 label="Print"
@@ -527,6 +544,20 @@ export default function MeetingDetail() {
             {isShareholderMeeting && companyDirectors.length > 0 && (
               <DirectorReElection directors={companyDirectors} shareholders={companyShareholders} />
             )}
+            <MeetingAttendanceSelector
+              meetingId={meeting.id}
+              meetingDate={meeting.meeting_date}
+              roster={companyDirectors.map((d) => ({
+                id: d.id,
+                name: d.name,
+                startDate: d.added_date,
+              }))}
+              existingNames={directors.map((d: any) => d.director_name)}
+              roleLabel="Director"
+              roleLabelPlural="Directors"
+              tableName="meeting_directors"
+              nameColumn="director_name"
+            />
             <div className="flex justify-end">
               <PrintPreviewButton
                 label="Print"
