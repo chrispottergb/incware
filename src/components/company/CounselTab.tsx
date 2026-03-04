@@ -110,6 +110,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
   const [contactForm, setContactForm] = useState({ attorney_name: "", title: "", bar_number: "", specialty: "", phone: "", email: "", notes: "" });
   const [contactFirmId, setContactFirmId] = useState<string | null>(null);
   const [expandedFirms, setExpandedFirms] = useState<Set<string>>(new Set());
+  const [selectedAttorneys, setSelectedAttorneys] = useState<Record<string, string>>({});
 
   // Contact search state
   const [contactSearch, setContactSearch] = useState("");
@@ -261,6 +262,20 @@ function AttorneySection({ companyId }: { companyId: string }) {
                 </div>
                 <CollapsibleContent>
                   <div className="bg-muted/30 border-t">
+                    {/* Select Attorney dropdown */}
+                    {firmAttorneys.length > 0 && (
+                      <div className="px-10 py-2 border-b">
+                        <Label className="text-xs text-muted-foreground">Select Attorney</Label>
+                        <Select value={selectedAttorneys[f.id] || ""} onValueChange={v => setSelectedAttorneys(prev => ({ ...prev, [f.id]: v }))}>
+                          <SelectTrigger className="h-7 text-xs mt-1"><SelectValue placeholder="Select Attorney" /></SelectTrigger>
+                          <SelectContent>
+                            {firmAttorneys.map((a: any) => (
+                              <SelectItem key={a.id} value={a.id}>{a.attorney_name}{a.title ? `, ${a.title}` : ""}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     {firmAttorneys.length > 0 ? (
                       <Table>
                         <TableHeader>
@@ -268,7 +283,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
                         </TableHeader>
                         <TableBody>
                           {firmAttorneys.map((a: any) => (
-                            <TableRow key={a.id}>
+                            <TableRow key={a.id} className={selectedAttorneys[f.id] === a.id ? "bg-primary/5" : ""}>
                               <TableCell className="font-medium text-xs pl-10">{a.attorney_name}</TableCell>
                               <TableCell className="hidden sm:table-cell text-xs">{a.title}</TableCell>
                               <TableCell className="hidden md:table-cell text-xs">{a.bar_number}</TableCell>
@@ -406,6 +421,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
   const [contactForm, setContactForm] = useState({ accountant_name: "", title: "", cpa_number: "", specialty: "", phone: "", email: "", notes: "" });
   const [contactFirmId, setContactFirmId] = useState<string | null>(null);
   const [expandedFirms, setExpandedFirms] = useState<Set<string>>(new Set());
+  const [selectedAccountants, setSelectedAccountants] = useState<Record<string, string>>({});
 
   // Contact search state
   const [contactSearch, setContactSearch] = useState("");
@@ -555,6 +571,20 @@ function AccountantSection({ companyId }: { companyId: string }) {
                 </div>
                 <CollapsibleContent>
                   <div className="bg-muted/30 border-t">
+                    {/* Select Accountant dropdown */}
+                    {firmAccountants.length > 0 && (
+                      <div className="px-10 py-2 border-b">
+                        <Label className="text-xs text-muted-foreground">Select Accountant</Label>
+                        <Select value={selectedAccountants[f.id] || ""} onValueChange={v => setSelectedAccountants(prev => ({ ...prev, [f.id]: v }))}>
+                          <SelectTrigger className="h-7 text-xs mt-1"><SelectValue placeholder="Select Accountant" /></SelectTrigger>
+                          <SelectContent>
+                            {firmAccountants.map((a: any) => (
+                              <SelectItem key={a.id} value={a.id}>{a.accountant_name}{a.title ? `, ${a.title}` : ""}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     {firmAccountants.length > 0 ? (
                       <Table>
                         <TableHeader>
@@ -562,7 +592,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
                         </TableHeader>
                         <TableBody>
                           {firmAccountants.map((a: any) => (
-                            <TableRow key={a.id}>
+                            <TableRow key={a.id} className={selectedAccountants[f.id] === a.id ? "bg-primary/5" : ""}>
                               <TableCell className="font-medium text-xs pl-10">{a.accountant_name}</TableCell>
                               <TableCell className="hidden sm:table-cell text-xs">{a.title}</TableCell>
                               <TableCell className="hidden md:table-cell text-xs">{a.cpa_number}</TableCell>
