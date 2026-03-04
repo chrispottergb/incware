@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -6,9 +6,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Printer, Eye, Download, Loader2 } from "lucide-react";
+import { Printer, Eye, Download, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Use the bundled worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.mjs",
+  import.meta.url
+).toString();
 
 interface Props {
   label?: string;
@@ -18,15 +25,22 @@ interface Props {
 
 export default function PrintPreviewButton({ label = "Print", generatePDF, fileName }: Props) {
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [pdfData, setPdfData] = useState<Uint8Array | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pageCount, setPageCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rendering, setRendering] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const pdfDocRef = useRef<any>(null);
 
   const handlePreview = () => {
     setLoading(true);
     try {
       const doc = generatePDF();
-      const dataUri = doc.output("datauristring");
-      setPreviewUrl(dataUri);
+      const arrayBuf = doc.output("arraybuffer");
+      setPdfData(new Uint8Array(arrayBuf));
+      setCurrentPage(1);
       setPreviewOpen(true);
     } catch (err: any) {
       console.error("PDF preview error:", err);
@@ -51,21 +65,15 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       const doc = generatePDF();
       const blob = doc.output("blob");
       const url = URL.createObjectURL(blob);
-
-      // Most reliable cross-browser: open blob URL directly in same window via anchor
-      // This avoids popup blockers entirely
       const a = document.createElement("a");
       a.href = url;
       a.target = "_blank";
       a.rel = "noopener";
-      // Use download as fallback — browsers that block the new tab will download instead
       a.download = fileName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-
       toast.info("PDF opened — use Ctrl+P / ⌘+P to print from your PDF viewer.");
-
       setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (err: any) {
       console.error("PDF print error:", err);
@@ -73,15 +81,66 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     }
   };
 
-  const handlePrintFromPreview = () => {
-    // With data URIs in object tags, direct print isn't possible — fall back to open-in-tab
-    handlePrint();
-  };
-
   const handleClosePreview = () => {
     setPreviewOpen(false);
-    setPreviewUrl(null);
+    setPdfData(null);
+    pdfDocRef.current = null;
+    setPageCount(0);
   };
+
+  // Load PDF document when data changes
+  useEffect(() => {
+    if (!pdfData) return;
+    let cancelled = false;
+    const loadDoc = async () => {
+      try {
+        const doc = await pdfjsLib.getDocument({ data: pdfData }).promise;
+        if (cancelled) return;
+        pdfDocRef.current = doc;
+        setPageCount(doc.numPages);
+      } catch (err) {
+        console.error("PDF.js load error:", err);
+      }
+    };
+    loadDoc();
+    return () => { cancelled = true; };
+  }, [pdfData]);
+
+  // Render current page
+  useEffect(() => {
+    if (!pdfDocRef.current || !canvasRef.current || !containerRef.current || pageCount === 0) return;
+    let cancelled = false;
+
+    const renderPage = async () => {
+      setRendering(true);
+      try {
+        const page = await pdfDocRef.current.getPage(currentPage);
+        if (cancelled) return;
+
+        const container = containerRef.current!;
+        const containerWidth = container.clientWidth - 32; // 16px padding each side
+        const unscaledViewport = page.getViewport({ scale: 1 });
+        const scale = containerWidth / unscaledViewport.width;
+        const viewport = page.getViewport({ scale });
+
+        const canvas = canvasRef.current!;
+        const ctx = canvas.getContext("2d")!;
+        canvas.width = viewport.width * 2; // retina
+        canvas.height = viewport.height * 2;
+        canvas.style.width = `${viewport.width}px`;
+        canvas.style.height = `${viewport.height}px`;
+        ctx.scale(2, 2);
+
+        await page.render({ canvasContext: ctx, viewport }).promise;
+      } catch (err) {
+        console.error("PDF render error:", err);
+      } finally {
+        if (!cancelled) setRendering(false);
+      }
+    };
+    renderPage();
+    return () => { cancelled = true; };
+  }, [currentPage, pageCount]);
 
   return (
     <>
@@ -110,27 +169,46 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
                   <Download className="mr-1.5 h-3.5 w-3.5" />
                   Download PDF
                 </Button>
-                <Button size="sm" onClick={handlePrintFromPreview}>
+                <Button size="sm" onClick={handlePrint}>
                   <Printer className="mr-1.5 h-3.5 w-3.5" />
                   Print
                 </Button>
               </div>
             </div>
           </DialogHeader>
-          <div className="flex-1 overflow-hidden">
-            {previewUrl && (
-              <object
-                data={previewUrl}
-                type="application/pdf"
-                className="w-full h-full border-0"
-                title="PDF Preview"
+
+          {/* Page navigation */}
+          {pageCount > 1 && (
+            <div className="flex items-center justify-center gap-3 px-6 py-2 border-b border-border">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
               >
-                <p className="p-8 text-center text-muted-foreground">
-                  PDF preview not supported in this browser.{" "}
-                  <button onClick={handleDownload} className="underline text-primary">Download instead</button>.
-                </p>
-              </object>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage} of {pageCount}
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))}
+                disabled={currentPage >= pageCount}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
+          <div ref={containerRef} className="flex-1 overflow-auto flex justify-center p-4 bg-muted/30">
+            {rendering && (
+              <div className="absolute inset-0 flex items-center justify-center z-10">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
             )}
+            <canvas ref={canvasRef} className="shadow-lg rounded" />
           </div>
         </DialogContent>
       </Dialog>
