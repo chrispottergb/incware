@@ -733,9 +733,14 @@ export type Database = {
           phone: string | null
           registered_agent_address: string | null
           registered_agent_address_2: string | null
+          registered_agent_appointed_date: string | null
           registered_agent_city: string | null
+          registered_agent_email: string | null
           registered_agent_name: string | null
+          registered_agent_phone: string | null
+          registered_agent_resigned_date: string | null
           registered_agent_state: string | null
+          registered_agent_type: string | null
           registered_agent_zip: string | null
           s_election_date: string | null
           salutation_name: string | null
@@ -785,9 +790,14 @@ export type Database = {
           phone?: string | null
           registered_agent_address?: string | null
           registered_agent_address_2?: string | null
+          registered_agent_appointed_date?: string | null
           registered_agent_city?: string | null
+          registered_agent_email?: string | null
           registered_agent_name?: string | null
+          registered_agent_phone?: string | null
+          registered_agent_resigned_date?: string | null
           registered_agent_state?: string | null
+          registered_agent_type?: string | null
           registered_agent_zip?: string | null
           s_election_date?: string | null
           salutation_name?: string | null
@@ -837,9 +847,14 @@ export type Database = {
           phone?: string | null
           registered_agent_address?: string | null
           registered_agent_address_2?: string | null
+          registered_agent_appointed_date?: string | null
           registered_agent_city?: string | null
+          registered_agent_email?: string | null
           registered_agent_name?: string | null
+          registered_agent_phone?: string | null
+          registered_agent_resigned_date?: string | null
           registered_agent_state?: string | null
+          registered_agent_type?: string | null
           registered_agent_zip?: string | null
           s_election_date?: string | null
           salutation_name?: string | null
@@ -2187,6 +2202,65 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      registered_agent_history: {
+        Row: {
+          address: string | null
+          address_2: string | null
+          agent_name: string
+          agent_type: string | null
+          appointed_date: string | null
+          city: string | null
+          company_id: string
+          created_at: string
+          email: string | null
+          id: string
+          phone: string | null
+          resigned_date: string | null
+          state: string | null
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          address_2?: string | null
+          agent_name: string
+          agent_type?: string | null
+          appointed_date?: string | null
+          city?: string | null
+          company_id: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          phone?: string | null
+          resigned_date?: string | null
+          state?: string | null
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          address_2?: string | null
+          agent_name?: string
+          agent_type?: string | null
+          appointed_date?: string | null
+          city?: string | null
+          company_id?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          phone?: string | null
+          resigned_date?: string | null
+          state?: string | null
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registered_agent_history_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       share_transactions: {
         Row: {

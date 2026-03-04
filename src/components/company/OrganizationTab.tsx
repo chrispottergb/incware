@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { isLLCType } from "@/lib/entity-terminology";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,13 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Loader2, Save, Users, FileText, ChevronDown, ExternalLink } from "lucide-react";
+import { Plus, Trash2, Loader2, Save, Users, FileText, ChevronDown, ExternalLink, Shield, History } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import CompanyAssetsSection from "@/components/company/CompanyAssetsSection";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+import { useZipLookup } from "@/hooks/useZipLookup";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
@@ -115,6 +116,112 @@ interface Props {
 
 export default function OrganizationTab({ companyId, company }: Props) {
   const queryClient = useQueryClient();
+  const isLLC = isLLCType(company.entity_type);
+
+  // --- Registered Agent (LLC only) ---
+  const [raForm, setRaForm] = useState({
+    registered_agent_name: (company as any).registered_agent_name ?? "",
+    registered_agent_type: (company as any).registered_agent_type ?? "",
+    registered_agent_address: (company as any).registered_agent_address ?? "",
+    registered_agent_address_2: (company as any).registered_agent_address_2 ?? "",
+    registered_agent_city: (company as any).registered_agent_city ?? "",
+    registered_agent_state: (company as any).registered_agent_state ?? (company as any).state_of_incorporation ?? "",
+    registered_agent_zip: (company as any).registered_agent_zip ?? "",
+    registered_agent_phone: (company as any).registered_agent_phone ?? "",
+    registered_agent_email: (company as any).registered_agent_email ?? "",
+    registered_agent_appointed_date: (company as any).registered_agent_appointed_date ?? "",
+    registered_agent_resigned_date: (company as any).registered_agent_resigned_date ?? "",
+  });
+
+  useEffect(() => {
+    setRaForm({
+      registered_agent_name: (company as any).registered_agent_name ?? "",
+      registered_agent_type: (company as any).registered_agent_type ?? "",
+      registered_agent_address: (company as any).registered_agent_address ?? "",
+      registered_agent_address_2: (company as any).registered_agent_address_2 ?? "",
+      registered_agent_city: (company as any).registered_agent_city ?? "",
+      registered_agent_state: (company as any).registered_agent_state ?? (company as any).state_of_incorporation ?? "",
+      registered_agent_zip: (company as any).registered_agent_zip ?? "",
+      registered_agent_phone: (company as any).registered_agent_phone ?? "",
+      registered_agent_email: (company as any).registered_agent_email ?? "",
+      registered_agent_appointed_date: (company as any).registered_agent_appointed_date ?? "",
+      registered_agent_resigned_date: (company as any).registered_agent_resigned_date ?? "",
+    });
+  }, [company.id]);
+
+  const handleRaZipResult = useCallback((result: { city: string; state: string }) => {
+    setRaForm(prev => ({ ...prev, registered_agent_city: result.city, registered_agent_state: result.state }));
+  }, []);
+  const { handleZipChange: handleRaZip } = useZipLookup(handleRaZipResult);
+
+  // Fetch history
+  const { data: raHistory = [] } = useQuery({
+    queryKey: ["registered-agent-history", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("registered_agent_history" as any)
+        .select("*")
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: isLLC,
+  });
+
+  const [showRaHistory, setShowRaHistory] = useState(false);
+
+  const saveRegisteredAgent = useMutation({
+    mutationFn: async () => {
+      if (!raForm.registered_agent_name.trim()) throw new Error("Registered Agent Name is required.");
+      if (!raForm.registered_agent_address.trim()) throw new Error("Registered Agent Address is required.");
+      if (!raForm.registered_agent_state) throw new Error("Registered Agent State is required.");
+      if (!raForm.registered_agent_zip.trim()) throw new Error("Registered Agent Zip is required.");
+
+      // If agent name changed and there was a previous agent, archive to history
+      const prevName = (company as any).registered_agent_name;
+      if (prevName && prevName.trim() && prevName.trim() !== raForm.registered_agent_name.trim()) {
+        await supabase.from("registered_agent_history" as any).insert({
+          company_id: companyId,
+          agent_name: prevName,
+          agent_type: (company as any).registered_agent_type || null,
+          address: (company as any).registered_agent_address || null,
+          address_2: (company as any).registered_agent_address_2 || null,
+          city: (company as any).registered_agent_city || null,
+          state: (company as any).registered_agent_state || null,
+          zip: (company as any).registered_agent_zip || null,
+          phone: (company as any).registered_agent_phone || null,
+          email: (company as any).registered_agent_email || null,
+          appointed_date: (company as any).registered_agent_appointed_date || null,
+          resigned_date: raForm.registered_agent_resigned_date || new Date().toISOString().split("T")[0],
+        });
+      }
+
+      const { error } = await supabase
+        .from("companies")
+        .update({
+          registered_agent_name: raForm.registered_agent_name || null,
+          registered_agent_type: raForm.registered_agent_type || null,
+          registered_agent_address: raForm.registered_agent_address || null,
+          registered_agent_address_2: raForm.registered_agent_address_2 || null,
+          registered_agent_city: raForm.registered_agent_city || null,
+          registered_agent_state: raForm.registered_agent_state || null,
+          registered_agent_zip: raForm.registered_agent_zip || null,
+          registered_agent_phone: raForm.registered_agent_phone || null,
+          registered_agent_email: raForm.registered_agent_email || null,
+          registered_agent_appointed_date: raForm.registered_agent_appointed_date || null,
+          registered_agent_resigned_date: raForm.registered_agent_resigned_date || null,
+        } as any)
+        .eq("id", companyId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["company", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["registered-agent-history", companyId] });
+      toast.success("Registered Agent saved!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
 
   // Filing details form
   const [filingForm, setFilingForm] = useState({
@@ -450,6 +557,158 @@ export default function OrganizationTab({ companyId, company }: Props) {
           </form>
         </CardContent>
       </Card>
+
+      {/* Registered Agent - LLC only */}
+      {isLLC && (
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full justify-between text-sm font-medium">
+              <span className="flex items-center gap-2">
+                <Shield className="h-3.5 w-3.5 text-primary" />
+                Registered Agent
+              </span>
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-3">
+            <Card>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <div className="flex items-center justify-between">
+                  <CardDescription className="text-[11px] mt-0.5">
+                    The registered agent receives legal and state correspondence on behalf of the LLC
+                  </CardDescription>
+                  <div className="flex items-center gap-1">
+                    {raHistory.length > 0 && (
+                      <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setShowRaHistory(!showRaHistory)}>
+                        <History className="h-3 w-3" />
+                        {showRaHistory ? "Hide" : "Show"} History ({raHistory.length})
+                      </Button>
+                    )}
+                    <SectionPdfActions config={{
+                      title: "Registered Agent",
+                      companyName: company.name,
+                      fields: [
+                        { label: "Agent Name", value: raForm.registered_agent_name },
+                        { label: "Agent Type", value: raForm.registered_agent_type },
+                        { label: "Address", value: raForm.registered_agent_address },
+                        { label: "Address 2", value: raForm.registered_agent_address_2 },
+                        { label: "City", value: raForm.registered_agent_city },
+                        { label: "State", value: raForm.registered_agent_state },
+                        { label: "Zip", value: raForm.registered_agent_zip },
+                        { label: "Phone", value: raForm.registered_agent_phone },
+                        { label: "Email", value: raForm.registered_agent_email },
+                        { label: "Date Appointed", value: raForm.registered_agent_appointed_date },
+                        { label: "Date Resigned/Changed", value: raForm.registered_agent_resigned_date },
+                      ],
+                    }} />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    saveRegisteredAgent.mutate();
+                  }}
+                  className="space-y-3"
+                >
+                  <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+                    <div className="field-group col-span-12 sm:col-span-5">
+                      <Label className="field-label">Agent Name <span className="text-destructive">*</span></Label>
+                      <Input className="h-7 text-sm" value={raForm.registered_agent_name} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_name: e.target.value }))} placeholder="Individual or entity name" />
+                    </div>
+                    <div className="field-group col-span-6 sm:col-span-3">
+                      <Label className="field-label">Agent Type</Label>
+                      <Select value={raForm.registered_agent_type} onValueChange={(v) => setRaForm(p => ({ ...p, registered_agent_type: v }))}>
+                        <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select type" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Individual">Individual</SelectItem>
+                          <SelectItem value="Commercial Registered Agent">Commercial Registered Agent</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="field-group col-span-6 sm:col-span-4" />
+                    <div className="field-group col-span-12 sm:col-span-7">
+                      <Label className="field-label">Street Address <span className="text-destructive">*</span></Label>
+                      <Input className="h-7 text-sm" value={raForm.registered_agent_address} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_address: e.target.value }))} placeholder="Physical address (no P.O. Boxes)" />
+                    </div>
+                    <div className="field-group col-span-12 sm:col-span-5">
+                      <Label className="field-label">Address 2</Label>
+                      <Input className="h-7 text-sm" value={raForm.registered_agent_address_2} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_address_2: e.target.value }))} placeholder="Suite, Unit, Floor" />
+                    </div>
+                    <div className="field-group col-span-6 sm:col-span-4">
+                      <Label className="field-label">City</Label>
+                      <Input className="h-7 text-sm" value={raForm.registered_agent_city} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_city: e.target.value }))} />
+                    </div>
+                    <div className="field-group col-span-3 sm:col-span-2">
+                      <Label className="field-label">State <span className="text-destructive">*</span></Label>
+                      <Select value={raForm.registered_agent_state} onValueChange={(v) => setRaForm(p => ({ ...p, registered_agent_state: v }))}>
+                        <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
+                        <SelectContent>
+                          {US_STATES.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="field-group col-span-3 sm:col-span-2">
+                      <Label className="field-label">Zip <span className="text-destructive">*</span></Label>
+                      <Input className="h-7 text-sm" value={raForm.registered_agent_zip} onChange={(e) => { setRaForm(p => ({ ...p, registered_agent_zip: e.target.value })); handleRaZip(e.target.value); }} />
+                    </div>
+                    <div className="field-group col-span-6 sm:col-span-4" />
+                    <div className="field-group col-span-6 sm:col-span-3">
+                      <Label className="field-label">Phone</Label>
+                      <Input className="h-7 text-sm" value={raForm.registered_agent_phone} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_phone: e.target.value }))} placeholder="(555) 555-5555" />
+                    </div>
+                    <div className="field-group col-span-6 sm:col-span-4">
+                      <Label className="field-label">Email</Label>
+                      <Input type="email" className="h-7 text-sm" value={raForm.registered_agent_email} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_email: e.target.value }))} />
+                    </div>
+                    <div className="field-group col-span-6 sm:col-span-3">
+                      <Label className="field-label">Date Appointed</Label>
+                      <DatePickerField value={raForm.registered_agent_appointed_date} onChange={(v) => setRaForm(p => ({ ...p, registered_agent_appointed_date: v || "" }))} placeholder="Appointed date" />
+                    </div>
+                    <div className="field-group col-span-6 sm:col-span-3">
+                      <Label className="field-label">Date Resigned / Changed</Label>
+                      <DatePickerField value={raForm.registered_agent_resigned_date} onChange={(v) => setRaForm(p => ({ ...p, registered_agent_resigned_date: v || "" }))} placeholder="Resigned date" />
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button type="submit" disabled={saveRegisteredAgent.isPending} size="sm">
+                      {saveRegisteredAgent.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
+                      Save Registered Agent
+                    </Button>
+                  </div>
+                </form>
+
+                {/* History panel */}
+                {showRaHistory && raHistory.length > 0 && (
+                  <div className="mt-4 border-t pt-3">
+                    <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+                      <History className="h-3 w-3" /> Agent Change History
+                    </h4>
+                    <div className="space-y-2">
+                      {raHistory.map((h: any) => (
+                        <div key={h.id} className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{h.agent_name}</span>
+                            <span className="text-muted-foreground">
+                              {h.appointed_date ? new Date(h.appointed_date + "T00:00:00").toLocaleDateString() : "?"} — {h.resigned_date ? new Date(h.resigned_date + "T00:00:00").toLocaleDateString() : "?"}
+                            </span>
+                          </div>
+                          {(h.address || h.city || h.state) && (
+                            <p className="text-muted-foreground mt-0.5">
+                              {[h.address, h.address_2, h.city, h.state, h.zip].filter(Boolean).join(", ")}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
 
       {/* Initial List of Directors - Collapsible */}
       <Collapsible>
