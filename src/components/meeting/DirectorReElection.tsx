@@ -16,9 +16,12 @@ interface Shareholder {
 interface Props {
   directors: Director[];
   shareholders: Shareholder[];
+  directorLabel?: string;
+  directorsLabel?: string;
+  shareholdersLabel?: string;
 }
 
-export default function DirectorReElection({ directors, shareholders }: Props) {
+export default function DirectorReElection({ directors, shareholders, directorLabel = "Director", directorsLabel = "Directors", shareholdersLabel = "Shareholders" }: Props) {
   if (directors.length === 0) return null;
 
   return (
@@ -26,17 +29,17 @@ export default function DirectorReElection({ directors, shareholders }: Props) {
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-primary" />
-          <CardTitle className="font-display text-base">Director Re-Election</CardTitle>
+          <CardTitle className="font-display text-base">{directorLabel} Re-{directorLabel === "Director" ? "Election" : "Appointment"}</CardTitle>
         </div>
         <CardDescription className="text-xs">
-          Current directors nominated for re-election by shareholders
+          Current {directorsLabel.toLowerCase()} nominated for re-{directorLabel === "Director" ? "election" : "appointment"} by {shareholdersLabel.toLowerCase()}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
           {shareholders.length > 0 && (
             <div className="rounded-md bg-muted/50 p-3">
-              <p className="text-xs font-medium text-muted-foreground mb-1.5">Shareholders Present for Vote</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1.5">{shareholdersLabel} Present for Vote</p>
               <div className="flex flex-wrap gap-1.5">
                 {shareholders.map((s) => (
                   <Badge key={s.id} variant="secondary" className="text-xs">
@@ -49,7 +52,7 @@ export default function DirectorReElection({ directors, shareholders }: Props) {
 
           <div className="rounded-md border border-border">
             <div className="px-3 py-2 bg-muted/40 border-b border-border">
-              <p className="text-xs font-semibold">Directors Nominated for Re-Election</p>
+              <p className="text-xs font-semibold">{directorsLabel} Nominated for Re-{directorLabel === "Director" ? "Election" : "Appointment"}</p>
             </div>
             <div className="divide-y divide-border">
               {directors.map((d) => (
@@ -65,7 +68,7 @@ export default function DirectorReElection({ directors, shareholders }: Props) {
           </div>
 
           <p className="text-[11px] text-muted-foreground italic">
-            All current directors have been nominated and approved for re-election to serve until the next annual meeting of shareholders.
+            All current {directorsLabel.toLowerCase()} have been nominated and approved for re-{directorLabel === "Director" ? "election" : "appointment"} to serve until the next annual meeting of {shareholdersLabel.toLowerCase()}.
           </p>
         </div>
       </CardContent>

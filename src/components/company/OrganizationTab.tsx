@@ -292,7 +292,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["directors", companyId] });
-      toast.success("Directors saved!");
+      toast.success(isLLCType(company.entity_type) ? "Authorized Binders saved!" : "Directors saved!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -457,7 +457,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
            <Button variant="outline" className="w-full justify-between text-sm font-medium">
             <span className="flex items-center gap-2">
               <Users className="h-3.5 w-3.5 text-primary" />
-              {isLLCType(company.entity_type) ? "Initial List of Members" : "Initial List of Directors"}
+              {isLLCType(company.entity_type) ? "Authorized Binders" : "Initial List of Directors"}
             </span>
             <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
           </Button>
@@ -467,13 +467,13 @@ export default function OrganizationTab({ companyId, company }: Props) {
             <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-center justify-between">
                 <CardDescription className="text-[11px] mt-0.5">
-                  {isLLCType(company.entity_type) ? "Enter the names of the initial members for this company" : "Enter the names of the initial directors for this company"}
+                  {isLLCType(company.entity_type) ? "Enter the names of the authorized binders for this company" : "Enter the names of the initial directors for this company"}
                 </CardDescription>
                 <SectionPdfActions config={{
-                  title: isLLCType(company.entity_type) ? "Initial List of Members" : "Initial List of Directors",
+                  title: isLLCType(company.entity_type) ? "Authorized Binders" : "Initial List of Directors",
                   companyName: company.name,
                   fields: directorNames.filter((n) => n.trim()).map((n, i) => ({
-                    label: isLLCType(company.entity_type) ? `Member ${i + 1}` : `Director ${i + 1}`,
+                    label: isLLCType(company.entity_type) ? `Authorized Binder ${i + 1}` : `Director ${i + 1}`,
                     value: n.trim(),
                   })),
                 }} />
@@ -490,7 +490,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
                   {directorNames.map((name, index) => (
                     <div key={index} className="field-group">
-                      <Label className="field-label">{isLLCType(company.entity_type) ? `Member ${index + 1}` : `Director ${index + 1}`}</Label>
+                      <Label className="field-label">{isLLCType(company.entity_type) ? `Authorized Binder ${index + 1}` : `Director ${index + 1}`}</Label>
                       <div className="flex gap-1">
                         <Input
                           className="h-8 text-sm"
@@ -500,7 +500,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                               prev.map((n, i) => (i === index ? e.target.value : n))
                             )
                           }
-                          placeholder={isLLCType(company.entity_type) ? "Member name" : "Director name"}
+                          placeholder={isLLCType(company.entity_type) ? "Authorized binder name" : "Director name"}
                         />
                         {directorNames.length > 1 && (
                           <Button
@@ -519,11 +519,11 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 </div>
                 <div className="flex items-center justify-between">
                   <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={addDirectorSlot}>
-                    <Plus className="mr-1 h-3 w-3" /> {isLLCType(company.entity_type) ? "Add Another Member" : "Add Another Director"}
+                    <Plus className="mr-1 h-3 w-3" /> {isLLCType(company.entity_type) ? "Add Another Binder" : "Add Another Director"}
                   </Button>
                   <Button type="submit" disabled={saveDirectors.isPending} size="sm">
                     {saveDirectors.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-                    {isLLCType(company.entity_type) ? "Save Members" : "Save Directors"}
+                    {isLLCType(company.entity_type) ? "Save Authorized Binders" : "Save Directors"}
                   </Button>
                 </div>
               </form>
