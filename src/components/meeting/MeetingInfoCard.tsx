@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useZipLookup } from "@/hooks/useZipLookup";
 import { format, parseISO } from "date-fns";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,6 +47,13 @@ function DateFieldWrapper({
 export default function MeetingInfoCard({ meeting }: Props) {
   const queryClient = useQueryClient();
   const [values, setValues] = useState<Record<string, string>>({});
+
+  const { handleZipChange } = useZipLookup(
+    useCallback(({ city, state }: { city: string; state: string }) => {
+      setValues((prev) => ({ ...prev, company_city_at_meeting: city, company_state_at_meeting: state }));
+      updateMeeting.mutate({ company_city_at_meeting: city, company_state_at_meeting: state } as any);
+    }, [])
+  );
 
   const updateMeeting = useMutation({
     mutationFn: async (updates: Partial<Meeting>) => {
@@ -201,7 +209,12 @@ export default function MeetingInfoCard({ meeting }: Props) {
               <Label className="text-xs font-medium text-muted-foreground">{item.label}</Label>
               <Input
                 value={getValue(item.field)}
-                onChange={(e) => handleChange(item.field, e.target.value)}
+                onChange={(e) => {
+                  handleChange(item.field, e.target.value);
+                  if (item.field === "company_zip_at_meeting") {
+                    handleZipChange(e.target.value);
+                  }
+                }}
                 onBlur={(e) => handleBlur(item.field, e.target.value)}
                 className="h-9 text-sm"
               />
