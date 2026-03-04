@@ -164,8 +164,16 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     let locationPart = "";
     if (location) {
       locationPart = `, was held at ${location}`;
-      if (cityAtMeeting || stateAtMeeting) {
-        locationPart += `, ${[cityAtMeeting, stateAtMeeting].filter(Boolean).join(", ")}`;
+      // Only append city/state if they aren't already contained in the location string
+      const locLower = location.toLowerCase();
+      const cityAlreadyInLoc = cityAtMeeting && locLower.includes(cityAtMeeting.toLowerCase());
+      const stateAlreadyInLoc = stateAtMeeting && locLower.includes(stateAtMeeting.toLowerCase());
+      const extras = [
+        !cityAlreadyInLoc ? cityAtMeeting : "",
+        !stateAlreadyInLoc ? stateAtMeeting : "",
+      ].filter(Boolean);
+      if (extras.length > 0) {
+        locationPart += `, ${extras.join(", ")}`;
       }
     }
 
@@ -203,11 +211,18 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
       if (participants.length === 0) {
         const seen = new Set<string>();
         const addUnique = (name: string) => {
-          const key = name.trim().toLowerCase();
-          if (key && !seen.has(key)) {
-            seen.add(key);
-            participants.push(name.trim());
+          const normalized = name.trim();
+          if (!normalized) return;
+          // Check if this name is already represented (fuzzy: strip middle initials & periods)
+          const simplify = (n: string) => n.toLowerCase().replace(/\b[a-z]\.\s*/g, "").replace(/\s+/g, " ").trim();
+          const simple = simplify(normalized);
+          for (const existing of seen) {
+            if (simplify(existing) === simple || simple.includes(simplify(existing)) || simplify(existing).includes(simple)) {
+              return; // already have a variant of this name
+            }
           }
+          seen.add(normalized);
+          participants.push(normalized);
         };
         (meetingData.shareholders || []).forEach(s => {
           if (s.shareholder_name) addUnique(s.shareholder_name);
