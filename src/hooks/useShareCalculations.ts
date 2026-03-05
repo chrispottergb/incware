@@ -60,7 +60,7 @@ export function useShareCalculations(companyId: string) {
   });
 
   const { data: shareholders = [] } = useQuery({
-    queryKey: ["shareholders", companyId],
+    queryKey: ["shareholders-for-holdings", companyId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shareholders")
