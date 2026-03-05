@@ -322,18 +322,20 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
   };
 
   const handlePreview = () => {
-    if (pdfDoc) {
-      const blob = pdfDoc.output("blob");
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${companyName.replace(/[^a-zA-Z0-9]/g, "_")}_Operating_Agreement_Preview.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } else {
+    if (!pdfDoc || !previewUrl) {
       toast.error("Please generate the Operating Agreement first.");
+      return;
+    }
+
+    const previewCard = document.getElementById("operating-agreement-preview");
+    if (previewCard) {
+      previewCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    const win = window.open(previewUrl, "_blank", "noopener,noreferrer");
+    if (!win) {
+      toast.error("Preview was blocked by your browser. Please allow popups for this site.");
     }
   };
 
@@ -487,7 +489,7 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
 
       {/* Inline Preview */}
       {previewUrl && (
-        <Card>
+        <Card id="operating-agreement-preview">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-display flex items-center gap-2">
               <Eye className="h-4 w-4" /> Document Preview
