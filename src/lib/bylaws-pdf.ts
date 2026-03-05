@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const MARGIN = 14;
+const MARGIN = 25.4; // 1 inch for binder compatibility
 const BRAND = "EntityIQ";
 
 function pw(doc: jsPDF) { return doc.internal.pageSize.getWidth(); }

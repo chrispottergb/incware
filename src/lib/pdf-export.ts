@@ -1,6 +1,8 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+const MARGIN = 25.4; // 1 inch for binder compatibility
+const R_MARGIN = 14;
 const BRAND = "EntityIQ";
 const BRAND_SUB = "Corporate Records Management";
 
@@ -10,35 +12,35 @@ function addHeader(doc: jsPDF, title: string, subtitle?: string) {
   // Brand header
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text(BRAND, 14, 18);
+  doc.text(BRAND, MARGIN, 18);
 
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(120, 120, 120);
-  doc.text(BRAND_SUB, 14, 24);
+  doc.text(BRAND_SUB, MARGIN, 24);
 
   // Title
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text(title, 14, 36);
+  doc.text(title, MARGIN, 36);
 
   if (subtitle) {
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(100, 100, 100);
-    doc.text(subtitle, 14, 43);
+    doc.text(subtitle, MARGIN, 43);
   }
 
   // Date
   doc.setFontSize(8);
   doc.setTextColor(150, 150, 150);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - 14, 18, { align: "right" });
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - R_MARGIN, 18, { align: "right" });
 
   // Divider line
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
-  doc.line(14, subtitle ? 47 : 40, pageWidth - 14, subtitle ? 47 : 40);
+  doc.line(MARGIN, subtitle ? 47 : 40, pageWidth - R_MARGIN, subtitle ? 47 : 40);
 }
 
 function addFooter(doc: jsPDF) {
@@ -49,8 +51,8 @@ function addFooter(doc: jsPDF) {
     const pageWidth = doc.internal.pageSize.getWidth();
     doc.setFontSize(7);
     doc.setTextColor(160, 160, 160);
-    doc.text(`${BRAND} — Confidential`, 14, pageHeight - 8);
-    doc.text(`Page ${i} of ${pageCount}`, pageWidth - 14, pageHeight - 8, { align: "right" });
+    doc.text(`${BRAND} — Confidential`, MARGIN, pageHeight - 8);
+    doc.text(`Page ${i} of ${pageCount}`, pageWidth - R_MARGIN, pageHeight - 8, { align: "right" });
   }
 }
 
@@ -81,7 +83,7 @@ export function exportCompliancePDF(data: ComplianceItem[], overallScore: number
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
-    doc.text(item.companyName, 14, y);
+    doc.text(item.companyName, MARGIN, y);
 
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
@@ -117,7 +119,7 @@ export function exportCompliancePDF(data: ComplianceItem[], overallScore: number
           }
         }
       },
-      margin: { left: 14, right: 14 },
+      margin: { left: MARGIN, right: R_MARGIN },
     });
 
     y = (doc as any).lastAutoTable.finalY + 12;
@@ -184,7 +186,7 @@ export function exportStockLedgerPDF(certificates: CertificateRow[], companyFilt
         }
       }
     },
-    margin: { left: 14, right: 14 },
+    margin: { left: MARGIN, right: R_MARGIN },
   });
 
   // Summary
@@ -195,9 +197,9 @@ export function exportStockLedgerPDF(certificates: CertificateRow[], companyFilt
   doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text(`Total Certificates: ${certificates.length}`, 14, finalY);
-  doc.text(`Active: ${activeCount}`, 14, finalY + 5);
-  doc.text(`Total Shares: ${totalShares.toLocaleString()}`, 14, finalY + 10);
+  doc.text(`Total Certificates: ${certificates.length}`, MARGIN, finalY);
+  doc.text(`Active: ${activeCount}`, MARGIN, finalY + 5);
+  doc.text(`Total Shares: ${totalShares.toLocaleString()}`, MARGIN, finalY + 10);
 
   addFooter(doc);
   doc.save("stock-ledger.pdf");
@@ -245,7 +247,7 @@ export function exportShareholderPDF(shareholders: ShareholderRow[]) {
         }
       }
     },
-    margin: { left: 14, right: 14 },
+    margin: { left: MARGIN, right: R_MARGIN },
   });
 
   const activeCount = shareholders.filter((s) => s.status === "active").length;
@@ -253,8 +255,8 @@ export function exportShareholderPDF(shareholders: ShareholderRow[]) {
   doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text(`Total Shareholders: ${shareholders.length}`, 14, finalY);
-  doc.text(`Active: ${activeCount}`, 14, finalY + 5);
+  doc.text(`Total Shareholders: ${shareholders.length}`, MARGIN, finalY);
+  doc.text(`Active: ${activeCount}`, MARGIN, finalY + 5);
 
   addFooter(doc);
   doc.save("shareholder-summary.pdf");
@@ -322,15 +324,15 @@ export function exportAICompliancePDF(data: AIComplianceData) {
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text("1. AI Systems Registry", 14, y);
+  doc.text("1. AI Systems Registry", MARGIN, y);
   y += 2;
 
   if (data.systems.length === 0) {
     doc.setFontSize(9);
     doc.setFont("helvetica", "italic");
     doc.setTextColor(130, 130, 130);
-    doc.text("No AI systems registered.", 14, y + 6);
-    y += 14;
+    doc.text("No AI systems registered.", MARGIN, y + 6);
+    y += MARGIN;
   } else {
     autoTable(doc, {
       startY: y,
@@ -355,7 +357,7 @@ export function exportAICompliancePDF(data: AIComplianceData) {
           data.cell.styles.fontStyle = "bold";
         }
       },
-      margin: { left: 14, right: 14 },
+      margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 10;
   }
@@ -365,15 +367,15 @@ export function exportAICompliancePDF(data: AIComplianceData) {
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text("2. Human Oversight Assignments (Art. 26.2)", 14, y);
+  doc.text("2. Human Oversight Assignments (Art. 26.2)", MARGIN, y);
   y += 2;
 
   if (data.oversightPersons.length === 0) {
     doc.setFontSize(9);
     doc.setFont("helvetica", "italic");
     doc.setTextColor(130, 130, 130);
-    doc.text("No oversight persons assigned.", 14, y + 6);
-    y += 14;
+    doc.text("No oversight persons assigned.", MARGIN, y + 6);
+    y += MARGIN;
   } else {
     autoTable(doc, {
       startY: y,
@@ -389,7 +391,7 @@ export function exportAICompliancePDF(data: AIComplianceData) {
       theme: "grid",
       headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
       bodyStyles: { fontSize: 7 },
-      margin: { left: 14, right: 14 },
+      margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 10;
   }
@@ -399,15 +401,15 @@ export function exportAICompliancePDF(data: AIComplianceData) {
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text("3. AI Usage Log (Art. 26.6 — 6-month retention)", 14, y);
+  doc.text("3. AI Usage Log (Art. 26.6 — 6-month retention)", MARGIN, y);
   y += 2;
 
   if (data.usageLogs.length === 0) {
     doc.setFontSize(9);
     doc.setFont("helvetica", "italic");
     doc.setTextColor(130, 130, 130);
-    doc.text("No usage events recorded.", 14, y + 6);
-    y += 14;
+    doc.text("No usage events recorded.", MARGIN, y + 6);
+    y += MARGIN;
   } else {
     autoTable(doc, {
       startY: y,
@@ -433,7 +435,7 @@ export function exportAICompliancePDF(data: AIComplianceData) {
           data.cell.styles.fontStyle = "bold";
         }
       },
-      margin: { left: 14, right: 14 },
+      margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 10;
   }
@@ -443,15 +445,15 @@ export function exportAICompliancePDF(data: AIComplianceData) {
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text("4. Risk & Incidents (Art. 26.5)", 14, y);
+  doc.text("4. Risk & Incidents (Art. 26.5)", MARGIN, y);
   y += 2;
 
   if (data.incidents.length === 0) {
     doc.setFontSize(9);
     doc.setFont("helvetica", "italic");
     doc.setTextColor(130, 130, 130);
-    doc.text("No incidents reported.", 14, y + 6);
-    y += 14;
+    doc.text("No incidents reported.", MARGIN, y + 6);
+    y += MARGIN;
   } else {
     autoTable(doc, {
       startY: y,
@@ -478,7 +480,7 @@ export function exportAICompliancePDF(data: AIComplianceData) {
           data.cell.styles.fontStyle = "bold";
         }
       },
-      margin: { left: 14, right: 14 },
+      margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 10;
   }
@@ -491,22 +493,22 @@ export function exportAICompliancePDF(data: AIComplianceData) {
   doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text("Summary", 14, y);
+  doc.text("Summary", MARGIN, y);
   y += 6;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   const openIncidents = data.incidents.filter(i => i.status !== "resolved").length;
   const pendingReviews = data.usageLogs.filter(l => !l.review_decision).length;
-  doc.text(`• Registered AI Systems: ${data.systems.length} (${data.systems.filter(s => s.status === "active").length} active)`, 14, y); y += 5;
-  doc.text(`• Oversight Persons Assigned: ${data.oversightPersons.length} (${data.oversightPersons.filter(p => p.status === "active").length} active)`, 14, y); y += 5;
-  doc.text(`• Usage Events Logged: ${data.usageLogs.length}`, 14, y); y += 5;
-  doc.text(`• Pending Reviews: ${pendingReviews}`, 14, y); y += 5;
-  doc.text(`• Total Incidents: ${data.incidents.length} (${openIncidents} open)`, 14, y); y += 5;
+  doc.text(`• Registered AI Systems: ${data.systems.length} (${data.systems.filter(s => s.status === "active").length} active)`, MARGIN, y); y += 5;
+  doc.text(`• Oversight Persons Assigned: ${data.oversightPersons.length} (${data.oversightPersons.filter(p => p.status === "active").length} active)`, MARGIN, y); y += 5;
+  doc.text(`• Usage Events Logged: ${data.usageLogs.length}`, MARGIN, y); y += 5;
+  doc.text(`• Pending Reviews: ${pendingReviews}`, MARGIN, y); y += 5;
+  doc.text(`• Total Incidents: ${data.incidents.length} (${openIncidents} open)`, MARGIN, y); y += 5;
   const highRisk = data.systems.filter(s => s.risk_level === "high" || s.risk_level === "unacceptable").length;
   if (highRisk > 0) {
     doc.setTextColor(220, 38, 38);
     doc.setFont("helvetica", "bold");
-    doc.text(`⚠ ${highRisk} high/unacceptable risk system(s) require enhanced oversight`, 14, y);
+    doc.text(`⚠ ${highRisk} high/unacceptable risk system(s) require enhanced oversight`, MARGIN, y);
   }
 
   addFooter(doc);

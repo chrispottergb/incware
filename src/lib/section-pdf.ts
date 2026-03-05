@@ -1,6 +1,8 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+const MARGIN = 25.4; // 1 inch for binder compatibility
+const R_MARGIN = 14;
 const BRAND = "EntityIQ";
 const BRAND_SUB = "Corporate Records Management";
 
@@ -10,33 +12,33 @@ function addHeader(doc: jsPDF, title: string, subtitle?: string) {
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text(BRAND, 14, 18);
+  doc.text(BRAND, MARGIN, 18);
 
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(120, 120, 120);
-  doc.text(BRAND_SUB, 14, 24);
+  doc.text(BRAND_SUB, MARGIN, 24);
 
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text(title, 14, 36);
+  doc.text(title, MARGIN, 36);
 
   if (subtitle) {
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(100, 100, 100);
-    doc.text(subtitle, 14, 43);
+    doc.text(subtitle, MARGIN, 43);
   }
 
   doc.setFontSize(8);
   doc.setTextColor(150, 150, 150);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - 14, 18, { align: "right" });
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - R_MARGIN, 18, { align: "right" });
 
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
   const lineY = subtitle ? 47 : 40;
-  doc.line(14, lineY, pageWidth - 14, lineY);
+  doc.line(MARGIN, lineY, pageWidth - R_MARGIN, lineY);
 }
 
 function addFooter(doc: jsPDF) {
@@ -47,8 +49,8 @@ function addFooter(doc: jsPDF) {
     const pageWidth = doc.internal.pageSize.getWidth();
     doc.setFontSize(7);
     doc.setTextColor(160, 160, 160);
-    doc.text(`${BRAND} — Confidential`, 14, pageHeight - 8);
-    doc.text(`Page ${i} of ${pageCount}`, pageWidth - 14, pageHeight - 8, { align: "right" });
+    doc.text(`${BRAND} — Confidential`, MARGIN, pageHeight - 8);
+    doc.text(`Page ${i} of ${pageCount}`, pageWidth - R_MARGIN, pageHeight - 8, { align: "right" });
   }
 }
 
@@ -92,7 +94,7 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
       columnStyles: {
         0: { cellWidth: 60, fontStyle: "bold" },
       },
-      margin: { left: 14, right: 14 },
+      margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 10;
   }
@@ -106,7 +108,7 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
       theme: "grid",
       headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
       bodyStyles: { fontSize: 8 },
-      margin: { left: 14, right: 14 },
+      margin: { left: MARGIN, right: R_MARGIN },
       didParseCell(data) {
         // Color status-like cells
         if (data.section === "body") {
@@ -128,7 +130,7 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
     doc.setFontSize(9);
     doc.setFont("helvetica", "italic");
     doc.setTextColor(130, 130, 130);
-    doc.text("No records to display.", 14, y + 6);
+    doc.text("No records to display.", MARGIN, y + 6);
   }
 
   addFooter(doc);
