@@ -145,10 +145,8 @@ export function downloadSectionPdf(config: SectionPdfConfig) {
 
 export function previewSectionPdf(config: SectionPdfConfig) {
   const doc = generateSectionPdf(config);
-  const blob = doc.output("blob");
-  const url = URL.createObjectURL(blob);
+  const dataUri = doc.output("datauristring");
 
-  // Use an inline iframe overlay instead of window.open to avoid Edge popup blocker
   const overlay = document.createElement("div");
   overlay.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;";
   
@@ -161,17 +159,18 @@ export function previewSectionPdf(config: SectionPdfConfig) {
   const closeBtn = document.createElement("button");
   closeBtn.textContent = "✕ Close";
   closeBtn.style.cssText = "padding:4px 12px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;font-size:13px;";
-  closeBtn.onclick = () => { document.body.removeChild(overlay); URL.revokeObjectURL(url); };
+  closeBtn.onclick = () => { document.body.removeChild(overlay); };
   toolbar.appendChild(closeBtn);
   
-  const iframe = document.createElement("iframe");
-  iframe.src = url;
-  iframe.style.cssText = "flex:1;border:0;width:100%;";
+  const embed = document.createElement("embed");
+  embed.src = dataUri;
+  embed.type = "application/pdf";
+  embed.style.cssText = "flex:1;border:0;width:100%;height:100%;";
   
   container.appendChild(toolbar);
-  container.appendChild(iframe);
+  container.appendChild(embed);
   overlay.appendChild(container);
-  overlay.onclick = (e) => { if (e.target === overlay) { document.body.removeChild(overlay); URL.revokeObjectURL(url); } };
+  overlay.onclick = (e) => { if (e.target === overlay) { document.body.removeChild(overlay); } };
   document.body.appendChild(overlay);
 }
 
