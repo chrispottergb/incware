@@ -62,7 +62,7 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
     einAuthorizedName: "",
     einAuthorizedTitle: "",
     managers: [{ name: "", title: "Managing Member" }],
-    members: [{ name: "", commonShares: "", preferredShares: "", distributionPct: "" }],
+    members: [{ name: "", membershipUnits: "", membershipInterestPct: "" }],
     businessPurpose: company?.business_purpose || "",
     operatingAgreementAdopted: true,
     fiscalYearEnd: company?.fiscal_year_end || "December 31",
@@ -308,27 +308,23 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-semibold">Initial Members</h3>
-                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => update("members", [...data.members, { name: "", commonShares: "", preferredShares: "", distributionPct: "" }])}>
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => update("members", [...data.members, { name: "", membershipUnits: "", membershipInterestPct: "" }])}>
                     <Plus className="h-3 w-3 mr-1" /> Add
                   </Button>
                 </div>
-                {data.members.map((m, i) => (
-                  <div key={i} className="grid grid-cols-12 gap-2 mb-1">
-                    <div className="col-span-3">
+                {data.members.map((m: any, i: number) => (
+                  <div key={i} className="grid grid-cols-12 gap-2 items-end">
+                    <div className="col-span-5">
                       {i === 0 && <Label className={labelClass}>Name</Label>}
-                      <Input className={inputClass} value={m.name} onChange={e => updateMember(i, "name", e.target.value)} placeholder="Name" />
-                    </div>
-                    <div className="col-span-2">
-                      {i === 0 && <Label className={labelClass}>Common</Label>}
-                      <Input className={inputClass} value={m.commonShares} onChange={e => updateMember(i, "commonShares", e.target.value)} placeholder="0" />
-                    </div>
-                    <div className="col-span-2">
-                      {i === 0 && <Label className={labelClass}>Preferred</Label>}
-                      <Input className={inputClass} value={m.preferredShares} onChange={e => updateMember(i, "preferredShares", e.target.value)} placeholder="0" />
+                      <Input className={inputClass} value={m.name} onChange={e => updateMember(i, "name", e.target.value)} placeholder="Member name" />
                     </div>
                     <div className="col-span-3">
-                      {i === 0 && <Label className={labelClass}>Distribution %</Label>}
-                      <Input className={inputClass} value={m.distributionPct} onChange={e => updateMember(i, "distributionPct", e.target.value)} placeholder="0" />
+                      {i === 0 && <Label className={labelClass}>Membership Units</Label>}
+                      <Input className={inputClass} value={m.membershipUnits} onChange={e => updateMember(i, "membershipUnits", e.target.value)} placeholder="0" />
+                    </div>
+                    <div className="col-span-3">
+                      {i === 0 && <Label className={labelClass}>Interest %</Label>}
+                      <Input className={inputClass} value={m.membershipInterestPct} onChange={e => updateMember(i, "membershipInterestPct", e.target.value)} placeholder="0" />
                     </div>
                     <div className="col-span-2 flex items-end">
                       {data.members.length > 1 && (
