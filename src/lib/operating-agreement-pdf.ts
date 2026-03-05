@@ -109,11 +109,11 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   doc.setFillColor(245, 245, 245);
   doc.rect(0, 0, pw(doc), ph(doc), "F");
 
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(80, 80, 80);
   doc.text("STATE OF WISCONSIN", cx, 45, { align: "center" });
-  doc.setFontSize(8);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(120, 120, 120);
   doc.text("Wis. Stat. Ch. 183 — Wisconsin Uniform Limited Liability Company Law", cx, 52, { align: "center" });
@@ -124,7 +124,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   doc.setLineWidth(0.3);
   doc.line(40, 64, pw(doc) - 40, 64);
 
-  doc.setFontSize(20);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text("OPERATING AGREEMENT", cx, 85, { align: "center" });
@@ -132,37 +132,37 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   doc.setTextColor(80, 80, 80);
   doc.text(`(${isManagerManaged ? "Manager-Managed" : "Member-Managed"})`, cx, 94, { align: "center" });
 
-  doc.setFontSize(16);
+  doc.setFontSize(11);
   doc.setTextColor(140, 80, 40);
   const nameLines = doc.splitTextToSize(companyName, pw(doc) - 60);
   let cy = 115;
   nameLines.forEach((l: string) => { doc.text(l, cx, cy, { align: "center" }); cy += 8; });
 
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.setTextColor(80, 80, 80);
   doc.text("A Wisconsin Limited Liability Company", cx, cy + 5, { align: "center" });
 
-  doc.setFontSize(9);
+  doc.setFontSize(11);
   doc.setTextColor(100, 100, 100);
   doc.text(`Effective Date: ${filingDate}`, cx, cy + 20, { align: "center" });
   doc.text(`Prepared by ${BRAND}`, cx, cy + 27, { align: "center" });
 
   if (hasAi) {
-    doc.setFontSize(8);
+    doc.setFontSize(11);
     doc.setTextColor(120, 80, 180);
     doc.text("Contains AI-Assisted Sections", cx, cy + 35, { align: "center" });
   }
 
-  doc.setFontSize(7);
+  doc.setFontSize(11);
   doc.setTextColor(130, 130, 130);
   doc.text("CONFIDENTIAL — FOR AUTHORIZED USE ONLY", cx, ph(doc) - 20, { align: "center" });
 
   // ── TABLE OF CONTENTS ──
   doc.addPage();
   let y = 25;
-  doc.setFontSize(14);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
+  doc.setTextColor(120, 120, 120);
   doc.text("TABLE OF CONTENTS", cx, y, { align: "center" });
   y += 10;
 
@@ -185,7 +185,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
     "XVI. Miscellaneous Provisions",
   ];
   tocItems.forEach((item) => {
-    doc.setFontSize(9);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(50, 50, 50);
     doc.text(item, MARGIN + 5, y);
@@ -195,9 +195,9 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   // ── PREAMBLE ──
   doc.addPage();
   y = 25;
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
+  doc.setTextColor(120, 120, 120);
   doc.text("OPERATING AGREEMENT", cx, y, { align: "center" });
   doc.text(`OF ${companyName.toUpperCase()}`, cx, y + 6, { align: "center" });
   y += 15;
@@ -255,8 +255,8 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
         m.status || "Active",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [140, 140, 140], fontSize: 11, fontStyle: "bold" },
+      bodyStyles: { fontSize: 11 },
       margin: { left: MARGIN, right: MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 6;
@@ -367,12 +367,12 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   // ── SIGNATURE PAGE ──
   doc.addPage();
   y = 30;
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
+  doc.setTextColor(120, 120, 120);
   doc.text("IN WITNESS WHEREOF", cx, y, { align: "center" });
   y += 8;
-  doc.setFontSize(9);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(50, 50, 50);
   const witnessText = `the undersigned Members have executed this Operating Agreement as of the date first written above.`;
@@ -389,7 +389,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
     doc.line(MARGIN, y, MARGIN + 80, y);
     doc.line(pw(doc) - MARGIN - 50, y, pw(doc) - MARGIN, y);
     y += 4;
-    doc.setFontSize(8);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(80, 80, 80);
     doc.text(m.name || "Member", MARGIN, y);
@@ -400,20 +400,20 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   // ── SCHEDULE A ──
   doc.addPage();
   y = 25;
-  doc.setFontSize(14);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(25, 25, 30);
+  doc.setTextColor(120, 120, 120);
   doc.text("SCHEDULE A", cx, y, { align: "center" });
   y += 7;
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.text("Members, Addresses, and Membership Interests", cx, y, { align: "center" });
   y += 4;
-  doc.setDrawColor(45, 55, 72);
+  doc.setDrawColor(140, 140, 140);
   doc.setLineWidth(0.4);
   doc.line(cx - 40, y, cx + 40, y);
   y += 8;
 
-  doc.setFontSize(9);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(50, 50, 50);
   doc.text(`Company: ${companyName}`, MARGIN, y);
@@ -447,8 +447,8 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
         ];
       }),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [140, 140, 140], fontSize: 11, fontStyle: "bold" },
+      bodyStyles: { fontSize: 11 },
       margin: { left: MARGIN, right: MARGIN },
       columnStyles: {
         3: { halign: "center" },
@@ -465,14 +465,14 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
     return sum + (interest || 0);
   }, 0);
   if (scheduleMembers.length > 0) {
-    doc.setFontSize(9);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(`Total Membership Interests: ${totalPct.toFixed(2)}%`, pw(doc) - MARGIN, y, { align: "right" });
     y += 10;
   }
 
-  doc.setFontSize(8);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "italic");
   doc.setTextColor(120, 120, 120);
   const scheduleNote = "This Schedule A is incorporated into and made a part of the Operating Agreement. Any changes to membership interests shall be reflected by an amended Schedule A executed by all Members.";

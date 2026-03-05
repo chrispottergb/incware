@@ -45,30 +45,27 @@ function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType
   const pw = doc.internal.pageSize.getWidth();
   const cx = pw / 2;
 
-  // Company name as top header (letterhead style)
   const displayName = meeting?.company_name_at_meeting || companyName;
-  doc.setFontSize(15);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text(displayName, cx, 16, { align: "center" });
 
-  // Address line
   const addrLine = meeting?.company_address_at_meeting || company?.address || "";
   let hy = 21;
   if (addrLine) {
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.text(addrLine, cx, hy, { align: "center" });
     hy += 5;
   }
 
-  // City, State Zip
   const cityPart = meeting?.company_city_at_meeting || company?.city || "";
   const statePart = meeting?.company_state_at_meeting || company?.state || "";
   const zipPart = meeting?.company_zip_at_meeting || company?.zip || "";
   const cityStateLine = [cityPart, statePart].filter(Boolean).join(", ") + (zipPart ? `  ${zipPart}` : "");
   if (cityStateLine.trim()) {
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.text(cityStateLine, cx, hy, { align: "center" });
     hy += 5;
@@ -265,7 +262,7 @@ function addDFIFooter(doc: jsPDF, companyName: string) {
     doc.setLineWidth(0.3);
     doc.line(MARGIN, ph - 18, pw - R_MARGIN, ph - 18);
 
-    doc.setFontSize(8);
+    doc.setFontSize(11);
     doc.setTextColor(130, 130, 130);
     doc.text(`${companyName} — Corporate Records`, MARGIN, ph - 13);
     doc.text(`Page ${i} of ${pageCount}`, pw - R_MARGIN, ph - 13, { align: "right" });
@@ -275,9 +272,9 @@ function addDFIFooter(doc: jsPDF, companyName: string) {
 }
 
 function addSectionTitle(doc: jsPDF, y: number, title: string): number {
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
+  doc.setTextColor(120, 120, 120);
   doc.text(title.toUpperCase(), MARGIN, y);
   doc.setDrawColor(180, 180, 180);
   doc.setLineWidth(0.3);
@@ -286,7 +283,7 @@ function addSectionTitle(doc: jsPDF, y: number, title: string): number {
 }
 
 function addLabelValue(doc: jsPDF, y: number, label: string, value: string, x = MARGIN): number {
-  doc.setFontSize(8);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(80, 80, 80);
   doc.text(`${label}:`, x, y);
@@ -307,13 +304,13 @@ function checkPageBreak(doc: jsPDF, y: number, needed: number): number {
 function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string): number {
   const pw = doc.internal.pageSize.getWidth();
   y = checkPageBreak(doc, y, 30);
-  doc.setFontSize(9);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text(purpose, MARGIN, y);
   y += 4;
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
+  doc.setFontSize(11);
   const lines = doc.splitTextToSize(text, pw - MARGIN - R_MARGIN);
   doc.text(lines, MARGIN, y);
   y += lines.length * 3.5 + 5;
@@ -323,7 +320,7 @@ function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string
 function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: string): number {
   const pw = doc.internal.pageSize.getWidth();
   y = checkPageBreak(doc, y, 25);
-  doc.setFontSize(8);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(30, 30, 30);
   const whereasLines = doc.splitTextToSize(whereas, pw - MARGIN - R_MARGIN);
