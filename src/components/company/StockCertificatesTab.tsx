@@ -36,11 +36,13 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
   const t = getTerminology(entityType);
 
   const { data: shareholders = [] } = useQuery({
-    queryKey: ["shareholders", companyId],
+    queryKey: ["stock-certificate-shareholders", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("shareholders").select("id, name").eq("company_id", companyId).eq("is_treasury", false).order("name");
+      const { data, error } = await supabase.from("shareholders").select("id, name, is_treasury, status").eq("company_id", companyId);
       if (error) throw error;
-      return data;
+      return (data ?? [])
+        .filter((s) => !s.is_treasury && (s.status ?? "active") === "active")
+        .sort((a, b) => a.name.localeCompare(b.name));
     },
     enabled: !!companyId,
   });
@@ -98,9 +100,13 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
 
   const save = useMutation({
     mutationFn: async () => {
+      if (!form.shareholder_id) {
+        throw new Error(`Please select a ${t.shareholder.toLowerCase()} first.`);
+      }
+
       const payload = {
         certificate_number: parseInt(form.certificate_number) || nextCertNum,
-        shareholder_id: form.shareholder_id || null,
+        shareholder_id: form.shareholder_id,
         share_class: form.share_class,
         num_shares: parseInt(form.num_shares) || 0,
         par_value: t.isLLC ? null : (form.par_value_type === "no_par" ? null : (form.par_value ? parseInt(form.par_value) : null)),
@@ -202,23 +208,24 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                   </div>
                   <div className="field-group">
                     <Label className="field-label">{t.shareholder}</Label>
-                    <select
-                      className="h-8 w-full rounded-md border border-input bg-background px-3 text-sm"
-                      value={form.shareholder_id}
-                      onChange={(e) => setForm((p) => ({ ...p, shareholder_id: e.target.value }))}
-                      required
+                    <Select
+                      value={form.shareholder_id || "__none__"}
+                      onValueChange={(v) => setForm((p) => ({ ...p, shareholder_id: v === "__none__" ? "" : v }))}
                     >
-                      <option value="" disabled>
-                        Select {t.shareholder.toLowerCase()}
-                      </option>
-                      {shareholders.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue placeholder={`Select ${t.shareholder.toLowerCase()}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Select {t.shareholder.toLowerCase()}</SelectItem>
+                        {shareholders.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     {shareholders.length === 0 && (
-                      <p className="text-xs text-muted-foreground">No {t.shareholders.toLowerCase()} found. Add one in the registry first.</p>
+                      <p className="text-xs text-muted-foreground">No active {t.shareholders.toLowerCase()} found. Add one in the registry first.</p>
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
