@@ -38,7 +38,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
   const { data: shareholders = [] } = useQuery({
     queryKey: ["shareholders", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("shareholders").select("id, name").eq("company_id", companyId).order("name");
+      const { data, error } = await supabase.from("shareholders").select("id, name").eq("company_id", companyId).eq("is_treasury", false).order("name");
       if (error) throw error;
       return data;
     },
