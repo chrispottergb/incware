@@ -303,12 +303,12 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
   const showAssetGrid = ["property", "other", "services"].includes(form.consideration_type);
   const assetTotal = assets.reduce((sum, a) => sum + (parseFloat(a.value) || 0), 0);
 
-  const handlePrintCertificate = (t: any) => {
+  const handlePrintCertificate = async (t: any) => {
     const certNum = (t as any).issued_certificate_number;
     const cert = certNum ? certificates.find((c: any) => c.certificate_number === certNum) : 
                  t.certificate_id ? certificates.find((c: any) => c.id === t.certificate_id) : null;
     if (!cert && !certNum) { toast.error("No certificate linked to this transaction."); return; }
-    downloadStockCertificatePdf({
+    await downloadStockCertificatePdf({
       companyName: company?.name || "",
       stateOfIncorporation: company?.state_of_incorporation || undefined,
       certificateNumber: certNum || (cert as any)?.certificate_number || 0,
