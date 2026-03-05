@@ -1,5 +1,11 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import * as pdfjsLib from "pdfjs-dist";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.mjs",
+  import.meta.url
+).toString();
 
 const MARGIN = 25.4; // 1 inch for binder compatibility
 const R_MARGIN = 14;
@@ -143,35 +149,53 @@ export function downloadSectionPdf(config: SectionPdfConfig) {
   doc.save(filename);
 }
 
-export function previewSectionPdf(config: SectionPdfConfig) {
+export async function previewSectionPdf(config: SectionPdfConfig) {
   const doc = generateSectionPdf(config);
-  const dataUri = doc.output("datauristring");
+  const pdfData = doc.output("arraybuffer");
 
   const overlay = document.createElement("div");
   overlay.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;";
-  
+
   const container = document.createElement("div");
   container.style.cssText = "width:90vw;height:90vh;max-width:900px;background:#fff;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;";
-  
+
   const toolbar = document.createElement("div");
   toolbar.style.cssText = "display:flex;justify-content:flex-end;padding:8px 12px;background:#f3f4f6;border-bottom:1px solid #e5e7eb;";
-  
+
   const closeBtn = document.createElement("button");
   closeBtn.textContent = "✕ Close";
   closeBtn.style.cssText = "padding:4px 12px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;font-size:13px;";
   closeBtn.onclick = () => { document.body.removeChild(overlay); };
   toolbar.appendChild(closeBtn);
-  
-  const embed = document.createElement("embed");
-  embed.src = dataUri;
-  embed.type = "application/pdf";
-  embed.style.cssText = "flex:1;border:0;width:100%;height:100%;";
-  
+
+  const scrollArea = document.createElement("div");
+  scrollArea.style.cssText = "flex:1;overflow-y:auto;padding:16px;background:#e5e7eb;display:flex;flex-direction:column;align-items:center;gap:16px;";
+
   container.appendChild(toolbar);
-  container.appendChild(embed);
+  container.appendChild(scrollArea);
   overlay.appendChild(container);
   overlay.onclick = (e) => { if (e.target === overlay) { document.body.removeChild(overlay); } };
   document.body.appendChild(overlay);
+
+  // Render pages as canvas images via pdf.js
+  try {
+    const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const scale = 2;
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      canvas.style.cssText = "max-width:100%;height:auto;box-shadow:0 2px 8px rgba(0,0,0,0.15);border-radius:4px;";
+      const ctx = canvas.getContext("2d")!;
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      scrollArea.appendChild(canvas);
+    }
+  } catch (err) {
+    scrollArea.textContent = "Failed to render preview.";
+    console.error("PDF preview error:", err);
+  }
 }
 
 export function printSectionPdf(config: SectionPdfConfig) {
