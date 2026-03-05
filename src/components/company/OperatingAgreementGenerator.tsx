@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useShareCalculations } from "@/hooks/useShareCalculations";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 
 export default function OperatingAgreementGenerator({ companyId, companyName, company }: Props) {
   const queryClient = useQueryClient();
+  const { shareholderHoldings, totalIssuedShares } = useShareCalculations(companyId);
   const [managementType, setManagementType] = useState<"member-managed" | "manager-managed">("member-managed");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
@@ -121,12 +123,16 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
   });
 
   const buildPdf = useCallback((sections: Record<string, string> | null = null) => {
-    const data: OperatingAgreementData = { company, members, officers, managementType, aiDraftSections: sections };
+    const data: OperatingAgreementData = {
+      company, members, officers, managementType, aiDraftSections: sections,
+      shareholderHoldings: shareholderHoldings || {},
+      totalIssuedUnits: totalIssuedShares,
+    };
     const doc = generateOperatingAgreementPDF(data);
     setPdfDoc(doc);
     setPreviewPage(1);
     return doc;
-  }, [company, members, officers, managementType]);
+  }, [company, members, officers, managementType, shareholderHoldings, totalIssuedShares]);
 
   const saveVersion = async (doc: any, isAi: boolean) => {
     try {
