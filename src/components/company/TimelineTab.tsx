@@ -404,6 +404,7 @@ export default function TimelineTab({ companyId, company }: Props) {
                     e.description || "—",
                   ]),
                 },
+                landscape: false,
               }}
             />
             <Dialog open={dialog} onOpenChange={(o) => { setDialog(o); if (!o) resetForm(); }}>
