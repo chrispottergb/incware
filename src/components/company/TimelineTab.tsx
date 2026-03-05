@@ -396,13 +396,12 @@ export default function TimelineTab({ companyId, company }: Props) {
                 title: "Corporate Timeline",
                 companyName: company.name,
                 table: {
-                  headers: ["Date", "Type", "Event", "Description", "Source"],
+                  headers: ["Date", "Type", "Event", "Description"],
                   rows: timeline.map((e) => [
                     new Date(e.date + "T00:00:00").toLocaleDateString(),
                     e.type.replace("_", " "),
                     e.title,
                     e.description || "—",
-                    e.source,
                   ]),
                 },
               }}
