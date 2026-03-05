@@ -237,6 +237,15 @@ export default function OrganizationTab({ companyId, company }: Props) {
     max_vps_allowed: company.max_vps_allowed?.toString() ?? "",
     additional_provisions: company.additional_provisions ?? "",
     s_election_date: company.s_election_date ?? "",
+    address: company.address ?? "",
+    address_2: company.address_2 ?? "",
+    city: company.city ?? "",
+    state: company.state ?? "",
+    zip: company.zip ?? "",
+  });
+
+  const { handleZipChange: handleFilingZipChange } = useZipLookup(({ city, state }) => {
+    setFilingForm((p) => ({ ...p, city, state }));
   });
   const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(!!company.s_election_date);
 
@@ -265,6 +274,11 @@ export default function OrganizationTab({ companyId, company }: Props) {
           max_directors_allowed: filingForm.max_directors_allowed ? parseInt(filingForm.max_directors_allowed) : null,
           max_vps_allowed: filingForm.max_vps_allowed ? parseInt(filingForm.max_vps_allowed) : null,
           additional_provisions: filingForm.additional_provisions || null,
+          address: filingForm.address || null,
+          address_2: filingForm.address_2 || null,
+          city: filingForm.city || null,
+          state: filingForm.state || null,
+          zip: filingForm.zip || null,
           s_election_date: isLLCType(company.entity_type)
             ? (llcSElectionEnabled ? (filingForm.s_election_date || null) : null)
             : company.s_election_date,
@@ -510,6 +524,37 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   </div>
                 </>
               )}
+            </div>
+            {/* Principal Office Address */}
+            <div className="pt-1">
+              <Label className="field-label font-semibold text-xs text-muted-foreground mb-1.5 block">Principal Office Address</Label>
+              <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+                <div className="field-group col-span-12 sm:col-span-5">
+                  <Label className="field-label">Address</Label>
+                  <Input className="h-7 text-sm" value={filingForm.address} onChange={(e) => setFilingForm((p) => ({ ...p, address: e.target.value }))} placeholder="Street address" />
+                </div>
+                <div className="field-group col-span-12 sm:col-span-3">
+                  <Label className="field-label">Address 2</Label>
+                  <Input className="h-7 text-sm" value={filingForm.address_2} onChange={(e) => setFilingForm((p) => ({ ...p, address_2: e.target.value }))} placeholder="Suite, unit, floor" />
+                </div>
+                <div className="field-group col-span-5 sm:col-span-4">
+                  <Label className="field-label">City</Label>
+                  <Input className="h-7 text-sm" value={filingForm.city} onChange={(e) => setFilingForm((p) => ({ ...p, city: e.target.value }))} />
+                </div>
+                <div className="field-group col-span-3 sm:col-span-2">
+                  <Label className="field-label">State</Label>
+                  <Select value={filingForm.state} onValueChange={(v) => setFilingForm((p) => ({ ...p, state: v }))}>
+                    <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      {US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="field-group col-span-4 sm:col-span-2">
+                  <Label className="field-label">ZIP</Label>
+                  <Input className="h-7 text-sm" value={filingForm.zip} onChange={(e) => { const v = e.target.value; setFilingForm((p) => ({ ...p, zip: v })); handleFilingZipChange(v); }} maxLength={10} placeholder="00000" />
+                </div>
+              </div>
             </div>
             <div className="field-group">
               <Label className="field-label">Additional Provisions</Label>
