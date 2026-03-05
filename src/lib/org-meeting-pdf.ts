@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 
 export interface OrgMeetingData {
@@ -181,7 +181,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
 
   if (data.managers.length > 0) {
     const tableData = data.managers.map(m => [m.name, m.title]);
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: y,
       head: [["Name", "Title"]],
       body: tableData,
@@ -199,7 +199,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
 
   if (data.members.length > 0) {
     const tableData = data.members.map(m => [m.name, m.membershipUnits, m.membershipInterestPct ? `${m.membershipInterestPct}%` : ""]);
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: y,
       head: [["Name", "Membership Units", "Membership Interest %"]],
       body: tableData,
