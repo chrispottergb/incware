@@ -85,11 +85,13 @@ export interface OperatingAgreementData {
   officers: any[];
   managementType: "member-managed" | "manager-managed";
   aiDraftSections?: Record<string, string> | null;
+  shareholderHoldings?: Record<string, number>;
+  totalIssuedUnits?: number;
 }
 
 export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsPDF {
   const doc = new jsPDF();
-  const { company, members, officers, managementType, aiDraftSections } = data;
+  const { company, members, officers, managementType, aiDraftSections, shareholderHoldings, totalIssuedUnits } = data;
   const cx = pw(doc) / 2;
   const ai = aiDraftSections || {};
   const hasAi = !!aiDraftSections && Object.keys(aiDraftSections).length > 0;
@@ -420,16 +422,30 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   y += 8;
 
   const scheduleMembers = members.filter((m: any) => !m.is_treasury);
+  const totalUnits = totalIssuedUnits || 0;
+  const holdings = shareholderHoldings || {};
+
+  // Helper to get membership interest % for a member
+  const getMemberInterest = (m: any): number | null => {
+    const units = holdings[m.id] || 0;
+    if (totalUnits > 0 && units > 0) return (units / totalUnits) * 100;
+    if (m.ownership_percentage != null) return m.ownership_percentage;
+    return null;
+  };
+
   if (scheduleMembers.length > 0) {
     autoTable(doc, {
       startY: y,
       head: [["Member Name", "Address", "City, State, ZIP", "Membership Interest (%)"]],
-      body: scheduleMembers.map((m: any) => [
-        m.name || "—",
-        [m.address, m.address_2].filter(Boolean).join(", ") || "—",
-        [m.city, m.state, m.zip].filter(Boolean).join(", ") || "—",
-        m.ownership_percentage != null ? `${m.ownership_percentage}%` : "—",
-      ]),
+      body: scheduleMembers.map((m: any) => {
+        const interest = getMemberInterest(m);
+        return [
+          m.name || "—",
+          [m.address, m.address_2].filter(Boolean).join(", ") || "—",
+          [m.city, m.state, m.zip].filter(Boolean).join(", ") || "—",
+          interest != null ? `${interest.toFixed(2)}%` : "—",
+        ];
+      }),
       theme: "grid",
       headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
       bodyStyles: { fontSize: 8 },
@@ -444,12 +460,15 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   }
 
   // Total percentage row
-  const totalPct = scheduleMembers.reduce((sum: number, m: any) => sum + (m.ownership_percentage || 0), 0);
+  const totalPct = scheduleMembers.reduce((sum: number, m: any) => {
+    const interest = getMemberInterest(m);
+    return sum + (interest || 0);
+  }, 0);
   if (scheduleMembers.length > 0) {
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
-    doc.text(`Total Membership Interests: ${totalPct}%`, pw(doc) - MARGIN, y, { align: "right" });
+    doc.text(`Total Membership Interests: ${totalPct.toFixed(2)}%`, pw(doc) - MARGIN, y, { align: "right" });
     y += 10;
   }
 
