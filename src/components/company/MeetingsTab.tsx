@@ -39,10 +39,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Calendar, MapPin, ChevronRight, Upload } from "lucide-react";
+import { Plus, Trash2, Loader2, Calendar, MapPin, ChevronRight, Upload, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import TaxReturnUpload from "@/components/TaxReturnUpload";
+import { isLLCType } from "@/lib/entity-terminology";
+import OrgMeetingWizard from "@/components/OrgMeetingWizard";
 
 const MEETING_TYPES = [
   "Annual Meeting",
@@ -81,6 +83,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [orgWizardOpen, setOrgWizardOpen] = useState(false);
 
   const defaultForm = () => ({
     meeting_date: "",
@@ -324,6 +327,11 @@ export default function MeetingsTab({ companyId, company }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {isLLCType(company.entity_type) && (
+            <Button variant="outline" size="sm" onClick={() => setOrgWizardOpen(true)}>
+              <FileText className="h-3.5 w-3.5 mr-1.5" /> Org Meeting Minutes
+            </Button>
+          )}
           <TaxReturnUpload
             companyId={companyId}
             mode="populate"
@@ -597,6 +605,16 @@ export default function MeetingsTab({ companyId, company }: Props) {
           ))}
         </div>
       )}
+
+      {/* Organizational Meeting Wizard Dialog */}
+      <Dialog open={orgWizardOpen} onOpenChange={setOrgWizardOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display">Organizational Meeting Minutes Generator</DialogTitle>
+          </DialogHeader>
+          <OrgMeetingWizard company={company} onClose={() => setOrgWizardOpen(false)} />
+        </DialogContent>
+      </Dialog>
 
       {/* Two-step delete confirmation */}
       <AlertDialog open={deleteStep === 1} onOpenChange={(open) => { if (!open) { setDeleteStep(0); setDeletingId(null); } }}>
