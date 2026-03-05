@@ -23,7 +23,7 @@ export interface OrgMeetingData {
   einAuthorizedTitle: string;
 
   managers: { name: string; title: string }[];
-  members: { name: string; commonShares: string; preferredShares: string; distributionPct: string }[];
+  members: { name: string; membershipUnits: string; membershipInterestPct: string }[];
 
   businessPurpose: string;
 
@@ -197,10 +197,10 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   boldPara("RESOLVED, ", `that the following persons are the initial members of ${fullName} and hold ownership interests as set forth below:`);
 
   if (data.members.length > 0) {
-    const tableData = data.members.map(m => [m.name, m.commonShares, m.preferredShares, m.distributionPct ? `${m.distributionPct}%` : ""]);
+    const tableData = data.members.map(m => [m.name, m.membershipUnits, m.membershipInterestPct ? `${m.membershipInterestPct}%` : ""]);
     (doc as any).autoTable({
       startY: y,
-      head: [["Name", "Common Shares", "Preferred Shares", "Distribution %"]],
+      head: [["Name", "Membership Units", "Membership Interest %"]],
       body: tableData,
       margin: { left: margin, right: margin },
       styles: { fontSize: 9, cellPadding: 4 },
