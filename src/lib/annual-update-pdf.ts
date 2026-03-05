@@ -1,6 +1,8 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+const MARGIN = 25.4; // 1 inch for binder compatibility
+const R_MARGIN = 14;
 const BRAND = "EntityIQ";
 const BRAND_SUB = "Corporate Records Management";
 
@@ -10,30 +12,30 @@ function addHeader(doc: jsPDF, companyName: string) {
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text(BRAND, 14, 18);
+  doc.text(BRAND, MARGIN, 18);
 
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(120, 120, 120);
-  doc.text(BRAND_SUB, 14, 24);
+  doc.text(BRAND_SUB, MARGIN, 24);
 
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text("Annual Update Review", 14, 36);
+  doc.text("Annual Update Review", MARGIN, 36);
 
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
-  doc.text(companyName, 14, 43);
+  doc.text(companyName, MARGIN, 43);
 
   doc.setFontSize(8);
   doc.setTextColor(150, 150, 150);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - 14, 18, { align: "right" });
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - R_MARGIN, 18, { align: "right" });
 
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
-  doc.line(14, 47, pageWidth - 14, 47);
+  doc.line(MARGIN, 47, pageWidth - R_MARGIN, 47);
 }
 
 function addFooter(doc: jsPDF) {
@@ -44,8 +46,8 @@ function addFooter(doc: jsPDF) {
     const pageWidth = doc.internal.pageSize.getWidth();
     doc.setFontSize(7);
     doc.setTextColor(160, 160, 160);
-    doc.text(`${BRAND} — Confidential`, 14, pageHeight - 8);
-    doc.text(`Page ${i} of ${pageCount}`, pageWidth - 14, pageHeight - 8, { align: "right" });
+    doc.text(`${BRAND} — Confidential`, MARGIN, pageHeight - 8);
+    doc.text(`Page ${i} of ${pageCount}`, pageWidth - R_MARGIN, pageHeight - 8, { align: "right" });
   }
 }
 
@@ -57,7 +59,7 @@ function addSectionTitle(doc: jsPDF, title: string, y: number): number {
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(45, 55, 72);
-  doc.text(title, 14, y);
+  doc.text(title, MARGIN, y);
   return y + 2;
 }
 
@@ -66,8 +68,8 @@ function addKeyValueTable(doc: jsPDF, rows: [string, string][], y: number): numb
     doc.setFontSize(8);
     doc.setFont("helvetica", "italic");
     doc.setTextColor(130, 130, 130);
-    doc.text("No data on file.", 14, y + 6);
-    return y + 14;
+    doc.text("No data on file.", MARGIN, y + 6);
+    return y + MARGIN;
   }
   autoTable(doc, {
     startY: y,
@@ -78,7 +80,7 @@ function addKeyValueTable(doc: jsPDF, rows: [string, string][], y: number): numb
       0: { cellWidth: 55, fontStyle: "bold", textColor: [80, 80, 80] },
       1: { textColor: [30, 30, 30] },
     },
-    margin: { left: 14, right: 14 },
+    margin: { left: MARGIN, right: R_MARGIN },
   });
   return (doc as any).lastAutoTable.finalY + 8;
 }
@@ -88,8 +90,8 @@ function addDataTable(doc: jsPDF, headers: string[], rows: string[][], y: number
     doc.setFontSize(8);
     doc.setFont("helvetica", "italic");
     doc.setTextColor(130, 130, 130);
-    doc.text("No records on file.", 14, y + 6);
-    return y + 14;
+    doc.text("No records on file.", MARGIN, y + 6);
+    return y + MARGIN;
   }
   autoTable(doc, {
     startY: y,
@@ -98,7 +100,7 @@ function addDataTable(doc: jsPDF, headers: string[], rows: string[][], y: number
     theme: "grid",
     headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
     bodyStyles: { fontSize: 7 },
-    margin: { left: 14, right: 14 },
+    margin: { left: MARGIN, right: R_MARGIN },
   });
   return (doc as any).lastAutoTable.finalY + 8;
 }
@@ -182,8 +184,8 @@ export function generateAnnualUpdatePdf(data: AnnualUpdateData): jsPDF {
     doc.setFontSize(8);
     doc.setFont("helvetica", "italic");
     doc.setTextColor(130, 130, 130);
-    doc.text("No officers on file.", 14, y + 6);
-    y += 14;
+    doc.text("No officers on file.", MARGIN, y + 6);
+    y += MARGIN;
   }
 
   // --- Section 4: Directors ---
@@ -245,8 +247,8 @@ export function generateAnnualUpdatePdf(data: AnnualUpdateData): jsPDF {
     doc.setFontSize(8);
     doc.setFont("helvetica", "italic");
     doc.setTextColor(130, 130, 130);
-    doc.text("No legal counsel on file.", 14, y + 6);
-    y += 14;
+    doc.text("No legal counsel on file.", MARGIN, y + 6);
+    y += MARGIN;
   }
 
   // --- Section 7: Accounting ---
@@ -280,8 +282,8 @@ export function generateAnnualUpdatePdf(data: AnnualUpdateData): jsPDF {
     doc.setFontSize(8);
     doc.setFont("helvetica", "italic");
     doc.setTextColor(130, 130, 130);
-    doc.text("No accounting records on file.", 14, y + 6);
-    y += 14;
+    doc.text("No accounting records on file.", MARGIN, y + 6);
+    y += MARGIN;
   }
 
   // --- Section 8: Banking ---
@@ -309,7 +311,7 @@ export function generateAnnualUpdatePdf(data: AnnualUpdateData): jsPDF {
   doc.setFontSize(8);
   doc.setFont("helvetica", "italic");
   doc.setTextColor(100, 100, 100);
-  doc.text("Please review all sections above and report any changes or corrections to your service provider.", 14, y);
+  doc.text("Please review all sections above and report any changes or corrections to your service provider.", MARGIN, y);
 
   addFooter(doc);
   return doc;

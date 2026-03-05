@@ -16,7 +16,7 @@ export function generatePromissoryNotePDF(data: PromissoryNoteData): jsPDF {
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.getWidth();
   const cx = pw / 2;
-  const margin = 20;
+  const margin = 25.4; // 1 inch for binder compatibility
   const textWidth = pw - margin * 2;
 
   let y = 20;

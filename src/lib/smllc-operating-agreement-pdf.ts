@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 
-const MARGIN = 14;
+const MARGIN = 25.4; // 1 inch for binder compatibility
 const BRAND = "EntityIQ";
 
 function pw(doc: jsPDF) { return doc.internal.pageSize.getWidth(); }
@@ -78,20 +78,20 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
   const fiscalYearEnd = company.fiscal_year_end || "December";
 
   // ── COVER PAGE ──
-  doc.setFillColor(25, 25, 30);
+  doc.setFillColor(245, 245, 245);
   doc.rect(0, 0, pw(doc), ph(doc), "F");
 
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(200, 200, 200);
+  doc.setTextColor(80, 80, 80);
   doc.text("STATE OF WISCONSIN", cx, 45, { align: "center" });
 
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(160, 160, 160);
+  doc.setTextColor(120, 120, 120);
   doc.text("Wis. Stat. Ch. 183 — Wisconsin Uniform Limited Liability Company Law", cx, 52, { align: "center" });
 
-  doc.setDrawColor(180, 60, 40);
+  doc.setDrawColor(140, 40, 30);
   doc.setLineWidth(1.5);
   doc.line(40, 62, pw(doc) - 40, 62);
   doc.setLineWidth(0.3);
@@ -99,27 +99,27 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
 
   doc.setFontSize(20);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(255, 255, 255);
+  doc.setTextColor(30, 30, 30);
   doc.text("SOLE MEMBER", cx, 82, { align: "center" });
   doc.text("OPERATING AGREEMENT", cx, 92, { align: "center" });
 
   doc.setFontSize(16);
-  doc.setTextColor(200, 140, 100);
+  doc.setTextColor(140, 80, 40);
   const nameLines = doc.splitTextToSize(companyName, pw(doc) - 60);
   let cy = 115;
   nameLines.forEach((l: string) => { doc.text(l, cx, cy, { align: "center" }); cy += 8; });
 
   doc.setFontSize(10);
-  doc.setTextColor(180, 180, 180);
+  doc.setTextColor(80, 80, 80);
   doc.text("A Wisconsin Limited Liability Company", cx, cy + 5, { align: "center" });
 
   doc.setFontSize(9);
-  doc.setTextColor(140, 140, 140);
+  doc.setTextColor(100, 100, 100);
   doc.text(`Effective Date: ${filingDate}`, cx, cy + 20, { align: "center" });
   doc.text(`Prepared by ${BRAND}`, cx, cy + 27, { align: "center" });
 
   doc.setFontSize(7);
-  doc.setTextColor(100, 100, 100);
+  doc.setTextColor(130, 130, 130);
   doc.text("CONFIDENTIAL — FOR AUTHORIZED USE ONLY", cx, ph(doc) - 20, { align: "center" });
 
   // ── TABLE OF CONTENTS ──

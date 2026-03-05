@@ -27,7 +27,7 @@ function fmtCurrency(v: string) {
 export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.getWidth();
-  const margin = 20;
+  const margin = 25.4; // 1 inch for binder compatibility
   const maxW = pw - margin * 2;
   let y = 20;
 

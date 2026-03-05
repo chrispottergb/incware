@@ -1,6 +1,9 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+const MARGIN = 25.4; // 1 inch for binder compatibility
+const R_MARGIN = 14;
+
 export interface BillOfSaleData {
   companyName: string;
   sellerName: string;
@@ -32,7 +35,7 @@ export function generateBillOfSalePdf(data: BillOfSaleData): jsPDF {
 
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
-  doc.line(14, 38, pw - 14, 38);
+  doc.line(MARGIN, 38, pw - R_MARGIN, 38);
 
   let y = 48;
 
@@ -66,7 +69,7 @@ export function generateBillOfSalePdf(data: BillOfSaleData): jsPDF {
     headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: "bold" },
     bodyStyles: { fontSize: 9 },
     columnStyles: { 0: { cellWidth: 55, fontStyle: "bold" } },
-    margin: { left: 14, right: 14 },
+    margin: { left: MARGIN, right: R_MARGIN },
   });
 
   y = (doc as any).lastAutoTable.finalY + 12;
@@ -76,7 +79,7 @@ export function generateBillOfSalePdf(data: BillOfSaleData): jsPDF {
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
-    doc.text("Non-Cash Consideration — Asset Detail", 14, y);
+    doc.text("Non-Cash Consideration — Asset Detail", MARGIN, y);
     y += 6;
 
     const assetRows = data.assets.map(a => [a.description, `$${a.value.toFixed(2)}`]);
@@ -90,7 +93,7 @@ export function generateBillOfSalePdf(data: BillOfSaleData): jsPDF {
       theme: "grid",
       headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: "bold" },
       bodyStyles: { fontSize: 9 },
-      margin: { left: 14, right: 14 },
+      margin: { left: MARGIN, right: R_MARGIN },
       didParseCell(cellData) {
         if (cellData.section === "body" && cellData.row.index === assetRows.length - 1) {
           cellData.cell.styles.fontStyle = "bold";
@@ -105,24 +108,24 @@ export function generateBillOfSalePdf(data: BillOfSaleData): jsPDF {
   doc.setFont("helvetica", "normal");
   doc.setTextColor(60, 60, 60);
   const legalText = `FOR VALUE RECEIVED, the undersigned Seller hereby sells, assigns, and transfers to the Buyer the above-described shares of ${data.companyName}, together with all rights, title, and interest therein.`;
-  const legalLines = doc.splitTextToSize(legalText, pw - 28);
-  doc.text(legalLines, 14, y);
+  const legalLines = doc.splitTextToSize(legalText, pw - MARGIN - R_MARGIN);
+  doc.text(legalLines, MARGIN, y);
   y += legalLines.length * 5 + 20;
 
   // Signature lines
   doc.setDrawColor(100, 100, 100);
   doc.setLineWidth(0.3);
-  doc.line(14, y, 90, y);
-  doc.line(pw / 2 + 10, y, pw - 14, y);
+  doc.line(MARGIN, y, 90, y);
+  doc.line(pw / 2 + 10, y, pw - R_MARGIN, y);
   doc.setFontSize(8);
   doc.setTextColor(100, 100, 100);
   doc.text("Seller Signature", 52, y + 5, { align: "center" });
-  doc.text("Buyer Signature", (pw / 2 + 10 + pw - 14) / 2, y + 5, { align: "center" });
+  doc.text("Buyer Signature", (pw / 2 + 10 + pw - R_MARGIN) / 2, y + 5, { align: "center" });
   y += 15;
-  doc.line(14, y, 90, y);
-  doc.line(pw / 2 + 10, y, pw - 14, y);
+  doc.line(MARGIN, y, 90, y);
+  doc.line(pw / 2 + 10, y, pw - R_MARGIN, y);
   doc.text("Date", 52, y + 5, { align: "center" });
-  doc.text("Date", (pw / 2 + 10 + pw - 14) / 2, y + 5, { align: "center" });
+  doc.text("Date", (pw / 2 + 10 + pw - R_MARGIN) / 2, y + 5, { align: "center" });
 
   // Footer
   const ph = doc.internal.pageSize.getHeight();
