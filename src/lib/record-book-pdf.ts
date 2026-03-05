@@ -29,11 +29,11 @@ function checkBreak(doc: jsPDF, y: number, needed: number): number {
 function addSectionTitle(doc: jsPDF, y: number, num: number, title: string): number {
   y = checkBreak(doc, y, 20);
   const pw = getPageWidth(doc);
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
+  doc.setTextColor(120, 120, 120);
   doc.text(`${num}. ${title.toUpperCase()}`, MARGIN, y);
-  doc.setDrawColor(45, 55, 72);
+  doc.setDrawColor(140, 140, 140);
   doc.setLineWidth(0.6);
   doc.line(MARGIN, y + 2, pw - MARGIN, y + 2);
   return y + 8;
@@ -41,15 +41,15 @@ function addSectionTitle(doc: jsPDF, y: number, num: number, title: string): num
 
 function addSubSection(doc: jsPDF, y: number, title: string): number {
   y = checkBreak(doc, y, 14);
-  doc.setFontSize(9);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(60, 60, 60);
+  doc.setTextColor(120, 120, 120);
   doc.text(title, MARGIN, y);
   return y + 5;
 }
 
 function addLabelValue(doc: jsPDF, y: number, label: string, value: string, x = MARGIN): number {
-  doc.setFontSize(8);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(80, 80, 80);
   doc.text(`${label}:`, x, y);
@@ -61,7 +61,7 @@ function addLabelValue(doc: jsPDF, y: number, label: string, value: string, x = 
 
 function addNarrative(doc: jsPDF, y: number, text: string): number {
   if (!text) return y;
-  doc.setFontSize(8.5);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(50, 50, 50);
   const pw = getPageWidth(doc);
@@ -76,7 +76,7 @@ function addNarrative(doc: jsPDF, y: number, text: string): number {
 
 function addTableSafe(doc: jsPDF, y: number, head: string[], body: string[][]): number {
   if (body.length === 0) {
-    doc.setFontSize(8);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "italic");
     doc.setTextColor(130, 130, 130);
     doc.text("No records.", MARGIN, y + 4);
@@ -87,8 +87,8 @@ function addTableSafe(doc: jsPDF, y: number, head: string[], body: string[][]): 
     head: [head],
     body,
     theme: "grid",
-    headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
-    bodyStyles: { fontSize: 7 },
+    headStyles: { fillColor: [140, 140, 140], fontSize: 11, fontStyle: "bold" },
+    bodyStyles: { fontSize: 11 },
     margin: { left: MARGIN, right: MARGIN },
     styles: { overflow: "linebreak", cellWidth: "auto" },
   });
@@ -512,7 +512,7 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
     doc.setLineWidth(0.3);
     doc.line(MARGIN, ph - 18, ppw - MARGIN, ph - 18);
 
-    doc.setFontSize(7);
+    doc.setFontSize(11);
     doc.setTextColor(130, 130, 130);
     doc.text(`${company.name} — Corporate Record Book`, MARGIN, ph - 13);
     doc.text(`Page ${i - 1} of ${pageCount - 1}`, ppw - MARGIN, ph - 13, { align: "right" });

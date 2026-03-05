@@ -27,14 +27,14 @@ function addParagraph(doc: jsPDF, y: number, text: string, indent = MARGIN): num
 
 function addArticleTitle(doc: jsPDF, y: number, num: string, title: string): number {
   y = checkBreak(doc, y, 18);
-  doc.setFontSize(13);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(25, 25, 30);
+  doc.setTextColor(120, 120, 120);
   doc.text(`ARTICLE ${num}`, pw(doc) / 2, y, { align: "center" });
   y += 6;
   doc.text(title.toUpperCase(), pw(doc) / 2, y, { align: "center" });
   y += 3;
-  doc.setDrawColor(45, 55, 72);
+  doc.setDrawColor(140, 140, 140);
   doc.setLineWidth(0.4);
   doc.line(pw(doc) / 2 - 30, y, pw(doc) / 2 + 30, y);
   return y + 7;
@@ -42,9 +42,9 @@ function addArticleTitle(doc: jsPDF, y: number, num: string, title: string): num
 
 function addSectionTitle(doc: jsPDF, y: number, label: string): number {
   y = checkBreak(doc, y, 14);
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(40, 40, 40);
+  doc.setTextColor(120, 120, 120);
   doc.text(label, MARGIN, y);
   return y + 6;
 }
@@ -53,7 +53,7 @@ function addFooters(doc: jsPDF, companyName: string) {
   const count = doc.getNumberOfPages();
   for (let i = 2; i <= count; i++) {
     doc.setPage(i);
-    doc.setFontSize(8);
+    doc.setFontSize(11);
     doc.setTextColor(160, 160, 160);
     doc.text(`Bylaws — ${companyName}`, MARGIN, ph(doc) - 8);
     doc.text(`Page ${i - 1} of ${count - 1}`, pw(doc) - MARGIN, ph(doc) - 8, { align: "right" });
@@ -87,16 +87,16 @@ export function generateBylawsPDF(data: BylawsData): jsPDF {
   const statuteRef = isSCorp ? "Wis. Stat. Ch. 180 (with IRC § 1362 S-Election)" : "Wis. Stat. Ch. 180";
 
   // ── COVER PAGE ──
-  doc.setFillColor(25, 25, 30);
+  doc.setFillColor(245, 245, 245);
   doc.rect(0, 0, pw(doc), ph(doc), "F");
 
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(200, 200, 200);
+  doc.setTextColor(80, 80, 80);
   doc.text("STATE OF WISCONSIN", cx, 45, { align: "center" });
-  doc.setFontSize(8);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(160, 160, 160);
+  doc.setTextColor(120, 120, 120);
   doc.text(`${statuteRef} — Wisconsin Business Corporation Law`, cx, 52, { align: "center" });
 
   doc.setDrawColor(40, 80, 160);
@@ -105,39 +105,39 @@ export function generateBylawsPDF(data: BylawsData): jsPDF {
   doc.setLineWidth(0.3);
   doc.line(40, 64, pw(doc) - 40, 64);
 
-  doc.setFontSize(20);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(255, 255, 255);
+  doc.setTextColor(30, 30, 30);
   doc.text("BYLAWS", cx, 85, { align: "center" });
   doc.setFontSize(11);
-  doc.setTextColor(200, 200, 200);
+  doc.setTextColor(80, 80, 80);
   doc.text(`(${company.entity_type})`, cx, 94, { align: "center" });
 
-  doc.setFontSize(16);
-  doc.setTextColor(100, 140, 200);
+  doc.setFontSize(11);
+  doc.setTextColor(140, 80, 40);
   const nameLines = doc.splitTextToSize(companyName, pw(doc) - 60);
   let cy = 115;
   nameLines.forEach((l: string) => { doc.text(l, cx, cy, { align: "center" }); cy += 8; });
 
-  doc.setFontSize(10);
-  doc.setTextColor(180, 180, 180);
+  doc.setFontSize(11);
+  doc.setTextColor(80, 80, 80);
   doc.text(`A Wisconsin ${company.entity_type}`, cx, cy + 5, { align: "center" });
 
-  doc.setFontSize(9);
-  doc.setTextColor(140, 140, 140);
+  doc.setFontSize(11);
+  doc.setTextColor(100, 100, 100);
   doc.text(`Incorporated: ${incDate}`, cx, cy + 20, { align: "center" });
   doc.text(`Prepared by ${BRAND}`, cx, cy + 27, { align: "center" });
 
-  doc.setFontSize(7);
-  doc.setTextColor(100, 100, 100);
+  doc.setFontSize(11);
+  doc.setTextColor(130, 130, 130);
   doc.text("CONFIDENTIAL — FOR AUTHORIZED USE ONLY", cx, ph(doc) - 20, { align: "center" });
 
   // ── TABLE OF CONTENTS ──
   doc.addPage();
   let y = 25;
-  doc.setFontSize(14);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
+  doc.setTextColor(120, 120, 120);
   doc.text("TABLE OF CONTENTS", cx, y, { align: "center" });
   y += 10;
 
@@ -156,7 +156,7 @@ export function generateBylawsPDF(data: BylawsData): jsPDF {
     "XII. Miscellaneous Provisions",
   ];
   tocItems.forEach((item) => {
-    doc.setFontSize(9);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(50, 50, 50);
     doc.text(item, MARGIN + 5, y);
@@ -166,9 +166,9 @@ export function generateBylawsPDF(data: BylawsData): jsPDF {
   // ── PREAMBLE ──
   doc.addPage();
   y = 25;
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
+  doc.setTextColor(120, 120, 120);
   doc.text("BYLAWS", cx, y, { align: "center" });
   doc.text(`OF ${companyName.toUpperCase()}`, cx, y + 6, { align: "center" });
   y += 15;
@@ -342,12 +342,12 @@ export function generateBylawsPDF(data: BylawsData): jsPDF {
   // ── CERTIFICATION PAGE ──
   doc.addPage();
   y = 30;
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
+  doc.setTextColor(120, 120, 120);
   doc.text("CERTIFICATION", cx, y, { align: "center" });
   y += 10;
-  doc.setFontSize(9);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(50, 50, 50);
   const certText = `The undersigned, being the Secretary of ${companyName}, hereby certifies that the foregoing Bylaws were duly adopted by the Board of Directors of the Corporation.`;
@@ -361,7 +361,7 @@ export function generateBylawsPDF(data: BylawsData): jsPDF {
   doc.line(MARGIN, y, MARGIN + 80, y);
   doc.line(pw(doc) - MARGIN - 50, y, pw(doc) - MARGIN, y);
   y += 4;
-  doc.setFontSize(8);
+  doc.setFontSize(11);
   doc.setTextColor(80, 80, 80);
   const secName = officers.length > 0 && officers[0]?.secretary ? officers[0].secretary : "Secretary";
   doc.text(secName, MARGIN, y);
