@@ -45,7 +45,7 @@ function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType
 
   // Company name as top header (letterhead style)
   const displayName = meeting?.company_name_at_meeting || companyName;
-  doc.setFontSize(13);
+  doc.setFontSize(15);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text(displayName, cx, 16, { align: "center" });
@@ -54,7 +54,7 @@ function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType
   const addrLine = meeting?.company_address_at_meeting || company?.address || "";
   let hy = 21;
   if (addrLine) {
-    doc.setFontSize(10);
+    doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
     doc.text(addrLine, cx, hy, { align: "center" });
     hy += 5;
@@ -66,7 +66,7 @@ function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType
   const zipPart = meeting?.company_zip_at_meeting || company?.zip || "";
   const cityStateLine = [cityPart, statePart].filter(Boolean).join(", ") + (zipPart ? `  ${zipPart}` : "");
   if (cityStateLine.trim()) {
-    doc.setFontSize(10);
+    doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
     doc.text(cityStateLine, cx, hy, { align: "center" });
     hy += 5;
@@ -182,12 +182,12 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
 
     const introText = `The ${meetingLabel} meeting of ${companyName}, ${entityLabel} duly formed in the state of ${stateOfInc}${locationPart}${datePart}. There were present and participating at the meeting:`;
 
-    doc.setFontSize(9);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(30, 30, 30);
     const introLines = doc.splitTextToSize(introText, pw - 28);
     doc.text(introLines, 14, y);
-    y += introLines.length * 4 + 4;
+    y += introLines.length * 4.5 + 4;
 
     // List participants based on meeting sub_type / type
     if (meetingData) {
@@ -236,7 +236,7 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
       }
 
       if (participants.length > 0) {
-        doc.setFontSize(9);
+        doc.setFontSize(11);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(30, 30, 30);
         participants.forEach(name => {
@@ -263,7 +263,7 @@ function addDFIFooter(doc: jsPDF, companyName: string) {
     doc.setLineWidth(0.3);
     doc.line(14, ph - 18, pw - 14, ph - 18);
 
-    doc.setFontSize(7);
+    doc.setFontSize(8);
     doc.setTextColor(130, 130, 130);
     doc.text(`${companyName} — Corporate Records`, 14, ph - 13);
     doc.text(`Page ${i} of ${pageCount}`, pw - 14, ph - 13, { align: "right" });
