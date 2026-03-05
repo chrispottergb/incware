@@ -224,6 +224,28 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                       <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
                     </div>
                   </div>
+                  {t.isLLC && (
+                    <div className="field-group">
+                      <Label className="field-label">Membership Interest</Label>
+                      <Input
+                        className="h-8 text-sm bg-muted"
+                        readOnly
+                        value={
+                          form.num_shares
+                            ? `${(
+                                (parseInt(form.num_shares) /
+                                  (totalActiveUnits -
+                                    (editId
+                                      ? certificates.find((c: any) => c.id === editId)?.num_shares || 0
+                                      : 0) +
+                                    (parseInt(form.num_shares) || 0))) *
+                                100
+                              ).toFixed(2)}%`
+                            : "—"
+                        }
+                      />
+                    </div>
+                  )}
                   {!t.isLLC && (
                   <div className="grid grid-cols-2 gap-2">
                     <div className="field-group">
