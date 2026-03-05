@@ -395,6 +395,70 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
     y += 15;
   });
 
+  // ── SCHEDULE A ──
+  doc.addPage();
+  y = 25;
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(25, 25, 30);
+  doc.text("SCHEDULE A", cx, y, { align: "center" });
+  y += 7;
+  doc.setFontSize(10);
+  doc.text("Members, Addresses, and Membership Interests", cx, y, { align: "center" });
+  y += 4;
+  doc.setDrawColor(45, 55, 72);
+  doc.setLineWidth(0.4);
+  doc.line(cx - 40, y, cx + 40, y);
+  y += 8;
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(50, 50, 50);
+  doc.text(`Company: ${companyName}`, MARGIN, y);
+  y += 5;
+  doc.text(`Effective Date: ${filingDate}`, MARGIN, y);
+  y += 8;
+
+  const scheduleMembers = members.filter((m: any) => !m.is_treasury);
+  if (scheduleMembers.length > 0) {
+    autoTable(doc, {
+      startY: y,
+      head: [["Member Name", "Address", "City, State, ZIP", "Membership Interest (%)"]],
+      body: scheduleMembers.map((m: any) => [
+        m.name || "—",
+        [m.address, m.address_2].filter(Boolean).join(", ") || "—",
+        [m.city, m.state, m.zip].filter(Boolean).join(", ") || "—",
+        m.ownership_percentage != null ? `${m.ownership_percentage}%` : "—",
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8 },
+      margin: { left: MARGIN, right: MARGIN },
+      columnStyles: {
+        3: { halign: "center" },
+      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 8;
+  } else {
+    y = addParagraph(doc, y, "No members have been recorded at this time.");
+  }
+
+  // Total percentage row
+  const totalPct = scheduleMembers.reduce((sum: number, m: any) => sum + (m.ownership_percentage || 0), 0);
+  if (scheduleMembers.length > 0) {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 30);
+    doc.text(`Total Membership Interests: ${totalPct}%`, pw(doc) - MARGIN, y, { align: "right" });
+    y += 10;
+  }
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "italic");
+  doc.setTextColor(120, 120, 120);
+  const scheduleNote = "This Schedule A is incorporated into and made a part of the Operating Agreement. Any changes to membership interests shall be reflected by an amended Schedule A executed by all Members.";
+  y = addParagraph(doc, y, scheduleNote);
+
   addFooters(doc, companyName);
   return doc;
 }
