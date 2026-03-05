@@ -202,12 +202,24 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                   </div>
                   <div className="field-group">
                     <Label className="field-label">{t.shareholder}</Label>
-                    <Select value={form.shareholder_id} onValueChange={(v) => setForm(p => ({ ...p, shareholder_id: v }))}>
-                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={`Select ${t.shareholder.toLowerCase()}`} /></SelectTrigger>
-                      <SelectContent>
-                        {shareholders.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <select
+                      className="h-8 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      value={form.shareholder_id}
+                      onChange={(e) => setForm((p) => ({ ...p, shareholder_id: e.target.value }))}
+                      required
+                    >
+                      <option value="" disabled>
+                        Select {t.shareholder.toLowerCase()}
+                      </option>
+                      {shareholders.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                    {shareholders.length === 0 && (
+                      <p className="text-xs text-muted-foreground">No {t.shareholders.toLowerCase()} found. Add one in the registry first.</p>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="field-group">
