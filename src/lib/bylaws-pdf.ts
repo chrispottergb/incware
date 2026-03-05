@@ -13,47 +13,47 @@ function checkBreak(doc: jsPDF, y: number, needed: number): number {
 }
 
 function addParagraph(doc: jsPDF, y: number, text: string, indent = MARGIN): number {
-  doc.setFontSize(9);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(30, 30, 30);
   const lines = doc.splitTextToSize(text, pw(doc) - indent - MARGIN);
   for (const line of lines) {
-    y = checkBreak(doc, y, 5);
+    y = checkBreak(doc, y, 6);
     doc.text(line, indent, y);
-    y += 4.2;
+    y += 5.0;
   }
-  return y + 3;
+  return y + 4;
 }
 
 function addArticleTitle(doc: jsPDF, y: number, num: string, title: string): number {
-  y = checkBreak(doc, y, 16);
-  doc.setFontSize(11);
+  y = checkBreak(doc, y, 18);
+  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(25, 25, 30);
   doc.text(`ARTICLE ${num}`, pw(doc) / 2, y, { align: "center" });
-  y += 5;
+  y += 6;
   doc.text(title.toUpperCase(), pw(doc) / 2, y, { align: "center" });
   y += 3;
   doc.setDrawColor(45, 55, 72);
   doc.setLineWidth(0.4);
   doc.line(pw(doc) / 2 - 30, y, pw(doc) / 2 + 30, y);
-  return y + 6;
+  return y + 7;
 }
 
 function addSectionTitle(doc: jsPDF, y: number, label: string): number {
-  y = checkBreak(doc, y, 12);
-  doc.setFontSize(9.5);
+  y = checkBreak(doc, y, 14);
+  doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(40, 40, 40);
   doc.text(label, MARGIN, y);
-  return y + 5;
+  return y + 6;
 }
 
 function addFooters(doc: jsPDF, companyName: string) {
   const count = doc.getNumberOfPages();
   for (let i = 2; i <= count; i++) {
     doc.setPage(i);
-    doc.setFontSize(7);
+    doc.setFontSize(8);
     doc.setTextColor(160, 160, 160);
     doc.text(`Bylaws — ${companyName}`, MARGIN, ph(doc) - 8);
     doc.text(`Page ${i - 1} of ${count - 1}`, pw(doc) - MARGIN, ph(doc) - 8, { align: "right" });
