@@ -80,7 +80,7 @@ export interface SectionPdfConfig {
 }
 
 export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
-  const doc = new jsPDF({ orientation: config.landscape ? "landscape" : "portrait" });
+  const doc = new jsPDF({ orientation: config.landscape ? "landscape" : "portrait", unit: "mm", format: "a4" });
   const subtitle = [config.companyName, config.statuteRef].filter(Boolean).join(" — ");
 
   addHeader(doc, config.title, subtitle);
