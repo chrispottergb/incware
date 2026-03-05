@@ -322,21 +322,32 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
   };
 
   const handlePreview = () => {
-    if (previewUrl) {
-      const win = window.open("", "_blank");
-      if (win) win.location.href = previewUrl;
+    if (pdfDoc) {
+      const blob = pdfDoc.output("blob");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${companyName.replace(/[^a-zA-Z0-9]/g, "_")}_Operating_Agreement_Preview.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } else {
+      toast.error("Please generate the Operating Agreement first.");
     }
   };
 
   const handlePrint = () => {
     if (pdfDoc) {
-      const win = window.open("", "_blank");
       const blob = pdfDoc.output("blob");
       const url = URL.createObjectURL(blob);
-      if (win) {
-        win.location.href = url;
-        win.addEventListener("load", () => win.print());
-      }
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${companyName.replace(/[^a-zA-Z0-9]/g, "_")}_Operating_Agreement_Print.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
   };
 
