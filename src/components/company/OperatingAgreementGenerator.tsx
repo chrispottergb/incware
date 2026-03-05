@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,8 +19,9 @@ import {
 import { toast } from "sonner";
 import {
   FileText, Download, Eye, Loader2, Sparkles, Printer, Copy, Check, Share2,
-  ChevronDown, History, RotateCcw, FileDown,
+  ChevronDown, History, RotateCcw, FileDown, ChevronLeft, ChevronRight,
 } from "lucide-react";
+import * as pdfjsLib from "pdfjs-dist";
 import {
   generateOperatingAgreementPDF, type OperatingAgreementData,
 } from "@/lib/operating-agreement-pdf";
@@ -58,13 +59,17 @@ const AI_SECTION_LABELS: Record<string, string> = {
   indemnification: "Indemnification",
 };
 
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.mjs",
+  import.meta.url
+).toString();
+
 export default function OperatingAgreementGenerator({ companyId, companyName, company }: Props) {
   const queryClient = useQueryClient();
   const [managementType, setManagementType] = useState<"member-managed" | "manager-managed">("member-managed");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [aiProvider, setAiProvider] = useState(() => localStorage.getItem("ai_provider") || "lovable");
@@ -74,6 +79,12 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
   const [pendingDownloadType, setPendingDownloadType] = useState<"pdf" | "docx" | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [isAiDraft, setIsAiDraft] = useState(false);
+  const [previewPages, setPreviewPages] = useState(0);
+  const [previewPage, setPreviewPage] = useState(1);
+  const [isRenderingPreview, setIsRenderingPreview] = useState(false);
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const previewPdfRef = useRef<any>(null);
 
   const { data: members = [] } = useQuery({
     queryKey: ["shareholders", companyId],
@@ -113,11 +124,9 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
     const data: OperatingAgreementData = { company, members, officers, managementType, aiDraftSections: sections };
     const doc = generateOperatingAgreementPDF(data);
     setPdfDoc(doc);
-    const blob = doc.output("blob");
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(URL.createObjectURL(blob));
+    setPreviewPage(1);
     return doc;
-  }, [company, members, officers, managementType, previewUrl]);
+  }, [company, members, officers, managementType]);
 
   const saveVersion = async (doc: any, isAi: boolean) => {
     try {
@@ -322,7 +331,7 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
   };
 
   const handlePreview = () => {
-    if (!pdfDoc || !previewUrl) {
+    if (!pdfDoc) {
       toast.error("Please generate the Operating Agreement first.");
       return;
     }
@@ -330,12 +339,6 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
     const previewCard = document.getElementById("operating-agreement-preview");
     if (previewCard) {
       previewCard.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
-
-    const win = window.open(previewUrl, "_blank", "noopener,noreferrer");
-    if (!win) {
-      toast.error("Preview was blocked by your browser. Please allow popups for this site.");
     }
   };
 
@@ -352,6 +355,73 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
   };
+
+  useEffect(() => {
+    if (!pdfDoc) {
+      previewPdfRef.current = null;
+      setPreviewPages(0);
+      return;
+    }
+
+    let cancelled = false;
+    const loadPdf = async () => {
+      try {
+        const arrayBuffer = pdfDoc.output("arraybuffer");
+        const loadedPdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        if (cancelled) return;
+        previewPdfRef.current = loadedPdf;
+        setPreviewPages(loadedPdf.numPages);
+        setPreviewPage(1);
+      } catch (error) {
+        console.error("Operating Agreement preview load failed:", error);
+        if (!cancelled) toast.error("Unable to render preview in Chrome. You can still download the PDF.");
+      }
+    };
+
+    loadPdf();
+    return () => {
+      cancelled = true;
+    };
+  }, [pdfDoc]);
+
+  useEffect(() => {
+    if (!previewPdfRef.current || !previewCanvasRef.current || !previewContainerRef.current || previewPages === 0) return;
+
+    let cancelled = false;
+    const renderPage = async () => {
+      setIsRenderingPreview(true);
+      try {
+        const page = await previewPdfRef.current.getPage(previewPage);
+        if (cancelled) return;
+
+        const containerWidth = Math.max(previewContainerRef.current!.clientWidth - 24, 320);
+        const unscaledViewport = page.getViewport({ scale: 1 });
+        const scale = containerWidth / unscaledViewport.width;
+        const viewport = page.getViewport({ scale });
+
+        const canvas = previewCanvasRef.current!;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        canvas.width = viewport.width * 2;
+        canvas.height = viewport.height * 2;
+        canvas.style.width = `${viewport.width}px`;
+        canvas.style.height = `${viewport.height}px`;
+        ctx.setTransform(2, 0, 0, 2, 0, 0);
+
+        await page.render({ canvasContext: ctx, viewport }).promise;
+      } catch (error) {
+        console.error("Operating Agreement preview render failed:", error);
+      } finally {
+        if (!cancelled) setIsRenderingPreview(false);
+      }
+    };
+
+    renderPage();
+    return () => {
+      cancelled = true;
+    };
+  }, [previewPage, previewPages]);
 
   const isLLC = company.entity_type === "LLC" || company.entity_type === "Single Member LLC";
   if (!isLLC) return null;
@@ -488,7 +558,7 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
       </Card>
 
       {/* Inline Preview */}
-      {previewUrl && (
+      {pdfDoc && (
         <Card id="operating-agreement-preview">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-display flex items-center gap-2">
@@ -497,7 +567,40 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <iframe src={previewUrl} className="w-full h-[600px] rounded border border-border" title="Operating Agreement Preview" />
+            {previewPages > 1 && (
+              <div className="mb-3 flex items-center justify-center gap-2">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  className="h-7 w-7"
+                  onClick={() => setPreviewPage((page) => Math.max(1, page - 1))}
+                  disabled={previewPage <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-xs text-muted-foreground">Page {previewPage} of {previewPages}</span>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  className="h-7 w-7"
+                  onClick={() => setPreviewPage((page) => Math.min(previewPages, page + 1))}
+                  disabled={previewPage >= previewPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            <div ref={previewContainerRef} className="relative flex justify-center overflow-auto rounded border border-border bg-muted/30 p-3">
+              {isRenderingPreview && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/70">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              )}
+              <canvas ref={previewCanvasRef} className="max-w-full rounded shadow" />
+            </div>
           </CardContent>
         </Card>
       )}
