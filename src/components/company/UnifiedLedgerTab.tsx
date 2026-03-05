@@ -396,12 +396,12 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
     });
   });
 
-  const handlePrintCertificate = (t: any) => {
+  const handlePrintCertificate = async (t: any) => {
     const certNum = t.issued_certificate_number;
     const cert = certNum ? certificates.find((c: any) => c.certificate_number === certNum) :
                  t.certificate_id ? certificates.find((c: any) => c.id === t.certificate_id) : null;
     if (!cert && !certNum) { toast.error("No certificate linked."); return; }
-    downloadStockCertificatePdf({
+    await downloadStockCertificatePdf({
       companyName: company?.name || "",
       stateOfIncorporation: company?.state_of_incorporation || undefined,
       certificateNumber: certNum || (cert as any)?.certificate_number || 0,
