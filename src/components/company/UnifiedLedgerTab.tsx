@@ -402,12 +402,20 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
                  t.certificate_id ? certificates.find((c: any) => c.id === t.certificate_id) : null;
     if (!cert && !certNum) { toast.error("No certificate linked."); return; }
     downloadStockCertificatePdf({
-      companyName: company?.name || "", stateOfIncorporation: company?.state_of_incorporation || undefined,
+      companyName: company?.name || "",
+      stateOfIncorporation: company?.state_of_incorporation || undefined,
       certificateNumber: certNum || (cert as any)?.certificate_number || 0,
       shareholderName: t.shareholders?.name || t.to_shareholder || "",
-      numShares: t.num_shares || 0, shareClass: t.share_class || "Membership",
-      parValue: null, issueDate: t.transaction_date || new Date().toISOString().split("T")[0],
+      numShares: t.num_shares || 0,
+      shareClass: t.share_class || "Membership",
+      parValue: null,
+      issueDate: t.transaction_date || new Date().toISOString().split("T")[0],
       authorizedShares: company?.authorized_shares,
+      isLLC: true,
+      membershipInterest: (() => {
+        const totalUnits = certificates.filter((c: any) => c.status === "active").reduce((s: number, c: any) => s + (c.num_shares || 0), 0);
+        return t.num_shares && totalUnits ? (t.num_shares / totalUnits) * 100 : null;
+      })(),
     });
   };
 
