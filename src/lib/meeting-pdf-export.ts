@@ -524,7 +524,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
 
   addDFIHeader(doc, isWrittenConsent ? "Written Consent" : `${meeting.meeting_type} — Minutes`, companyName, entityType, meeting, company);
 
-  let y = 38;
+  let y = 45;
 
   // Meeting Type Header
   y = addMeetingTypeHeader(doc, y, meeting.meeting_type, companyName, meetingDate, isWrittenConsent, meeting, company, data);
@@ -552,7 +552,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     y += 3;
     y = checkPageBreak(doc, y, 60);
     y = addSectionTitle(doc, y, "Section 1244 Stock Plan");
-    doc.setFontSize(8);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(30, 30, 30);
     const section1244Text = `WHEREAS, the Board of Directors deems it to be in the best interest of the corporation and its shareholders to qualify the stock of the corporation as "Section 1244 Stock" as defined in Section 1244 of the Internal Revenue Code of 1986, as amended; and
@@ -573,8 +573,12 @@ NOW, THEREFORE, BE IT RESOLVED, that the corporation hereby adopts the following
 
 BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby authorized and directed to take all actions necessary to implement this plan and to maintain the qualification of the stock issued hereunder as Section 1244 Stock.`;
     const lines1244 = doc.splitTextToSize(section1244Text, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-    doc.text(lines1244, MARGIN, y);
-    y += lines1244.length * 3.5 + 6;
+    for (const line of lines1244) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5;
+    }
+    y += 5;
   }
 
   // ── Organizational Meeting Boilerplate (auto-generated from company data) ──
