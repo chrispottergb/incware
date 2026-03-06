@@ -1110,7 +1110,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     autoTable(doc, {
       startY: y,
       head: [["Counsel", "Bank", "Loans"]],
-      body: data.counsel.map(c => [c.counsel_name || "—", c.bank_name || "—", c.loans || "—"]),
+      body: counselRows.map(c => [c.counsel_name || "—", c.bank_name || "—", c.loans || "—"]),
       theme: "grid",
       headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
