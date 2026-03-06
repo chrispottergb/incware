@@ -144,9 +144,18 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
   });
 
   const { data: companyAssets = [] } = useQuery({
-    queryKey: ["company_assets_vehicles", company?.id],
+    queryKey: ["company_assets_all", company?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("company_assets").select("*").eq("company_id", company.id).in("asset_type", ["Vehicle", "Equipment"]).order("created_at");
+      const { data } = await supabase.from("company_assets").select("*").eq("company_id", company.id).order("created_at");
+      return data || [];
+    },
+    enabled: !!company?.id,
+  });
+
+  const { data: companyLeases = [] } = useQuery({
+    queryKey: ["company_leases", company?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("company_assets").select("*").eq("company_id", company.id).eq("asset_type", "Lease").order("created_at");
       return data || [];
     },
     enabled: !!company?.id,
@@ -175,6 +184,15 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
     queryKey: ["prior_meeting_loans", priorMeeting?.id],
     queryFn: async () => {
       const { data } = await supabase.from("meeting_loans").select("*").eq("meeting_id", priorMeeting!.id).order("created_at");
+      return data || [];
+    },
+    enabled: !!priorMeeting?.id,
+  });
+
+  const { data: priorOfficers = [] } = useQuery({
+    queryKey: ["prior_meeting_officers", priorMeeting?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("meeting_officers").select("*").eq("meeting_id", priorMeeting!.id).order("created_at");
       return data || [];
     },
     enabled: !!priorMeeting?.id,
@@ -213,15 +231,25 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
       }))
       : [{ name: "", units: "", interestPct: "", address: "" }];
 
-    // Build officers
+    // Build officers with bonus field
     const officerList: AnnualMeetingData["officers"] = [];
-    if (companyOfficers) {
-      if (companyOfficers.president) officerList.push({ name: companyOfficers.president, title: "Managing Member", salary: "", status: "Re-Appointed" });
-      if (companyOfficers.vice_president) officerList.push({ name: companyOfficers.vice_president, title: "Member", salary: "", status: "Re-Appointed" });
-      if (companyOfficers.secretary) officerList.push({ name: companyOfficers.secretary, title: "Secretary", salary: "", status: "Re-Appointed" });
-      if (companyOfficers.treasurer) officerList.push({ name: companyOfficers.treasurer, title: "Treasurer", salary: "", status: "Re-Appointed" });
+    if (priorOfficers.length > 0) {
+      priorOfficers.forEach((o: any) => {
+        officerList.push({ name: o.name, title: o.title, salary: o.salary?.toString() || "", bonus: o.bonus?.toString() || "", status: "Re-Appointed" });
+      });
+    } else if (companyOfficers) {
+      if (companyOfficers.president) officerList.push({ name: companyOfficers.president, title: "Managing Member", salary: "", bonus: "", status: "Re-Appointed" });
+      if (companyOfficers.vice_president) officerList.push({ name: companyOfficers.vice_president, title: "Member", salary: "", bonus: "", status: "Re-Appointed" });
+      if (companyOfficers.secretary) officerList.push({ name: companyOfficers.secretary, title: "Secretary", salary: "", bonus: "", status: "Re-Appointed" });
+      if (companyOfficers.treasurer) officerList.push({ name: companyOfficers.treasurer, title: "Treasurer", salary: "", bonus: "", status: "Re-Appointed" });
     }
-    if (officerList.length === 0) officerList.push({ name: "", title: "", salary: "", status: "Re-Appointed" });
+    if (officerList.length === 0) officerList.push({ name: "", title: "", salary: "", bonus: "", status: "Re-Appointed" });
+
+    // Compensation items from officers
+    const compensationList: AnnualMeetingData["compensationItems"] = officerList
+      .filter(o => o.name)
+      .map(o => ({ name: o.name, title: o.title, salary: o.salary, bonus: o.bonus, notes: "" }));
+    if (compensationList.length === 0) compensationList.push({ name: "", title: "", salary: "", bonus: "", notes: "" });
 
     // Build authorized binders from company field
     const binderList: AnnualMeetingData["authorizedBinders"] = [];
@@ -231,7 +259,6 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
       });
     }
     if (binderList.length === 0) {
-      // Fall back to officers
       officerList.forEach(o => {
         if (o.name) binderList.push({ name: o.name, title: o.title, scope: "Full authority", status: "Confirmed" });
       });
@@ -252,14 +279,37 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
       : [{ institution: "", accountType: "", signatory: "", title: "" }];
 
     // Build vehicles from assets
-    const vehicleList = companyAssets.length > 0
-      ? companyAssets.filter(a => a.asset_type === "Vehicle").map(a => ({
+    const vehicleList = companyAssets
+      .filter(a => a.asset_type === "Vehicle")
+      .map(a => ({
         yearMakeModel: [a.year, a.make, a.model].filter(Boolean).join(" ") || a.description,
         vin: a.vin || "",
         ownedLeased: a.ownership_type || "Owned",
         primaryDriver: "",
         businessUsePct: "",
         notes: "",
+      }));
+
+    // Build equipment from assets
+    const equipmentList = companyAssets
+      .filter(a => a.asset_type === "Equipment")
+      .map(a => ({
+        description: a.description,
+        manufacturer: a.manufacturer || "",
+        ownedLeased: a.ownership_type || "Owned",
+        value: a.value?.toString() || "",
+        notes: "",
+      }));
+
+    // Build leases from company assets
+    const leaseList = companyLeases.length > 0
+      ? companyLeases.map(l => ({
+        property: l.description,
+        lessor: l.landlord_name || "",
+        lessee: company?.name ? `${company.name}, LLC` : "",
+        monthlyAmount: l.lease_amount?.toString() || l.monthly_payment?.toString() || "",
+        term: l.lease_end_date || l.lease_term || "",
+        leaseBack: "N",
       }))
       : [];
 
@@ -324,11 +374,15 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
         { item: "Total Expenses", amount: "", notes: "" },
         { item: "Net Income", amount: "", notes: "" },
       ],
+      compensationItems: compensationList,
       distributions: memberList.filter(m => m.name).map(m => ({ memberName: m.name, amount: "", date: "", notes: "" })),
       retainedEarnings: "",
+      retainedEarningsJustification: "",
 
       includeBanking: companyBanks.length > 0,
       bankAccounts: bankList,
+      includeBankingChanges: false,
+      bankingChanges: [{ changeType: "", institution: "", details: "" }],
 
       accountingMethod: company?.accounting_method || "cash",
       taxElections: [{ election: "S Corporation (Form 2553)", status: company?.s_election_date ? "Active" : "N/A", effectiveDate: company?.s_election_date || "", notes: "" }],
@@ -336,8 +390,9 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
       institutionalLoans: instLoans.length > 0 ? instLoans : [],
       memberLoans: memLoans.length > 0 ? memLoans : [],
 
-      leases: [],
+      leases: leaseList,
       vehicles: vehicleList,
+      equipment: equipmentList,
 
       benefitPlans: benefitList,
       profitSharingAmount: "",
@@ -361,7 +416,7 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
       setData(buildDefaultData());
       setInitialized(true);
     }
-  }, [companyShareholders, companyOfficers, companyBanks, priorMeeting, attorneys, accountants]);
+  }, [companyShareholders, companyOfficers, companyBanks, priorMeeting, attorneys, accountants, companyAssets, companyLeases, priorOfficers]);
 
   const update = (field: keyof AnnualMeetingData, value: any) =>
     setData(prev => ({ ...prev, [field]: value }));
@@ -428,6 +483,9 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
   const progress = ((step + 1) / STEPS.length) * 100;
   const inputClass = "h-8 text-sm";
   const labelClass = "text-xs font-medium text-muted-foreground";
+
+  // Retained earnings exceeds $250k?
+  const retainedExceeds250k = parseFloat(data.retainedEarnings?.replace(/[^0-9.]/g, "") || "0") > 250000;
 
   // Helper for dynamic table rendering
   function DynamicTable({ field, columns, addTemplate }: { field: keyof AnnualMeetingData; columns: { key: string; label: string; wide?: boolean }[]; addTemplate: any }) {
@@ -537,6 +595,9 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
                 <div className="col-span-6">
                   <Label className={labelClass}>Prior Meeting Date</Label>
                   <Input className={inputClass} type="date" value={data.priorMeetingDate} onChange={e => update("priorMeetingDate", e.target.value)} />
+                  {priorMeeting?.meeting_date && (
+                    <p className="text-xs text-muted-foreground mt-1">Pre-filled from last annual meeting on file</p>
+                  )}
                 </div>
               </div>
               <div className="p-3 rounded-md bg-muted/50 text-xs text-muted-foreground italic space-y-2">
@@ -551,7 +612,7 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
           {step === 2 && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Professional Advisors on Record</h3>
-              <TemplateNote text="Confirm or update the company's professional support team annually." />
+              <TemplateNote text="Confirm or update the company's professional support team annually. Include attorneys, accountants, insurance agents, and financial advisors." />
               <DynamicTable
                 field="advisors"
                 columns={[
@@ -590,9 +651,10 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
                     { key: "name", label: "Name" },
                     { key: "title", label: "Title" },
                     { key: "salary", label: "Salary" },
+                    { key: "bonus", label: "Bonus" },
                     { key: "status", label: "Status" },
                   ]}
-                  addTemplate={{ name: "", title: "", salary: "", status: "Re-Appointed" }}
+                  addTemplate={{ name: "", title: "", salary: "", bonus: "", status: "Re-Appointed" }}
                 />
               </div>
             </div>
@@ -603,6 +665,7 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Authorized Binders — Confirmation or Update</h3>
               <p className="text-xs text-muted-foreground">Wis. Stat. § 183.0407</p>
+              <TemplateNote text="Authorized binders are persons empowered to execute contracts and bind the company. Review and update annually." />
               <DynamicTable
                 field="authorizedBinders"
                 columns={[
@@ -620,6 +683,7 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
           {step === 5 && (
             <div className="space-y-4">
               <h3 className="text-sm font-semibold">Financial Information</h3>
+
               <div>
                 <h4 className="text-xs font-semibold mb-2">Prior Year Financial Review</h4>
                 <DynamicTable
@@ -632,8 +696,25 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
                   addTemplate={{ item: "", amount: "", notes: "" }}
                 />
               </div>
+
               <div>
-                <h4 className="text-xs font-semibold mb-2">Compensation & Distributions</h4>
+                <h4 className="text-xs font-semibold mb-2">Compensation & Bonuses</h4>
+                <TemplateNote text="Record compensation and bonus amounts approved for each officer/manager. These should match W-2 or guaranteed payment amounts." />
+                <DynamicTable
+                  field="compensationItems"
+                  columns={[
+                    { key: "name", label: "Name" },
+                    { key: "title", label: "Title" },
+                    { key: "salary", label: "Salary" },
+                    { key: "bonus", label: "Bonus" },
+                    { key: "notes", label: "Notes" },
+                  ]}
+                  addTemplate={{ name: "", title: "", salary: "", bonus: "", notes: "" }}
+                />
+              </div>
+
+              <div>
+                <h4 className="text-xs font-semibold mb-2">Distributions</h4>
                 <DynamicTable
                   field="distributions"
                   columns={[
@@ -645,6 +726,7 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
                   addTemplate={{ memberName: "", amount: "", date: "", notes: "" }}
                 />
               </div>
+
               <div>
                 <h4 className="text-xs font-semibold mb-2">Retained Earnings</h4>
                 <div className="grid grid-cols-12 gap-2">
@@ -653,16 +735,30 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
                     <Input className={inputClass} value={data.retainedEarnings} onChange={e => update("retainedEarnings", e.target.value)} placeholder="0.00" />
                   </div>
                 </div>
+                {retainedExceeds250k && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center gap-1 text-xs text-amber-600 font-medium">
+                      <AlertTriangle className="h-3 w-3" />
+                      Retained earnings exceeds $250,000 — justification required
+                    </div>
+                    <Textarea
+                      className="text-sm min-h-[60px]"
+                      value={data.retainedEarningsJustification}
+                      onChange={e => update("retainedEarningsJustification", e.target.value)}
+                      placeholder="Provide business justification for retaining earnings above $250,000 (e.g., planned capital expenditures, working capital needs, debt retirement)"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {/* STEP 6: Banking */}
           {step === 6 && (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <Switch checked={data.includeBanking} onCheckedChange={v => update("includeBanking", v)} />
-                <h3 className="text-sm font-semibold">Banking</h3>
+                <h3 className="text-sm font-semibold">Current Banking Relationships</h3>
               </div>
               {data.includeBanking && (
                 <DynamicTable
@@ -676,6 +772,23 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
                   addTemplate={{ institution: "", accountType: "", signatory: "", title: "" }}
                 />
               )}
+
+              <div className="flex items-center gap-3 pt-2 border-t">
+                <Switch checked={data.includeBankingChanges} onCheckedChange={v => update("includeBankingChanges", v)} />
+                <h4 className="text-xs font-semibold">Banking Changes</h4>
+              </div>
+              <TemplateNote text="Toggle on to authorize new accounts, close existing accounts, or change signatories." />
+              {data.includeBankingChanges && (
+                <DynamicTable
+                  field="bankingChanges"
+                  columns={[
+                    { key: "changeType", label: "Change Type" },
+                    { key: "institution", label: "Institution" },
+                    { key: "details", label: "Details" },
+                  ]}
+                  addTemplate={{ changeType: "", institution: "", details: "" }}
+                />
+              )}
             </div>
           )}
 
@@ -683,6 +796,8 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
           {step === 7 && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Tax & Accounting</h3>
+
+              <h4 className="text-xs font-semibold">Fiscal Year Confirmation</h4>
               <div className="grid grid-cols-12 gap-2">
                 <div className="col-span-6">
                   <Label className={labelClass}>Fiscal Year End</Label>
@@ -699,6 +814,7 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
                   </Select>
                 </div>
               </div>
+
               <h4 className="text-xs font-semibold mt-2">Tax Elections — Confirmation or Changes</h4>
               <DynamicTable
                 field="taxElections"
@@ -735,6 +851,7 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
               </div>
               <div>
                 <h4 className="text-xs font-semibold mb-2">Member Loans</h4>
+                <TemplateNote text="Document any loans between members and the company. Interest rates should reflect applicable federal rate (AFR) minimums." />
                 <DynamicTable
                   field="memberLoans"
                   columns={[
@@ -755,6 +872,7 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
           {step === 9 && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Leases</h3>
+              <TemplateNote text="Include all property, equipment, and vehicle leases. Mark lease-back arrangements where the lessor is a member or related party." />
               <DynamicTable
                 field="leases"
                 columns={[
@@ -772,20 +890,40 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
 
           {/* STEP 10: Vehicles & Equipment */}
           {step === 10 && (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <h3 className="text-sm font-semibold">Vehicles & Equipment</h3>
-              <DynamicTable
-                field="vehicles"
-                columns={[
-                  { key: "yearMakeModel", label: "Year / Make / Model" },
-                  { key: "vin", label: "VIN" },
-                  { key: "ownedLeased", label: "Owned / Leased" },
-                  { key: "primaryDriver", label: "Primary Driver" },
-                  { key: "businessUsePct", label: "Business Use %" },
-                  { key: "notes", label: "Notes" },
-                ]}
-                addTemplate={{ yearMakeModel: "", vin: "", ownedLeased: "Owned", primaryDriver: "", businessUsePct: "", notes: "" }}
-              />
+
+              <div>
+                <h4 className="text-xs font-semibold mb-2">Company Vehicles</h4>
+                <DynamicTable
+                  field="vehicles"
+                  columns={[
+                    { key: "yearMakeModel", label: "Year / Make / Model" },
+                    { key: "vin", label: "VIN" },
+                    { key: "ownedLeased", label: "Owned / Leased" },
+                    { key: "primaryDriver", label: "Primary Driver" },
+                    { key: "businessUsePct", label: "Business Use %" },
+                    { key: "notes", label: "Notes" },
+                  ]}
+                  addTemplate={{ yearMakeModel: "", vin: "", ownedLeased: "Owned", primaryDriver: "", businessUsePct: "", notes: "" }}
+                />
+              </div>
+
+              <div>
+                <h4 className="text-xs font-semibold mb-2">Major Equipment</h4>
+                <TemplateNote text="List significant equipment items owned or leased by the company." />
+                <DynamicTable
+                  field="equipment"
+                  columns={[
+                    { key: "description", label: "Description" },
+                    { key: "manufacturer", label: "Manufacturer" },
+                    { key: "ownedLeased", label: "Owned / Leased" },
+                    { key: "value", label: "Value" },
+                    { key: "notes", label: "Notes" },
+                  ]}
+                  addTemplate={{ description: "", manufacturer: "", ownedLeased: "Owned", value: "", notes: "" }}
+                />
+              </div>
             </div>
           )}
 

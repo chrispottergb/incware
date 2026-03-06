@@ -22,7 +22,7 @@ export interface AnnualMeetingData {
   members: { name: string; units: string; interestPct: string; address: string }[];
 
   // Officers/Managers
-  officers: { name: string; title: string; salary: string; status: string }[];
+  officers: { name: string; title: string; salary: string; bonus: string; status: string }[];
 
   // Authorized Binders
   authorizedBinders: { name: string; title: string; scope: string; status: string }[];
@@ -30,12 +30,16 @@ export interface AnnualMeetingData {
   // Financial Information
   fiscalYearEnd: string;
   financialItems: { item: string; amount: string; notes: string }[];
+  compensationItems: { name: string; title: string; salary: string; bonus: string; notes: string }[];
   distributions: { memberName: string; amount: string; date: string; notes: string }[];
   retainedEarnings: string;
+  retainedEarningsJustification: string;
 
   // Banking
   includeBanking: boolean;
   bankAccounts: { institution: string; accountType: string; signatory: string; title: string }[];
+  includeBankingChanges: boolean;
+  bankingChanges: { changeType: string; institution: string; details: string }[];
 
   // Tax & Accounting
   accountingMethod: string;
@@ -50,6 +54,7 @@ export interface AnnualMeetingData {
 
   // Vehicles & Equipment
   vehicles: { yearMakeModel: string; vin: string; ownedLeased: string; primaryDriver: string; businessUsePct: string; notes: string }[];
+  equipment: { description: string; manufacturer: string; ownedLeased: string; value: string; notes: string }[];
 
   // Benefits
   benefitPlans: { planType: string; provider: string; eligibility: string; contribution: string; status: string }[];
@@ -66,6 +71,11 @@ export interface AnnualMeetingData {
   // Signatures
   memberSignatures: { name: string }[];
 }
+
+// Blue theme colors matching org meeting
+const BLUE = { r: 31, g: 78, b: 121 }; // #1F4E79
+const LIGHT_BLUE_BG = [214, 228, 240]; // #D6E4F0
+const BODY_COLOR = [40, 40, 40];
 
 export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
@@ -106,36 +116,41 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     }
   }
 
-  // Gray heading bar with white text and section number
+  // Blue text heading with blue bottom border underline
   function sectionHeading(text: string) {
     sectionNumber++;
     checkPage(50);
     y += 14;
-    const barH = 22;
-    doc.setFillColor(128, 128, 128);
-    doc.rect(margin, y - 15, contentWidth, barH, "F");
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(255, 255, 255);
-    doc.text(`${sectionNumber}. ${text.toUpperCase()}`, margin + 8, y);
-    y += barH - 4;
+    doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
+    doc.text(`${sectionNumber}. ${text.toUpperCase()}`, margin, y);
+    y += 5;
+    doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
+    doc.setLineWidth(1);
+    doc.line(margin, y, pw - margin, y);
+    y += 18;
   }
 
-  // Sub-heading (no bar, bold)
+  // Blue text sub-heading with lighter gray bottom border
   function subHeading(text: string) {
     checkPage(30);
     y += 6;
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 30, 30);
+    doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
     doc.text(text, margin, y);
-    y += 16;
+    y += 4;
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, pw - margin, y);
+    y += 14;
   }
 
   function para(text: string, indent: number = 0) {
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(40, 40, 40);
+    doc.setTextColor(...BODY_COLOR as [number, number, number]);
     const lines = doc.splitTextToSize(text, contentWidth - indent);
     for (const line of lines) {
       checkPage(18);
@@ -145,11 +160,14 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     y += 4;
   }
 
-  function boldPara(prefix: string, rest: string) {
+  // RESOLVED: indented, "RESOLVED" in bold, remainder normal
+  function resolvedPara(rest: string) {
+    const indent = 36;
+    const prefix = "RESOLVED, ";
     doc.setFontSize(11);
-    doc.setTextColor(40, 40, 40);
+    doc.setTextColor(...BODY_COLOR as [number, number, number]);
     const fullText = prefix + rest;
-    const lines = doc.splitTextToSize(fullText, contentWidth);
+    const lines = doc.splitTextToSize(fullText, contentWidth - indent);
     checkPage(lines.length * 16 + 10);
 
     for (let i = 0; i < lines.length; i++) {
@@ -157,13 +175,40 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       if (i === 0) {
         doc.setFont("helvetica", "bold");
         const prefixWidth = doc.getTextWidth(prefix);
-        doc.text(prefix, margin, lineY);
+        doc.text(prefix, margin + indent, lineY);
         doc.setFont("helvetica", "normal");
         const remainder = lines[0].substring(prefix.length);
-        if (remainder) doc.text(remainder, margin + prefixWidth, lineY);
+        if (remainder) doc.text(remainder, margin + indent + prefixWidth, lineY);
       } else {
         doc.setFont("helvetica", "normal");
-        doc.text(lines[i], margin, lineY);
+        doc.text(lines[i], margin + indent, lineY);
+      }
+    }
+    y += lines.length * 16 + 6;
+  }
+
+  // WHEREAS: indented, "WHEREAS" in bold italic, remainder in italic
+  function whereasPara(rest: string) {
+    const indent = 36;
+    const prefix = "WHEREAS, ";
+    doc.setFontSize(11);
+    doc.setTextColor(...BODY_COLOR as [number, number, number]);
+    const fullText = prefix + rest;
+    const lines = doc.splitTextToSize(fullText, contentWidth - indent);
+    checkPage(lines.length * 16 + 10);
+
+    for (let i = 0; i < lines.length; i++) {
+      const lineY = y + i * 16;
+      if (i === 0) {
+        doc.setFont("helvetica", "bolditalic");
+        const prefixWidth = doc.getTextWidth(prefix);
+        doc.text(prefix, margin + indent, lineY);
+        doc.setFont("helvetica", "italic");
+        const remainder = lines[0].substring(prefix.length);
+        if (remainder) doc.text(remainder, margin + indent + prefixWidth, lineY);
+      } else {
+        doc.setFont("helvetica", "italic");
+        doc.text(lines[i], margin + indent, lineY);
       }
     }
     y += lines.length * 16 + 6;
@@ -177,7 +222,11 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       body: rows,
       margin: { left: margin, right: margin },
       styles: { fontSize: 10, cellPadding: 5, font: "helvetica" },
-      headStyles: { fillColor: [180, 180, 180], textColor: [30, 30, 30], fontStyle: "bold" },
+      headStyles: {
+        fillColor: LIGHT_BLUE_BG as [number, number, number],
+        textColor: [BLUE.r, BLUE.g, BLUE.b] as [number, number, number],
+        fontStyle: "bold",
+      },
       theme: "grid",
     });
     y = (doc as any).lastAutoTable.finalY + 14;
@@ -186,7 +235,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   // ===== TITLE =====
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
+  doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
   doc.text("MINUTES OF THE ANNUAL MEETING", pw / 2, y, { align: "center" });
   y += 22;
   doc.setFontSize(12);
@@ -214,16 +263,16 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   // ===== SECTION 2: CALL TO ORDER =====
   sectionHeading("Call to Order & Approval of Prior Meeting Minutes");
 
-  boldPara("WHEREAS, ", `the Annual Meeting of ${fullName} was duly called and noticed in accordance with the Operating Agreement;`);
+  whereasPara(`the Annual Meeting of ${fullName} was duly called and noticed in accordance with the Operating Agreement;`);
 
-  boldPara("WHEREAS, ", `the minutes of the previous Annual Meeting held on ${formattedPriorDate} have been reviewed by the members;`);
+  whereasPara(`the minutes of the previous Annual Meeting held on ${formattedPriorDate} have been reviewed by the members;`);
 
-  boldPara("RESOLVED, ", `that the meeting is hereby called to order, and the minutes of the Annual Meeting held on ${formattedPriorDate} are hereby approved and adopted as a true and accurate record of that meeting.`);
+  resolvedPara(`that the meeting is hereby called to order, and the minutes of the Annual Meeting held on ${formattedPriorDate} are hereby approved and adopted as a true and accurate record of that meeting.`);
 
   // ===== SECTION 3: PROFESSIONAL ADVISORS =====
   sectionHeading("Professional Advisors on Record");
 
-  boldPara("RESOLVED, ", "that the following professional advisors are hereby confirmed as the company's advisors of record for the current year:");
+  resolvedPara("that the following professional advisors are hereby confirmed as the company's advisors of record for the current year:");
 
   if (data.advisors.length > 0) {
     addTable(
@@ -237,8 +286,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   subHeading("Current Members & Ownership");
 
-  boldPara("WHEREAS, ", `the members of ${fullName} hold ownership interests as set forth below;`);
-  boldPara("RESOLVED, ", "that the following membership interests are hereby acknowledged and confirmed for the current year:");
+  whereasPara(`the members of ${fullName} hold ownership interests as set forth below;`);
+  resolvedPara("that the following membership interests are hereby acknowledged and confirmed for the current year:");
 
   if (data.members.length > 0) {
     addTable(
@@ -249,21 +298,21 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   subHeading("Re-Appointment or Election of Managers / Officers");
 
-  boldPara("RESOLVED, ", "that the following persons are hereby re-appointed or newly elected as managers/officers of the limited liability company, to serve until the next annual meeting or until their successors are duly appointed:");
+  resolvedPara("that the following persons are hereby re-appointed or newly elected as managers/officers of the limited liability company, to serve until the next annual meeting or until their successors are duly appointed:");
 
   if (data.officers.length > 0) {
     addTable(
-      ["Name", "Title", "Salary", "Status (Re-Appointed / New)"],
-      data.officers.map(o => [o.name || "[Enter]", o.title || "[Enter]", o.salary || "[Enter]", o.status || "[Enter]"])
+      ["Name", "Title", "Salary", "Bonus", "Status (Re-Appointed / New)"],
+      data.officers.map(o => [o.name || "[Enter]", o.title || "[Enter]", o.salary || "[Enter]", o.bonus || "[Enter]", o.status || "[Enter]"])
     );
   }
 
   // ===== SECTION 5: AUTHORIZED BINDERS =====
   sectionHeading("Authorized Binders — Confirmation or Update");
 
-  boldPara("WHEREAS, ", "the members desire to confirm or update the persons authorized to execute documents on behalf of the company, consistent with Wis. Stat. § 183.0407;");
+  whereasPara("the members desire to confirm or update the persons authorized to execute documents on behalf of the company, consistent with Wis. Stat. § 183.0407;");
 
-  boldPara("RESOLVED, ", "that the following persons are hereby confirmed or newly designated as authorized binders of the limited liability company:");
+  resolvedPara("that the following persons are hereby confirmed or newly designated as authorized binders of the limited liability company:");
 
   if (data.authorizedBinders.length > 0) {
     addTable(
@@ -277,7 +326,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   subHeading("Prior Year Financial Review");
 
-  boldPara("RESOLVED, ", `that the members have reviewed the financial statements for the fiscal year ended ${data.fiscalYearEnd || "December 31"}, ${data.taxYear || "[Year]"}:`);
+  resolvedPara(`that the members have reviewed the financial statements for the fiscal year ended ${data.fiscalYearEnd || "December 31"}, ${data.taxYear || "[Year]"}:`);
 
   if (data.financialItems.length > 0) {
     addTable(
@@ -286,7 +335,17 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     );
   }
 
-  subHeading("Compensation & Distributions");
+  subHeading("Compensation & Bonuses");
+
+  if (data.compensationItems.length > 0) {
+    resolvedPara("that the following compensation and bonuses for officers and managers are hereby approved and ratified:");
+    addTable(
+      ["Name", "Title", "Salary", "Bonus", "Notes"],
+      data.compensationItems.map(c => [c.name || "[Enter]", c.title || "[Enter]", c.salary || "[Enter]", c.bonus || "[Enter]", c.notes || ""])
+    );
+  }
+
+  subHeading("Distributions");
 
   if (data.distributions.length > 0) {
     addTable(
@@ -297,27 +356,40 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   subHeading("Retained Earnings");
 
-  boldPara("RESOLVED, ", `that the members have reviewed the current retained earnings balance of $${data.retainedEarnings || "[Amount]"} and hereby acknowledge and approve said balance.`);
+  resolvedPara(`that the members have reviewed the current retained earnings balance of $${data.retainedEarnings || "[Amount]"} and hereby acknowledge and approve said balance.`);
+
+  if (data.retainedEarningsJustification) {
+    whereasPara(`the retained earnings balance exceeds $250,000, the members acknowledge and provide the following justification for retaining said earnings: ${data.retainedEarningsJustification}`);
+  }
 
   // ===== SECTION 7: BANKING =====
+  sectionHeading("Banking");
+
   if (data.includeBanking && data.bankAccounts.length > 0) {
-    sectionHeading("Banking");
-
-    boldPara("RESOLVED, ", "that the company shall continue to maintain the following account(s), and the following persons are authorized as signatories:");
-
+    subHeading("Current Banking Relationships");
+    resolvedPara("that the company shall continue to maintain the following account(s), and the following persons are authorized as signatories:");
     addTable(
       ["Institution", "Account Type", "Authorized Signatory", "Title"],
       data.bankAccounts.map(b => [b.institution || "[Enter]", b.accountType || "[Enter]", b.signatory || "[Enter]", b.title || "[Enter]"])
     );
   } else {
-    sectionHeading("Banking");
     para("No changes to banking relationships were proposed at this meeting.");
+  }
+
+  if (data.includeBankingChanges && data.bankingChanges.length > 0) {
+    subHeading("Banking Changes");
+    resolvedPara("that the following banking changes are hereby authorized:");
+    addTable(
+      ["Change Type", "Institution", "Details"],
+      data.bankingChanges.map(b => [b.changeType || "[Enter]", b.institution || "[Enter]", b.details || "[Enter]"])
+    );
   }
 
   // ===== SECTION 8: TAX & ACCOUNTING =====
   sectionHeading("Tax & Accounting");
 
-  boldPara("RESOLVED, ", `that the fiscal year of the limited liability company shall continue to end on ${data.fiscalYearEnd || "December 31"}, and the company shall continue to maintain its books on the ${data.accountingMethod || "cash"} basis method of accounting.`);
+  subHeading("Fiscal Year Confirmation");
+  resolvedPara(`that the fiscal year of the limited liability company shall continue to end on ${data.fiscalYearEnd || "December 31"}, and the company shall continue to maintain its books on the ${data.accountingMethod || "cash"} basis method of accounting.`);
 
   if (data.taxElections.length > 0) {
     subHeading("Tax Elections — Confirmation or Changes");
@@ -359,7 +431,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       data.leases.map(l => [l.property || "[Enter]", l.lessor || "[Enter]", l.lessee || "[Enter]", l.monthlyAmount || "[Enter]", l.term || "[Enter]", l.leaseBack || "N"])
     );
 
-    boldPara("RESOLVED, ", "that the above-referenced lease agreements are hereby ratified and confirmed. Any lease-back arrangements between the company and its members have been reviewed and acknowledged as being on terms consistent with fair market value.");
+    resolvedPara("that the above-referenced lease agreements are hereby ratified and confirmed. Any lease-back arrangements between the company and its members have been reviewed and acknowledged as being on terms consistent with fair market value.");
   } else {
     para("No leases were reviewed or authorized at this meeting.");
   }
@@ -373,7 +445,17 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       ["Year / Make / Model", "VIN", "Owned / Leased", "Primary Driver", "Business Use %", "Notes"],
       data.vehicles.map(v => [v.yearMakeModel || "[Enter]", v.vin || "[Enter]", v.ownedLeased || "[Enter]", v.primaryDriver || "[Enter]", v.businessUsePct || "[Enter]", v.notes || ""])
     );
-  } else {
+  }
+
+  if (data.equipment.length > 0) {
+    subHeading("Major Equipment");
+    addTable(
+      ["Description", "Manufacturer", "Owned / Leased", "Value", "Notes"],
+      data.equipment.map(e => [e.description || "[Enter]", e.manufacturer || "[Enter]", e.ownedLeased || "[Enter]", e.value || "[Enter]", e.notes || ""])
+    );
+  }
+
+  if (data.vehicles.length === 0 && data.equipment.length === 0) {
     para("No vehicles or equipment were reviewed at this meeting.");
   }
 
@@ -389,7 +471,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   if (data.profitSharingAmount) {
     subHeading("Profit Sharing");
-    boldPara("RESOLVED, ", `that the profit sharing contribution for the fiscal year ended December 31, ${data.taxYear || "[Year]"} shall be $${data.profitSharingAmount}.`);
+    resolvedPara(`that the profit sharing contribution for the fiscal year ended December 31, ${data.taxYear || "[Year]"} shall be $${data.profitSharingAmount}.`);
   }
 
   if (data.benefitPlans.length === 0 && !data.profitSharingAmount) {
@@ -402,29 +484,33 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     data.specialResolutions.forEach((r, i) => {
       subHeading(`Resolution ${i + 1} — ${r.title || "[Title]"}`);
       if (r.whereas) {
-        boldPara("WHEREAS, ", r.whereas);
+        whereasPara(r.whereas);
       }
-      boldPara("RESOLVED, ", `that ${r.resolved || "[Enter resolved clause]"}`);
+      resolvedPara(`that ${r.resolved || "[Enter resolved clause]"}`);
     });
   }
 
   // ===== SECTION 14: REGISTERED AGENT CONFIRMATION =====
   sectionHeading("Registered Agent Confirmation");
 
-  boldPara("RESOLVED, ", `that ${data.registeredAgentName || "[Registered Agent Name]"}, located at ${data.registeredAgentAddress || "[Address, City, State, ZIP]"}, is hereby confirmed as the registered agent of the limited liability company in the State of Wisconsin, pursuant to Wis. Stat. § 183.0113.`);
+  resolvedPara(`that ${data.registeredAgentName || "[Registered Agent Name]"}, located at ${data.registeredAgentAddress || "[Address, City, State, ZIP]"}, is hereby confirmed as the registered agent of the limited liability company in the State of Wisconsin, pursuant to Wis. Stat. § 183.0113.`);
 
   // ===== SECTION 15: GENERAL AUTHORIZATION =====
   sectionHeading("General Authorization");
 
-  boldPara("RESOLVED, ", "that the authorized binders of the limited liability company are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.");
+  resolvedPara("that the authorized binders of the limited liability company are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.");
 
   // ===== ADJOURNMENT =====
   checkPage(40);
   y += 10;
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(30, 30, 30);
+  doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
   doc.text("ADJOURNMENT", margin, y);
+  y += 4;
+  doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
+  doc.setLineWidth(1);
+  doc.line(margin, y, pw - margin, y);
   y += 18;
   para("There being no further business, the meeting was duly adjourned.");
 
@@ -442,7 +528,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   y += 14;
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(40, 40, 40);
+  doc.setTextColor(...BODY_COLOR as [number, number, number]);
   doc.text(data.chairperson || "Chairperson", margin, y);
   doc.text("Chairperson", margin, y + 13);
   doc.text("Date: ________________", margin, y + 26);
@@ -469,7 +555,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       doc.line(xPos, y, xPos + colW - 20, y);
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(40, 40, 40);
+      doc.setTextColor(...BODY_COLOR as [number, number, number]);
       doc.text(`Member: ${sig.name || "[Name]"}`, xPos, y + 14);
       doc.text("Date: ________________", xPos, y + 27);
       doc.text("Title: ________________", xPos, y + 40);
