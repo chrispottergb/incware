@@ -7,6 +7,11 @@ const DFI_SUB = "DEPARTMENT OF FINANCIAL INSTITUTIONS";
 const MARGIN = 25.4; // 1 inch for binder compatibility
 const R_MARGIN = 25.4; // 1 inch right margin — matches left for readability
 
+// Blue theme colors for Annual Meeting
+const BLUE = { r: 31, g: 78, b: 121 }; // #1F4E79
+const LIGHT_BLUE_BG: [number, number, number] = [214, 228, 240]; // #D6E4F0
+const BODY_COLOR: [number, number, number] = [40, 40, 40];
+
 interface MeetingData {
   meeting: any;
   company: any;
@@ -266,15 +271,45 @@ function addDFIFooter(doc: jsPDF, companyName: string) {
   }
 }
 
-function addSectionTitle(doc: jsPDF, y: number, title: string): number {
+function addAnnualMeetingFooter(doc: jsPDF, companyName: string) {
+  const pageCount = doc.getNumberOfPages();
+  const generatedDate = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    const ph = doc.internal.pageSize.getHeight();
+    const pw = doc.internal.pageSize.getWidth();
+
+    doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
+    doc.setLineWidth(0.5);
+    doc.line(MARGIN, ph - 20, pw - R_MARGIN, ph - 20);
+
+    doc.setFontSize(8);
+    doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
+    doc.text(`${companyName} — Annual Meeting Minutes — Generated: ${generatedDate}`, pw / 2, ph - 14, { align: "center" });
+    doc.setTextColor(130, 130, 130);
+    doc.text(`Page ${i} of ${pageCount}`, pw - R_MARGIN, ph - 14, { align: "right" });
+  }
+}
+
+
+function addSectionTitle(doc: jsPDF, y: number, title: string, blueTheme: boolean = false, sectionNum?: number): number {
   y += 4;
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(120, 120, 120);
-  doc.text(title.toUpperCase(), MARGIN, y);
-  doc.setDrawColor(180, 180, 180);
-  doc.setLineWidth(0.3);
-  doc.line(MARGIN, y + 2, doc.internal.pageSize.getWidth() - R_MARGIN, y + 2);
+  if (blueTheme) {
+    doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
+    const label = sectionNum != null ? `${sectionNum}. ${title.toUpperCase()}` : title.toUpperCase();
+    doc.text(label, MARGIN, y);
+    doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
+    doc.setLineWidth(1);
+    doc.line(MARGIN, y + 3, doc.internal.pageSize.getWidth() - R_MARGIN, y + 3);
+  } else {
+    doc.setTextColor(120, 120, 120);
+    doc.text(title.toUpperCase(), MARGIN, y);
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.3);
+    doc.line(MARGIN, y + 2, doc.internal.pageSize.getWidth() - R_MARGIN, y + 2);
+  }
   return y + 8;
 }
 
@@ -317,27 +352,109 @@ function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string
   return y;
 }
 
-function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: string): number {
-  const pw = doc.internal.pageSize.getWidth();
-  y = checkPageBreak(doc, y, 30);
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(30, 30, 30);
-  const whereasLines = doc.splitTextToSize(whereas, pw - MARGIN - R_MARGIN);
-  for (const line of whereasLines) {
-    y = checkPageBreak(doc, y, 6);
-    doc.text(line, MARGIN, y);
-    y += 5;
-  }
-  y += 3;
+function addSubHeading(doc: jsPDF, y: number, text: string): number {
   y = checkPageBreak(doc, y, 20);
-  const resolvedLines = doc.splitTextToSize(resolved, pw - MARGIN - R_MARGIN);
-  for (const line of resolvedLines) {
-    y = checkPageBreak(doc, y, 6);
-    doc.text(line, MARGIN, y);
+  y += 4;
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
+  doc.text(text, MARGIN, y);
+  y += 3;
+  doc.setDrawColor(180, 180, 180);
+  doc.setLineWidth(0.5);
+  doc.line(MARGIN, y, doc.internal.pageSize.getWidth() - R_MARGIN, y);
+  return y + 8;
+}
+
+function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: string, blueTheme: boolean = false): number {
+  const pw = doc.internal.pageSize.getWidth();
+
+  if (blueTheme) {
+    // WHEREAS: indented, bold italic prefix, italic body
+    const indent = 36;
+    const whereasPrefix = "WHEREAS, ";
+    doc.setFontSize(11);
+    doc.setTextColor(...BODY_COLOR);
+    // Strip leading "WHEREAS, " if present in the text
+    let whereasBody = whereas;
+    if (whereasBody.toUpperCase().startsWith("WHEREAS,")) {
+      whereasBody = whereasBody.substring(whereasBody.indexOf(",") + 1).trim();
+    }
+    const fullWhereas = whereasPrefix + whereasBody;
+    const wLines = doc.splitTextToSize(fullWhereas, pw - MARGIN - R_MARGIN - indent);
+    y = checkPageBreak(doc, y, wLines.length * 5.5 + 6);
+
+    for (let i = 0; i < wLines.length; i++) {
+      y = checkPageBreak(doc, y, 6);
+      if (i === 0) {
+        doc.setFont("helvetica", "bolditalic");
+        const prefixWidth = doc.getTextWidth(whereasPrefix);
+        doc.text(whereasPrefix, MARGIN + indent, y);
+        doc.setFont("helvetica", "italic");
+        const remainder = wLines[0].substring(whereasPrefix.length);
+        if (remainder) doc.text(remainder, MARGIN + indent + prefixWidth, y);
+      } else {
+        doc.setFont("helvetica", "italic");
+        doc.text(wLines[i], MARGIN + indent, y);
+      }
+      y += 5.5;
+    }
+    y += 3;
+
+    // RESOLVED: indented, bold prefix, normal body
+    const resolvedPrefix = "RESOLVED, ";
+    let resolvedBody = resolved;
+    // Strip "NOW, THEREFORE, BE IT " prefix if present
+    const nowPrefix = "NOW, THEREFORE, BE IT ";
+    if (resolvedBody.toUpperCase().startsWith(nowPrefix.toUpperCase())) {
+      resolvedBody = resolvedBody.substring(nowPrefix.length);
+    }
+    // If it still starts with RESOLVED, strip that too
+    if (resolvedBody.toUpperCase().startsWith("RESOLVED,")) {
+      resolvedBody = resolvedBody.substring(resolvedBody.indexOf(",") + 1).trim();
+    }
+    const fullResolved = resolvedPrefix + "that " + resolvedBody;
+    const rLines = doc.splitTextToSize(fullResolved, pw - MARGIN - R_MARGIN - indent);
+    y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
+
+    for (let i = 0; i < rLines.length; i++) {
+      y = checkPageBreak(doc, y, 6);
+      if (i === 0) {
+        doc.setFont("helvetica", "bold");
+        const prefixWidth = doc.getTextWidth(resolvedPrefix);
+        doc.text(resolvedPrefix, MARGIN + indent, y);
+        doc.setFont("helvetica", "normal");
+        const remainder = rLines[0].substring(resolvedPrefix.length);
+        if (remainder) doc.text(remainder, MARGIN + indent + prefixWidth, y);
+      } else {
+        doc.setFont("helvetica", "normal");
+        doc.text(rLines[i], MARGIN + indent, y);
+      }
+      y += 5.5;
+    }
+    y += 5;
+  } else {
+    // Original gray theme
+    y = checkPageBreak(doc, y, 30);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(30, 30, 30);
+    const whereasLines = doc.splitTextToSize(whereas, pw - MARGIN - R_MARGIN);
+    for (const line of whereasLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5;
+    }
+    y += 3;
+    y = checkPageBreak(doc, y, 20);
+    const resolvedLines = doc.splitTextToSize(resolved, pw - MARGIN - R_MARGIN);
+    for (const line of resolvedLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5;
+    }
     y += 5;
   }
-  y += 5;
   return y;
 }
 
@@ -521,31 +638,115 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   const meetingDate = new Date(meeting.meeting_date + "T00:00:00").toLocaleDateString();
   const isWrittenConsent = meeting.meeting_type === "Written Consent";
   const isLLC = entityType?.toLowerCase().includes("llc") || entityType?.toLowerCase().includes("limited liability");
+  const isAnnual = (meeting.meeting_type || "").toLowerCase().includes("annual");
+  const bt = isAnnual; // blue theme flag
+  let sectionNum = 0;
+
+  // Helper to get table head styles based on theme
+  const tableHeadStyles = bt
+    ? { fillColor: LIGHT_BLUE_BG as [number, number, number], textColor: [BLUE.r, BLUE.g, BLUE.b] as [number, number, number], fontStyle: "bold" as const, fontSize: 10 }
+    : { fillColor: [45, 55, 72] as [number, number, number], fontSize: 10, fontStyle: "bold" as const };
+
+  // Helper for numbered section titles in blue theme
+  const section = (title: string) => {
+    sectionNum++;
+    return addSectionTitle(doc, y, title, bt, bt ? sectionNum : undefined);
+  };
 
   addDFIHeader(doc, isWrittenConsent ? "Written Consent" : `${meeting.meeting_type} — Minutes`, companyName, entityType, meeting, company);
 
   let y = 45;
 
-  // Meeting Type Header
-  y = addMeetingTypeHeader(doc, y, meeting.meeting_type, companyName, meetingDate, isWrittenConsent, meeting, company, data);
-  y = addSectionTitle(doc, y, "Meeting Information");
-  y = addLabelValue(doc, y, "Date", meetingDate);
-  y = addLabelValue(doc, y, "Type", `${meeting.meeting_type}${meeting.sub_type ? ` — ${meeting.sub_type}` : ""}`);
-  if (meeting.meeting_time) y = addLabelValue(doc, y, "Time", meeting.meeting_time);
-  if (meeting.meeting_location) y = addLabelValue(doc, y, "Location", meeting.meeting_location);
-
-  // Smart chairperson/secretary paragraph: combine if same person
-  const chair = meeting.chairperson?.trim() || "";
-  const sec = meeting.mtg_secretary?.trim() || "";
-  if (chair && sec && chair.toLowerCase() === sec.toLowerCase()) {
-    y = addLabelValue(doc, y, "Chairperson & Secretary", chair);
+  // For Annual Meeting blue theme: use a cleaner title block
+  if (bt) {
+    const pw = doc.internal.pageSize.getWidth();
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
+    doc.text("MINUTES OF THE ANNUAL MEETING", pw / 2, y, { align: "center" });
+    y += 8;
+    doc.setFontSize(12);
+    doc.text(`OF ${companyName.toUpperCase()}`, pw / 2, y, { align: "center" });
+    y += 10;
   } else {
-    if (chair) y = addLabelValue(doc, y, "Chairperson", chair);
-    if (sec) y = addLabelValue(doc, y, "Secretary", sec);
+    // Meeting Type Header
+    y = addMeetingTypeHeader(doc, y, meeting.meeting_type, companyName, meetingDate, isWrittenConsent, meeting, company, data);
   }
 
-  if (meeting.tax_year) y = addLabelValue(doc, y, "Tax Year", String(meeting.tax_year));
-  if (meeting.others_present) y = addLabelValue(doc, y, "Others Present", meeting.others_present);
+  y = section("Meeting Information");
+
+  if (bt) {
+    // For blue theme: write introductory paragraph
+    const stateOfInc = company?.state_of_incorporation || company?.state || "Wisconsin";
+    const entityLabel = isLLC ? "limited liability company" : "corporation";
+    const mtgDate = new Date(meeting.meeting_date + "T12:00:00");
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const dateStr = `${days[mtgDate.getDay()]}, ${months[mtgDate.getMonth()]} ${mtgDate.getDate()}, ${mtgDate.getFullYear()}`;
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...BODY_COLOR);
+    const introText = `The Annual Meeting of ${companyName}, a ${stateOfInc} ${entityLabel}, was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${meeting.meeting_location ? `, at ${meeting.meeting_location}` : ""}.`;
+    const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+    for (const line of introLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5.5;
+    }
+    y += 3;
+
+    const chairText = `${meeting.chairperson || "[Chairperson]"} served as Chairperson and ${meeting.mtg_secretary || "[Secretary]"} served as Secretary of the meeting.`;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    const chairLines = doc.splitTextToSize(chairText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+    for (const line of chairLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5.5;
+    }
+    y += 3;
+
+    // Attendees list
+    const attendees = new Set<string>();
+    (data.shareholders || []).forEach(s => { if (s.shareholder_name) attendees.add(s.shareholder_name); });
+    (data.directors || []).forEach(d => { if (d.director_name) attendees.add(d.director_name); });
+    (data.officers || []).forEach(o => { if (o.name) attendees.add(o.name); });
+    if (attendees.size > 0) {
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...BODY_COLOR);
+      doc.text("The following were present at the meeting:", MARGIN, y);
+      y += 5.5;
+      attendees.forEach(name => {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(`•  ${name}`, MARGIN + 6, y);
+        y += 5.5;
+      });
+      y += 3;
+    }
+
+    if (meeting.tax_year) {
+      y = addLabelValue(doc, y, "Tax Year", String(meeting.tax_year));
+    }
+  } else {
+    y = addLabelValue(doc, y, "Date", meetingDate);
+    y = addLabelValue(doc, y, "Type", `${meeting.meeting_type}${meeting.sub_type ? ` — ${meeting.sub_type}` : ""}`);
+    if (meeting.meeting_time) y = addLabelValue(doc, y, "Time", meeting.meeting_time);
+    if (meeting.meeting_location) y = addLabelValue(doc, y, "Location", meeting.meeting_location);
+
+    const chair = meeting.chairperson?.trim() || "";
+    const sec = meeting.mtg_secretary?.trim() || "";
+    if (chair && sec && chair.toLowerCase() === sec.toLowerCase()) {
+      y = addLabelValue(doc, y, "Chairperson & Secretary", chair);
+    } else {
+      if (chair) y = addLabelValue(doc, y, "Chairperson", chair);
+      if (sec) y = addLabelValue(doc, y, "Secretary", sec);
+    }
+
+    if (meeting.tax_year) y = addLabelValue(doc, y, "Tax Year", String(meeting.tax_year));
+    if (meeting.others_present) y = addLabelValue(doc, y, "Others Present", meeting.others_present);
+  }
 
   // Section 1244 Stock Plan - include in Organizational Meeting if checked (Corp only, not applicable to LLCs)
   if (meeting.meeting_type === "Organizational Meeting" && company?.election_1244 && !isLLC) {
@@ -591,22 +792,33 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (mType.includes("annual") || mType.includes("shareholder")) {
     y += 3;
     y = checkPageBreak(doc, y, 30);
-    y = addSectionTitle(doc, y, "Ratification of Prior Year Actions");
+    y = section("Call to Order & Approval of Prior Meeting Minutes");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} and ${isLLC ? "members" : "shareholders"} of ${companyName} have taken various actions and made certain decisions during the prior fiscal year in the ordinary course of business; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that all acts and decisions of the ${isLLC ? "members/authorized binders" : "directors"} and ${isLLC ? "members" : "officers"} of ${companyName} taken or made since the last annual meeting are hereby ratified, confirmed, and approved in all respects.`
+      `NOW, THEREFORE, BE IT RESOLVED, that all acts and decisions of the ${isLLC ? "members/authorized binders" : "directors"} and ${isLLC ? "members" : "officers"} of ${companyName} taken or made since the last annual meeting are hereby ratified, confirmed, and approved in all respects.`,
+      bt
     );
+
+    if (meeting.prior_mtg_date) {
+      const priorDate = new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+      y = addWhereasResolved(doc, y,
+        `WHEREAS, the minutes of the previous Annual Meeting held on ${priorDate} have been reviewed by the ${isLLC ? "members" : "shareholders"};`,
+        `NOW, THEREFORE, BE IT RESOLVED, that the minutes of the Annual Meeting held on ${priorDate} are hereby approved and adopted as a true and accurate record of that meeting.`,
+        bt
+      );
+    }
   }
 
   // Directors
   if (data.directors && data.directors.length > 0) {
     y += 3;
     y = checkPageBreak(doc, y, 30 + data.directors.length * 7);
-    y = addSectionTitle(doc, y, isLLC ? "Authorized Binders Present" : "Directors Present");
-    if (!isLLC && (mType.includes("annual") || mType.includes("shareholder"))) {
+    y = section(isLLC ? "Authorized Binders Present" : "Directors Present");
+    if (mType.includes("annual") || mType.includes("shareholder")) {
       y = addWhereasResolved(doc, y,
         `WHEREAS, the terms of the current ${isLLC ? "authorized binders" : "directors"} expire at this meeting, and the ${isLLC ? "members" : "shareholders"} are called upon to ${isLLC ? "appoint" : "elect"} the ${isLLC ? "authorized binders" : "Board of Directors"} for the ensuing year; and`,
-        `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby ${isLLC ? "appointed" : "re-elected"} as ${isLLC ? "authorized binders" : "directors"} of ${companyName}, to serve until the next annual meeting and until their successors are duly ${isLLC ? "appointed" : "elected"} and qualified:`
+        `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby ${isLLC ? "appointed" : "re-elected"} as ${isLLC ? "authorized binders" : "directors"} of ${companyName}, to serve until the next annual meeting and until their successors are duly ${isLLC ? "appointed" : "elected"} and qualified:`,
+        bt
       );
     }
     autoTable(doc, {
@@ -614,7 +826,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       head: [[isLLC ? "Authorized Binder Name" : "Director Name"]],
       body: data.directors.map(d => [d.director_name]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
@@ -624,11 +836,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Officers (with salary/bonus)
   if (data.officers && data.officers.length > 0) {
     y = checkPageBreak(doc, y, 30 + data.officers.length * 7);
-    y = addSectionTitle(doc, y, "Officers");
+    y = section("Officers");
     const isSCorp = entityType === "S-Corp";
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the current ${isLLC ? "management" : "officer"} positions and compensation of ${companyName}${isSCorp ? ", and recognizing the requirement under IRC § 1366 that officer-shareholders receive reasonable compensation" : ""}; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby ${isLLC ? "appointed" : "re-elected"} as ${isLLC ? "managers/officers" : "officers"} of ${companyName}, at the compensation levels set forth below, to serve until their successors are duly ${isLLC ? "appointed" : "elected"} and qualified:`
+      `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby ${isLLC ? "appointed" : "re-elected"} as ${isLLC ? "managers/officers" : "officers"} of ${companyName}, at the compensation levels set forth below, to serve until their successors are duly ${isLLC ? "appointed" : "elected"} and qualified:`,
+      bt
     );
     const hasSalaryData = data.officers.some(o => o.salary != null || o.bonus != null);
     autoTable(doc, {
@@ -639,7 +852,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         : [o.title, o.name]
       ),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
@@ -650,10 +863,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (data.shareholders && data.shareholders.length > 0) {
     y = checkPageBreak(doc, y, 30 + data.shareholders.length * 7);
     const memberLabel = isLLC ? "Members" : "Shareholders";
-    y = addSectionTitle(doc, y, memberLabel);
+    y = section(memberLabel);
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members" : "shareholders"} of ${companyName} hold ownership interests as set forth below; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following ${isLLC ? "membership interests" : "share ownership"} is hereby acknowledged and confirmed:`
+      `NOW, THEREFORE, BE IT RESOLVED, that the following ${isLLC ? "membership interests" : "share ownership"} is hereby acknowledged and confirmed:`,
+      bt
     );
     autoTable(doc, {
       startY: y,
@@ -665,7 +879,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         s.distribution || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
@@ -676,10 +890,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (data.financials) {
     const f = data.financials;
     y = checkPageBreak(doc, y, 80);
-    y = addSectionTitle(doc, y, "Financial Comparison — Year to Year");
+    y = section("Financial Comparison — Year to Year");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the financial statements of ${companyName} for the current and prior fiscal years; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the financial statements as presented are hereby accepted and approved:`
+      `NOW, THEREFORE, BE IT RESOLVED, that the financial statements as presented are hereby accepted and approved:`,
+      bt
     );
 
     const yoy = (cur: number | null | undefined, prev: number | null | undefined): string => {
@@ -699,7 +914,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         ["Net Income", fmt(f.current_net_income), fmt(f.previous_net_income), yoy(f.current_net_income, f.previous_net_income)],
       ],
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       columnStyles: { 1: { halign: "right", fontStyle: "bold" }, 2: { halign: "right" }, 3: { halign: "center", fontStyle: "bold" } },
       margin: { left: MARGIN, right: R_MARGIN },
@@ -711,7 +926,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const chartW = pw - 28;
     const chartH = 50;
     y = checkPageBreak(doc, y, chartH + 30);
-    y = addSectionTitle(doc, y, "Year to Year Visual Comparison");
+    if (bt) {
+      y = addSubHeading(doc, y, "Year to Year Visual Comparison");
+    } else {
+      y = addSectionTitle(doc, y, "Year to Year Visual Comparison");
+    }
 
     const metrics = [
       { label: "Sales", cur: f.current_total_sales, prev: f.previous_total_sales },
@@ -738,7 +957,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       const prevH = (Math.abs(m.prev || 0) / maxVal) * (chartH - 10);
 
       // Current year bar (blue)
-      doc.setFillColor(45, 55, 120);
+      doc.setFillColor(bt ? BLUE.r : 45, bt ? BLUE.g : 55, bt ? BLUE.b : 120);
       doc.rect(gx, chartBottom - curH, barW, curH, "F");
 
       // Previous year bar (gray)
@@ -754,7 +973,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     // Legend
     const ly = chartBottom + 8;
-    doc.setFillColor(45, 55, 120);
+    doc.setFillColor(bt ? BLUE.r : 45, bt ? BLUE.g : 55, bt ? BLUE.b : 120);
     doc.rect(chartX, ly, 6, 3, "F");
     doc.setFontSize(6);
     doc.setTextColor(60, 60, 60);
@@ -769,17 +988,18 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Counsel
   if (data.counsel && data.counsel.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.counsel.length * 7);
-    y = addSectionTitle(doc, y, "Selection of Counsel & Banking");
+    y = section("Selection of Counsel & Banking");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the professional advisors and banking relationships of ${companyName}; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following selections of counsel, accountant, and banking institution are hereby approved and confirmed:`
+      `NOW, THEREFORE, BE IT RESOLVED, that the following selections of counsel, accountant, and banking institution are hereby approved and confirmed:`,
+      bt
     );
     autoTable(doc, {
       startY: y,
       head: [["Counsel", "Bank", "Loans"]],
       body: data.counsel.map(c => [c.counsel_name || "—", c.bank_name || "—", c.loans || "—"]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
@@ -789,10 +1009,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Loans
   if (data.loans && data.loans.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.loans.length * 7);
-    y = addSectionTitle(doc, y, "Loans");
+    y = section("Loans");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the borrowing needs and existing loan obligations of ${companyName}; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following loans are hereby approved and the proper ${isLLC ? "authorized binders" : "officers"} are authorized to execute all necessary documents:`
+      `NOW, THEREFORE, BE IT RESOLVED, that the following loans are hereby approved and the proper ${isLLC ? "authorized binders" : "officers"} are authorized to execute all necessary documents:`,
+      bt
     );
     autoTable(doc, {
       startY: y,
@@ -805,7 +1026,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         l.notes || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
@@ -815,10 +1036,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Vehicle Purchases
   if (data.vehiclePurchases && data.vehiclePurchases.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.vehiclePurchases.length * 7);
-    y = addSectionTitle(doc, y, "Vehicle Purchases Entered Into During the Year");
+    y = section("Vehicle Purchases Entered Into During the Year");
     y = addWhereasResolved(doc, y,
       `WHEREAS, it is necessary for the company to obtain vehicles for the efficient operation of the business, and after discussion, the ${isLLC ? "authorized binders" : "directors"} decided that it would be in the best interests of the company to acquire the following vehicle(s);`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following vehicle purchases are hereby approved and ratified:`
+      `NOW, THEREFORE, BE IT RESOLVED, that the following vehicle purchases are hereby approved and ratified:`,
+      bt
     );
     autoTable(doc, {
       startY: y,
@@ -833,7 +1055,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         v.authorized_drivers || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
@@ -844,10 +1066,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Vehicle Leases
   if (data.vehicleLeases && data.vehicleLeases.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.vehicleLeases.length * 7);
-    y = addSectionTitle(doc, y, "Vehicle Leases Entered Into During the Year");
+    y = section("Vehicle Leases Entered Into During the Year");
     y = addWhereasResolved(doc, y,
       `WHEREAS, it is necessary for the company to lease vehicles for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} decided that it would be in the best interests of the company to enter into the following vehicle lease(s);`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following vehicle leases are hereby approved and ratified:`
+      `NOW, THEREFORE, BE IT RESOLVED, that the following vehicle leases are hereby approved and ratified:`,
+      bt
     );
     autoTable(doc, {
       startY: y,
@@ -863,7 +1086,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         v.business_use_description || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
@@ -874,10 +1097,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Vehicle/Equipment Sales
   if (data.vehicleSales && data.vehicleSales.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.vehicleSales.length * 7);
-    y = addSectionTitle(doc, y, "Vehicles & Equipment Sold During the Year");
+    y = section("Vehicles & Equipment Sold During the Year");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the disposition of vehicles and equipment by ${companyName} during the year, and after discussion;`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following vehicle and equipment sales are hereby ratified and approved:`
+      `NOW, THEREFORE, BE IT RESOLVED, that the following vehicle and equipment sales are hereby ratified and approved:`,
+      bt
     );
     autoTable(doc, {
       startY: y,
@@ -891,7 +1115,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         v.reason_for_sale || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
@@ -902,10 +1126,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Lease Terminations
   if (data.leaseTerminations && data.leaseTerminations.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.leaseTerminations.length * 7);
-    y = addSectionTitle(doc, y, "Leases Ended During the Year");
+    y = section("Leases Ended During the Year");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the leases that have expired or been terminated by ${companyName} during the year; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the termination or expiration of the following leases is hereby acknowledged and ratified:`
+      `NOW, THEREFORE, BE IT RESOLVED, that the termination or expiration of the following leases is hereby acknowledged and ratified:`,
+      bt
     );
     autoTable(doc, {
       startY: y,
@@ -919,7 +1144,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         v.penalty_amount != null ? fmt(v.penalty_amount) : "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
@@ -930,20 +1155,22 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Amendments
   if (data.amendments && data.amendments.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.amendments.length * 12);
-    y = addSectionTitle(doc, y, "Amendments");
+    y = section("Amendments");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has determined that certain amendments to the governing documents of ${companyName} are in the best interests of the ${isLLC ? "company" : "corporation"}; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following amendments are hereby adopted:`
+      `NOW, THEREFORE, BE IT RESOLVED, that the following amendments are hereby adopted:`,
+      bt
     );
     data.amendments.forEach((a) => {
       y = checkPageBreak(doc, y, 25);
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(30, 30, 30);
+      doc.setTextColor(bt ? BLUE.r : 30, bt ? BLUE.g : 30, bt ? BLUE.b : 30);
       doc.text(a.amendment_type || "Amendment", MARGIN, y);
       y += 6;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(11);
+      doc.setTextColor(...(bt ? BODY_COLOR : [30, 30, 30] as [number, number, number]));
       const lines = doc.splitTextToSize(a.amendment_text || "", doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
       for (const line of lines) {
         y = checkPageBreak(doc, y, 6);
@@ -957,16 +1184,17 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Resolutions
   if (data.resolutions && data.resolutions.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.resolutions.length * 15);
-    y = addSectionTitle(doc, y, "Resolutions");
+    y = section("Special Resolutions");
     data.resolutions.forEach((r) => {
       y = checkPageBreak(doc, y, 25);
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(30, 30, 30);
+      doc.setTextColor(bt ? BLUE.r : 30, bt ? BLUE.g : 30, bt ? BLUE.b : 30);
       doc.text(r.purpose, MARGIN, y);
       y += 6;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(11);
+      doc.setTextColor(...(bt ? BODY_COLOR : [30, 30, 30] as [number, number, number]));
       const lines = doc.splitTextToSize(r.resolution_text || "", doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
       for (const line of lines) {
         y = checkPageBreak(doc, y, 6);
@@ -993,27 +1221,23 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       data.officers.forEach((o: any) => {
         const prior = priorByName[o.name?.toLowerCase()];
         if (!prior) {
-          // New officer
           autoResolutions.push({
             purpose: `Elect ${o.title}`,
             text: `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has determined it is in the best interests of the ${entityLabel} to elect a new officer, and after discussion, it was\n\nRESOLVED, that ${o.name} is hereby elected as ${o.title} of the ${entityLabel}${o.salary != null ? `, with an annual salary of ${fmt(o.salary)}` : ""}${o.bonus != null ? ` and a bonus of ${fmt(o.bonus)}` : ""}, effective immediately.`,
           });
         } else {
-          // Salary change
           if (o.salary != null && prior.salary != null && Number(o.salary) !== Number(prior.salary)) {
             autoResolutions.push({
               purpose: `Adjust ${o.title} Salary`,
               text: `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the compensation of ${o.name}, ${o.title}, and after discussion, it was\n\nRESOLVED, that the annual salary of ${o.name}, ${o.title}, is hereby adjusted from ${fmt(prior.salary)} to ${fmt(o.salary)}, effective immediately.`,
             });
           }
-          // Bonus change
           if (o.bonus != null && prior.bonus != null && Number(o.bonus) !== Number(prior.bonus)) {
             autoResolutions.push({
               purpose: `Adjust ${o.title} Bonus`,
               text: `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the bonus compensation of ${o.name}, ${o.title}, and after discussion, it was\n\nRESOLVED, that a bonus of ${fmt(o.bonus)} is hereby authorized for ${o.name}, ${o.title} (prior year bonus: ${fmt(prior.bonus)}).`,
             });
           }
-          // Title change
           if (o.title !== prior.title) {
             autoResolutions.push({
               purpose: `Change Officer Title`,
@@ -1037,7 +1261,6 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
             text: `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the proposed ${bType} plan${b.provider ? ` with ${b.provider}` : ""}, and after discussion, it was\n\nRESOLVED, that the ${entityLabel} is hereby authorized to establish the ${bType} plan${b.provider ? ` through ${b.provider}` : ""}${b.retirement_contribution != null ? `, with a contribution of ${fmt(b.retirement_contribution)}` : ""}${b.plan_year ? `, effective for plan year ${b.plan_year}` : ""}.`,
           });
         } else {
-          // Check for contribution changes
           const priorMatch = priorBenefits.find((pb: any) => (pb.benefit_type || pb.benefit_description || "").toLowerCase() === bType.toLowerCase());
           if (priorMatch && b.retirement_contribution != null && priorMatch.retirement_contribution != null && Number(b.retirement_contribution) !== Number(priorMatch.retirement_contribution)) {
             autoResolutions.push({
@@ -1084,7 +1307,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     if (autoResolutions.length > 0) {
       y += 3;
       y = checkPageBreak(doc, y, 20 + autoResolutions.length * 20);
-      y = addSectionTitle(doc, y, "Resolutions — Changes from Prior Year");
+      y = section("Resolutions — Changes from Prior Year");
 
       doc.setFontSize(9);
       doc.setFont("helvetica", "italic");
@@ -1096,11 +1319,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         y = checkPageBreak(doc, y, 30);
         doc.setFontSize(11);
         doc.setFont("helvetica", "bold");
-        doc.setTextColor(30, 30, 30);
+        doc.setTextColor(bt ? BLUE.r : 30, bt ? BLUE.g : 30, bt ? BLUE.b : 30);
         doc.text(r.purpose, MARGIN, y);
         y += 6;
         doc.setFont("helvetica", "normal");
         doc.setFontSize(11);
+        doc.setTextColor(...(bt ? BODY_COLOR : [30, 30, 30] as [number, number, number]));
         const lines = doc.splitTextToSize(r.text, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
         for (const line of lines) {
           y = checkPageBreak(doc, y, 6);
@@ -1114,10 +1338,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
   if (data.benefits && data.benefits.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.benefits.length * 7);
-    y = addSectionTitle(doc, y, "Benefits");
+    y = section("Benefits");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the employee benefit plans of ${companyName} for the current plan year; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following benefit plans are hereby approved and adopted for the ensuing year:`
+      `NOW, THEREFORE, BE IT RESOLVED, that the following benefit plans are hereby approved and adopted for the ensuing year:`,
+      bt
     );
     autoTable(doc, {
       startY: y,
@@ -1130,7 +1355,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         b.retirement_contribution != null ? fmt(b.retirement_contribution) : "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
@@ -1140,10 +1365,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Agreements
   if (data.agreements && data.agreements.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.agreements.length * 7);
-    y = addSectionTitle(doc, y, "Agreements");
+    y = section("Agreements");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the following agreements entered into by ${companyName}; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following agreements are hereby ratified and approved:`
+      `NOW, THEREFORE, BE IT RESOLVED, that the following agreements are hereby ratified and approved:`,
+      bt
     );
     autoTable(doc, {
       startY: y,
@@ -1155,7 +1381,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         a.agreement_purpose || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
@@ -1165,13 +1391,13 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Other
   if (data.other && data.other.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.other.length * 7);
-    y = addSectionTitle(doc, y, "Other Notes");
+    y = section("Other Notes");
     autoTable(doc, {
       startY: y,
       head: [["Notes"]],
       body: data.other.map(o => [o.notes]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
@@ -1181,21 +1407,45 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Authorized Signatories
   if (data.authorizedSigners && data.authorizedSigners.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.authorizedSigners.length * 7);
-    y = addSectionTitle(doc, y, "Authorized Signatories");
+    y = section("Authorized Signatories");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the authorized signatories on the banking accounts of ${companyName}; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby authorized as signatories on the designated accounts:`
+      `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby authorized as signatories on the designated accounts:`,
+      bt
     );
     autoTable(doc, {
       startY: y,
       head: [["Name", "Title", "Bank"]],
       body: data.authorizedSigners.map(s => [s.signer_name, s.title || "—", s.bank_name || "—"]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 10;
+  }
+
+  // Registered Agent Confirmation (Annual Meeting blue theme)
+  if (bt && company?.registered_agent_name) {
+    y = checkPageBreak(doc, y, 40);
+    y = section("Registered Agent Confirmation");
+    const agentAddr = [company.registered_agent_address, company.registered_agent_city, company.registered_agent_state, company.registered_agent_zip].filter(Boolean).join(", ");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, pursuant to Wis. Stat. § 183.0113, the company is required to maintain a registered agent in the State of ${company.state_of_incorporation || company.state || "Wisconsin"};`,
+      `NOW, THEREFORE, BE IT RESOLVED, that ${company.registered_agent_name}${agentAddr ? `, located at ${agentAddr},` : ""} is hereby confirmed as the registered agent of the company.`,
+      bt
+    );
+  }
+
+  // General Authorization (Annual Meeting blue theme)
+  if (bt) {
+    y = checkPageBreak(doc, y, 40);
+    y = section("General Authorization");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} recognizes that actions may need to be taken to implement the resolutions adopted at this meeting;`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the ${isLLC ? "authorized binders" : "officers"} of the company are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.`,
+      bt
+    );
   }
 
   // Signature block
@@ -1221,7 +1471,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   doc.text("Chairperson", MARGIN, y + 5);
   doc.text("Date: _______________", 95, y + 5);
 
-  addDFIFooter(doc, companyName);
+  // Footer
+  if (bt) {
+    addAnnualMeetingFooter(doc, companyName);
+  } else {
+    addDFIFooter(doc, companyName);
+  }
   return doc;
 }
 
