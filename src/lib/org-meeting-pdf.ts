@@ -34,6 +34,8 @@ export interface OrgMeetingData {
   firstFiscalYearEnd: string;
   accountingMethod: string;
 
+  authorizedBinders: { name: string; title: string; scopeOfAuthority: string }[];
+
   includeScorp: boolean;
   scorpEffectiveDate: string;
 
@@ -49,7 +51,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
-  const margin = 54;
+  const margin = 72; // 1 inch
   const contentWidth = pw - margin * 2;
   let y = margin;
 
@@ -57,8 +59,9 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   const formattedDate = data.meetingDate
     ? format(new Date(data.meetingDate + "T12:00:00"), "MMMM d, yyyy")
     : "[Date]";
+  const generatedDate = format(new Date(), "MMMM d, yyyy");
 
-  const footerText = `${fullName} — Organizational Meeting Minutes — ${formattedDate}`;
+  const footerText = `${fullName} — Organizational Meeting Minutes — Generated: ${generatedDate}`;
 
   function addFooter(pageDoc: jsPDF) {
     const totalPages = pageDoc.getNumberOfPages();
@@ -79,39 +82,40 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
     }
   }
 
+  // Capital letter heading with thin underline — no bar
   function heading(text: string) {
     checkPage(50);
+    y += 6;
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(text.toUpperCase(), margin, y);
-    y += 6;
-    doc.setDrawColor(60, 60, 60);
+    y += 4;
+    doc.setDrawColor(160, 160, 160);
     doc.setLineWidth(0.5);
     doc.line(margin, y, pw - margin, y);
     y += 16;
   }
 
   function para(text: string, indent: number = 0) {
-    doc.setFontSize(10);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(40, 40, 40);
     const lines = doc.splitTextToSize(text, contentWidth - indent);
-    checkPage(lines.length * 13 + 6);
+    checkPage(lines.length * 14 + 6);
     doc.text(lines, margin + indent, y);
-    y += lines.length * 13 + 6;
+    y += lines.length * 14 + 6;
   }
 
   function boldPara(prefix: string, rest: string) {
-    doc.setFontSize(10);
+    doc.setFontSize(11);
     doc.setTextColor(40, 40, 40);
     const fullText = prefix + rest;
     const lines = doc.splitTextToSize(fullText, contentWidth);
-    checkPage(lines.length * 13 + 6);
+    checkPage(lines.length * 14 + 6);
 
-    // Render first occurrence of prefix in bold, rest normal
     for (let i = 0; i < lines.length; i++) {
-      const lineY = y + i * 13;
+      const lineY = y + i * 14;
       if (i === 0) {
         doc.setFont("helvetica", "bold");
         const prefixWidth = doc.getTextWidth(prefix);
@@ -124,7 +128,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
         doc.text(lines[i], margin, lineY);
       }
     }
-    y += lines.length * 13 + 6;
+    y += lines.length * 14 + 6;
   }
 
   // ===== TITLE =====
@@ -135,23 +139,23 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   y += 18;
   doc.setFontSize(12);
   doc.text(`OF ${fullName.toUpperCase()}`, pw / 2, y, { align: "center" });
-  y += 24;
+  y += 28;
 
   // ===== INTRO =====
   const dayOfWeek = data.meetingDate
     ? format(new Date(data.meetingDate + "T12:00:00"), "EEEE")
     : "[Day]";
-  const introText = `The organizational meeting of ${fullName}, a ${data.stateOfFormation} limited liability company, was held on ${dayOfWeek}, ${formattedDate}, at ${data.meetingTime || "[Time]"}, at ${data.meetingLocation || "[Location]"}.`;
-  para(introText);
+  para(`The organizational meeting of ${fullName}, a ${data.stateOfFormation} limited liability company, was held on ${dayOfWeek}, ${formattedDate}, at ${data.meetingTime || "[Time]"}, at ${data.meetingLocation || "[Location]"}.`);
 
   para(`${data.chairperson || "[Chairperson]"} served as Chairperson and ${data.secretary || "[Secretary]"} served as Secretary of the meeting.`);
 
   // Present members
-  if (data.members.length > 0) {
-    const memberNames = data.members.map(m => m.name).filter(Boolean);
-    if (memberNames.length > 0) {
-      para(`The following members were present at the meeting: ${memberNames.join(", ")}.`);
-    }
+  const memberNames = data.members.map(m => m.name).filter(Boolean);
+  if (memberNames.length > 0) {
+    para(`The following members were present at the meeting:`);
+    memberNames.forEach(name => {
+      para(`• ${name}`, 10);
+    });
   }
 
   para("The Chairperson called the meeting to order and announced that a quorum was present. The Chairperson stated the purpose of the meeting was to complete the organization of the limited liability company, adopt initial resolutions, and transact such other business as may properly come before the meeting.");
@@ -159,7 +163,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
 
   // ===== FORMATION & ORGANIZATION =====
   heading("Formation & Organization");
-  boldPara("WHEREAS, ", `the Articles of Organization of ${fullName} were filed with the ${data.stateAgency || "WI Department of Financial Institutions"} on ${data.filingDate ? format(new Date(data.filingDate + "T12:00:00"), "MMMM d, yyyy") : "[Filing Date]"}, thereby forming the limited liability company; and`);
+  boldPara("WHEREAS, ", `the Articles of Organization of ${fullName} were filed with the ${data.stateAgency || "[State Agency]"} on ${data.filingDate ? format(new Date(data.filingDate + "T12:00:00"), "MMMM d, yyyy") : "[Filing Date]"}, thereby forming the limited liability company; and`);
   boldPara("WHEREAS, ", "this organizational meeting has been called for the purpose of completing the organization of the limited liability company, adopting initial resolutions, and transacting such other business as may properly come before the meeting;");
   boldPara("RESOLVED, ", `that the filing of the Articles of Organization and the formation of the limited liability company under the laws of the State of ${data.stateOfFormation} are hereby ratified and confirmed.`);
 
@@ -171,7 +175,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   heading("Principal Office");
   boldPara("RESOLVED, ", `that the principal office of the limited liability company shall be located at ${data.principalOfficeAddress || "[Address]"}.`);
 
-  // ===== EIN =====
+  // ===== EMPLOYER IDENTIFICATION NUMBER =====
   heading("Employer Identification Number");
   boldPara("RESOLVED, ", `that ${data.einAuthorizedName || "[Name]"}, ${data.einAuthorizedTitle || "[Title]"}, is hereby authorized to apply for and obtain a federal Employer Identification Number (EIN) from the Internal Revenue Service on behalf of the limited liability company.`);
 
@@ -180,14 +184,13 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   boldPara("RESOLVED, ", `that the following persons are hereby elected as the initial managers and officers of ${fullName}:`);
 
   if (data.managers.length > 0) {
-    const tableData = data.managers.map(m => [m.name, m.title]);
     autoTable(doc, {
       startY: y,
       head: [["Name", "Title"]],
-      body: tableData,
+      body: data.managers.map(m => [m.name || "[Enter]", m.title || "[Enter]"]),
       margin: { left: margin, right: margin },
-      styles: { fontSize: 9, cellPadding: 4 },
-      headStyles: { fillColor: [50, 50, 50], textColor: [255, 255, 255], fontStyle: "bold" },
+      styles: { fontSize: 10, cellPadding: 5, font: "helvetica" },
+      headStyles: { fillColor: [180, 180, 180], textColor: [30, 30, 30], fontStyle: "bold" },
       theme: "grid",
     });
     y = (doc as any).lastAutoTable.finalY + 14;
@@ -195,17 +198,16 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
 
   // ===== INITIAL MEMBERS =====
   heading("Initial Members");
-  boldPara("RESOLVED, ", `that the following persons are the initial members of ${fullName} and hold ownership interests as set forth below:`);
+  boldPara("RESOLVED, ", `that the following persons are the initial members of ${fullName} and hold ownership interests as set forth below; RESOLVED, that the following membership interests are hereby acknowledged and confirmed:`);
 
   if (data.members.length > 0) {
-    const tableData = data.members.map(m => [m.name, m.membershipUnits, m.membershipInterestPct ? `${m.membershipInterestPct}%` : ""]);
     autoTable(doc, {
       startY: y,
       head: [["Name", "Membership Units", "Membership Interest %"]],
-      body: tableData,
+      body: data.members.map(m => [m.name || "[Enter]", m.membershipUnits || "[Enter]", m.membershipInterestPct ? `${m.membershipInterestPct}%` : "[Enter]"]),
       margin: { left: margin, right: margin },
-      styles: { fontSize: 9, cellPadding: 4 },
-      headStyles: { fillColor: [50, 50, 50], textColor: [255, 255, 255], fontStyle: "bold" },
+      styles: { fontSize: 10, cellPadding: 5, font: "helvetica" },
+      headStyles: { fillColor: [180, 180, 180], textColor: [30, 30, 30], fontStyle: "bold" },
       theme: "grid",
     });
     y = (doc as any).lastAutoTable.finalY + 14;
@@ -213,7 +215,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
 
   // ===== BUSINESS PURPOSE =====
   heading("Business Purpose");
-  boldPara("RESOLVED, ", `that the limited liability company is organized for the following purpose:`);
+  boldPara("RESOLVED, ", "that the limited liability company is organized for the following purpose:");
   para(data.businessPurpose || "[Business Purpose]");
 
   // ===== OPERATING AGREEMENT =====
@@ -226,9 +228,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
 
   // ===== FISCAL YEAR & ACCOUNTING =====
   heading("Fiscal Year & Accounting");
-  const fyEnd = data.fiscalYearEnd || "December 31";
-  const firstFY = data.firstFiscalYearEnd || "[Year]";
-  boldPara("RESOLVED, ", `that the fiscal year of the limited liability company shall end on ${fyEnd} of each year (the first fiscal year ending ${firstFY}), and that the limited liability company shall maintain its books and records on the ${data.accountingMethod || "cash"} basis method of accounting.`);
+  boldPara("RESOLVED, ", `that the fiscal year of the limited liability company shall end on ${data.fiscalYearEnd || "December 31"} of each year (the first fiscal year ending ${data.firstFiscalYearEnd || "[Year]"}), and that the limited liability company shall maintain its books and records on the ${data.accountingMethod || "cash"} basis method of accounting.`);
 
   // ===== S CORP ELECTION (optional) =====
   if (data.includeScorp) {
@@ -240,24 +240,39 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
     doc.setFont("helvetica", "italic");
     doc.setTextColor(100, 100, 100);
     doc.text("Note: IRS Form 2553 must be filed within 75 days of the effective date of election.", margin, y);
-    y += 16;
+    y += 18;
   }
 
   // ===== BANKING RESOLUTIONS (optional) =====
   if (data.includeBanking) {
     heading("Banking Resolutions");
     boldPara("RESOLVED, ", `that the limited liability company is hereby authorized to open and maintain a checking account at ${data.bankName || "[Bank Name]"}, ${data.bankCity || "[City, State]"}, and that the following persons are hereby authorized as signatories on said account:`);
+    data.bankSignatories.forEach(s => {
+      para(`• ${s.name || "[Name]"}, ${s.title || "[Title]"}`, 10);
+    });
+  }
 
-    if (data.bankSignatories.length > 0) {
-      data.bankSignatories.forEach(s => {
-        para(`• ${s.name || "[Name]"}, ${s.title || "[Title]"}`, 10);
-      });
-    }
+  // ===== DESIGNATION OF AUTHORIZED BINDERS =====
+  heading("Designation of Authorized Binders");
+  boldPara("WHEREAS, ", `the members of the limited liability company desire to formally designate the persons authorized to execute documents, instruments, and agreements on behalf of the company, consistent with Wis. Stat. § 183.0407;`);
+  boldPara("RESOLVED, ", "that the following persons are hereby designated as authorized binders of the limited liability company, each authorized to execute and deliver documents, instruments, contracts, filings, and certificates on behalf of the company within the scope of their designated authority:");
+
+  if (data.authorizedBinders.length > 0) {
+    autoTable(doc, {
+      startY: y,
+      head: [["Name", "Title", "Scope of Authority"]],
+      body: data.authorizedBinders.map(b => [b.name || "[Enter]", b.title || "[Enter]", b.scopeOfAuthority || "[Enter]"]),
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 10, cellPadding: 5, font: "helvetica" },
+      headStyles: { fillColor: [180, 180, 180], textColor: [30, 30, 30], fontStyle: "bold" },
+      theme: "grid",
+    });
+    y = (doc as any).lastAutoTable.finalY + 14;
   }
 
   // ===== GENERAL AUTHORIZATION =====
   heading("General Authorization");
-  boldPara("RESOLVED, ", "that the authorized binders of the limited liability company are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.");
+  boldPara("RESOLVED, ", "that the authorized binders designated herein are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.");
 
   // ===== ADJOURNMENT =====
   heading("Adjournment");
@@ -268,7 +283,6 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   heading("Signatures");
   y += 10;
 
-  // Chairperson & Secretary side by side
   const colW = contentWidth / 2 - 10;
   doc.setDrawColor(80, 80, 80);
   doc.setLineWidth(0.5);
@@ -276,45 +290,46 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   // Chairperson
   doc.line(margin, y, margin + colW - 20, y);
   y += 14;
-  doc.setFontSize(9);
+  doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(40, 40, 40);
   doc.text(data.chairperson || "Chairperson", margin, y);
-  doc.text("Chairperson", margin, y + 12);
-  doc.text("Date: ________________", margin, y + 24);
+  doc.text("Chairperson", margin, y + 13);
+  doc.text("Date: ________________", margin, y + 26);
+  doc.text("Title: ________________", margin, y + 39);
 
   // Secretary
   const sx = margin + colW + 20;
   doc.line(sx, y - 14, sx + colW - 20, y - 14);
   doc.text(data.secretary || "Secretary", sx, y);
-  doc.text("Secretary", sx, y + 12);
-  doc.text("Date: ________________", sx, y + 24);
-  y += 50;
+  doc.text("Secretary", sx, y + 13);
+  doc.text("Date: ________________", sx, y + 26);
+  doc.text("Title: ________________", sx, y + 39);
+  y += 60;
 
   // Member signatures
   if (data.memberSignatures.length > 0) {
-    checkPage(data.memberSignatures.length * 60);
+    checkPage(data.memberSignatures.length * 70);
     y += 10;
     data.memberSignatures.forEach((sig, i) => {
-      checkPage(60);
+      checkPage(70);
       const col = i % 2;
       const xPos = col === 0 ? margin : margin + colW + 20;
-      if (col === 0 && i > 0) y += 50;
+      if (col === 0 && i > 0) y += 60;
       
       doc.setDrawColor(80, 80, 80);
       doc.line(xPos, y, xPos + colW - 20, y);
-      doc.setFontSize(9);
+      doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(40, 40, 40);
-      doc.text(sig.name || `Member ${i + 1}`, xPos, y + 14);
-      doc.text("Member", xPos, y + 26);
-      doc.text("Date: ________________", xPos, y + 38);
+      doc.text(`Member: ${sig.name || `[Name]`}`, xPos, y + 14);
+      doc.text("Date: ________________", xPos, y + 27);
+      doc.text("Title: ________________", xPos, y + 40);
     });
-    // Handle odd number
     if (data.memberSignatures.length % 2 !== 0) {
-      y += 50;
+      y += 60;
     } else {
-      y += 50;
+      y += 60;
     }
   }
 
