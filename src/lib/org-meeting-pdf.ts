@@ -75,8 +75,8 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
     }
   }
 
-  function checkPage(needed: number = 60) {
-    if (y + needed > ph - 60) {
+  function checkPage(needed: number = 80) {
+    if (y + needed > ph - 72) {
       doc.addPage();
       y = margin;
     }
@@ -84,17 +84,17 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
 
   // Capital letter heading with thin underline — no bar
   function heading(text: string) {
-    checkPage(50);
-    y += 6;
+    checkPage(60);
+    y += 10;
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(text.toUpperCase(), margin, y);
-    y += 4;
+    y += 5;
     doc.setDrawColor(160, 160, 160);
     doc.setLineWidth(0.5);
     doc.line(margin, y, pw - margin, y);
-    y += 16;
+    y += 18;
   }
 
   function para(text: string, indent: number = 0) {
@@ -102,9 +102,12 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
     doc.setFont("helvetica", "normal");
     doc.setTextColor(40, 40, 40);
     const lines = doc.splitTextToSize(text, contentWidth - indent);
-    checkPage(lines.length * 14 + 6);
-    doc.text(lines, margin + indent, y);
-    y += lines.length * 14 + 6;
+    for (const line of lines) {
+      checkPage(18);
+      doc.text(line, margin + indent, y);
+      y += 16;
+    }
+    y += 8;
   }
 
   function boldPara(prefix: string, rest: string) {
@@ -112,10 +115,10 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
     doc.setTextColor(40, 40, 40);
     const fullText = prefix + rest;
     const lines = doc.splitTextToSize(fullText, contentWidth);
-    checkPage(lines.length * 14 + 6);
+    checkPage(lines.length * 16 + 10);
 
     for (let i = 0; i < lines.length; i++) {
-      const lineY = y + i * 14;
+      const lineY = y + i * 16;
       if (i === 0) {
         doc.setFont("helvetica", "bold");
         const prefixWidth = doc.getTextWidth(prefix);
@@ -128,7 +131,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
         doc.text(lines[i], margin, lineY);
       }
     }
-    y += lines.length * 14 + 6;
+    y += lines.length * 16 + 10;
   }
 
   // ===== TITLE =====
