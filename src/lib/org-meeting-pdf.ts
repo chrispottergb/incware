@@ -192,11 +192,11 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
       head: [["Name", "Title"]],
       body: data.managers.map(m => [m.name || "[Enter]", m.title || "[Enter]"]),
       margin: { left: margin, right: margin },
-      styles: { fontSize: 10, cellPadding: 5, font: "helvetica" },
+      styles: { fontSize: 11, cellPadding: 6, font: "helvetica" },
       headStyles: { fillColor: [180, 180, 180], textColor: [30, 30, 30], fontStyle: "bold" },
       theme: "grid",
     });
-    y = (doc as any).lastAutoTable.finalY + 14;
+    y = (doc as any).lastAutoTable.finalY + 18;
   }
 
   // ===== INITIAL MEMBERS =====
@@ -209,11 +209,11 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
       head: [["Name", "Membership Units", "Membership Interest %"]],
       body: data.members.map(m => [m.name || "[Enter]", m.membershipUnits || "[Enter]", m.membershipInterestPct ? `${m.membershipInterestPct}%` : "[Enter]"]),
       margin: { left: margin, right: margin },
-      styles: { fontSize: 10, cellPadding: 5, font: "helvetica" },
+      styles: { fontSize: 11, cellPadding: 6, font: "helvetica" },
       headStyles: { fillColor: [180, 180, 180], textColor: [30, 30, 30], fontStyle: "bold" },
       theme: "grid",
     });
-    y = (doc as any).lastAutoTable.finalY + 14;
+    y = (doc as any).lastAutoTable.finalY + 18;
   }
 
   // ===== BUSINESS PURPOSE =====
@@ -266,11 +266,11 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
       head: [["Name", "Title", "Scope of Authority"]],
       body: data.authorizedBinders.map(b => [b.name || "[Enter]", b.title || "[Enter]", b.scopeOfAuthority || "[Enter]"]),
       margin: { left: margin, right: margin },
-      styles: { fontSize: 10, cellPadding: 5, font: "helvetica" },
+      styles: { fontSize: 11, cellPadding: 6, font: "helvetica" },
       headStyles: { fillColor: [180, 180, 180], textColor: [30, 30, 30], fontStyle: "bold" },
       theme: "grid",
     });
-    y = (doc as any).lastAutoTable.finalY + 14;
+    y = (doc as any).lastAutoTable.finalY + 18;
   }
 
   // ===== GENERAL AUTHORIZATION =====
