@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 const MARGIN = 25.4; // 1 inch for binder compatibility
-const R_MARGIN = 14;
+const R_MARGIN = 25.4; // 1 inch right margin — matches left
 const BRAND = "EntityIQ";
 const BRAND_SUB = "Corporate Records Management";
 
