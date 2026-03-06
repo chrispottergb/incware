@@ -236,7 +236,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
       </CardHeader>
       <CardContent className="p-0">
         {firms.length === 0 && unassignedAttorneys.length === 0 && (
-          <div className="text-center text-xs text-muted-foreground py-6">No attorney firms yet. Add a firm to get started.</div>
+          <div className="text-center text-xs text-muted-foreground py-6">None Appointed</div>
         )}
         {firms.map((f: any) => {
           const firmAttorneys = getAttorneysForFirm(f.id);
