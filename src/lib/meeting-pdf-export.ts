@@ -331,27 +331,109 @@ function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string
   return y;
 }
 
-function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: string): number {
-  const pw = doc.internal.pageSize.getWidth();
-  y = checkPageBreak(doc, y, 30);
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(30, 30, 30);
-  const whereasLines = doc.splitTextToSize(whereas, pw - MARGIN - R_MARGIN);
-  for (const line of whereasLines) {
-    y = checkPageBreak(doc, y, 6);
-    doc.text(line, MARGIN, y);
-    y += 5;
-  }
-  y += 3;
+function addSubHeading(doc: jsPDF, y: number, text: string): number {
   y = checkPageBreak(doc, y, 20);
-  const resolvedLines = doc.splitTextToSize(resolved, pw - MARGIN - R_MARGIN);
-  for (const line of resolvedLines) {
-    y = checkPageBreak(doc, y, 6);
-    doc.text(line, MARGIN, y);
+  y += 4;
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
+  doc.text(text, MARGIN, y);
+  y += 3;
+  doc.setDrawColor(180, 180, 180);
+  doc.setLineWidth(0.5);
+  doc.line(MARGIN, y, doc.internal.pageSize.getWidth() - R_MARGIN, y);
+  return y + 8;
+}
+
+function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: string, blueTheme: boolean = false): number {
+  const pw = doc.internal.pageSize.getWidth();
+
+  if (blueTheme) {
+    // WHEREAS: indented, bold italic prefix, italic body
+    const indent = 36;
+    const whereasPrefix = "WHEREAS, ";
+    doc.setFontSize(11);
+    doc.setTextColor(...BODY_COLOR);
+    // Strip leading "WHEREAS, " if present in the text
+    let whereasBody = whereas;
+    if (whereasBody.toUpperCase().startsWith("WHEREAS,")) {
+      whereasBody = whereasBody.substring(whereasBody.indexOf(",") + 1).trim();
+    }
+    const fullWhereas = whereasPrefix + whereasBody;
+    const wLines = doc.splitTextToSize(fullWhereas, pw - MARGIN - R_MARGIN - indent);
+    y = checkPageBreak(doc, y, wLines.length * 5.5 + 6);
+
+    for (let i = 0; i < wLines.length; i++) {
+      y = checkPageBreak(doc, y, 6);
+      if (i === 0) {
+        doc.setFont("helvetica", "bolditalic");
+        const prefixWidth = doc.getTextWidth(whereasPrefix);
+        doc.text(whereasPrefix, MARGIN + indent, y);
+        doc.setFont("helvetica", "italic");
+        const remainder = wLines[0].substring(whereasPrefix.length);
+        if (remainder) doc.text(remainder, MARGIN + indent + prefixWidth, y);
+      } else {
+        doc.setFont("helvetica", "italic");
+        doc.text(wLines[i], MARGIN + indent, y);
+      }
+      y += 5.5;
+    }
+    y += 3;
+
+    // RESOLVED: indented, bold prefix, normal body
+    const resolvedPrefix = "RESOLVED, ";
+    let resolvedBody = resolved;
+    // Strip "NOW, THEREFORE, BE IT " prefix if present
+    const nowPrefix = "NOW, THEREFORE, BE IT ";
+    if (resolvedBody.toUpperCase().startsWith(nowPrefix.toUpperCase())) {
+      resolvedBody = resolvedBody.substring(nowPrefix.length);
+    }
+    // If it still starts with RESOLVED, strip that too
+    if (resolvedBody.toUpperCase().startsWith("RESOLVED,")) {
+      resolvedBody = resolvedBody.substring(resolvedBody.indexOf(",") + 1).trim();
+    }
+    const fullResolved = resolvedPrefix + "that " + resolvedBody;
+    const rLines = doc.splitTextToSize(fullResolved, pw - MARGIN - R_MARGIN - indent);
+    y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
+
+    for (let i = 0; i < rLines.length; i++) {
+      y = checkPageBreak(doc, y, 6);
+      if (i === 0) {
+        doc.setFont("helvetica", "bold");
+        const prefixWidth = doc.getTextWidth(resolvedPrefix);
+        doc.text(resolvedPrefix, MARGIN + indent, y);
+        doc.setFont("helvetica", "normal");
+        const remainder = rLines[0].substring(resolvedPrefix.length);
+        if (remainder) doc.text(remainder, MARGIN + indent + prefixWidth, y);
+      } else {
+        doc.setFont("helvetica", "normal");
+        doc.text(rLines[i], MARGIN + indent, y);
+      }
+      y += 5.5;
+    }
+    y += 5;
+  } else {
+    // Original gray theme
+    y = checkPageBreak(doc, y, 30);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(30, 30, 30);
+    const whereasLines = doc.splitTextToSize(whereas, pw - MARGIN - R_MARGIN);
+    for (const line of whereasLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5;
+    }
+    y += 3;
+    y = checkPageBreak(doc, y, 20);
+    const resolvedLines = doc.splitTextToSize(resolved, pw - MARGIN - R_MARGIN);
+    for (const line of resolvedLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5;
+    }
     y += 5;
   }
-  y += 5;
   return y;
 }
 
