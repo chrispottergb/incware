@@ -7,6 +7,11 @@ const DFI_SUB = "DEPARTMENT OF FINANCIAL INSTITUTIONS";
 const MARGIN = 25.4; // 1 inch for binder compatibility
 const R_MARGIN = 25.4; // 1 inch right margin — matches left for readability
 
+// Blue theme colors for Annual Meeting
+const BLUE = { r: 31, g: 78, b: 121 }; // #1F4E79
+const LIGHT_BLUE_BG: [number, number, number] = [214, 228, 240]; // #D6E4F0
+const BODY_COLOR: [number, number, number] = [40, 40, 40];
+
 interface MeetingData {
   meeting: any;
   company: any;
