@@ -443,6 +443,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
       queryClient.invalidateQueries({ queryKey: ["bills_of_sale", companyId] });
       queryClient.invalidateQueries({ queryKey: ["shareholders", companyId] });
       queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["active_certificates", companyId] });
       queryClient.invalidateQueries({ queryKey: ["company", companyId] });
 
       toast.success("Transaction recorded successfully!");
