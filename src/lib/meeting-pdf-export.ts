@@ -485,12 +485,16 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
   if (company?.business_purpose) {
     y = checkPageBreak(doc, y, 30);
     y = addSectionTitle(doc, y, "Business Purpose");
-    doc.setFontSize(8);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(30, 30, 30);
     const bpLines = doc.splitTextToSize(`The ${entityLabel} is organized for the following purpose: ${company.business_purpose}`, pw - MARGIN - R_MARGIN);
-    doc.text(bpLines, MARGIN, y);
-    y += bpLines.length * 3.5 + 5;
+    for (const line of bpLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5;
+    }
+    y += 4;
   }
 
   // 11. Seal
