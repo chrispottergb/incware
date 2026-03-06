@@ -99,10 +99,10 @@ export function exportCompliancePDF(data: ComplianceItem[], overallScore: number
       theme: "grid",
       headStyles: {
         fillColor: [45, 55, 72],
-        fontSize: 8,
+        fontSize: 10,
         fontStyle: "bold",
       },
-      bodyStyles: { fontSize: 8 },
+      bodyStyles: { fontSize: 10 },
       columnStyles: {
         0: { cellWidth: 130 },
         1: { cellWidth: 35, halign: "center" },
@@ -165,10 +165,10 @@ export function exportStockLedgerPDF(certificates: CertificateRow[], companyFilt
     theme: "grid",
     headStyles: {
       fillColor: [45, 55, 72],
-      fontSize: 8,
-      fontStyle: "bold",
-    },
-    bodyStyles: { fontSize: 8 },
+        fontSize: 10,
+        fontStyle: "bold",
+      },
+      bodyStyles: { fontSize: 10 },
     columnStyles: {
       0: { cellWidth: 20, halign: "center", fontStyle: "bold" },
       4: { halign: "right" },
@@ -231,10 +231,10 @@ export function exportShareholderPDF(shareholders: ShareholderRow[]) {
     theme: "grid",
     headStyles: {
       fillColor: [45, 55, 72],
-      fontSize: 8,
-      fontStyle: "bold",
-    },
-    bodyStyles: { fontSize: 8 },
+        fontSize: 10,
+        fontStyle: "bold",
+      },
+      bodyStyles: { fontSize: 10 },
     didParseCell(data) {
       if (data.section === "body" && data.column.index === 3) {
         const text = (data.cell.raw as string || "").toLowerCase();

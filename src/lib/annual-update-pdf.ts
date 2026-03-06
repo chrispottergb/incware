@@ -75,7 +75,7 @@ function addKeyValueTable(doc: jsPDF, rows: [string, string][], y: number): numb
     startY: y,
     body: rows,
     theme: "plain",
-    bodyStyles: { fontSize: 8 },
+    bodyStyles: { fontSize: 10 },
     columnStyles: {
       0: { cellWidth: 55, fontStyle: "bold", textColor: [80, 80, 80] },
       1: { textColor: [30, 30, 30] },
