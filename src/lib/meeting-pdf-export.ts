@@ -371,7 +371,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
 
   if (blueTheme) {
     // WHEREAS: indented, bold italic prefix, italic body
-    const indent = 36;
+    const indent = 20;
     const whereasPrefix = "WHEREAS, ";
     doc.setFontSize(11);
     doc.setTextColor(...BODY_COLOR);
@@ -664,9 +664,6 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setFont("helvetica", "bold");
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
     doc.text("MINUTES OF THE ANNUAL MEETING", pw / 2, y, { align: "center" });
-    y += 8;
-    doc.setFontSize(12);
-    doc.text(`OF ${companyName.toUpperCase()}`, pw / 2, y, { align: "center" });
     y += 10;
   } else {
     // Meeting Type Header
@@ -985,15 +982,127 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = ly + 10;
   }
 
-  // Counsel
+  // Counsel / Professional Advisors
   if (data.counsel && data.counsel.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.counsel.length * 7);
     y = section("Selection of Counsel & Banking");
-    y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the professional advisors and banking relationships of ${companyName}; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following selections of counsel, accountant, and banking institution are hereby approved and confirmed:`,
-      bt
-    );
+
+    // Extract attorney and accountant info from counsel records
+    const counselRec = data.counsel[0] || {};
+    const attorneyName = counselRec.attorney_name?.trim() || "";
+    const lawFirm = counselRec.law_firm?.trim() || "";
+    const accountantName = counselRec.accountant_name?.trim() || "";
+    const accountingFirm = counselRec.counsel_name?.trim() || ""; // counsel_name maps to accounting firm
+
+    // Attorney / Law Firm paragraph
+    y = checkPageBreak(doc, y, 30);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...BODY_COLOR);
+    if (attorneyName && attorneyName.toLowerCase() !== "none appointed") {
+      const firmPart = lawFirm ? ` of ${lawFirm}` : "";
+      const attyText = `The chairperson then reviewed the legal associations of the ${isLLC ? "company" : "corporation"} and upon motion duly made and seconded, the following resolution was adopted:`;
+      const attyLines = doc.splitTextToSize(attyText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of attyLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 2;
+      y = addWhereasResolved(doc, y,
+        `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the legal counsel needs of ${companyName}; and`,
+        `NOW, THEREFORE, BE IT RESOLVED, that ${attorneyName}${firmPart} is hereby approved and retained as legal counsel for ${companyName} for the ensuing year.`,
+        bt
+      );
+    } else {
+      // No attorney appointed
+      const attyText = `The chairperson then reviewed the legal associations of the ${isLLC ? "company" : "corporation"} and upon motion duly made and seconded, the following resolution was adopted:`;
+      const attyLines = doc.splitTextToSize(attyText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of attyLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 2;
+      const indent = 20;
+      const resolvedPrefix = "RESOLVED, ";
+      const resolvedBody = `that no legal counsel will be retained by the ${isLLC ? "company" : "corporation"}. When legal services are required, the ${isLLC ? "authorized binder" : "president"} of the ${isLLC ? "company" : "corporation"} is authorized to engage legal counsel as deemed appropriate.`;
+      const fullResolved = resolvedPrefix + resolvedBody;
+      const rLines = doc.splitTextToSize(fullResolved, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN - indent);
+      y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
+      for (let i = 0; i < rLines.length; i++) {
+        y = checkPageBreak(doc, y, 6);
+        if (i === 0) {
+          doc.setFont("helvetica", "bold");
+          const prefixWidth = doc.getTextWidth(resolvedPrefix);
+          doc.text(resolvedPrefix, MARGIN + indent, y);
+          doc.setFont("helvetica", "normal");
+          const remainder = rLines[0].substring(resolvedPrefix.length);
+          if (remainder) doc.text(remainder, MARGIN + indent + prefixWidth, y);
+        } else {
+          doc.setFont("helvetica", "normal");
+          doc.text(rLines[i], MARGIN + indent, y);
+        }
+        y += 5.5;
+      }
+      y += 5;
+    }
+
+    // Accountant / Accounting Firm paragraph
+    y = checkPageBreak(doc, y, 30);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...BODY_COLOR);
+    if (accountantName && accountantName.toLowerCase() !== "none appointed") {
+      const firmPart = accountingFirm ? ` of ${accountingFirm}` : "";
+      const acctText = `The chairperson then reviewed the accounting associations of the ${isLLC ? "company" : "corporation"} and upon motion duly made and seconded, the following resolution was adopted:`;
+      const acctLines = doc.splitTextToSize(acctText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of acctLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 2;
+      y = addWhereasResolved(doc, y,
+        `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the accounting needs of ${companyName}; and`,
+        `NOW, THEREFORE, BE IT RESOLVED, that ${accountantName}${firmPart} is hereby approved and retained as accountant for ${companyName} for the ensuing year.`,
+        bt
+      );
+    } else {
+      const acctText = `The chairperson then reviewed the accounting associations of the ${isLLC ? "company" : "corporation"} and upon motion duly made and seconded, the following resolution was adopted:`;
+      const acctLines = doc.splitTextToSize(acctText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of acctLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 2;
+      const indent = 20;
+      const resolvedPrefix = "RESOLVED, ";
+      const resolvedBody = `that no accountant will be retained by the ${isLLC ? "company" : "corporation"}. When accounting services are required, the ${isLLC ? "authorized binder" : "president"} of the ${isLLC ? "company" : "corporation"} is authorized to engage an accountant as deemed appropriate.`;
+      const fullResolved = resolvedPrefix + resolvedBody;
+      const rLines = doc.splitTextToSize(fullResolved, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN - indent);
+      y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
+      for (let i = 0; i < rLines.length; i++) {
+        y = checkPageBreak(doc, y, 6);
+        if (i === 0) {
+          doc.setFont("helvetica", "bold");
+          const prefixWidth = doc.getTextWidth(resolvedPrefix);
+          doc.text(resolvedPrefix, MARGIN + indent, y);
+          doc.setFont("helvetica", "normal");
+          const remainder = rLines[0].substring(resolvedPrefix.length);
+          if (remainder) doc.text(remainder, MARGIN + indent + prefixWidth, y);
+        } else {
+          doc.setFont("helvetica", "normal");
+          doc.text(rLines[i], MARGIN + indent, y);
+        }
+        y += 5.5;
+      }
+      y += 5;
+    }
+
+    // Banking table
+    y = checkPageBreak(doc, y, 30);
     autoTable(doc, {
       startY: y,
       head: [["Counsel", "Bank", "Loans"]],
