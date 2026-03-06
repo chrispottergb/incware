@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 const MARGIN = 25.4; // 1 inch for binder compatibility
-const R_MARGIN = 14;
+const R_MARGIN = 25.4; // 1 inch right margin — matches left
 const BRAND = "EntityIQ";
 const BRAND_SUB = "Corporate Records Management";
 
@@ -75,7 +75,7 @@ function addKeyValueTable(doc: jsPDF, rows: [string, string][], y: number): numb
     startY: y,
     body: rows,
     theme: "plain",
-    bodyStyles: { fontSize: 8 },
+    bodyStyles: { fontSize: 10 },
     columnStyles: {
       0: { cellWidth: 55, fontStyle: "bold", textColor: [80, 80, 80] },
       1: { textColor: [30, 30, 30] },
@@ -98,8 +98,8 @@ function addDataTable(doc: jsPDF, headers: string[], rows: string[][], y: number
     head: [headers],
     body: rows,
     theme: "grid",
-    headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
-    bodyStyles: { fontSize: 7 },
+    headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+    bodyStyles: { fontSize: 10 },
     margin: { left: MARGIN, right: R_MARGIN },
   });
   return (doc as any).lastAutoTable.finalY + 8;

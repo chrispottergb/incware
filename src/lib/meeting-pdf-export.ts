@@ -5,7 +5,7 @@ import autoTable from "jspdf-autotable";
 const DFI_HEADER = "STATE OF WISCONSIN";
 const DFI_SUB = "DEPARTMENT OF FINANCIAL INSTITUTIONS";
 const MARGIN = 25.4; // 1 inch for binder compatibility
-const R_MARGIN = 14; // right margin
+const R_MARGIN = 25.4; // 1 inch right margin — matches left for readability
 
 interface MeetingData {
   meeting: any;
@@ -46,18 +46,18 @@ function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType
   const cx = pw / 2;
 
   const displayName = meeting?.company_name_at_meeting || companyName;
-  doc.setFontSize(11);
+  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text(displayName, cx, 16, { align: "center" });
+  doc.text(displayName, cx, 22, { align: "center" });
 
   const addrLine = meeting?.company_address_at_meeting || company?.address || "";
-  let hy = 21;
+  let hy = 29;
   if (addrLine) {
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.text(addrLine, cx, hy, { align: "center" });
-    hy += 5;
+    hy += 6;
   }
 
   const cityPart = meeting?.company_city_at_meeting || company?.city || "";
@@ -68,10 +68,10 @@ function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.text(cityStateLine, cx, hy, { align: "center" });
-    hy += 5;
+    hy += 6;
   }
 
-  hy += 1;
+  hy += 2;
   doc.setDrawColor(30, 30, 30);
   doc.setLineWidth(0.8);
   doc.line(MARGIN, hy, pw - R_MARGIN, hy);
@@ -85,55 +85,55 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
 
   if (isWrittenConsent) {
     // Written Consent Header
-    doc.setFontSize(12);
+    doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text("WRITTEN CONSENT", cx, y, { align: "center" });
-    y += 5;
-    doc.setFontSize(10);
+    y += 7;
+    doc.setFontSize(12);
     doc.text("IN LIEU OF A MEETING", cx, y, { align: "center" });
-    y += 5;
-    doc.setFontSize(9);
+    y += 7;
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 60, 60);
     doc.text(`OF THE BOARD OF DIRECTORS / MEMBERS OF`, cx, y, { align: "center" });
-    y += 5;
+    y += 6;
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(companyName.toUpperCase(), cx, y, { align: "center" });
-    y += 5;
+    y += 6;
     doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 60, 60);
     doc.text(`Date: ${meetingDate}`, cx, y, { align: "center" });
-    y += 4;
+    y += 6;
     doc.setDrawColor(160, 160, 160);
     doc.setLineWidth(0.3);
     doc.line(MARGIN, y, pw - R_MARGIN, y);
-    y += 5;
+    y += 8;
     // Intro paragraph
-    doc.setFontSize(8);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(30, 30, 30);
     const introText = `The undersigned, being all of the directors/members of ${companyName}, do hereby consent to and adopt the following resolutions and actions without a formal meeting, pursuant to the applicable provisions of the Wisconsin Statutes:`;
     const lines = doc.splitTextToSize(introText, pw - MARGIN - R_MARGIN);
     doc.text(lines, MARGIN, y);
-    y += lines.length * 4 + 4;
+    y += lines.length * 5 + 6;
   } else {
     // Standard Meeting Type Header
-    doc.setFontSize(11);
+    doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(`MINUTES OF ${meetingType.toUpperCase()}`, cx, y, { align: "center" });
-    y += 5;
-    doc.setFontSize(9);
+    y += 7;
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 60, 60);
     doc.text(`${companyName} — ${meetingDate}`, cx, y, { align: "center" });
-    y += 4;
+    y += 5;
     doc.setDrawColor(160, 160, 160);
     doc.setLineWidth(0.3);
     doc.line(MARGIN, y, pw - R_MARGIN, y);
-    y += 5;
+    y += 8;
   }
 
   // Add introductory paragraph for all meeting types (non-written-consent)
@@ -163,7 +163,6 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     let locationPart = "";
     if (location) {
       locationPart = `, was held at ${location}`;
-      // Only append city/state if they aren't already contained in the location string
       const locLower = location.toLowerCase();
       const cityAlreadyInLoc = cityAtMeeting && locLower.includes(cityAtMeeting.toLowerCase());
       const stateAlreadyInLoc = stateAtMeeting && locLower.includes(stateAtMeeting.toLowerCase());
@@ -186,7 +185,7 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     doc.setTextColor(30, 30, 30);
     const introLines = doc.splitTextToSize(introText, pw - MARGIN - R_MARGIN);
     doc.text(introLines, MARGIN, y);
-    y += introLines.length * 4.5 + 4;
+    y += introLines.length * 5 + 6;
 
     // List participants based on meeting sub_type / type
     if (meetingData) {
@@ -194,30 +193,26 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
       const subType = (meeting.sub_type || "").toLowerCase();
       const mType = meetingType.toLowerCase();
 
-      // Shareholders/Members meeting → list shareholders
       if (subType.includes("shareholder") || subType.includes("member")) {
         (meetingData.shareholders || []).forEach(s => {
           if (s.shareholder_name) participants.push(s.shareholder_name);
         });
       }
-      // Directors meeting → list directors
       if (subType.includes("director") || subType.includes("board")) {
         (meetingData.directors || []).forEach(d => {
           if (d.director_name) participants.push(d.director_name);
         });
       }
-      // If no sub_type match or organizational/annual, list all available
       if (participants.length === 0) {
         const seen = new Set<string>();
         const addUnique = (name: string) => {
           const normalized = name.trim();
           if (!normalized) return;
-          // Check if this name is already represented (fuzzy: strip middle initials & periods)
           const simplify = (n: string) => n.toLowerCase().replace(/\b[a-z]\.\s*/g, "").replace(/\s+/g, " ").trim();
           const simple = simplify(normalized);
           for (const existing of seen) {
             if (simplify(existing) === simple || simple.includes(simplify(existing)) || simplify(existing).includes(simple)) {
-              return; // already have a variant of this name
+              return;
             }
           }
           seen.add(normalized);
@@ -239,11 +234,11 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
         doc.setFont("helvetica", "normal");
         doc.setTextColor(30, 30, 30);
         participants.forEach(name => {
-          y = checkPageBreak(doc, y, 5);
+          y = checkPageBreak(doc, y, 6);
           doc.text(`•  ${name}`, MARGIN + 6, y);
-          y += 4;
+          y += 5.5;
         });
-        y += 2;
+        y += 4;
       }
     }
   }
@@ -260,26 +255,27 @@ function addDFIFooter(doc: jsPDF, companyName: string) {
 
     doc.setDrawColor(160, 160, 160);
     doc.setLineWidth(0.3);
-    doc.line(MARGIN, ph - 18, pw - R_MARGIN, ph - 18);
+    doc.line(MARGIN, ph - 20, pw - R_MARGIN, ph - 20);
 
-    doc.setFontSize(11);
+    doc.setFontSize(8);
     doc.setTextColor(130, 130, 130);
-    doc.text(`${companyName} — Corporate Records`, MARGIN, ph - 13);
-    doc.text(`Page ${i} of ${pageCount}`, pw - R_MARGIN, ph - 13, { align: "right" });
-    doc.text("Generated by EntityIQ", MARGIN, ph - 9);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, pw - R_MARGIN, ph - 9, { align: "right" });
+    doc.text(`${companyName} — Corporate Records`, MARGIN, ph - 15);
+    doc.text(`Page ${i} of ${pageCount}`, pw - R_MARGIN, ph - 15, { align: "right" });
+    doc.text("Generated by EntityIQ", MARGIN, ph - 10);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, pw - R_MARGIN, ph - 10, { align: "right" });
   }
 }
 
 function addSectionTitle(doc: jsPDF, y: number, title: string): number {
+  y += 4;
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(120, 120, 120);
   doc.text(title.toUpperCase(), MARGIN, y);
   doc.setDrawColor(180, 180, 180);
   doc.setLineWidth(0.3);
-  doc.line(MARGIN, y + 1.5, doc.internal.pageSize.getWidth() - R_MARGIN, y + 1.5);
-  return y + 6;
+  doc.line(MARGIN, y + 2, doc.internal.pageSize.getWidth() - R_MARGIN, y + 2);
+  return y + 8;
 }
 
 function addLabelValue(doc: jsPDF, y: number, label: string, value: string, x = MARGIN): number {
@@ -290,46 +286,58 @@ function addLabelValue(doc: jsPDF, y: number, label: string, value: string, x = 
   doc.setFont("helvetica", "normal");
   doc.setTextColor(30, 30, 30);
   doc.text(value || "—", x + doc.getTextWidth(`${label}: `) + 2, y);
-  return y + 5;
+  return y + 6;
 }
 
 function checkPageBreak(doc: jsPDF, y: number, needed: number): number {
-  if (y + needed > doc.internal.pageSize.getHeight() - 25) {
+  if (y + needed > doc.internal.pageSize.getHeight() - 35) {
     doc.addPage();
-    return 20;
+    return 25;
   }
   return y;
 }
 
 function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string): number {
   const pw = doc.internal.pageSize.getWidth();
-  y = checkPageBreak(doc, y, 30);
+  y = checkPageBreak(doc, y, 35);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text(purpose, MARGIN, y);
-  y += 4;
+  y += 6;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
   const lines = doc.splitTextToSize(text, pw - MARGIN - R_MARGIN);
-  doc.text(lines, MARGIN, y);
-  y += lines.length * 3.5 + 5;
+  for (const line of lines) {
+    y = checkPageBreak(doc, y, 6);
+    doc.text(line, MARGIN, y);
+    y += 5;
+  }
+  y += 5;
   return y;
 }
 
 function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: string): number {
   const pw = doc.internal.pageSize.getWidth();
-  y = checkPageBreak(doc, y, 25);
+  y = checkPageBreak(doc, y, 30);
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(30, 30, 30);
   const whereasLines = doc.splitTextToSize(whereas, pw - MARGIN - R_MARGIN);
-  doc.text(whereasLines, MARGIN, y);
-  y += whereasLines.length * 3.5 + 2;
-  y = checkPageBreak(doc, y, 15);
+  for (const line of whereasLines) {
+    y = checkPageBreak(doc, y, 6);
+    doc.text(line, MARGIN, y);
+    y += 5;
+  }
+  y += 3;
+  y = checkPageBreak(doc, y, 20);
   const resolvedLines = doc.splitTextToSize(resolved, pw - MARGIN - R_MARGIN);
-  doc.text(resolvedLines, MARGIN, y);
-  y += resolvedLines.length * 3.5 + 5;
+  for (const line of resolvedLines) {
+    y = checkPageBreak(doc, y, 6);
+    doc.text(line, MARGIN, y);
+    y += 5;
+  }
+  y += 5;
   return y;
 }
 
@@ -402,11 +410,11 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
       head: [["Title", "Name"]],
       body: officerSource.map((o: any) => [o.title, o.name]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // 5. Directors (Corp only)
@@ -477,12 +485,16 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
   if (company?.business_purpose) {
     y = checkPageBreak(doc, y, 30);
     y = addSectionTitle(doc, y, "Business Purpose");
-    doc.setFontSize(8);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(30, 30, 30);
     const bpLines = doc.splitTextToSize(`The ${entityLabel} is organized for the following purpose: ${company.business_purpose}`, pw - MARGIN - R_MARGIN);
-    doc.text(bpLines, MARGIN, y);
-    y += bpLines.length * 3.5 + 5;
+    for (const line of bpLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5;
+    }
+    y += 4;
   }
 
   // 11. Seal
@@ -512,7 +524,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
 
   addDFIHeader(doc, isWrittenConsent ? "Written Consent" : `${meeting.meeting_type} — Minutes`, companyName, entityType, meeting, company);
 
-  let y = 38;
+  let y = 45;
 
   // Meeting Type Header
   y = addMeetingTypeHeader(doc, y, meeting.meeting_type, companyName, meetingDate, isWrittenConsent, meeting, company, data);
@@ -540,7 +552,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     y += 3;
     y = checkPageBreak(doc, y, 60);
     y = addSectionTitle(doc, y, "Section 1244 Stock Plan");
-    doc.setFontSize(8);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(30, 30, 30);
     const section1244Text = `WHEREAS, the Board of Directors deems it to be in the best interest of the corporation and its shareholders to qualify the stock of the corporation as "Section 1244 Stock" as defined in Section 1244 of the Internal Revenue Code of 1986, as amended; and
@@ -561,8 +573,12 @@ NOW, THEREFORE, BE IT RESOLVED, that the corporation hereby adopts the following
 
 BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby authorized and directed to take all actions necessary to implement this plan and to maintain the qualification of the stock issued hereunder as Section 1244 Stock.`;
     const lines1244 = doc.splitTextToSize(section1244Text, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-    doc.text(lines1244, MARGIN, y);
-    y += lines1244.length * 3.5 + 6;
+    for (const line of lines1244) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5;
+    }
+    y += 5;
   }
 
   // ── Organizational Meeting Boilerplate (auto-generated from company data) ──
@@ -598,11 +614,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       head: [[isLLC ? "Authorized Binder Name" : "Director Name"]],
       body: data.directors.map(d => [d.director_name]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Officers (with salary/bonus)
@@ -623,11 +639,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         : [o.title, o.name]
       ),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Shareholders
@@ -649,11 +665,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         s.distribution || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Financials
@@ -683,12 +699,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         ["Net Income", fmt(f.current_net_income), fmt(f.previous_net_income), yoy(f.current_net_income, f.previous_net_income)],
       ],
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       columnStyles: { 1: { halign: "right", fontStyle: "bold" }, 2: { halign: "right" }, 3: { halign: "center", fontStyle: "bold" } },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
 
     // Draw simple YoY bar chart in PDF
     const pw = doc.internal.pageSize.getWidth();
@@ -763,11 +779,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       head: [["Counsel", "Bank", "Loans"]],
       body: data.counsel.map(c => [c.counsel_name || "—", c.bank_name || "—", c.loans || "—"]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Loans
@@ -789,11 +805,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         l.notes || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Vehicle Purchases
@@ -817,12 +833,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         v.authorized_drivers || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Vehicle Leases
@@ -847,12 +863,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         v.business_use_description || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Vehicle/Equipment Sales
@@ -875,12 +891,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         v.reason_for_sale || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Lease Terminations
@@ -903,12 +919,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         v.penalty_amount != null ? fmt(v.penalty_amount) : "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Amendments
@@ -920,17 +936,21 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       `NOW, THEREFORE, BE IT RESOLVED, that the following amendments are hereby adopted:`
     );
     data.amendments.forEach((a) => {
-      y = checkPageBreak(doc, y, 20);
-      doc.setFontSize(9);
+      y = checkPageBreak(doc, y, 25);
+      doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(30, 30, 30);
       doc.text(a.amendment_type || "Amendment", MARGIN, y);
-      y += 4;
+      y += 6;
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
+      doc.setFontSize(11);
       const lines = doc.splitTextToSize(a.amendment_text || "", doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-      doc.text(lines, MARGIN, y);
-      y += lines.length * 4 + 4;
+      for (const line of lines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5;
+      }
+      y += 5;
     });
   }
 
@@ -940,16 +960,20 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = addSectionTitle(doc, y, "Resolutions");
     data.resolutions.forEach((r) => {
       y = checkPageBreak(doc, y, 25);
-      doc.setFontSize(9);
+      doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(30, 30, 30);
       doc.text(r.purpose, MARGIN, y);
-      y += 4;
+      y += 6;
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
+      doc.setFontSize(11);
       const lines = doc.splitTextToSize(r.resolution_text || "", doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-      doc.text(lines, MARGIN, y);
-      y += lines.length * 4 + 4;
+      for (const line of lines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5;
+      }
+      y += 5;
     });
   }
 
@@ -1062,24 +1086,28 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y = checkPageBreak(doc, y, 20 + autoResolutions.length * 20);
       y = addSectionTitle(doc, y, "Resolutions — Changes from Prior Year");
 
-      doc.setFontSize(7);
+      doc.setFontSize(9);
       doc.setFont("helvetica", "italic");
       doc.setTextColor(120, 120, 120);
       doc.text("The following resolutions were auto-generated based on changes from the prior year meeting record.", MARGIN, y);
-      y += 5;
+      y += 7;
 
       autoResolutions.forEach((r) => {
         y = checkPageBreak(doc, y, 30);
-        doc.setFontSize(9);
+        doc.setFontSize(11);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(30, 30, 30);
         doc.text(r.purpose, MARGIN, y);
-        y += 4;
+        y += 6;
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(8);
+        doc.setFontSize(11);
         const lines = doc.splitTextToSize(r.text, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-        doc.text(lines, MARGIN, y);
-        y += lines.length * 4 + 4;
+        for (const line of lines) {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(line, MARGIN, y);
+          y += 5;
+        }
+        y += 5;
       });
     }
   }
@@ -1102,11 +1130,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         b.retirement_contribution != null ? fmt(b.retirement_contribution) : "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Agreements
@@ -1127,11 +1155,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         a.agreement_purpose || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Other
@@ -1143,11 +1171,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       head: [["Notes"]],
       body: data.other.map(o => [o.notes]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Authorized Signatories
@@ -1163,34 +1191,35 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       head: [["Name", "Title", "Bank"]],
       body: data.authorizedSigners.map(s => [s.signer_name, s.title || "—", s.bank_name || "—"]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Signature block
-  y = checkPageBreak(doc, y, 50);
-  y += 8;
+  y = checkPageBreak(doc, y, 60);
+  y += 10;
   doc.setDrawColor(160, 160, 160);
   doc.setLineWidth(0.3);
 
-  doc.setFontSize(8);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
   doc.text("There being no further business, the meeting was adjourned.", MARGIN, y);
-  y += 12;
-
-  doc.line(MARGIN, y, 90, y);
-  doc.text("Secretary", MARGIN, y + 4);
-  doc.text("Date: _______________", 95, y + 4);
-
   y += 14;
 
+  doc.setFontSize(10);
   doc.line(MARGIN, y, 90, y);
-  doc.text("Chairperson", MARGIN, y + 4);
-  doc.text("Date: _______________", 95, y + 4);
+  doc.text("Secretary", MARGIN, y + 5);
+  doc.text("Date: _______________", 95, y + 5);
+
+  y += 18;
+
+  doc.line(MARGIN, y, 90, y);
+  doc.text("Chairperson", MARGIN, y + 5);
+  doc.text("Date: _______________", 95, y + 5);
 
   addDFIFooter(doc, companyName);
   return doc;
@@ -1211,7 +1240,7 @@ export function exportSectionPDF(
 
   addDFIHeader(doc, sectionTitle, companyName, entityType);
 
-  let y = 52;
+  let y = 55;
   y = addLabelValue(doc, y, "Meeting Date", meetingDate);
   y = addLabelValue(doc, y, "Meeting Type", meeting.meeting_type);
   if (meeting.tax_year) y = addLabelValue(doc, y, "Tax Year", String(meeting.tax_year));
@@ -1223,8 +1252,8 @@ export function exportSectionPDF(
       head: [tableHead],
       body: tableBody,
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
     });
@@ -1267,7 +1296,7 @@ export function exportFinancialsPDF(company: any, meeting: any, financials: any)
 
   addDFIHeader(doc, "Financial Comparison", companyName, entityType);
 
-  let y = 52;
+  let y = 55;
   y = addLabelValue(doc, y, "Meeting Date", meetingDate);
   if (meeting.tax_year) y = addLabelValue(doc, y, "Tax Year", String(meeting.tax_year));
   y += 3;
@@ -1291,9 +1320,9 @@ export function exportFinancialsPDF(company: any, meeting: any, financials: any)
         ["Net Income", fmt(financials.current_net_income), fmt(financials.previous_net_income), yoy(financials.current_net_income, financials.previous_net_income)],
       ],
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
-      columnStyles: { 1: { halign: "right", fontStyle: "bold" }, 2: { halign: "right" }, 3: { halign: "center", fontSize: 7 } },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
+      columnStyles: { 1: { halign: "right", fontStyle: "bold" }, 2: { halign: "right" }, 3: { halign: "center", fontSize: 9 } },
       margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 8;

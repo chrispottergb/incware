@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 const MARGIN = 25.4; // 1 inch for binder compatibility
-const R_MARGIN = 14;
+const R_MARGIN = 25.4; // 1 inch right margin — matches left
 const BRAND = "EntityIQ";
 const BRAND_SUB = "Corporate Records Management";
 
@@ -99,10 +99,10 @@ export function exportCompliancePDF(data: ComplianceItem[], overallScore: number
       theme: "grid",
       headStyles: {
         fillColor: [45, 55, 72],
-        fontSize: 8,
+        fontSize: 10,
         fontStyle: "bold",
       },
-      bodyStyles: { fontSize: 8 },
+      bodyStyles: { fontSize: 10 },
       columnStyles: {
         0: { cellWidth: 130 },
         1: { cellWidth: 35, halign: "center" },
@@ -165,10 +165,10 @@ export function exportStockLedgerPDF(certificates: CertificateRow[], companyFilt
     theme: "grid",
     headStyles: {
       fillColor: [45, 55, 72],
-      fontSize: 8,
-      fontStyle: "bold",
-    },
-    bodyStyles: { fontSize: 8 },
+        fontSize: 10,
+        fontStyle: "bold",
+      },
+      bodyStyles: { fontSize: 10 },
     columnStyles: {
       0: { cellWidth: 20, halign: "center", fontStyle: "bold" },
       4: { halign: "right" },
@@ -231,10 +231,10 @@ export function exportShareholderPDF(shareholders: ShareholderRow[]) {
     theme: "grid",
     headStyles: {
       fillColor: [45, 55, 72],
-      fontSize: 8,
-      fontStyle: "bold",
-    },
-    bodyStyles: { fontSize: 8 },
+        fontSize: 10,
+        fontStyle: "bold",
+      },
+      bodyStyles: { fontSize: 10 },
     didParseCell(data) {
       if (data.section === "body" && data.column.index === 3) {
         const text = (data.cell.raw as string || "").toLowerCase();
@@ -346,8 +346,8 @@ export function exportAICompliancePDF(data: AIComplianceData) {
         s.purpose || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
-      bodyStyles: { fontSize: 7 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: "bold" },
+      bodyStyles: { fontSize: 9 },
       didParseCell(data) {
         if (data.section === "body" && data.column.index === 2) {
           const risk = (data.cell.raw as string).toLowerCase();
@@ -389,8 +389,8 @@ export function exportAICompliancePDF(data: AIComplianceData) {
         p.status,
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
-      bodyStyles: { fontSize: 7 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: "bold" },
+      bodyStyles: { fontSize: 9 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 10;
@@ -424,8 +424,8 @@ export function exportAICompliancePDF(data: AIComplianceData) {
         l.affected_persons_notified ? "Yes" : "No",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
-      bodyStyles: { fontSize: 7 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: "bold" },
+      bodyStyles: { fontSize: 9 },
       didParseCell(data) {
         if (data.section === "body" && data.column.index === 5) {
           const d = (data.cell.raw as string).toLowerCase();
@@ -469,8 +469,8 @@ export function exportAICompliancePDF(data: AIComplianceData) {
         i.authority_notified ? "Yes" : "No",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
-      bodyStyles: { fontSize: 7 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: "bold" },
+      bodyStyles: { fontSize: 9 },
       didParseCell(data) {
         if (data.section === "body" && data.column.index === 2) {
           const s = (data.cell.raw as string).toLowerCase();

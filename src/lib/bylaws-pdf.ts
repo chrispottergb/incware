@@ -214,8 +214,8 @@ export function generateBylawsPDF(data: BylawsData): jsPDF {
         s.status || "Active",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 6;
@@ -255,8 +255,8 @@ export function generateBylawsPDF(data: BylawsData): jsPDF {
         d.added_date ? new Date(d.added_date + "T00:00:00").toLocaleDateString() : "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 6;

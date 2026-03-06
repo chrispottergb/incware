@@ -8,7 +8,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 ).toString();
 
 const MARGIN = 25.4; // 1 inch for binder compatibility
-const R_MARGIN = 14;
+const R_MARGIN = 25.4; // 1 inch right margin — matches left
 const BRAND = "EntityIQ";
 const BRAND_SUB = "Corporate Records Management";
 
@@ -95,8 +95,8 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
       head: [["Field", "Value"]],
       body: fieldRows,
       theme: "grid",
-      headStyles: { fillColor: [180, 180, 180], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [180, 180, 180], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       columnStyles: {
         0: { cellWidth: 60, fontStyle: "bold" },
       },
@@ -112,8 +112,8 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
       head: [config.table.headers],
       body: config.table.rows,
       theme: "grid",
-      headStyles: { fillColor: [180, 180, 180], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [180, 180, 180], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       didParseCell(data) {
         // Color status-like cells
