@@ -656,7 +656,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
 
   addDFIHeader(doc, isWrittenConsent ? "Written Consent" : `${meeting.meeting_type} — Minutes`, companyName, entityType, meeting, company);
 
-  let y = 45;
+  let y = bt ? 52 : 45;
 
   // For Annual Meeting blue theme: use a cleaner title block
   if (bt) {
