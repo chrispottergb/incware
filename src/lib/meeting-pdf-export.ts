@@ -271,15 +271,24 @@ function addDFIFooter(doc: jsPDF, companyName: string) {
   }
 }
 
-function addSectionTitle(doc: jsPDF, y: number, title: string): number {
+function addSectionTitle(doc: jsPDF, y: number, title: string, blueTheme: boolean = false, sectionNum?: number): number {
   y += 4;
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(120, 120, 120);
-  doc.text(title.toUpperCase(), MARGIN, y);
-  doc.setDrawColor(180, 180, 180);
-  doc.setLineWidth(0.3);
-  doc.line(MARGIN, y + 2, doc.internal.pageSize.getWidth() - R_MARGIN, y + 2);
+  if (blueTheme) {
+    doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
+    const label = sectionNum != null ? `${sectionNum}. ${title.toUpperCase()}` : title.toUpperCase();
+    doc.text(label, MARGIN, y);
+    doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
+    doc.setLineWidth(1);
+    doc.line(MARGIN, y + 3, doc.internal.pageSize.getWidth() - R_MARGIN, y + 3);
+  } else {
+    doc.setTextColor(120, 120, 120);
+    doc.text(title.toUpperCase(), MARGIN, y);
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.3);
+    doc.line(MARGIN, y + 2, doc.internal.pageSize.getWidth() - R_MARGIN, y + 2);
+  }
   return y + 8;
 }
 
