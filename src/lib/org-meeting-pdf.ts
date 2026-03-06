@@ -139,10 +139,10 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text("MINUTES OF THE ORGANIZATIONAL MEETING", pw / 2, y, { align: "center" });
-  y += 18;
+  y += 22;
   doc.setFontSize(12);
   doc.text(`OF ${fullName.toUpperCase()}`, pw / 2, y, { align: "center" });
-  y += 28;
+  y += 32;
 
   // ===== INTRO =====
   const dayOfWeek = data.meetingDate
@@ -162,7 +162,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   }
 
   para("The Chairperson called the meeting to order and announced that a quorum was present. The Chairperson stated the purpose of the meeting was to complete the organization of the limited liability company, adopt initial resolutions, and transact such other business as may properly come before the meeting.");
-  y += 4;
+  y += 8;
 
   // ===== FORMATION & ORGANIZATION =====
   heading("Formation & Organization");
