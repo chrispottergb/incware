@@ -613,6 +613,16 @@ export default function MeetingsTab({ companyId, company }: Props) {
         </div>
       )}
 
+      {/* Annual Meeting Wizard Dialog */}
+      <Dialog open={annualWizardOpen} onOpenChange={setAnnualWizardOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display">Annual Meeting Minutes Generator</DialogTitle>
+          </DialogHeader>
+          <AnnualMeetingWizard company={company} onClose={() => setAnnualWizardOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
       {/* Organizational Meeting Wizard Dialog */}
       <Dialog open={orgWizardOpen} onOpenChange={setOrgWizardOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
