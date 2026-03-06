@@ -45,6 +45,7 @@ import { useNavigate } from "react-router-dom";
 import TaxReturnUpload from "@/components/TaxReturnUpload";
 import { isLLCType } from "@/lib/entity-terminology";
 import OrgMeetingWizard from "@/components/OrgMeetingWizard";
+import AnnualMeetingWizard from "@/components/AnnualMeetingWizard";
 
 const MEETING_TYPES = [
   "Annual Meeting",
@@ -84,6 +85,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [orgWizardOpen, setOrgWizardOpen] = useState(false);
+  const [annualWizardOpen, setAnnualWizardOpen] = useState(false);
 
   const defaultForm = () => ({
     meeting_date: "",
@@ -328,9 +330,14 @@ export default function MeetingsTab({ companyId, company }: Props) {
         </div>
         <div className="flex items-center gap-2">
           {isLLCType(company.entity_type) && (
-            <Button variant="outline" size="sm" onClick={() => setOrgWizardOpen(true)}>
-              <FileText className="h-3.5 w-3.5 mr-1.5" /> Org Meeting Minutes
-            </Button>
+            <>
+              <Button variant="outline" size="sm" onClick={() => setAnnualWizardOpen(true)}>
+                <FileText className="h-3.5 w-3.5 mr-1.5" /> Annual Meeting Minutes
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setOrgWizardOpen(true)}>
+                <FileText className="h-3.5 w-3.5 mr-1.5" /> Org Meeting Minutes
+              </Button>
+            </>
           )}
           <TaxReturnUpload
             companyId={companyId}
@@ -605,6 +612,16 @@ export default function MeetingsTab({ companyId, company }: Props) {
           ))}
         </div>
       )}
+
+      {/* Annual Meeting Wizard Dialog */}
+      <Dialog open={annualWizardOpen} onOpenChange={setAnnualWizardOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display">Annual Meeting Minutes Generator</DialogTitle>
+          </DialogHeader>
+          <AnnualMeetingWizard company={company} onClose={() => setAnnualWizardOpen(false)} />
+        </DialogContent>
+      </Dialog>
 
       {/* Organizational Meeting Wizard Dialog */}
       <Dialog open={orgWizardOpen} onOpenChange={setOrgWizardOpen}>
