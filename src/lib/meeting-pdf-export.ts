@@ -11,6 +11,7 @@ const R_MARGIN = 25.4; // 1 inch right margin — matches left for readability
 const BLUE = { r: 31, g: 78, b: 121 }; // #1F4E79
 const LIGHT_BLUE_BG: [number, number, number] = [214, 228, 240]; // #D6E4F0
 const BODY_COLOR: [number, number, number] = [40, 40, 40];
+const WHEREAS_RESOLVED_INDENT = 14;
 
 interface MeetingData {
   meeting: any;
@@ -371,7 +372,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
 
   if (blueTheme) {
     // WHEREAS: indented, bold italic prefix, italic body
-    const indent = 20;
+    const indent = WHEREAS_RESOLVED_INDENT;
     const whereasPrefix = "WHEREAS, ";
     doc.setFontSize(11);
     doc.setTextColor(...BODY_COLOR);
@@ -655,7 +656,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
 
   addDFIHeader(doc, isWrittenConsent ? "Written Consent" : `${meeting.meeting_type} — Minutes`, companyName, entityType, meeting, company);
 
-  let y = 45;
+  let y = bt ? 52 : 45;
 
   // For Annual Meeting blue theme: use a cleaner title block
   if (bt) {
@@ -684,7 +685,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...BODY_COLOR);
-    const introText = `The Annual Meeting of ${companyName}, a ${stateOfInc} ${entityLabel}, was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${meeting.meeting_location ? `, at ${meeting.meeting_location}` : ""}.`;
+    const introText = `The Annual Meeting of the ${stateOfInc} ${entityLabel} was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${meeting.meeting_location ? `, at ${meeting.meeting_location}` : ""}.`;
     const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of introLines) {
       y = checkPageBreak(doc, y, 6);
@@ -983,12 +984,15 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Counsel / Professional Advisors
-  if (data.counsel && data.counsel.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.counsel.length * 7);
+  const shouldRenderCounselSection = bt || (data.counsel && data.counsel.length > 0);
+  const counselRows = data.counsel && data.counsel.length > 0 ? data.counsel : [{} as any];
+
+  if (shouldRenderCounselSection) {
+    y = checkPageBreak(doc, y, 20 + counselRows.length * 7);
     y = section("Selection of Counsel & Banking");
 
     // Extract attorney and accountant info from counsel records
-    const counselRec = data.counsel[0] || {};
+    const counselRec = counselRows[0] || {};
     const attorneyName = counselRec.attorney_name?.trim() || "";
     const lawFirm = counselRec.law_firm?.trim() || "";
     const accountantName = counselRec.accountant_name?.trim() || "";
@@ -1024,7 +1028,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         y += 5.5;
       }
       y += 2;
-      const indent = 20;
+      const indent = WHEREAS_RESOLVED_INDENT;
       const resolvedPrefix = "RESOLVED, ";
       const resolvedBody = `that no legal counsel will be retained by the ${isLLC ? "company" : "corporation"}. When legal services are required, the ${isLLC ? "authorized binder" : "president"} of the ${isLLC ? "company" : "corporation"} is authorized to engage legal counsel as deemed appropriate.`;
       const fullResolved = resolvedPrefix + resolvedBody;
@@ -1077,7 +1081,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         y += 5.5;
       }
       y += 2;
-      const indent = 20;
+      const indent = WHEREAS_RESOLVED_INDENT;
       const resolvedPrefix = "RESOLVED, ";
       const resolvedBody = `that no accountant will be retained by the ${isLLC ? "company" : "corporation"}. When accounting services are required, the ${isLLC ? "authorized binder" : "president"} of the ${isLLC ? "company" : "corporation"} is authorized to engage an accountant as deemed appropriate.`;
       const fullResolved = resolvedPrefix + resolvedBody;
@@ -1106,7 +1110,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     autoTable(doc, {
       startY: y,
       head: [["Counsel", "Bank", "Loans"]],
-      body: data.counsel.map(c => [c.counsel_name || "—", c.bank_name || "—", c.loans || "—"]),
+      body: counselRows.map(c => [c.counsel_name || "—", c.bank_name || "—", c.loans || "—"]),
       theme: "grid",
       headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
