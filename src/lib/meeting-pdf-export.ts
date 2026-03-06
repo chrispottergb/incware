@@ -292,6 +292,7 @@ function addAnnualMeetingFooter(doc: jsPDF, companyName: string) {
 }
 
 
+function addSectionTitle(doc: jsPDF, y: number, title: string, blueTheme: boolean = false, sectionNum?: number): number {
   y += 4;
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
