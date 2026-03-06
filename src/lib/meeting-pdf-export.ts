@@ -5,7 +5,7 @@ import autoTable from "jspdf-autotable";
 const DFI_HEADER = "STATE OF WISCONSIN";
 const DFI_SUB = "DEPARTMENT OF FINANCIAL INSTITUTIONS";
 const MARGIN = 25.4; // 1 inch for binder compatibility
-const R_MARGIN = 14; // right margin
+const R_MARGIN = 25.4; // 1 inch right margin — matches left for readability
 
 interface MeetingData {
   meeting: any;
@@ -46,18 +46,18 @@ function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType
   const cx = pw / 2;
 
   const displayName = meeting?.company_name_at_meeting || companyName;
-  doc.setFontSize(11);
+  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text(displayName, cx, 16, { align: "center" });
+  doc.text(displayName, cx, 22, { align: "center" });
 
   const addrLine = meeting?.company_address_at_meeting || company?.address || "";
-  let hy = 21;
+  let hy = 29;
   if (addrLine) {
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.text(addrLine, cx, hy, { align: "center" });
-    hy += 5;
+    hy += 6;
   }
 
   const cityPart = meeting?.company_city_at_meeting || company?.city || "";
@@ -68,10 +68,10 @@ function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.text(cityStateLine, cx, hy, { align: "center" });
-    hy += 5;
+    hy += 6;
   }
 
-  hy += 1;
+  hy += 2;
   doc.setDrawColor(30, 30, 30);
   doc.setLineWidth(0.8);
   doc.line(MARGIN, hy, pw - R_MARGIN, hy);
@@ -85,55 +85,55 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
 
   if (isWrittenConsent) {
     // Written Consent Header
-    doc.setFontSize(12);
+    doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text("WRITTEN CONSENT", cx, y, { align: "center" });
-    y += 5;
-    doc.setFontSize(10);
+    y += 7;
+    doc.setFontSize(12);
     doc.text("IN LIEU OF A MEETING", cx, y, { align: "center" });
-    y += 5;
-    doc.setFontSize(9);
+    y += 7;
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 60, 60);
     doc.text(`OF THE BOARD OF DIRECTORS / MEMBERS OF`, cx, y, { align: "center" });
-    y += 5;
+    y += 6;
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(companyName.toUpperCase(), cx, y, { align: "center" });
-    y += 5;
+    y += 6;
     doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 60, 60);
     doc.text(`Date: ${meetingDate}`, cx, y, { align: "center" });
-    y += 4;
+    y += 6;
     doc.setDrawColor(160, 160, 160);
     doc.setLineWidth(0.3);
     doc.line(MARGIN, y, pw - R_MARGIN, y);
-    y += 5;
+    y += 8;
     // Intro paragraph
-    doc.setFontSize(8);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(30, 30, 30);
     const introText = `The undersigned, being all of the directors/members of ${companyName}, do hereby consent to and adopt the following resolutions and actions without a formal meeting, pursuant to the applicable provisions of the Wisconsin Statutes:`;
     const lines = doc.splitTextToSize(introText, pw - MARGIN - R_MARGIN);
     doc.text(lines, MARGIN, y);
-    y += lines.length * 4 + 4;
+    y += lines.length * 5 + 6;
   } else {
     // Standard Meeting Type Header
-    doc.setFontSize(11);
+    doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(`MINUTES OF ${meetingType.toUpperCase()}`, cx, y, { align: "center" });
-    y += 5;
-    doc.setFontSize(9);
+    y += 7;
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 60, 60);
     doc.text(`${companyName} — ${meetingDate}`, cx, y, { align: "center" });
-    y += 4;
+    y += 5;
     doc.setDrawColor(160, 160, 160);
     doc.setLineWidth(0.3);
     doc.line(MARGIN, y, pw - R_MARGIN, y);
-    y += 5;
+    y += 8;
   }
 
   // Add introductory paragraph for all meeting types (non-written-consent)
@@ -163,7 +163,6 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     let locationPart = "";
     if (location) {
       locationPart = `, was held at ${location}`;
-      // Only append city/state if they aren't already contained in the location string
       const locLower = location.toLowerCase();
       const cityAlreadyInLoc = cityAtMeeting && locLower.includes(cityAtMeeting.toLowerCase());
       const stateAlreadyInLoc = stateAtMeeting && locLower.includes(stateAtMeeting.toLowerCase());
@@ -186,7 +185,7 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     doc.setTextColor(30, 30, 30);
     const introLines = doc.splitTextToSize(introText, pw - MARGIN - R_MARGIN);
     doc.text(introLines, MARGIN, y);
-    y += introLines.length * 4.5 + 4;
+    y += introLines.length * 5 + 6;
 
     // List participants based on meeting sub_type / type
     if (meetingData) {
@@ -194,30 +193,26 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
       const subType = (meeting.sub_type || "").toLowerCase();
       const mType = meetingType.toLowerCase();
 
-      // Shareholders/Members meeting → list shareholders
       if (subType.includes("shareholder") || subType.includes("member")) {
         (meetingData.shareholders || []).forEach(s => {
           if (s.shareholder_name) participants.push(s.shareholder_name);
         });
       }
-      // Directors meeting → list directors
       if (subType.includes("director") || subType.includes("board")) {
         (meetingData.directors || []).forEach(d => {
           if (d.director_name) participants.push(d.director_name);
         });
       }
-      // If no sub_type match or organizational/annual, list all available
       if (participants.length === 0) {
         const seen = new Set<string>();
         const addUnique = (name: string) => {
           const normalized = name.trim();
           if (!normalized) return;
-          // Check if this name is already represented (fuzzy: strip middle initials & periods)
           const simplify = (n: string) => n.toLowerCase().replace(/\b[a-z]\.\s*/g, "").replace(/\s+/g, " ").trim();
           const simple = simplify(normalized);
           for (const existing of seen) {
             if (simplify(existing) === simple || simple.includes(simplify(existing)) || simplify(existing).includes(simple)) {
-              return; // already have a variant of this name
+              return;
             }
           }
           seen.add(normalized);
@@ -239,11 +234,11 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
         doc.setFont("helvetica", "normal");
         doc.setTextColor(30, 30, 30);
         participants.forEach(name => {
-          y = checkPageBreak(doc, y, 5);
+          y = checkPageBreak(doc, y, 6);
           doc.text(`•  ${name}`, MARGIN + 6, y);
-          y += 4;
+          y += 5.5;
         });
-        y += 2;
+        y += 4;
       }
     }
   }
