@@ -346,8 +346,8 @@ export function exportAICompliancePDF(data: AIComplianceData) {
         s.purpose || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
-      bodyStyles: { fontSize: 7 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: "bold" },
+      bodyStyles: { fontSize: 9 },
       didParseCell(data) {
         if (data.section === "body" && data.column.index === 2) {
           const risk = (data.cell.raw as string).toLowerCase();
@@ -389,8 +389,8 @@ export function exportAICompliancePDF(data: AIComplianceData) {
         p.status,
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
-      bodyStyles: { fontSize: 7 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: "bold" },
+      bodyStyles: { fontSize: 9 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 10;
@@ -424,8 +424,8 @@ export function exportAICompliancePDF(data: AIComplianceData) {
         l.affected_persons_notified ? "Yes" : "No",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
-      bodyStyles: { fontSize: 7 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: "bold" },
+      bodyStyles: { fontSize: 9 },
       didParseCell(data) {
         if (data.section === "body" && data.column.index === 5) {
           const d = (data.cell.raw as string).toLowerCase();
@@ -469,8 +469,8 @@ export function exportAICompliancePDF(data: AIComplianceData) {
         i.authority_notified ? "Yes" : "No",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
-      bodyStyles: { fontSize: 7 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: "bold" },
+      bodyStyles: { fontSize: 9 },
       didParseCell(data) {
         if (data.section === "body" && data.column.index === 2) {
           const s = (data.cell.raw as string).toLowerCase();
