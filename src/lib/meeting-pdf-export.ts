@@ -984,12 +984,15 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Counsel / Professional Advisors
-  if (data.counsel && data.counsel.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.counsel.length * 7);
+  const shouldRenderCounselSection = bt || (data.counsel && data.counsel.length > 0);
+  const counselRows = data.counsel && data.counsel.length > 0 ? data.counsel : [{} as any];
+
+  if (shouldRenderCounselSection) {
+    y = checkPageBreak(doc, y, 20 + counselRows.length * 7);
     y = section("Selection of Counsel & Banking");
 
     // Extract attorney and accountant info from counsel records
-    const counselRec = data.counsel[0] || {};
+    const counselRec = counselRows[0] || {};
     const attorneyName = counselRec.attorney_name?.trim() || "";
     const lawFirm = counselRec.law_firm?.trim() || "";
     const accountantName = counselRec.accountant_name?.trim() || "";
