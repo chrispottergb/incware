@@ -1,0 +1,993 @@
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Plus, Trash2, Download, ChevronLeft, ChevronRight, FileText, Info, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
+import { generateAnnualMeetingPDF, AnnualMeetingData } from "@/lib/annual-meeting-pdf";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { format } from "date-fns";
+import * as pdfjsLib from "pdfjs-dist";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
+const STEPS = [
+  "Meeting Information",
+  "Call to Order",
+  "Professional Advisors",
+  "Members & Officers",
+  "Authorized Binders",
+  "Financial Information",
+  "Banking",
+  "Tax & Accounting",
+  "Loans",
+  "Leases",
+  "Vehicles & Equipment",
+  "Employee Benefits",
+  "Special Resolutions",
+  "Registered Agent",
+  "General Authorization",
+  "Signatures",
+];
+
+interface Props {
+  company: any;
+  onClose?: () => void;
+}
+
+function TemplateNote({ text }: { text: string }) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground cursor-help">
+            <Info className="h-3 w-3" />
+            <span className="underline decoration-dotted">Template Note</span>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs text-xs">
+          {text}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+function RequiredField({ label, value }: { label: string; value: string }) {
+  const missing = !value?.trim();
+  return (
+    <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+      {label} *
+      {missing && <AlertTriangle className="h-3 w-3 text-destructive" />}
+    </span>
+  );
+}
+
+export default function AnnualMeetingWizard({ company, onClose }: Props) {
+  const [step, setStep] = useState(0);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewCanvas, setPreviewCanvas] = useState<HTMLCanvasElement | null>(null);
+  const [previewPages, setPreviewPages] = useState(0);
+  const [previewPage, setPreviewPage] = useState(1);
+  const [pdfDocRef, setPdfDocRef] = useState<any>(null);
+
+  // Fetch company data for pre-fill
+  const { data: companyShareholders = [] } = useQuery({
+    queryKey: ["shareholders", company?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("shareholders").select("*").eq("company_id", company.id).eq("status", "active").order("created_at");
+      return data || [];
+    },
+    enabled: !!company?.id,
+  });
+
+  const { data: companyOfficers } = useQuery({
+    queryKey: ["officers", company?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("officers").select("*").eq("company_id", company.id).maybeSingle();
+      return data;
+    },
+    enabled: !!company?.id,
+  });
+
+  const { data: companyDirectors = [] } = useQuery({
+    queryKey: ["directors", company?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("directors").select("*").eq("company_id", company.id).order("created_at");
+      return data || [];
+    },
+    enabled: !!company?.id,
+  });
+
+  const { data: companyBanks = [] } = useQuery({
+    queryKey: ["company_banks", company?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("company_banks").select("*").eq("company_id", company.id).order("created_at");
+      return data || [];
+    },
+    enabled: !!company?.id,
+  });
+
+  const { data: bankSigners = [] } = useQuery({
+    queryKey: ["bank_authorized_signers", company?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("bank_authorized_signers").select("*").eq("company_id", company.id).order("created_at");
+      return data || [];
+    },
+    enabled: !!company?.id,
+  });
+
+  const { data: attorneys = [] } = useQuery({
+    queryKey: ["attorneys", company?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("attorneys").select("*, attorney_firms(firm_name, address, city, state, zip, phone, email)").eq("company_id", company.id);
+      return data || [];
+    },
+    enabled: !!company?.id,
+  });
+
+  const { data: accountants = [] } = useQuery({
+    queryKey: ["accountants", company?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("accountants").select("*, accountant_firms(firm_name, address, city, state, zip, phone, email)").eq("company_id", company.id);
+      return data || [];
+    },
+    enabled: !!company?.id,
+  });
+
+  const { data: companyAssets = [] } = useQuery({
+    queryKey: ["company_assets_vehicles", company?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("company_assets").select("*").eq("company_id", company.id).in("asset_type", ["Vehicle", "Equipment"]).order("created_at");
+      return data || [];
+    },
+    enabled: !!company?.id,
+  });
+
+  // Fetch prior annual meeting data
+  const { data: priorMeeting } = useQuery({
+    queryKey: ["prior_annual_meeting", company?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("meetings").select("*").eq("company_id", company.id).eq("meeting_type", "Annual Meeting").order("meeting_date", { ascending: false }).limit(1).maybeSingle();
+      return data;
+    },
+    enabled: !!company?.id,
+  });
+
+  const { data: priorBenefits = [] } = useQuery({
+    queryKey: ["prior_meeting_benefits", priorMeeting?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("meeting_benefits").select("*").eq("meeting_id", priorMeeting!.id).order("created_at");
+      return data || [];
+    },
+    enabled: !!priorMeeting?.id,
+  });
+
+  const { data: priorLoans = [] } = useQuery({
+    queryKey: ["prior_meeting_loans", priorMeeting?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("meeting_loans").select("*").eq("meeting_id", priorMeeting!.id).order("created_at");
+      return data || [];
+    },
+    enabled: !!priorMeeting?.id,
+  });
+
+  const buildDefaultData = (): AnnualMeetingData => {
+    // Build advisors from attorneys + accountants
+    const advisorList: AnnualMeetingData["advisors"] = [];
+    attorneys.forEach((a: any) => {
+      const firm = a.attorney_firms;
+      advisorList.push({
+        role: "Attorney",
+        nameFirm: firm ? `${a.attorney_name} / ${firm.firm_name}` : a.attorney_name,
+        address: firm ? [firm.address, firm.city, firm.state, firm.zip].filter(Boolean).join(", ") : "",
+        phoneEmail: [a.phone, a.email].filter(Boolean).join(" / "),
+      });
+    });
+    accountants.forEach((a: any) => {
+      const firm = a.accountant_firms;
+      advisorList.push({
+        role: "Accountant",
+        nameFirm: firm ? `${a.accountant_name} / ${firm.firm_name}` : a.accountant_name,
+        address: firm ? [firm.address, firm.city, firm.state, firm.zip].filter(Boolean).join(", ") : "",
+        phoneEmail: [a.phone, a.email].filter(Boolean).join(" / "),
+      });
+    });
+    if (advisorList.length === 0) advisorList.push({ role: "", nameFirm: "", address: "", phoneEmail: "" });
+
+    // Build members from shareholders
+    const memberList = companyShareholders.length > 0
+      ? companyShareholders.filter(s => !s.is_treasury).map(s => ({
+        name: s.name,
+        units: s.ownership_percentage?.toString() || "",
+        interestPct: s.ownership_percentage?.toString() || "",
+        address: [s.address, s.city, s.state, s.zip].filter(Boolean).join(", "),
+      }))
+      : [{ name: "", units: "", interestPct: "", address: "" }];
+
+    // Build officers
+    const officerList: AnnualMeetingData["officers"] = [];
+    if (companyOfficers) {
+      if (companyOfficers.president) officerList.push({ name: companyOfficers.president, title: "Managing Member", salary: "", status: "Re-Appointed" });
+      if (companyOfficers.vice_president) officerList.push({ name: companyOfficers.vice_president, title: "Member", salary: "", status: "Re-Appointed" });
+      if (companyOfficers.secretary) officerList.push({ name: companyOfficers.secretary, title: "Secretary", salary: "", status: "Re-Appointed" });
+      if (companyOfficers.treasurer) officerList.push({ name: companyOfficers.treasurer, title: "Treasurer", salary: "", status: "Re-Appointed" });
+    }
+    if (officerList.length === 0) officerList.push({ name: "", title: "", salary: "", status: "Re-Appointed" });
+
+    // Build authorized binders from company field
+    const binderList: AnnualMeetingData["authorizedBinders"] = [];
+    if (company?.authorized_binders) {
+      company.authorized_binders.split(",").forEach((b: string) => {
+        binderList.push({ name: b.trim(), title: "", scope: "Full authority", status: "Confirmed" });
+      });
+    }
+    if (binderList.length === 0) {
+      // Fall back to officers
+      officerList.forEach(o => {
+        if (o.name) binderList.push({ name: o.name, title: o.title, scope: "Full authority", status: "Confirmed" });
+      });
+    }
+    if (binderList.length === 0) binderList.push({ name: "", title: "", scope: "Full authority", status: "Confirmed" });
+
+    // Build bank accounts
+    const bankList = companyBanks.length > 0
+      ? companyBanks.map(b => {
+        const signers = bankSigners.filter(s => s.bank_id === b.id);
+        return {
+          institution: b.bank_name,
+          accountType: b.account_type || "Checking",
+          signatory: signers.map(s => s.signer_name).join(", ") || "",
+          title: signers.map(s => s.title || "").join(", ") || "",
+        };
+      })
+      : [{ institution: "", accountType: "", signatory: "", title: "" }];
+
+    // Build vehicles from assets
+    const vehicleList = companyAssets.length > 0
+      ? companyAssets.filter(a => a.asset_type === "Vehicle").map(a => ({
+        yearMakeModel: [a.year, a.make, a.model].filter(Boolean).join(" ") || a.description,
+        vin: a.vin || "",
+        ownedLeased: a.ownership_type || "Owned",
+        primaryDriver: "",
+        businessUsePct: "",
+        notes: "",
+      }))
+      : [];
+
+    // Build benefit plans from prior meeting
+    const benefitList = priorBenefits.length > 0
+      ? priorBenefits.map((b: any) => ({
+        planType: b.benefit_type || b.benefit_description || "",
+        provider: b.provider || "",
+        eligibility: b.eligibility_comments || "",
+        contribution: b.retirement_contribution?.toString() || "",
+        status: "Active",
+      }))
+      : [{ planType: "", provider: "", eligibility: "", contribution: "", status: "Active" }];
+
+    // Build loans from prior meeting
+    const instLoans = priorLoans.filter((l: any) => l.loan_direction !== "member_to_company" && l.loan_direction !== "company_to_member").map((l: any) => ({
+      lender: l.lender_name || "",
+      loanType: l.loan_type || "",
+      balance: l.loan_amount?.toString() || "",
+      rate: l.loan_rate?.toString() || "",
+      maturity: l.end_date || "",
+      signatory: "",
+    }));
+    const memLoans = priorLoans.filter((l: any) => l.loan_direction === "member_to_company" || l.loan_direction === "company_to_member").map((l: any) => ({
+      lender: l.lender_name || "",
+      borrower: l.borrower_name || "",
+      amount: l.loan_amount?.toString() || "",
+      rate: l.loan_rate?.toString() || "",
+      terms: l.repayment_terms || "",
+      notes: l.notes || "",
+    }));
+
+    // Build attendees from members
+    const attendeeList = memberList.filter(m => m.name).map(m => ({ name: m.name, title: "" }));
+    if (attendeeList.length === 0) attendeeList.push({ name: "", title: "" });
+
+    // Registered agent
+    const raAddr = [company?.registered_agent_address, company?.registered_agent_city, company?.registered_agent_state, company?.registered_agent_zip].filter(Boolean).join(", ");
+
+    return {
+      companyName: company?.name || "",
+      stateOfFormation: company?.state_of_incorporation || "Wisconsin",
+      meetingDate: "",
+      meetingTime: priorMeeting?.meeting_time || "10:00 AM",
+      meetingLocation: priorMeeting?.meeting_location || (company?.address ? `${company.address}, ${company.city || ""}, ${company.state || ""}` : ""),
+      chairperson: priorMeeting?.chairperson || "",
+      secretary: priorMeeting?.mtg_secretary || "",
+      taxYear: new Date().getFullYear().toString(),
+      priorMeetingDate: priorMeeting?.meeting_date || "",
+
+      attendees: attendeeList,
+      advisors: advisorList,
+      members: memberList,
+      officers: officerList,
+      authorizedBinders: binderList,
+
+      fiscalYearEnd: company?.fiscal_year_end || "December 31",
+      financialItems: [
+        { item: "Total Revenue", amount: "", notes: "" },
+        { item: "Cost of Goods Sold", amount: "", notes: "" },
+        { item: "Gross Profit", amount: "", notes: "" },
+        { item: "Total Expenses", amount: "", notes: "" },
+        { item: "Net Income", amount: "", notes: "" },
+      ],
+      distributions: memberList.filter(m => m.name).map(m => ({ memberName: m.name, amount: "", date: "", notes: "" })),
+      retainedEarnings: "",
+
+      includeBanking: companyBanks.length > 0,
+      bankAccounts: bankList,
+
+      accountingMethod: company?.accounting_method || "cash",
+      taxElections: [{ election: "S Corporation (Form 2553)", status: company?.s_election_date ? "Active" : "N/A", effectiveDate: company?.s_election_date || "", notes: "" }],
+
+      institutionalLoans: instLoans.length > 0 ? instLoans : [],
+      memberLoans: memLoans.length > 0 ? memLoans : [],
+
+      leases: [],
+      vehicles: vehicleList,
+
+      benefitPlans: benefitList,
+      profitSharingAmount: "",
+
+      includeSpecialResolutions: false,
+      specialResolutions: [{ title: "", whereas: "", resolved: "" }],
+
+      registeredAgentName: company?.registered_agent_name || "",
+      registeredAgentAddress: raAddr,
+
+      memberSignatures: attendeeList.filter(a => a.name).map(a => ({ name: a.name })),
+    };
+  };
+
+  const [data, setData] = useState<AnnualMeetingData>(buildDefaultData());
+  const [initialized, setInitialized] = useState(false);
+
+  // Re-initialize when company data loads
+  useEffect(() => {
+    if (!initialized && company?.id) {
+      setData(buildDefaultData());
+      setInitialized(true);
+    }
+  }, [companyShareholders, companyOfficers, companyBanks, priorMeeting, attorneys, accountants]);
+
+  const update = (field: keyof AnnualMeetingData, value: any) =>
+    setData(prev => ({ ...prev, [field]: value }));
+
+  const updateArrayItem = (field: keyof AnnualMeetingData, idx: number, key: string, value: string) => {
+    const arr = [...(data[field] as any[])];
+    arr[idx] = { ...arr[idx], [key]: value };
+    update(field, arr);
+  };
+
+  const addArrayItem = (field: keyof AnnualMeetingData, template: any) => {
+    update(field, [...(data[field] as any[]), template]);
+  };
+
+  const removeArrayItem = (field: keyof AnnualMeetingData, idx: number) => {
+    update(field, (data[field] as any[]).filter((_, i) => i !== idx));
+  };
+
+  const canGenerate = () => {
+    return data.companyName && data.meetingDate && data.chairperson && data.secretary;
+  };
+
+  const handleDownload = () => {
+    if (!canGenerate()) {
+      toast.error("Please fill in all required fields (Company Name, Meeting Date, Chairperson, Secretary).");
+      return;
+    }
+    const doc = generateAnnualMeetingPDF(data);
+    const dateStr = data.meetingDate ? format(new Date(data.meetingDate + "T12:00:00"), "yyyy-MM-dd") : "draft";
+    doc.save(`${data.companyName}_Annual_Meeting_Minutes_${dateStr}.pdf`);
+    toast.success("PDF downloaded successfully!");
+  };
+
+  const handlePreview = async () => {
+    if (!canGenerate()) {
+      toast.error("Please fill in all required fields first.");
+      return;
+    }
+    const doc = generateAnnualMeetingPDF(data);
+    const arrayBuffer = doc.output("arraybuffer");
+    const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    setPdfDocRef(pdfDoc);
+    setPreviewPages(pdfDoc.numPages);
+    setPreviewPage(1);
+    setPreviewOpen(true);
+  };
+
+  const renderPreviewPage = async (pageNum: number, canvas: HTMLCanvasElement) => {
+    if (!pdfDocRef || !canvas) return;
+    const page = await pdfDocRef.getPage(pageNum);
+    const containerWidth = 680;
+    const unscaledViewport = page.getViewport({ scale: 1 });
+    const scale = containerWidth / unscaledViewport.width;
+    const viewport = page.getViewport({ scale });
+    const ctx = canvas.getContext("2d")!;
+    canvas.width = viewport.width * 2;
+    canvas.height = viewport.height * 2;
+    canvas.style.width = `${viewport.width}px`;
+    canvas.style.height = `${viewport.height}px`;
+    ctx.scale(2, 2);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+  };
+
+  const progress = ((step + 1) / STEPS.length) * 100;
+  const inputClass = "h-8 text-sm";
+  const labelClass = "text-xs font-medium text-muted-foreground";
+
+  // Helper for dynamic table rendering
+  function DynamicTable({ field, columns, addTemplate }: { field: keyof AnnualMeetingData; columns: { key: string; label: string; wide?: boolean }[]; addTemplate: any }) {
+    const rows = data[field] as any[];
+    return (
+      <div className="space-y-2">
+        <div className="flex justify-end">
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => addArrayItem(field, addTemplate)}>
+            <Plus className="h-3 w-3 mr-1" /> Add Row
+          </Button>
+        </div>
+        {rows.map((row: any, i: number) => (
+          <div key={i} className="grid gap-2 items-end" style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr) 40px` }}>
+            {columns.map(col => (
+              <div key={col.key}>
+                {i === 0 && <Label className={labelClass}>{col.label}</Label>}
+                <Input className={inputClass} value={row[col.key] || ""} onChange={e => updateArrayItem(field, i, col.key, e.target.value)} placeholder={col.label} />
+              </div>
+            ))}
+            <div className="flex items-end">
+              {rows.length > 1 && (
+                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" onClick={() => removeArrayItem(field, i)}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Progress */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Step {step + 1} of {STEPS.length}</span>
+          <span className="font-medium">{STEPS[step]}</span>
+        </div>
+        <Progress value={progress} className="h-2" />
+      </div>
+
+      {/* Step indicators */}
+      <div className="flex gap-1">
+        {STEPS.map((s, i) => (
+          <button
+            key={s}
+            onClick={() => setStep(i)}
+            className={`flex-1 h-1.5 rounded-full transition-colors ${i <= step ? "bg-primary" : "bg-muted"}`}
+          />
+        ))}
+      </div>
+
+      <Card>
+        <CardContent className="pt-4 space-y-4">
+
+          {/* STEP 0: Meeting Information */}
+          {step === 0 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">Meeting Information</h3>
+              <div className="grid grid-cols-12 gap-2">
+                <div className="col-span-8">
+                  <RequiredField label="Company Name" value={data.companyName} />
+                  <Input className={inputClass} value={data.companyName} onChange={e => update("companyName", e.target.value)} />
+                </div>
+                <div className="col-span-4">
+                  <Label className={labelClass}>State of Formation</Label>
+                  <Input className={inputClass} value={data.stateOfFormation} onChange={e => update("stateOfFormation", e.target.value)} />
+                </div>
+                <div className="col-span-4">
+                  <RequiredField label="Meeting Date" value={data.meetingDate} />
+                  <Input className={inputClass} type="date" value={data.meetingDate} onChange={e => update("meetingDate", e.target.value)} />
+                </div>
+                <div className="col-span-4">
+                  <Label className={labelClass}>Meeting Time</Label>
+                  <Input className={inputClass} value={data.meetingTime} onChange={e => update("meetingTime", e.target.value)} />
+                </div>
+                <div className="col-span-4">
+                  <Label className={labelClass}>Tax Year</Label>
+                  <Input className={inputClass} value={data.taxYear} onChange={e => update("taxYear", e.target.value)} />
+                </div>
+                <div className="col-span-12">
+                  <Label className={labelClass}>Meeting Location</Label>
+                  <Input className={inputClass} value={data.meetingLocation} onChange={e => update("meetingLocation", e.target.value)} />
+                </div>
+                <div className="col-span-6">
+                  <RequiredField label="Chairperson" value={data.chairperson} />
+                  <Input className={inputClass} value={data.chairperson} onChange={e => update("chairperson", e.target.value)} />
+                </div>
+                <div className="col-span-6">
+                  <RequiredField label="Secretary" value={data.secretary} />
+                  <Input className={inputClass} value={data.secretary} onChange={e => update("secretary", e.target.value)} />
+                </div>
+              </div>
+              <h4 className="text-xs font-semibold mt-3">Attendees</h4>
+              <TemplateNote text="Add or remove attendee lines as needed. Note any members attending remotely." />
+              <DynamicTable field="attendees" columns={[{ key: "name", label: "Name" }, { key: "title", label: "Title" }]} addTemplate={{ name: "", title: "" }} />
+            </div>
+          )}
+
+          {/* STEP 1: Call to Order */}
+          {step === 1 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">Call to Order & Approval of Prior Meeting Minutes</h3>
+              <div className="grid grid-cols-12 gap-2">
+                <div className="col-span-6">
+                  <Label className={labelClass}>Prior Meeting Date</Label>
+                  <Input className={inputClass} type="date" value={data.priorMeetingDate} onChange={e => update("priorMeetingDate", e.target.value)} />
+                </div>
+              </div>
+              <div className="p-3 rounded-md bg-muted/50 text-xs text-muted-foreground italic space-y-2">
+                <p><strong className="not-italic">WHEREAS,</strong> the Annual Meeting of {data.companyName || "[Company Name]"}, LLC was duly called and noticed in accordance with the Operating Agreement;</p>
+                <p><strong className="not-italic">WHEREAS,</strong> the minutes of the previous Annual Meeting held on {data.priorMeetingDate ? format(new Date(data.priorMeetingDate + "T12:00:00"), "MMMM d, yyyy") : "[Prior Meeting Date]"} have been reviewed by the members;</p>
+                <p><strong className="not-italic">RESOLVED,</strong> that the meeting is hereby called to order, and the minutes of the Annual Meeting held on {data.priorMeetingDate ? format(new Date(data.priorMeetingDate + "T12:00:00"), "MMMM d, yyyy") : "[Prior Meeting Date]"} are hereby approved and adopted as a true and accurate record of that meeting.</p>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 2: Professional Advisors */}
+          {step === 2 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">Professional Advisors on Record</h3>
+              <TemplateNote text="Confirm or update the company's professional support team annually." />
+              <DynamicTable
+                field="advisors"
+                columns={[
+                  { key: "role", label: "Role" },
+                  { key: "nameFirm", label: "Name / Firm" },
+                  { key: "address", label: "Address" },
+                  { key: "phoneEmail", label: "Phone / Email" },
+                ]}
+                addTemplate={{ role: "", nameFirm: "", address: "", phoneEmail: "" }}
+              />
+            </div>
+          )}
+
+          {/* STEP 3: Members & Officers */}
+          {step === 3 && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold">Members, Managers & Officers</h3>
+              <div>
+                <h4 className="text-xs font-semibold mb-2">Current Members & Ownership</h4>
+                <DynamicTable
+                  field="members"
+                  columns={[
+                    { key: "name", label: "Name" },
+                    { key: "units", label: "Membership Units" },
+                    { key: "interestPct", label: "Interest %" },
+                    { key: "address", label: "Address" },
+                  ]}
+                  addTemplate={{ name: "", units: "", interestPct: "", address: "" }}
+                />
+              </div>
+              <div>
+                <h4 className="text-xs font-semibold mb-2">Re-Appointment or Election of Managers / Officers</h4>
+                <DynamicTable
+                  field="officers"
+                  columns={[
+                    { key: "name", label: "Name" },
+                    { key: "title", label: "Title" },
+                    { key: "salary", label: "Salary" },
+                    { key: "status", label: "Status" },
+                  ]}
+                  addTemplate={{ name: "", title: "", salary: "", status: "Re-Appointed" }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* STEP 4: Authorized Binders */}
+          {step === 4 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">Authorized Binders — Confirmation or Update</h3>
+              <p className="text-xs text-muted-foreground">Wis. Stat. § 183.0407</p>
+              <DynamicTable
+                field="authorizedBinders"
+                columns={[
+                  { key: "name", label: "Name" },
+                  { key: "title", label: "Title" },
+                  { key: "scope", label: "Scope of Authority" },
+                  { key: "status", label: "Status" },
+                ]}
+                addTemplate={{ name: "", title: "", scope: "Full authority", status: "Confirmed" }}
+              />
+            </div>
+          )}
+
+          {/* STEP 5: Financial Information */}
+          {step === 5 && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold">Financial Information</h3>
+              <div>
+                <h4 className="text-xs font-semibold mb-2">Prior Year Financial Review</h4>
+                <DynamicTable
+                  field="financialItems"
+                  columns={[
+                    { key: "item", label: "Item" },
+                    { key: "amount", label: "Amount" },
+                    { key: "notes", label: "Notes" },
+                  ]}
+                  addTemplate={{ item: "", amount: "", notes: "" }}
+                />
+              </div>
+              <div>
+                <h4 className="text-xs font-semibold mb-2">Compensation & Distributions</h4>
+                <DynamicTable
+                  field="distributions"
+                  columns={[
+                    { key: "memberName", label: "Member Name" },
+                    { key: "amount", label: "Distribution Amount" },
+                    { key: "date", label: "Distribution Date" },
+                    { key: "notes", label: "Notes" },
+                  ]}
+                  addTemplate={{ memberName: "", amount: "", date: "", notes: "" }}
+                />
+              </div>
+              <div>
+                <h4 className="text-xs font-semibold mb-2">Retained Earnings</h4>
+                <div className="grid grid-cols-12 gap-2">
+                  <div className="col-span-6">
+                    <Label className={labelClass}>Retained Earnings Balance ($)</Label>
+                    <Input className={inputClass} value={data.retainedEarnings} onChange={e => update("retainedEarnings", e.target.value)} placeholder="0.00" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 6: Banking */}
+          {step === 6 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Switch checked={data.includeBanking} onCheckedChange={v => update("includeBanking", v)} />
+                <h3 className="text-sm font-semibold">Banking</h3>
+              </div>
+              {data.includeBanking && (
+                <DynamicTable
+                  field="bankAccounts"
+                  columns={[
+                    { key: "institution", label: "Institution" },
+                    { key: "accountType", label: "Account Type" },
+                    { key: "signatory", label: "Auth. Signatory" },
+                    { key: "title", label: "Title" },
+                  ]}
+                  addTemplate={{ institution: "", accountType: "", signatory: "", title: "" }}
+                />
+              )}
+            </div>
+          )}
+
+          {/* STEP 7: Tax & Accounting */}
+          {step === 7 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">Tax & Accounting</h3>
+              <div className="grid grid-cols-12 gap-2">
+                <div className="col-span-6">
+                  <Label className={labelClass}>Fiscal Year End</Label>
+                  <Input className={inputClass} value={data.fiscalYearEnd} onChange={e => update("fiscalYearEnd", e.target.value)} />
+                </div>
+                <div className="col-span-6">
+                  <Label className={labelClass}>Accounting Method</Label>
+                  <Select value={data.accountingMethod} onValueChange={v => update("accountingMethod", v)}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash Basis</SelectItem>
+                      <SelectItem value="accrual">Accrual Basis</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <h4 className="text-xs font-semibold mt-2">Tax Elections — Confirmation or Changes</h4>
+              <DynamicTable
+                field="taxElections"
+                columns={[
+                  { key: "election", label: "Election" },
+                  { key: "status", label: "Status" },
+                  { key: "effectiveDate", label: "Effective Date" },
+                  { key: "notes", label: "Notes" },
+                ]}
+                addTemplate={{ election: "", status: "", effectiveDate: "", notes: "" }}
+              />
+            </div>
+          )}
+
+          {/* STEP 8: Loans */}
+          {step === 8 && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold">Loans</h3>
+              <div>
+                <h4 className="text-xs font-semibold mb-2">Loans From Financial Institutions</h4>
+                <TemplateNote text="Include all active loans or lines of credit, or authorize new ones below." />
+                <DynamicTable
+                  field="institutionalLoans"
+                  columns={[
+                    { key: "lender", label: "Lender" },
+                    { key: "loanType", label: "Loan Type" },
+                    { key: "balance", label: "Balance / Amount" },
+                    { key: "rate", label: "Interest Rate" },
+                    { key: "maturity", label: "Maturity Date" },
+                    { key: "signatory", label: "Auth. Signatory" },
+                  ]}
+                  addTemplate={{ lender: "", loanType: "", balance: "", rate: "", maturity: "", signatory: "" }}
+                />
+              </div>
+              <div>
+                <h4 className="text-xs font-semibold mb-2">Member Loans</h4>
+                <DynamicTable
+                  field="memberLoans"
+                  columns={[
+                    { key: "lender", label: "Lender" },
+                    { key: "borrower", label: "Borrower" },
+                    { key: "amount", label: "Amount" },
+                    { key: "rate", label: "Rate" },
+                    { key: "terms", label: "Terms" },
+                    { key: "notes", label: "Notes" },
+                  ]}
+                  addTemplate={{ lender: "", borrower: "", amount: "", rate: "", terms: "", notes: "" }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* STEP 9: Leases */}
+          {step === 9 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">Leases</h3>
+              <DynamicTable
+                field="leases"
+                columns={[
+                  { key: "property", label: "Property / Asset" },
+                  { key: "lessor", label: "Lessor" },
+                  { key: "lessee", label: "Lessee" },
+                  { key: "monthlyAmount", label: "Monthly Amount" },
+                  { key: "term", label: "Term / Expiration" },
+                  { key: "leaseBack", label: "Lease-Back?" },
+                ]}
+                addTemplate={{ property: "", lessor: "", lessee: "", monthlyAmount: "", term: "", leaseBack: "N" }}
+              />
+            </div>
+          )}
+
+          {/* STEP 10: Vehicles & Equipment */}
+          {step === 10 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">Vehicles & Equipment</h3>
+              <DynamicTable
+                field="vehicles"
+                columns={[
+                  { key: "yearMakeModel", label: "Year / Make / Model" },
+                  { key: "vin", label: "VIN" },
+                  { key: "ownedLeased", label: "Owned / Leased" },
+                  { key: "primaryDriver", label: "Primary Driver" },
+                  { key: "businessUsePct", label: "Business Use %" },
+                  { key: "notes", label: "Notes" },
+                ]}
+                addTemplate={{ yearMakeModel: "", vin: "", ownedLeased: "Owned", primaryDriver: "", businessUsePct: "", notes: "" }}
+              />
+            </div>
+          )}
+
+          {/* STEP 11: Employee Benefits */}
+          {step === 11 && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold">Employee Benefit Plans</h3>
+              <DynamicTable
+                field="benefitPlans"
+                columns={[
+                  { key: "planType", label: "Plan Type" },
+                  { key: "provider", label: "Provider" },
+                  { key: "eligibility", label: "Eligibility" },
+                  { key: "contribution", label: "Company Contribution" },
+                  { key: "status", label: "Status" },
+                ]}
+                addTemplate={{ planType: "", provider: "", eligibility: "", contribution: "", status: "Active" }}
+              />
+              <div>
+                <h4 className="text-xs font-semibold mb-2">Profit Sharing</h4>
+                <TemplateNote text="Profit sharing amounts must be approved before fiscal year end." />
+                <div className="grid grid-cols-12 gap-2">
+                  <div className="col-span-6">
+                    <Label className={labelClass}>Profit Sharing Contribution ($)</Label>
+                    <Input className={inputClass} value={data.profitSharingAmount} onChange={e => update("profitSharingAmount", e.target.value)} placeholder="0.00" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 12: Special Resolutions */}
+          {step === 12 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Switch checked={data.includeSpecialResolutions} onCheckedChange={v => update("includeSpecialResolutions", v)} />
+                <h3 className="text-sm font-semibold">Special Resolutions</h3>
+              </div>
+              <TemplateNote text="Additional resolution types to consider: Amendment of Operating Agreement, Admission/Withdrawal of Members, Transfer of Membership Interests, Real Property Purchase/Sale, Joint Ventures, Key Legal Decisions, Bad Debt Write-Offs." />
+              {data.includeSpecialResolutions && (
+                <div className="space-y-4">
+                  {data.specialResolutions.map((r, i) => (
+                    <div key={i} className="border rounded-md p-3 space-y-2 relative">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-semibold">Resolution {i + 1}</h4>
+                        {data.specialResolutions.length > 1 && (
+                          <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive" onClick={() => removeArrayItem("specialResolutions", i)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                      <div>
+                        <Label className={labelClass}>Title</Label>
+                        <Input className={inputClass} value={r.title} onChange={e => updateArrayItem("specialResolutions", i, "title", e.target.value)} placeholder="Resolution Title" />
+                      </div>
+                      <div>
+                        <Label className={labelClass}>WHEREAS clause (optional)</Label>
+                        <Textarea className="text-sm min-h-[60px]" value={r.whereas} onChange={e => updateArrayItem("specialResolutions", i, "whereas", e.target.value)} placeholder="Enter whereas clause or leave blank" />
+                      </div>
+                      <div>
+                        <Label className={labelClass}>RESOLVED clause</Label>
+                        <Textarea className="text-sm min-h-[60px]" value={r.resolved} onChange={e => updateArrayItem("specialResolutions", i, "resolved", e.target.value)} placeholder="Enter resolved clause" />
+                      </div>
+                    </div>
+                  ))}
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => addArrayItem("specialResolutions", { title: "", whereas: "", resolved: "" })}>
+                    <Plus className="h-3 w-3 mr-1" /> Add Resolution
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* STEP 13: Registered Agent */}
+          {step === 13 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">Registered Agent Confirmation</h3>
+              <p className="text-xs text-muted-foreground">Wis. Stat. § 183.0113</p>
+              <div className="grid grid-cols-12 gap-2">
+                <div className="col-span-12">
+                  <Label className={labelClass}>Registered Agent Name</Label>
+                  <Input className={inputClass} value={data.registeredAgentName} onChange={e => update("registeredAgentName", e.target.value)} />
+                </div>
+                <div className="col-span-12">
+                  <Label className={labelClass}>Registered Agent Address</Label>
+                  <Input className={inputClass} value={data.registeredAgentAddress} onChange={e => update("registeredAgentAddress", e.target.value)} />
+                </div>
+              </div>
+              <div className="p-3 rounded-md bg-muted/50 text-xs text-muted-foreground italic">
+                <p><strong className="not-italic">RESOLVED,</strong> that {data.registeredAgentName || "[Name]"}, located at {data.registeredAgentAddress || "[Address]"}, is hereby confirmed as the registered agent of the limited liability company in the State of Wisconsin, pursuant to Wis. Stat. § 183.0113.</p>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 14: General Authorization */}
+          {step === 14 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">General Authorization</h3>
+              <div className="p-3 rounded-md bg-muted/50 text-sm text-muted-foreground italic">
+                <p className="font-medium text-foreground not-italic mb-2">This section is auto-populated — no input required.</p>
+                <p>"RESOLVED, that the authorized binders of the limited liability company are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions."</p>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 15: Signatures */}
+          {step === 15 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">Signature Lines</h3>
+              <p className="text-xs text-muted-foreground">Chairperson ({data.chairperson || "—"}) and Secretary ({data.secretary || "—"}) signature lines are included automatically.</p>
+              <div className="flex items-center justify-between mt-3">
+                <Label className={labelClass}>Additional Member Signatures</Label>
+                <Button size="sm" variant="outline" className="h-6 text-xs" onClick={() => addArrayItem("memberSignatures", { name: "" })}>
+                  <Plus className="h-3 w-3 mr-1" /> Add
+                </Button>
+              </div>
+              {data.memberSignatures.map((s, i) => (
+                <div key={i} className="grid grid-cols-12 gap-2">
+                  <div className="col-span-10">
+                    <Input className={inputClass} value={s.name} onChange={e => updateArrayItem("memberSignatures", i, "name", e.target.value)} placeholder={`Member ${i + 1} Name`} />
+                  </div>
+                  <div className="col-span-2">
+                    {data.memberSignatures.length > 1 && (
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" onClick={() => removeArrayItem("memberSignatures", i)}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              <TemplateNote text="Add additional signature lines below for each member if required by your Operating Agreement." />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Navigation */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2">
+          {step > 0 && (
+            <Button variant="outline" size="sm" onClick={() => setStep(step - 1)}>
+              <ChevronLeft className="h-4 w-4 mr-1" /> Back
+            </Button>
+          )}
+          {onClose && (
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              Cancel
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          {step < STEPS.length - 1 ? (
+            <Button size="sm" onClick={() => setStep(step + 1)}>
+              Next <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" onClick={handlePreview}>
+                <FileText className="h-4 w-4 mr-1" /> Preview
+              </Button>
+              <Button size="sm" onClick={handleDownload} disabled={!canGenerate()}>
+                <Download className="h-4 w-4 mr-1" /> Download PDF
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Preview Dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-[780px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Document Preview</span>
+              <div className="flex items-center gap-2 text-sm font-normal">
+                <Button variant="outline" size="sm" disabled={previewPage <= 1} onClick={async () => {
+                  const p = previewPage - 1;
+                  setPreviewPage(p);
+                  if (previewCanvas) await renderPreviewPage(p, previewCanvas);
+                }}>Prev</Button>
+                <span>Page {previewPage} of {previewPages}</span>
+                <Button variant="outline" size="sm" disabled={previewPage >= previewPages} onClick={async () => {
+                  const p = previewPage + 1;
+                  setPreviewPage(p);
+                  if (previewCanvas) await renderPreviewPage(p, previewCanvas);
+                }}>Next</Button>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center">
+            <canvas
+              ref={async (el) => {
+                if (el && el !== previewCanvas) {
+                  setPreviewCanvas(el);
+                  await renderPreviewPage(previewPage, el);
+                }
+              }}
+              className="border rounded shadow-sm"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
