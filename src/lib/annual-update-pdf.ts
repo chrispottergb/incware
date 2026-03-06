@@ -98,8 +98,8 @@ function addDataTable(doc: jsPDF, headers: string[], rows: string[][], y: number
     head: [headers],
     body: rows,
     theme: "grid",
-    headStyles: { fillColor: [45, 55, 72], fontSize: 7, fontStyle: "bold" },
-    bodyStyles: { fontSize: 7 },
+    headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+    bodyStyles: { fontSize: 10 },
     margin: { left: MARGIN, right: R_MARGIN },
   });
   return (doc as any).lastAutoTable.finalY + 8;
