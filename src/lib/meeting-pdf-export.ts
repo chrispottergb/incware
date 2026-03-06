@@ -1025,7 +1025,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         y += 5.5;
       }
       y += 2;
-      const indent = 20;
+      const indent = WHEREAS_RESOLVED_INDENT;
       const resolvedPrefix = "RESOLVED, ";
       const resolvedBody = `that no legal counsel will be retained by the ${isLLC ? "company" : "corporation"}. When legal services are required, the ${isLLC ? "authorized binder" : "president"} of the ${isLLC ? "company" : "corporation"} is authorized to engage legal counsel as deemed appropriate.`;
       const fullResolved = resolvedPrefix + resolvedBody;
@@ -1078,7 +1078,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         y += 5.5;
       }
       y += 2;
-      const indent = 20;
+      const indent = WHEREAS_RESOLVED_INDENT;
       const resolvedPrefix = "RESOLVED, ";
       const resolvedBody = `that no accountant will be retained by the ${isLLC ? "company" : "corporation"}. When accounting services are required, the ${isLLC ? "authorized binder" : "president"} of the ${isLLC ? "company" : "corporation"} is authorized to engage an accountant as deemed appropriate.`;
       const fullResolved = resolvedPrefix + resolvedBody;
