@@ -271,7 +271,27 @@ function addDFIFooter(doc: jsPDF, companyName: string) {
   }
 }
 
-function addSectionTitle(doc: jsPDF, y: number, title: string, blueTheme: boolean = false, sectionNum?: number): number {
+function addAnnualMeetingFooter(doc: jsPDF, companyName: string) {
+  const pageCount = doc.getNumberOfPages();
+  const generatedDate = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    const ph = doc.internal.pageSize.getHeight();
+    const pw = doc.internal.pageSize.getWidth();
+
+    doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
+    doc.setLineWidth(0.5);
+    doc.line(MARGIN, ph - 20, pw - R_MARGIN, ph - 20);
+
+    doc.setFontSize(8);
+    doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
+    doc.text(`${companyName} — Annual Meeting Minutes — Generated: ${generatedDate}`, pw / 2, ph - 14, { align: "center" });
+    doc.setTextColor(130, 130, 130);
+    doc.text(`Page ${i} of ${pageCount}`, pw - R_MARGIN, ph - 14, { align: "right" });
+  }
+}
+
+
   y += 4;
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
