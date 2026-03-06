@@ -960,16 +960,20 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = addSectionTitle(doc, y, "Resolutions");
     data.resolutions.forEach((r) => {
       y = checkPageBreak(doc, y, 25);
-      doc.setFontSize(9);
+      doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(30, 30, 30);
       doc.text(r.purpose, MARGIN, y);
-      y += 4;
+      y += 6;
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
+      doc.setFontSize(11);
       const lines = doc.splitTextToSize(r.resolution_text || "", doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-      doc.text(lines, MARGIN, y);
-      y += lines.length * 4 + 4;
+      for (const line of lines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5;
+      }
+      y += 5;
     });
   }
 
@@ -1082,24 +1086,28 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y = checkPageBreak(doc, y, 20 + autoResolutions.length * 20);
       y = addSectionTitle(doc, y, "Resolutions — Changes from Prior Year");
 
-      doc.setFontSize(7);
+      doc.setFontSize(9);
       doc.setFont("helvetica", "italic");
       doc.setTextColor(120, 120, 120);
       doc.text("The following resolutions were auto-generated based on changes from the prior year meeting record.", MARGIN, y);
-      y += 5;
+      y += 7;
 
       autoResolutions.forEach((r) => {
         y = checkPageBreak(doc, y, 30);
-        doc.setFontSize(9);
+        doc.setFontSize(11);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(30, 30, 30);
         doc.text(r.purpose, MARGIN, y);
-        y += 4;
+        y += 6;
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(8);
+        doc.setFontSize(11);
         const lines = doc.splitTextToSize(r.text, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-        doc.text(lines, MARGIN, y);
-        y += lines.length * 4 + 4;
+        for (const line of lines) {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(line, MARGIN, y);
+          y += 5;
+        }
+        y += 5;
       });
     }
   }
