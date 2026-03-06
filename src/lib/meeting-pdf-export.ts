@@ -1155,11 +1155,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         a.agreement_purpose || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Other
@@ -1171,11 +1171,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       head: [["Notes"]],
       body: data.other.map(o => [o.notes]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Authorized Signatories
@@ -1191,11 +1191,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       head: [["Name", "Title", "Bank"]],
       body: data.authorizedSigners.map(s => [s.signer_name, s.title || "—", s.bank_name || "—"]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Signature block
@@ -1252,8 +1252,8 @@ export function exportSectionPDF(
       head: [tableHead],
       body: tableBody,
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
     });
@@ -1320,9 +1320,9 @@ export function exportFinancialsPDF(company: any, meeting: any, financials: any)
         ["Net Income", fmt(financials.current_net_income), fmt(financials.previous_net_income), yoy(financials.current_net_income, financials.previous_net_income)],
       ],
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
-      columnStyles: { 1: { halign: "right", fontStyle: "bold" }, 2: { halign: "right" }, 3: { halign: "center", fontSize: 7 } },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
+      columnStyles: { 1: { halign: "right", fontStyle: "bold" }, 2: { halign: "right" }, 3: { halign: "center", fontSize: 9 } },
       margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 8;
