@@ -281,6 +281,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
       queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["active_certificates", companyId] });
       setDialog(false);
       resetForm();
       toast.success("Transaction recorded!");

@@ -122,6 +122,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["active_certificates", companyId] });
       setDialog(false);
       resetForm();
       toast.success(editId ? "Certificate updated!" : "Certificate issued!");
@@ -140,6 +141,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["active_certificates", companyId] });
       setCancelDialog(null);
       setCancelReason("");
       toast.success("Certificate cancelled.");
@@ -154,6 +156,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["active_certificates", companyId] });
       toast.success("Certificate deleted.");
     },
     onError: (err: Error) => toast.error(err.message),
