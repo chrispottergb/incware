@@ -410,11 +410,11 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
       head: [["Title", "Name"]],
       body: officerSource.map((o: any) => [o.title, o.name]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // 5. Directors (Corp only)
@@ -614,11 +614,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       head: [[isLLC ? "Authorized Binder Name" : "Director Name"]],
       body: data.directors.map(d => [d.director_name]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Officers (with salary/bonus)
@@ -639,11 +639,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         : [o.title, o.name]
       ),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Shareholders
@@ -665,11 +665,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         s.distribution || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Financials
@@ -699,12 +699,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         ["Net Income", fmt(f.current_net_income), fmt(f.previous_net_income), yoy(f.current_net_income, f.previous_net_income)],
       ],
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       columnStyles: { 1: { halign: "right", fontStyle: "bold" }, 2: { halign: "right" }, 3: { halign: "center", fontStyle: "bold" } },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
 
     // Draw simple YoY bar chart in PDF
     const pw = doc.internal.pageSize.getWidth();
@@ -779,11 +779,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       head: [["Counsel", "Bank", "Loans"]],
       body: data.counsel.map(c => [c.counsel_name || "—", c.bank_name || "—", c.loans || "—"]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Loans
@@ -805,11 +805,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         l.notes || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Vehicle Purchases
@@ -833,12 +833,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         v.authorized_drivers || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Vehicle Leases
@@ -863,12 +863,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         v.business_use_description || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Vehicle/Equipment Sales
@@ -891,12 +891,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         v.reason_for_sale || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Lease Terminations
@@ -919,12 +919,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         v.penalty_amount != null ? fmt(v.penalty_amount) : "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Amendments
@@ -1130,11 +1130,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         b.retirement_contribution != null ? fmt(b.retirement_contribution) : "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 8, fontStyle: "bold" },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
+      bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Agreements
