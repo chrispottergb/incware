@@ -1240,7 +1240,7 @@ export function exportSectionPDF(
 
   addDFIHeader(doc, sectionTitle, companyName, entityType);
 
-  let y = 52;
+  let y = 55;
   y = addLabelValue(doc, y, "Meeting Date", meetingDate);
   y = addLabelValue(doc, y, "Meeting Type", meeting.meeting_type);
   if (meeting.tax_year) y = addLabelValue(doc, y, "Tax Year", String(meeting.tax_year));
@@ -1296,7 +1296,7 @@ export function exportFinancialsPDF(company: any, meeting: any, financials: any)
 
   addDFIHeader(doc, "Financial Comparison", companyName, entityType);
 
-  let y = 52;
+  let y = 55;
   y = addLabelValue(doc, y, "Meeting Date", meetingDate);
   if (meeting.tax_year) y = addLabelValue(doc, y, "Tax Year", String(meeting.tax_year));
   y += 3;
