@@ -495,7 +495,7 @@ export default function MeetingDetail() {
               roster={companyShareholders.map((s) => ({
                 id: s.id,
                 name: s.name,
-                startDate: s.date_added,
+                
                 status: s.status,
                 isTreasury: s.is_treasury,
               }))}
