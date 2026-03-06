@@ -1199,26 +1199,27 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Signature block
-  y = checkPageBreak(doc, y, 50);
-  y += 8;
+  y = checkPageBreak(doc, y, 60);
+  y += 10;
   doc.setDrawColor(160, 160, 160);
   doc.setLineWidth(0.3);
 
-  doc.setFontSize(8);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
   doc.text("There being no further business, the meeting was adjourned.", MARGIN, y);
-  y += 12;
-
-  doc.line(MARGIN, y, 90, y);
-  doc.text("Secretary", MARGIN, y + 4);
-  doc.text("Date: _______________", 95, y + 4);
-
   y += 14;
 
+  doc.setFontSize(10);
   doc.line(MARGIN, y, 90, y);
-  doc.text("Chairperson", MARGIN, y + 4);
-  doc.text("Date: _______________", 95, y + 4);
+  doc.text("Secretary", MARGIN, y + 5);
+  doc.text("Date: _______________", 95, y + 5);
+
+  y += 18;
+
+  doc.line(MARGIN, y, 90, y);
+  doc.text("Chairperson", MARGIN, y + 5);
+  doc.text("Date: _______________", 95, y + 5);
 
   addDFIFooter(doc, companyName);
   return doc;
