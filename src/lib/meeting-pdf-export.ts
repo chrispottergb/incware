@@ -372,7 +372,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
 
   if (blueTheme) {
     // WHEREAS: indented, bold italic prefix, italic body
-    const indent = 20;
+    const indent = WHEREAS_RESOLVED_INDENT;
     const whereasPrefix = "WHEREAS, ";
     doc.setFontSize(11);
     doc.setTextColor(...BODY_COLOR);
