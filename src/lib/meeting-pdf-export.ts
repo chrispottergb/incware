@@ -685,7 +685,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...BODY_COLOR);
-    const introText = `The Annual Meeting of ${companyName}, a ${stateOfInc} ${entityLabel}, was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${meeting.meeting_location ? `, at ${meeting.meeting_location}` : ""}.`;
+    const introText = `The Annual Meeting of the ${stateOfInc} ${entityLabel} was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${meeting.meeting_location ? `, at ${meeting.meeting_location}` : ""}.`;
     const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of introLines) {
       y = checkPageBreak(doc, y, 6);
