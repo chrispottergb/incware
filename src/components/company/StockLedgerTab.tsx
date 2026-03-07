@@ -307,7 +307,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
 
   const resetForm = () => {
     setForm({
-      transaction_type: "issuance", shareholder_id: "", share_class: "Common",
+      transaction_type: defaultTxType, shareholder_id: "", share_class: "Common",
       num_shares: "", price_per_share: "", total_consideration: "",
       consideration_type: "cash", transaction_date: new Date().toISOString().split("T")[0],
       from_shareholder: "", to_shareholder: "", notes: "",
