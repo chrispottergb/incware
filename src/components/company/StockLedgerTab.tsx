@@ -169,8 +169,10 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     enabled: !!companyId,
   });
 
+  const defaultTxType = transactionTypes[0]?.value || "issuance";
+
   const [form, setForm] = useState({
-    transaction_type: "issuance",
+    transaction_type: defaultTxType,
     shareholder_id: "",
     share_class: "Common",
     num_shares: "",
@@ -185,6 +187,16 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     issued_certificate_number: "",
     surrendered_certificate_number: "",
   });
+
+  // Auto-calculate total consideration when shares or price changes
+  const updateTotal = (numShares: string, pricePerShare: string) => {
+    const shares = parseFloat(numShares);
+    const price = parseFloat(pricePerShare);
+    if (!isNaN(shares) && !isNaN(price)) {
+      return (shares * price).toFixed(2);
+    }
+    return "";
+  };
 
   const [assets, setAssets] = useState<{ description: string; value: string }[]>([]);
 

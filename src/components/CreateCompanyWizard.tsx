@@ -199,6 +199,10 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
             from_shareholder: "Treasury",
             certificate_id: cert.id,
             consideration_type: "cash",
+            issued_certificate_number: certNumber,
+            par_value: parValueType === "par" ? (parseFloat(parValue) || null) : null,
+            price_per_share: sh.price_per_share ? parseFloat(sh.price_per_share) : null,
+            total_consideration: sh.price_per_share && sh.num_shares ? parseFloat(sh.price_per_share) * sh.num_shares : null,
           });
         }
       }
