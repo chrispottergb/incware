@@ -244,20 +244,20 @@ function AttorneySection({ companyId }: { companyId: string }) {
           return (
             <Collapsible key={f.id} open={isExpanded} onOpenChange={() => toggleFirm(f.id)}>
               <div className="border-b last:border-b-0">
-                <div className="flex items-center justify-between px-4 py-2 hover:bg-muted/50">
+                <div className="flex items-center justify-between px-4 py-3 hover:bg-muted/50">
                   <CollapsibleTrigger asChild>
                     <button className="flex items-center gap-2 text-left flex-1 min-w-0">
-                      {isExpanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-                      <Building className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      <span className="text-xs font-medium truncate">{f.firm_name}</span>
-                      <span className="text-[10px] text-muted-foreground ml-1">({firmAttorneys.length} attorney{firmAttorneys.length !== 1 ? "s" : ""})</span>
-                      {f.city && f.state && <span className="text-[10px] text-muted-foreground ml-2 hidden sm:inline">· {f.city}, {f.state}</span>}
+                      {isExpanded ? <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />}
+                      <Building className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="text-sm font-medium truncate">{f.firm_name}</span>
+                      <span className="text-xs text-muted-foreground ml-1">({firmAttorneys.length} attorney{firmAttorneys.length !== 1 ? "s" : ""})</span>
+                      {f.city && f.state && <span className="text-xs text-muted-foreground ml-2 hidden sm:inline">· {f.city}, {f.state}</span>}
                     </button>
                   </CollapsibleTrigger>
                   <div className="flex gap-1 shrink-0 ml-2">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openNewContact(f.id); }}><Plus className="h-3 w-3" /></Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openEditFirm(f); }}><Pencil className="h-3 w-3" /></Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => { e.stopPropagation(); delFirm.mutate(f.id); }}><Trash2 className="h-3 w-3" /></Button>
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); openNewContact(f.id); }}><Plus className="h-3 w-3 mr-1" />Attorney</Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); openEditFirm(f); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); delFirm.mutate(f.id); }}><Trash2 className="h-3.5 w-3.5" /></Button>
                   </div>
                 </div>
                 <CollapsibleContent>
@@ -300,9 +300,9 @@ function AttorneySection({ companyId }: { companyId: string }) {
                         </TableBody>
                       </Table>
                     ) : (
-                      <div className="text-center text-[11px] text-muted-foreground py-4">
-                        No attorneys in this firm.{" "}
-                        <button className="text-primary underline" onClick={() => openNewContact(f.id)}>Add one</button>
+                      <div className="flex flex-col items-center gap-3 py-6">
+                        <p className="text-sm text-muted-foreground">No attorneys added to this firm yet.</p>
+                        <Button variant="outline" size="sm" onClick={() => openNewContact(f.id)}><Plus className="h-3.5 w-3.5 mr-1.5" />Add Attorney</Button>
                       </div>
                     )}
                   </div>
