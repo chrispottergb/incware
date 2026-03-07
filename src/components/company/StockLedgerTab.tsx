@@ -169,8 +169,10 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     enabled: !!companyId,
   });
 
+  const defaultTxType = transactionTypes[0]?.value || "issuance";
+
   const [form, setForm] = useState({
-    transaction_type: "issuance",
+    transaction_type: defaultTxType,
     shareholder_id: "",
     share_class: "Common",
     num_shares: "",
@@ -185,6 +187,16 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     issued_certificate_number: "",
     surrendered_certificate_number: "",
   });
+
+  // Auto-calculate total consideration when shares or price changes
+  const updateTotal = (numShares: string, pricePerShare: string) => {
+    const shares = parseFloat(numShares);
+    const price = parseFloat(pricePerShare);
+    if (!isNaN(shares) && !isNaN(price)) {
+      return (shares * price).toFixed(2);
+    }
+    return "";
+  };
 
   const [assets, setAssets] = useState<{ description: string; value: string }[]>([]);
 
@@ -282,6 +294,10 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
       queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] });
       queryClient.invalidateQueries({ queryKey: ["active_certificates", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["shareholders", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["shareholders-for-holdings", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["stock-certificate-shareholders", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["company-authorized-shares", companyId] });
       setDialog(false);
       resetForm();
       toast.success("Transaction recorded!");
@@ -291,7 +307,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
 
   const resetForm = () => {
     setForm({
-      transaction_type: "issuance", shareholder_id: "", share_class: "Common",
+      transaction_type: defaultTxType, shareholder_id: "", share_class: "Common",
       num_shares: "", price_per_share: "", total_consideration: "",
       consideration_type: "cash", transaction_date: new Date().toISOString().split("T")[0],
       from_shareholder: "", to_shareholder: "", notes: "",
@@ -453,7 +469,10 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 </div>
                 <div className="field-group">
                   <Label className="field-label">{term.numUnitsLabel}</Label>
-                  <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
+                  <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => {
+                    const val = e.target.value;
+                    setForm(p => ({ ...p, num_shares: val, total_consideration: updateTotal(val, p.price_per_share) || p.total_consideration }));
+                  }} required />
                 </div>
                 <div className="field-group">
                   <Label className="field-label">Par Value</Label>
@@ -461,7 +480,10 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 </div>
                 <div className="field-group">
                   <Label className="field-label">{term.pricePerUnit}</Label>
-                  <Input className="h-8 text-sm" type="number" step="0.01" value={form.price_per_share} onChange={(e) => setForm(p => ({ ...p, price_per_share: e.target.value }))} />
+                  <Input className="h-8 text-sm" type="number" step="0.01" value={form.price_per_share} onChange={(e) => {
+                    const val = e.target.value;
+                    setForm(p => ({ ...p, price_per_share: val, total_consideration: updateTotal(p.num_shares, val) || p.total_consideration }));
+                  }} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
