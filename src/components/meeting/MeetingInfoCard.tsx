@@ -7,8 +7,9 @@ import { Tables } from "@/integrations/supabase/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { Clock, MapPin, User, Users, Loader2, Hash, Calendar as CalendarIcon } from "lucide-react";
+import { Clock, MapPin, User, Users, Loader2, Hash, Calendar as CalendarIcon, Heart, Car } from "lucide-react";
 import { toast } from "sonner";
 
 type Meeting = Tables<"meetings">;
