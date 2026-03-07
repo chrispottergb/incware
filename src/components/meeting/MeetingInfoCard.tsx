@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { Clock, MapPin, User, Users, Loader2, Hash, Calendar as CalendarIcon, Heart, Car } from "lucide-react";
+import { Clock, MapPin, User, Users, Loader2, Hash, Calendar as CalendarIcon, Heart, Car, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 type Meeting = Tables<"meetings">;
@@ -285,6 +285,47 @@ export default function MeetingInfoCard({ meeting }: Props) {
                   placeholder="Company-owned vehicles are to be used only for business activities and not for personal use..."
                 />
                 <p className="text-[10px] text-muted-foreground">This text will appear in the meeting minutes before the vehicle transactions section. Leave blank to omit.</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="font-display text-base flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Other Business
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">Old Business</Label>
+                <Textarea
+                  value={getValue("old_business")}
+                  onChange={(e) => handleChange("old_business", e.target.value)}
+                  onBlur={(e) => handleBlur("old_business", e.target.value)}
+                  className="text-sm min-h-[60px]"
+                  placeholder="Discussion of old business from prior meetings..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">Other</Label>
+                <Textarea
+                  value={getValue("other_business")}
+                  onChange={(e) => handleChange("other_business", e.target.value)}
+                  onBlur={(e) => handleBlur("other_business", e.target.value)}
+                  className="text-sm min-h-[60px]"
+                  placeholder="Other business reported by the chairperson..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">Profit Improvement Plan</Label>
+                <Textarea
+                  value={getValue("profit_improvement_plan")}
+                  onChange={(e) => handleChange("profit_improvement_plan", e.target.value)}
+                  onBlur={(e) => handleBlur("profit_improvement_plan", e.target.value)}
+                  className="text-sm min-h-[60px]"
+                  placeholder="Profit improvement strategies and plans..."
+                />
               </div>
             </CardContent>
           </Card>
