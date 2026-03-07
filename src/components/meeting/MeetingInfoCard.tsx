@@ -200,6 +200,73 @@ export default function MeetingInfoCard({ meeting }: Props) {
         </CardContent>
       </Card>
 
+      {/* Annual Meeting Extras */}
+      {meeting.meeting_type === "Annual Meeting" && (
+        <>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="font-display text-base flex items-center gap-2">
+                <Heart className="h-4 w-4" />
+                Charitable Contributions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">Contribution Amount</Label>
+                <Input
+                  type="number"
+                  value={getValue("charitable_contribution_amount")}
+                  onChange={(e) => handleChange("charitable_contribution_amount", e.target.value)}
+                  onBlur={(e) => {
+                    const val = e.target.value;
+                    const numVal = val ? parseFloat(val) : null;
+                    const original = (meeting as any).charitable_contribution_amount;
+                    if (numVal !== original) {
+                      updateMeeting.mutate({ charitable_contribution_amount: numVal } as any);
+                    }
+                  }}
+                  className="h-9 text-sm"
+                  placeholder="e.g. 1000"
+                  step="0.01"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">Organization / Description</Label>
+                <Input
+                  value={getValue("charitable_contribution_org")}
+                  onChange={(e) => handleChange("charitable_contribution_org", e.target.value)}
+                  onBlur={(e) => handleBlur("charitable_contribution_org", e.target.value)}
+                  className="h-9 text-sm"
+                  placeholder="e.g. a recognized charitable organization"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="font-display text-base flex items-center gap-2">
+                <Car className="h-4 w-4" />
+                Vehicle Policy
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">Vehicle Usage Policy Text</Label>
+                <Textarea
+                  value={getValue("vehicle_policy_text")}
+                  onChange={(e) => handleChange("vehicle_policy_text", e.target.value)}
+                  onBlur={(e) => handleBlur("vehicle_policy_text", e.target.value)}
+                  className="text-sm min-h-[80px]"
+                  placeholder="Company-owned vehicles are to be used only for business activities and not for personal use..."
+                />
+                <p className="text-[10px] text-muted-foreground">This text will appear in the meeting minutes before the vehicle transactions section. Leave blank to omit.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
+
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="font-display text-base">Company at Time of Meeting</CardTitle>
