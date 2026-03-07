@@ -469,7 +469,10 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 </div>
                 <div className="field-group">
                   <Label className="field-label">{term.numUnitsLabel}</Label>
-                  <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
+                  <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => {
+                    const val = e.target.value;
+                    setForm(p => ({ ...p, num_shares: val, total_consideration: updateTotal(val, p.price_per_share) || p.total_consideration }));
+                  }} required />
                 </div>
                 <div className="field-group">
                   <Label className="field-label">Par Value</Label>
@@ -477,7 +480,10 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 </div>
                 <div className="field-group">
                   <Label className="field-label">{term.pricePerUnit}</Label>
-                  <Input className="h-8 text-sm" type="number" step="0.01" value={form.price_per_share} onChange={(e) => setForm(p => ({ ...p, price_per_share: e.target.value }))} />
+                  <Input className="h-8 text-sm" type="number" step="0.01" value={form.price_per_share} onChange={(e) => {
+                    const val = e.target.value;
+                    setForm(p => ({ ...p, price_per_share: val, total_consideration: updateTotal(p.num_shares, val) || p.total_consideration }));
+                  }} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
