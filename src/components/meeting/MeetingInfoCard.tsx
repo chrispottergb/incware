@@ -200,6 +200,30 @@ export default function MeetingInfoCard({ meeting }: Props) {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="font-display text-base">Company at Time of Meeting</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {companyFields.map((item) => (
+            <div key={item.field} className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">{item.label}</Label>
+              <Input
+                value={getValue(item.field)}
+                onChange={(e) => {
+                  handleChange(item.field, e.target.value);
+                  if (item.field === "company_zip_at_meeting") {
+                    handleZipChange(e.target.value);
+                  }
+                }}
+                onBlur={(e) => handleBlur(item.field, e.target.value)}
+                className="h-9 text-sm"
+              />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
       {/* Annual Meeting Extras */}
       {meeting.meeting_type === "Annual Meeting" && (
         <>
@@ -266,30 +290,6 @@ export default function MeetingInfoCard({ meeting }: Props) {
           </Card>
         </>
       )}
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="font-display text-base">Company at Time of Meeting</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {companyFields.map((item) => (
-            <div key={item.field} className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">{item.label}</Label>
-              <Input
-                value={getValue(item.field)}
-                onChange={(e) => {
-                  handleChange(item.field, e.target.value);
-                  if (item.field === "company_zip_at_meeting") {
-                    handleZipChange(e.target.value);
-                  }
-                }}
-                onBlur={(e) => handleBlur(item.field, e.target.value)}
-                className="h-9 text-sm"
-              />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
     </div>
   );
 }
