@@ -1317,6 +1317,27 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
+  // Company Vehicle Policy (if provided)
+  const vehiclePolicyText = meeting?.vehicle_policy_text?.trim();
+  const hasVehicleActivity = (data.vehiclePurchases && data.vehiclePurchases.length > 0) ||
+    (data.vehicleSales && data.vehicleSales.length > 0) ||
+    (data.vehicleLeases && data.vehicleLeases.length > 0);
+
+  if (bt && vehiclePolicyText && hasVehicleActivity) {
+    y = checkPageBreak(doc, y, 30);
+    y = section("Company Vehicle Policy");
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...BODY_COLOR);
+    const policyLines = doc.splitTextToSize(vehiclePolicyText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+    for (const line of policyLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5.5;
+    }
+    y += 6;
+  }
+
   // Vehicle Purchases
   if (data.vehiclePurchases && data.vehiclePurchases.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.vehiclePurchases.length * 7);
