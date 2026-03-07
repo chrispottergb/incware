@@ -1808,6 +1808,41 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     );
   }
 
+  // Tax Return Filing Acknowledgment (Annual Meeting)
+  if (bt && meeting?.tax_year) {
+    y = checkPageBreak(doc, y, 30);
+    const counselRec = (data.counsel && data.counsel.length > 0) ? data.counsel[0] : null;
+    const acctName = counselRec?.accountant_name?.trim() || "";
+    const acctFirm = counselRec?.counsel_name?.trim() || "";
+    const acctLabel = acctName && acctName.toLowerCase() !== "none appointed"
+      ? `${acctName}${acctFirm ? ` of ${acctFirm}` : ""}`
+      : `the ${isLLC ? "company's" : "corporation's"} accounting firm`;
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...BODY_COLOR);
+    const taxText = `The ${isLLC ? "company's" : "corporation's"} income tax return for year ended December 31, ${meeting.tax_year} was prepared by ${acctLabel} and was duly filed with the Internal Revenue Service. The annual filing form has been filed with the state of ${company?.state_of_incorporation || company?.state || "Wisconsin"} by the corporate registered agent.`;
+    const taxLines = doc.splitTextToSize(taxText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+    for (const line of taxLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5.5;
+    }
+    y += 6;
+  }
+
+  // Charitable Contributions (Annual Meeting)
+  if (bt && meeting?.charitable_contribution_amount != null && Number(meeting.charitable_contribution_amount) > 0) {
+    y = checkPageBreak(doc, y, 30);
+    const contribAmt = fmt(meeting.charitable_contribution_amount);
+    const contribOrg = meeting.charitable_contribution_org?.trim() || "a recognized charitable organization";
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "company" : "corporation"} is committed to supporting community initiatives and charitable causes that align with its values and mission;`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the ${isLLC ? "company" : "corporation"} approved the contribution of ${contribAmt} to ${contribOrg} as allowed by IRS Code Section 170(c)(2), payment of which is made during this taxable year.`,
+      bt
+    );
+  }
+
   // Signature block
   y = checkPageBreak(doc, y, 60);
   y += 10;
