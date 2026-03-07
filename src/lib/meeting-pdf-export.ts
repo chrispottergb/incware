@@ -1853,18 +1853,33 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
   doc.text("There being no further business, the meeting was adjourned.", MARGIN, y);
-  y += 14;
+  y += 4;
+
+  // Meeting date
+  if (bt && meeting?.meeting_date) {
+    const mtgDate = new Date(meeting.meeting_date + "T12:00:00");
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const dateStr = `${days[mtgDate.getDay()]}, ${months[mtgDate.getMonth()]} ${mtgDate.getDate()}, ${mtgDate.getFullYear()}`;
+    doc.text(`Dated: ${dateStr}`, MARGIN, y + 6);
+    y += 10;
+  }
+  y += 8;
+
+  const pw = doc.internal.pageSize.getWidth();
+  const sigLineW = (pw - MARGIN - R_MARGIN - 20) / 2;
+  const chairName = meeting?.chairperson?.trim() || "";
+  const secName = meeting?.mtg_secretary?.trim() || "";
 
   doc.setFontSize(10);
-  doc.line(MARGIN, y, 90, y);
-  doc.text("Secretary", MARGIN, y + 5);
-  doc.text("Date: _______________", 95, y + 5);
+  // Left signature
+  doc.line(MARGIN, y, MARGIN + sigLineW, y);
+  doc.text(chairName ? `${chairName}, Meeting Chairperson` : "Chairperson", MARGIN, y + 5);
 
-  y += 18;
-
-  doc.line(MARGIN, y, 90, y);
-  doc.text("Chairperson", MARGIN, y + 5);
-  doc.text("Date: _______________", 95, y + 5);
+  // Right signature
+  const rightX = MARGIN + sigLineW + 20;
+  doc.line(rightX, y, rightX + sigLineW, y);
+  doc.text(secName ? `${secName}, Meeting Secretary` : "Secretary", rightX, y + 5);
 
   // Footer
   if (bt) {
