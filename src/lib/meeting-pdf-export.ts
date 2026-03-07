@@ -459,6 +459,172 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
   return y;
 }
 
+function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
+  const { meeting, company } = data;
+  const companyName = meeting?.company_name_at_meeting || company?.name || "the Company";
+  const entityType = company?.entity_type || "Corporation";
+  const isLLC = entityType?.toLowerCase().includes("llc") || entityType?.toLowerCase().includes("limited liability");
+  const isNonprofit = entityType?.toLowerCase().includes("nonprofit") || entityType?.toLowerCase().includes("non-profit");
+  const pw = doc.internal.pageSize.getWidth();
+  const cx = pw / 2;
+
+  const governingLabel = isLLC ? "Members" : isNonprofit ? "Board of Directors" : "Board of Directors";
+  const governingLabelLower = isLLC ? "members" : "directors";
+  const meetingOfLabel = isLLC ? "Members" : "Directors";
+
+  // Build full date string
+  const mtgDate = new Date(meeting.meeting_date + "T12:00:00");
+  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const fullDateStr = `${days[mtgDate.getDay()]}, ${months[mtgDate.getMonth()]} ${mtgDate.getDate()}, ${mtgDate.getFullYear()}`;
+
+  // Build location string
+  const location = meeting.meeting_location || "";
+  const cityAtMeeting = meeting.company_city_at_meeting || company?.city || "";
+  const stateAtMeeting = meeting.company_state_at_meeting || company?.state || "";
+  let locationStr = location;
+  if (locationStr) {
+    const locLower = locationStr.toLowerCase();
+    const extras = [
+      cityAtMeeting && !locLower.includes(cityAtMeeting.toLowerCase()) ? cityAtMeeting : "",
+      stateAtMeeting && !locLower.includes(stateAtMeeting.toLowerCase()) ? stateAtMeeting : "",
+    ].filter(Boolean);
+    if (extras.length > 0) locationStr += `, ${extras.join(", ")}`;
+  }
+
+  // Collect director/member names for signatures
+  const signerNames: string[] = [];
+  const seen = new Set<string>();
+  const addUnique = (name: string) => {
+    const n = name.trim();
+    if (!n) return;
+    const key = n.toLowerCase().replace(/\b[a-z]\.\s*/g, "").replace(/\s+/g, " ").trim();
+    if (seen.has(key)) return;
+    seen.add(key);
+    signerNames.push(n);
+  };
+
+  // For Corps use directors, for LLCs use shareholders/members
+  if (isLLC) {
+    (data.shareholders || []).forEach(s => { if (s.shareholder_name) addUnique(s.shareholder_name); });
+  } else {
+    (data.directors || []).forEach(d => { if (d.director_name) addUnique(d.director_name); });
+  }
+  // Fallback: use officers if no directors/members found
+  if (signerNames.length === 0) {
+    (data.officers || []).forEach(o => { if (o.name) addUnique(o.name); });
+  }
+
+  const purposes = [
+    `Elect ${isLLC ? "managers/officers" : "officers"}`,
+    "Conduct any other business that properly may be brought before the meeting",
+  ];
+
+  let y = 30;
+
+  // ── PAGE 1: NOTICE OF MEETING ──
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
+  doc.text(companyName, cx, y, { align: "center" });
+  y += 12;
+
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
+  doc.text(`Annual Meeting of ${governingLabel}`, cx, y, { align: "center" });
+  y += 10;
+
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(30, 30, 30);
+  doc.text(fullDateStr, cx, y, { align: "center" });
+  y += 14;
+
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...BODY_COLOR);
+  doc.text("The purposes of this meeting are to:", MARGIN, y);
+  y += 8;
+
+  purposes.forEach((p, i) => {
+    const lines = doc.splitTextToSize(`${i + 1}. ${p}`, pw - MARGIN - R_MARGIN - 10);
+    for (const line of lines) {
+      doc.text(line, MARGIN + 8, y);
+      y += 5.5;
+    }
+    y += 2;
+  });
+
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.text(`DATED: ${fullDateStr}`, MARGIN, y);
+  y += 12;
+
+  // Signature lines for directors/members
+  signerNames.forEach(name => {
+    doc.setDrawColor(30, 30, 30);
+    doc.setLineWidth(0.3);
+    doc.line(MARGIN, y, MARGIN + 70, y);
+    y += 5;
+    doc.setFontSize(10);
+    doc.text(name, MARGIN, y);
+    y += 10;
+  });
+
+  // ── WAIVER OF NOTICE SECTION (same page if space, otherwise new page) ──
+  y = checkPageBreak(doc, y, 80);
+  y += 6;
+
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
+  doc.text(`WAIVER OF NOTICE AND CONSENT TO ANNUAL MEETING OF ${meetingOfLabel.toUpperCase()}`, cx, y, { align: "center" });
+  y += 10;
+
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...BODY_COLOR);
+
+  const waiverText = `We (I), the undersigned, being the ${governingLabelLower} of ${companyName}, do hereby severally waive notice of the time, place and purposes of the annual meeting of said ${governingLabelLower} and do hereby call said meeting and consent to the holding thereof at this time and place: ${locationStr || "[location]"} on ${fullDateStr}${isLLC ? "" : " immediately following the meeting of shareholders"}, and are aware that the purposes of the meeting are to:`;
+  const waiverLines = doc.splitTextToSize(waiverText, pw - MARGIN - R_MARGIN);
+  for (const line of waiverLines) {
+    y = checkPageBreak(doc, y, 6);
+    doc.text(line, MARGIN, y);
+    y += 5.5;
+  }
+  y += 6;
+
+  purposes.forEach((p, i) => {
+    y = checkPageBreak(doc, y, 8);
+    const lines = doc.splitTextToSize(`${i + 1}. ${p}`, pw - MARGIN - R_MARGIN - 10);
+    for (const line of lines) {
+      doc.text(line, MARGIN + 8, y);
+      y += 5.5;
+    }
+    y += 2;
+  });
+
+  y += 6;
+  y = checkPageBreak(doc, y, 10 + signerNames.length * 15);
+  doc.text(`DATED: ${fullDateStr}`, MARGIN, y);
+  y += 12;
+
+  signerNames.forEach(name => {
+    y = checkPageBreak(doc, y, 15);
+    doc.setDrawColor(30, 30, 30);
+    doc.setLineWidth(0.3);
+    doc.line(MARGIN, y, MARGIN + 70, y);
+    y += 5;
+    doc.setFontSize(10);
+    doc.text(name, MARGIN, y);
+    y += 10;
+  });
+
+  // Start minutes on a new page
+  doc.addPage();
+}
+
 function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData): number {
   const { company, meeting } = data;
   const entityType = company?.entity_type || "Corporation";
