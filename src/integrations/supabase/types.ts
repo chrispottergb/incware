@@ -2055,6 +2055,8 @@ export type Database = {
       meetings: {
         Row: {
           chairperson: string | null
+          charitable_contribution_amount: number | null
+          charitable_contribution_org: string | null
           company_address_2_at_meeting: string | null
           company_address_at_meeting: string | null
           company_city_at_meeting: string | null
@@ -2076,9 +2078,12 @@ export type Database = {
           sub_type: string | null
           tax_year: number | null
           updated_at: string
+          vehicle_policy_text: string | null
         }
         Insert: {
           chairperson?: string | null
+          charitable_contribution_amount?: number | null
+          charitable_contribution_org?: string | null
           company_address_2_at_meeting?: string | null
           company_address_at_meeting?: string | null
           company_city_at_meeting?: string | null
@@ -2100,9 +2105,12 @@ export type Database = {
           sub_type?: string | null
           tax_year?: number | null
           updated_at?: string
+          vehicle_policy_text?: string | null
         }
         Update: {
           chairperson?: string | null
+          charitable_contribution_amount?: number | null
+          charitable_contribution_org?: string | null
           company_address_2_at_meeting?: string | null
           company_address_at_meeting?: string | null
           company_city_at_meeting?: string | null
@@ -2124,6 +2132,7 @@ export type Database = {
           sub_type?: string | null
           tax_year?: number | null
           updated_at?: string
+          vehicle_policy_text?: string | null
         }
         Relationships: [
           {
