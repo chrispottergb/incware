@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -383,11 +384,10 @@ export default function MeetingsTab({ companyId, company }: Props) {
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Date *</Label>
-                  <Input
-                    type="date"
+                  <DatePickerField
                     value={form.meeting_date}
-                    onChange={(e) => setForm((p) => ({ ...p, meeting_date: e.target.value }))}
-                    required
+                    onChange={(val) => setForm((p) => ({ ...p, meeting_date: val }))}
+                    placeholder="Pick a date"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -475,19 +475,19 @@ export default function MeetingsTab({ companyId, company }: Props) {
                 {!isOrgMeeting && (
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">Prior Meeting Date</Label>
-                    <Input
-                      type="date"
+                    <DatePickerField
                       value={form.prior_mtg_date}
-                      onChange={(e) => setForm((p) => ({ ...p, prior_mtg_date: e.target.value }))}
+                      onChange={(val) => setForm((p) => ({ ...p, prior_mtg_date: val }))}
+                      placeholder="Pick a date"
                     />
                   </div>
                 )}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Next Annual Meeting</Label>
-                  <Input
-                    type="date"
+                  <DatePickerField
                     value={form.next_annual_mtg}
-                    onChange={(e) => setForm((p) => ({ ...p, next_annual_mtg: e.target.value }))}
+                    onChange={(val) => setForm((p) => ({ ...p, next_annual_mtg: val }))}
+                    placeholder="Pick a date"
                   />
                 </div>
               </div>
