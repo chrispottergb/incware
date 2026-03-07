@@ -294,6 +294,10 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
       queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] });
       queryClient.invalidateQueries({ queryKey: ["active_certificates", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["shareholders", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["shareholders-for-holdings", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["stock-certificate-shareholders", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["company-authorized-shares", companyId] });
       setDialog(false);
       resetForm();
       toast.success("Transaction recorded!");
