@@ -459,6 +459,172 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
   return y;
 }
 
+function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
+  const { meeting, company } = data;
+  const companyName = meeting?.company_name_at_meeting || company?.name || "the Company";
+  const entityType = company?.entity_type || "Corporation";
+  const isLLC = entityType?.toLowerCase().includes("llc") || entityType?.toLowerCase().includes("limited liability");
+  const isNonprofit = entityType?.toLowerCase().includes("nonprofit") || entityType?.toLowerCase().includes("non-profit");
+  const pw = doc.internal.pageSize.getWidth();
+  const cx = pw / 2;
+
+  const governingLabel = isLLC ? "Members" : isNonprofit ? "Board of Directors" : "Board of Directors";
+  const governingLabelLower = isLLC ? "members" : "directors";
+  const meetingOfLabel = isLLC ? "Members" : "Directors";
+
+  // Build full date string
+  const mtgDate = new Date(meeting.meeting_date + "T12:00:00");
+  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const fullDateStr = `${days[mtgDate.getDay()]}, ${months[mtgDate.getMonth()]} ${mtgDate.getDate()}, ${mtgDate.getFullYear()}`;
+
+  // Build location string
+  const location = meeting.meeting_location || "";
+  const cityAtMeeting = meeting.company_city_at_meeting || company?.city || "";
+  const stateAtMeeting = meeting.company_state_at_meeting || company?.state || "";
+  let locationStr = location;
+  if (locationStr) {
+    const locLower = locationStr.toLowerCase();
+    const extras = [
+      cityAtMeeting && !locLower.includes(cityAtMeeting.toLowerCase()) ? cityAtMeeting : "",
+      stateAtMeeting && !locLower.includes(stateAtMeeting.toLowerCase()) ? stateAtMeeting : "",
+    ].filter(Boolean);
+    if (extras.length > 0) locationStr += `, ${extras.join(", ")}`;
+  }
+
+  // Collect director/member names for signatures
+  const signerNames: string[] = [];
+  const seen = new Set<string>();
+  const addUnique = (name: string) => {
+    const n = name.trim();
+    if (!n) return;
+    const key = n.toLowerCase().replace(/\b[a-z]\.\s*/g, "").replace(/\s+/g, " ").trim();
+    if (seen.has(key)) return;
+    seen.add(key);
+    signerNames.push(n);
+  };
+
+  // For Corps use directors, for LLCs use shareholders/members
+  if (isLLC) {
+    (data.shareholders || []).forEach(s => { if (s.shareholder_name) addUnique(s.shareholder_name); });
+  } else {
+    (data.directors || []).forEach(d => { if (d.director_name) addUnique(d.director_name); });
+  }
+  // Fallback: use officers if no directors/members found
+  if (signerNames.length === 0) {
+    (data.officers || []).forEach(o => { if (o.name) addUnique(o.name); });
+  }
+
+  const purposes = [
+    `Elect ${isLLC ? "managers/officers" : "officers"}`,
+    "Conduct any other business that properly may be brought before the meeting",
+  ];
+
+  let y = 30;
+
+  // ── PAGE 1: NOTICE OF MEETING ──
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
+  doc.text(companyName, cx, y, { align: "center" });
+  y += 12;
+
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
+  doc.text(`Annual Meeting of ${governingLabel}`, cx, y, { align: "center" });
+  y += 10;
+
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(30, 30, 30);
+  doc.text(fullDateStr, cx, y, { align: "center" });
+  y += 14;
+
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...BODY_COLOR);
+  doc.text("The purposes of this meeting are to:", MARGIN, y);
+  y += 8;
+
+  purposes.forEach((p, i) => {
+    const lines = doc.splitTextToSize(`${i + 1}. ${p}`, pw - MARGIN - R_MARGIN - 10);
+    for (const line of lines) {
+      doc.text(line, MARGIN + 8, y);
+      y += 5.5;
+    }
+    y += 2;
+  });
+
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.text(`DATED: ${fullDateStr}`, MARGIN, y);
+  y += 12;
+
+  // Signature lines for directors/members
+  signerNames.forEach(name => {
+    doc.setDrawColor(30, 30, 30);
+    doc.setLineWidth(0.3);
+    doc.line(MARGIN, y, MARGIN + 70, y);
+    y += 5;
+    doc.setFontSize(10);
+    doc.text(name, MARGIN, y);
+    y += 10;
+  });
+
+  // ── WAIVER OF NOTICE SECTION (same page if space, otherwise new page) ──
+  y = checkPageBreak(doc, y, 80);
+  y += 6;
+
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
+  doc.text(`WAIVER OF NOTICE AND CONSENT TO ANNUAL MEETING OF ${meetingOfLabel.toUpperCase()}`, cx, y, { align: "center" });
+  y += 10;
+
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...BODY_COLOR);
+
+  const waiverText = `We (I), the undersigned, being the ${governingLabelLower} of ${companyName}, do hereby severally waive notice of the time, place and purposes of the annual meeting of said ${governingLabelLower} and do hereby call said meeting and consent to the holding thereof at this time and place: ${locationStr || "[location]"} on ${fullDateStr}${isLLC ? "" : " immediately following the meeting of shareholders"}, and are aware that the purposes of the meeting are to:`;
+  const waiverLines = doc.splitTextToSize(waiverText, pw - MARGIN - R_MARGIN);
+  for (const line of waiverLines) {
+    y = checkPageBreak(doc, y, 6);
+    doc.text(line, MARGIN, y);
+    y += 5.5;
+  }
+  y += 6;
+
+  purposes.forEach((p, i) => {
+    y = checkPageBreak(doc, y, 8);
+    const lines = doc.splitTextToSize(`${i + 1}. ${p}`, pw - MARGIN - R_MARGIN - 10);
+    for (const line of lines) {
+      doc.text(line, MARGIN + 8, y);
+      y += 5.5;
+    }
+    y += 2;
+  });
+
+  y += 6;
+  y = checkPageBreak(doc, y, 10 + signerNames.length * 15);
+  doc.text(`DATED: ${fullDateStr}`, MARGIN, y);
+  y += 12;
+
+  signerNames.forEach(name => {
+    y = checkPageBreak(doc, y, 15);
+    doc.setDrawColor(30, 30, 30);
+    doc.setLineWidth(0.3);
+    doc.line(MARGIN, y, MARGIN + 70, y);
+    y += 5;
+    doc.setFontSize(10);
+    doc.text(name, MARGIN, y);
+    y += 10;
+  });
+
+  // Start minutes on a new page
+  doc.addPage();
+}
+
 function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData): number {
   const { company, meeting } = data;
   const entityType = company?.entity_type || "Corporation";
@@ -653,6 +819,11 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     sectionNum++;
     return addSectionTitle(doc, y, title, bt, bt ? sectionNum : undefined);
   };
+
+  // For Annual Meeting: add Waiver of Notice front pages
+  if (bt) {
+    addWaiverOfNoticePages(doc, data);
+  }
 
   addDFIHeader(doc, isWrittenConsent ? "Written Consent" : `${meeting.meeting_type} — Minutes`, companyName, entityType, meeting, company);
 
@@ -1146,6 +1317,27 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
+  // Company Vehicle Policy (if provided)
+  const vehiclePolicyText = meeting?.vehicle_policy_text?.trim();
+  const hasVehicleActivity = (data.vehiclePurchases && data.vehiclePurchases.length > 0) ||
+    (data.vehicleSales && data.vehicleSales.length > 0) ||
+    (data.vehicleLeases && data.vehicleLeases.length > 0);
+
+  if (bt && vehiclePolicyText && hasVehicleActivity) {
+    y = checkPageBreak(doc, y, 30);
+    y = section("Company Vehicle Policy");
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...BODY_COLOR);
+    const policyLines = doc.splitTextToSize(vehiclePolicyText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+    for (const line of policyLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5.5;
+    }
+    y += 6;
+  }
+
   // Vehicle Purchases
   if (data.vehiclePurchases && data.vehiclePurchases.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.vehiclePurchases.length * 7);
@@ -1226,6 +1418,61 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         v.sale_price != null ? fmt(v.sale_price) : "—",
         v.buyer_name || "—",
         v.reason_for_sale || "—",
+      ]),
+      theme: "grid",
+      headStyles: tableHeadStyles,
+      bodyStyles: { fontSize: 10 },
+      margin: { left: MARGIN, right: R_MARGIN },
+      styles: { overflow: "linebreak", cellWidth: "auto" },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+  }
+
+  // Equipment Transactions (from meeting_assets)
+  if (data.assets && data.assets.length > 0) {
+    y = checkPageBreak(doc, y, 20 + data.assets.length * 7);
+    y = section("Equipment Transactions");
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...(bt ? BODY_COLOR : [30, 30, 30] as [number, number, number]));
+    const equipIntro = `Next, the chairperson reviewed the equipment needs of the ${isLLC ? "company" : "corporation"}, and whereas it is necessary to acquire or dispose of certain equipment for the efficient operation of the business, it was`;
+    const equipLines = doc.splitTextToSize(equipIntro, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+    for (const line of equipLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5.5;
+    }
+    y += 2;
+    const indent = WHEREAS_RESOLVED_INDENT;
+    const resolvedPrefix = "RESOLVED, ";
+    const resolvedBody = `that the company acquire/dispose of the equipment generally described below:`;
+    const fullResolved = resolvedPrefix + resolvedBody;
+    const rLines = doc.splitTextToSize(fullResolved, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN - indent);
+    for (let i = 0; i < rLines.length; i++) {
+      y = checkPageBreak(doc, y, 6);
+      if (i === 0) {
+        doc.setFont("helvetica", "bold");
+        const prefixWidth = doc.getTextWidth(resolvedPrefix);
+        doc.text(resolvedPrefix, MARGIN + indent, y);
+        doc.setFont("helvetica", "normal");
+        const remainder = rLines[0].substring(resolvedPrefix.length);
+        if (remainder) doc.text(remainder, MARGIN + indent + prefixWidth, y);
+      } else {
+        doc.setFont("helvetica", "normal");
+        doc.text(rLines[i], MARGIN + indent, y);
+      }
+      y += 5.5;
+    }
+    y += 5;
+    autoTable(doc, {
+      startY: y,
+      head: [["Transaction", "Date", "Equipment", "Make/Model", "Amount"]],
+      body: data.assets.map((a: any) => [
+        a.asset_type || "Purchased",
+        a.value != null ? "—" : "—",
+        a.description || "—",
+        "—",
+        a.value != null ? fmt(a.value) : "—",
       ]),
       theme: "grid",
       headStyles: tableHeadStyles,
@@ -1561,6 +1808,41 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     );
   }
 
+  // Tax Return Filing Acknowledgment (Annual Meeting)
+  if (bt && meeting?.tax_year) {
+    y = checkPageBreak(doc, y, 30);
+    const counselRec = (data.counsel && data.counsel.length > 0) ? data.counsel[0] : null;
+    const acctName = counselRec?.accountant_name?.trim() || "";
+    const acctFirm = counselRec?.counsel_name?.trim() || "";
+    const acctLabel = acctName && acctName.toLowerCase() !== "none appointed"
+      ? `${acctName}${acctFirm ? ` of ${acctFirm}` : ""}`
+      : `the ${isLLC ? "company's" : "corporation's"} accounting firm`;
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...BODY_COLOR);
+    const taxText = `The ${isLLC ? "company's" : "corporation's"} income tax return for year ended December 31, ${meeting.tax_year} was prepared by ${acctLabel} and was duly filed with the Internal Revenue Service. The annual filing form has been filed with the state of ${company?.state_of_incorporation || company?.state || "Wisconsin"} by the corporate registered agent.`;
+    const taxLines = doc.splitTextToSize(taxText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+    for (const line of taxLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5.5;
+    }
+    y += 6;
+  }
+
+  // Charitable Contributions (Annual Meeting)
+  if (bt && meeting?.charitable_contribution_amount != null && Number(meeting.charitable_contribution_amount) > 0) {
+    y = checkPageBreak(doc, y, 30);
+    const contribAmt = fmt(meeting.charitable_contribution_amount);
+    const contribOrg = meeting.charitable_contribution_org?.trim() || "a recognized charitable organization";
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "company" : "corporation"} is committed to supporting community initiatives and charitable causes that align with its values and mission;`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the ${isLLC ? "company" : "corporation"} approved the contribution of ${contribAmt} to ${contribOrg} as allowed by IRS Code Section 170(c)(2), payment of which is made during this taxable year.`,
+      bt
+    );
+  }
+
   // Signature block
   y = checkPageBreak(doc, y, 60);
   y += 10;
@@ -1571,18 +1853,33 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
   doc.text("There being no further business, the meeting was adjourned.", MARGIN, y);
-  y += 14;
+  y += 4;
+
+  // Meeting date
+  if (bt && meeting?.meeting_date) {
+    const mtgDate = new Date(meeting.meeting_date + "T12:00:00");
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const dateStr = `${days[mtgDate.getDay()]}, ${months[mtgDate.getMonth()]} ${mtgDate.getDate()}, ${mtgDate.getFullYear()}`;
+    doc.text(`Dated: ${dateStr}`, MARGIN, y + 6);
+    y += 10;
+  }
+  y += 8;
+
+  const pw = doc.internal.pageSize.getWidth();
+  const sigLineW = (pw - MARGIN - R_MARGIN - 20) / 2;
+  const chairName = meeting?.chairperson?.trim() || "";
+  const secName = meeting?.mtg_secretary?.trim() || "";
 
   doc.setFontSize(10);
-  doc.line(MARGIN, y, 90, y);
-  doc.text("Secretary", MARGIN, y + 5);
-  doc.text("Date: _______________", 95, y + 5);
+  // Left signature
+  doc.line(MARGIN, y, MARGIN + sigLineW, y);
+  doc.text(chairName ? `${chairName}, Meeting Chairperson` : "Chairperson", MARGIN, y + 5);
 
-  y += 18;
-
-  doc.line(MARGIN, y, 90, y);
-  doc.text("Chairperson", MARGIN, y + 5);
-  doc.text("Date: _______________", 95, y + 5);
+  // Right signature
+  const rightX = MARGIN + sigLineW + 20;
+  doc.line(rightX, y, rightX + sigLineW, y);
+  doc.text(secName ? `${secName}, Meeting Secretary` : "Secretary", rightX, y + 5);
 
   // Footer
   if (bt) {
