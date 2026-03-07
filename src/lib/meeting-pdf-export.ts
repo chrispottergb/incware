@@ -820,6 +820,11 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     return addSectionTitle(doc, y, title, bt, bt ? sectionNum : undefined);
   };
 
+  // For Annual Meeting: add Waiver of Notice front pages
+  if (bt) {
+    addWaiverOfNoticePages(doc, data);
+  }
+
   addDFIHeader(doc, isWrittenConsent ? "Written Consent" : `${meeting.meeting_type} — Minutes`, companyName, entityType, meeting, company);
 
   let y = bt ? 52 : 45;
