@@ -318,19 +318,22 @@ export default function CompanyDetail() {
               </Button>
             </div>
             <ShareholdersTab companyId={company.id} entityType={company.entity_type} shareholderHoldings={shareCalc.shareholderHoldings} />
-            <div data-section="certificates">
-              <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
-            </div>
             {isLLCType(company.entity_type) ? (
               <>
-                <BillsOfSaleTab companyId={company.id} entityType={company.entity_type} />
                 <UnifiedLedgerTab companyId={company.id} entityType={company.entity_type} authorizedShares={shareCalc.authorizedShares} />
+                <div data-section="certificates">
+                  <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
+                </div>
+                <BillsOfSaleTab companyId={company.id} entityType={company.entity_type} />
               </>
             ) : (
               <>
                 <StockLedgerTab companyId={company.id} entityType={company.entity_type} />
-                <BillsOfSaleTab companyId={company.id} entityType={company.entity_type} />
+                <div data-section="certificates">
+                  <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
+                </div>
                 <TransferLedgerTab companyId={company.id} entityType={company.entity_type} authorizedShares={shareCalc.authorizedShares} />
+                <BillsOfSaleTab companyId={company.id} entityType={company.entity_type} />
               </>
             )}
           </div>
