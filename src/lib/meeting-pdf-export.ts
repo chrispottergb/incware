@@ -1428,6 +1428,61 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
+  // Equipment Transactions (from meeting_assets)
+  if (data.assets && data.assets.length > 0) {
+    y = checkPageBreak(doc, y, 20 + data.assets.length * 7);
+    y = section("Equipment Transactions");
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...(bt ? BODY_COLOR : [30, 30, 30] as [number, number, number]));
+    const equipIntro = `Next, the chairperson reviewed the equipment needs of the ${isLLC ? "company" : "corporation"}, and whereas it is necessary to acquire or dispose of certain equipment for the efficient operation of the business, it was`;
+    const equipLines = doc.splitTextToSize(equipIntro, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+    for (const line of equipLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5.5;
+    }
+    y += 2;
+    const indent = WHEREAS_RESOLVED_INDENT;
+    const resolvedPrefix = "RESOLVED, ";
+    const resolvedBody = `that the company acquire/dispose of the equipment generally described below:`;
+    const fullResolved = resolvedPrefix + resolvedBody;
+    const rLines = doc.splitTextToSize(fullResolved, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN - indent);
+    for (let i = 0; i < rLines.length; i++) {
+      y = checkPageBreak(doc, y, 6);
+      if (i === 0) {
+        doc.setFont("helvetica", "bold");
+        const prefixWidth = doc.getTextWidth(resolvedPrefix);
+        doc.text(resolvedPrefix, MARGIN + indent, y);
+        doc.setFont("helvetica", "normal");
+        const remainder = rLines[0].substring(resolvedPrefix.length);
+        if (remainder) doc.text(remainder, MARGIN + indent + prefixWidth, y);
+      } else {
+        doc.setFont("helvetica", "normal");
+        doc.text(rLines[i], MARGIN + indent, y);
+      }
+      y += 5.5;
+    }
+    y += 5;
+    autoTable(doc, {
+      startY: y,
+      head: [["Transaction", "Date", "Equipment", "Make/Model", "Amount"]],
+      body: data.assets.map((a: any) => [
+        a.asset_type || "Purchased",
+        a.value != null ? "—" : "—",
+        a.description || "—",
+        "—",
+        a.value != null ? fmt(a.value) : "—",
+      ]),
+      theme: "grid",
+      headStyles: tableHeadStyles,
+      bodyStyles: { fontSize: 10 },
+      margin: { left: MARGIN, right: R_MARGIN },
+      styles: { overflow: "linebreak", cellWidth: "auto" },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+  }
+
   // Lease Terminations
   if (data.leaseTerminations && data.leaseTerminations.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.leaseTerminations.length * 7);
