@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +20,12 @@ import {
 import { Loader2, FileText, Mail, AlertCircle, Download } from "lucide-react";
 import { toast } from "sonner";
 import { downloadAnnualUpdatePdf, generateAnnualUpdatePdf, type AnnualUpdateData } from "@/lib/annual-update-pdf";
+import * as pdfjsLib from "pdfjs-dist";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.mjs",
+  import.meta.url,
+).toString();
 
 interface AnnualUpdateWorkflowProps {
   open: boolean;
@@ -32,11 +38,14 @@ export default function AnnualUpdateWorkflow({ open, onOpenChange, companies }: 
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
   const [step, setStep] = useState<"select" | "generating" | "ready">("select");
   const [updateData, setUpdateData] = useState<AnnualUpdateData | null>(null);
+  const [previewPages, setPreviewPages] = useState<string[]>([]);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
   const handleReset = () => {
     setSelectedCompanyId("");
     setStep("select");
     setUpdateData(null);
+    setPreviewPages([]);
   };
 
   const handleClose = () => {
@@ -100,6 +109,28 @@ export default function AnnualUpdateWorkflow({ open, onOpenChange, companies }: 
 
       setUpdateData(data);
       setStep("ready");
+
+      // Generate preview images from PDF
+      try {
+        const doc = generateAnnualUpdatePdf(data);
+        const pdfBytes = doc.output("arraybuffer");
+        const pdfDoc = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+        const pages: string[] = [];
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+          const page = await pdfDoc.getPage(i);
+          const scale = 1.5;
+          const viewport = page.getViewport({ scale });
+          const canvas = document.createElement("canvas");
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          const ctx = canvas.getContext("2d")!;
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          pages.push(canvas.toDataURL("image/png"));
+        }
+        setPreviewPages(pages);
+      } catch (err) {
+        console.error("Preview render error:", err);
+      }
     } catch (err: any) {
       console.error("Annual update error:", err);
       toast.error("Failed to load company data.");
@@ -155,7 +186,7 @@ export default function AnnualUpdateWorkflow({ open, onOpenChange, companies }: 
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={step === "ready" ? "sm:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col" : "sm:max-w-md"}>
         <DialogHeader>
           <DialogTitle className="font-display">Annual Update</DialogTitle>
           <DialogDescription>
@@ -207,32 +238,53 @@ export default function AnnualUpdateWorkflow({ open, onOpenChange, companies }: 
         )}
 
         {step === "ready" && updateData && (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4 min-h-0">
             <div className="rounded-md border border-border bg-muted p-3 text-sm text-foreground">
               ✅ Annual Update Review generated for <strong>{updateData.company.name}</strong>.
             </div>
 
-            <div className="flex flex-col gap-2">
-              <Button onClick={handleDownloadPdf} variant="outline" className="w-full">
+            {/* PDF Preview */}
+            <div
+              ref={previewContainerRef}
+              className="flex-1 overflow-y-auto border border-border rounded-md bg-muted/50 p-4 space-y-4 max-h-[50vh]"
+            >
+              {previewPages.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                previewPages.map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt={`Page ${i + 1}`}
+                    className="w-full rounded shadow-sm border border-border"
+                  />
+                ))
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={handleDownloadPdf} variant="outline" className="flex-1">
                 <Download className="mr-2 h-4 w-4" />
-                Download PDF
+                Save to File
               </Button>
 
               <Button
                 onClick={handleSendEmail}
-                className="w-full"
+                className="flex-1"
                 disabled={!updateData.company.contact_email}
               >
                 <Mail className="mr-2 h-4 w-4" />
-                Download PDF & Compose Email
+                Download & Email
               </Button>
-
-              {!updateData.company.contact_email && (
-                <p className="text-xs text-muted-foreground text-center">
-                  Add a contact email to the company record to enable email composition.
-                </p>
-              )}
             </div>
+
+            {!updateData.company.contact_email && (
+              <p className="text-xs text-muted-foreground text-center">
+                Add a contact email to the company record to enable email composition.
+              </p>
+            )}
 
             <Button variant="ghost" size="sm" className="w-full" onClick={handleReset}>
               ← Select a different company
