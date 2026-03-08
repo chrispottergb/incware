@@ -441,7 +441,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
               <CardDescription className="text-[11px]">Information used to prepare articles of incorporation/organization</CardDescription>
             </div>
             <SectionPdfActions config={{
-              title: "Filing & Articles Details",
+              title: "Incorporation Info",
               companyName: company.name,
               fields: [
                 { label: "2nd Name Choice", value: filingForm.second_name_choice },
