@@ -45,6 +45,7 @@ export default function AnnualUpdateWorkflow({ open, onOpenChange, companies }: 
     setSelectedCompanyId("");
     setStep("select");
     setUpdateData(null);
+    setPreviewPages([]);
   };
 
   const handleClose = () => {
