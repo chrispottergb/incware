@@ -199,39 +199,64 @@ export async function callClaudeWithDocument({
     }
   }
 
-  // Fallback: Lovable AI with image_url (works for PDFs sent as data URIs)
+  // Fallback: Lovable AI with file content via multimodal input
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("Neither ANTHROPIC_API_KEY nor LOVABLE_API_KEY is configured");
 
+  console.log("Using Lovable AI fallback for document processing");
+
   const messages: any[] = [];
   if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
+
+  // Use inline_data format for Gemini models via the gateway (supports PDFs natively)
   messages.push({
     role: "user",
     content: [
+      {
+        type: "image_url",
+        image_url: { url: `data:${mimeType};base64,${base64Data}` },
+      },
       { type: "text", text: prompt },
-      { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64Data}` } },
     ],
   });
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ model: "google/gemini-2.5-flash", messages }),
-  });
+  // Add a 120-second timeout to prevent hanging
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120_000);
 
-  if (!response.ok) {
-    const status = response.status;
-    if (status === 429) throw new AIProviderError("AI rate limit exceeded. Please try again in a moment.", 429);
-    if (status === 402) throw new AIProviderError("AI credits exhausted. Please add credits to continue.", 402);
-    const text = await response.text();
-    throw new Error(`Lovable AI error (${status}): ${text}`);
+  try {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ model: "google/gemini-2.5-pro", messages }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const status = response.status;
+      const text = await response.text();
+      console.error(`Lovable AI error (${status}):`, text);
+      if (status === 429) throw new AIProviderError("AI rate limit exceeded. Please try again in a moment.", 429);
+      if (status === 402) throw new AIProviderError("AI credits exhausted. Please add credits to continue.", 402);
+      throw new Error(`Lovable AI error (${status}): ${text}`);
+    }
+
+    const result = await response.json();
+    console.log("Lovable AI response received successfully");
+    return { content: result.choices?.[0]?.message?.content || "" };
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof AIProviderError) throw err;
+    if ((err as Error).name === "AbortError") {
+      throw new Error("AI processing timed out after 120 seconds. Please try with a smaller file.");
+    }
+    throw err;
   }
-
-  const result = await response.json();
-  return { content: result.choices?.[0]?.message?.content || "" };
 }
 
 export function parseJsonFromAI(raw: string): any {
