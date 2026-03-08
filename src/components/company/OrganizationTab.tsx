@@ -481,10 +481,6 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <Label className="field-label">Delayed Effective Date</Label>
                 <Input type="date" className="h-7 text-sm" value={filingForm.delayed_effective_filing_date} onChange={(e) => setFilingForm((p) => ({ ...p, delayed_effective_filing_date: e.target.value }))} />
               </div>
-              <div className="field-group col-span-12 sm:col-span-5">
-                <Label className="field-label">Business Purpose</Label>
-                <Input className="h-7 text-sm" value={filingForm.business_purpose} onChange={(e) => setFilingForm((p) => ({ ...p, business_purpose: e.target.value }))} />
-              </div>
               <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label">Accounting Method</Label>
                 <Select value={filingForm.accounting_method} onValueChange={(v) => setFilingForm((p) => ({ ...p, accounting_method: v }))}>
@@ -495,6 +491,14 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="field-group col-span-6 sm:col-span-3">
+                <Label className="field-label">Sched. Annual Mtg Date</Label>
+                <Input type="number" className="h-7 text-sm" value={filingForm.first_year_annual_meeting} onChange={(e) => setFilingForm((p) => ({ ...p, first_year_annual_meeting: e.target.value }))} />
+              </div>
+              <div className="field-group col-span-12 sm:col-span-10">
+                <Label className="field-label">Business Purpose</Label>
+                <Textarea className="text-sm min-h-[50px]" value={filingForm.business_purpose} onChange={(e) => setFilingForm((p) => ({ ...p, business_purpose: e.target.value }))} rows={2} placeholder="Describe the business purpose..." />
+              </div>
               <div className="field-group col-span-6 sm:col-span-2">
                 <Label className="field-label flex items-center gap-1">
                   NAICS
@@ -502,11 +506,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </Label>
-                <Input className="h-7 text-sm" value={filingForm.naics_code} onChange={(e) => setFilingForm((p) => ({ ...p, naics_code: e.target.value }))} />
-              </div>
-              <div className="field-group col-span-6 sm:col-span-4">
-                <Label className="field-label">Sched. Annual Mtg Date</Label>
-                <Input type="number" className="h-7 text-sm" value={filingForm.first_year_annual_meeting} onChange={(e) => setFilingForm((p) => ({ ...p, first_year_annual_meeting: e.target.value }))} />
+                <Input className="h-7 text-sm" value={filingForm.naics_code} onChange={(e) => setFilingForm((p) => ({ ...p, naics_code: e.target.value }))} placeholder="Code" />
               </div>
               {!isLLCType(company.entity_type) && (
                 <>
