@@ -176,6 +176,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     if (valid.length === 0) return;
 
     const entries: FileEntry[] = valid.map((f) => ({
+      id: crypto.randomUUID(),
       file: f,
       name: f.name,
       status: "pending" as const,
