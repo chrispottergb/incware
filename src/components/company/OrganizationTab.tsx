@@ -449,7 +449,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 { label: "Business Purpose", value: filingForm.business_purpose },
                 { label: "Accounting Method", value: filingForm.accounting_method },
                 { label: "NAICS Code", value: filingForm.naics_code },
-                { label: "First Year Annual Meeting", value: filingForm.first_year_annual_meeting },
+                { label: "Scheduled Annual Meeting Date", value: filingForm.first_year_annual_meeting },
                 ...(!isLLCType(company.entity_type) ? [
                   { label: "Initial # of Directors", value: filingForm.initial_directors_count },
                   { label: "Max Directors Allowed", value: filingForm.max_directors_allowed },
