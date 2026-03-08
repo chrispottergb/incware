@@ -263,6 +263,25 @@ export default function OrganizationTab({ companyId, company }: Props) {
   });
   const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(!!company.s_election_date);
 
+  // Phone formatting helper
+  const formatPhone = (value: string): string => {
+    const digits = value.replace(/\D/g, "").slice(0, 10);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  };
+
+  const handlePhoneChange = (field: string, value: string) => {
+    setFilingForm((p) => ({ ...p, [field]: formatPhone(value) }));
+  };
+
+  const formatWebpage = (value: string): string => {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+  };
+
   useEffect(() => {
     setLlcSElectionEnabled(!!company.s_election_date);
     setFilingForm((prev) => ({ ...prev, s_election_date: company.s_election_date ?? "" }));
@@ -277,6 +296,13 @@ export default function OrganizationTab({ companyId, company }: Props) {
       const { error } = await supabase
         .from("companies")
         .update({
+          name: filingForm.name,
+          entity_type: filingForm.entity_type,
+          state_of_incorporation: filingForm.state_of_incorporation || null,
+          incorporation_date: filingForm.incorporation_date || null,
+          fiscal_year_end: filingForm.fiscal_year_end || null,
+          scheduled_annual_meeting: filingForm.scheduled_annual_meeting || null,
+          corporate_status: filingForm.corporate_status,
           second_name_choice: filingForm.second_name_choice || null,
           filing_date: filingForm.filing_date || null,
           delayed_effective_filing_date: filingForm.delayed_effective_filing_date || null,
@@ -293,16 +319,24 @@ export default function OrganizationTab({ companyId, company }: Props) {
           city: filingForm.city || null,
           state: filingForm.state || null,
           zip: filingForm.zip || null,
+          phone: filingForm.phone || null,
+          contact_full_name: filingForm.contact_full_name || null,
+          contact_email: filingForm.contact_email || null,
+          salutation_name: filingForm.salutation_name || null,
+          contact_phone: filingForm.contact_phone || null,
+          contact_cell: filingForm.contact_cell || null,
+          contact_webpage: filingForm.contact_webpage ? formatWebpage(filingForm.contact_webpage) : null,
           s_election_date: isLLCType(company.entity_type)
             ? (llcSElectionEnabled ? (filingForm.s_election_date || null) : null)
             : company.s_election_date,
-        })
+        } as any)
         .eq("id", companyId);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company", companyId] });
-      toast.success("Filing details saved!");
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      toast.success("Organizational info saved!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
