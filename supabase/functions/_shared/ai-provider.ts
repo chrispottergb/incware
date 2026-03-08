@@ -148,49 +148,55 @@ export async function callClaudeWithDocument({
   const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 
   if (ANTHROPIC_API_KEY) {
-    // Use Claude's native document support
-    const body: any = {
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 4096,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "document",
-              source: {
-                type: "base64",
-                media_type: mimeType,
-                data: base64Data,
+    try {
+      // Use Claude's native document support
+      const body: any = {
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4096,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "document",
+                source: {
+                  type: "base64",
+                  media_type: mimeType,
+                  data: base64Data,
+                },
               },
-            },
-            { type: "text", text: prompt },
-          ],
+              { type: "text", text: prompt },
+            ],
+          },
+        ],
+      };
+      if (systemPrompt) body.system = systemPrompt;
+
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": ANTHROPIC_API_KEY,
+          "Content-Type": "application/json",
+          "anthropic-version": "2023-06-01",
         },
-      ],
-    };
-    if (systemPrompt) body.system = systemPrompt;
+        body: JSON.stringify(body),
+      });
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "Content-Type": "application/json",
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const status = response.status;
-      const text = await response.text();
-      if (status === 429) throw new AIProviderError("Claude rate limit exceeded. Please try again.", 429);
-      throw new Error(`Claude API error (${status}): ${text}`);
+      if (!response.ok) {
+        const status = response.status;
+        const text = await response.text();
+        if (status === 429) throw new AIProviderError("Claude rate limit exceeded. Please try again.", 429);
+        console.warn(`Claude API error (${status}), falling back to Lovable AI: ${text}`);
+        // Fall through to Lovable AI fallback below
+      } else {
+        const result = await response.json();
+        const content = result.content?.map((b: any) => b.text || "").join("") || "";
+        return { content };
+      }
+    } catch (err) {
+      if (err instanceof AIProviderError) throw err;
+      console.warn("Claude call failed, falling back to Lovable AI:", err);
     }
-
-    const result = await response.json();
-    const content = result.content?.map((b: any) => b.text || "").join("") || "";
-    return { content };
   }
 
   // Fallback: Lovable AI with image_url (works for PDFs sent as data URIs)
