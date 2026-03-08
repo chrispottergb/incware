@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
+import { callClaudeWithDocument, parseJsonFromAI, AIProviderError } from "../_shared/ai-provider.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -23,14 +23,6 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "AI not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     // Verify user
     const userClient = createClient(supabaseUrl, anonKey, {
@@ -76,10 +68,10 @@ serve(async (req) => {
       });
     }
 
-    // Convert file to base64 for AI vision — use small chunks to avoid call-stack overflow
+    // Convert file to base64 for AI — use small chunks to avoid call-stack overflow
     const uint8Array = new Uint8Array(fileBuffer);
     let binaryStr = "";
-    const chunkSize = 1024; // small chunk to avoid spread-operator stack overflow
+    const chunkSize = 1024;
     for (let i = 0; i < uint8Array.length; i += chunkSize) {
       const end = Math.min(i + chunkSize, uint8Array.length);
       for (let j = i; j < end; j++) {
@@ -87,7 +79,6 @@ serve(async (req) => {
       }
     }
     const base64 = btoa(binaryStr);
-
     const mimeType = file.type || "application/pdf";
 
     const extractionPrompt = `You are a corporate tax return analyst. Analyze this tax return document and extract ALL of the following data. Return ONLY valid JSON.
@@ -150,65 +141,37 @@ Rules:
 - For retirement, look at deductions section line items
 - Return ONLY the JSON, no other text`;
 
-    const aiResponse = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: extractionPrompt },
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: `data:${mimeType};base64,${base64}`,
-                  },
-                },
-              ],
-            },
-          ],
-        }),
-      }
-    );
-
-    if (!aiResponse.ok) {
-      const status = aiResponse.status;
-      if (status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again shortly." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    // Use shared AI helper — prefers Claude (ANTHROPIC_API_KEY) with native PDF support,
+    // falls back to Lovable AI (LOVABLE_API_KEY) with image_url mode
+    let aiContent: string;
+    try {
+      const result = await callClaudeWithDocument({
+        base64Data: base64,
+        mimeType,
+        prompt: "Extract all entity data from this tax return and return the JSON object.",
+        systemPrompt: extractionPrompt,
+      });
+      aiContent = result.content;
+    } catch (err) {
+      if (err instanceof AIProviderError) {
+        return new Response(JSON.stringify({ error: err.message }), {
+          status: err.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      console.error("AI error:", status, await aiResponse.text());
+      console.error("AI error:", err);
       return new Response(JSON.stringify({ error: "AI processing failed" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const aiResult = await aiResponse.json();
-    const rawContent = aiResult.choices?.[0]?.message?.content || "";
-
     let extracted: any = null;
     try {
-      const jsonStr = rawContent
-        .replace(/```json\n?/g, "")
-        .replace(/```\n?/g, "")
-        .trim();
-      extracted = JSON.parse(jsonStr);
+      extracted = parseJsonFromAI(aiContent);
     } catch (e) {
-      console.error("JSON parse error:", e, "Raw:", rawContent);
-      return new Response(JSON.stringify({ error: "Failed to parse AI response", raw: rawContent }), {
+      console.error("JSON parse error:", e, "Raw:", aiContent);
+      return new Response(JSON.stringify({ error: "Failed to parse AI response", raw: aiContent }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
