@@ -409,7 +409,9 @@ export default function IncorporationTab({ company }: Props) {
           contact_phone: form.contact_phone || null,
           contact_cell: form.contact_cell || null,
           contact_webpage: form.contact_webpage ? formatWebpage(form.contact_webpage) : null,
-          authorized_binders: form.authorized_binders || null,
+           authorized_binders: form.authorized_binders || null,
+           business_purpose: form.business_purpose || null,
+           naics_code: form.naics_code || null,
         } as any)
         .eq("id", company.id);
       if (error) throw error;
