@@ -674,9 +674,41 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 </div>
               </div>
             </div>
-            <div className="field-group">
-              <Label className="field-label">Additional Provisions</Label>
-              <Textarea className="text-sm min-h-[60px]" value={filingForm.additional_provisions} onChange={(e) => setFilingForm((p) => ({ ...p, additional_provisions: e.target.value }))} rows={2} />
+
+            {/* Filing Details */}
+            <div className="border-t border-border pt-3">
+              <div className="flex items-center gap-2 mb-2">
+                <FileText className="h-3.5 w-3.5 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Filing & Article Details</h3>
+              </div>
+              <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+                <div className="field-group col-span-12 sm:col-span-5">
+                  <Label className="field-label">2nd Name Choice</Label>
+                  <Input className="h-7 text-sm" value={filingForm.second_name_choice} onChange={(e) => setFilingForm((p) => ({ ...p, second_name_choice: e.target.value }))} />
+                </div>
+                <div className="field-group col-span-6 sm:col-span-3">
+                  <Label className="field-label">Filing Date</Label>
+                  <DatePickerField value={filingForm.filing_date || ""} onChange={(v) => setFilingForm((p) => ({ ...p, filing_date: v }))} className="h-7" />
+                </div>
+                <div className="field-group col-span-6 sm:col-span-4">
+                  <Label className="field-label">Delayed Effective Date</Label>
+                  <DatePickerField value={filingForm.delayed_effective_filing_date || ""} onChange={(v) => setFilingForm((p) => ({ ...p, delayed_effective_filing_date: v }))} className="h-7" />
+                </div>
+                <div className="field-group col-span-6 sm:col-span-3">
+                  <Label className="field-label">Accounting Method</Label>
+                  <Select value={filingForm.accounting_method} onValueChange={(v) => setFilingForm((p) => ({ ...p, accounting_method: v }))}>
+                    <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash basis">Cash Basis</SelectItem>
+                      <SelectItem value="accrual">Accrual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="field-group mt-2">
+                <Label className="field-label">Additional Provisions</Label>
+                <Textarea className="text-sm min-h-[60px]" value={filingForm.additional_provisions} onChange={(e) => setFilingForm((p) => ({ ...p, additional_provisions: e.target.value }))} rows={2} />
+              </div>
             </div>
             {/* S Corporation Tax Status — LLC only */}
             {isLLCType(company.entity_type) && (
