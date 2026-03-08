@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +20,12 @@ import {
 import { Loader2, FileText, Mail, AlertCircle, Download } from "lucide-react";
 import { toast } from "sonner";
 import { downloadAnnualUpdatePdf, generateAnnualUpdatePdf, type AnnualUpdateData } from "@/lib/annual-update-pdf";
+import * as pdfjsLib from "pdfjs-dist";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.mjs",
+  import.meta.url,
+).toString();
 
 interface AnnualUpdateWorkflowProps {
   open: boolean;
