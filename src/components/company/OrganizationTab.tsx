@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Loader2, Save, Users, FileText, ChevronDown, ExternalLink, Shield, History } from "lucide-react";
+import { Plus, Trash2, Loader2, Save, Users, FileText, ChevronDown, ExternalLink, Shield, History, Building2, User, Phone, Globe } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 import { toast } from "sonner";
@@ -225,6 +225,13 @@ export default function OrganizationTab({ companyId, company }: Props) {
 
   // Filing details form
   const [filingForm, setFilingForm] = useState({
+    name: company.name,
+    entity_type: company.entity_type,
+    state_of_incorporation: company.state_of_incorporation ?? "",
+    incorporation_date: company.incorporation_date ?? "",
+    fiscal_year_end: company.fiscal_year_end ?? "",
+    scheduled_annual_meeting: company.scheduled_annual_meeting ?? "",
+    corporate_status: company.corporate_status ?? "current",
     second_name_choice: company.second_name_choice ?? "",
     filing_date: company.filing_date ?? "",
     delayed_effective_filing_date: company.delayed_effective_filing_date ?? "",
@@ -242,12 +249,38 @@ export default function OrganizationTab({ companyId, company }: Props) {
     city: company.city ?? "",
     state: company.state ?? "",
     zip: company.zip ?? "",
+    phone: company.phone ?? "",
+    contact_full_name: (company as any).contact_full_name ?? "",
+    contact_email: (company as any).contact_email ?? "",
+    salutation_name: (company as any).salutation_name ?? "",
+    contact_phone: (company as any).contact_phone ?? "",
+    contact_cell: (company as any).contact_cell ?? "",
+    contact_webpage: (company as any).contact_webpage ?? "",
   });
 
   const { handleZipChange: handleFilingZipChange } = useZipLookup(({ city, state }) => {
     setFilingForm((p) => ({ ...p, city, state }));
   });
   const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(!!company.s_election_date);
+
+  // Phone formatting helper
+  const formatPhone = (value: string): string => {
+    const digits = value.replace(/\D/g, "").slice(0, 10);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  };
+
+  const handlePhoneChange = (field: string, value: string) => {
+    setFilingForm((p) => ({ ...p, [field]: formatPhone(value) }));
+  };
+
+  const formatWebpage = (value: string): string => {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+  };
 
   useEffect(() => {
     setLlcSElectionEnabled(!!company.s_election_date);
@@ -263,6 +296,13 @@ export default function OrganizationTab({ companyId, company }: Props) {
       const { error } = await supabase
         .from("companies")
         .update({
+          name: filingForm.name,
+          entity_type: filingForm.entity_type,
+          state_of_incorporation: filingForm.state_of_incorporation || null,
+          incorporation_date: filingForm.incorporation_date || null,
+          fiscal_year_end: filingForm.fiscal_year_end || null,
+          scheduled_annual_meeting: filingForm.scheduled_annual_meeting || null,
+          corporate_status: filingForm.corporate_status,
           second_name_choice: filingForm.second_name_choice || null,
           filing_date: filingForm.filing_date || null,
           delayed_effective_filing_date: filingForm.delayed_effective_filing_date || null,
@@ -279,16 +319,24 @@ export default function OrganizationTab({ companyId, company }: Props) {
           city: filingForm.city || null,
           state: filingForm.state || null,
           zip: filingForm.zip || null,
+          phone: filingForm.phone || null,
+          contact_full_name: filingForm.contact_full_name || null,
+          contact_email: filingForm.contact_email || null,
+          salutation_name: filingForm.salutation_name || null,
+          contact_phone: filingForm.contact_phone || null,
+          contact_cell: filingForm.contact_cell || null,
+          contact_webpage: filingForm.contact_webpage ? formatWebpage(filingForm.contact_webpage) : null,
           s_election_date: isLLCType(company.entity_type)
             ? (llcSElectionEnabled ? (filingForm.s_election_date || null) : null)
             : company.s_election_date,
-        })
+        } as any)
         .eq("id", companyId);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company", companyId] });
-      toast.success("Filing details saved!");
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      toast.success("Organizational info saved!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -429,38 +477,42 @@ export default function OrganizationTab({ companyId, company }: Props) {
 
   return (
     <div className="space-y-5">
-      {/* Filing & Articles Details */}
+      {/* Organizational Info */}
       <Card>
         <CardHeader className="pb-2 pt-4 px-4">
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <FileText className="h-3.5 w-3.5 text-primary" />
-                <CardTitle className="card-section-title">{isLLCType(company.entity_type) ? "Organizational Info" : "Incorporation Info"}</CardTitle>
+                <Building2 className="h-3.5 w-3.5 text-primary" />
+                <CardTitle className="card-section-title">Organizational Info</CardTitle>
               </div>
-              <CardDescription className="text-[11px]">{isLLCType(company.entity_type) ? "Information used to prepare articles of organization" : "Information used to prepare articles of incorporation/organization"}</CardDescription>
             </div>
             <SectionPdfActions config={{
-              title: isLLCType(company.entity_type) ? "Organizational Info" : "Incorporation Info",
+              title: "Organizational Info",
               companyName: company.name,
               fields: [
-                { label: "2nd Name Choice", value: filingForm.second_name_choice },
-                { label: "Filing Date", value: filingForm.filing_date ? new Date(filingForm.filing_date + "T00:00:00").toLocaleDateString() : "" },
+                { label: "Company Name", value: filingForm.name },
+                { label: "Entity Type", value: filingForm.entity_type },
+                { label: "State of Organization", value: filingForm.state_of_incorporation },
+                { label: "Organization Date", value: filingForm.incorporation_date ? new Date(filingForm.incorporation_date + "T00:00:00").toLocaleDateString() : "" },
+                { label: "Fiscal Year End", value: filingForm.fiscal_year_end },
+                { label: "Scheduled Annual Meeting", value: filingForm.scheduled_annual_meeting },
+                { label: "Contact Name", value: filingForm.contact_full_name },
+                { label: "Salutation", value: filingForm.salutation_name },
+                { label: "Email", value: filingForm.contact_email },
+                { label: "Main Phone", value: filingForm.contact_phone },
+                { label: "Cell Phone", value: filingForm.contact_cell },
+                { label: "Webpage", value: filingForm.contact_webpage },
+                { label: "Address", value: [filingForm.address, filingForm.address_2].filter(Boolean).join(", ") },
+                { label: "City / State / Zip", value: [filingForm.city, filingForm.state, filingForm.zip].filter(Boolean).join(", ") },
+                { label: "Company Phone", value: filingForm.phone },
                 { label: "Business Purpose", value: filingForm.business_purpose },
-                { label: "Accounting Method", value: filingForm.accounting_method },
                 { label: "NAICS Code", value: filingForm.naics_code },
-                { label: "Scheduled Annual Meeting Date", value: filingForm.first_year_annual_meeting },
-                ...(!isLLCType(company.entity_type) ? [
-                  { label: "Initial # of Directors", value: filingForm.initial_directors_count },
-                  { label: "Max Directors Allowed", value: filingForm.max_directors_allowed },
-                  { label: "Max VPs Allowed", value: filingForm.max_vps_allowed },
-                ] : []),
-                { label: "Additional Provisions", value: filingForm.additional_provisions },
               ],
             }} />
           </div>
         </CardHeader>
-        <CardContent className="px-4 pb-4">
+        <CardContent className="px-4 pb-4 space-y-5">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -468,97 +520,195 @@ export default function OrganizationTab({ companyId, company }: Props) {
             }}
             className="space-y-3"
           >
+            {/* Company Details - compact grid */}
             <div className="grid grid-cols-12 gap-x-3 gap-y-2">
               <div className="field-group col-span-12 sm:col-span-5">
-                <Label className="field-label">2nd Name Choice</Label>
-                <Input className="h-7 text-sm" value={filingForm.second_name_choice} onChange={(e) => setFilingForm((p) => ({ ...p, second_name_choice: e.target.value }))} />
+                <Label className="field-label">Company Name</Label>
+                <Input className="h-7 text-sm" value={filingForm.name} onChange={(e) => setFilingForm((p) => ({ ...p, name: e.target.value }))} required />
               </div>
               <div className="field-group col-span-6 sm:col-span-3">
-                <Label className="field-label">Filing Date</Label>
-                <Input type="date" className="h-7 text-sm" value={filingForm.filing_date} onChange={(e) => setFilingForm((p) => ({ ...p, filing_date: e.target.value }))} />
-              </div>
-              <div className="field-group col-span-6 sm:col-span-4">
-                <Label className="field-label">Delayed Effective Date</Label>
-                <Input type="date" className="h-7 text-sm" value={filingForm.delayed_effective_filing_date} onChange={(e) => setFilingForm((p) => ({ ...p, delayed_effective_filing_date: e.target.value }))} />
-              </div>
-              <div className="field-group col-span-6 sm:col-span-3">
-                <Label className="field-label">Accounting Method</Label>
-                <Select value={filingForm.accounting_method} onValueChange={(v) => setFilingForm((p) => ({ ...p, accounting_method: v }))}>
+                <Label className="field-label">Entity Type</Label>
+                <Select value={filingForm.entity_type} onValueChange={(v) => setFilingForm((p) => ({ ...p, entity_type: v }))}>
                   <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash basis">Cash Basis</SelectItem>
-                    <SelectItem value="accrual">Accrual</SelectItem>
+                    {["Corporation", "LLC", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"].map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="field-group col-span-6 sm:col-span-2">
+                <Label className="field-label">State of Org.</Label>
+                <Select value={filingForm.state_of_incorporation} onValueChange={(v) => setFilingForm((p) => ({ ...p, state_of_incorporation: v }))}>
+                  <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
+                  <SelectContent>
+                    {US_STATES.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="field-group col-span-6 sm:col-span-2">
+                <Label className="field-label">Status</Label>
+                <Select value={filingForm.corporate_status} onValueChange={(v) => setFilingForm((p) => ({ ...p, corporate_status: v }))}>
+                  <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="current">Current</SelectItem>
+                    <SelectItem value="delinquent">Delinquent</SelectItem>
+                    <SelectItem value="dissolved">Dissolved</SelectItem>
+                    <SelectItem value="suspended">Suspended</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="field-group col-span-6 sm:col-span-3">
+                <Label className="field-label">Organization Date</Label>
+                <DatePickerField value={filingForm.incorporation_date || ""} onChange={(v) => setFilingForm((p) => ({ ...p, incorporation_date: v }))} className="h-7" />
+              </div>
+              <div className="field-group col-span-6 sm:col-span-3">
+                <Label className="field-label">Fiscal Year End</Label>
+                <Input className="h-7 text-sm" value={filingForm.fiscal_year_end} onChange={(e) => setFilingForm((p) => ({ ...p, fiscal_year_end: e.target.value }))} placeholder="December 31" />
+              </div>
+              <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label">Sched. Annual Mtg Date</Label>
-                <Input type="number" className="h-7 text-sm" value={filingForm.first_year_annual_meeting} onChange={(e) => setFilingForm((p) => ({ ...p, first_year_annual_meeting: e.target.value }))} />
+                <Input className="h-7 text-sm" value={filingForm.scheduled_annual_meeting} onChange={(e) => setFilingForm((p) => ({ ...p, scheduled_annual_meeting: e.target.value }))} placeholder="1st Monday in April" />
               </div>
-              <div className="field-group col-span-12 sm:col-span-10">
-                <Label className="field-label">Business Purpose</Label>
-                <Textarea className="text-sm min-h-[50px]" value={filingForm.business_purpose} onChange={(e) => setFilingForm((p) => ({ ...p, business_purpose: e.target.value }))} rows={2} placeholder="Describe the business purpose..." />
-              </div>
-              <div className="field-group col-span-6 sm:col-span-2">
-                <Label className="field-label flex items-center gap-1">
-                  NAICS
-                  <a href="https://www.naics.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                </Label>
-                <Input className="h-7 text-sm" value={filingForm.naics_code} onChange={(e) => setFilingForm((p) => ({ ...p, naics_code: e.target.value }))} placeholder="Code" />
-              </div>
-              {!isLLCType(company.entity_type) && (
-                <>
-                  <div className="field-group col-span-4 sm:col-span-2">
-                    <Label className="field-label">Init. Directors</Label>
-                    <Input type="number" className="h-7 text-sm" value={filingForm.initial_directors_count} onChange={(e) => setFilingForm((p) => ({ ...p, initial_directors_count: e.target.value }))} />
-                  </div>
-                  <div className="field-group col-span-4 sm:col-span-2">
-                    <Label className="field-label">Max Directors</Label>
-                    <Input type="number" className="h-7 text-sm" value={filingForm.max_directors_allowed} onChange={(e) => setFilingForm((p) => ({ ...p, max_directors_allowed: e.target.value }))} />
-                  </div>
-                  <div className="field-group col-span-4 sm:col-span-2">
-                    <Label className="field-label">Max VPs</Label>
-                    <Input type="number" className="h-7 text-sm" value={filingForm.max_vps_allowed} onChange={(e) => setFilingForm((p) => ({ ...p, max_vps_allowed: e.target.value }))} />
-                  </div>
-                </>
-              )}
             </div>
-            {/* Principal Office Address */}
-            <div className="pt-1">
-              <Label className="field-label font-semibold text-xs text-muted-foreground mb-1.5 block">Principal Office Address</Label>
+
+            {/* Primary Contact - compact */}
+            <div className="border-t border-border pt-3">
+              <div className="flex items-center gap-2 mb-2">
+                <User className="h-3.5 w-3.5 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Primary Contact</h3>
+              </div>
               <div className="grid grid-cols-12 gap-x-3 gap-y-2">
                 <div className="field-group col-span-12 sm:col-span-5">
-                  <Label className="field-label">Address</Label>
+                  <Label className="field-label">Full Name</Label>
+                  <Input className="h-7 text-sm" value={filingForm.contact_full_name} onChange={(e) => setFilingForm((p) => ({ ...p, contact_full_name: e.target.value }))} placeholder="First and Last Name" />
+                </div>
+                <div className="field-group col-span-6 sm:col-span-2">
+                  <Label className="field-label">Salutation</Label>
+                  <Input className="h-7 text-sm" value={filingForm.salutation_name} onChange={(e) => setFilingForm((p) => ({ ...p, salutation_name: e.target.value }))} placeholder='"John"' />
+                </div>
+                <div className="field-group col-span-12 sm:col-span-5">
+                  <Label className="field-label">Email</Label>
+                  <Input className="h-7 text-sm" type="email" value={filingForm.contact_email} onChange={(e) => setFilingForm((p) => ({ ...p, contact_email: e.target.value }))} placeholder="client@example.com" />
+                </div>
+                <div className="field-group col-span-6 sm:col-span-3">
+                  <Label className="field-label flex items-center gap-1"><Phone className="h-3 w-3" /> Main Phone</Label>
+                  <Input className="h-7 text-sm" value={filingForm.contact_phone} onChange={(e) => handlePhoneChange("contact_phone", e.target.value)} placeholder="(555) 555-5555" />
+                </div>
+                <div className="field-group col-span-6 sm:col-span-3">
+                  <Label className="field-label flex items-center gap-1"><Phone className="h-3 w-3" /> Cell Phone</Label>
+                  <Input className="h-7 text-sm" value={filingForm.contact_cell} onChange={(e) => handlePhoneChange("contact_cell", e.target.value)} placeholder="(555) 555-5555" />
+                </div>
+                <div className="field-group col-span-12 sm:col-span-6">
+                  <Label className="field-label flex items-center gap-1"><Globe className="h-3 w-3" /> Webpage</Label>
+                  <div className="flex items-center gap-2">
+                    <Input className="h-7 text-sm" type="url" value={filingForm.contact_webpage} onChange={(e) => setFilingForm((p) => ({ ...p, contact_webpage: e.target.value }))} placeholder="www.example.com" onBlur={(e) => { if (e.target.value) setFilingForm((p) => ({ ...p, contact_webpage: formatWebpage(e.target.value) })); }} />
+                    {filingForm.contact_webpage && (
+                      <a href={formatWebpage(filingForm.contact_webpage)} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline shrink-0 inline-flex items-center gap-0.5">
+                        <ExternalLink className="h-2.5 w-2.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Company Address - compact */}
+            <div className="border-t border-border pt-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Building2 className="h-3.5 w-3.5 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Company Address</h3>
+              </div>
+              <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+                <div className="field-group col-span-12 sm:col-span-7">
+                  <Label className="field-label">Address Line 1</Label>
                   <Input className="h-7 text-sm" value={filingForm.address} onChange={(e) => setFilingForm((p) => ({ ...p, address: e.target.value }))} placeholder="Street address" />
                 </div>
-                <div className="field-group col-span-12 sm:col-span-3">
-                  <Label className="field-label">Address 2</Label>
-                  <Input className="h-7 text-sm" value={filingForm.address_2} onChange={(e) => setFilingForm((p) => ({ ...p, address_2: e.target.value }))} placeholder="Suite, unit, floor" />
+                <div className="field-group col-span-12 sm:col-span-5">
+                  <Label className="field-label">Address Line 2</Label>
+                  <Input className="h-7 text-sm" value={filingForm.address_2} onChange={(e) => setFilingForm((p) => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor" />
                 </div>
-                <div className="field-group col-span-5 sm:col-span-4">
+                <div className="field-group col-span-6 sm:col-span-4">
                   <Label className="field-label">City</Label>
                   <Input className="h-7 text-sm" value={filingForm.city} onChange={(e) => setFilingForm((p) => ({ ...p, city: e.target.value }))} />
                 </div>
                 <div className="field-group col-span-3 sm:col-span-2">
                   <Label className="field-label">State</Label>
                   <Select value={filingForm.state} onValueChange={(v) => setFilingForm((p) => ({ ...p, state: v }))}>
-                    <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
                     <SelectContent>
-                      {US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      {US_STATES.map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="field-group col-span-4 sm:col-span-2">
-                  <Label className="field-label">ZIP</Label>
-                  <Input className="h-7 text-sm" value={filingForm.zip} onChange={(e) => { const v = e.target.value; setFilingForm((p) => ({ ...p, zip: v })); handleFilingZipChange(v); }} maxLength={10} placeholder="00000" />
+                <div className="field-group col-span-3 sm:col-span-2">
+                  <Label className="field-label">Zip</Label>
+                  <Input className="h-7 text-sm" value={filingForm.zip} onChange={(e) => { const v = e.target.value.replace(/[^\d-]/g, "").slice(0, 10); setFilingForm((p) => ({ ...p, zip: v })); handleFilingZipChange(v); }} placeholder="55555" />
+                </div>
+                <div className="field-group col-span-6 sm:col-span-3">
+                  <Label className="field-label">Company Phone</Label>
+                  <Input className="h-7 text-sm" value={filingForm.phone} onChange={(e) => handlePhoneChange("phone", e.target.value)} placeholder="(555) 555-5555" />
                 </div>
               </div>
             </div>
-            <div className="field-group">
-              <Label className="field-label">Additional Provisions</Label>
-              <Textarea className="text-sm min-h-[60px]" value={filingForm.additional_provisions} onChange={(e) => setFilingForm((p) => ({ ...p, additional_provisions: e.target.value }))} rows={2} />
+
+            {/* Business Purpose & NAICS */}
+            <div className="border-t border-border pt-3">
+              <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+                <div className="field-group col-span-12 sm:col-span-10">
+                  <Label className="field-label">Business Purpose</Label>
+                  <Textarea className="text-sm min-h-[50px]" value={filingForm.business_purpose} onChange={(e) => setFilingForm((p) => ({ ...p, business_purpose: e.target.value }))} rows={2} placeholder="Describe the business purpose..." />
+                </div>
+                <div className="field-group col-span-6 sm:col-span-2">
+                  <Label className="field-label flex items-center gap-1">
+                    NAICS
+                    <a href="https://www.naics.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </Label>
+                  <Input className="h-7 text-sm" value={filingForm.naics_code} onChange={(e) => setFilingForm((p) => ({ ...p, naics_code: e.target.value }))} placeholder="Code" />
+                </div>
+              </div>
+            </div>
+
+            {/* Filing Details */}
+            <div className="border-t border-border pt-3">
+              <div className="flex items-center gap-2 mb-2">
+                <FileText className="h-3.5 w-3.5 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Filing & Article Details</h3>
+              </div>
+              <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+                <div className="field-group col-span-12 sm:col-span-5">
+                  <Label className="field-label">2nd Name Choice</Label>
+                  <Input className="h-7 text-sm" value={filingForm.second_name_choice} onChange={(e) => setFilingForm((p) => ({ ...p, second_name_choice: e.target.value }))} />
+                </div>
+                <div className="field-group col-span-6 sm:col-span-3">
+                  <Label className="field-label">Filing Date</Label>
+                  <DatePickerField value={filingForm.filing_date || ""} onChange={(v) => setFilingForm((p) => ({ ...p, filing_date: v }))} className="h-7" />
+                </div>
+                <div className="field-group col-span-6 sm:col-span-4">
+                  <Label className="field-label">Delayed Effective Date</Label>
+                  <DatePickerField value={filingForm.delayed_effective_filing_date || ""} onChange={(v) => setFilingForm((p) => ({ ...p, delayed_effective_filing_date: v }))} className="h-7" />
+                </div>
+                <div className="field-group col-span-6 sm:col-span-3">
+                  <Label className="field-label">Accounting Method</Label>
+                  <Select value={filingForm.accounting_method} onValueChange={(v) => setFilingForm((p) => ({ ...p, accounting_method: v }))}>
+                    <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash basis">Cash Basis</SelectItem>
+                      <SelectItem value="accrual">Accrual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="field-group mt-2">
+                <Label className="field-label">Additional Provisions</Label>
+                <Textarea className="text-sm min-h-[60px]" value={filingForm.additional_provisions} onChange={(e) => setFilingForm((p) => ({ ...p, additional_provisions: e.target.value }))} rows={2} />
+              </div>
             </div>
             {/* S Corporation Tax Status — LLC only */}
             {isLLCType(company.entity_type) && (
@@ -596,7 +746,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
             <div className="flex justify-end">
               <Button type="submit" disabled={saveFiling.isPending} size="sm">
                 {saveFiling.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-                Save Filing Details
+                Save Organizational Info
               </Button>
             </div>
           </form>
