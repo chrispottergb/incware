@@ -60,6 +60,7 @@ interface ExtractedData {
 }
 
 interface FileEntry {
+  id: string;
   file: File;
   name: string;
   status: "pending" | "processing" | "done" | "error";
@@ -175,6 +176,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     if (valid.length === 0) return;
 
     const entries: FileEntry[] = valid.map((f) => ({
+      id: crypto.randomUUID(),
       file: f,
       name: f.name,
       status: "pending" as const,
@@ -284,7 +286,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
 
   const processEntry = async (entry: FileEntry, accessToken: string, retryCount = 0) => {
     setFiles((prev) =>
-      prev.map((f) => (f === entry ? { ...f, status: "processing", error: undefined, retries: retryCount } : f))
+      prev.map((f) => (f.id === entry.id ? { ...f, status: "processing", error: undefined, retries: retryCount } : f))
     );
 
     try {
@@ -317,7 +319,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
 
       setFiles((prev) =>
         prev.map((f) =>
-          f === entry ? { ...f, status: "done", data: extracted } : f
+          f.id === entry.id ? { ...f, status: "done", data: extracted } : f
         )
       );
     } catch (err: any) {
@@ -335,7 +337,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
       console.error(err);
       setFiles((prev) =>
         prev.map((f) =>
-          f === entry ? { ...f, status: "error", error: errorMsg, retries: retryCount } : f
+          f.id === entry.id ? { ...f, status: "error", error: errorMsg, retries: retryCount } : f
         )
       );
     }
