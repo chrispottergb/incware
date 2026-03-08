@@ -815,9 +815,8 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 </div>
               )}
             </div>
-                </div>
-                <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowOrganizerForm(true)}>
-                  <Plus className="h-3 w-3 mr-1" /> Add Organizer
+
+
                 </Button>
               </div>
 
