@@ -419,7 +419,7 @@ export default function IncorporationTab({ company }: Props) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company", company.id] });
       queryClient.invalidateQueries({ queryKey: ["companies"] });
-      toast.success("Incorporation info saved!");
+      toast.success(isLLCType(company.entity_type) ? "Organizational info saved!" : "Incorporation info saved!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
