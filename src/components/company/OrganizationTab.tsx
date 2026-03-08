@@ -815,11 +815,6 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 </div>
               )}
             </div>
-
-
-                <div key={org.id} className="flex items-start gap-2 py-1.5 border-b border-border last:border-b-0">
-                  <div className="flex-1 text-sm">
-                    <span className="font-medium">{org.organizer_name}</span>
                     {(org.address || org.city) && (
                       <span className="text-muted-foreground ml-2">
                         — {[org.address, org.address_2, org.city, org.state, org.zip].filter(Boolean).join(", ")}
