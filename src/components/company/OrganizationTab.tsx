@@ -261,6 +261,63 @@ export default function OrganizationTab({ companyId, company }: Props) {
   const { handleZipChange: handleFilingZipChange } = useZipLookup(({ city, state }) => {
     setFilingForm((p) => ({ ...p, city, state }));
   });
+  // ─── Organizers ────────────────────────────────────────────────────────────
+  const { data: organizers = [], refetch: refetchOrganizers } = useQuery({
+    queryKey: ["organizers", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("organizers" as any)
+        .select("*")
+        .eq("company_id", companyId)
+        .order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const [newOrganizer, setNewOrganizer] = useState({ organizer_name: "", address: "", address_2: "", city: "", state: "", zip: "" });
+  const [showOrganizerForm, setShowOrganizerForm] = useState(false);
+
+  const handleOrganizerZipResult = useCallback((result: { city: string; state: string }) => {
+    setNewOrganizer(prev => ({ ...prev, city: result.city, state: result.state }));
+  }, []);
+  const { handleZipChange: handleOrganizerZip } = useZipLookup(handleOrganizerZipResult);
+
+  const addOrganizer = useMutation({
+    mutationFn: async () => {
+      if (!newOrganizer.organizer_name.trim()) throw new Error("Organizer name is required");
+      const { error } = await supabase.from("organizers" as any).insert({
+        company_id: companyId,
+        organizer_name: newOrganizer.organizer_name.trim(),
+        address: newOrganizer.address || null,
+        address_2: newOrganizer.address_2 || null,
+        city: newOrganizer.city || null,
+        state: newOrganizer.state || null,
+        zip: newOrganizer.zip || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchOrganizers();
+      setNewOrganizer({ organizer_name: "", address: "", address_2: "", city: "", state: "", zip: "" });
+      setShowOrganizerForm(false);
+      toast.success("Organizer added!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const deleteOrganizer = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("organizers" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchOrganizers();
+      toast.success("Organizer removed");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(!!company.s_election_date);
 
   // Phone formatting helper
@@ -601,6 +658,81 @@ export default function OrganizationTab({ companyId, company }: Props) {
               </div>
             </div>
 
+            {/* Organizers */}
+            <div className="border-t border-border pt-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Users className="h-3.5 w-3.5 text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">Organizer(s)</h3>
+                </div>
+                <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowOrganizerForm(true)}>
+                  <Plus className="h-3 w-3 mr-1" /> Add Organizer
+                </Button>
+              </div>
+
+              {organizers.length === 0 && !showOrganizerForm && (
+                <p className="text-sm text-muted-foreground text-center py-3">No organizers added yet.</p>
+              )}
+
+              {organizers.map((org: any) => (
+                <div key={org.id} className="flex items-start gap-2 py-1.5 border-b border-border last:border-b-0">
+                  <div className="flex-1 text-sm">
+                    <span className="font-medium">{org.organizer_name}</span>
+                    {(org.address || org.city) && (
+                      <span className="text-muted-foreground ml-2">
+                        — {[org.address, org.address_2, org.city, org.state, org.zip].filter(Boolean).join(", ")}
+                      </span>
+                    )}
+                  </div>
+                  <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive hover:text-destructive" onClick={() => deleteOrganizer.mutate(org.id)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+
+              {showOrganizerForm && (
+                <div className="mt-2 rounded-md border border-border bg-muted/30 p-3 space-y-2">
+                  <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+                    <div className="field-group col-span-12 sm:col-span-5">
+                      <Label className="field-label">Organizer Name</Label>
+                      <Input className="h-7 text-sm" value={newOrganizer.organizer_name} onChange={(e) => setNewOrganizer(p => ({ ...p, organizer_name: e.target.value }))} placeholder="Full name" />
+                    </div>
+                    <div className="field-group col-span-12 sm:col-span-4">
+                      <Label className="field-label">Address</Label>
+                      <Input className="h-7 text-sm" value={newOrganizer.address} onChange={(e) => setNewOrganizer(p => ({ ...p, address: e.target.value }))} />
+                    </div>
+                    <div className="field-group col-span-12 sm:col-span-3">
+                      <Label className="field-label">Address 2</Label>
+                      <Input className="h-7 text-sm" value={newOrganizer.address_2} onChange={(e) => setNewOrganizer(p => ({ ...p, address_2: e.target.value }))} />
+                    </div>
+                    <div className="field-group col-span-5 sm:col-span-4">
+                      <Label className="field-label">City</Label>
+                      <Input className="h-7 text-sm" value={newOrganizer.city} onChange={(e) => setNewOrganizer(p => ({ ...p, city: e.target.value }))} />
+                    </div>
+                    <div className="field-group col-span-3 sm:col-span-2">
+                      <Label className="field-label">State</Label>
+                      <Select value={newOrganizer.state} onValueChange={(v) => setNewOrganizer(p => ({ ...p, state: v }))}>
+                        <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
+                        <SelectContent>
+                          {US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="field-group col-span-4 sm:col-span-2">
+                      <Label className="field-label">Zip</Label>
+                      <Input className="h-7 text-sm" value={newOrganizer.zip} onChange={(e) => { const v = e.target.value; setNewOrganizer(p => ({ ...p, zip: v })); handleOrganizerZip(v); }} maxLength={10} />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setShowOrganizerForm(false); setNewOrganizer({ organizer_name: "", address: "", address_2: "", city: "", state: "", zip: "" }); }}>Cancel</Button>
+                    <Button type="button" size="sm" className="h-7 text-xs" onClick={() => addOrganizer.mutate()} disabled={addOrganizer.isPending}>
+                      {addOrganizer.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
+                      Add
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
 
 
             {/* S Corporation Tax Status — LLC only */}
