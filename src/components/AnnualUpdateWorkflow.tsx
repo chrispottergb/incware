@@ -38,6 +38,8 @@ export default function AnnualUpdateWorkflow({ open, onOpenChange, companies }: 
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
   const [step, setStep] = useState<"select" | "generating" | "ready">("select");
   const [updateData, setUpdateData] = useState<AnnualUpdateData | null>(null);
+  const [previewPages, setPreviewPages] = useState<string[]>([]);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
   const handleReset = () => {
     setSelectedCompanyId("");
