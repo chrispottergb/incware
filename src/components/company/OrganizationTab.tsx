@@ -436,12 +436,12 @@ export default function OrganizationTab({ companyId, company }: Props) {
             <div>
               <div className="flex items-center gap-2">
                 <FileText className="h-3.5 w-3.5 text-primary" />
-                <CardTitle className="card-section-title">Incorporation Info</CardTitle>
+                <CardTitle className="card-section-title">{isLLCType(company.entity_type) ? "Organizational Info" : "Incorporation Info"}</CardTitle>
               </div>
-              <CardDescription className="text-[11px]">Information used to prepare articles of incorporation/organization</CardDescription>
+              <CardDescription className="text-[11px]">{isLLCType(company.entity_type) ? "Information used to prepare articles of organization" : "Information used to prepare articles of incorporation/organization"}</CardDescription>
             </div>
             <SectionPdfActions config={{
-              title: "Incorporation Info",
+              title: isLLCType(company.entity_type) ? "Organizational Info" : "Incorporation Info",
               companyName: company.name,
               fields: [
                 { label: "2nd Name Choice", value: filingForm.second_name_choice },
@@ -504,7 +504,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 </Label>
                 <Input className="h-7 text-sm" value={filingForm.naics_code} onChange={(e) => setFilingForm((p) => ({ ...p, naics_code: e.target.value }))} />
               </div>
-              <div className="field-group col-span-6 sm:col-span-2">
+              <div className="field-group col-span-6 sm:col-span-4">
                 <Label className="field-label">Sched. Annual Mtg Date</Label>
                 <Input type="number" className="h-7 text-sm" value={filingForm.first_year_annual_meeting} onChange={(e) => setFilingForm((p) => ({ ...p, first_year_annual_meeting: e.target.value }))} />
               </div>
