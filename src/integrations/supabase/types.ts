@@ -2560,6 +2560,56 @@ export type Database = {
           },
         ]
       }
+      tax_return_jobs: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          error: string | null
+          extracted: Json | null
+          file_name: string | null
+          file_path: string | null
+          id: string
+          mode: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          error?: string | null
+          extracted?: Json | null
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          mode?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          error?: string | null
+          extracted?: Json | null
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          mode?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_return_jobs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timeline_events: {
         Row: {
           company_id: string
