@@ -109,6 +109,28 @@ export default function AnnualUpdateWorkflow({ open, onOpenChange, companies }: 
 
       setUpdateData(data);
       setStep("ready");
+
+      // Generate preview images from PDF
+      try {
+        const doc = generateAnnualUpdatePdf(data);
+        const pdfBytes = doc.output("arraybuffer");
+        const pdfDoc = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+        const pages: string[] = [];
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+          const page = await pdfDoc.getPage(i);
+          const scale = 1.5;
+          const viewport = page.getViewport({ scale });
+          const canvas = document.createElement("canvas");
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          const ctx = canvas.getContext("2d")!;
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          pages.push(canvas.toDataURL("image/png"));
+        }
+        setPreviewPages(pages);
+      } catch (err) {
+        console.error("Preview render error:", err);
+      }
     } catch (err: any) {
       console.error("Annual update error:", err);
       toast.error("Failed to load company data.");
