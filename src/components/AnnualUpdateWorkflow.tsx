@@ -186,7 +186,7 @@ export default function AnnualUpdateWorkflow({ open, onOpenChange, companies }: 
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={step === "ready" ? "sm:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col" : "sm:max-w-md"}>
         <DialogHeader>
           <DialogTitle className="font-display">Annual Update</DialogTitle>
           <DialogDescription>
