@@ -263,17 +263,26 @@ async function populateCompanyData(
   const c = extracted.company || {};
   const f = extracted.financials || {};
 
-  // Update company record
-  await admin.from("companies").update({
-    address: c.address || undefined,
-    city: c.city || undefined,
-    state: c.state || undefined,
-    zip: c.zip || undefined,
-    fiscal_year_end: c.fiscal_year_end || undefined,
-    business_purpose: c.business_purpose || undefined,
-    accounting_method: c.accounting_method || undefined,
-    naics_code: c.naics_code || undefined,
-  }).eq("id", companyId);
+  // Update company record with all extracted fields
+  const companyUpdate: Record<string, any> = {};
+  if (c.address) companyUpdate.address = c.address;
+  if (c.city) companyUpdate.city = c.city;
+  if (c.state) {
+    companyUpdate.state = c.state;
+    companyUpdate.state_of_incorporation = c.state;
+  }
+  if (c.zip) companyUpdate.zip = c.zip;
+  if (c.fiscal_year_end) companyUpdate.fiscal_year_end = c.fiscal_year_end;
+  if (c.business_purpose) companyUpdate.business_purpose = c.business_purpose;
+  if (c.entity_type) companyUpdate.entity_type = c.entity_type;
+  if (c.accounting_method) companyUpdate.accounting_method = c.accounting_method;
+  if (c.naics_code) companyUpdate.naics_code = c.naics_code;
+  if (c.incorporation_date) companyUpdate.incorporation_date = c.incorporation_date;
+  if (c.ein) companyUpdate.phone = companyUpdate.phone; // preserve existing phone
+
+  if (Object.keys(companyUpdate).length > 0) {
+    await admin.from("companies").update(companyUpdate).eq("id", companyId);
+  }
 
   // Create meeting with financials
   if (extracted.tax_year && f.total_sales !== null) {
