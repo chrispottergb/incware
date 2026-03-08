@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const DURATION = 5000;
+const DURATION = 7500;
 const EXIT_DURATION = 800;
 
 interface SplashScreenProps {
