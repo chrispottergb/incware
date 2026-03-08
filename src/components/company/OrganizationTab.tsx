@@ -504,7 +504,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 </Label>
                 <Input className="h-7 text-sm" value={filingForm.naics_code} onChange={(e) => setFilingForm((p) => ({ ...p, naics_code: e.target.value }))} />
               </div>
-              <div className="field-group col-span-6 sm:col-span-2">
+              <div className="field-group col-span-6 sm:col-span-4">
                 <Label className="field-label">Sched. Annual Mtg Date</Label>
                 <Input type="number" className="h-7 text-sm" value={filingForm.first_year_annual_meeting} onChange={(e) => setFilingForm((p) => ({ ...p, first_year_annual_meeting: e.target.value }))} />
               </div>
