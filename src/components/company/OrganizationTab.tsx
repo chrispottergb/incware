@@ -438,7 +438,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <FileText className="h-3.5 w-3.5 text-primary" />
                 <CardTitle className="card-section-title">{isLLCType(company.entity_type) ? "Organizational Info" : "Incorporation Info"}</CardTitle>
               </div>
-              <CardDescription className="text-[11px]">Information used to prepare articles of incorporation/organization</CardDescription>
+              <CardDescription className="text-[11px]">{isLLCType(company.entity_type) ? "Information used to prepare articles of organization" : "Information used to prepare articles of incorporation/organization"}</CardDescription>
             </div>
             <SectionPdfActions config={{
               title: "Incorporation Info",
