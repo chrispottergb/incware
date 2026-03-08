@@ -712,6 +712,10 @@ export default function IncorporationTab({ company }: Props) {
                 </Label>
                 <Input className="h-7 text-sm" value={form.naics_code} onChange={(e) => update("naics_code", e.target.value)} placeholder="Code" />
               </div>
+              <div className="field-group col-span-12 sm:col-span-4">
+                <Label className="field-label">Sched. Annual Mtg Date</Label>
+                <Input className="h-7 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
+              </div>
             </div>
           </div>
 
