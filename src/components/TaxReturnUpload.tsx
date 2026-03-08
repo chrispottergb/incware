@@ -148,13 +148,13 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
       setSimulatedProgress(0);
       return;
     }
-    setSimulatedProgress(5);
+    setSimulatedProgress(8);
     const interval = setInterval(() => {
       setSimulatedProgress((prev) => {
-        if (prev >= 92) return prev; // Cap at 92%, completion jumps to 100%
-        // Slow down as it gets higher to simulate realistic AI processing
-        const increment = prev < 30 ? 3 : prev < 60 ? 2 : prev < 80 ? 1 : 0.5;
-        return Math.min(prev + increment, 92);
+        // Keep moving so UI never appears frozen while server-side parsing/retries run
+        if (prev >= 99) return 99;
+        const increment = prev < 30 ? 3 : prev < 60 ? 2 : prev < 85 ? 1 : 0.35;
+        return Math.min(prev + increment, 99);
       });
     }, 500);
     return () => clearInterval(interval);
