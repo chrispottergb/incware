@@ -788,6 +788,82 @@ export default function IncorporationTab({ company }: Props) {
               </div>
             )}
           </div>
+
+          {/* Initial Directors */}
+          <div className="border-t border-border pt-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <UserCheck className="h-3.5 w-3.5 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Initial Director(s)</h3>
+              </div>
+              <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowDirectorForm(true)}>
+                <Plus className="h-3 w-3 mr-1" /> Add Director
+              </Button>
+            </div>
+
+            {directors.length === 0 && !showDirectorForm && (
+              <p className="text-sm text-muted-foreground text-center py-3">No initial directors added yet.</p>
+            )}
+
+            {directors.map((dir) => (
+              <div key={dir.id} className="flex items-start gap-2 py-1.5 border-b border-border last:border-b-0">
+                <div className="flex-1 text-sm">
+                  <span className="font-medium">{dir.name}</span>
+                  {(dir.address || dir.city) && (
+                    <span className="text-muted-foreground ml-2">
+                      — {[dir.address, dir.address_2, dir.city, dir.state, dir.zip].filter(Boolean).join(", ")}
+                    </span>
+                  )}
+                </div>
+                <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive hover:text-destructive" onClick={() => deleteDirector.mutate(dir.id)}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+
+            {showDirectorForm && (
+              <div className="mt-2 rounded-md border border-border bg-muted/30 p-3 space-y-2">
+                <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+                  <div className="field-group col-span-12 sm:col-span-5">
+                    <Label className="field-label">Director Name</Label>
+                    <Input className="h-7 text-sm" value={newDirector.name} onChange={(e) => setNewDirector(p => ({ ...p, name: e.target.value }))} placeholder="Full name" />
+                  </div>
+                  <div className="field-group col-span-12 sm:col-span-4">
+                    <Label className="field-label">Address</Label>
+                    <Input className="h-7 text-sm" value={newDirector.address} onChange={(e) => setNewDirector(p => ({ ...p, address: e.target.value }))} />
+                  </div>
+                  <div className="field-group col-span-12 sm:col-span-3">
+                    <Label className="field-label">Address 2</Label>
+                    <Input className="h-7 text-sm" value={newDirector.address_2} onChange={(e) => setNewDirector(p => ({ ...p, address_2: e.target.value }))} />
+                  </div>
+                  <div className="field-group col-span-5 sm:col-span-4">
+                    <Label className="field-label">City</Label>
+                    <Input className="h-7 text-sm" value={newDirector.city} onChange={(e) => setNewDirector(p => ({ ...p, city: e.target.value }))} />
+                  </div>
+                  <div className="field-group col-span-3 sm:col-span-2">
+                    <Label className="field-label">State</Label>
+                    <Select value={newDirector.state} onValueChange={(v) => setNewDirector(p => ({ ...p, state: v }))}>
+                      <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
+                      <SelectContent>
+                        {US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="field-group col-span-4 sm:col-span-2">
+                    <Label className="field-label">Zip</Label>
+                    <Input className="h-7 text-sm" value={newDirector.zip} onChange={(e) => { const v = e.target.value; setNewDirector(p => ({ ...p, zip: v })); handleDirectorZip(v); }} maxLength={10} />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setShowDirectorForm(false); setNewDirector({ name: "", address: "", address_2: "", city: "", state: "", zip: "" }); }}>Cancel</Button>
+                  <Button type="button" size="sm" className="h-7 text-xs" onClick={() => addDirector.mutate()} disabled={addDirector.isPending}>
+                    {addDirector.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
+                    Add
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
