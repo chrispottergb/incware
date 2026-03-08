@@ -419,7 +419,7 @@ export default function IncorporationTab({ company }: Props) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company", company.id] });
       queryClient.invalidateQueries({ queryKey: ["companies"] });
-      toast.success("Incorporation info saved!");
+      toast.success(isLLCType(company.entity_type) ? "Organizational info saved!" : "Incorporation info saved!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -535,10 +535,10 @@ export default function IncorporationTab({ company }: Props) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Building2 className="h-3.5 w-3.5 text-primary" />
-              <CardTitle className="card-section-title">Company &amp; Contact Information</CardTitle>
+              <CardTitle className="card-section-title">{isLLCType(company.entity_type) ? "Organizational Info" : "Incorporation Info"}</CardTitle>
             </div>
             <SectionPdfActions config={{
-              title: "Company & Contact Information",
+              title: isLLCType(company.entity_type) ? "Organizational Info" : "Incorporation Info",
               companyName: company.name,
               fields: [
                 { label: "Company Name", value: form.name },
@@ -611,10 +611,6 @@ export default function IncorporationTab({ company }: Props) {
             <div className="field-group col-span-6 sm:col-span-3">
               <Label className="field-label">Fiscal Year End</Label>
               <Input className="h-7 text-sm" value={form.fiscal_year_end} onChange={(e) => update("fiscal_year_end", e.target.value)} placeholder="December 31" />
-            </div>
-            <div className="field-group col-span-12 sm:col-span-4">
-              <Label className="field-label">Scheduled Annual Meeting</Label>
-              <Input className="h-7 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
             </div>
           </div>
 
@@ -715,6 +711,10 @@ export default function IncorporationTab({ company }: Props) {
                   </a>
                 </Label>
                 <Input className="h-7 text-sm" value={form.naics_code} onChange={(e) => update("naics_code", e.target.value)} placeholder="Code" />
+              </div>
+              <div className="field-group col-span-12 sm:col-span-4">
+                <Label className="field-label">Sched. Annual Mtg Date</Label>
+                <Input className="h-7 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
               </div>
             </div>
           </div>
