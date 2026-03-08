@@ -257,6 +257,63 @@ export default function IncorporationTab({ company }: Props) {
   const { handleZipChange: handleAgentZip } = useZipLookup(handleAgentZipResult);
   const { handleZipChange: handleCompanyZip } = useZipLookup(handleCompanyZipResult);
 
+  // ─── Organizers ────────────────────────────────────────────────────────────
+  const { data: organizers = [], refetch: refetchOrganizers } = useQuery({
+    queryKey: ["organizers", company.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("organizers" as any)
+        .select("*")
+        .eq("company_id", company.id)
+        .order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const [newOrganizer, setNewOrganizer] = useState({ organizer_name: "", address: "", address_2: "", city: "", state: "", zip: "" });
+  const [showOrganizerForm, setShowOrganizerForm] = useState(false);
+
+  const handleOrganizerZipResult = useCallback((result: { city: string; state: string }) => {
+    setNewOrganizer(prev => ({ ...prev, city: result.city, state: result.state }));
+  }, []);
+  const { handleZipChange: handleOrganizerZip } = useZipLookup(handleOrganizerZipResult);
+
+  const addOrganizer = useMutation({
+    mutationFn: async () => {
+      if (!newOrganizer.organizer_name.trim()) throw new Error("Organizer name is required");
+      const { error } = await supabase.from("organizers" as any).insert({
+        company_id: company.id,
+        organizer_name: newOrganizer.organizer_name.trim(),
+        address: newOrganizer.address || null,
+        address_2: newOrganizer.address_2 || null,
+        city: newOrganizer.city || null,
+        state: newOrganizer.state || null,
+        zip: newOrganizer.zip || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchOrganizers();
+      setNewOrganizer({ organizer_name: "", address: "", address_2: "", city: "", state: "", zip: "" });
+      setShowOrganizerForm(false);
+      toast.success("Organizer added!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const deleteOrganizer = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("organizers" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchOrganizers();
+      toast.success("Organizer removed");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   // Derive card config reactively from current entity_type
   const equityCard = getEquityCardConfig(form.entity_type);
 
