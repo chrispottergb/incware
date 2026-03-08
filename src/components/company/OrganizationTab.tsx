@@ -436,7 +436,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
             <div>
               <div className="flex items-center gap-2">
                 <FileText className="h-3.5 w-3.5 text-primary" />
-                <CardTitle className="card-section-title">Filing & Articles Details</CardTitle>
+                <CardTitle className="card-section-title">Incorporation Info</CardTitle>
               </div>
               <CardDescription className="text-[11px]">Information used to prepare articles of incorporation/organization</CardDescription>
             </div>
