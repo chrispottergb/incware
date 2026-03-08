@@ -225,6 +225,13 @@ export default function OrganizationTab({ companyId, company }: Props) {
 
   // Filing details form
   const [filingForm, setFilingForm] = useState({
+    name: company.name,
+    entity_type: company.entity_type,
+    state_of_incorporation: company.state_of_incorporation ?? "",
+    incorporation_date: company.incorporation_date ?? "",
+    fiscal_year_end: company.fiscal_year_end ?? "",
+    scheduled_annual_meeting: company.scheduled_annual_meeting ?? "",
+    corporate_status: company.corporate_status ?? "current",
     second_name_choice: company.second_name_choice ?? "",
     filing_date: company.filing_date ?? "",
     delayed_effective_filing_date: company.delayed_effective_filing_date ?? "",
@@ -242,6 +249,13 @@ export default function OrganizationTab({ companyId, company }: Props) {
     city: company.city ?? "",
     state: company.state ?? "",
     zip: company.zip ?? "",
+    phone: company.phone ?? "",
+    contact_full_name: (company as any).contact_full_name ?? "",
+    contact_email: (company as any).contact_email ?? "",
+    salutation_name: (company as any).salutation_name ?? "",
+    contact_phone: (company as any).contact_phone ?? "",
+    contact_cell: (company as any).contact_cell ?? "",
+    contact_webpage: (company as any).contact_webpage ?? "",
   });
 
   const { handleZipChange: handleFilingZipChange } = useZipLookup(({ city, state }) => {
