@@ -612,10 +612,6 @@ export default function IncorporationTab({ company }: Props) {
               <Label className="field-label">Fiscal Year End</Label>
               <Input className="h-7 text-sm" value={form.fiscal_year_end} onChange={(e) => update("fiscal_year_end", e.target.value)} placeholder="December 31" />
             </div>
-            <div className="field-group col-span-12 sm:col-span-4">
-              <Label className="field-label">Scheduled Annual Meeting</Label>
-              <Input className="h-7 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
-            </div>
           </div>
 
           {/* Primary Contact - compact */}
