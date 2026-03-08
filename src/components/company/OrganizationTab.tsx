@@ -565,12 +565,26 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <DatePickerField value={filingForm.incorporation_date || ""} onChange={(v) => setFilingForm((p) => ({ ...p, incorporation_date: v }))} className="h-7" />
               </div>
               <div className="field-group col-span-6 sm:col-span-3">
+                <Label className="field-label">Delayed Effective Date</Label>
+                <DatePickerField value={filingForm.delayed_effective_filing_date || ""} onChange={(v) => setFilingForm((p) => ({ ...p, delayed_effective_filing_date: v }))} className="h-7" />
+              </div>
+              <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label">Fiscal Year End</Label>
                 <Input className="h-7 text-sm" value={filingForm.fiscal_year_end} onChange={(e) => setFilingForm((p) => ({ ...p, fiscal_year_end: e.target.value }))} placeholder="December 31" />
               </div>
               <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label">Sched. Annual Mtg Date</Label>
                 <Input className="h-7 text-sm" value={filingForm.scheduled_annual_meeting} onChange={(e) => setFilingForm((p) => ({ ...p, scheduled_annual_meeting: e.target.value }))} placeholder="1st Monday in April" />
+              </div>
+              <div className="field-group col-span-6 sm:col-span-3">
+                <Label className="field-label">Accounting Method</Label>
+                <Select value={filingForm.accounting_method} onValueChange={(v) => setFilingForm((p) => ({ ...p, accounting_method: v }))}>
+                  <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash basis">Cash Basis</SelectItem>
+                    <SelectItem value="accrual">Accrual</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
