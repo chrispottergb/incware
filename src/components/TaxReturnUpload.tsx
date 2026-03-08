@@ -60,6 +60,7 @@ interface ExtractedData {
 }
 
 interface FileEntry {
+  id: string;
   file: File;
   name: string;
   status: "pending" | "processing" | "done" | "error";
