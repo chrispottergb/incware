@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { callClaudeWithDocument, parseJsonFromAI, AIProviderError } from "../_shared/ai-provider.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -39,7 +40,7 @@ serve(async (req) => {
     const formData = await req.formData();
     const file = formData.get("file") as File;
     const companyId = formData.get("company_id") as string | null;
-    const mode = formData.get("mode") as string || "extract"; // "extract" or "populate"
+    const mode = formData.get("mode") as string || "extract";
 
     if (!file) {
       return new Response(JSON.stringify({ error: "No file provided" }), {
@@ -48,18 +49,17 @@ serve(async (req) => {
       });
     }
 
-    // Upload file to storage
     const admin = createClient(supabaseUrl, serviceKey);
+
+    // Upload file to storage
     const fileName = `${user.id}/${Date.now()}_${file.name}`;
     const fileBuffer = await file.arrayBuffer();
     console.log(`Processing ${file.name} (${(fileBuffer.byteLength / 1024).toFixed(0)} KB, mode=${mode})`);
 
     const { error: uploadError } = await admin.storage
       .from("tax-returns")
-      .upload(fileName, fileBuffer, {
-        contentType: file.type,
-        upsert: true,
-      });
+      .upload(fileName, fileBuffer, { contentType: file.type, upsert: true });
+
     if (uploadError) {
       console.error("Upload error:", uploadError);
       return new Response(JSON.stringify({ error: "Failed to upload file" }), {
@@ -68,7 +68,72 @@ serve(async (req) => {
       });
     }
 
-    // Convert file to base64 for AI — use small chunks to avoid call-stack overflow
+    // Create job record
+    const { data: job, error: jobErr } = await admin
+      .from("tax_return_jobs")
+      .insert({
+        user_id: user.id,
+        company_id: companyId,
+        status: "processing",
+        mode,
+        file_path: fileName,
+        file_name: file.name,
+      })
+      .select("id")
+      .single();
+
+    if (jobErr || !job) {
+      console.error("Job creation error:", jobErr);
+      return new Response(JSON.stringify({ error: "Failed to create job" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Return job_id immediately, process in background
+    // Use EdgeRuntime.waitUntil so the response is sent immediately
+    // while the AI processing continues in the background
+    const backgroundPromise = processInBackground(admin, job.id, user.id, fileBuffer, file.type, file.name, fileName, companyId, mode);
+
+    // Try EdgeRuntime.waitUntil for Deno Deploy / Supabase Edge
+    try {
+      // @ts-ignore - EdgeRuntime is available in Supabase Edge Functions
+      if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
+        EdgeRuntime.waitUntil(backgroundPromise);
+      } else {
+        // Fallback: just let it run (may get cancelled when response is sent)
+        backgroundPromise.catch((err) => console.error("Background processing error:", err));
+      }
+    } catch {
+      backgroundPromise.catch((err) => console.error("Background processing error:", err));
+    }
+
+    return new Response(
+      JSON.stringify({ job_id: job.id, status: "processing" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (e) {
+    console.error("parse-tax-return error:", e);
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
+
+async function processInBackground(
+  admin: any,
+  jobId: string,
+  userId: string,
+  fileBuffer: ArrayBuffer,
+  fileType: string,
+  originalFileName: string,
+  storagePath: string,
+  companyId: string | null,
+  mode: string,
+) {
+  try {
+    // Convert to base64
     const uint8Array = new Uint8Array(fileBuffer);
     let binaryStr = "";
     const chunkSize = 1024;
@@ -79,7 +144,7 @@ serve(async (req) => {
       }
     }
     const base64 = btoa(binaryStr);
-    const mimeType = file.type || "application/pdf";
+    const mimeType = fileType || "application/pdf";
 
     const extractionPrompt = `You are a corporate tax return analyst. Analyze this tax return document and extract ALL of the following data. Return ONLY valid JSON.
 
@@ -141,198 +206,185 @@ Rules:
 - For retirement, look at deductions section line items
 - Return ONLY the JSON, no other text`;
 
-    // Use shared AI helper — prefers Claude (ANTHROPIC_API_KEY) with native PDF support,
-    // falls back to Lovable AI (LOVABLE_API_KEY) with image_url mode
-    let aiContent: string;
-    try {
-      const result = await callClaudeWithDocument({
-        base64Data: base64,
-        mimeType,
-        prompt: "Extract all entity data from this tax return and return the JSON object.",
-        systemPrompt: extractionPrompt,
-      });
-      aiContent = result.content;
-    } catch (err) {
-      if (err instanceof AIProviderError) {
-        return new Response(JSON.stringify({ error: err.message }), {
-          status: err.status,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      console.error("AI error:", err);
-      return new Response(JSON.stringify({ error: "AI processing failed" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Call AI
+    const result = await callClaudeWithDocument({
+      base64Data: base64,
+      mimeType,
+      prompt: "Extract all entity data from this tax return and return the JSON object.",
+      systemPrompt: extractionPrompt,
+    });
 
-    let extracted: any = null;
-    try {
-      extracted = parseJsonFromAI(aiContent);
-    } catch (e) {
-      console.error("JSON parse error:", e, "Raw:", aiContent);
-      return new Response(JSON.stringify({ error: "Failed to parse AI response", raw: aiContent }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const extracted = parseJsonFromAI(result.content);
 
     // If mode is "populate" and company_id provided, auto-save data
     if (mode === "populate" && companyId) {
-      // Verify company ownership
-      const { data: comp, error: compErr } = await admin
+      const { data: comp } = await admin
         .from("companies")
         .select("id")
         .eq("id", companyId)
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .maybeSingle();
 
-      if (compErr || !comp) {
-        return new Response(JSON.stringify({ error: "Company not found" }), {
-          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      if (comp) {
+        await populateCompanyData(admin, companyId, userId, extracted, originalFileName, storagePath);
       }
-
-      const c = extracted.company || {};
-      const f = extracted.financials || {};
-
-      // Update company record
-      await admin.from("companies").update({
-        address: c.address || undefined,
-        city: c.city || undefined,
-        state: c.state || undefined,
-        zip: c.zip || undefined,
-        fiscal_year_end: c.fiscal_year_end || undefined,
-        business_purpose: c.business_purpose || undefined,
-        accounting_method: c.accounting_method || undefined,
-        naics_code: c.naics_code || undefined,
-      }).eq("id", companyId);
-
-      // Create meeting with financials if we have tax year data
-      if (extracted.tax_year && f.total_sales !== null) {
-        const { data: newMeeting } = await admin.from("meetings").insert({
-          company_id: companyId,
-          meeting_date: `${extracted.tax_year}-12-31`,
-          meeting_type: "Annual Meeting",
-          tax_year: extracted.tax_year,
-          company_name_at_meeting: c.name || null,
-          company_address_at_meeting: c.address || null,
-          company_city_at_meeting: c.city || null,
-          company_state_at_meeting: c.state || null,
-          company_zip_at_meeting: c.zip || null,
-        }).select("id").single();
-
-        if (newMeeting) {
-          await admin.from("meeting_financials").insert({
-            meeting_id: newMeeting.id,
-            current_total_sales: f.total_sales,
-            current_cog: f.cost_of_goods_sold,
-            current_gross_profit: f.gross_profit,
-            current_net_income: f.net_income,
-            current_cog_ratio: f.cog_ratio,
-          });
-
-          // Add officers to meeting
-          if (extracted.officers?.length > 0) {
-            await admin.from("meeting_officers").insert(
-              extracted.officers.map((o: any) => ({
-                meeting_id: newMeeting.id,
-                name: o.name,
-                title: o.title || "Officer",
-              }))
-            );
-          }
-
-          // Add shareholders to meeting
-          if (extracted.shareholders?.length > 0) {
-            await admin.from("meeting_shareholders").insert(
-              extracted.shareholders.map((s: any) => ({
-                meeting_id: newMeeting.id,
-                shareholder_name: s.name,
-              }))
-            );
-          }
-        }
-      }
-
-      // Add vehicles as company assets
-      if (extracted.vehicles?.length > 0) {
-        await admin.from("company_assets").insert(
-          extracted.vehicles.map((v: any) => ({
-            company_id: companyId,
-            asset_type: "Vehicle",
-            description: v.description || `${v.year || ""} ${v.make || ""} ${v.model || ""}`.trim() || "Vehicle",
-            year: v.year || null,
-            make: v.make || null,
-            model: v.model || null,
-            cost: v.cost || null,
-          }))
-        );
-      }
-
-      // Add equipment as company assets
-      if (extracted.equipment?.length > 0) {
-        await admin.from("company_assets").insert(
-          extracted.equipment.map((eq: any) => ({
-            company_id: companyId,
-            asset_type: "Equipment",
-            description: eq.description || `${eq.manufacturer || ""} ${eq.model || ""}`.trim() || "Equipment",
-            year: eq.year || null,
-            manufacturer: eq.manufacturer || null,
-            model: eq.model || null,
-            cost: eq.cost || null,
-          }))
-        );
-      }
-
-      // Add shareholders to company
-      if (extracted.shareholders?.length > 0) {
-        const encryptionKey = Deno.env.get("SSN_ENCRYPTION_KEY");
-        for (const s of extracted.shareholders) {
-          const { data: newShareholder } = await admin.from("shareholders").insert({
-            company_id: companyId,
-            name: s.name,
-            address: s.address || null,
-            city: s.city || null,
-            state: s.state || null,
-            zip: s.zip || null,
-          }).select("id").single();
-
-          // Encrypt SSN/EIN if provided
-          if (newShareholder && s.ssn_ein && encryptionKey) {
-            await admin.rpc("encrypt_shareholder_ssn", {
-              p_shareholder_id: newShareholder.id,
-              p_ssn_ein: s.ssn_ein,
-              p_encryption_key: encryptionKey,
-            });
-          }
-        }
-      }
-
-      // Register the document
-      const { data: signedUrl } = await admin.storage
-        .from("tax-returns")
-        .createSignedUrl(fileName, 60 * 60 * 24 * 365);
-
-      await admin.from("document_registry").insert({
-        company_id: companyId,
-        title: `Tax Return ${extracted.form_type || ""} — ${extracted.tax_year || "Unknown Year"}`,
-        document_category: "tax",
-        document_type: `Form ${extracted.form_type || "Unknown"}`,
-        status: "final",
-        file_name: file.name,
-        file_url: signedUrl?.signedUrl || null,
-      });
     }
 
-    return new Response(
-      JSON.stringify({ extracted, file_path: fileName }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (e) {
-    console.error("parse-tax-return error:", e);
-    return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    // Update job as completed
+    await admin.from("tax_return_jobs").update({
+      status: "completed",
+      extracted,
+      updated_at: new Date().toISOString(),
+    }).eq("id", jobId);
+
+    console.log(`Job ${jobId} completed successfully`);
+  } catch (err) {
+    const errorMsg = err instanceof AIProviderError
+      ? err.message
+      : err instanceof Error ? err.message : "Unknown error";
+    console.error(`Job ${jobId} failed:`, errorMsg);
+
+    await admin.from("tax_return_jobs").update({
+      status: "failed",
+      error: errorMsg,
+      updated_at: new Date().toISOString(),
+    }).eq("id", jobId);
+  }
+}
+
+async function populateCompanyData(
+  admin: any,
+  companyId: string,
+  userId: string,
+  extracted: any,
+  originalFileName: string,
+  storagePath: string,
+) {
+  const c = extracted.company || {};
+  const f = extracted.financials || {};
+
+  // Update company record
+  await admin.from("companies").update({
+    address: c.address || undefined,
+    city: c.city || undefined,
+    state: c.state || undefined,
+    zip: c.zip || undefined,
+    fiscal_year_end: c.fiscal_year_end || undefined,
+    business_purpose: c.business_purpose || undefined,
+    accounting_method: c.accounting_method || undefined,
+    naics_code: c.naics_code || undefined,
+  }).eq("id", companyId);
+
+  // Create meeting with financials
+  if (extracted.tax_year && f.total_sales !== null) {
+    const { data: newMeeting } = await admin.from("meetings").insert({
+      company_id: companyId,
+      meeting_date: `${extracted.tax_year}-12-31`,
+      meeting_type: "Annual Meeting",
+      tax_year: extracted.tax_year,
+      company_name_at_meeting: c.name || null,
+      company_address_at_meeting: c.address || null,
+      company_city_at_meeting: c.city || null,
+      company_state_at_meeting: c.state || null,
+      company_zip_at_meeting: c.zip || null,
+    }).select("id").single();
+
+    if (newMeeting) {
+      await admin.from("meeting_financials").insert({
+        meeting_id: newMeeting.id,
+        current_total_sales: f.total_sales,
+        current_cog: f.cost_of_goods_sold,
+        current_gross_profit: f.gross_profit,
+        current_net_income: f.net_income,
+        current_cog_ratio: f.cog_ratio,
+      });
+
+      if (extracted.officers?.length > 0) {
+        await admin.from("meeting_officers").insert(
+          extracted.officers.map((o: any) => ({
+            meeting_id: newMeeting.id,
+            name: o.name,
+            title: o.title || "Officer",
+          }))
+        );
+      }
+
+      if (extracted.shareholders?.length > 0) {
+        await admin.from("meeting_shareholders").insert(
+          extracted.shareholders.map((s: any) => ({
+            meeting_id: newMeeting.id,
+            shareholder_name: s.name,
+          }))
+        );
+      }
+    }
+  }
+
+  // Add vehicles as company assets
+  if (extracted.vehicles?.length > 0) {
+    await admin.from("company_assets").insert(
+      extracted.vehicles.map((v: any) => ({
+        company_id: companyId,
+        asset_type: "Vehicle",
+        description: v.description || `${v.year || ""} ${v.make || ""} ${v.model || ""}`.trim() || "Vehicle",
+        year: v.year || null,
+        make: v.make || null,
+        model: v.model || null,
+        cost: v.cost || null,
+      }))
     );
   }
-});
+
+  // Add equipment as company assets
+  if (extracted.equipment?.length > 0) {
+    await admin.from("company_assets").insert(
+      extracted.equipment.map((eq: any) => ({
+        company_id: companyId,
+        asset_type: "Equipment",
+        description: eq.description || `${eq.manufacturer || ""} ${eq.model || ""}`.trim() || "Equipment",
+        year: eq.year || null,
+        manufacturer: eq.manufacturer || null,
+        model: eq.model || null,
+        cost: eq.cost || null,
+      }))
+    );
+  }
+
+  // Add shareholders
+  if (extracted.shareholders?.length > 0) {
+    const encryptionKey = Deno.env.get("SSN_ENCRYPTION_KEY");
+    for (const s of extracted.shareholders) {
+      const { data: newShareholder } = await admin.from("shareholders").insert({
+        company_id: companyId,
+        name: s.name,
+        address: s.address || null,
+        city: s.city || null,
+        state: s.state || null,
+        zip: s.zip || null,
+      }).select("id").single();
+
+      if (newShareholder && s.ssn_ein && encryptionKey) {
+        await admin.rpc("encrypt_shareholder_ssn", {
+          p_shareholder_id: newShareholder.id,
+          p_ssn_ein: s.ssn_ein,
+          p_encryption_key: encryptionKey,
+        });
+      }
+    }
+  }
+
+  // Register document
+  const { data: signedUrl } = await admin.storage
+    .from("tax-returns")
+    .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+
+  await admin.from("document_registry").insert({
+    company_id: companyId,
+    title: `Tax Return ${extracted.form_type || ""} — ${extracted.tax_year || "Unknown Year"}`,
+    document_category: "tax",
+    document_type: `Form ${extracted.form_type || "Unknown"}`,
+    status: "final",
+    file_name: originalFileName,
+    file_url: signedUrl?.signedUrl || null,
+  });
+}
