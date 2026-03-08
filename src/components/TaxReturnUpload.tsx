@@ -217,7 +217,9 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     }
   };
 
-  const TIMEOUT_MS = 180_000; // 3 minutes — AI vision on large PDFs can take time
+  const UPLOAD_TIMEOUT_MS = 30_000; // 30s for initial upload + job creation
+  const POLL_INTERVAL_MS = 3_000; // poll every 3 seconds
+  const POLL_TIMEOUT_MS = 300_000; // 5 minutes max polling time
   const MAX_RETRIES = 2;
 
   const fetchWithTimeout = (url: string, options: RequestInit, timeoutMs: number): Promise<Response> => {
@@ -242,12 +244,51 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     toast.info("Parsing cancelled");
   };
 
+  const pollForResult = async (jobId: string, accessToken: string): Promise<ExtractedData> => {
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < POLL_TIMEOUT_MS) {
+      if (cancelledRef.current) throw new Error("Cancelled");
+
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/poll-tax-return-job`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ job_id: jobId }),
+        }
+      );
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || `Poll failed (${resp.status})`);
+      }
+
+      const job = await resp.json();
+
+      if (job.status === "completed" && job.extracted) {
+        return job.extracted as ExtractedData;
+      } else if (job.status === "failed") {
+        throw new Error(job.error || "AI processing failed");
+      }
+      // status === "processing" → keep polling
+    }
+
+    throw new Error("Processing timed out after 5 minutes");
+  };
+
   const processEntry = async (entry: FileEntry, accessToken: string, retryCount = 0) => {
     setFiles((prev) =>
       prev.map((f) => (f === entry ? { ...f, status: "processing", error: undefined, retries: retryCount } : f))
     );
 
     try {
+      // Step 1: Upload file and get job_id (fast, returns immediately)
       const formData = new FormData();
       formData.append("file", entry.file);
       formData.append("mode", mode);
@@ -260,7 +301,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
           headers: { Authorization: `Bearer ${accessToken}` },
           body: formData,
         },
-        TIMEOUT_MS
+        UPLOAD_TIMEOUT_MS
       );
 
       if (!response.ok) {
@@ -269,7 +310,9 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
       }
 
       const data = await response.json();
-      const extracted = data.extracted as ExtractedData;
+
+      // Step 2: Poll for completion
+      const extracted = await pollForResult(data.job_id, accessToken);
       onExtracted?.(extracted);
 
       setFiles((prev) =>
@@ -279,7 +322,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
       );
     } catch (err: any) {
       const isTimeout = err.name === "AbortError";
-      const errorMsg = isTimeout ? "Request timed out" : err.message;
+      const errorMsg = isTimeout ? "Upload timed out" : err.message;
 
       // Auto-retry on timeout or 5xx
       if (retryCount < MAX_RETRIES && (isTimeout || /5\d{2}/.test(err.message))) {
