@@ -436,12 +436,12 @@ export default function OrganizationTab({ companyId, company }: Props) {
             <div>
               <div className="flex items-center gap-2">
                 <FileText className="h-3.5 w-3.5 text-primary" />
-                <CardTitle className="card-section-title">Filing & Articles Details</CardTitle>
+                <CardTitle className="card-section-title">Incorporation Info</CardTitle>
               </div>
               <CardDescription className="text-[11px]">Information used to prepare articles of incorporation/organization</CardDescription>
             </div>
             <SectionPdfActions config={{
-              title: "Filing & Articles Details",
+              title: "Incorporation Info",
               companyName: company.name,
               fields: [
                 { label: "2nd Name Choice", value: filingForm.second_name_choice },
@@ -449,7 +449,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 { label: "Business Purpose", value: filingForm.business_purpose },
                 { label: "Accounting Method", value: filingForm.accounting_method },
                 { label: "NAICS Code", value: filingForm.naics_code },
-                { label: "First Year Annual Meeting", value: filingForm.first_year_annual_meeting },
+                { label: "Scheduled Annual Meeting Date", value: filingForm.first_year_annual_meeting },
                 ...(!isLLCType(company.entity_type) ? [
                   { label: "Initial # of Directors", value: filingForm.initial_directors_count },
                   { label: "Max Directors Allowed", value: filingForm.max_directors_allowed },
@@ -505,7 +505,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <Input className="h-7 text-sm" value={filingForm.naics_code} onChange={(e) => setFilingForm((p) => ({ ...p, naics_code: e.target.value }))} />
               </div>
               <div className="field-group col-span-6 sm:col-span-2">
-                <Label className="field-label">1st Yr Annual Mtg</Label>
+                <Label className="field-label">Sched. Annual Mtg Date</Label>
                 <Input type="number" className="h-7 text-sm" value={filingForm.first_year_annual_meeting} onChange={(e) => setFilingForm((p) => ({ ...p, first_year_annual_meeting: e.target.value }))} />
               </div>
               {!isLLCType(company.entity_type) && (

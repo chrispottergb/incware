@@ -2194,6 +2194,50 @@ export type Database = {
           },
         ]
       }
+      organizers: {
+        Row: {
+          address: string | null
+          address_2: string | null
+          city: string | null
+          company_id: string
+          created_at: string
+          id: string
+          organizer_name: string
+          state: string | null
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          address_2?: string | null
+          city?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          organizer_name: string
+          state?: string | null
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          address_2?: string | null
+          city?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          organizer_name?: string
+          state?: string | null
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

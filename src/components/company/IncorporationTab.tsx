@@ -1,7 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -23,7 +23,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Loader2, Save, Shield, Building2, Share2, UserCheck, ChevronDown, Users, Heart, RefreshCw, ExternalLink, User, Phone, Globe } from "lucide-react";
+import { Loader2, Save, Shield, Building2, Share2, UserCheck, ChevronDown, Users, Heart, RefreshCw, ExternalLink, User, Phone, Globe, Plus, Trash2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import WIComplianceChecklist from "./WIComplianceChecklist";
@@ -218,6 +219,8 @@ export default function IncorporationTab({ company }: Props) {
     contact_cell: (company as any).contact_cell ?? "",
     contact_webpage: (company as any).contact_webpage ?? "",
     authorized_binders: (company as any).authorized_binders ?? "",
+    business_purpose: company.business_purpose ?? "",
+    naics_code: company.naics_code ?? "",
   });
 
   // Phone formatting helper
@@ -253,6 +256,63 @@ export default function IncorporationTab({ company }: Props) {
 
   const { handleZipChange: handleAgentZip } = useZipLookup(handleAgentZipResult);
   const { handleZipChange: handleCompanyZip } = useZipLookup(handleCompanyZipResult);
+
+  // ─── Organizers ────────────────────────────────────────────────────────────
+  const { data: organizers = [], refetch: refetchOrganizers } = useQuery({
+    queryKey: ["organizers", company.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("organizers" as any)
+        .select("*")
+        .eq("company_id", company.id)
+        .order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const [newOrganizer, setNewOrganizer] = useState({ organizer_name: "", address: "", address_2: "", city: "", state: "", zip: "" });
+  const [showOrganizerForm, setShowOrganizerForm] = useState(false);
+
+  const handleOrganizerZipResult = useCallback((result: { city: string; state: string }) => {
+    setNewOrganizer(prev => ({ ...prev, city: result.city, state: result.state }));
+  }, []);
+  const { handleZipChange: handleOrganizerZip } = useZipLookup(handleOrganizerZipResult);
+
+  const addOrganizer = useMutation({
+    mutationFn: async () => {
+      if (!newOrganizer.organizer_name.trim()) throw new Error("Organizer name is required");
+      const { error } = await supabase.from("organizers" as any).insert({
+        company_id: company.id,
+        organizer_name: newOrganizer.organizer_name.trim(),
+        address: newOrganizer.address || null,
+        address_2: newOrganizer.address_2 || null,
+        city: newOrganizer.city || null,
+        state: newOrganizer.state || null,
+        zip: newOrganizer.zip || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchOrganizers();
+      setNewOrganizer({ organizer_name: "", address: "", address_2: "", city: "", state: "", zip: "" });
+      setShowOrganizerForm(false);
+      toast.success("Organizer added!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const deleteOrganizer = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("organizers" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchOrganizers();
+      toast.success("Organizer removed");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
 
   // Derive card config reactively from current entity_type
   const equityCard = getEquityCardConfig(form.entity_type);
@@ -349,7 +409,9 @@ export default function IncorporationTab({ company }: Props) {
           contact_phone: form.contact_phone || null,
           contact_cell: form.contact_cell || null,
           contact_webpage: form.contact_webpage ? formatWebpage(form.contact_webpage) : null,
-          authorized_binders: form.authorized_binders || null,
+           authorized_binders: form.authorized_binders || null,
+           business_purpose: form.business_purpose || null,
+           naics_code: form.naics_code || null,
         } as any)
         .eq("id", company.id);
       if (error) throw error;
@@ -494,6 +556,9 @@ export default function IncorporationTab({ company }: Props) {
                 { label: "Address", value: [form.address, form.address_2].filter(Boolean).join(", ") },
                 { label: "City / State / Zip", value: [form.city, form.state, form.zip].filter(Boolean).join(", ") },
                 { label: "Company Phone", value: form.phone },
+                { label: "Business Purpose", value: form.business_purpose },
+                { label: "NAICS Code", value: form.naics_code },
+                { label: "Company Phone", value: form.phone },
               ],
             }} />
           </div>
@@ -633,6 +698,101 @@ export default function IncorporationTab({ company }: Props) {
                 <Input className="h-7 text-sm" value={form.phone} onChange={(e) => handlePhoneChange("phone", e.target.value)} placeholder="(555) 555-5555" />
               </div>
             </div>
+          </div>
+
+          {/* Business Purpose & NAICS */}
+          <div className="border-t border-border pt-3">
+            <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+              <div className="field-group col-span-12 sm:col-span-10">
+                <Label className="field-label">Business Purpose</Label>
+                <Textarea className="text-sm min-h-[50px]" value={form.business_purpose} onChange={(e) => update("business_purpose", e.target.value)} placeholder="Describe the business purpose..." rows={2} />
+              </div>
+              <div className="field-group col-span-6 sm:col-span-2">
+                <Label className="field-label flex items-center gap-1">
+                  NAICS
+                  <a href="https://www.naics.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </Label>
+                <Input className="h-7 text-sm" value={form.naics_code} onChange={(e) => update("naics_code", e.target.value)} placeholder="Code" />
+              </div>
+            </div>
+          </div>
+
+          {/* Organizers */}
+          <div className="border-t border-border pt-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Users className="h-3.5 w-3.5 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Organizer(s)</h3>
+              </div>
+              <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowOrganizerForm(true)}>
+                <Plus className="h-3 w-3 mr-1" /> Add Organizer
+              </Button>
+            </div>
+
+            {organizers.length === 0 && !showOrganizerForm && (
+              <p className="text-sm text-muted-foreground text-center py-3">No organizers added yet.</p>
+            )}
+
+            {organizers.map((org: any) => (
+              <div key={org.id} className="flex items-start gap-2 py-1.5 border-b border-border last:border-b-0">
+                <div className="flex-1 text-sm">
+                  <span className="font-medium">{org.organizer_name}</span>
+                  {(org.address || org.city) && (
+                    <span className="text-muted-foreground ml-2">
+                      — {[org.address, org.address_2, org.city, org.state, org.zip].filter(Boolean).join(", ")}
+                    </span>
+                  )}
+                </div>
+                <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive hover:text-destructive" onClick={() => deleteOrganizer.mutate(org.id)}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+
+            {showOrganizerForm && (
+              <div className="mt-2 rounded-md border border-border bg-muted/30 p-3 space-y-2">
+                <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+                  <div className="field-group col-span-12 sm:col-span-5">
+                    <Label className="field-label">Organizer Name</Label>
+                    <Input className="h-7 text-sm" value={newOrganizer.organizer_name} onChange={(e) => setNewOrganizer(p => ({ ...p, organizer_name: e.target.value }))} placeholder="Full name" />
+                  </div>
+                  <div className="field-group col-span-12 sm:col-span-4">
+                    <Label className="field-label">Address</Label>
+                    <Input className="h-7 text-sm" value={newOrganizer.address} onChange={(e) => setNewOrganizer(p => ({ ...p, address: e.target.value }))} />
+                  </div>
+                  <div className="field-group col-span-12 sm:col-span-3">
+                    <Label className="field-label">Address 2</Label>
+                    <Input className="h-7 text-sm" value={newOrganizer.address_2} onChange={(e) => setNewOrganizer(p => ({ ...p, address_2: e.target.value }))} />
+                  </div>
+                  <div className="field-group col-span-5 sm:col-span-4">
+                    <Label className="field-label">City</Label>
+                    <Input className="h-7 text-sm" value={newOrganizer.city} onChange={(e) => setNewOrganizer(p => ({ ...p, city: e.target.value }))} />
+                  </div>
+                  <div className="field-group col-span-3 sm:col-span-2">
+                    <Label className="field-label">State</Label>
+                    <Select value={newOrganizer.state} onValueChange={(v) => setNewOrganizer(p => ({ ...p, state: v }))}>
+                      <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
+                      <SelectContent>
+                        {US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="field-group col-span-4 sm:col-span-2">
+                    <Label className="field-label">Zip</Label>
+                    <Input className="h-7 text-sm" value={newOrganizer.zip} onChange={(e) => { const v = e.target.value; setNewOrganizer(p => ({ ...p, zip: v })); handleOrganizerZip(v); }} maxLength={10} />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setShowOrganizerForm(false); setNewOrganizer({ organizer_name: "", address: "", address_2: "", city: "", state: "", zip: "" }); }}>Cancel</Button>
+                  <Button type="button" size="sm" className="h-7 text-xs" onClick={() => addOrganizer.mutate()} disabled={addOrganizer.isPending}>
+                    {addOrganizer.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
+                    Add
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
