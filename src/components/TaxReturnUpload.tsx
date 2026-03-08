@@ -201,10 +201,10 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     }
 
     setProcessing(false);
-    // In populate mode, show summary immediately since edge function already saved
-    if (mode === "populate") {
-      const doneFiles = entries.filter((e) => e.status !== "error");
-      // Re-read files state for data
+    // In populate mode WITH companyId, the edge function already saved data server-side
+    // so we can show the summary immediately. Without companyId, the user needs to click Save
+    // to create a new company client-side.
+    if (mode === "populate" && companyId) {
       setFiles((prev) => {
         const doneData = prev.filter((f) => f.status === "done" && f.data).map((f) => f.data!);
         if (doneData.length > 0) {
