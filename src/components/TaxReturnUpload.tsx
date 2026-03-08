@@ -286,7 +286,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
 
   const processEntry = async (entry: FileEntry, accessToken: string, retryCount = 0) => {
     setFiles((prev) =>
-      prev.map((f) => (f === entry ? { ...f, status: "processing", error: undefined, retries: retryCount } : f))
+      prev.map((f) => (f.id === entry.id ? { ...f, status: "processing", error: undefined, retries: retryCount } : f))
     );
 
     try {
@@ -319,7 +319,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
 
       setFiles((prev) =>
         prev.map((f) =>
-          f === entry ? { ...f, status: "done", data: extracted } : f
+          f.id === entry.id ? { ...f, status: "done", data: extracted } : f
         )
       );
     } catch (err: any) {
@@ -337,7 +337,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
       console.error(err);
       setFiles((prev) =>
         prev.map((f) =>
-          f === entry ? { ...f, status: "error", error: errorMsg, retries: retryCount } : f
+          f.id === entry.id ? { ...f, status: "error", error: errorMsg, retries: retryCount } : f
         )
       );
     }
