@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.verify-wdfi-status]
 verify_jwt = false
+
+[functions.poll-tax-return-job]
+verify_jwt = false
