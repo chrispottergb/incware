@@ -219,6 +219,8 @@ export default function IncorporationTab({ company }: Props) {
     contact_cell: (company as any).contact_cell ?? "",
     contact_webpage: (company as any).contact_webpage ?? "",
     authorized_binders: (company as any).authorized_binders ?? "",
+    business_purpose: company.business_purpose ?? "",
+    naics_code: company.naics_code ?? "",
   });
 
   // Phone formatting helper
