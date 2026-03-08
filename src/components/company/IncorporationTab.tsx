@@ -535,10 +535,10 @@ export default function IncorporationTab({ company }: Props) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Building2 className="h-3.5 w-3.5 text-primary" />
-              <CardTitle className="card-section-title">Company &amp; Contact Information</CardTitle>
+              <CardTitle className="card-section-title">{isLLCType(company.entity_type) ? "Organizational Info" : "Incorporation Info"}</CardTitle>
             </div>
             <SectionPdfActions config={{
-              title: "Company & Contact Information",
+              title: isLLCType(company.entity_type) ? "Organizational Info" : "Incorporation Info",
               companyName: company.name,
               fields: [
                 { label: "Company Name", value: form.name },
