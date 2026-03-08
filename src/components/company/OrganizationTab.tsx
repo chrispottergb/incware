@@ -817,14 +817,6 @@ export default function OrganizationTab({ companyId, company }: Props) {
             </div>
 
 
-                </Button>
-              </div>
-
-              {organizers.length === 0 && !showOrganizerForm && (
-                <p className="text-sm text-muted-foreground text-center py-3">No organizers added yet.</p>
-              )}
-
-              {organizers.map((org: any) => (
                 <div key={org.id} className="flex items-start gap-2 py-1.5 border-b border-border last:border-b-0">
                   <div className="flex-1 text-sm">
                     <span className="font-medium">{org.organizer_name}</span>
