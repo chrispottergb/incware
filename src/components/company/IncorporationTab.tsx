@@ -1087,6 +1087,63 @@ export default function IncorporationTab({ company }: Props) {
         </CardContent>
       </Card>
 
+  // ─── Initial Directors ─────────────────────────────────────────────────────
+  const { data: directors = [], refetch: refetchDirectors } = useQuery({
+    queryKey: ["directors", company.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("directors")
+        .select("*")
+        .eq("company_id", company.id)
+        .order("created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const [newDirector, setNewDirector] = useState({ name: "", address: "", address_2: "", city: "", state: "", zip: "" });
+  const [showDirectorForm, setShowDirectorForm] = useState(false);
+
+  const handleDirectorZipResult = useCallback((result: { city: string; state: string }) => {
+    setNewDirector(prev => ({ ...prev, city: result.city, state: result.state }));
+  }, []);
+  const { handleZipChange: handleDirectorZip } = useZipLookup(handleDirectorZipResult);
+
+  const addDirector = useMutation({
+    mutationFn: async () => {
+      if (!newDirector.name.trim()) throw new Error("Director name is required");
+      const { error } = await supabase.from("directors").insert({
+        company_id: company.id,
+        name: newDirector.name.trim(),
+        address: newDirector.address || null,
+        address_2: newDirector.address_2 || null,
+        city: newDirector.city || null,
+        state: newDirector.state || null,
+        zip: newDirector.zip || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchDirectors();
+      setNewDirector({ name: "", address: "", address_2: "", city: "", state: "", zip: "" });
+      setShowDirectorForm(false);
+      toast.success("Director added!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const deleteDirector = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("directors").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchDirectors();
+      toast.success("Director removed");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
 
       {/* WI Compliance Checklist - Collapsible */}
       <Collapsible>
