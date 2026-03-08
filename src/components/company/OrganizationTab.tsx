@@ -586,106 +586,18 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            {/* Primary Contact - compact */}
-            <div className="border-t border-border pt-3">
-              <div className="flex items-center gap-2 mb-2">
-                <User className="h-3.5 w-3.5 text-primary" />
-                <h3 className="text-sm font-semibold text-foreground">Primary Contact</h3>
+              <div className="field-group col-span-12 sm:col-span-7">
+                <Label className="field-label">Business Purpose</Label>
+                <Textarea className="text-sm min-h-[50px]" value={filingForm.business_purpose} onChange={(e) => setFilingForm((p) => ({ ...p, business_purpose: e.target.value }))} rows={2} placeholder="Describe the business purpose..." />
               </div>
-              <div className="grid grid-cols-12 gap-x-3 gap-y-2">
-                <div className="field-group col-span-12 sm:col-span-5">
-                  <Label className="field-label">Full Name</Label>
-                  <Input className="h-7 text-sm" value={filingForm.contact_full_name} onChange={(e) => setFilingForm((p) => ({ ...p, contact_full_name: e.target.value }))} placeholder="First and Last Name" />
-                </div>
-                <div className="field-group col-span-6 sm:col-span-2">
-                  <Label className="field-label">Salutation</Label>
-                  <Input className="h-7 text-sm" value={filingForm.salutation_name} onChange={(e) => setFilingForm((p) => ({ ...p, salutation_name: e.target.value }))} placeholder='"John"' />
-                </div>
-                <div className="field-group col-span-12 sm:col-span-5">
-                  <Label className="field-label">Email</Label>
-                  <Input className="h-7 text-sm" type="email" value={filingForm.contact_email} onChange={(e) => setFilingForm((p) => ({ ...p, contact_email: e.target.value }))} placeholder="client@example.com" />
-                </div>
-                <div className="field-group col-span-6 sm:col-span-3">
-                  <Label className="field-label flex items-center gap-1"><Phone className="h-3 w-3" /> Main Phone</Label>
-                  <Input className="h-7 text-sm" value={filingForm.contact_phone} onChange={(e) => handlePhoneChange("contact_phone", e.target.value)} placeholder="(555) 555-5555" />
-                </div>
-                <div className="field-group col-span-6 sm:col-span-3">
-                  <Label className="field-label flex items-center gap-1"><Phone className="h-3 w-3" /> Cell Phone</Label>
-                  <Input className="h-7 text-sm" value={filingForm.contact_cell} onChange={(e) => handlePhoneChange("contact_cell", e.target.value)} placeholder="(555) 555-5555" />
-                </div>
-                <div className="field-group col-span-12 sm:col-span-6">
-                  <Label className="field-label flex items-center gap-1"><Globe className="h-3 w-3" /> Webpage</Label>
-                  <div className="flex items-center gap-2">
-                    <Input className="h-7 text-sm" type="url" value={filingForm.contact_webpage} onChange={(e) => setFilingForm((p) => ({ ...p, contact_webpage: e.target.value }))} placeholder="www.example.com" onBlur={(e) => { if (e.target.value) setFilingForm((p) => ({ ...p, contact_webpage: formatWebpage(e.target.value) })); }} />
-                    {filingForm.contact_webpage && (
-                      <a href={formatWebpage(filingForm.contact_webpage)} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline shrink-0 inline-flex items-center gap-0.5">
-                        <ExternalLink className="h-2.5 w-2.5" />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Company Address - compact */}
-            <div className="border-t border-border pt-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Building2 className="h-3.5 w-3.5 text-primary" />
-                <h3 className="text-sm font-semibold text-foreground">Company Address</h3>
-              </div>
-              <div className="grid grid-cols-12 gap-x-3 gap-y-2">
-                <div className="field-group col-span-12 sm:col-span-7">
-                  <Label className="field-label">Address Line 1</Label>
-                  <Input className="h-7 text-sm" value={filingForm.address} onChange={(e) => setFilingForm((p) => ({ ...p, address: e.target.value }))} placeholder="Street address" />
-                </div>
-                <div className="field-group col-span-12 sm:col-span-5">
-                  <Label className="field-label">Address Line 2</Label>
-                  <Input className="h-7 text-sm" value={filingForm.address_2} onChange={(e) => setFilingForm((p) => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor" />
-                </div>
-                <div className="field-group col-span-6 sm:col-span-4">
-                  <Label className="field-label">City</Label>
-                  <Input className="h-7 text-sm" value={filingForm.city} onChange={(e) => setFilingForm((p) => ({ ...p, city: e.target.value }))} />
-                </div>
-                <div className="field-group col-span-3 sm:col-span-2">
-                  <Label className="field-label">State</Label>
-                  <Select value={filingForm.state} onValueChange={(v) => setFilingForm((p) => ({ ...p, state: v }))}>
-                    <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
-                    <SelectContent>
-                      {US_STATES.map((s) => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="field-group col-span-3 sm:col-span-2">
-                  <Label className="field-label">Zip</Label>
-                  <Input className="h-7 text-sm" value={filingForm.zip} onChange={(e) => { const v = e.target.value.replace(/[^\d-]/g, "").slice(0, 10); setFilingForm((p) => ({ ...p, zip: v })); handleFilingZipChange(v); }} placeholder="55555" />
-                </div>
-                <div className="field-group col-span-6 sm:col-span-3">
-                  <Label className="field-label">Company Phone</Label>
-                  <Input className="h-7 text-sm" value={filingForm.phone} onChange={(e) => handlePhoneChange("phone", e.target.value)} placeholder="(555) 555-5555" />
-                </div>
-              </div>
-            </div>
-
-            {/* Business Purpose & NAICS */}
-            <div className="border-t border-border pt-3">
-              <div className="grid grid-cols-12 gap-x-3 gap-y-2">
-                <div className="field-group col-span-12 sm:col-span-10">
-                  <Label className="field-label">Business Purpose</Label>
-                  <Textarea className="text-sm min-h-[50px]" value={filingForm.business_purpose} onChange={(e) => setFilingForm((p) => ({ ...p, business_purpose: e.target.value }))} rows={2} placeholder="Describe the business purpose..." />
-                </div>
-                <div className="field-group col-span-6 sm:col-span-2">
-                  <Label className="field-label flex items-center gap-1">
-                    NAICS
-                    <a href="https://www.naics.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </Label>
-                  <Input className="h-7 text-sm" value={filingForm.naics_code} onChange={(e) => setFilingForm((p) => ({ ...p, naics_code: e.target.value }))} placeholder="Code" />
-                </div>
+              <div className="field-group col-span-6 sm:col-span-2">
+                <Label className="field-label flex items-center gap-1">
+                  NAICS
+                  <a href="https://www.naics.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </Label>
+                <Input className="h-7 text-sm" value={filingForm.naics_code} onChange={(e) => setFilingForm((p) => ({ ...p, naics_code: e.target.value }))} placeholder="Code" />
               </div>
             </div>
 
