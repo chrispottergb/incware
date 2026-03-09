@@ -37,21 +37,33 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [companySearch, setCompanySearch] = useState("");
 
+  const [inactiveOpen, setInactiveOpen] = useState(false);
+
   const { data: companies = [] } = useQuery({
     queryKey: ["companies"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("companies").select("id, name, entity_type").order("name");
+      const { data, error } = await supabase.from("companies").select("id, name, entity_type, status").order("name");
       if (error) throw error;
       return data;
     },
   });
 
-  const filteredCompanies = useMemo(() => {
-    if (!companySearch.trim()) return companies.slice(0, 8);
-    return companies.filter((c) =>
+  const activeCompanies = useMemo(() => companies.filter((c) => c.status !== "inactive"), [companies]);
+  const inactiveCompanies = useMemo(() => companies.filter((c) => c.status === "inactive"), [companies]);
+
+  const filteredActiveCompanies = useMemo(() => {
+    if (!companySearch.trim()) return activeCompanies.slice(0, 8);
+    return activeCompanies.filter((c) =>
       c.name.toLowerCase().includes(companySearch.toLowerCase())
     );
-  }, [companies, companySearch]);
+  }, [activeCompanies, companySearch]);
+
+  const filteredInactiveCompanies = useMemo(() => {
+    if (!companySearch.trim()) return inactiveCompanies;
+    return inactiveCompanies.filter((c) =>
+      c.name.toLowerCase().includes(companySearch.toLowerCase())
+    );
+  }, [inactiveCompanies, companySearch]);
 
   // Detect if we're in a company context
   const companyMatch = location.pathname.match(/^\/company\/([^/]+)/);
