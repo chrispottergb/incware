@@ -926,13 +926,11 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
                 <h4 className="text-xs font-semibold">Banking Changes</h4>
               </div>
               <TemplateNote text="Toggle on to authorize new accounts, close existing accounts, or change signatories." />
-              {data.includeBankingChanges && (
-                {renderTable("bankingChanges", [
+              {data.includeBankingChanges && renderTable("bankingChanges", [
                     { key: "changeType", label: "Change Type" },
                     { key: "institution", label: "Institution" },
                     { key: "details", label: "Details" },
                   ], { changeType: "", institution: "", details: "" })}
-              )}
             </div>
           )}
 
