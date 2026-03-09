@@ -678,6 +678,9 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             distribution_amount: dist?.amount ? parseFloat(dist.amount.replace(/[,$]/g, "")) : null,
           };
         });
+        if (shRows.length > 0) await supabase.from("meeting_shareholders").insert(shRows);
+
+        // Save professional advisors as a single consolidated counsel record
         const advisors = data.advisors.filter(a => a.nameFirm);
         const attorneyAdvisor = advisors.find(a => a.role === "Attorney");
         const accountantAdvisor = advisors.find(a => a.role === "Accountant");
