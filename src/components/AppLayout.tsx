@@ -1,4 +1,6 @@
 import { ReactNode, useState, useMemo } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 import logoEntityIQ from "@/assets/logo-entityiq.png";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -35,21 +37,33 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [companySearch, setCompanySearch] = useState("");
 
+  const [inactiveOpen, setInactiveOpen] = useState(false);
+
   const { data: companies = [] } = useQuery({
     queryKey: ["companies"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("companies").select("id, name, entity_type").order("name");
+      const { data, error } = await supabase.from("companies").select("id, name, entity_type, status").order("name");
       if (error) throw error;
       return data;
     },
   });
 
-  const filteredCompanies = useMemo(() => {
-    if (!companySearch.trim()) return companies.slice(0, 8);
-    return companies.filter((c) =>
+  const activeCompanies = useMemo(() => companies.filter((c) => c.status !== "inactive"), [companies]);
+  const inactiveCompanies = useMemo(() => companies.filter((c) => c.status === "inactive"), [companies]);
+
+  const filteredActiveCompanies = useMemo(() => {
+    if (!companySearch.trim()) return activeCompanies.slice(0, 8);
+    return activeCompanies.filter((c) =>
       c.name.toLowerCase().includes(companySearch.toLowerCase())
     );
-  }, [companies, companySearch]);
+  }, [activeCompanies, companySearch]);
+
+  const filteredInactiveCompanies = useMemo(() => {
+    if (!companySearch.trim()) return inactiveCompanies;
+    return inactiveCompanies.filter((c) =>
+      c.name.toLowerCase().includes(companySearch.toLowerCase())
+    );
+  }, [inactiveCompanies, companySearch]);
 
   // Detect if we're in a company context
   const companyMatch = location.pathname.match(/^\/company\/([^/]+)/);
@@ -140,7 +154,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
           <div className="max-h-40 overflow-y-auto space-y-0.5">
-            {filteredCompanies.map((c) => {
+            {filteredActiveCompanies.map((c) => {
               const isActive = location.pathname === `/company/${c.id}`;
               return (
                 <button
@@ -163,7 +177,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 </button>
               );
             })}
-            {filteredCompanies.length === 0 && (
+            {filteredActiveCompanies.length === 0 && (
               <p className="px-3 py-2 text-[11px] text-sidebar-foreground/40">No matches</p>
             )}
           </div>
@@ -171,7 +185,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             onClick={() => {
               navigate("/");
               setMobileOpen(false);
-              // Small delay to let Dashboard mount, then trigger dialog
               setTimeout(() => window.dispatchEvent(new CustomEvent("open-add-company")), 100);
             }}
             className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-[12px] font-medium text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
@@ -179,6 +192,44 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <Plus className="h-3 w-3 shrink-0" />
             <span>Add Company</span>
           </button>
+
+          {filteredInactiveCompanies.length > 0 && (
+            <Collapsible open={inactiveOpen} onOpenChange={setInactiveOpen}>
+              <CollapsibleTrigger className="flex w-full items-center gap-1 px-3 pt-3 pb-1">
+                <ChevronDown className={`h-3 w-3 text-sidebar-foreground/40 transition-transform ${inactiveOpen ? "" : "-rotate-90"}`} />
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
+                  Inactive Clients ({filteredInactiveCompanies.length})
+                </span>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="max-h-32 overflow-y-auto space-y-0.5">
+                  {filteredInactiveCompanies.map((c) => {
+                    const isActive = location.pathname === `/company/${c.id}`;
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => {
+                          navigate(`/company/${c.id}`);
+                          setMobileOpen(false);
+                        }}
+                        className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors text-left opacity-60 ${
+                          isActive
+                            ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                        }`}
+                      >
+                        <Building2 className="h-3 w-3 shrink-0 opacity-50" />
+                        <span className="truncate flex-1">{c.name}</span>
+                        <span className="shrink-0 rounded bg-sidebar-accent/60 px-1 py-0 text-[9px] font-semibold uppercase text-sidebar-foreground/50">
+                          {c.entity_type === "Corporation" ? "Corp" : c.entity_type === "S-Corp" ? "S-Corp" : c.entity_type === "LLC" ? "LLC" : c.entity_type === "Single Member LLC" ? "SMLLC" : c.entity_type?.slice(0, 4)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
 
           {companyNav.length > 0 && (
             <>

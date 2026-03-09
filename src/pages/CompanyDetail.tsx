@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Building2, Loader2, Trash2, ArrowRightLeft } from "lucide-react";
+import { ArrowLeft, Building2, Loader2, Trash2, ArrowRightLeft, Power } from "lucide-react";
 import { toast } from "sonner";
 import IncorporationTab from "@/components/company/IncorporationTab";
 import OrganizationTab from "@/components/company/OrganizationTab";
@@ -191,7 +191,26 @@ export default function CompanyDetail() {
             <h1 className="font-display text-xl font-bold tracking-tight truncate">
               {company.name}
             </h1>
-            <Badge variant="outline" className={`${statusColor} text-[10px] px-1.5 py-0`}>
+            <Badge 
+              variant="outline" 
+              className={`${statusColor} text-[10px] px-1.5 py-0 cursor-pointer hover:opacity-80 transition-opacity`}
+              onClick={async () => {
+                const newStatus = company.status === "active" ? "inactive" : "active";
+                const { error } = await supabase
+                  .from("companies")
+                  .update({ status: newStatus })
+                  .eq("id", company.id);
+                if (error) {
+                  toast.error("Failed to update status");
+                } else {
+                  queryClient.invalidateQueries({ queryKey: ["company", company.id] });
+                  queryClient.invalidateQueries({ queryKey: ["companies"] });
+                  toast.success(`Client marked as ${newStatus}`);
+                }
+              }}
+              title={`Click to mark as ${company.status === "active" ? "inactive" : "active"}`}
+            >
+              <Power className="h-2.5 w-2.5 mr-1" />
               {company.status === "active" ? "Active" : "Inactive"}
             </Badge>
           </div>

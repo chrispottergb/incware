@@ -49,6 +49,7 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("active");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [taxReturnOpen, setTaxReturnOpen] = useState(false);
@@ -79,7 +80,8 @@ export default function Dashboard() {
   const filtered = companies.filter((c) => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
     const matchesType = filterType === "all" || c.entity_type === filterType;
-    return matchesSearch && matchesType;
+    const matchesStatus = filterStatus === "all" || (filterStatus === "active" ? c.status !== "inactive" : c.status === "inactive");
+    return matchesSearch && matchesType && matchesStatus;
   });
 
   const statusBadge = (status: string | null) => {
@@ -225,6 +227,16 @@ export default function Dashboard() {
             {ENTITY_TYPES.map((t) => (
               <SelectItem key={t} value={t}>{t}</SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-full sm:w-40 h-9 text-sm">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">Active Clients</SelectItem>
+            <SelectItem value="inactive">Inactive Clients</SelectItem>
+            <SelectItem value="all">All Clients</SelectItem>
           </SelectContent>
         </Select>
       </div>
