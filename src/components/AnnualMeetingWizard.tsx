@@ -675,8 +675,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   // Retained earnings exceeds $250k?
   const retainedExceeds250k = parseFloat(data.retainedEarnings?.replace(/[^0-9.]/g, "") || "0") > 250000;
 
-  // Use the extracted stable DynamicTable
-  const DynamicTable = ({ field, columns, addTemplate }: { field: keyof AnnualMeetingData; columns: { key: string; label: string; wide?: boolean }[]; addTemplate: any }) => (
+  // Helper to render DynamicTableStable with common props
+  const renderTable = (field: keyof AnnualMeetingData, columns: { key: string; label: string; wide?: boolean }[], addTemplate: any) => (
     <DynamicTableStable
       field={field}
       columns={columns}
