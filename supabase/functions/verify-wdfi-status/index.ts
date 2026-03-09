@@ -17,8 +17,9 @@ function mapWDFIStatus(rawStatus: string): string {
   const s = rawStatus.toLowerCase().trim();
   if (s.includes('organized') || s.includes('registered') || s.includes('incorporated') || s.includes('good standing')) return 'current';
   if (s.includes('delinquent')) return 'delinquent';
-  if (s.includes('dissolved')) return 'dissolved';
-  if (s.includes('revoked') || s.includes('suspended')) return 'suspended';
+  if (s.includes('admin') && s.includes('dissolved')) return 'admin_dissolved';
+  if (s.includes('dissolved')) return 'admin_dissolved';
+  if (s.includes('revoked') || s.includes('suspended')) return 'admin_dissolved';
   return 'current'; // default
 }
 

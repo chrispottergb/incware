@@ -525,8 +525,7 @@ export default function IncorporationTab({ company }: Props) {
                     <SelectContent>
                       <SelectItem value="current">Current</SelectItem>
                       <SelectItem value="delinquent">Delinquent</SelectItem>
-                      <SelectItem value="dissolved">Dissolved</SelectItem>
-                      <SelectItem value="suspended">Suspended</SelectItem>
+                      <SelectItem value="admin_dissolved">Administratively Dissolved</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -656,8 +655,7 @@ export default function IncorporationTab({ company }: Props) {
                 <SelectContent>
                   <SelectItem value="current">Current</SelectItem>
                   <SelectItem value="delinquent">Delinquent</SelectItem>
-                  <SelectItem value="dissolved">Dissolved</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
+                  <SelectItem value="admin_dissolved">Administratively Dissolved</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1270,8 +1268,7 @@ export default function IncorporationTab({ company }: Props) {
                     "font-medium",
                     result.mappedStatus === "current" && "text-green-600",
                     result.mappedStatus === "delinquent" && "text-yellow-600",
-                    result.mappedStatus === "dissolved" && "text-red-600",
-                    result.mappedStatus === "suspended" && "text-red-600",
+                    result.mappedStatus === "admin_dissolved" && "text-red-600",
                   )}>
                     {result.status}
                   </span>
