@@ -521,7 +521,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       setData(buildDefaultData());
       setInitialized(true);
     }
-  }, [companyShareholders, companyOfficers, companyBanks, priorMeeting, attorneys, accountants, companyAssets, companyLeases, priorOfficers]);
+  }, [companyShareholders, companyOfficers, companyBanks, priorMeeting, attorneys, accountants, companyAssets, companyLeases, priorOfficers, activeCertificates]);
 
   // Auto-save to localStorage whenever data or step changes
   useEffect(() => {
