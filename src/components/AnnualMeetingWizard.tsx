@@ -293,14 +293,16 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     if (advisorList.length === 0) advisorList.push({ role: "", nameFirm: "", address: "", phoneEmail: "" });
 
     // Build members from shareholders with actual unit counts from certificates
+    const totalAllUnits = activeCertificates.reduce((sum, c) => sum + (c.num_shares || 0), 0);
     const memberList = companyShareholders.length > 0
       ? companyShareholders.filter(s => !s.is_treasury).map(s => {
         const memberCerts = activeCertificates.filter(c => c.shareholder_id === s.id);
         const totalUnits = memberCerts.reduce((sum, c) => sum + (c.num_shares || 0), 0);
+        const interestPct = totalAllUnits > 0 ? ((totalUnits / totalAllUnits) * 100).toFixed(2) : (s.ownership_percentage?.toString() || "");
         return {
           name: s.name,
           units: totalUnits > 0 ? totalUnits.toString() : "",
-          interestPct: s.ownership_percentage?.toString() || "",
+          interestPct,
           address: [s.address, s.city, s.state, s.zip].filter(Boolean).join(", "),
         };
       })
