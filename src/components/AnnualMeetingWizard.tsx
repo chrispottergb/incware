@@ -836,16 +836,12 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               <h3 className="text-sm font-semibold">Authorized Binders — Confirmation or Update</h3>
               <p className="text-xs text-muted-foreground">Wis. Stat. § 183.0407</p>
               <TemplateNote text="Authorized binders are persons empowered to execute contracts and bind the company. Review and update annually." />
-              <DynamicTable
-                field="authorizedBinders"
-                columns={[
+              {renderTable("authorizedBinders", [
                   { key: "name", label: "Name" },
                   { key: "title", label: "Title" },
                   { key: "scope", label: "Scope of Authority" },
                   { key: "status", label: "Status" },
-                ]}
-                addTemplate={{ name: "", title: "", scope: "Full authority", status: "Confirmed" }}
-              />
+                ], { name: "", title: "", scope: "Full authority", status: "Confirmed" })}
             </div>
           )}
 
