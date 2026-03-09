@@ -929,15 +929,11 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               </div>
               <TemplateNote text="Toggle on to authorize new accounts, close existing accounts, or change signatories." />
               {data.includeBankingChanges && (
-                <DynamicTable
-                  field="bankingChanges"
-                  columns={[
+                {renderTable("bankingChanges", [
                     { key: "changeType", label: "Change Type" },
                     { key: "institution", label: "Institution" },
                     { key: "details", label: "Details" },
-                  ]}
-                  addTemplate={{ changeType: "", institution: "", details: "" }}
-                />
+                  ], { changeType: "", institution: "", details: "" })}
               )}
             </div>
           )}
