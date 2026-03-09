@@ -962,16 +962,12 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               </div>
 
               <h4 className="text-xs font-semibold mt-2">Tax Elections — Confirmation or Changes</h4>
-              <DynamicTable
-                field="taxElections"
-                columns={[
+              {renderTable("taxElections", [
                   { key: "election", label: "Election" },
                   { key: "status", label: "Status" },
                   { key: "effectiveDate", label: "Effective Date" },
                   { key: "notes", label: "Notes" },
-                ]}
-                addTemplate={{ election: "", status: "", effectiveDate: "", notes: "" }}
-              />
+                ], { election: "", status: "", effectiveDate: "", notes: "" })}
             </div>
           )}
 
