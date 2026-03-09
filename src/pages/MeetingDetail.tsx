@@ -105,7 +105,7 @@ export default function MeetingDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!(isOrganizational || isShareholderMeeting),
+    enabled: !!id && !!(isOrganizational || isShareholderMeeting || isAnnualMeeting),
   });
 
   const { data: companyBankSigners = [] } = useQuery({
