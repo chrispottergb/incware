@@ -22,7 +22,7 @@ export interface AnnualMeetingData {
   members: { name: string; units: string; interestPct: string; address: string }[];
 
   // Officers/Managers
-  officers: { name: string; title: string; salary: string; bonus: string; status: string }[];
+  officers: { name: string; title: string; salary: string; bonus: string }[];
 
   // Authorized Binders
   authorizedBinders: { name: string; title: string; scope: string; status: string }[];
