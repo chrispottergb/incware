@@ -865,8 +865,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
                     { key: "name", label: "Name" },
                     { key: "units", label: "Membership Units" },
                     { key: "interestPct", label: "Interest %" },
-                    { key: "address", label: "Address" },
-                  ], { name: "", units: "", interestPct: "", address: "" })}
+                  ], { name: "", units: "", interestPct: "", address: "" }, [{ key: "address", label: "Address" }])}
               </div>
               <div>
                 <h4 className="text-xs font-semibold mb-2">Re-Appointment or Election of Managers / Officers</h4>
