@@ -45,6 +45,8 @@ interface MeetingData {
   companyDirectors?: any[];
   companyBanks?: any[];
   companyBankSigners?: any[];
+  companyAttorneys?: any[];
+  companyAccountants?: any[];
 }
 
 function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType: string, meeting?: any, company?: any) {
@@ -1242,12 +1244,24 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + counselRows.length * 7);
     y = section("Selection of Counsel & Banking");
 
-    // Extract attorney and accountant info from counsel records
+    // Extract attorney and accountant info from counsel records, with fallback to company-level data
     const counselRec = counselRows[0] || {};
-    const attorneyName = counselRec.attorney_name?.trim() || "";
-    const lawFirm = counselRec.law_firm?.trim() || "";
-    const accountantName = counselRec.accountant_name?.trim() || "";
-    const accountingFirm = counselRec.counsel_name?.trim() || ""; // counsel_name maps to accounting firm
+    let attorneyName = counselRec.attorney_name?.trim() || "";
+    let lawFirm = counselRec.law_firm?.trim() || "";
+    let accountantName = counselRec.accountant_name?.trim() || "";
+    let accountingFirm = counselRec.counsel_name?.trim() || ""; // counsel_name maps to accounting firm
+
+    // Fallback to company-level attorneys/accountants if meeting_counsel is empty
+    if (!attorneyName && data.companyAttorneys && data.companyAttorneys.length > 0) {
+      const atty = data.companyAttorneys[0];
+      attorneyName = atty.attorney_name || "";
+      lawFirm = atty.attorney_firms?.firm_name || "";
+    }
+    if (!accountantName && data.companyAccountants && data.companyAccountants.length > 0) {
+      const acct = data.companyAccountants[0];
+      accountantName = acct.accountant_name || "";
+      accountingFirm = acct.accountant_firms?.firm_name || "";
+    }
 
     // Attorney / Law Firm paragraph
     y = checkPageBreak(doc, y, 30);
@@ -1368,6 +1382,51 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 10;
+
+    // Banking Resolutions for Annual Meetings (use company-level bank data)
+    const annualBanks = data.companyBanks || [];
+    const annualSigners = data.companyBankSigners || [];
+    if (annualBanks.length > 0) {
+      y = checkPageBreak(doc, y, 30 + annualBanks.length * 12);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...BODY_COLOR);
+      const bankIntro = `The chairperson then reviewed the banking relationships of the ${isLLC ? "company" : "corporation"} and upon motion duly made and seconded, the following resolution was adopted:`;
+      const bankIntroLines = doc.splitTextToSize(bankIntro, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of bankIntroLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 2;
+      annualBanks.forEach((bank: any) => {
+        const bankSignerList = annualSigners.filter((s: any) => s.bank_id === bank.id);
+        const signerStr = bankSignerList.map((s: any) => `${s.signer_name}${s.title ? `, ${s.title}` : ""}`).join("; ");
+        y = addWhereasResolved(doc, y,
+          `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the banking relationship with ${bank.bank_name}; and`,
+          `NOW, THEREFORE, BE IT RESOLVED, that ${bank.bank_name} is hereby approved and confirmed as a depository for the funds of ${companyName}${signerStr ? `, and that the following persons are hereby authorized as signatories on said account: ${signerStr}` : ""}.`,
+          bt
+        );
+      });
+    }
+    // Also render authorized signers from meeting_authorized_signers if available
+    if (data.authorizedSigners && data.authorizedSigners.length > 0 && annualBanks.length === 0) {
+      y = checkPageBreak(doc, y, 20 + data.authorizedSigners.length * 7);
+      autoTable(doc, {
+        startY: y,
+        head: [["Bank", "Authorized Signatory", "Title"]],
+        body: data.authorizedSigners.map((s: any) => [
+          s.bank_name || "—",
+          s.signer_name || "—",
+          s.title || "—",
+        ]),
+        theme: "grid",
+        headStyles: tableHeadStyles,
+        bodyStyles: { fontSize: 10 },
+        margin: { left: MARGIN, right: R_MARGIN },
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
+    }
   }
 
   // Loans

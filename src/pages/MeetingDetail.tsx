@@ -98,6 +98,26 @@ export default function MeetingDetail() {
     enabled: !!id,
   });
 
+  const { data: companyAttorneys = [] } = useQuery({
+    queryKey: ["attorneys", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("attorneys").select("*, attorney_firms(firm_name)").eq("company_id", id!);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id && !!isAnnualMeeting,
+  });
+
+  const { data: companyAccountants = [] } = useQuery({
+    queryKey: ["accountants", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("accountants").select("*, accountant_firms(firm_name)").eq("company_id", id!);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id && !!isAnnualMeeting,
+  });
+
   const { data: companyBanks = [] } = useQuery({
     queryKey: ["company_banks", id],
     queryFn: async () => {
@@ -105,7 +125,7 @@ export default function MeetingDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!(isOrganizational || isShareholderMeeting),
+    enabled: !!id && !!(isOrganizational || isShareholderMeeting || isAnnualMeeting),
   });
 
   const { data: companyBankSigners = [] } = useQuery({
@@ -115,7 +135,7 @@ export default function MeetingDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!(isOrganizational || isShareholderMeeting),
+    enabled: !!id && !!(isOrganizational || isShareholderMeeting || isAnnualMeeting),
   });
   // Fetch prior year meeting for comparison (most recent meeting before this one for same company)
   const { data: priorMeeting } = useQuery({
@@ -401,6 +421,8 @@ export default function MeetingDetail() {
       companyDirectors,
       companyBanks,
       companyBankSigners,
+      companyAttorneys,
+      companyAccountants,
     });
 
   const term = getTerminology(company?.entity_type);
