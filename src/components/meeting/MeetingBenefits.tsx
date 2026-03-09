@@ -34,13 +34,42 @@ import { Plus, Trash2, Loader2, Pencil, ChevronDown, ChevronUp } from "lucide-re
 import { toast } from "sonner";
 
 const BENEFIT_TYPE_OPTIONS = [
-  "401(k)",
-  "Profit Sharing Plan",
+  // Health & Wellness
   "Health Insurance",
   "Dental Insurance",
   "Vision Insurance",
   "Life Insurance",
-  "Disability Insurance",
+  "Disability Insurance (Short Term)",
+  "Disability Insurance (Long Term)",
+  "HSA / FSA Contributions",
+  "Mental Health Benefits",
+  // Retirement & Financial
+  "401(k) / Retirement Plan",
+  "Profit Sharing",
+  "SEP IRA",
+  "SIMPLE IRA",
+  "Stock Options / Equity",
+  "Bonuses (Performance, Signing, Annual)",
+  "Expense Reimbursement",
+  // Time Off
+  "Paid Time Off (PTO)",
+  "Sick Leave",
+  "Parental / Family Leave",
+  "Sabbatical",
+  // Work Perks
+  "Vehicle / Car Allowance",
+  "Cell Phone / Technology Allowance",
+  "Remote Work / Work From Home",
+  "Mileage Reimbursement",
+  "Meal / Per Diem Allowance",
+  // Education & Development
+  "Tuition Reimbursement",
+  "Professional Development",
+  "Certifications / Training",
+  // Other
+  "Child Care Assistance",
+  "Gym / Wellness Stipend",
+  "Employee Assistance Program (EAP)",
   "Other",
 ];
 
