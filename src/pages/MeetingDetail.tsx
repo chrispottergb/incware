@@ -115,7 +115,7 @@ export default function MeetingDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!(isOrganizational || isShareholderMeeting),
+    enabled: !!id && !!(isOrganizational || isShareholderMeeting || isAnnualMeeting),
   });
   // Fetch prior year meeting for comparison (most recent meeting before this one for same company)
   const { data: priorMeeting } = useQuery({
