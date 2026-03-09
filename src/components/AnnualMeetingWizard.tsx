@@ -613,36 +613,18 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   // Retained earnings exceeds $250k?
   const retainedExceeds250k = parseFloat(data.retainedEarnings?.replace(/[^0-9.]/g, "") || "0") > 250000;
 
-  // Helper for dynamic table rendering
-  function DynamicTable({ field, columns, addTemplate }: { field: keyof AnnualMeetingData; columns: { key: string; label: string; wide?: boolean }[]; addTemplate: any }) {
-    const rows = data[field] as any[];
-    return (
-      <div className="space-y-2">
-        <div className="flex justify-end">
-          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => addArrayItem(field, addTemplate)}>
-            <Plus className="h-3 w-3 mr-1" /> Add Row
-          </Button>
-        </div>
-        {rows.map((row: any, i: number) => (
-          <div key={i} className="grid gap-2 items-end" style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr) 40px` }}>
-            {columns.map(col => (
-              <div key={col.key}>
-                {i === 0 && <Label className={labelClass}>{col.label}</Label>}
-                <Input className={inputClass} value={row[col.key] || ""} onChange={e => updateArrayItem(field, i, col.key, e.target.value)} placeholder={col.label} />
-              </div>
-            ))}
-            <div className="flex items-end">
-              {rows.length > 1 && (
-                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" onClick={() => removeArrayItem(field, i)}>
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
+  // Use the extracted stable DynamicTable
+  const DynamicTable = ({ field, columns, addTemplate }: { field: keyof AnnualMeetingData; columns: { key: string; label: string; wide?: boolean }[]; addTemplate: any }) => (
+    <DynamicTableStable
+      field={field}
+      columns={columns}
+      addTemplate={addTemplate}
+      rows={data[field] as any[]}
+      onUpdateItem={handleUpdateItem}
+      onAddItem={handleAddItem}
+      onRemoveItem={handleRemoveItem}
+    />
+  );
 
   return (
     <div className="space-y-4">
