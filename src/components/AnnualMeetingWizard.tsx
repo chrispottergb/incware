@@ -874,8 +874,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
                     { key: "title", label: "Title" },
                     { key: "salary", label: "Salary" },
                     { key: "bonus", label: "Bonus" },
-                    { key: "status", label: "Status" },
-                  ], { name: "", title: "", salary: "", bonus: "", status: "Re-Appointed" })}
+                  ], { name: "", title: "", salary: "", bonus: "" })}
               </div>
             </div>
           )}
