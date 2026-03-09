@@ -709,19 +709,28 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
           await supabase.from("meeting_counsel").insert(counselRecord);
         }
 
-        // Save financials
+        // Save financials — current year from wizard, previous year from prior meeting
         const finItems = data.financialItems || [];
         const getFinAmount = (label: string) => {
           const item = finItems.find(f => f.item?.toLowerCase().includes(label.toLowerCase()));
           return item?.amount ? parseFloat(item.amount.replace(/[,$]/g, "")) : null;
         };
-        await supabase.from("meeting_financials").insert({
+        const financialsPayload: any = {
           meeting_id: mid,
           current_total_sales: getFinAmount("revenue") ?? getFinAmount("sales"),
           current_cog: getFinAmount("cost of goods"),
           current_gross_profit: getFinAmount("gross profit"),
           current_net_income: getFinAmount("net income"),
-        });
+        };
+        // Auto-populate previous year from prior meeting's current year data
+        if (priorFinancials) {
+          financialsPayload.previous_total_sales = priorFinancials.current_total_sales;
+          financialsPayload.previous_cog = priorFinancials.current_cog;
+          financialsPayload.previous_gross_profit = priorFinancials.current_gross_profit;
+          financialsPayload.previous_net_income = priorFinancials.current_net_income;
+          financialsPayload.previous_cog_ratio = priorFinancials.current_cog_ratio;
+        }
+        await supabase.from("meeting_financials").insert(financialsPayload);
 
         // Save bank authorized signers
         const signerRows = data.bankAccounts.filter(b => b.institution && b.signatory).map(b => ({
