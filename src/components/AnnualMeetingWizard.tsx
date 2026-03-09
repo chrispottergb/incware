@@ -53,6 +53,7 @@ function DynamicTableStable({
   onUpdateItem,
   onAddItem,
   onRemoveItem,
+  bottomFields,
 }: {
   field: string;
   columns: { key: string; label: string; wide?: boolean }[];
@@ -61,6 +62,7 @@ function DynamicTableStable({
   onUpdateItem: (field: string, idx: number, key: string, value: string) => void;
   onAddItem: (field: string, template: any) => void;
   onRemoveItem: (field: string, idx: number) => void;
+  bottomFields?: { key: string; label: string }[];
 }) {
   const inputClass = "h-8 text-sm";
   const labelClass = "text-xs font-medium text-muted-foreground";
@@ -73,20 +75,28 @@ function DynamicTableStable({
       </div>
       <div className="overflow-x-auto">
         {rows.map((row: any, i: number) => (
-          <div key={i} className="grid gap-2 items-end mb-2" style={{ gridTemplateColumns: columns.map(col => (col.wide || col.key === 'name' || col.key === 'nameFirm') ? 'minmax(220px, 2fr)' : 'minmax(120px, 1fr)').join(' ') + ' 40px' }}>
-            {columns.map(col => (
-              <div key={col.key}>
-                {i === 0 && <Label className={labelClass}>{col.label}</Label>}
-                <Input className={inputClass} value={row[col.key] || ""} onChange={e => onUpdateItem(field, i, col.key, e.target.value)} placeholder={col.label} />
+          <div key={i} className="mb-3">
+            <div className="grid gap-2 items-end" style={{ gridTemplateColumns: columns.map(col => (col.wide || col.key === 'name' || col.key === 'nameFirm') ? 'minmax(220px, 2fr)' : 'minmax(100px, 1fr)').join(' ') + ' 40px' }}>
+              {columns.map(col => (
+                <div key={col.key}>
+                  {i === 0 && <Label className={labelClass}>{col.label}</Label>}
+                  <Input className={inputClass} value={row[col.key] || ""} onChange={e => onUpdateItem(field, i, col.key, e.target.value)} placeholder={col.label} />
+                </div>
+              ))}
+              <div className="flex items-end">
+                {rows.length > 1 && (
+                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" onClick={() => onRemoveItem(field, i)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            </div>
+            {bottomFields && bottomFields.map(bf => (
+              <div key={bf.key} className="mt-1">
+                {i === 0 && <Label className={labelClass}>{bf.label}</Label>}
+                <Input className={inputClass} value={row[bf.key] || ""} onChange={e => onUpdateItem(field, i, bf.key, e.target.value)} placeholder={bf.label} />
               </div>
             ))}
-            <div className="flex items-end">
-              {rows.length > 1 && (
-                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" onClick={() => onRemoveItem(field, i)}>
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
           </div>
         ))}
       </div>
