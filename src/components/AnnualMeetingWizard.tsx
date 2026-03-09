@@ -122,14 +122,24 @@ function RequiredField({ label, value }: { label: string; value: string }) {
   );
 }
 
+const STORAGE_KEY_PREFIX = "annual_meeting_draft_";
+
 export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated }: Props) {
   const queryClient = useQueryClient();
-  const [step, setStep] = useState(0);
+  const storageKey = `${STORAGE_KEY_PREFIX}${company?.id || "unknown"}`;
+  const [step, setStep] = useState(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) return JSON.parse(saved).step || 0;
+    } catch {}
+    return 0;
+  });
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewCanvas, setPreviewCanvas] = useState<HTMLCanvasElement | null>(null);
   const [previewPages, setPreviewPages] = useState(0);
   const [previewPage, setPreviewPage] = useState(1);
   const [pdfDocRef, setPdfDocRef] = useState<any>(null);
+  const [hasDraft, setHasDraft] = useState(false);
 
   // Fetch company data for pre-fill
   const { data: companyShareholders = [] } = useQuery({
@@ -459,16 +469,68 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     };
   };
 
-  const [data, setData] = useState<AnnualMeetingData>(buildDefaultData());
-  const [initialized, setInitialized] = useState(false);
+  const [data, setData] = useState<AnnualMeetingData>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.data) return parsed.data;
+      }
+    } catch {}
+    return buildDefaultData();
+  });
+  const [initialized, setInitialized] = useState(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved ? true : false;
+    } catch {}
+    return false;
+  });
 
-  // Re-initialize when company data loads
+  // Check if draft exists on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) setHasDraft(true);
+    } catch {}
+  }, []);
+
+  // Re-initialize when company data loads (only if no draft)
   useEffect(() => {
     if (!initialized && company?.id) {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+          setInitialized(true);
+          return; // Don't overwrite draft data
+        }
+      } catch {}
       setData(buildDefaultData());
       setInitialized(true);
     }
   }, [companyShareholders, companyOfficers, companyBanks, priorMeeting, attorneys, accountants, companyAssets, companyLeases, priorOfficers]);
+
+  // Auto-save to localStorage whenever data or step changes
+  useEffect(() => {
+    if (initialized) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify({ data, step }));
+      } catch {}
+    }
+  }, [data, step, initialized, storageKey]);
+
+  const clearDraft = () => {
+    try { localStorage.removeItem(storageKey); } catch {}
+    setHasDraft(false);
+  };
+
+  const handleStartOver = () => {
+    clearDraft();
+    setData(buildDefaultData());
+    setStep(0);
+    setInitialized(true);
+    toast.info("Draft cleared — starting fresh.");
+  };
 
   const update = (field: keyof AnnualMeetingData, value: any) =>
     setData(prev => ({ ...prev, [field]: value }));
@@ -553,6 +615,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         if (shRows.length > 0) await supabase.from("meeting_shareholders").insert(shRows);
       }
 
+      clearDraft();
       queryClient.invalidateQueries({ queryKey: ["meetings", company.id] });
       toast.success("Annual Meeting saved successfully!");
       onMeetingCreated?.();
@@ -627,6 +690,18 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
 
   return (
     <div className="space-y-4">
+      {/* Draft notice */}
+      {hasDraft && (
+        <div className="flex items-center justify-between rounded-md border border-accent/30 bg-accent/5 px-3 py-2">
+          <p className="text-xs text-accent-foreground">
+            📝 Your draft has been restored. All changes are auto-saved as you work.
+          </p>
+          <Button type="button" variant="ghost" size="sm" className="h-6 text-[10px] text-muted-foreground hover:text-destructive shrink-0 ml-2" onClick={handleStartOver}>
+            Start Over
+          </Button>
+        </div>
+      )}
+
       {/* Progress */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -1182,6 +1257,9 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
           )}
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleSaveMeeting} disabled={!canGenerate() || saving}>
+            {saving ? "Saving..." : "Save Meeting"}
+          </Button>
           {step < STEPS.length - 1 ? (
             <Button size="sm" onClick={() => setStep(step + 1)}>
               Next <ChevronRight className="h-4 w-4 ml-1" />
@@ -1193,9 +1271,6 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               </Button>
               <Button variant="outline" size="sm" onClick={handleDownload} disabled={!canGenerate()}>
                 <Download className="h-4 w-4 mr-1" /> Download PDF
-              </Button>
-              <Button size="sm" onClick={handleSaveMeeting} disabled={!canGenerate() || saving}>
-                {saving ? "Saving..." : "Save Meeting"}
               </Button>
             </>
           )}
