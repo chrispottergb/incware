@@ -421,6 +421,8 @@ export default function MeetingDetail() {
       companyDirectors,
       companyBanks,
       companyBankSigners,
+      companyAttorneys,
+      companyAccountants,
     });
 
   const term = getTerminology(company?.entity_type);
