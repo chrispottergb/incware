@@ -122,14 +122,24 @@ function RequiredField({ label, value }: { label: string; value: string }) {
   );
 }
 
+const STORAGE_KEY_PREFIX = "annual_meeting_draft_";
+
 export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated }: Props) {
   const queryClient = useQueryClient();
-  const [step, setStep] = useState(0);
+  const storageKey = `${STORAGE_KEY_PREFIX}${company?.id || "unknown"}`;
+  const [step, setStep] = useState(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) return JSON.parse(saved).step || 0;
+    } catch {}
+    return 0;
+  });
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewCanvas, setPreviewCanvas] = useState<HTMLCanvasElement | null>(null);
   const [previewPages, setPreviewPages] = useState(0);
   const [previewPage, setPreviewPage] = useState(1);
   const [pdfDocRef, setPdfDocRef] = useState<any>(null);
+  const [hasDraft, setHasDraft] = useState(false);
 
   // Fetch company data for pre-fill
   const { data: companyShareholders = [] } = useQuery({
