@@ -1007,18 +1007,14 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Leases</h3>
               <TemplateNote text="Include all property, equipment, and vehicle leases. Mark lease-back arrangements where the lessor is a member or related party." />
-              <DynamicTable
-                field="leases"
-                columns={[
+              {renderTable("leases", [
                   { key: "property", label: "Property / Asset" },
                   { key: "lessor", label: "Lessor" },
                   { key: "lessee", label: "Lessee" },
                   { key: "monthlyAmount", label: "Monthly Amount" },
                   { key: "term", label: "Term / Expiration" },
                   { key: "leaseBack", label: "Lease-Back?" },
-                ]}
-                addTemplate={{ property: "", lessor: "", lessee: "", monthlyAmount: "", term: "", leaseBack: "N" }}
-              />
+                ], { property: "", lessor: "", lessee: "", monthlyAmount: "", term: "", leaseBack: "N" })}
             </div>
           )}
 
