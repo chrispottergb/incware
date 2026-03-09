@@ -84,9 +84,10 @@ export default function Dashboard() {
     return matchesSearch && matchesType && matchesStatus;
   });
 
-  const statusBadge = (status: string | null) => {
-    if (status === "active") return <Badge variant="outline" className="bg-success/10 text-success border-success/20 text-[10px] px-1.5 py-0">Active</Badge>;
-    return <Badge variant="outline" className="bg-muted text-muted-foreground border-muted text-[10px] px-1.5 py-0">Inactive</Badge>;
+  const statusBadge = (corporateStatus: string | null) => {
+    if (corporateStatus === "delinquent") return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-[10px] px-1.5 py-0">Delinquent</Badge>;
+    if (corporateStatus === "admin_dissolved") return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] px-1.5 py-0">Admin. Dissolved</Badge>;
+    return <Badge variant="outline" className="bg-success/10 text-success border-success/20 text-[10px] px-1.5 py-0">Current</Badge>;
   };
 
   return (
