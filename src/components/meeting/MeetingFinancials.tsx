@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, TrendingUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Save, TrendingUp, Lock, Info } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
 import {
   BarChart,
   Bar,
@@ -38,6 +40,74 @@ export default function MeetingFinancials({ meetingId }: Props) {
     },
   });
 
+  // Fetch the meeting to find its company_id
+  const { data: meeting } = useQuery({
+    queryKey: ["meeting_for_financials", meetingId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("meetings")
+        .select("id, company_id, meeting_date, meeting_type")
+        .eq("id", meetingId)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  // Fetch the most recent prior meeting with current year financial data
+  const { data: priorMeetingFinancials } = useQuery({
+    queryKey: ["prior_meeting_financials_for_autofill", meeting?.company_id, meetingId],
+    queryFn: async () => {
+      // Find the most recent meeting before this one that has financials with current year data
+      const { data: priorMeetings } = await supabase
+        .from("meetings")
+        .select("id, meeting_date")
+        .eq("company_id", meeting!.company_id)
+        .neq("id", meetingId)
+        .order("meeting_date", { ascending: false })
+        .limit(10);
+
+      if (!priorMeetings?.length) return null;
+
+      for (const pm of priorMeetings) {
+        const { data: fin } = await supabase
+          .from("meeting_financials")
+          .select("*")
+          .eq("meeting_id", pm.id)
+          .maybeSingle();
+
+        if (fin && (fin.current_total_sales != null || fin.current_cog != null || fin.current_net_income != null)) {
+          return { financials: fin, meetingDate: pm.meeting_date };
+        }
+      }
+      return null;
+    },
+    enabled: !!meeting?.company_id,
+  });
+
+  // Determine if previous year fields were auto-populated
+  const isAutoFilled = !!(
+    priorMeetingFinancials?.financials &&
+    (!financials || (
+      financials.previous_total_sales == null &&
+      financials.previous_cog == null &&
+      financials.previous_net_income == null
+    ))
+  );
+
+  const hasSavedPreviousData = !!(
+    financials &&
+    (financials.previous_total_sales != null ||
+     financials.previous_cog != null ||
+     financials.previous_net_income != null)
+  );
+
+  // Previous year fields are locked when they have data (either saved or auto-filled)
+  const previousYearLocked = hasSavedPreviousData || isAutoFilled;
+
+  const sourceLabel = priorMeetingFinancials?.meetingDate
+    ? `Auto-filled from meeting on ${format(new Date(priorMeetingFinancials.meetingDate + "T12:00:00"), "MMM d, yyyy")}`
+    : null;
+
   const [form, setForm] = useState({
     current_total_sales: "",
     current_gross_profit: "",
@@ -52,6 +122,9 @@ export default function MeetingFinancials({ meetingId }: Props) {
   });
 
   const [lastFinancials, setLastFinancials] = useState<typeof financials>(undefined);
+  const [autoFillApplied, setAutoFillApplied] = useState(false);
+
+  // Sync form from saved financials
   if (financials !== lastFinancials) {
     setLastFinancials(financials);
     if (financials) {
@@ -70,10 +143,30 @@ export default function MeetingFinancials({ meetingId }: Props) {
     }
   }
 
+  // Auto-fill previous year from prior meeting when no saved previous data exists
+  useEffect(() => {
+    if (
+      !autoFillApplied &&
+      priorMeetingFinancials?.financials &&
+      !hasSavedPreviousData
+    ) {
+      const pf = priorMeetingFinancials.financials;
+      setForm((prev) => ({
+        ...prev,
+        previous_total_sales: pf.current_total_sales?.toString() ?? "",
+        previous_cog: pf.current_cog?.toString() ?? "",
+        previous_gross_profit: pf.current_gross_profit?.toString() ?? "",
+        previous_cog_ratio: pf.current_cog_ratio?.toString() ?? "",
+        previous_net_income: pf.current_net_income?.toString() ?? "",
+      }));
+      setAutoFillApplied(true);
+    }
+  }, [priorMeetingFinancials, hasSavedPreviousData, autoFillApplied]);
+
   const toNum = (s: string) => (s ? parseFloat(s) : null);
 
-  // Auto-calculate derived fields when sales or COG change
   const handleFieldChange = (prefix: "current" | "previous", key: string, value: string) => {
+    if (prefix === "previous" && previousYearLocked) return;
     setForm((prev) => {
       const updated = { ...prev, [`${prefix}_${key}`]: value };
 
@@ -156,7 +249,6 @@ export default function MeetingFinancials({ meetingId }: Props) {
 
   const hasData = chartData.some((d) => d["Current Year"] > 0 || d["Previous Year"] > 0);
 
-  // YoY change helpers
   const yoyChange = (currentKey: string, previousKey: string) => {
     const cur = toNum((form as any)[currentKey]);
     const prev = toNum((form as any)[previousKey]);
@@ -172,13 +264,23 @@ export default function MeetingFinancials({ meetingId }: Props) {
     { key: "net_income", label: "Net Income" },
   ];
 
+  const noPriorData = !priorMeetingFinancials?.financials && !hasSavedPreviousData;
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            <CardTitle className="font-display text-base">Financial Comparison</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <CardTitle className="font-display text-base">Financial Comparison</CardTitle>
+            </div>
+            {previousYearLocked && sourceLabel && (
+              <Badge variant="secondary" className="text-[10px] font-normal gap-1">
+                <Info className="h-3 w-3" />
+                {sourceLabel}
+              </Badge>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -191,11 +293,16 @@ export default function MeetingFinancials({ meetingId }: Props) {
             <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 mb-4">
               <div></div>
               <p className="text-xs font-semibold text-center text-muted-foreground uppercase tracking-wider">Current Year</p>
-              <p className="text-xs font-semibold text-center text-muted-foreground uppercase tracking-wider">Previous Year</p>
+              <div className="flex items-center justify-center gap-1">
+                <p className="text-xs font-semibold text-center text-muted-foreground uppercase tracking-wider">Previous Year</p>
+                {previousYearLocked && <Lock className="h-3 w-3 text-muted-foreground" />}
+              </div>
               <p className="w-16 text-xs font-semibold text-right text-muted-foreground uppercase tracking-wider">YoY</p>
             </div>
             {fields.map((f) => {
               const change = yoyChange(`current_${f.key}`, `previous_${f.key}`);
+              const prevValue = (form as any)[`previous_${f.key}`];
+              const isPrevLocked = previousYearLocked || f.computed;
               return (
                 <div key={f.key} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 mb-3 items-center">
                   <Label className="text-sm">{f.label}</Label>
@@ -207,14 +314,25 @@ export default function MeetingFinancials({ meetingId }: Props) {
                     readOnly={f.computed}
                     className={`text-right font-mono text-sm ${f.computed ? "bg-muted/50 text-muted-foreground" : ""}`}
                   />
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={(form as any)[`previous_${f.key}`]}
-                    onChange={(e) => handleFieldChange("previous", f.key, e.target.value)}
-                    readOnly={f.computed}
-                    className={`text-right font-mono text-sm ${f.computed ? "bg-muted/50 text-muted-foreground" : ""}`}
-                  />
+                  {noPriorData && !prevValue ? (
+                    <div className="text-xs text-muted-foreground italic text-center py-2">
+                      No previous data available
+                    </div>
+                  ) : (
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={prevValue}
+                      onChange={(e) => handleFieldChange("previous", f.key, e.target.value)}
+                      readOnly={isPrevLocked}
+                      tabIndex={isPrevLocked ? -1 : undefined}
+                      className={`text-right font-mono text-sm ${
+                        isPrevLocked
+                          ? "bg-muted/50 text-muted-foreground cursor-not-allowed"
+                          : ""
+                      }`}
+                    />
+                  )}
                   <div className="w-16 text-right">
                     {change != null && (
                       <span className={`text-[11px] font-mono font-medium ${change >= 0 ? "text-success" : "text-destructive"}`}>
