@@ -615,11 +615,18 @@ export default function MeetingsTab({ companyId, company }: Props) {
 
       {/* Annual Meeting Wizard Dialog */}
       <Dialog open={annualWizardOpen} onOpenChange={setAnnualWizardOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">Annual Meeting Minutes Generator</DialogTitle>
           </DialogHeader>
-          <AnnualMeetingWizard company={company} onClose={() => setAnnualWizardOpen(false)} />
+          <AnnualMeetingWizard
+            company={company}
+            onClose={() => setAnnualWizardOpen(false)}
+            onMeetingCreated={() => {
+              queryClient.invalidateQueries({ queryKey: ["meetings", companyId] });
+              setAnnualWizardOpen(false);
+            }}
+          />
         </DialogContent>
       </Dialog>
 

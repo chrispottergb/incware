@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,57 @@ const STEPS = [
 interface Props {
   company: any;
   onClose?: () => void;
+  onMeetingCreated?: () => void;
+}
+
+// ---- Extracted DynamicTable to prevent re-mount on every keystroke ----
+function DynamicTableStable({
+  field,
+  columns,
+  addTemplate,
+  rows,
+  onUpdateItem,
+  onAddItem,
+  onRemoveItem,
+}: {
+  field: string;
+  columns: { key: string; label: string; wide?: boolean }[];
+  addTemplate: any;
+  rows: any[];
+  onUpdateItem: (field: string, idx: number, key: string, value: string) => void;
+  onAddItem: (field: string, template: any) => void;
+  onRemoveItem: (field: string, idx: number) => void;
+}) {
+  const inputClass = "h-8 text-sm";
+  const labelClass = "text-xs font-medium text-muted-foreground";
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-end">
+        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onAddItem(field, addTemplate)}>
+          <Plus className="h-3 w-3 mr-1" /> Add Row
+        </Button>
+      </div>
+      <div className="overflow-x-auto">
+        {rows.map((row: any, i: number) => (
+          <div key={i} className="grid gap-2 items-end mb-2" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(120px, 1fr)) 40px` }}>
+            {columns.map(col => (
+              <div key={col.key}>
+                {i === 0 && <Label className={labelClass}>{col.label}</Label>}
+                <Input className={inputClass} value={row[col.key] || ""} onChange={e => onUpdateItem(field, i, col.key, e.target.value)} placeholder={col.label} />
+              </div>
+            ))}
+            <div className="flex items-end">
+              {rows.length > 1 && (
+                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" onClick={() => onRemoveItem(field, i)}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function TemplateNote({ text }: { text: string }) {
@@ -71,7 +122,8 @@ function RequiredField({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function AnnualMeetingWizard({ company, onClose }: Props) {
+export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated }: Props) {
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewCanvas, setPreviewCanvas] = useState<HTMLCanvasElement | null>(null);
@@ -421,22 +473,95 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
   const update = (field: keyof AnnualMeetingData, value: any) =>
     setData(prev => ({ ...prev, [field]: value }));
 
+  const handleUpdateItem = useCallback((field: string, idx: number, key: string, value: string) => {
+    setData(prev => {
+      const arr = [...(prev[field as keyof AnnualMeetingData] as any[])];
+      arr[idx] = { ...arr[idx], [key]: value };
+      return { ...prev, [field]: arr };
+    });
+  }, []);
+
+  const handleAddItem = useCallback((field: string, template: any) => {
+    setData(prev => ({
+      ...prev,
+      [field]: [...(prev[field as keyof AnnualMeetingData] as any[]), template],
+    }));
+  }, []);
+
+  const handleRemoveItem = useCallback((field: string, idx: number) => {
+    setData(prev => ({
+      ...prev,
+      [field]: (prev[field as keyof AnnualMeetingData] as any[]).filter((_: any, i: number) => i !== idx),
+    }));
+  }, []);
+
+  // Keep legacy helpers for inline usage (special resolutions, signatures)
   const updateArrayItem = (field: keyof AnnualMeetingData, idx: number, key: string, value: string) => {
-    const arr = [...(data[field] as any[])];
-    arr[idx] = { ...arr[idx], [key]: value };
-    update(field, arr);
+    handleUpdateItem(field, idx, key, value);
   };
-
   const addArrayItem = (field: keyof AnnualMeetingData, template: any) => {
-    update(field, [...(data[field] as any[]), template]);
+    handleAddItem(field, template);
   };
-
   const removeArrayItem = (field: keyof AnnualMeetingData, idx: number) => {
-    update(field, (data[field] as any[]).filter((_, i) => i !== idx));
+    handleRemoveItem(field, idx);
   };
 
   const canGenerate = () => {
     return data.companyName && data.meetingDate && data.chairperson && data.secretary;
+  };
+
+  const [saving, setSaving] = useState(false);
+
+  const handleSaveMeeting = async () => {
+    if (!canGenerate()) {
+      toast.error("Please fill in all required fields (Company Name, Meeting Date, Chairperson, Secretary).");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data: newMeeting, error } = await supabase.from("meetings").insert({
+        company_id: company.id,
+        meeting_date: data.meetingDate,
+        meeting_time: data.meetingTime || null,
+        tax_year: data.taxYear ? parseInt(data.taxYear) : null,
+        meeting_type: "Annual Meeting",
+        meeting_location: data.meetingLocation || null,
+        chairperson: data.chairperson || null,
+        mtg_secretary: data.secretary || null,
+        prior_mtg_date: data.priorMeetingDate || null,
+        company_name_at_meeting: data.companyName || null,
+      }).select("id").single();
+
+      if (error) throw error;
+
+      if (newMeeting) {
+        // Save officers
+        const officerRows = data.officers.filter(o => o.name).map(o => ({
+          meeting_id: newMeeting.id,
+          name: o.name,
+          title: o.title,
+          salary: o.salary ? parseFloat(o.salary) : null,
+          bonus: o.bonus ? parseFloat(o.bonus) : null,
+        }));
+        if (officerRows.length > 0) await supabase.from("meeting_officers").insert(officerRows);
+
+        // Save shareholders
+        const shRows = data.members.filter(m => m.name).map(m => ({
+          meeting_id: newMeeting.id,
+          shareholder_name: m.name,
+        }));
+        if (shRows.length > 0) await supabase.from("meeting_shareholders").insert(shRows);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["meetings", company.id] });
+      toast.success("Annual Meeting saved successfully!");
+      onMeetingCreated?.();
+      onClose?.();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save meeting");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDownload = () => {
@@ -487,36 +612,18 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
   // Retained earnings exceeds $250k?
   const retainedExceeds250k = parseFloat(data.retainedEarnings?.replace(/[^0-9.]/g, "") || "0") > 250000;
 
-  // Helper for dynamic table rendering
-  function DynamicTable({ field, columns, addTemplate }: { field: keyof AnnualMeetingData; columns: { key: string; label: string; wide?: boolean }[]; addTemplate: any }) {
-    const rows = data[field] as any[];
-    return (
-      <div className="space-y-2">
-        <div className="flex justify-end">
-          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => addArrayItem(field, addTemplate)}>
-            <Plus className="h-3 w-3 mr-1" /> Add Row
-          </Button>
-        </div>
-        {rows.map((row: any, i: number) => (
-          <div key={i} className="grid gap-2 items-end" style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr) 40px` }}>
-            {columns.map(col => (
-              <div key={col.key}>
-                {i === 0 && <Label className={labelClass}>{col.label}</Label>}
-                <Input className={inputClass} value={row[col.key] || ""} onChange={e => updateArrayItem(field, i, col.key, e.target.value)} placeholder={col.label} />
-              </div>
-            ))}
-            <div className="flex items-end">
-              {rows.length > 1 && (
-                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" onClick={() => removeArrayItem(field, i)}>
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
+  // Use the extracted stable DynamicTable
+  const DynamicTable = ({ field, columns, addTemplate }: { field: keyof AnnualMeetingData; columns: { key: string; label: string; wide?: boolean }[]; addTemplate: any }) => (
+    <DynamicTableStable
+      field={field}
+      columns={columns}
+      addTemplate={addTemplate}
+      rows={data[field] as any[]}
+      onUpdateItem={handleUpdateItem}
+      onAddItem={handleAddItem}
+      onRemoveItem={handleRemoveItem}
+    />
+  );
 
   return (
     <div className="space-y-4">
@@ -1084,8 +1191,11 @@ export default function AnnualMeetingWizard({ company, onClose }: Props) {
               <Button variant="outline" size="sm" onClick={handlePreview}>
                 <FileText className="h-4 w-4 mr-1" /> Preview
               </Button>
-              <Button size="sm" onClick={handleDownload} disabled={!canGenerate()}>
+              <Button variant="outline" size="sm" onClick={handleDownload} disabled={!canGenerate()}>
                 <Download className="h-4 w-4 mr-1" /> Download PDF
+              </Button>
+              <Button size="sm" onClick={handleSaveMeeting} disabled={!canGenerate() || saving}>
+                {saving ? "Saving..." : "Save Meeting"}
               </Button>
             </>
           )}
