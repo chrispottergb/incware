@@ -1038,17 +1038,13 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               <div>
                 <h4 className="text-xs font-semibold mb-2">Major Equipment</h4>
                 <TemplateNote text="List significant equipment items owned or leased by the company." />
-                <DynamicTable
-                  field="equipment"
-                  columns={[
+                {renderTable("equipment", [
                     { key: "description", label: "Description" },
                     { key: "manufacturer", label: "Manufacturer" },
                     { key: "ownedLeased", label: "Owned / Leased" },
                     { key: "value", label: "Value" },
                     { key: "notes", label: "Notes" },
-                  ]}
-                  addTemplate={{ description: "", manufacturer: "", ownedLeased: "Owned", value: "", notes: "" }}
-                />
+                  ], { description: "", manufacturer: "", ownedLeased: "Owned", value: "", notes: "" })}
               </div>
             </div>
           )}
