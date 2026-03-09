@@ -664,6 +664,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
           meeting_id: mid,
           shareholder_name: m.name,
           common_shares: m.units ? parseInt(m.units) : null,
+          preferred_shares: m.interestPct ? parseFloat(m.interestPct) : null,
         }));
         if (shRows.length > 0) await supabase.from("meeting_shareholders").insert(shRows);
 
