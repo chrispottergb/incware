@@ -42,6 +42,57 @@ const STEPS = [
 interface Props {
   company: any;
   onClose?: () => void;
+  onMeetingCreated?: () => void;
+}
+
+// ---- Extracted DynamicTable to prevent re-mount on every keystroke ----
+function DynamicTableStable({
+  field,
+  columns,
+  addTemplate,
+  rows,
+  onUpdateItem,
+  onAddItem,
+  onRemoveItem,
+}: {
+  field: string;
+  columns: { key: string; label: string; wide?: boolean }[];
+  addTemplate: any;
+  rows: any[];
+  onUpdateItem: (field: string, idx: number, key: string, value: string) => void;
+  onAddItem: (field: string, template: any) => void;
+  onRemoveItem: (field: string, idx: number) => void;
+}) {
+  const inputClass = "h-8 text-sm";
+  const labelClass = "text-xs font-medium text-muted-foreground";
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-end">
+        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onAddItem(field, addTemplate)}>
+          <Plus className="h-3 w-3 mr-1" /> Add Row
+        </Button>
+      </div>
+      <div className="overflow-x-auto">
+        {rows.map((row: any, i: number) => (
+          <div key={i} className="grid gap-2 items-end mb-2" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(120px, 1fr)) 40px` }}>
+            {columns.map(col => (
+              <div key={col.key}>
+                {i === 0 && <Label className={labelClass}>{col.label}</Label>}
+                <Input className={inputClass} value={row[col.key] || ""} onChange={e => onUpdateItem(field, i, col.key, e.target.value)} placeholder={col.label} />
+              </div>
+            ))}
+            <div className="flex items-end">
+              {rows.length > 1 && (
+                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" onClick={() => onRemoveItem(field, i)}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function TemplateNote({ text }: { text: string }) {
