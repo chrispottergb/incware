@@ -469,16 +469,68 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     };
   };
 
-  const [data, setData] = useState<AnnualMeetingData>(buildDefaultData());
-  const [initialized, setInitialized] = useState(false);
+  const [data, setData] = useState<AnnualMeetingData>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.data) return parsed.data;
+      }
+    } catch {}
+    return buildDefaultData();
+  });
+  const [initialized, setInitialized] = useState(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved ? true : false;
+    } catch {}
+    return false;
+  });
 
-  // Re-initialize when company data loads
+  // Check if draft exists on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) setHasDraft(true);
+    } catch {}
+  }, []);
+
+  // Re-initialize when company data loads (only if no draft)
   useEffect(() => {
     if (!initialized && company?.id) {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+          setInitialized(true);
+          return; // Don't overwrite draft data
+        }
+      } catch {}
       setData(buildDefaultData());
       setInitialized(true);
     }
   }, [companyShareholders, companyOfficers, companyBanks, priorMeeting, attorneys, accountants, companyAssets, companyLeases, priorOfficers]);
+
+  // Auto-save to localStorage whenever data or step changes
+  useEffect(() => {
+    if (initialized) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify({ data, step }));
+      } catch {}
+    }
+  }, [data, step, initialized, storageKey]);
+
+  const clearDraft = () => {
+    try { localStorage.removeItem(storageKey); } catch {}
+    setHasDraft(false);
+  };
+
+  const handleStartOver = () => {
+    clearDraft();
+    setData(buildDefaultData());
+    setStep(0);
+    setInitialized(true);
+    toast.info("Draft cleared — starting fresh.");
+  };
 
   const update = (field: keyof AnnualMeetingData, value: any) =>
     setData(prev => ({ ...prev, [field]: value }));
