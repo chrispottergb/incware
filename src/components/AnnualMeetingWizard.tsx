@@ -1192,8 +1192,11 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               <Button variant="outline" size="sm" onClick={handlePreview}>
                 <FileText className="h-4 w-4 mr-1" /> Preview
               </Button>
-              <Button size="sm" onClick={handleDownload} disabled={!canGenerate()}>
+              <Button variant="outline" size="sm" onClick={handleDownload} disabled={!canGenerate()}>
                 <Download className="h-4 w-4 mr-1" /> Download PDF
+              </Button>
+              <Button size="sm" onClick={handleSaveMeeting} disabled={!canGenerate() || saving}>
+                {saving ? "Saving..." : "Save Meeting"}
               </Button>
             </>
           )}
