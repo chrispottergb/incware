@@ -1257,6 +1257,9 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
           )}
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleSaveMeeting} disabled={!canGenerate() || saving}>
+            {saving ? "Saving..." : "Save Meeting"}
+          </Button>
           {step < STEPS.length - 1 ? (
             <Button size="sm" onClick={() => setStep(step + 1)}>
               Next <ChevronRight className="h-4 w-4 ml-1" />
@@ -1268,9 +1271,6 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               </Button>
               <Button variant="outline" size="sm" onClick={handleDownload} disabled={!canGenerate()}>
                 <Download className="h-4 w-4 mr-1" /> Download PDF
-              </Button>
-              <Button size="sm" onClick={handleSaveMeeting} disabled={!canGenerate() || saving}>
-                {saving ? "Saving..." : "Save Meeting"}
               </Button>
             </>
           )}
