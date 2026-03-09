@@ -915,16 +915,12 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
                 <h3 className="text-sm font-semibold">Current Banking Relationships</h3>
               </div>
               {data.includeBanking && (
-                <DynamicTable
-                  field="bankAccounts"
-                  columns={[
+                {renderTable("bankAccounts", [
                     { key: "institution", label: "Institution" },
                     { key: "accountType", label: "Account Type" },
                     { key: "signatory", label: "Auth. Signatory" },
                     { key: "title", label: "Title" },
-                  ]}
-                  addTemplate={{ institution: "", accountType: "", signatory: "", title: "" }}
-                />
+                  ], { institution: "", accountType: "", signatory: "", title: "" })}
               )}
 
               <div className="flex items-center gap-3 pt-2 border-t">
