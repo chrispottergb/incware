@@ -819,17 +819,13 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               </div>
               <div>
                 <h4 className="text-xs font-semibold mb-2">Re-Appointment or Election of Managers / Officers</h4>
-                <DynamicTable
-                  field="officers"
-                  columns={[
+                {renderTable("officers", [
                     { key: "name", label: "Name" },
                     { key: "title", label: "Title" },
                     { key: "salary", label: "Salary" },
                     { key: "bonus", label: "Bonus" },
                     { key: "status", label: "Status" },
-                  ]}
-                  addTemplate={{ name: "", title: "", salary: "", bonus: "", status: "Re-Appointed" }}
-                />
+                  ], { name: "", title: "", salary: "", bonus: "", status: "Re-Appointed" })}
               </div>
             </div>
           )}
