@@ -73,7 +73,7 @@ function DynamicTableStable({
       </div>
       <div className="overflow-x-auto">
         {rows.map((row: any, i: number) => (
-          <div key={i} className="grid gap-2 items-end mb-2" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(120px, 1fr)) 40px` }}>
+          <div key={i} className="grid gap-2 items-end mb-2" style={{ gridTemplateColumns: columns.map(col => col.wide ? 'minmax(180px, 1.5fr)' : 'minmax(120px, 1fr)').join(' ') + ' 40px' }}>
             {columns.map(col => (
               <div key={col.key}>
                 {i === 0 && <Label className={labelClass}>{col.label}</Label>}
