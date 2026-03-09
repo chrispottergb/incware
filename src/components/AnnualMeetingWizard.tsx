@@ -528,22 +528,22 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   // Always refresh members from DB data when certificates/shareholders load, even with a draft
   useEffect(() => {
     if (initialized && companyShareholders.length > 0) {
+      const totalAllUnits = activeCertificates.reduce((sum: number, c: any) => sum + (c.num_shares || 0), 0);
       const freshMembers = companyShareholders.filter(s => !s.is_treasury).map(s => {
         const memberCerts = activeCertificates.filter((c: any) => c.shareholder_id === s.id);
         const totalUnits = memberCerts.reduce((sum: number, c: any) => sum + (c.num_shares || 0), 0);
-        // Preserve any user-edited fields from draft, but refresh units/interest from DB
-        const existing = data.members?.find((m: any) => m.name === s.name);
+        const interestPct = totalAllUnits > 0 ? ((totalUnits / totalAllUnits) * 100).toFixed(2) : (s.ownership_percentage?.toString() || "");
         return {
           name: s.name,
-          units: totalUnits > 0 ? totalUnits.toString() : (existing?.units || ""),
-          interestPct: s.ownership_percentage?.toString() || (existing?.interestPct || ""),
+          units: totalUnits > 0 ? totalUnits.toString() : "",
+          interestPct,
           address: [s.address, s.city, s.state, s.zip].filter(Boolean).join(", "),
         };
       });
       if (freshMembers.length > 0) {
-        const currentUnitsEmpty = data.members?.every((m: any) => !m.units);
-        const freshHasUnits = freshMembers.some((m: any) => m.units);
-        if (currentUnitsEmpty && freshHasUnits) {
+        const currentMissing = data.members?.some((m: any) => !m.units || !m.interestPct);
+        const freshHasData = freshMembers.some((m: any) => m.units || m.interestPct);
+        if (currentMissing && freshHasData) {
           setData(prev => ({ ...prev, members: freshMembers }));
         }
       }
