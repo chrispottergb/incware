@@ -22,7 +22,7 @@ export interface AnnualMeetingData {
   members: { name: string; units: string; interestPct: string; address: string }[];
 
   // Officers/Managers
-  officers: { name: string; title: string; salary: string; bonus: string; status: string }[];
+  officers: { name: string; title: string; salary: string; bonus: string }[];
 
   // Authorized Binders
   authorizedBinders: { name: string; title: string; scope: string; status: string }[];
@@ -302,8 +302,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   if (data.officers.length > 0) {
     addTable(
-      ["Name", "Title", "Salary", "Bonus", "Status (Re-Appointed / New)"],
-      data.officers.map(o => [o.name || "[Enter]", o.title || "[Enter]", o.salary || "[Enter]", o.bonus || "[Enter]", o.status || "[Enter]"])
+      ["Name", "Title", "Salary", "Bonus"],
+      data.officers.map(o => [o.name || "[Enter]", o.title || "[Enter]", o.salary || "[Enter]", o.bonus || "[Enter]"])
     );
   }
 
