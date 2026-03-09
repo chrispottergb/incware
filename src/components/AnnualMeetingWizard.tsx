@@ -252,6 +252,15 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     enabled: !!company?.id,
   });
 
+  const { data: priorFinancials } = useQuery({
+    queryKey: ["prior_meeting_financials", priorMeeting?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("meeting_financials").select("*").eq("meeting_id", priorMeeting!.id).maybeSingle();
+      return data;
+    },
+    enabled: !!priorMeeting?.id,
+  });
+
   const { data: priorBenefits = [] } = useQuery({
     queryKey: ["prior_meeting_benefits", priorMeeting?.id],
     queryFn: async () => {
