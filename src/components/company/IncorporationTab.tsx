@@ -525,8 +525,7 @@ export default function IncorporationTab({ company }: Props) {
                     <SelectContent>
                       <SelectItem value="current">Current</SelectItem>
                       <SelectItem value="delinquent">Delinquent</SelectItem>
-                      <SelectItem value="dissolved">Dissolved</SelectItem>
-                      <SelectItem value="suspended">Suspended</SelectItem>
+                      <SelectItem value="admin_dissolved">Administratively Dissolved</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
