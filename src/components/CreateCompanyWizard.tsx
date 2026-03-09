@@ -144,6 +144,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
         authorized_shares: isCorp ? authSharesNum || null : null,
         par_value: parValueType === "par" ? (parseFloat(parValue) || null) : null,
         par_value_type: parValueType,
+        fiscal_year_end: "December 31",
       }).select("id").single();
       if (compErr) throw compErr;
 
