@@ -668,15 +668,25 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         }));
         if (shRows.length > 0) await supabase.from("meeting_shareholders").insert(shRows);
 
-        // Save professional advisors as counsel records
-        const advisorRows = data.advisors.filter(a => a.nameFirm).map(a => ({
+        // Save professional advisors as a single consolidated counsel record
+        const advisors = data.advisors.filter(a => a.nameFirm);
+        const attorneyAdvisor = advisors.find(a => a.role === "Attorney");
+        const accountantAdvisor = advisors.find(a => a.role === "Accountant");
+        const firstBank = data.bankAccounts?.find(b => b.institution);
+        
+        const counselRecord: any = {
           meeting_id: mid,
-          counsel_name: a.nameFirm,
-          attorney_name: a.role === "Attorney" ? a.nameFirm.split(" / ")[0] : null,
-          accountant_name: a.role === "Accountant" ? a.nameFirm.split(" / ")[0] : null,
-          law_firm: a.role === "Attorney" ? (a.nameFirm.split(" / ")[1] || null) : null,
-        }));
-        if (advisorRows.length > 0) await supabase.from("meeting_counsel").insert(advisorRows);
+          attorney_name: attorneyAdvisor ? attorneyAdvisor.nameFirm.split(" / ")[0] : null,
+          law_firm: attorneyAdvisor ? (attorneyAdvisor.nameFirm.split(" / ")[1] || null) : null,
+          accountant_name: accountantAdvisor ? accountantAdvisor.nameFirm.split(" / ")[0] : null,
+          counsel_name: accountantAdvisor ? (accountantAdvisor.nameFirm.split(" / ")[1] || null) : null,
+          bank_name: firstBank?.institution || null,
+        };
+        
+        // Only insert if we have at least some data
+        if (counselRecord.attorney_name || counselRecord.accountant_name || counselRecord.bank_name) {
+          await supabase.from("meeting_counsel").insert(counselRecord);
+        }
 
         // Save financials
         const finItems = data.financialItems || [];
