@@ -229,6 +229,16 @@ export default function Dashboard() {
             ))}
           </SelectContent>
         </Select>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-full sm:w-40 h-9 text-sm">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">Active Clients</SelectItem>
+            <SelectItem value="inactive">Inactive Clients</SelectItem>
+            <SelectItem value="all">All Clients</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Companies Table */}
