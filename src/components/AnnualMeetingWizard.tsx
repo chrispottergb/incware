@@ -765,7 +765,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               </div>
               <h4 className="text-xs font-semibold mt-3">Attendees</h4>
               <TemplateNote text="Add or remove attendee lines as needed. Note any members attending remotely." />
-              <DynamicTable field="attendees" columns={[{ key: "name", label: "Name" }, { key: "title", label: "Title" }]} addTemplate={{ name: "", title: "" }} />
+              {renderTable("attendees", [{ key: "name", label: "Name" }, { key: "title", label: "Title" }], { name: "", title: "" })}
             </div>
           )}
 
