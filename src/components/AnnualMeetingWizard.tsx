@@ -123,7 +123,8 @@ function RequiredField({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function AnnualMeetingWizard({ company, onClose }: Props) {
+export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated }: Props) {
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewCanvas, setPreviewCanvas] = useState<HTMLCanvasElement | null>(null);
