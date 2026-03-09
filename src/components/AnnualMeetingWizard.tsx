@@ -834,7 +834,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
                 <h4 className="text-xs font-semibold mb-2">Re-Appointment or Election of Managers / Officers</h4>
                 {renderTable("officers", [
                     { key: "name", label: "Name" },
-                    { key: "title", label: "Title" },
+                    { key: "title", label: "Title", wide: true },
                     { key: "salary", label: "Salary" },
                     { key: "bonus", label: "Bonus" },
                     { key: "status", label: "Status" },
