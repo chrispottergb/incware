@@ -21,6 +21,7 @@ import MeetingVehicles from "@/components/meeting/MeetingVehicles";
 import { OFFICER_TITLE_OPTIONS } from "@/components/company/OrganizationTab";
 import CounselTab from "@/components/company/CounselTab";
 import LeasesTab from "@/components/company/LeasesTab";
+import BanksTab from "@/components/company/BanksTab";
 
 import {
   exportMeetingMinutesPDF,
