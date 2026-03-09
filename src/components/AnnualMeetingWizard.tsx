@@ -642,6 +642,11 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         mtg_secretary: data.secretary || null,
         prior_mtg_date: data.priorMeetingDate || null,
         company_name_at_meeting: data.companyName || null,
+        company_address_at_meeting: company?.address || null,
+        company_address_2_at_meeting: company?.address_2 || null,
+        company_city_at_meeting: company?.city || null,
+        company_state_at_meeting: company?.state || null,
+        company_zip_at_meeting: company?.zip || null,
       }).select("id").single();
 
       if (error) throw error;
