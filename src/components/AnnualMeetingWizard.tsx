@@ -642,6 +642,11 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         mtg_secretary: data.secretary || null,
         prior_mtg_date: data.priorMeetingDate || null,
         company_name_at_meeting: data.companyName || null,
+        company_address_at_meeting: company?.address || null,
+        company_address_2_at_meeting: company?.address_2 || null,
+        company_city_at_meeting: company?.city || null,
+        company_state_at_meeting: company?.state || null,
+        company_zip_at_meeting: company?.zip || null,
       }).select("id").single();
 
       if (error) throw error;
@@ -660,12 +665,19 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         if (officerRows.length > 0) await supabase.from("meeting_officers").insert(officerRows);
 
         // Save shareholders/members
-        const shRows = data.members.filter(m => m.name).map(m => ({
-          meeting_id: mid,
-          shareholder_name: m.name,
-          common_shares: m.units ? parseInt(m.units) : null,
-          preferred_shares: m.interestPct ? parseFloat(m.interestPct) : null,
-        }));
+        const shRows = data.members.filter(m => m.name).map(m => {
+          // Find matching distribution for this member
+          const dist = (data.distributions || []).find(d => 
+            d.memberName && m.name && d.memberName.trim().toLowerCase() === m.name.trim().toLowerCase()
+          );
+          return {
+            meeting_id: mid,
+            shareholder_name: m.name,
+            common_shares: m.units ? parseInt(m.units) : null,
+            preferred_shares: m.interestPct ? parseFloat(m.interestPct) : null,
+            distribution_amount: dist?.amount ? parseFloat(dist.amount.replace(/[,$]/g, "")) : null,
+          };
+        });
         if (shRows.length > 0) await supabase.from("meeting_shareholders").insert(shRows);
 
         // Save professional advisors as a single consolidated counsel record
@@ -756,20 +768,33 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
           if (resRows.length > 0) await supabase.from("meeting_resolutions").insert(resRows);
         }
 
-        // Save vehicles as meeting assets
-        const vehicleRows = (data.vehicles || []).filter(v => v.yearMakeModel).map(v => ({
+        // Save vehicles to meeting_vehicle_purchases (owned) or meeting_vehicle_leases (leased)
+        const ownedVehicles = (data.vehicles || []).filter(v => v.yearMakeModel && v.ownedLeased !== "Leased").map(v => ({
           meeting_id: mid,
-          asset_type: "Vehicle",
-          description: v.yearMakeModel,
+          year_make_model: v.yearMakeModel,
+          vin: v.vin || null,
+          business_use_description: [v.primaryDriver ? `Primary Driver: ${v.primaryDriver}` : "", v.businessUsePct ? `Business Use: ${v.businessUsePct}%` : ""].filter(Boolean).join("; ") || null,
+          notes: v.notes || null,
         }));
+        if (ownedVehicles.length > 0) await supabase.from("meeting_vehicle_purchases").insert(ownedVehicles);
+
+        const leasedVehicles = (data.vehicles || []).filter(v => v.yearMakeModel && v.ownedLeased === "Leased").map(v => ({
+          meeting_id: mid,
+          year_make_model: v.yearMakeModel,
+          vin: v.vin || null,
+          business_use_description: [v.primaryDriver ? `Primary Driver: ${v.primaryDriver}` : "", v.businessUsePct ? `Business Use: ${v.businessUsePct}%` : ""].filter(Boolean).join("; ") || null,
+          notes: v.notes || null,
+        }));
+        if (leasedVehicles.length > 0) await supabase.from("meeting_vehicle_leases").insert(leasedVehicles);
+
+        // Save equipment as meeting assets
         const equipRows = (data.equipment || []).filter(e => e.description).map(e => ({
           meeting_id: mid,
           asset_type: "Equipment",
           description: e.description,
           value: e.value ? parseFloat(e.value.replace(/[,$]/g, "")) : null,
         }));
-        const allAssetRows = [...vehicleRows, ...equipRows];
-        if (allAssetRows.length > 0) await supabase.from("meeting_assets").insert(allAssetRows);
+        if (equipRows.length > 0) await supabase.from("meeting_assets").insert(equipRows);
       }
 
       clearDraft();
