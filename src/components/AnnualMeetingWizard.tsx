@@ -525,7 +525,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
 
   // Always refresh members from DB data when certificates/shareholders load, even with a draft
   useEffect(() => {
-    if (initialized && companyShareholders.length > 0 && isLLC) {
+    if (initialized && companyShareholders.length > 0) {
       const freshMembers = companyShareholders.filter(s => !s.is_treasury).map(s => {
         const memberCerts = activeCertificates.filter((c: any) => c.shareholder_id === s.id);
         const totalUnits = memberCerts.reduce((sum: number, c: any) => sum + (c.num_shares || 0), 0);
