@@ -795,16 +795,12 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Professional Advisors on Record</h3>
               <TemplateNote text="Confirm or update the company's professional support team annually. Include attorneys, accountants, insurance agents, and financial advisors." />
-              <DynamicTable
-                field="advisors"
-                columns={[
+              {renderTable("advisors", [
                   { key: "role", label: "Role" },
                   { key: "nameFirm", label: "Name / Firm" },
                   { key: "address", label: "Address" },
                   { key: "phoneEmail", label: "Phone / Email" },
-                ]}
-                addTemplate={{ role: "", nameFirm: "", address: "", phoneEmail: "" }}
-              />
+                ], { role: "", nameFirm: "", address: "", phoneEmail: "" })}
             </div>
           )}
 
