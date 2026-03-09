@@ -675,8 +675,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   // Retained earnings exceeds $250k?
   const retainedExceeds250k = parseFloat(data.retainedEarnings?.replace(/[^0-9.]/g, "") || "0") > 250000;
 
-  // Use the extracted stable DynamicTable
-  const DynamicTable = ({ field, columns, addTemplate }: { field: keyof AnnualMeetingData; columns: { key: string; label: string; wide?: boolean }[]; addTemplate: any }) => (
+  // Helper to render DynamicTableStable with common props
+  const renderTable = (field: keyof AnnualMeetingData, columns: { key: string; label: string; wide?: boolean }[], addTemplate: any) => (
     <DynamicTableStable
       field={field}
       columns={columns}
@@ -765,7 +765,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               </div>
               <h4 className="text-xs font-semibold mt-3">Attendees</h4>
               <TemplateNote text="Add or remove attendee lines as needed. Note any members attending remotely." />
-              <DynamicTable field="attendees" columns={[{ key: "name", label: "Name" }, { key: "title", label: "Title" }]} addTemplate={{ name: "", title: "" }} />
+              {renderTable("attendees", [{ key: "name", label: "Name" }, { key: "title", label: "Title" }], { name: "", title: "" })}
             </div>
           )}
 
@@ -795,16 +795,12 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Professional Advisors on Record</h3>
               <TemplateNote text="Confirm or update the company's professional support team annually. Include attorneys, accountants, insurance agents, and financial advisors." />
-              <DynamicTable
-                field="advisors"
-                columns={[
+              {renderTable("advisors", [
                   { key: "role", label: "Role" },
                   { key: "nameFirm", label: "Name / Firm" },
                   { key: "address", label: "Address" },
                   { key: "phoneEmail", label: "Phone / Email" },
-                ]}
-                addTemplate={{ role: "", nameFirm: "", address: "", phoneEmail: "" }}
-              />
+                ], { role: "", nameFirm: "", address: "", phoneEmail: "" })}
             </div>
           )}
 
@@ -814,30 +810,22 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               <h3 className="text-sm font-semibold">Members, Managers & Officers</h3>
               <div>
                 <h4 className="text-xs font-semibold mb-2">Current Members & Ownership</h4>
-                <DynamicTable
-                  field="members"
-                  columns={[
+                {renderTable("members", [
                     { key: "name", label: "Name" },
                     { key: "units", label: "Membership Units" },
                     { key: "interestPct", label: "Interest %" },
                     { key: "address", label: "Address" },
-                  ]}
-                  addTemplate={{ name: "", units: "", interestPct: "", address: "" }}
-                />
+                  ], { name: "", units: "", interestPct: "", address: "" })}
               </div>
               <div>
                 <h4 className="text-xs font-semibold mb-2">Re-Appointment or Election of Managers / Officers</h4>
-                <DynamicTable
-                  field="officers"
-                  columns={[
+                {renderTable("officers", [
                     { key: "name", label: "Name" },
                     { key: "title", label: "Title" },
                     { key: "salary", label: "Salary" },
                     { key: "bonus", label: "Bonus" },
                     { key: "status", label: "Status" },
-                  ]}
-                  addTemplate={{ name: "", title: "", salary: "", bonus: "", status: "Re-Appointed" }}
-                />
+                  ], { name: "", title: "", salary: "", bonus: "", status: "Re-Appointed" })}
               </div>
             </div>
           )}
@@ -848,16 +836,12 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               <h3 className="text-sm font-semibold">Authorized Binders — Confirmation or Update</h3>
               <p className="text-xs text-muted-foreground">Wis. Stat. § 183.0407</p>
               <TemplateNote text="Authorized binders are persons empowered to execute contracts and bind the company. Review and update annually." />
-              <DynamicTable
-                field="authorizedBinders"
-                columns={[
+              {renderTable("authorizedBinders", [
                   { key: "name", label: "Name" },
                   { key: "title", label: "Title" },
                   { key: "scope", label: "Scope of Authority" },
                   { key: "status", label: "Status" },
-                ]}
-                addTemplate={{ name: "", title: "", scope: "Full authority", status: "Confirmed" }}
-              />
+                ], { name: "", title: "", scope: "Full authority", status: "Confirmed" })}
             </div>
           )}
 
@@ -868,45 +852,33 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
 
               <div>
                 <h4 className="text-xs font-semibold mb-2">Prior Year Financial Review</h4>
-                <DynamicTable
-                  field="financialItems"
-                  columns={[
+                {renderTable("financialItems", [
                     { key: "item", label: "Item" },
                     { key: "amount", label: "Amount" },
                     { key: "notes", label: "Notes" },
-                  ]}
-                  addTemplate={{ item: "", amount: "", notes: "" }}
-                />
+                  ], { item: "", amount: "", notes: "" })}
               </div>
 
               <div>
                 <h4 className="text-xs font-semibold mb-2">Compensation & Bonuses</h4>
                 <TemplateNote text="Record compensation and bonus amounts approved for each officer/manager. These should match W-2 or guaranteed payment amounts." />
-                <DynamicTable
-                  field="compensationItems"
-                  columns={[
+                {renderTable("compensationItems", [
                     { key: "name", label: "Name" },
                     { key: "title", label: "Title" },
                     { key: "salary", label: "Salary" },
                     { key: "bonus", label: "Bonus" },
                     { key: "notes", label: "Notes" },
-                  ]}
-                  addTemplate={{ name: "", title: "", salary: "", bonus: "", notes: "" }}
-                />
+                  ], { name: "", title: "", salary: "", bonus: "", notes: "" })}
               </div>
 
               <div>
                 <h4 className="text-xs font-semibold mb-2">Distributions</h4>
-                <DynamicTable
-                  field="distributions"
-                  columns={[
+                {renderTable("distributions", [
                     { key: "memberName", label: "Member Name" },
                     { key: "amount", label: "Distribution Amount" },
                     { key: "date", label: "Distribution Date" },
                     { key: "notes", label: "Notes" },
-                  ]}
-                  addTemplate={{ memberName: "", amount: "", date: "", notes: "" }}
-                />
+                  ], { memberName: "", amount: "", date: "", notes: "" })}
               </div>
 
               <div>
@@ -942,35 +914,23 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
                 <Switch checked={data.includeBanking} onCheckedChange={v => update("includeBanking", v)} />
                 <h3 className="text-sm font-semibold">Current Banking Relationships</h3>
               </div>
-              {data.includeBanking && (
-                <DynamicTable
-                  field="bankAccounts"
-                  columns={[
+              {data.includeBanking && renderTable("bankAccounts", [
                     { key: "institution", label: "Institution" },
                     { key: "accountType", label: "Account Type" },
                     { key: "signatory", label: "Auth. Signatory" },
                     { key: "title", label: "Title" },
-                  ]}
-                  addTemplate={{ institution: "", accountType: "", signatory: "", title: "" }}
-                />
-              )}
+                  ], { institution: "", accountType: "", signatory: "", title: "" })}
 
               <div className="flex items-center gap-3 pt-2 border-t">
                 <Switch checked={data.includeBankingChanges} onCheckedChange={v => update("includeBankingChanges", v)} />
                 <h4 className="text-xs font-semibold">Banking Changes</h4>
               </div>
               <TemplateNote text="Toggle on to authorize new accounts, close existing accounts, or change signatories." />
-              {data.includeBankingChanges && (
-                <DynamicTable
-                  field="bankingChanges"
-                  columns={[
+              {data.includeBankingChanges && renderTable("bankingChanges", [
                     { key: "changeType", label: "Change Type" },
                     { key: "institution", label: "Institution" },
                     { key: "details", label: "Details" },
-                  ]}
-                  addTemplate={{ changeType: "", institution: "", details: "" }}
-                />
-              )}
+                  ], { changeType: "", institution: "", details: "" })}
             </div>
           )}
 
@@ -998,16 +958,12 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               </div>
 
               <h4 className="text-xs font-semibold mt-2">Tax Elections — Confirmation or Changes</h4>
-              <DynamicTable
-                field="taxElections"
-                columns={[
+              {renderTable("taxElections", [
                   { key: "election", label: "Election" },
                   { key: "status", label: "Status" },
                   { key: "effectiveDate", label: "Effective Date" },
                   { key: "notes", label: "Notes" },
-                ]}
-                addTemplate={{ election: "", status: "", effectiveDate: "", notes: "" }}
-              />
+                ], { election: "", status: "", effectiveDate: "", notes: "" })}
             </div>
           )}
 
@@ -1018,34 +974,26 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               <div>
                 <h4 className="text-xs font-semibold mb-2">Loans From Financial Institutions</h4>
                 <TemplateNote text="Include all active loans or lines of credit, or authorize new ones below." />
-                <DynamicTable
-                  field="institutionalLoans"
-                  columns={[
+                {renderTable("institutionalLoans", [
                     { key: "lender", label: "Lender" },
                     { key: "loanType", label: "Loan Type" },
                     { key: "balance", label: "Balance / Amount" },
                     { key: "rate", label: "Interest Rate" },
                     { key: "maturity", label: "Maturity Date" },
                     { key: "signatory", label: "Auth. Signatory" },
-                  ]}
-                  addTemplate={{ lender: "", loanType: "", balance: "", rate: "", maturity: "", signatory: "" }}
-                />
+                  ], { lender: "", loanType: "", balance: "", rate: "", maturity: "", signatory: "" })}
               </div>
               <div>
                 <h4 className="text-xs font-semibold mb-2">Member Loans</h4>
                 <TemplateNote text="Document any loans between members and the company. Interest rates should reflect applicable federal rate (AFR) minimums." />
-                <DynamicTable
-                  field="memberLoans"
-                  columns={[
+                {renderTable("memberLoans", [
                     { key: "lender", label: "Lender" },
                     { key: "borrower", label: "Borrower" },
                     { key: "amount", label: "Amount" },
                     { key: "rate", label: "Rate" },
                     { key: "terms", label: "Terms" },
                     { key: "notes", label: "Notes" },
-                  ]}
-                  addTemplate={{ lender: "", borrower: "", amount: "", rate: "", terms: "", notes: "" }}
-                />
+                  ], { lender: "", borrower: "", amount: "", rate: "", terms: "", notes: "" })}
               </div>
             </div>
           )}
@@ -1055,18 +1003,14 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Leases</h3>
               <TemplateNote text="Include all property, equipment, and vehicle leases. Mark lease-back arrangements where the lessor is a member or related party." />
-              <DynamicTable
-                field="leases"
-                columns={[
+              {renderTable("leases", [
                   { key: "property", label: "Property / Asset" },
                   { key: "lessor", label: "Lessor" },
                   { key: "lessee", label: "Lessee" },
                   { key: "monthlyAmount", label: "Monthly Amount" },
                   { key: "term", label: "Term / Expiration" },
                   { key: "leaseBack", label: "Lease-Back?" },
-                ]}
-                addTemplate={{ property: "", lessor: "", lessee: "", monthlyAmount: "", term: "", leaseBack: "N" }}
-              />
+                ], { property: "", lessor: "", lessee: "", monthlyAmount: "", term: "", leaseBack: "N" })}
             </div>
           )}
 
@@ -1077,34 +1021,26 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
 
               <div>
                 <h4 className="text-xs font-semibold mb-2">Company Vehicles</h4>
-                <DynamicTable
-                  field="vehicles"
-                  columns={[
+                {renderTable("vehicles", [
                     { key: "yearMakeModel", label: "Year / Make / Model" },
                     { key: "vin", label: "VIN" },
                     { key: "ownedLeased", label: "Owned / Leased" },
                     { key: "primaryDriver", label: "Primary Driver" },
                     { key: "businessUsePct", label: "Business Use %" },
                     { key: "notes", label: "Notes" },
-                  ]}
-                  addTemplate={{ yearMakeModel: "", vin: "", ownedLeased: "Owned", primaryDriver: "", businessUsePct: "", notes: "" }}
-                />
+                  ], { yearMakeModel: "", vin: "", ownedLeased: "Owned", primaryDriver: "", businessUsePct: "", notes: "" })}
               </div>
 
               <div>
                 <h4 className="text-xs font-semibold mb-2">Major Equipment</h4>
                 <TemplateNote text="List significant equipment items owned or leased by the company." />
-                <DynamicTable
-                  field="equipment"
-                  columns={[
+                {renderTable("equipment", [
                     { key: "description", label: "Description" },
                     { key: "manufacturer", label: "Manufacturer" },
                     { key: "ownedLeased", label: "Owned / Leased" },
                     { key: "value", label: "Value" },
                     { key: "notes", label: "Notes" },
-                  ]}
-                  addTemplate={{ description: "", manufacturer: "", ownedLeased: "Owned", value: "", notes: "" }}
-                />
+                  ], { description: "", manufacturer: "", ownedLeased: "Owned", value: "", notes: "" })}
               </div>
             </div>
           )}
@@ -1113,17 +1049,13 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
           {step === 11 && (
             <div className="space-y-4">
               <h3 className="text-sm font-semibold">Employee Benefit Plans</h3>
-              <DynamicTable
-                field="benefitPlans"
-                columns={[
+              {renderTable("benefitPlans", [
                   { key: "planType", label: "Plan Type" },
                   { key: "provider", label: "Provider" },
                   { key: "eligibility", label: "Eligibility" },
                   { key: "contribution", label: "Company Contribution" },
                   { key: "status", label: "Status" },
-                ]}
-                addTemplate={{ planType: "", provider: "", eligibility: "", contribution: "", status: "Active" }}
-              />
+                ], { planType: "", provider: "", eligibility: "", contribution: "", status: "Active" })}
               <div>
                 <h4 className="text-xs font-semibold mb-2">Profit Sharing</h4>
                 <TemplateNote text="Profit sharing amounts must be approved before fiscal year end." />
