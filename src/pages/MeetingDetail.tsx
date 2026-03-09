@@ -21,6 +21,7 @@ import MeetingVehicles from "@/components/meeting/MeetingVehicles";
 import { OFFICER_TITLE_OPTIONS } from "@/components/company/OrganizationTab";
 import CounselTab from "@/components/company/CounselTab";
 import LeasesTab from "@/components/company/LeasesTab";
+import BanksTab from "@/components/company/BanksTab";
 
 import {
   exportMeetingMinutesPDF,
@@ -621,7 +622,10 @@ export default function MeetingDetail() {
         </TabsContent>
         <TabsContent value="counsel" className="mt-5">
           {showCompanyLevelCounselAndLeases ? (
-            <CounselTab companyId={id!} />
+            <div className="space-y-6">
+              <CounselTab companyId={id!} />
+              <BanksTab companyId={id!} />
+            </div>
           ) : (
             <div className="space-y-4">
               <div className="flex justify-end">
