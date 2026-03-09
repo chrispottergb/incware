@@ -615,6 +615,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         if (shRows.length > 0) await supabase.from("meeting_shareholders").insert(shRows);
       }
 
+      clearDraft();
       queryClient.invalidateQueries({ queryKey: ["meetings", company.id] });
       toast.success("Annual Meeting saved successfully!");
       onMeetingCreated?.();
