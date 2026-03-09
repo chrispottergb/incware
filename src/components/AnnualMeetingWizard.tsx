@@ -223,6 +223,15 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     enabled: !!company?.id,
   });
 
+  const { data: activeCertificates = [] } = useQuery({
+    queryKey: ["active_certificates", company?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("stock_certificates").select("*").eq("company_id", company.id).eq("status", "active").order("created_at");
+      return data || [];
+    },
+    enabled: !!company?.id,
+  });
+
   // Fetch prior annual meeting data
   const { data: priorMeeting } = useQuery({
     queryKey: ["prior_annual_meeting", company?.id],
