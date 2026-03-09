@@ -862,17 +862,13 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               <div>
                 <h4 className="text-xs font-semibold mb-2">Compensation & Bonuses</h4>
                 <TemplateNote text="Record compensation and bonus amounts approved for each officer/manager. These should match W-2 or guaranteed payment amounts." />
-                <DynamicTable
-                  field="compensationItems"
-                  columns={[
+                {renderTable("compensationItems", [
                     { key: "name", label: "Name" },
                     { key: "title", label: "Title" },
                     { key: "salary", label: "Salary" },
                     { key: "bonus", label: "Bonus" },
                     { key: "notes", label: "Notes" },
-                  ]}
-                  addTemplate={{ name: "", title: "", salary: "", bonus: "", notes: "" }}
-                />
+                  ], { name: "", title: "", salary: "", bonus: "", notes: "" })}
               </div>
 
               <div>
