@@ -665,15 +665,19 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         if (officerRows.length > 0) await supabase.from("meeting_officers").insert(officerRows);
 
         // Save shareholders/members
-        const shRows = data.members.filter(m => m.name).map(m => ({
-          meeting_id: mid,
-          shareholder_name: m.name,
-          common_shares: m.units ? parseInt(m.units) : null,
-          preferred_shares: m.interestPct ? parseFloat(m.interestPct) : null,
-        }));
-        if (shRows.length > 0) await supabase.from("meeting_shareholders").insert(shRows);
-
-        // Save professional advisors as a single consolidated counsel record
+        const shRows = data.members.filter(m => m.name).map(m => {
+          // Find matching distribution for this member
+          const dist = (data.distributions || []).find(d => 
+            d.memberName && m.name && d.memberName.trim().toLowerCase() === m.name.trim().toLowerCase()
+          );
+          return {
+            meeting_id: mid,
+            shareholder_name: m.name,
+            common_shares: m.units ? parseInt(m.units) : null,
+            preferred_shares: m.interestPct ? parseFloat(m.interestPct) : null,
+            distribution_amount: dist?.amount ? parseFloat(dist.amount.replace(/[,$]/g, "")) : null,
+          };
+        });
         const advisors = data.advisors.filter(a => a.nameFirm);
         const attorneyAdvisor = advisors.find(a => a.role === "Attorney");
         const accountantAdvisor = advisors.find(a => a.role === "Accountant");
