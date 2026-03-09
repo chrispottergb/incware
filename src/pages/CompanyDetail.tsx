@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Building2, Loader2, Trash2, ArrowRightLeft } from "lucide-react";
+import { ArrowLeft, Building2, Loader2, Trash2, ArrowRightLeft, Power } from "lucide-react";
 import { toast } from "sonner";
 import IncorporationTab from "@/components/company/IncorporationTab";
 import OrganizationTab from "@/components/company/OrganizationTab";
