@@ -80,7 +80,8 @@ export default function Dashboard() {
   const filtered = companies.filter((c) => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
     const matchesType = filterType === "all" || c.entity_type === filterType;
-    return matchesSearch && matchesType;
+    const matchesStatus = filterStatus === "all" || (filterStatus === "active" ? c.status !== "inactive" : c.status === "inactive");
+    return matchesSearch && matchesType && matchesStatus;
   });
 
   const statusBadge = (status: string | null) => {
