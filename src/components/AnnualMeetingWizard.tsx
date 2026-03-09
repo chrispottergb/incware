@@ -56,7 +56,7 @@ function DynamicTableStable({
   bottomFields,
 }: {
   field: string;
-  columns: { key: string; label: string; wide?: boolean }[];
+  columns: { key: string; label: string; wide?: boolean; flex?: string }[];
   addTemplate: any;
   rows: any[];
   onUpdateItem: (field: string, idx: number, key: string, value: string) => void;
@@ -76,7 +76,7 @@ function DynamicTableStable({
       <div className="overflow-x-auto">
         {rows.map((row: any, i: number) => (
           <div key={i} className="mb-3">
-            <div className="grid gap-2 items-end" style={{ gridTemplateColumns: columns.map(col => (col.wide || col.key === 'name' || col.key === 'nameFirm') ? 'minmax(220px, 2fr)' : 'minmax(100px, 1fr)').join(' ') + ' 40px' }}>
+            <div className="grid gap-2 items-end" style={{ gridTemplateColumns: columns.map(col => col.flex ? col.flex : (col.wide || col.key === 'name' || col.key === 'nameFirm') ? 'minmax(220px, 2fr)' : 'minmax(100px, 1fr)').join(' ') + ' 40px' }}>
               {columns.map(col => (
                 <div key={col.key}>
                   {i === 0 && <Label className={labelClass}>{col.label}</Label>}
@@ -726,7 +726,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   const retainedExceeds250k = parseFloat(data.retainedEarnings?.replace(/[^0-9.]/g, "") || "0") > 250000;
 
   // Helper to render DynamicTableStable with common props
-  const renderTable = (field: keyof AnnualMeetingData, columns: { key: string; label: string; wide?: boolean }[], addTemplate: any, bottomFields?: { key: string; label: string }[]) => (
+  const renderTable = (field: keyof AnnualMeetingData, columns: { key: string; label: string; wide?: boolean; flex?: string }[], addTemplate: any, bottomFields?: { key: string; label: string }[]) => (
     <DynamicTableStable
       field={field}
       columns={columns}
@@ -870,10 +870,10 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               <div>
                 <h4 className="text-xs font-semibold mb-2">Re-Appointment or Election of Managers / Officers</h4>
                 {renderTable("officers", [
-                    { key: "name", label: "Name" },
-                    { key: "title", label: "Title" },
-                    { key: "salary", label: "Salary" },
-                    { key: "bonus", label: "Bonus" },
+                    { key: "name", label: "Name", flex: "minmax(240px, 2.5fr)" },
+                    { key: "title", label: "Title", flex: "minmax(160px, 1.5fr)" },
+                    { key: "salary", label: "Salary", flex: "minmax(80px, 0.8fr)" },
+                    { key: "bonus", label: "Bonus", flex: "minmax(80px, 0.8fr)" },
                   ], { name: "", title: "", salary: "", bonus: "" })}
               </div>
             </div>
