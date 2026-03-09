@@ -1115,11 +1115,16 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     );
     autoTable(doc, {
       startY: y,
-      head: [["Name", "Common Shares", "Preferred Shares", "Distribution"]],
+      head: [[
+        "Name",
+        isLLC ? "Membership Units" : "Common Shares",
+        isLLC ? "Membership Interest %" : "Preferred Shares",
+        "Distribution",
+      ]],
       body: data.shareholders.map(s => [
         s.shareholder_name,
         s.common_shares?.toLocaleString() ?? "—",
-        s.preferred_shares?.toLocaleString() ?? "—",
+        isLLC && s.preferred_shares != null ? `${s.preferred_shares}%` : (s.preferred_shares?.toLocaleString() ?? "—"),
         s.distribution || "—",
       ]),
       theme: "grid",
