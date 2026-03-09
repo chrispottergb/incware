@@ -302,8 +302,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   if (data.officers.length > 0) {
     addTable(
-      ["Name", "Title", "Salary", "Bonus", "Status (Re-Appointed / New)"],
-      data.officers.map(o => [o.name || "[Enter]", o.title || "[Enter]", o.salary || "[Enter]", o.bonus || "[Enter]", o.status || "[Enter]"])
+      ["Name", "Title", "Salary", "Bonus"],
+      data.officers.map(o => [o.name || "[Enter]", o.title || "[Enter]", o.salary || "[Enter]", o.bonus || "[Enter]"])
     );
   }
 
