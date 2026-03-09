@@ -511,11 +511,11 @@ export default function MeetingDetail() {
                 generatePDF={() => exportSectionPDF(
                   term.shareholders,
                   company, meeting,
-                  ["Name", term.isLLC ? "Membership Units" : "Common Shares", term.isLLC ? "Profits Interest Units" : "Preferred Shares", "Distribution", "Dist. Amount", "Basis", "Add'l Capital"],
+                  ["Name", term.isLLC ? "Membership Units" : "Common Shares", term.isLLC ? "Membership Interest %" : "Preferred Shares", "Distribution", "Dist. Amount", "Basis", "Add'l Capital"],
                   shareholders.map(s => [
                     s.shareholder_name,
                     s.common_shares?.toLocaleString() ?? "—",
-                    s.preferred_shares?.toLocaleString() ?? "—",
+                    term.isLLC && s.preferred_shares != null ? `${s.preferred_shares}%` : (s.preferred_shares?.toLocaleString() ?? "—"),
                     s.distribution || "—",
                     s.distribution_amount != null ? `$${Number(s.distribution_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
                     s.basis != null ? `$${Number(s.basis).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
