@@ -523,6 +523,31 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     }
   }, [companyShareholders, companyOfficers, companyBanks, priorMeeting, attorneys, accountants, companyAssets, companyLeases, priorOfficers, activeCertificates]);
 
+  // Always refresh members from DB data when certificates/shareholders load, even with a draft
+  useEffect(() => {
+    if (initialized && companyShareholders.length > 0 && isLLC) {
+      const freshMembers = companyShareholders.filter(s => !s.is_treasury).map(s => {
+        const memberCerts = activeCertificates.filter((c: any) => c.shareholder_id === s.id);
+        const totalUnits = memberCerts.reduce((sum: number, c: any) => sum + (c.num_shares || 0), 0);
+        // Preserve any user-edited fields from draft, but refresh units/interest from DB
+        const existing = data.members?.find((m: any) => m.name === s.name);
+        return {
+          name: s.name,
+          units: totalUnits > 0 ? totalUnits.toString() : (existing?.units || ""),
+          interestPct: s.ownership_percentage?.toString() || (existing?.interestPct || ""),
+          address: [s.address, s.city, s.state, s.zip].filter(Boolean).join(", "),
+        };
+      });
+      if (freshMembers.length > 0) {
+        const currentUnitsEmpty = data.members?.every((m: any) => !m.units);
+        const freshHasUnits = freshMembers.some((m: any) => m.units);
+        if (currentUnitsEmpty && freshHasUnits) {
+          setData(prev => ({ ...prev, members: freshMembers }));
+        }
+      }
+    }
+  }, [initialized, companyShareholders, activeCertificates]);
+
   // Auto-save to localStorage whenever data or step changes
   useEffect(() => {
     if (initialized) {
