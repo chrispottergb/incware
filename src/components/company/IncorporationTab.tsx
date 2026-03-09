@@ -1268,8 +1268,7 @@ export default function IncorporationTab({ company }: Props) {
                     "font-medium",
                     result.mappedStatus === "current" && "text-green-600",
                     result.mappedStatus === "delinquent" && "text-yellow-600",
-                    result.mappedStatus === "dissolved" && "text-red-600",
-                    result.mappedStatus === "suspended" && "text-red-600",
+                    result.mappedStatus === "admin_dissolved" && "text-red-600",
                   )}>
                     {result.status}
                   </span>
