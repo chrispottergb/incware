@@ -1115,19 +1115,20 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       `NOW, THEREFORE, BE IT RESOLVED, that the following ${isLLC ? "membership interests" : "share ownership"} is hereby acknowledged and confirmed:`,
       bt
     );
+    const hasDistribution = data.shareholders.some(s => s.distribution_amount != null && Number(s.distribution_amount) > 0);
     autoTable(doc, {
       startY: y,
       head: [[
         "Name",
         isLLC ? "Membership Units" : "Common Shares",
         isLLC ? "Membership Interest %" : "Preferred Shares",
-        "Distribution",
+        ...(hasDistribution ? ["Distribution Amount"] : []),
       ]],
       body: data.shareholders.map(s => [
         s.shareholder_name,
         s.common_shares?.toLocaleString() ?? "—",
         isLLC && s.preferred_shares != null ? `${s.preferred_shares}%` : (s.preferred_shares?.toLocaleString() ?? "—"),
-        s.distribution || "—",
+        ...(hasDistribution ? [s.distribution_amount != null ? fmt(s.distribution_amount) : "—"] : []),
       ]),
       theme: "grid",
       headStyles: tableHeadStyles,
@@ -1135,6 +1136,32 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 10;
+
+    // Distribution resolution for each member/shareholder with a distribution amount
+    if (hasDistribution) {
+      const isSCorpEntity = entityType === "S-Corp";
+      data.shareholders.forEach(s => {
+        if (s.distribution_amount != null && Number(s.distribution_amount) > 0) {
+          const distAmount = fmt(s.distribution_amount);
+          const ownershipPct = s.preferred_shares != null ? `${s.preferred_shares}%` : "100%";
+          const meetingDateStr = meeting.meeting_date
+            ? new Date(meeting.meeting_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+            : "[DATE]";
+          const sCorpClause = isSCorpEntity || isLLC
+            ? " and consistent with the Company's S Corporation election under Section 1362 of the Internal Revenue Code"
+            : "";
+          const sCorpResolvedClause = isSCorpEntity || isLLC
+            ? " and in compliance with the Company's S Corporation tax election"
+            : "";
+          y = checkPageBreak(doc, y, 50);
+          y = addWhereasResolved(doc, y,
+            `WHEREAS, a resolution was presented to approve a distribution to the ${isLLC ? "member" : "shareholder"} in accordance with the ${isLLC ? "member's" : "shareholder's"} ownership interest in the Company${sCorpClause}. The ${isLLC ? "Managing Member" : "Board of Directors"} confirmed that the Company has sufficient cash flow and working capital to support the distribution without impairing the Company's operations or ability to meet its financial obligations. Upon motion duly made and seconded, the following resolution was unanimously adopted:`,
+            `RESOLVED, that the Company is hereby authorized and directed to distribute the sum of ${distAmount} to ${s.shareholder_name}, consistent with the ${isLLC ? "member's" : "shareholder's"} ${ownershipPct} ownership interest${sCorpResolvedClause}, said distribution to be made on or before ${meetingDateStr}.`,
+            bt
+          );
+        }
+      });
+    }
   }
 
   // Financials
