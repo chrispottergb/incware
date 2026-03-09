@@ -73,7 +73,7 @@ function DynamicTableStable({
       </div>
       <div className="overflow-x-auto">
         {rows.map((row: any, i: number) => (
-          <div key={i} className="grid gap-2 items-end mb-2" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(120px, 1fr)) 40px` }}>
+          <div key={i} className="grid gap-2 items-end mb-2" style={{ gridTemplateColumns: columns.map(col => col.wide ? 'minmax(180px, 1.5fr)' : 'minmax(120px, 1fr)').join(' ') + ' 40px' }}>
             {columns.map(col => (
               <div key={col.key}>
                 {i === 0 && <Label className={labelClass}>{col.label}</Label>}
@@ -223,6 +223,15 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     enabled: !!company?.id,
   });
 
+  const { data: activeCertificates = [] } = useQuery({
+    queryKey: ["active_certificates", company?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("stock_certificates").select("*").eq("company_id", company.id).eq("status", "active").order("created_at");
+      return data || [];
+    },
+    enabled: !!company?.id,
+  });
+
   // Fetch prior annual meeting data
   const { data: priorMeeting } = useQuery({
     queryKey: ["prior_annual_meeting", company?.id],
@@ -283,14 +292,18 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     });
     if (advisorList.length === 0) advisorList.push({ role: "", nameFirm: "", address: "", phoneEmail: "" });
 
-    // Build members from shareholders
+    // Build members from shareholders with actual unit counts from certificates
     const memberList = companyShareholders.length > 0
-      ? companyShareholders.filter(s => !s.is_treasury).map(s => ({
-        name: s.name,
-        units: s.ownership_percentage?.toString() || "",
-        interestPct: s.ownership_percentage?.toString() || "",
-        address: [s.address, s.city, s.state, s.zip].filter(Boolean).join(", "),
-      }))
+      ? companyShareholders.filter(s => !s.is_treasury).map(s => {
+        const memberCerts = activeCertificates.filter(c => c.shareholder_id === s.id);
+        const totalUnits = memberCerts.reduce((sum, c) => sum + (c.num_shares || 0), 0);
+        return {
+          name: s.name,
+          units: totalUnits > 0 ? totalUnits.toString() : "",
+          interestPct: s.ownership_percentage?.toString() || "",
+          address: [s.address, s.city, s.state, s.zip].filter(Boolean).join(", "),
+        };
+      })
       : [{ name: "", units: "", interestPct: "", address: "" }];
 
     // Build officers with bonus field
@@ -508,7 +521,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       setData(buildDefaultData());
       setInitialized(true);
     }
-  }, [companyShareholders, companyOfficers, companyBanks, priorMeeting, attorneys, accountants, companyAssets, companyLeases, priorOfficers]);
+  }, [companyShareholders, companyOfficers, companyBanks, priorMeeting, attorneys, accountants, companyAssets, companyLeases, priorOfficers, activeCertificates]);
 
   // Auto-save to localStorage whenever data or step changes
   useEffect(() => {
@@ -821,7 +834,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
                 <h4 className="text-xs font-semibold mb-2">Re-Appointment or Election of Managers / Officers</h4>
                 {renderTable("officers", [
                     { key: "name", label: "Name" },
-                    { key: "title", label: "Title" },
+                    { key: "title", label: "Title", wide: true },
                     { key: "salary", label: "Salary" },
                     { key: "bonus", label: "Bonus" },
                     { key: "status", label: "Status" },
