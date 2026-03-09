@@ -322,15 +322,15 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     const officerList: AnnualMeetingData["officers"] = [];
     if (priorOfficers.length > 0) {
       priorOfficers.forEach((o: any) => {
-        officerList.push({ name: o.name, title: o.title, salary: o.salary?.toString() || "", bonus: o.bonus?.toString() || "", status: "Re-Appointed" });
+        officerList.push({ name: o.name, title: o.title, salary: o.salary?.toString() || "", bonus: o.bonus?.toString() || "" });
       });
     } else if (companyOfficers) {
-      if (companyOfficers.president) officerList.push({ name: companyOfficers.president, title: "Managing Member", salary: "", bonus: "", status: "Re-Appointed" });
-      if (companyOfficers.vice_president) officerList.push({ name: companyOfficers.vice_president, title: "Member", salary: "", bonus: "", status: "Re-Appointed" });
-      if (companyOfficers.secretary) officerList.push({ name: companyOfficers.secretary, title: "Secretary", salary: "", bonus: "", status: "Re-Appointed" });
-      if (companyOfficers.treasurer) officerList.push({ name: companyOfficers.treasurer, title: "Treasurer", salary: "", bonus: "", status: "Re-Appointed" });
+      if (companyOfficers.president) officerList.push({ name: companyOfficers.president, title: "Managing Member", salary: "", bonus: "" });
+      if (companyOfficers.vice_president) officerList.push({ name: companyOfficers.vice_president, title: "Member", salary: "", bonus: "" });
+      if (companyOfficers.secretary) officerList.push({ name: companyOfficers.secretary, title: "Secretary", salary: "", bonus: "" });
+      if (companyOfficers.treasurer) officerList.push({ name: companyOfficers.treasurer, title: "Treasurer", salary: "", bonus: "" });
     }
-    if (officerList.length === 0) officerList.push({ name: "", title: "", salary: "", bonus: "", status: "Re-Appointed" });
+    if (officerList.length === 0) officerList.push({ name: "", title: "", salary: "", bonus: "" });
 
     // Compensation items from officers
     const compensationList: AnnualMeetingData["compensationItems"] = officerList
