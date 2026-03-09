@@ -474,22 +474,95 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   const update = (field: keyof AnnualMeetingData, value: any) =>
     setData(prev => ({ ...prev, [field]: value }));
 
+  const handleUpdateItem = useCallback((field: string, idx: number, key: string, value: string) => {
+    setData(prev => {
+      const arr = [...(prev[field as keyof AnnualMeetingData] as any[])];
+      arr[idx] = { ...arr[idx], [key]: value };
+      return { ...prev, [field]: arr };
+    });
+  }, []);
+
+  const handleAddItem = useCallback((field: string, template: any) => {
+    setData(prev => ({
+      ...prev,
+      [field]: [...(prev[field as keyof AnnualMeetingData] as any[]), template],
+    }));
+  }, []);
+
+  const handleRemoveItem = useCallback((field: string, idx: number) => {
+    setData(prev => ({
+      ...prev,
+      [field]: (prev[field as keyof AnnualMeetingData] as any[]).filter((_: any, i: number) => i !== idx),
+    }));
+  }, []);
+
+  // Keep legacy helpers for inline usage (special resolutions, signatures)
   const updateArrayItem = (field: keyof AnnualMeetingData, idx: number, key: string, value: string) => {
-    const arr = [...(data[field] as any[])];
-    arr[idx] = { ...arr[idx], [key]: value };
-    update(field, arr);
+    handleUpdateItem(field, idx, key, value);
   };
-
   const addArrayItem = (field: keyof AnnualMeetingData, template: any) => {
-    update(field, [...(data[field] as any[]), template]);
+    handleAddItem(field, template);
   };
-
   const removeArrayItem = (field: keyof AnnualMeetingData, idx: number) => {
-    update(field, (data[field] as any[]).filter((_, i) => i !== idx));
+    handleRemoveItem(field, idx);
   };
 
   const canGenerate = () => {
     return data.companyName && data.meetingDate && data.chairperson && data.secretary;
+  };
+
+  const [saving, setSaving] = useState(false);
+
+  const handleSaveMeeting = async () => {
+    if (!canGenerate()) {
+      toast.error("Please fill in all required fields (Company Name, Meeting Date, Chairperson, Secretary).");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data: newMeeting, error } = await supabase.from("meetings").insert({
+        company_id: company.id,
+        meeting_date: data.meetingDate,
+        meeting_time: data.meetingTime || null,
+        tax_year: data.taxYear ? parseInt(data.taxYear) : null,
+        meeting_type: "Annual Meeting",
+        meeting_location: data.meetingLocation || null,
+        chairperson: data.chairperson || null,
+        mtg_secretary: data.secretary || null,
+        prior_mtg_date: data.priorMeetingDate || null,
+        company_name_at_meeting: data.companyName || null,
+      }).select("id").single();
+
+      if (error) throw error;
+
+      if (newMeeting) {
+        // Save officers
+        const officerRows = data.officers.filter(o => o.name).map(o => ({
+          meeting_id: newMeeting.id,
+          name: o.name,
+          title: o.title,
+          salary: o.salary ? parseFloat(o.salary) : null,
+          bonus: o.bonus ? parseFloat(o.bonus) : null,
+        }));
+        if (officerRows.length > 0) await supabase.from("meeting_officers").insert(officerRows);
+
+        // Save shareholders
+        const shRows = data.members.filter(m => m.name).map(m => ({
+          meeting_id: newMeeting.id,
+          shareholder_name: m.name,
+        }));
+        if (shRows.length > 0) await supabase.from("meeting_shareholders").insert(shRows);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["meetings", company.id] });
+      toast.success("Annual Meeting saved successfully!");
+      onMeetingCreated?.();
+      onClose?.();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save meeting");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDownload = () => {
