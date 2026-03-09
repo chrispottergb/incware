@@ -990,18 +990,14 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               <div>
                 <h4 className="text-xs font-semibold mb-2">Member Loans</h4>
                 <TemplateNote text="Document any loans between members and the company. Interest rates should reflect applicable federal rate (AFR) minimums." />
-                <DynamicTable
-                  field="memberLoans"
-                  columns={[
+                {renderTable("memberLoans", [
                     { key: "lender", label: "Lender" },
                     { key: "borrower", label: "Borrower" },
                     { key: "amount", label: "Amount" },
                     { key: "rate", label: "Rate" },
                     { key: "terms", label: "Terms" },
                     { key: "notes", label: "Notes" },
-                  ]}
-                  addTemplate={{ lender: "", borrower: "", amount: "", rate: "", terms: "", notes: "" }}
-                />
+                  ], { lender: "", borrower: "", amount: "", rate: "", terms: "", notes: "" })}
               </div>
             </div>
           )}
