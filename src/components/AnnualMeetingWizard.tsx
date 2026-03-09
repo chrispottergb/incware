@@ -647,9 +647,11 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       if (error) throw error;
 
       if (newMeeting) {
+        const mid = newMeeting.id;
+
         // Save officers
         const officerRows = data.officers.filter(o => o.name).map(o => ({
-          meeting_id: newMeeting.id,
+          meeting_id: mid,
           name: o.name,
           title: o.title,
           salary: o.salary ? parseFloat(o.salary) : null,
@@ -657,12 +659,106 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         }));
         if (officerRows.length > 0) await supabase.from("meeting_officers").insert(officerRows);
 
-        // Save shareholders
+        // Save shareholders/members
         const shRows = data.members.filter(m => m.name).map(m => ({
-          meeting_id: newMeeting.id,
+          meeting_id: mid,
           shareholder_name: m.name,
+          common_shares: m.units ? parseInt(m.units) : null,
         }));
         if (shRows.length > 0) await supabase.from("meeting_shareholders").insert(shRows);
+
+        // Save professional advisors as counsel records
+        const advisorRows = data.advisors.filter(a => a.nameFirm).map(a => ({
+          meeting_id: mid,
+          counsel_name: a.nameFirm,
+          attorney_name: a.role === "Attorney" ? a.nameFirm.split(" / ")[0] : null,
+          accountant_name: a.role === "Accountant" ? a.nameFirm.split(" / ")[0] : null,
+          law_firm: a.role === "Attorney" ? (a.nameFirm.split(" / ")[1] || null) : null,
+        }));
+        if (advisorRows.length > 0) await supabase.from("meeting_counsel").insert(advisorRows);
+
+        // Save financials
+        const finItems = data.financialItems || [];
+        const getFinAmount = (label: string) => {
+          const item = finItems.find(f => f.item?.toLowerCase().includes(label.toLowerCase()));
+          return item?.amount ? parseFloat(item.amount.replace(/[,$]/g, "")) : null;
+        };
+        await supabase.from("meeting_financials").insert({
+          meeting_id: mid,
+          current_total_sales: getFinAmount("revenue") ?? getFinAmount("sales"),
+          current_cog: getFinAmount("cost of goods"),
+          current_gross_profit: getFinAmount("gross profit"),
+          current_net_income: getFinAmount("net income"),
+        });
+
+        // Save bank authorized signers
+        const signerRows = data.bankAccounts.filter(b => b.institution && b.signatory).map(b => ({
+          meeting_id: mid,
+          signer_name: b.signatory,
+          bank_name: b.institution,
+          title: b.title || null,
+        }));
+        if (signerRows.length > 0) await supabase.from("meeting_authorized_signers").insert(signerRows);
+
+        // Save institutional loans
+        const instLoanRows = (data.institutionalLoans || []).filter(l => l.lender).map(l => ({
+          meeting_id: mid,
+          lender_name: l.lender,
+          loan_type: l.loanType || null,
+          loan_amount: l.balance ? parseFloat(l.balance.replace(/[,$]/g, "")) : null,
+          loan_rate: l.rate ? parseFloat(l.rate) : null,
+          end_date: l.maturity || null,
+          loan_direction: "institutional",
+        }));
+        // Save member loans
+        const memLoanRows = (data.memberLoans || []).filter(l => l.lender || l.borrower).map(l => ({
+          meeting_id: mid,
+          lender_name: l.lender || null,
+          borrower_name: l.borrower || null,
+          loan_amount: l.amount ? parseFloat(l.amount.replace(/[,$]/g, "")) : null,
+          loan_rate: l.rate ? parseFloat(l.rate) : null,
+          repayment_terms: l.terms || null,
+          notes: l.notes || null,
+          loan_direction: l.lender ? "member_to_company" : "company_to_member",
+        }));
+        const allLoanRows = [...instLoanRows, ...memLoanRows];
+        if (allLoanRows.length > 0) await supabase.from("meeting_loans").insert(allLoanRows);
+
+        // Save benefits
+        const benefitRows = (data.benefitPlans || []).filter(b => b.planType).map(b => ({
+          meeting_id: mid,
+          benefit_description: b.planType,
+          benefit_type: b.planType,
+          provider: b.provider || null,
+          eligibility_comments: b.eligibility || null,
+          retirement_contribution: b.contribution ? parseFloat(b.contribution.replace(/[,$]/g, "")) : null,
+        }));
+        if (benefitRows.length > 0) await supabase.from("meeting_benefits").insert(benefitRows);
+
+        // Save special resolutions
+        if (data.includeSpecialResolutions) {
+          const resRows = (data.specialResolutions || []).filter(r => r.title || r.resolved).map(r => ({
+            meeting_id: mid,
+            purpose: r.title || "Special Resolution",
+            resolution_text: [r.whereas ? `WHEREAS, ${r.whereas}` : "", r.resolved ? `RESOLVED, ${r.resolved}` : ""].filter(Boolean).join("\n\n"),
+          }));
+          if (resRows.length > 0) await supabase.from("meeting_resolutions").insert(resRows);
+        }
+
+        // Save vehicles as meeting assets
+        const vehicleRows = (data.vehicles || []).filter(v => v.yearMakeModel).map(v => ({
+          meeting_id: mid,
+          asset_type: "Vehicle",
+          description: v.yearMakeModel,
+        }));
+        const equipRows = (data.equipment || []).filter(e => e.description).map(e => ({
+          meeting_id: mid,
+          asset_type: "Equipment",
+          description: e.description,
+          value: e.value ? parseFloat(e.value.replace(/[,$]/g, "")) : null,
+        }));
+        const allAssetRows = [...vehicleRows, ...equipRows];
+        if (allAssetRows.length > 0) await supabase.from("meeting_assets").insert(allAssetRows);
       }
 
       clearDraft();
