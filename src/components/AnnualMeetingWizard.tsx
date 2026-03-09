@@ -690,6 +690,18 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
 
   return (
     <div className="space-y-4">
+      {/* Draft notice */}
+      {hasDraft && (
+        <div className="flex items-center justify-between rounded-md border border-accent/30 bg-accent/5 px-3 py-2">
+          <p className="text-xs text-accent-foreground">
+            📝 Your draft has been restored. All changes are auto-saved as you work.
+          </p>
+          <Button type="button" variant="ghost" size="sm" className="h-6 text-[10px] text-muted-foreground hover:text-destructive shrink-0 ml-2" onClick={handleStartOver}>
+            Start Over
+          </Button>
+        </div>
+      )}
+
       {/* Progress */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs text-muted-foreground">
