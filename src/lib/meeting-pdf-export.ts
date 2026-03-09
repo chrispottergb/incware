@@ -1244,12 +1244,24 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + counselRows.length * 7);
     y = section("Selection of Counsel & Banking");
 
-    // Extract attorney and accountant info from counsel records
+    // Extract attorney and accountant info from counsel records, with fallback to company-level data
     const counselRec = counselRows[0] || {};
-    const attorneyName = counselRec.attorney_name?.trim() || "";
-    const lawFirm = counselRec.law_firm?.trim() || "";
-    const accountantName = counselRec.accountant_name?.trim() || "";
-    const accountingFirm = counselRec.counsel_name?.trim() || ""; // counsel_name maps to accounting firm
+    let attorneyName = counselRec.attorney_name?.trim() || "";
+    let lawFirm = counselRec.law_firm?.trim() || "";
+    let accountantName = counselRec.accountant_name?.trim() || "";
+    let accountingFirm = counselRec.counsel_name?.trim() || ""; // counsel_name maps to accounting firm
+
+    // Fallback to company-level attorneys/accountants if meeting_counsel is empty
+    if (!attorneyName && data.companyAttorneys && data.companyAttorneys.length > 0) {
+      const atty = data.companyAttorneys[0];
+      attorneyName = atty.attorney_name || "";
+      lawFirm = atty.attorney_firms?.firm_name || "";
+    }
+    if (!accountantName && data.companyAccountants && data.companyAccountants.length > 0) {
+      const acct = data.companyAccountants[0];
+      accountantName = acct.accountant_name || "";
+      accountingFirm = acct.accountant_firms?.firm_name || "";
+    }
 
     // Attorney / Law Firm paragraph
     y = checkPageBreak(doc, y, 30);
