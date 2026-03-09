@@ -292,14 +292,18 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     });
     if (advisorList.length === 0) advisorList.push({ role: "", nameFirm: "", address: "", phoneEmail: "" });
 
-    // Build members from shareholders
+    // Build members from shareholders with actual unit counts from certificates
     const memberList = companyShareholders.length > 0
-      ? companyShareholders.filter(s => !s.is_treasury).map(s => ({
-        name: s.name,
-        units: s.ownership_percentage?.toString() || "",
-        interestPct: s.ownership_percentage?.toString() || "",
-        address: [s.address, s.city, s.state, s.zip].filter(Boolean).join(", "),
-      }))
+      ? companyShareholders.filter(s => !s.is_treasury).map(s => {
+        const memberCerts = activeCertificates.filter(c => c.shareholder_id === s.id);
+        const totalUnits = memberCerts.reduce((sum, c) => sum + (c.num_shares || 0), 0);
+        return {
+          name: s.name,
+          units: totalUnits > 0 ? totalUnits.toString() : "",
+          interestPct: s.ownership_percentage?.toString() || "",
+          address: [s.address, s.city, s.state, s.zip].filter(Boolean).join(", "),
+        };
+      })
       : [{ name: "", units: "", interestPct: "", address: "" }];
 
     // Build officers with bonus field
