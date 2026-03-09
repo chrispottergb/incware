@@ -1372,10 +1372,17 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     // Banking table
     y = checkPageBreak(doc, y, 30);
+    // Derive bank name: prefer meeting_counsel record, fallback to company-level banks
+    let bankNameForTable = counselRec.bank_name?.trim() || "";
+    if (!bankNameForTable && data.companyBanks && data.companyBanks.length > 0) {
+      bankNameForTable = data.companyBanks.map((b: any) => b.bank_name).filter(Boolean).join(", ");
+    }
+    // Derive accounting firm for the table
+    const counselNameForTable = accountingFirm || counselRec.counsel_name || "";
     autoTable(doc, {
       startY: y,
       head: [["Counsel", "Bank", "Loans"]],
-      body: counselRows.map(c => [c.counsel_name || "—", c.bank_name || "—", c.loans || "—"]),
+      body: [[counselNameForTable || "—", bankNameForTable || "—", counselRec.loans || "—"]],
       theme: "grid",
       headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
