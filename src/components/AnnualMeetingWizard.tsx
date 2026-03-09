@@ -1053,17 +1053,13 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
           {step === 11 && (
             <div className="space-y-4">
               <h3 className="text-sm font-semibold">Employee Benefit Plans</h3>
-              <DynamicTable
-                field="benefitPlans"
-                columns={[
+              {renderTable("benefitPlans", [
                   { key: "planType", label: "Plan Type" },
                   { key: "provider", label: "Provider" },
                   { key: "eligibility", label: "Eligibility" },
                   { key: "contribution", label: "Company Contribution" },
                   { key: "status", label: "Status" },
-                ]}
-                addTemplate={{ planType: "", provider: "", eligibility: "", contribution: "", status: "Active" }}
-              />
+                ], { planType: "", provider: "", eligibility: "", contribution: "", status: "Active" })}
               <div>
                 <h4 className="text-xs font-semibold mb-2">Profit Sharing</h4>
                 <TemplateNote text="Profit sharing amounts must be approved before fiscal year end." />
