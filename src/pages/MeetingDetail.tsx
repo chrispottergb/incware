@@ -621,7 +621,10 @@ export default function MeetingDetail() {
         </TabsContent>
         <TabsContent value="counsel" className="mt-5">
           {showCompanyLevelCounselAndLeases ? (
-            <CounselTab companyId={id!} />
+            <div className="space-y-6">
+              <CounselTab companyId={id!} />
+              <BanksTab companyId={id!} />
+            </div>
           ) : (
             <div className="space-y-4">
               <div className="flex justify-end">
