@@ -852,15 +852,11 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
 
               <div>
                 <h4 className="text-xs font-semibold mb-2">Prior Year Financial Review</h4>
-                <DynamicTable
-                  field="financialItems"
-                  columns={[
+                {renderTable("financialItems", [
                     { key: "item", label: "Item" },
                     { key: "amount", label: "Amount" },
                     { key: "notes", label: "Notes" },
-                  ]}
-                  addTemplate={{ item: "", amount: "", notes: "" }}
-                />
+                  ], { item: "", amount: "", notes: "" })}
               </div>
 
               <div>
