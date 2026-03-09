@@ -978,18 +978,14 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               <div>
                 <h4 className="text-xs font-semibold mb-2">Loans From Financial Institutions</h4>
                 <TemplateNote text="Include all active loans or lines of credit, or authorize new ones below." />
-                <DynamicTable
-                  field="institutionalLoans"
-                  columns={[
+                {renderTable("institutionalLoans", [
                     { key: "lender", label: "Lender" },
                     { key: "loanType", label: "Loan Type" },
                     { key: "balance", label: "Balance / Amount" },
                     { key: "rate", label: "Interest Rate" },
                     { key: "maturity", label: "Maturity Date" },
                     { key: "signatory", label: "Auth. Signatory" },
-                  ]}
-                  addTemplate={{ lender: "", loanType: "", balance: "", rate: "", maturity: "", signatory: "" }}
-                />
+                  ], { lender: "", loanType: "", balance: "", rate: "", maturity: "", signatory: "" })}
               </div>
               <div>
                 <h4 className="text-xs font-semibold mb-2">Member Loans</h4>
