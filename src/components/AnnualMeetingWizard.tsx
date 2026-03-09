@@ -914,14 +914,12 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
                 <Switch checked={data.includeBanking} onCheckedChange={v => update("includeBanking", v)} />
                 <h3 className="text-sm font-semibold">Current Banking Relationships</h3>
               </div>
-              {data.includeBanking && (
-                {renderTable("bankAccounts", [
+              {data.includeBanking && renderTable("bankAccounts", [
                     { key: "institution", label: "Institution" },
                     { key: "accountType", label: "Account Type" },
                     { key: "signatory", label: "Auth. Signatory" },
                     { key: "title", label: "Title" },
                   ], { institution: "", accountType: "", signatory: "", title: "" })}
-              )}
 
               <div className="flex items-center gap-3 pt-2 border-t">
                 <Switch checked={data.includeBankingChanges} onCheckedChange={v => update("includeBankingChanges", v)} />
