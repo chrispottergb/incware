@@ -56,7 +56,7 @@ function DynamicTableStable({
   bottomFields,
 }: {
   field: string;
-  columns: { key: string; label: string; wide?: boolean }[];
+  columns: { key: string; label: string; wide?: boolean; flex?: string }[];
   addTemplate: any;
   rows: any[];
   onUpdateItem: (field: string, idx: number, key: string, value: string) => void;
