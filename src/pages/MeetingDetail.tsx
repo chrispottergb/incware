@@ -554,7 +554,6 @@ export default function MeetingDetail() {
                 { key: "shareholder_name", label: `${term.shareholder} Name`, required: true },
                 { key: "common_shares", label: term.isLLC ? "Membership Units" : "Common Shares", type: "number" },
                 { key: "preferred_shares", label: term.isLLC ? "Membership Interest %" : "Preferred Shares", type: "number" },
-                { key: "distribution", label: "Distribution" },
                 { key: "distribution_amount", label: "Distribution Amount", type: "number" },
                 { key: "basis", label: `${term.shareholder} Basis`, type: "number" },
                 { key: "additional_capital_contribution", label: "Additional Capital Contribution", type: "number" },
