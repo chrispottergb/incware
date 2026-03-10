@@ -73,6 +73,21 @@ const BENEFIT_TYPE_OPTIONS = [
   "Other",
 ];
 
+const RETIREMENT_TYPES = [
+  "401(k) / Retirement Plan",
+  "SEP IRA",
+  "SIMPLE IRA",
+  "Profit Sharing",
+  "Stock Options / Equity",
+];
+
+const isRetirementType = (type: string) => {
+  if (!type) return false;
+  const lower = type.toLowerCase();
+  return RETIREMENT_TYPES.some(rt => rt.toLowerCase() === lower) ||
+    /\b(ira|401|403|pension|retirement|roth)\b/i.test(lower);
+};
+
 interface Props {
   meetingId: string;
 }
@@ -282,13 +297,15 @@ export default function MeetingBenefits({ meetingId }: Props) {
                   <Label className="text-xs font-medium text-muted-foreground">New Plan Effective Date</Label>
                   <DatePickerField value={form.new_plan_effective_date || ""} onChange={(v) => updateField("new_plan_effective_date", v)} />
                 </div>
-                <div className="col-span-2 space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Retirement Contribution</Label>
-                  <Input type="number" step="0.01" value={form.retirement_contribution} onChange={(e) => updateField("retirement_contribution", e.target.value)} placeholder="$0.00" />
-                </div>
+                {isRetirementType(form.benefit_type) && (
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Contribution Amount</Label>
+                    <Input type="number" step="0.01" value={form.retirement_contribution} onChange={(e) => updateField("retirement_contribution", e.target.value)} placeholder="$0.00" />
+                  </div>
+                )}
                 <div className="col-span-2 space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Eligibility / Comments</Label>
-                  <Textarea value={form.eligibility_comments} onChange={(e) => updateField("eligibility_comments", e.target.value)} rows={3} placeholder="Eligibility criteria and comments…" />
+                  <Textarea value={form.eligibility_comments} onChange={(e) => updateField("eligibility_comments", e.target.value)} rows={3} placeholder="Eligibility requirements, waiting periods, enrollment windows…" />
                 </div>
               </div>
               <Button type="submit" className="w-full" disabled={isPending || !form.benefit_type}>
@@ -355,10 +372,12 @@ export default function MeetingBenefits({ meetingId }: Props) {
                               <span className="text-muted-foreground text-xs">Effective Date</span>
                               <p>{row.new_plan_effective_date ? new Date(row.new_plan_effective_date + "T00:00:00").toLocaleDateString() : "—"}</p>
                             </div>
-                            <div>
-                              <span className="text-muted-foreground text-xs">Retirement Contribution</span>
-                              <p>{row.retirement_contribution != null ? `$${Number(row.retirement_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}</p>
-                            </div>
+                            {isRetirementType(row.benefit_type) && (
+                              <div>
+                                <span className="text-muted-foreground text-xs">Contribution Amount</span>
+                                <p>{row.retirement_contribution != null ? `$${Number(row.retirement_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}</p>
+                              </div>
+                            )}
                             <div className="col-span-2 md:col-span-4">
                               <span className="text-muted-foreground text-xs">Eligibility / Comments</span>
                               <p className="whitespace-pre-wrap">{row.eligibility_comments || "—"}</p>
