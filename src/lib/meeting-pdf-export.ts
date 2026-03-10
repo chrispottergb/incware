@@ -1816,7 +1816,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         if (!priorTypes.has(bType.toLowerCase())) {
           autoResolutions.push({
             purpose: `Approve ${bType}`,
-            text: `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the proposed ${bType} plan${b.provider ? ` with ${b.provider}` : ""}, and after discussion, it was\n\nRESOLVED, that the ${entityLabel} is hereby authorized to establish the ${bType} plan${b.provider ? ` through ${b.provider}` : ""}${b.retirement_contribution != null ? `, with a contribution of ${fmt(b.retirement_contribution)}` : ""}${b.plan_year ? `, effective for plan year ${b.plan_year}` : ""}.`,
+            text: `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the proposed ${bType} plan${b.provider ? ` with ${b.provider}` : ""}, and after discussion, it was\n\nRESOLVED, that the ${entityLabel} is hereby authorized to establish the ${bType} plan${b.provider ? ` through ${b.provider}` : ""}${b.retirement_contribution != null ? `, with a contribution of ${fmt(b.retirement_contribution)}` : ""}${b.plan_year ? `, effective for plan year ${b.plan_year}` : ""}.`,
           });
         } else {
           const priorMatch = priorBenefits.find((pb: any) => (pb.benefit_type || pb.benefit_description || "").toLowerCase() === bType.toLowerCase());
