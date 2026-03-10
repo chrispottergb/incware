@@ -498,7 +498,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   // ===== SECTION 15: GENERAL AUTHORIZATION =====
   sectionHeading("General Authorization");
 
-  resolvedPara("that the authorized binders of the limited liability company are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.");
+  resolvedPara("that the officers of the limited liability company are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.");
 
   // ===== ADJOURNMENT =====
   checkPage(40);
