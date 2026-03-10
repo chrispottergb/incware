@@ -516,7 +516,7 @@ export default function MeetingDetail() {
             <div className="flex justify-end">
               <PrintPreviewButton
                 label="Print"
-                generatePDF={() => exportFinancialsPDF(company, meeting, financials)}
+                generatePDF={() => exportFinancialsPDF(company, meeting, financials, nonRecurringItems)}
                 fileName={`financials-${meetingFileName}`}
               />
             </div>
