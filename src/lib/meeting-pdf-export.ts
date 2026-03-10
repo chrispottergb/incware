@@ -1715,7 +1715,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + data.amendments.length * 12);
     y = section("Amendments");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has determined that certain amendments to the governing documents of ${companyName} are in the best interests of the ${isLLC ? "company" : "corporation"}; and`,
+      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have determined that certain amendments to the governing documents of ${companyName} are in the best interests of the ${isLLC ? "company" : "corporation"}; and`,
       `NOW, THEREFORE, BE IT RESOLVED, that the following amendments are hereby adopted:`,
       bt
     );
