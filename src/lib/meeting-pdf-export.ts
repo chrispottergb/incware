@@ -1602,7 +1602,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + data.vehicleSales.length * 7);
     y = section("Vehicles & Equipment Sold During the Year");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the disposition of vehicles and equipment by ${companyName} during the year, and after discussion;`,
+      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the disposition of vehicles and equipment by ${companyName} during the year, and after discussion;`,
       `NOW, THEREFORE, BE IT RESOLVED, that the following vehicle and equipment sales are hereby ratified and approved:`,
       bt
     );
