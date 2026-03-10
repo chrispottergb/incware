@@ -476,7 +476,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 </div>
                 <div className="field-group">
                   <Label className="field-label">Par Value</Label>
-                  <Input className="h-8 text-sm" type="number" step="0.01" value={form.par_value} onChange={(e) => setForm(p => ({ ...p, par_value: e.target.value }))} placeholder={company?.par_value ? `$${company.par_value}` : ""} />
+                  <Input className="h-8 text-sm" type="text" value={form.par_value} onChange={(e) => setForm(p => ({ ...p, par_value: e.target.value }))} placeholder={company?.par_value ? `$${company.par_value}` : "e.g. 1.00 or No Par Value"} />
                 </div>
                 <div className="field-group">
                   <Label className="field-label">{term.pricePerUnit}</Label>
