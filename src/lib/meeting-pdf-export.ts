@@ -1269,7 +1269,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
   if (shouldRenderCounselSection) {
     y = checkPageBreak(doc, y, 20 + counselRows.length * 7);
-    y = section("Selection of Counsel & Banking");
+    y = section("Selection of Counsel");
 
     // Extract attorney and accountant info from counsel records, with fallback to company-level data
     const counselRec = counselRows[0] || {};
