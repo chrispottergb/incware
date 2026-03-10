@@ -1458,7 +1458,13 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         }
         y += 2;
         annualBanks.forEach((bank: any) => {
-          const bankSignerList = annualSigners.filter((s: any) => s.bank_id === bank.id);
+          // First try company-level bank signers; fall back to meeting-level authorized signers matched by bank name
+          let bankSignerList = annualSigners.filter((s: any) => s.bank_id === bank.id);
+          if (bankSignerList.length === 0 && data.authorizedSigners && data.authorizedSigners.length > 0) {
+            bankSignerList = data.authorizedSigners.filter((s: any) =>
+              s.bank_name && bank.bank_name && s.bank_name.toLowerCase().trim() === bank.bank_name.toLowerCase().trim()
+            );
+          }
           const signerStr = bankSignerList.map((s: any) => `${s.signer_name}${s.title ? `, ${s.title}` : ""}`).join("; ");
           y = addWhereasResolved(doc, y,
             `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the banking relationship with ${bank.bank_name}; and`,
