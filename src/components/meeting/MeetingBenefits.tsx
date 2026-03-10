@@ -297,13 +297,15 @@ export default function MeetingBenefits({ meetingId }: Props) {
                   <Label className="text-xs font-medium text-muted-foreground">New Plan Effective Date</Label>
                   <DatePickerField value={form.new_plan_effective_date || ""} onChange={(v) => updateField("new_plan_effective_date", v)} />
                 </div>
-                <div className="col-span-2 space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Retirement Contribution</Label>
-                  <Input type="number" step="0.01" value={form.retirement_contribution} onChange={(e) => updateField("retirement_contribution", e.target.value)} placeholder="$0.00" />
-                </div>
+                {isRetirementType(form.benefit_type) && (
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Contribution Amount</Label>
+                    <Input type="number" step="0.01" value={form.retirement_contribution} onChange={(e) => updateField("retirement_contribution", e.target.value)} placeholder="$0.00" />
+                  </div>
+                )}
                 <div className="col-span-2 space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Eligibility / Comments</Label>
-                  <Textarea value={form.eligibility_comments} onChange={(e) => updateField("eligibility_comments", e.target.value)} rows={3} placeholder="Eligibility criteria and comments…" />
+                  <Textarea value={form.eligibility_comments} onChange={(e) => updateField("eligibility_comments", e.target.value)} rows={3} placeholder="Eligibility requirements, waiting periods, enrollment windows…" />
                 </div>
               </div>
               <Button type="submit" className="w-full" disabled={isPending || !form.benefit_type}>
