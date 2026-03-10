@@ -1787,7 +1787,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
           if (o.salary != null && prior.salary != null && Number(o.salary) !== Number(prior.salary)) {
             autoResolutions.push({
               purpose: `Adjust ${o.title} Salary`,
-              text: `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the compensation of ${o.name}, ${o.title}, and after discussion, it was\n\nRESOLVED, that the annual salary of ${o.name}, ${o.title}, is hereby adjusted from ${fmt(prior.salary)} to ${fmt(o.salary)}, effective immediately.`,
+              text: `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the compensation of ${o.name}, ${o.title}, and after discussion, it was\n\nRESOLVED, that the annual salary of ${o.name}, ${o.title}, is hereby adjusted from ${fmt(prior.salary)} to ${fmt(o.salary)}, effective immediately.`,
             });
           }
           if (o.bonus != null && prior.bonus != null && Number(o.bonus) !== Number(prior.bonus)) {
