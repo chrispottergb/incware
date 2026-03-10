@@ -1712,6 +1712,9 @@ export type Database = {
           loan_type: string | null
           meeting_id: string
           notes: string | null
+          promissory_note_file_name: string | null
+          promissory_note_file_url: string | null
+          promissory_note_required: boolean | null
           repayment_terms: string | null
           start_date: string | null
         }
@@ -1729,6 +1732,9 @@ export type Database = {
           loan_type?: string | null
           meeting_id: string
           notes?: string | null
+          promissory_note_file_name?: string | null
+          promissory_note_file_url?: string | null
+          promissory_note_required?: boolean | null
           repayment_terms?: string | null
           start_date?: string | null
         }
@@ -1746,6 +1752,9 @@ export type Database = {
           loan_type?: string | null
           meeting_id?: string
           notes?: string | null
+          promissory_note_file_name?: string | null
+          promissory_note_file_url?: string | null
+          promissory_note_required?: boolean | null
           repayment_terms?: string | null
           start_date?: string | null
         }
