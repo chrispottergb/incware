@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -30,9 +31,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Pencil, FileText } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil, FileText, Upload, Download, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { generatePromissoryNotePDF } from "@/lib/promissory-note-pdf";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Props {
   meetingId: string;
@@ -52,6 +54,7 @@ interface LoanForm {
   end_date: string;
   repayment_terms: string;
   notes: string;
+  promissory_note_required: boolean;
 }
 
 const emptyForm: LoanForm = {
@@ -67,13 +70,17 @@ const emptyForm: LoanForm = {
   end_date: "",
   repayment_terms: "",
   notes: "",
+  promissory_note_required: false,
 };
 
 export default function MeetingLoans({ meetingId, companyName }: Props) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<LoanForm>(emptyForm);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: rows = [] } = useQuery({
     queryKey: ["meeting_loans", meetingId],
@@ -104,6 +111,7 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
         end_date: form.end_date || null,
         repayment_terms: form.repayment_terms || null,
         notes: form.notes || null,
+        promissory_note_required: form.promissory_note_required,
       };
       const { error } = await supabase.from("meeting_loans" as any).insert(payload as any);
       if (error) throw error;
@@ -131,6 +139,7 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
         end_date: form.end_date || null,
         repayment_terms: form.repayment_terms || null,
         notes: form.notes || null,
+        promissory_note_required: form.promissory_note_required,
       };
       const { error } = await supabase
         .from("meeting_loans" as any)
@@ -179,6 +188,7 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
       end_date: row.end_date || "",
       repayment_terms: row.repayment_terms || "",
       notes: row.notes || "",
+      promissory_note_required: row.promissory_note_required || false,
     });
     setDialogOpen(true);
   };
@@ -204,8 +214,54 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
     doc.save(`promissory-note-${row.lender_name || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase());
   };
 
+  const handleUploadNote = async (rowId: string, file: File) => {
+    if (!user?.id) return;
+    setUploading(true);
+    try {
+      const filePath = `${user.id}/promissory-notes/${rowId}/${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("generated-documents")
+        .upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { error: updateError } = await supabase
+        .from("meeting_loans" as any)
+        .update({
+          promissory_note_file_url: filePath,
+          promissory_note_file_name: file.name,
+          promissory_note_required: true,
+        } as any)
+        .eq("id", rowId);
+      if (updateError) throw updateError;
+
+      queryClient.invalidateQueries({ queryKey: ["meeting_loans", meetingId] });
+      toast.success("Promissory note uploaded!");
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDownloadNote = async (row: any) => {
+    if (!row.promissory_note_file_url) return;
+    const { data, error } = await supabase.storage
+      .from("generated-documents")
+      .download(row.promissory_note_file_url);
+    if (error) {
+      toast.error("Failed to download file");
+      return;
+    }
+    const url = URL.createObjectURL(data);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = row.promissory_note_file_name || "promissory-note.pdf";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const isPending = addRow.isPending || updateRow.isPending;
-  const updateField = (key: keyof LoanForm, value: string) =>
+  const updateField = (key: keyof LoanForm, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
   const fmt = (v: any) =>
@@ -290,6 +346,23 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                   <Textarea value={form.notes} onChange={(e) => updateField("notes", e.target.value)} rows={2} placeholder="Additional details…" />
                 </div>
               </div>
+
+              {/* Promissory Note Section */}
+              <div className="border-t pt-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={form.promissory_note_required}
+                    onCheckedChange={(checked) => updateField("promissory_note_required", checked)}
+                  />
+                  <Label className="text-sm font-medium">Promissory Note Required</Label>
+                </div>
+                {form.promissory_note_required && (
+                  <p className="text-xs text-muted-foreground">
+                    After saving, use the table actions to generate a pre-filled promissory note or upload an existing document.
+                  </p>
+                )}
+              </div>
+
               <Button type="submit" className="w-full" disabled={isPending || !form.loan_type}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {editingId ? "Save Changes" : "Add Loan"}
@@ -315,7 +388,8 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                   <TableHead className="text-right">Rate</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead className="w-28" />
+                  <TableHead className="text-center">Note</TableHead>
+                  <TableHead className="w-36" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -328,8 +402,20 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                     <TableCell className="text-right text-sm">{row.loan_rate != null ? `${Number(row.loan_rate).toFixed(2)}%` : "—"}</TableCell>
                     <TableCell className="text-right font-mono text-xs">{fmt(row.loan_amount)}</TableCell>
                     <TableCell className="text-sm">{row.loan_date ? new Date(row.loan_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
+                    <TableCell className="text-center">
+                      {row.promissory_note_file_url ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-green-600">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> On File
+                        </span>
+                      ) : row.promissory_note_required ? (
+                        <span className="text-xs text-amber-600 font-medium">Required</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
+                        {/* Generate promissory note */}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -339,6 +425,38 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                         >
                           <FileText className="h-4 w-4" />
                         </Button>
+                        {/* Upload promissory note */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const input = document.createElement("input");
+                            input.type = "file";
+                            input.accept = ".pdf,.doc,.docx,.jpg,.jpeg,.png";
+                            input.onchange = (e) => {
+                              const file = (e.target as HTMLInputElement).files?.[0];
+                              if (file) handleUploadNote(row.id, file);
+                            };
+                            input.click();
+                          }}
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          title="Upload Promissory Note"
+                          disabled={uploading}
+                        >
+                          <Upload className="h-4 w-4" />
+                        </Button>
+                        {/* Download uploaded note */}
+                        {row.promissory_note_file_url && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDownloadNote(row)}
+                            className="h-8 w-8 text-green-600/60 hover:text-green-700"
+                            title={`Download: ${row.promissory_note_file_name || "Promissory Note"}`}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                           <Pencil className="h-4 w-4" />
                         </Button>
