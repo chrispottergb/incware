@@ -397,7 +397,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   t.shareholders?.name ?? "—",
                   t.share_class,
                   t.num_shares?.toLocaleString(),
-                  t.par_value != null ? `$${Number(t.par_value).toFixed(2)}` : "—",
+                  t.par_value != null ? `$${Number(t.par_value).toFixed(2)}` : (company?.par_value_type === "no_par" ? "No Par Value" : "—"),
                   t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—",
                   t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—",
                   t.consideration_type ?? "—",
