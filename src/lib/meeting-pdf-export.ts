@@ -634,7 +634,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
   const isNonprofit = entityType === "Non-Profit";
   const isSCorp = entityType === "S-Corp";
   const entityLabel = isLLC ? "limited liability company" : isNonprofit ? "nonprofit corporation" : "corporation";
-  const governingBody = isLLC ? "members/authorized binders" : "Board of Directors";
+  const governingBody = isLLC ? "members" : "Board of Directors";
   const companyName = company?.name || "the Company";
   const stateOfInc = company?.state_of_incorporation || "Wisconsin";
   const pw = doc.internal.pageSize.getWidth();
