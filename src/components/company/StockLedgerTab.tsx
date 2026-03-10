@@ -640,7 +640,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                       <TableCell className="text-xs">{t.shareholders?.name ?? t.to_shareholder ?? "—"}</TableCell>
                       <TableCell className="text-xs">{t.share_class}</TableCell>
                       <TableCell className="text-xs text-right">{t.num_shares?.toLocaleString()}</TableCell>
-                      <TableCell className="text-xs text-right">{(t as any).par_value != null ? `$${Number((t as any).par_value).toFixed(2)}` : "—"}</TableCell>
+                      <TableCell className="text-xs text-right">{(t as any).par_value != null ? `$${Number((t as any).par_value).toFixed(2)}` : (company?.par_value_type === "no_par" ? "No Par Value" : "—")}</TableCell>
                       <TableCell className="text-xs text-right">{t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—"}</TableCell>
                       <TableCell className="text-xs text-right">{t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—"}</TableCell>
                       <TableCell className="text-xs capitalize">{t.consideration_type?.replace("_", " ") ?? "—"}</TableCell>
