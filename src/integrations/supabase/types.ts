@@ -1519,6 +1519,9 @@ export type Database = {
           id: string
           law_firm: string | null
           loans: string | null
+          loc_amount: number | null
+          loc_enabled: boolean | null
+          loc_interest_rate: number | null
           meeting_id: string
         }
         Insert: {
@@ -1530,6 +1533,9 @@ export type Database = {
           id?: string
           law_firm?: string | null
           loans?: string | null
+          loc_amount?: number | null
+          loc_enabled?: boolean | null
+          loc_interest_rate?: number | null
           meeting_id: string
         }
         Update: {
@@ -1541,6 +1547,9 @@ export type Database = {
           id?: string
           law_firm?: string | null
           loans?: string | null
+          loc_amount?: number | null
+          loc_enabled?: boolean | null
+          loc_interest_rate?: number | null
           meeting_id?: string
         }
         Relationships: [
