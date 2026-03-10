@@ -27,7 +27,8 @@ function checkBreak(doc: jsPDF, y: number, needed: number): number {
 }
 
 function addSectionTitle(doc: jsPDF, y: number, num: number, title: string): number {
-  y = checkBreak(doc, y, 20);
+  y = checkBreak(doc, y, 26);
+  y += 6;
   const pw = getPageWidth(doc);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
@@ -36,7 +37,7 @@ function addSectionTitle(doc: jsPDF, y: number, num: number, title: string): num
   doc.setDrawColor(140, 140, 140);
   doc.setLineWidth(0.6);
   doc.line(MARGIN, y + 2, pw - MARGIN, y + 2);
-  return y + 8;
+  return y + 14;
 }
 
 function addSubSection(doc: jsPDF, y: number, title: string): number {

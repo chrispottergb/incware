@@ -56,11 +56,12 @@ function addSectionTitle(doc: jsPDF, title: string, y: number): number {
     doc.addPage();
     y = 20;
   }
+  y += 8;
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(45, 55, 72);
   doc.text(title, MARGIN, y);
-  return y + 2;
+  return y + 8;
 }
 
 function addKeyValueTable(doc: jsPDF, rows: [string, string][], y: number): number {

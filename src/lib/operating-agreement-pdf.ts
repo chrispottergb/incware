@@ -41,12 +41,13 @@ function addArticleTitle(doc: jsPDF, y: number, num: string, title: string): num
 }
 
 function addSectionTitle(doc: jsPDF, y: number, label: string): number {
-  y = checkBreak(doc, y, 12);
+  y = checkBreak(doc, y, 18);
+  y += 6;
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(40, 40, 40);
   doc.text(label, MARGIN, y);
-  return y + 5;
+  return y + 10;
 }
 
 function addAiBadge(doc: jsPDF, y: number): number {
