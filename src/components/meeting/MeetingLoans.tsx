@@ -282,7 +282,7 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
 
   const handleSavePdf = () => {
     if (!currentPdfBytes) return;
-    const blob = new Blob([currentPdfBytes], { type: "application/pdf" });
+    const blob = new Blob([currentPdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
