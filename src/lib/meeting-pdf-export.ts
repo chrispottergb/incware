@@ -1364,7 +1364,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       }
       y += 2;
       y = addWhereasResolved(doc, y,
-        `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the accounting needs of ${companyName}; and`,
+        `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the accounting needs of ${companyName}; and`,
         `NOW, THEREFORE, BE IT RESOLVED, that ${accountantName}${firmPart} is hereby approved and retained as accountant for ${companyName} for the ensuing year.`,
         bt
       );
