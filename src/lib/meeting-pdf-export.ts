@@ -28,6 +28,7 @@ interface MeetingData {
   agreements?: any[];
   other?: any[];
   financials?: any;
+  nonRecurringItems?: any[];
   authorizedSigners?: any[];
   vehiclePurchases?: any[];
   vehicleLeases?: any[];
