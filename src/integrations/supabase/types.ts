@@ -1521,7 +1521,7 @@ export type Database = {
           loans: string | null
           loc_amount: number | null
           loc_enabled: boolean | null
-          loc_interest_rate: number | null
+          loc_interest_rate: string | null
           meeting_id: string
         }
         Insert: {
@@ -1535,7 +1535,7 @@ export type Database = {
           loans?: string | null
           loc_amount?: number | null
           loc_enabled?: boolean | null
-          loc_interest_rate?: number | null
+          loc_interest_rate?: string | null
           meeting_id: string
         }
         Update: {
@@ -1549,7 +1549,7 @@ export type Database = {
           loans?: string | null
           loc_amount?: number | null
           loc_enabled?: boolean | null
-          loc_interest_rate?: number | null
+          loc_interest_rate?: string | null
           meeting_id?: string
         }
         Relationships: [

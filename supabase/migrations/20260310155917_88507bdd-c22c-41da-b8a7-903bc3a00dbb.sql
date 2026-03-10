@@ -1,0 +1,1 @@
+ALTER TABLE public.meeting_counsel ALTER COLUMN loc_interest_rate TYPE text USING loc_interest_rate::text;

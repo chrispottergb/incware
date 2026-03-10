@@ -136,14 +136,11 @@ export default function MeetingBanking({ meetingId }: Props) {
               <Label className="text-xs font-medium text-muted-foreground">Interest Rate (%)</Label>
               <Input
                 className="h-7 text-sm"
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
+                type="text"
                 value={locRate}
                 onChange={(e) => setLocRate(e.target.value)}
-                onBlur={() => handleBlur("loc_interest_rate", locRate ? parseFloat(locRate) : null)}
-                placeholder="0.00%"
+                onBlur={() => handleBlur("loc_interest_rate", locRate || null)}
+                placeholder="e.g. 3%, Prime + 1%"
               />
             </div>
           </div>
