@@ -470,6 +470,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         { item: "COG Ratio (%)", amount: "", notes: "" },
         { item: "Net Income", amount: "", notes: "" },
       ],
+      nonRecurringItems: [] as { description: string; amount: string }[],
       compensationItems: compensationList,
       distributions: memberList.filter(m => m.name).map(m => ({ memberName: m.name, amount: "", date: "", notes: "" })),
       retainedEarnings: "",
