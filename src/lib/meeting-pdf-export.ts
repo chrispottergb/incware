@@ -1993,21 +1993,59 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
   // Agreements
   if (data.agreements && data.agreements.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.agreements.length * 7);
+    const newOrUpdated = data.agreements.filter((a: any) => !a.is_carried_forward);
+    const carriedForward = data.agreements.filter((a: any) => a.is_carried_forward && (a.status === "Active" || !a.status));
+
+    y = checkPageBreak(doc, y, 30);
     y = section("Agreements");
-    y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the following agreements entered into by ${companyName}; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following agreements are hereby ratified and approved:`,
-      bt
-    );
+
+    // New or updated agreements get full resolution language
+    if (newOrUpdated.length > 0) {
+      for (const a of newOrUpdated) {
+        const amountStr = a.amount != null ? ` for $${Number(a.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "";
+        const dateStr = a.agreement_date ? ` on ${new Date(a.agreement_date + "T00:00:00").toLocaleDateString()}` : "";
+        y = addWhereasResolved(doc, y,
+          `WHEREAS, ${companyName} has entered into a ${a.agreement_type} with ${a.agreement_with || "the counterparty"}${dateStr}${amountStr}; and`,
+          `NOW, THEREFORE, BE IT RESOLVED, that the ${a.agreement_type} entered into between ${companyName} and ${a.agreement_with || "the counterparty"}${dateStr}${amountStr} is hereby reviewed, ratified, and approved by the ${isLLC ? "members" : "Board of Directors"}.`,
+          bt
+        );
+      }
+    }
+
+    // Carried-forward active agreements get a disclosure line
+    if (carriedForward.length > 0) {
+      y = checkPageBreak(doc, y, 20 + carriedForward.length * 6);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...BODY_COLOR);
+      const disclosureIntro = `The following agreements remain active and in good standing as of the date of this meeting:`;
+      const disclosureLines = doc.splitTextToSize(disclosureIntro, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of disclosureLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 3;
+      for (const a of carriedForward) {
+        y = checkPageBreak(doc, y, 6);
+        const amountStr = a.amount != null ? ` — $${Number(a.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "";
+        const dateStr = a.agreement_date ? ` (${new Date(a.agreement_date + "T00:00:00").toLocaleDateString()})` : "";
+        doc.text(`•  ${a.agreement_type} with ${a.agreement_with || "—"}${dateStr}${amountStr}`, MARGIN + 6, y);
+        y += 5.5;
+      }
+      y += 6;
+    }
+
+    // Summary table of all agreements
     autoTable(doc, {
       startY: y,
-      head: [["Type", "Date", "With", "Purpose"]],
-      body: data.agreements.map(a => [
+      head: [["Type", "Counterparty", "Date", "Amount", "Status"]],
+      body: data.agreements.map((a: any) => [
         a.agreement_type,
-        a.agreement_date ? new Date(a.agreement_date + "T00:00:00").toLocaleDateString() : "—",
         a.agreement_with || "—",
-        a.agreement_purpose || "—",
+        a.agreement_date ? new Date(a.agreement_date + "T00:00:00").toLocaleDateString() : "—",
+        a.amount != null ? `$${Number(a.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
+        a.status || "Active",
       ]),
       theme: "grid",
       headStyles: tableHeadStyles,

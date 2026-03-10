@@ -136,27 +136,48 @@ export type Database = {
           agreement_purpose: string | null
           agreement_type: string
           agreement_with: string | null
+          amount: number | null
           created_at: string
+          document_file_name: string | null
+          document_file_url: string | null
+          expiration_date: string | null
           id: string
+          is_carried_forward: boolean
           meeting_id: string
+          notes: string | null
+          status: string
         }
         Insert: {
           agreement_date?: string | null
           agreement_purpose?: string | null
           agreement_type: string
           agreement_with?: string | null
+          amount?: number | null
           created_at?: string
+          document_file_name?: string | null
+          document_file_url?: string | null
+          expiration_date?: string | null
           id?: string
+          is_carried_forward?: boolean
           meeting_id: string
+          notes?: string | null
+          status?: string
         }
         Update: {
           agreement_date?: string | null
           agreement_purpose?: string | null
           agreement_type?: string
           agreement_with?: string | null
+          amount?: number | null
           created_at?: string
+          document_file_name?: string | null
+          document_file_url?: string | null
+          expiration_date?: string | null
           id?: string
+          is_carried_forward?: boolean
           meeting_id?: string
+          notes?: string | null
+          status?: string
         }
         Relationships: [
           {
