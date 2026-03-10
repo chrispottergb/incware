@@ -57,7 +57,7 @@ export interface AnnualMeetingData {
   equipment: { description: string; manufacturer: string; ownedLeased: string; value: string; notes: string }[];
 
   // Benefits
-  benefitPlans: { planType: string; provider: string; eligibility: string; contribution: string; status: string }[];
+  benefitPlans: { planType: string; provider: string; eligibility: string; eligibility_comments?: string; contribution: string; status: string }[];
   profitSharingAmount: string;
 
   // Special Resolutions
