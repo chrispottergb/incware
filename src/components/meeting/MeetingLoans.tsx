@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useCallback } from "react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,10 +31,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Pencil, FileText, Upload, Download, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil, FileText, Upload, Download, CheckCircle2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { generatePromissoryNotePDF } from "@/lib/promissory-note-pdf";
 import { useAuth } from "@/hooks/useAuth";
+import * as pdfjsLib from "pdfjs-dist";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 interface Props {
   meetingId: string;
@@ -55,6 +58,17 @@ interface LoanForm {
   repayment_terms: string;
   notes: string;
   promissory_note_required: boolean;
+}
+
+interface NoteForm {
+  lenderName: string;
+  borrowerName: string;
+  loanAmount: string;
+  interestRate: string;
+  loanDuration: string;
+  startDate: string;
+  endDate: string;
+  repaymentTerms: string;
 }
 
 const emptyForm: LoanForm = {
@@ -80,7 +94,17 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<LoanForm>(emptyForm);
   const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Promissory note wizard state
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [noteForm, setNoteForm] = useState<NoteForm>({
+    lenderName: "", borrowerName: "", loanAmount: "", interestRate: "",
+    loanDuration: "", startDate: "", endDate: "", repaymentTerms: "",
+  });
+  const [noteStep, setNoteStep] = useState<"edit" | "preview">("edit");
+  const [previewPages, setPreviewPages] = useState<string[]>([]);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [currentPdfBytes, setCurrentPdfBytes] = useState<Uint8Array | null>(null);
 
   const { data: rows = [] } = useQuery({
     queryKey: ["meeting_loans", meetingId],
@@ -199,19 +223,74 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
     else addRow.mutate();
   };
 
-  const handlePromissoryNote = (row: any) => {
-    const doc = generatePromissoryNotePDF({
+  // --- Promissory Note Wizard ---
+  const openNoteWizard = (row: any) => {
+    setNoteForm({
       lenderName: row.lender_name || "",
       borrowerName: row.borrower_name || "",
-      loanAmount: row.loan_amount,
-      interestRate: row.loan_rate,
+      loanAmount: row.loan_amount?.toString() || "",
+      interestRate: row.loan_rate?.toString() || "",
       loanDuration: row.loan_duration || "",
       startDate: row.start_date || row.loan_date || "",
       endDate: row.end_date || "",
       repaymentTerms: row.repayment_terms || "",
-      companyName: companyName || "",
     });
-    doc.save(`promissory-note-${row.lender_name || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase());
+    setNoteStep("edit");
+    setPreviewPages([]);
+    setCurrentPdfBytes(null);
+    setNoteDialogOpen(true);
+  };
+
+  const renderPreview = useCallback(async () => {
+    setPreviewLoading(true);
+    try {
+      const doc = generatePromissoryNotePDF({
+        lenderName: noteForm.lenderName,
+        borrowerName: noteForm.borrowerName,
+        loanAmount: noteForm.loanAmount ? parseFloat(noteForm.loanAmount) : null,
+        interestRate: noteForm.interestRate ? parseFloat(noteForm.interestRate) : null,
+        loanDuration: noteForm.loanDuration,
+        startDate: noteForm.startDate,
+        endDate: noteForm.endDate,
+        repaymentTerms: noteForm.repaymentTerms,
+        companyName: companyName || "",
+      });
+      const bytes = doc.output("arraybuffer");
+      setCurrentPdfBytes(new Uint8Array(bytes));
+
+      const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+      const pages: string[] = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const scale = 2;
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext("2d")!;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        pages.push(canvas.toDataURL("image/png"));
+      }
+      setPreviewPages(pages);
+      setNoteStep("preview");
+    } catch (err: any) {
+      toast.error("Failed to generate preview");
+    } finally {
+      setPreviewLoading(false);
+    }
+  }, [noteForm, companyName]);
+
+  const handleSavePdf = () => {
+    if (!currentPdfBytes) return;
+    const blob = new Blob([currentPdfBytes], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `promissory-note-${noteForm.borrowerName || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase();
+    a.click();
+    URL.revokeObjectURL(url);
+    setNoteDialogOpen(false);
+    toast.success("Promissory note saved!");
   };
 
   const handleUploadNote = async (rowId: string, file: File) => {
@@ -263,6 +342,8 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
   const isPending = addRow.isPending || updateRow.isPending;
   const updateField = (key: keyof LoanForm, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [key]: value }));
+  const updateNoteField = (key: keyof NoteForm, value: string) =>
+    setNoteForm((prev) => ({ ...prev, [key]: value }));
 
   const fmt = (v: any) =>
     v != null ? `$${Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—";
@@ -389,7 +470,7 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead className="text-center">Note</TableHead>
-                  <TableHead className="w-36" />
+                  <TableHead className="w-[300px]" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -414,16 +495,16 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
-                        {/* Generate promissory note */}
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {/* Create promissory note — labeled button */}
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handlePromissoryNote(row)}
-                          className="h-8 w-8 text-primary/60 hover:text-primary"
-                          title="Generate Promissory Note"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openNoteWizard(row)}
+                          className="h-7 text-xs gap-1.5"
                         >
-                          <FileText className="h-4 w-4" />
+                          <FileText className="h-3.5 w-3.5" />
+                          Create Promissory Note
                         </Button>
                         {/* Upload promissory note */}
                         <Button
@@ -439,11 +520,11 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                             };
                             input.click();
                           }}
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
                           title="Upload Promissory Note"
                           disabled={uploading}
                         >
-                          <Upload className="h-4 w-4" />
+                          <Upload className="h-3.5 w-3.5" />
                         </Button>
                         {/* Download uploaded note */}
                         {row.promissory_note_file_url && (
@@ -451,17 +532,17 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDownloadNote(row)}
-                            className="h-8 w-8 text-green-600/60 hover:text-green-700"
+                            className="h-7 w-7 text-green-600/60 hover:text-green-700"
                             title={`Download: ${row.promissory_note_file_name || "Promissory Note"}`}
                           >
-                            <Download className="h-4 w-4" />
+                            <Download className="h-3.5 w-3.5" />
                           </Button>
                         )}
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                          <Pencil className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                          <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteRow.mutate(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" onClick={() => deleteRow.mutate(row.id)} className="h-7 w-7 text-destructive/60 hover:text-destructive">
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </TableCell>
@@ -472,6 +553,87 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
           </div>
         )}
       </CardContent>
+
+      {/* Promissory Note Wizard Dialog */}
+      <Dialog open={noteDialogOpen} onOpenChange={(open) => { if (!open) { setNoteDialogOpen(false); setNoteStep("edit"); } }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {noteStep === "edit" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display flex items-center gap-2">
+                  <FileText className="h-5 w-5" /> Create Promissory Note
+                </DialogTitle>
+                <DialogDescription>Review and edit the details below, then click Preview to see the formatted document.</DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Lender Name</Label>
+                  <Input value={noteForm.lenderName} onChange={(e) => updateNoteField("lenderName", e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Borrower Name</Label>
+                  <Input value={noteForm.borrowerName} onChange={(e) => updateNoteField("borrowerName", e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Principal Amount ($)</Label>
+                  <Input type="number" step="0.01" value={noteForm.loanAmount} onChange={(e) => updateNoteField("loanAmount", e.target.value)} placeholder="0.00" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Interest Rate (%)</Label>
+                  <Input type="number" step="0.01" value={noteForm.interestRate} onChange={(e) => updateNoteField("interestRate", e.target.value)} placeholder="0.00" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Loan Duration</Label>
+                  <Input value={noteForm.loanDuration} onChange={(e) => updateNoteField("loanDuration", e.target.value)} placeholder="e.g., 5 years" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Start Date</Label>
+                  <DatePickerField value={noteForm.startDate} onChange={(v) => updateNoteField("startDate", v)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">End Date</Label>
+                  <DatePickerField value={noteForm.endDate} onChange={(v) => updateNoteField("endDate", v)} />
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Repayment Terms</Label>
+                  <Textarea value={noteForm.repaymentTerms} onChange={(e) => updateNoteField("repaymentTerms", e.target.value)} rows={3} placeholder="Monthly payments, balloon payment, etc." />
+                </div>
+              </div>
+              <div className="flex justify-end mt-4">
+                <Button onClick={renderPreview} disabled={previewLoading}>
+                  {previewLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Preview
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display">Promissory Note Preview</DialogTitle>
+                <DialogDescription>Review the document below. You can go back to edit or save as PDF.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 mt-2">
+                {previewPages.map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt={`Page ${i + 1}`}
+                    className="w-full rounded border border-border shadow-sm"
+                  />
+                ))}
+              </div>
+              <div className="flex items-center justify-between mt-4">
+                <Button variant="outline" onClick={() => setNoteStep("edit")}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Back / Edit
+                </Button>
+                <Button onClick={handleSavePdf}>
+                  <Download className="mr-2 h-4 w-4" /> Save as PDF
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
