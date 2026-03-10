@@ -1840,7 +1840,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         if (!priorLoanTypes.has(key)) {
           autoResolutions.push({
             purpose: `Authorize ${l.loan_type || "Loan"}`,
-            text: `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has determined it is in the best interests of the ${entityLabel} to obtain financing, and after discussion, it was\n\nRESOLVED, that the proper ${isLLC ? "authorized binders" : "officers"} are hereby authorized to execute any documents necessary to establish a ${l.loan_type || "loan"}${l.loan_amount != null ? ` in the amount of ${fmt(l.loan_amount)}` : ""}${l.loan_rate != null ? ` at a rate of ${Number(l.loan_rate).toFixed(2)}%` : ""}.`,
+            text: `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have determined it is in the best interests of the ${entityLabel} to obtain financing, and after discussion, it was\n\nRESOLVED, that the proper officers are hereby authorized to execute any documents necessary to establish a ${l.loan_type || "loan"}${l.loan_amount != null ? ` in the amount of ${fmt(l.loan_amount)}` : ""}${l.loan_rate != null ? ` at a rate of ${Number(l.loan_rate).toFixed(2)}%` : ""}.`,
           });
         }
       });
