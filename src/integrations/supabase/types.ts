@@ -1768,6 +1768,38 @@ export type Database = {
           },
         ]
       }
+      meeting_non_recurring_items: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          meeting_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          meeting_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          meeting_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_non_recurring_items_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_officers: {
         Row: {
           bonus: number | null
