@@ -1926,7 +1926,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + data.agreements.length * 7);
     y = section("Agreements");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the following agreements entered into by ${companyName}; and`,
+      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the following agreements entered into by ${companyName}; and`,
       `NOW, THEREFORE, BE IT RESOLVED, that the following agreements are hereby ratified and approved:`,
       bt
     );
