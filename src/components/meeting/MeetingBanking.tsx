@@ -40,7 +40,7 @@ export default function MeetingBanking({ meetingId }: Props) {
       setBankName(row.bank_name || "");
       setLocEnabled(row.loc_enabled || false);
       setLocAmount(row.loc_amount != null ? String(row.loc_amount) : "");
-      setLocRate(row.loc_interest_rate != null ? String(row.loc_interest_rate) : "");
+      setLocRate(row.loc_interest_rate || "");
     }
   }, [row]);
 
