@@ -1823,7 +1823,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
           if (priorMatch && b.retirement_contribution != null && priorMatch.retirement_contribution != null && Number(b.retirement_contribution) !== Number(priorMatch.retirement_contribution)) {
             autoResolutions.push({
               purpose: `Adjust ${bType} Contribution`,
-              text: `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board"} has reviewed the ${bType} plan, and after discussion, it was\n\nRESOLVED, that the contribution to the ${bType} plan is hereby adjusted from ${fmt(priorMatch.retirement_contribution)} to ${fmt(b.retirement_contribution)}.`,
+              text: `WHEREAS, the ${isLLC ? "members" : "Board"} have reviewed the ${bType} plan, and after discussion, it was\n\nRESOLVED, that the contribution to the ${bType} plan is hereby adjusted from ${fmt(priorMatch.retirement_contribution)} to ${fmt(b.retirement_contribution)}.`,
             });
           }
         }
