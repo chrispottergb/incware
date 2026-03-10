@@ -1686,7 +1686,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + data.leaseTerminations.length * 7);
     y = section("Leases Ended During the Year");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the leases that have expired or been terminated by ${companyName} during the year; and`,
+      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the leases that have expired or been terminated by ${companyName} during the year; and`,
       `NOW, THEREFORE, BE IT RESOLVED, that the termination or expiration of the following leases is hereby acknowledged and ratified:`,
       bt
     );
