@@ -1129,6 +1129,52 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
                 )}
               </div>
 
+              {/* Non-Recurring Items */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-semibold">Non-Recurring Items</h4>
+                  <Button type="button" size="sm" variant="outline" className="h-6 text-xs" onClick={() => {
+                    update("nonRecurringItems", [...(data.nonRecurringItems || []), { description: "", amount: "" }]);
+                  }}>
+                    <Plus className="h-3 w-3 mr-1" /> Add Item
+                  </Button>
+                </div>
+                <p className="text-[11px] text-muted-foreground mb-2">Record one-time transactions (asset sales, insurance proceeds, settlements) that should not distort YoY comparison.</p>
+                {(data.nonRecurringItems || []).length === 0 && (
+                  <p className="text-xs text-muted-foreground italic">No non-recurring items.</p>
+                )}
+                {(data.nonRecurringItems || []).map((item: any, idx: number) => (
+                  <div key={idx} className="grid grid-cols-[2fr_1fr_auto] gap-2 mb-2 items-center">
+                    <Input
+                      className="h-7 text-sm"
+                      placeholder="Description (e.g., Sale of assets)"
+                      value={item.description || ""}
+                      onChange={e => {
+                        const items = [...(data.nonRecurringItems || [])];
+                        items[idx] = { ...items[idx], description: e.target.value };
+                        update("nonRecurringItems", items);
+                      }}
+                    />
+                    <Input
+                      className="h-7 text-sm"
+                      placeholder="Amount"
+                      value={item.amount || ""}
+                      onChange={e => {
+                        const items = [...(data.nonRecurringItems || [])];
+                        items[idx] = { ...items[idx], amount: e.target.value };
+                        update("nonRecurringItems", items);
+                      }}
+                    />
+                    <Button type="button" size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => {
+                      const items = (data.nonRecurringItems || []).filter((_: any, i: number) => i !== idx);
+                      update("nonRecurringItems", items);
+                    }}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
               <div>
                 <h4 className="text-xs font-semibold mb-2">Compensation & Bonuses</h4>
                 <TemplateNote text="Record compensation and bonus amounts approved for each officer/manager. These should match W-2 or guaranteed payment amounts." />
