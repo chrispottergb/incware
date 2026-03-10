@@ -300,13 +300,20 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
           const totalUnits = shareholderHoldings
             ? activeShareholders.reduce((sum, s) => sum + (shareholderHoldings[s.id] ?? 0), 0)
             : 0;
+          // Use ownership_percentage from DB (set by recalculate function) as primary source
+          // Fall back to certificate-based calculation only if DB value is null
           const getInterestPct = (s: typeof shareholders[0]) => {
+            // If the shareholder has a stored ownership_percentage, use it
+            if (s.ownership_percentage != null && Number(s.ownership_percentage) !== 0) {
+              return Number(s.ownership_percentage);
+            }
+            // Fall back to certificate-based calculation
             if (!shareholderHoldings || totalUnits === 0) return null;
             const units = shareholderHoldings[s.id] ?? 0;
             if (units === 0) return 0;
             return (units / totalUnits) * 100;
           };
-          const totalPct = t.isLLC && shareholderHoldings
+          const totalPct = t.isLLC
             ? activeShareholders.reduce((sum, s) => sum + (getInterestPct(s) ?? 0), 0)
             : null;
 
@@ -319,8 +326,8 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                     <TableHead className="text-[10px] uppercase">Address</TableHead>
                     <TableHead className="text-[10px] uppercase">City/State/Zip</TableHead>
                     <TableHead className="text-[10px] uppercase">SSN/EIN</TableHead>
-                    {shareholderHoldings && <TableHead className="text-[10px] uppercase text-right">{t.isLLC ? "Units Held" : "Shares Held"}</TableHead>}
-                    {t.isLLC && shareholderHoldings && <TableHead className="text-[10px] uppercase text-right">Interest %</TableHead>}
+                    {(shareholderHoldings || t.isLLC) && <TableHead className="text-[10px] uppercase text-right">{t.isLLC ? "Units Held" : "Shares Held"}</TableHead>}
+                    {t.isLLC && <TableHead className="text-[10px] uppercase text-right">Interest %</TableHead>}
                     {t.isLLC && <TableHead className="text-[10px] uppercase text-right">Capital Account</TableHead>}
                     <TableHead className="text-[10px] uppercase">Status</TableHead>
                     <TableHead className="text-[10px] uppercase w-20">Actions</TableHead>
@@ -335,14 +342,14 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                         <TableCell className="text-xs">{s.address ?? "—"}</TableCell>
                         <TableCell className="text-xs">{[s.city, s.state, s.zip].filter(Boolean).join(", ") || "—"}</TableCell>
                         <TableCell className="text-xs font-mono">{getSsnDisplay(s)}</TableCell>
-                        {shareholderHoldings && (
+                        {(shareholderHoldings || t.isLLC) && (
                           <TableCell className="text-xs text-right font-medium">
-                            {(shareholderHoldings[s.id] ?? 0).toLocaleString()}
+                            {(shareholderHoldings?.[s.id] ?? 0).toLocaleString()}
                           </TableCell>
                         )}
-                        {t.isLLC && shareholderHoldings && (
+                        {t.isLLC && (
                           <TableCell className="text-xs text-right font-medium">
-                            {s.status === "active" && !s.is_treasury && pct != null
+                            {s.status === "active" && !s.is_treasury && pct != null && pct > 0
                               ? `${pct.toFixed(2)}%`
                               : "—"}
                           </TableCell>
@@ -373,7 +380,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                     );
                   })}
                   {/* Total validation row for LLC interest % */}
-                  {t.isLLC && shareholderHoldings && totalUnits > 0 && (
+                  {t.isLLC && (totalUnits > 0 || (totalPct != null && totalPct > 0)) && (
                     <TableRow className="bg-muted/30 border-t-2">
                       <TableCell colSpan={4} className="text-xs font-semibold text-right">
                         Totals
