@@ -280,7 +280,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   if (data.includeScorp) {
     heading("S Corporation Election (IRC § 1362)");
     whereasPara("the members have considered the tax treatment of the limited liability company and determined it is in the best interests of the company to elect S Corporation status;");
-    resolvedPara(`that the limited liability company hereby elects to be treated as an S Corporation under Subchapter S of the Internal Revenue Code, effective ${data.scorpEffectiveDate ? format(new Date(data.scorpEffectiveDate + "T12:00:00"), "MMMM d, yyyy") : "[Effective Date]"}, and the proper authorized binders are authorized and directed to prepare and file IRS Form 2553 and any corresponding state forms, with all members consenting to such election.`);
+    resolvedPara(`that the limited liability company hereby elects to be treated as an S Corporation under Subchapter S of the Internal Revenue Code, effective ${data.scorpEffectiveDate ? format(new Date(data.scorpEffectiveDate + "T12:00:00"), "MMMM d, yyyy") : "[Effective Date]"}, and the proper officers are authorized and directed to prepare and file IRS Form 2553 and any corresponding state forms, with all members consenting to such election.`);
     y += 2;
     doc.setFontSize(9);
     doc.setFont("helvetica", "italic");
