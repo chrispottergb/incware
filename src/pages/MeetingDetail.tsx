@@ -417,6 +417,7 @@ export default function MeetingDetail() {
       agreements,
       other,
       financials,
+      nonRecurringItems,
       authorizedSigners,
       vehiclePurchases,
       vehicleLeases,
