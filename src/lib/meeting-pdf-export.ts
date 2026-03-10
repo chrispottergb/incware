@@ -2019,7 +2019,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...BODY_COLOR);
       const disclosureIntro = `The following agreements remain active and in good standing as of the date of this meeting:`;
-      const disclosureLines = doc.splitTextToSize(disclosureIntro, pw - MARGIN - R_MARGIN);
+      const disclosureLines = doc.splitTextToSize(disclosureIntro, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
       for (const line of disclosureLines) {
         y = checkPageBreak(doc, y, 6);
         doc.text(line, MARGIN, y);
