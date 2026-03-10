@@ -1793,7 +1793,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
           if (o.bonus != null && prior.bonus != null && Number(o.bonus) !== Number(prior.bonus)) {
             autoResolutions.push({
               purpose: `Adjust ${o.title} Bonus`,
-              text: `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the bonus compensation of ${o.name}, ${o.title}, and after discussion, it was\n\nRESOLVED, that a bonus of ${fmt(o.bonus)} is hereby authorized for ${o.name}, ${o.title} (prior year bonus: ${fmt(prior.bonus)}).`,
+              text: `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the bonus compensation of ${o.name}, ${o.title}, and after discussion, it was\n\nRESOLVED, that a bonus of ${fmt(o.bonus)} is hereby authorized for ${o.name}, ${o.title} (prior year bonus: ${fmt(prior.bonus)}).`,
             });
           }
           if (o.title !== prior.title) {
