@@ -1423,7 +1423,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         bankNameForTable || "—",
         hasLOC ? "Yes" : "No",
         hasLOC && locAmount != null ? fmt(locAmount) : "—",
-        hasLOC && locRate != null ? `${Number(locRate).toFixed(2)}%` : "—",
+        hasLOC && locRate ? locRate : "—",
       ]);
 
       autoTable(doc, {
