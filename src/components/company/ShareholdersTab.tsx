@@ -380,7 +380,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                     );
                   })}
                   {/* Total validation row for LLC interest % */}
-                  {t.isLLC && shareholderHoldings && totalUnits > 0 && (
+                  {t.isLLC && (totalUnits > 0 || (totalPct != null && totalPct > 0)) && (
                     <TableRow className="bg-muted/30 border-t-2">
                       <TableCell colSpan={4} className="text-xs font-semibold text-right">
                         Totals
