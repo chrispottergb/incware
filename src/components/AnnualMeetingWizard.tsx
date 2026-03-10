@@ -464,10 +464,10 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
 
       fiscalYearEnd: company?.fiscal_year_end || "December 31",
       financialItems: [
-        { item: "Total Revenue", amount: "", notes: "" },
+        { item: "Total Revenue/Sales", amount: "", notes: "" },
         { item: "Cost of Goods Sold", amount: "", notes: "" },
         { item: "Gross Profit", amount: "", notes: "" },
-        { item: "Total Expenses", amount: "", notes: "" },
+        { item: "COG Ratio (%)", amount: "", notes: "" },
         { item: "Net Income", amount: "", notes: "" },
       ],
       compensationItems: compensationList,
