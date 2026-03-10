@@ -120,7 +120,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   function sectionHeading(text: string) {
     sectionNumber++;
     checkPage(50);
-    y += 18;
+    y += 12;
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
@@ -129,7 +129,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
     doc.setLineWidth(1);
     doc.line(margin, y, pw - margin, y);
-    y += 20;
+    y += 14;
   }
 
   // Blue text sub-heading with lighter gray bottom border
