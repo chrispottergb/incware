@@ -36,8 +36,10 @@ export function useZipLookup(onResult: (result: ZipLookupResult) => void) {
 
   const handleZipChange = useCallback(
     (zipValue: string) => {
-      if (zipValue.length === 5) {
-        lookup(zipValue);
+      // Support both 5-digit and ZIP+4 formats (e.g. "54915" or "54915-1278")
+      const match = zipValue.match(/^(\d{5})(?:-?\d{0,4})?$/);
+      if (match) {
+        lookup(match[1]);
       }
     },
     [lookup]
