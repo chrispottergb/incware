@@ -207,7 +207,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
 
   // ===== REGISTERED AGENT =====
   heading("Registered Agent");
-  resolvedPara(`that ${data.registeredAgentName || "[Registered Agent]"}, located at ${data.registeredAgentAddress || "[Address]"}, is hereby confirmed as the registered agent of the limited liability company in the State of Wisconsin, pursuant to Wis. Stat. § 183.0113, and the proper authorized binders are authorized to execute any documents necessary to maintain the registered agent designation.`);
+  resolvedPara(`that ${data.registeredAgentName || "[Registered Agent]"}, located at ${data.registeredAgentAddress || "[Address]"}, is hereby confirmed as the registered agent of the limited liability company in the State of Wisconsin, pursuant to Wis. Stat. § 183.0113, and the proper officers are authorized to execute any documents necessary to maintain the registered agent designation.`);
 
   // ===== PRINCIPAL OFFICE =====
   heading("Principal Office");
