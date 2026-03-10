@@ -749,7 +749,12 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
     y = checkPageBreak(doc, y, 30 + bankSource.length * 7);
     y = addSectionTitle(doc, y, "Banking Resolutions");
     bankSource.forEach((bank: any) => {
-      const bankSigners = signerSource.filter((s: any) => s.bank_id === bank.id);
+      let bankSigners = signerSource.filter((s: any) => s.bank_id === bank.id);
+      if (bankSigners.length === 0 && data.authorizedSigners && data.authorizedSigners.length > 0) {
+        bankSigners = data.authorizedSigners.filter((s: any) =>
+          s.bank_name && bank.bank_name && s.bank_name.toLowerCase().trim() === bank.bank_name.toLowerCase().trim()
+        );
+      }
       const signerNames = bankSigners.map((s: any) => `${s.signer_name}${s.title ? `, ${s.title}` : ""}`).join("; ");
       y = addResolutionBlock(doc, y, `Authorize Account — ${bank.bank_name}`,
         `RESOLVED, that the ${entityLabel} is hereby authorized to open and maintain a ${bank.account_type || "checking"} account at ${bank.bank_name}${bank.city ? `, ${bank.city}` : ""}${bank.state ? `, ${bank.state}` : ""}${signerNames ? `, and that the following persons are hereby authorized as signatories on said account: ${signerNames}` : ""}.`);
