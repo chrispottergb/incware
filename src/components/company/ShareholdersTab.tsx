@@ -300,13 +300,20 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
           const totalUnits = shareholderHoldings
             ? activeShareholders.reduce((sum, s) => sum + (shareholderHoldings[s.id] ?? 0), 0)
             : 0;
+          // Use ownership_percentage from DB (set by recalculate function) as primary source
+          // Fall back to certificate-based calculation only if DB value is null
           const getInterestPct = (s: typeof shareholders[0]) => {
+            // If the shareholder has a stored ownership_percentage, use it
+            if (s.ownership_percentage != null && Number(s.ownership_percentage) !== 0) {
+              return Number(s.ownership_percentage);
+            }
+            // Fall back to certificate-based calculation
             if (!shareholderHoldings || totalUnits === 0) return null;
             const units = shareholderHoldings[s.id] ?? 0;
             if (units === 0) return 0;
             return (units / totalUnits) * 100;
           };
-          const totalPct = t.isLLC && shareholderHoldings
+          const totalPct = t.isLLC
             ? activeShareholders.reduce((sum, s) => sum + (getInterestPct(s) ?? 0), 0)
             : null;
 
