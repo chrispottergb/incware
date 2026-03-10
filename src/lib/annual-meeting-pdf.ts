@@ -308,11 +308,11 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   }
 
   // ===== SECTION 5: AUTHORIZED BINDERS =====
-  sectionHeading("Authorized Binders — Confirmation or Update");
+  sectionHeading("Authorized Binders — Confirmation for Ensuing Year");
 
-  whereasPara("the members desire to confirm or update the persons authorized to execute documents on behalf of the company, consistent with Wis. Stat. § 183.0407;");
+  whereasPara("the members desire to confirm and record the persons serving as authorized binders of the limited liability company for the ensuing year, consistent with Wis. Stat. § 183.0407;");
 
-  resolvedPara("that the following persons are hereby confirmed or newly designated as authorized binders of the limited liability company:");
+  resolvedPara(`that the following persons are hereby confirmed as authorized binders of ${data.companyName || "the limited liability company"} for the ensuing year, authorized to act on behalf of the company in their designated capacity:`);
 
   if (data.authorizedBinders.length > 0) {
     addTable(
@@ -498,7 +498,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   // ===== SECTION 15: GENERAL AUTHORIZATION =====
   sectionHeading("General Authorization");
 
-  resolvedPara("that the authorized binders of the limited liability company are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.");
+  resolvedPara("that the officers of the limited liability company are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.");
 
   // ===== ADJOURNMENT =====
   checkPage(40);

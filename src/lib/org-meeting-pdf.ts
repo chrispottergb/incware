@@ -207,7 +207,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
 
   // ===== REGISTERED AGENT =====
   heading("Registered Agent");
-  resolvedPara(`that ${data.registeredAgentName || "[Registered Agent]"}, located at ${data.registeredAgentAddress || "[Address]"}, is hereby confirmed as the registered agent of the limited liability company in the State of Wisconsin, pursuant to Wis. Stat. § 183.0113, and the proper authorized binders are authorized to execute any documents necessary to maintain the registered agent designation.`);
+  resolvedPara(`that ${data.registeredAgentName || "[Registered Agent]"}, located at ${data.registeredAgentAddress || "[Address]"}, is hereby confirmed as the registered agent of the limited liability company in the State of Wisconsin, pursuant to Wis. Stat. § 183.0113, and the proper officers are authorized to execute any documents necessary to maintain the registered agent designation.`);
 
   // ===== PRINCIPAL OFFICE =====
   heading("Principal Office");
@@ -280,7 +280,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   if (data.includeScorp) {
     heading("S Corporation Election (IRC § 1362)");
     whereasPara("the members have considered the tax treatment of the limited liability company and determined it is in the best interests of the company to elect S Corporation status;");
-    resolvedPara(`that the limited liability company hereby elects to be treated as an S Corporation under Subchapter S of the Internal Revenue Code, effective ${data.scorpEffectiveDate ? format(new Date(data.scorpEffectiveDate + "T12:00:00"), "MMMM d, yyyy") : "[Effective Date]"}, and the proper authorized binders are authorized and directed to prepare and file IRS Form 2553 and any corresponding state forms, with all members consenting to such election.`);
+    resolvedPara(`that the limited liability company hereby elects to be treated as an S Corporation under Subchapter S of the Internal Revenue Code, effective ${data.scorpEffectiveDate ? format(new Date(data.scorpEffectiveDate + "T12:00:00"), "MMMM d, yyyy") : "[Effective Date]"}, and the proper officers are authorized and directed to prepare and file IRS Form 2553 and any corresponding state forms, with all members consenting to such election.`);
     y += 2;
     doc.setFontSize(9);
     doc.setFont("helvetica", "italic");
@@ -300,8 +300,8 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
 
   // ===== DESIGNATION OF AUTHORIZED BINDERS =====
   heading("Designation of Authorized Binders");
-  whereasPara(`the members of the limited liability company desire to formally designate the persons authorized to execute documents, instruments, and agreements on behalf of the company, consistent with Wis. Stat. § 183.0407;`);
-  resolvedPara("that the following persons are hereby designated as authorized binders of the limited liability company, each authorized to execute and deliver documents, instruments, contracts, filings, and certificates on behalf of the company within the scope of their designated authority:");
+  whereasPara(`the members of the limited liability company desire to formally designate and record the persons who shall serve as authorized binders, consistent with Wis. Stat. § 183.0407;`);
+  resolvedPara(`that the following persons are hereby designated as authorized binders of the limited liability company for the ensuing year, each authorized to act on behalf of the company in their designated capacity:`);
 
   if (data.authorizedBinders.length > 0) {
     autoTable(doc, {
@@ -322,7 +322,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
 
   // ===== GENERAL AUTHORIZATION =====
   heading("General Authorization");
-  resolvedPara("that the authorized binders designated herein are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.");
+  resolvedPara("that the officers are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.");
 
   // ===== ADJOURNMENT =====
   heading("Adjournment");
