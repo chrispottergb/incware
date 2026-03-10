@@ -1541,7 +1541,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + data.vehiclePurchases.length * 7);
     y = section("Vehicle Purchases Entered Into During the Year");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, it is necessary for the company to obtain vehicles for the efficient operation of the business, and after discussion, the ${isLLC ? "authorized binders" : "directors"} decided that it would be in the best interests of the company to acquire the following vehicle(s);`,
+      `WHEREAS, it is necessary for the company to obtain vehicles for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} decided that it would be in the best interests of the company to acquire the following vehicle(s);`,
       `NOW, THEREFORE, BE IT RESOLVED, that the following vehicle purchases are hereby approved and ratified:`,
       bt
     );
