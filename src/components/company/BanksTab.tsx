@@ -243,8 +243,8 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                         </button>
                       </CollapsibleTrigger>
                       <div className="flex gap-1 shrink-0">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openNewSigner(b.id); }}>
-                          <Plus className="h-3 w-3" />
+                        <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={(e) => { e.stopPropagation(); openNewSigner(b.id); }}>
+                          <Plus className="h-3.5 w-3.5 mr-1" />Add Signatory
                         </Button>
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openEdit(b); }}>
                           <Pencil className="h-3 w-3" />
