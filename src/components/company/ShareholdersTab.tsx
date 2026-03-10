@@ -342,14 +342,14 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                         <TableCell className="text-xs">{s.address ?? "—"}</TableCell>
                         <TableCell className="text-xs">{[s.city, s.state, s.zip].filter(Boolean).join(", ") || "—"}</TableCell>
                         <TableCell className="text-xs font-mono">{getSsnDisplay(s)}</TableCell>
-                        {shareholderHoldings && (
+                        {(shareholderHoldings || t.isLLC) && (
                           <TableCell className="text-xs text-right font-medium">
-                            {(shareholderHoldings[s.id] ?? 0).toLocaleString()}
+                            {(shareholderHoldings?.[s.id] ?? 0).toLocaleString()}
                           </TableCell>
                         )}
-                        {t.isLLC && shareholderHoldings && (
+                        {t.isLLC && (
                           <TableCell className="text-xs text-right font-medium">
-                            {s.status === "active" && !s.is_treasury && pct != null
+                            {s.status === "active" && !s.is_treasury && pct != null && pct > 0
                               ? `${pct.toFixed(2)}%`
                               : "—"}
                           </TableCell>
