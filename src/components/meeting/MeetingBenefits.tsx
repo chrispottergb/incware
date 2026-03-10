@@ -73,6 +73,21 @@ const BENEFIT_TYPE_OPTIONS = [
   "Other",
 ];
 
+const RETIREMENT_TYPES = [
+  "401(k) / Retirement Plan",
+  "SEP IRA",
+  "SIMPLE IRA",
+  "Profit Sharing",
+  "Stock Options / Equity",
+];
+
+const isRetirementType = (type: string) => {
+  if (!type) return false;
+  const lower = type.toLowerCase();
+  return RETIREMENT_TYPES.some(rt => rt.toLowerCase() === lower) ||
+    /\b(ira|401|403|pension|retirement|roth)\b/i.test(lower);
+};
+
 interface Props {
   meetingId: string;
 }
