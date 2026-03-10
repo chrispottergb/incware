@@ -268,7 +268,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         transaction_date: form.transaction_date,
         from_shareholder: form.from_shareholder || null,
         to_shareholder: form.to_shareholder || null,
-        notes: form.notes || null,
+        notes: isNoParValue 
+          ? [form.notes, `Par Value: ${form.par_value.trim()}`].filter(Boolean).join(" | ") 
+          : (form.notes || null),
         par_value: parVal,
         issued_certificate_number: issuedCertNum,
         surrendered_certificate_number: surrenderedCertNum,
