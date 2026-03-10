@@ -40,13 +40,13 @@ function addArticleTitle(doc: jsPDF, y: number, num: string, title: string): num
 }
 
 function addSectionTitle(doc: jsPDF, y: number, label: string): number {
-  y = checkBreak(doc, y, 20);
-  y += 6;
+  y = checkBreak(doc, y, 18);
+  y += 4;
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(40, 40, 40);
   doc.text(label, MARGIN, y);
-  return y + 10;
+  return y + 8;
 }
 
 function addFooters(doc: jsPDF, companyName: string) {
