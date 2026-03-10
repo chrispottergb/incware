@@ -200,7 +200,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
       { table: "meeting_authorized_signers", fields: ["signer_name", "title", "bank_name", "signer_id"] },
       { table: "meeting_benefits", fields: ["benefit_description", "benefit_type", "provider", "plan_year", "transaction_type", "agent_administrator", "insurance_agency", "eligibility_comments", "new_plan_effective_date", "retirement_contribution"] },
       { table: "meeting_loans", fields: ["loan_type", "loan_amount", "loan_rate", "loan_duration", "loan_date", "start_date", "end_date", "lender_name", "borrower_name", "loan_direction", "repayment_terms", "notes"] },
-      { table: "agreements", fields: ["agreement_type", "agreement_with", "agreement_date", "agreement_purpose"] },
+      { table: "agreements", fields: ["agreement_type", "agreement_with", "agreement_date", "agreement_purpose", "amount", "expiration_date", "status", "notes", "is_carried_forward"], filterActive: true },
       { table: "meeting_other", fields: ["notes"] },
       // Explicitly NOT cloning: meeting_vehicle_purchases, meeting_vehicle_leases, meeting_vehicle_sales, meeting_assets (equipment), meeting_lease_terminations
     ];
