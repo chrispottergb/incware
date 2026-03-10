@@ -1474,7 +1474,13 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         });
       }
       // Also render authorized signers from meeting_authorized_signers if available
-      if (data.authorizedSigners && data.authorizedSigners.length > 0 && annualBanks.length === 0) {
+      if (data.authorizedSigners && data.authorizedSigners.length > 0) {
+        // Filter out signers already rendered via bank resolutions above
+        const renderedBankNames = new Set(annualBanks.map((b: any) => b.bank_name?.toLowerCase().trim()));
+        const remainingSigners = data.authorizedSigners.filter((s: any) =>
+          !renderedBankNames.has(s.bank_name?.toLowerCase().trim())
+        );
+        if (remainingSigners.length > 0) {
         y = checkPageBreak(doc, y, 20 + data.authorizedSigners.length * 7);
         autoTable(doc, {
           startY: y,
