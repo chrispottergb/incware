@@ -310,6 +310,16 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
+  const { data: nonRecurringItems = [] } = useQuery({
+    queryKey: ["meeting_non_recurring_items", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_non_recurring_items" as any).select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return (data as any[]) || [];
+    },
+    enabled: !!meetingId,
+  });
+
   const { data: vehicleSales = [] } = useQuery({
     queryKey: ["meeting_vehicle_sales", meetingId],
     queryFn: async () => {
