@@ -1493,8 +1493,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + data.loans.length * 7);
     y = section("Loans");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the borrowing needs and existing loan obligations of ${companyName}; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following loans are hereby approved and the proper ${isLLC ? "authorized binders" : "officers"} are authorized to execute all necessary documents:`,
+      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the borrowing needs and existing loan obligations of ${companyName}; and`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following loans are hereby approved and the proper officers are authorized to execute all necessary documents:`,
       bt
     );
     autoTable(doc, {
