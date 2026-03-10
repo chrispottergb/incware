@@ -206,16 +206,27 @@ export default function MeetingsTab({ companyId, company }: Props) {
     ];
 
     for (const task of cloneTasks) {
-      const { data: rows } = await supabase
+      let query = supabase
         .from(task.table as any)
         .select("*")
         .eq("meeting_id", priorMeetingId);
+
+      // For agreements, only carry forward Active ones
+      if ((task as any).filterActive) {
+        query = query.eq("status", "Active");
+      }
+
+      const { data: rows } = await query;
 
       if (rows && rows.length > 0) {
         const newRows = rows.map((row: any) => {
           const newRow: any = { meeting_id: newMeetingId };
           for (const field of task.fields) {
             if (row[field] !== undefined) newRow[field] = row[field];
+          }
+          // Mark agreements as carried forward
+          if ((task as any).filterActive) {
+            newRow.is_carried_forward = true;
           }
           return newRow;
         });

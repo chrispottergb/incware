@@ -757,18 +757,20 @@ export default function MeetingDetail() {
               <PrintPreviewButton
                 label="Print"
                 generatePDF={() => exportSectionPDF("Agreements", company, meeting,
-                  ["Type", "Date", "With", "Purpose"],
+                  ["Type", "Counterparty", "Date", "Amount", "Expiration", "Status"],
                   agreements.map((a: any) => [
                     a.agreement_type,
-                    a.agreement_date ? new Date(a.agreement_date + "T00:00:00").toLocaleDateString() : "—",
                     a.agreement_with || "—",
-                    a.agreement_purpose || "—",
+                    a.agreement_date ? new Date(a.agreement_date + "T00:00:00").toLocaleDateString() : "—",
+                    a.amount != null ? `$${Number(a.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
+                    a.expiration_date ? new Date(a.expiration_date + "T00:00:00").toLocaleDateString() : "—",
+                    a.status || "Active",
                   ])
                 )}
                 fileName={`agreements-${meetingFileName}`}
               />
             </div>
-            <MeetingAgreements meetingId={meeting.id} />
+            <MeetingAgreements meetingId={meeting.id} meetingDate={meeting.meeting_date} />
           </div>
         </TabsContent>
         <TabsContent value="other" className="mt-5">
