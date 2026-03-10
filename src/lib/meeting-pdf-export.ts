@@ -1461,7 +1461,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
           const bankSignerList = annualSigners.filter((s: any) => s.bank_id === bank.id);
           const signerStr = bankSignerList.map((s: any) => `${s.signer_name}${s.title ? `, ${s.title}` : ""}`).join("; ");
           y = addWhereasResolved(doc, y,
-            `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the banking relationship with ${bank.bank_name}; and`,
+            `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the banking relationship with ${bank.bank_name}; and`,
             `NOW, THEREFORE, BE IT RESOLVED, that ${bank.bank_name} is hereby approved and confirmed as a depository for the funds of ${companyName}${signerStr ? `, and that the following persons are hereby authorized as signatories on said account: ${signerStr}` : ""}.`,
             bt
           );
