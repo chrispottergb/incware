@@ -1898,7 +1898,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + data.benefits.length * 7);
     y = section("Benefits");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the employee benefit plans of ${companyName} for the current plan year; and`,
+      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the employee benefit plans of ${companyName} for the current plan year; and`,
       `NOW, THEREFORE, BE IT RESOLVED, that the following benefit plans are hereby approved and adopted for the ensuing year:`,
       bt
     );
