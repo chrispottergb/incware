@@ -1968,7 +1968,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + data.authorizedSigners.length * 7);
     y = section("Authorized Signatories");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the authorized signatories on the banking accounts of ${companyName}; and`,
+      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the authorized signatories on the banking accounts of ${companyName}; and`,
       `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby authorized as signatories on the designated accounts:`,
       bt
     );
