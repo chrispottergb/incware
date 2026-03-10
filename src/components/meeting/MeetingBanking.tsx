@@ -40,7 +40,7 @@ export default function MeetingBanking({ meetingId }: Props) {
       setBankName(row.bank_name || "");
       setLocEnabled(row.loc_enabled || false);
       setLocAmount(row.loc_amount != null ? String(row.loc_amount) : "");
-      setLocRate(row.loc_interest_rate != null ? String(row.loc_interest_rate) : "");
+      setLocRate(row.loc_interest_rate || "");
     }
   }, [row]);
 
@@ -136,14 +136,11 @@ export default function MeetingBanking({ meetingId }: Props) {
               <Label className="text-xs font-medium text-muted-foreground">Interest Rate (%)</Label>
               <Input
                 className="h-7 text-sm"
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
+                type="text"
                 value={locRate}
                 onChange={(e) => setLocRate(e.target.value)}
-                onBlur={() => handleBlur("loc_interest_rate", locRate ? parseFloat(locRate) : null)}
-                placeholder="0.00%"
+                onBlur={() => handleBlur("loc_interest_rate", locRate || null)}
+                placeholder="e.g. 3%, Prime + 1%"
               />
             </div>
           </div>
