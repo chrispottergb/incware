@@ -372,10 +372,12 @@ export default function MeetingBenefits({ meetingId }: Props) {
                               <span className="text-muted-foreground text-xs">Effective Date</span>
                               <p>{row.new_plan_effective_date ? new Date(row.new_plan_effective_date + "T00:00:00").toLocaleDateString() : "—"}</p>
                             </div>
-                            <div>
-                              <span className="text-muted-foreground text-xs">Retirement Contribution</span>
-                              <p>{row.retirement_contribution != null ? `$${Number(row.retirement_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}</p>
-                            </div>
+                            {isRetirementType(row.benefit_type) && (
+                              <div>
+                                <span className="text-muted-foreground text-xs">Contribution Amount</span>
+                                <p>{row.retirement_contribution != null ? `$${Number(row.retirement_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}</p>
+                              </div>
+                            )}
                             <div className="col-span-2 md:col-span-4">
                               <span className="text-muted-foreground text-xs">Eligibility / Comments</span>
                               <p className="whitespace-pre-wrap">{row.eligibility_comments || "—"}</p>
