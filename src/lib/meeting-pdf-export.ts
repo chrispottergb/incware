@@ -1498,6 +1498,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
           y = (doc as any).lastAutoTable.finalY + 10;
         }
       }
+    }
   }
 
   // Loans
