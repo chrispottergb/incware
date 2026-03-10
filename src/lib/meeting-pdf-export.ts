@@ -1481,23 +1481,23 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
           !renderedBankNames.has(s.bank_name?.toLowerCase().trim())
         );
         if (remainingSigners.length > 0) {
-        y = checkPageBreak(doc, y, 20 + data.authorizedSigners.length * 7);
-        autoTable(doc, {
-          startY: y,
-          head: [["Bank", "Authorized Signatory", "Title"]],
-          body: data.authorizedSigners.map((s: any) => [
-            s.bank_name || "—",
-            s.signer_name || "—",
-            s.title || "—",
-          ]),
-          theme: "grid",
-          headStyles: tableHeadStyles,
-          bodyStyles: { fontSize: 10 },
-          margin: { left: MARGIN, right: R_MARGIN },
-        });
-        y = (doc as any).lastAutoTable.finalY + 10;
+          y = checkPageBreak(doc, y, 20 + remainingSigners.length * 7);
+          autoTable(doc, {
+            startY: y,
+            head: [["Bank", "Authorized Signatory", "Title"]],
+            body: remainingSigners.map((s: any) => [
+              s.bank_name || "—",
+              s.signer_name || "—",
+              s.title || "—",
+            ]),
+            theme: "grid",
+            headStyles: tableHeadStyles,
+            bodyStyles: { fontSize: 10 },
+            margin: { left: MARGIN, right: R_MARGIN },
+          });
+          y = (doc as any).lastAutoTable.finalY + 10;
+        }
       }
-    }
   }
 
   // Loans
