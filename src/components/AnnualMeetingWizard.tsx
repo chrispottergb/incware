@@ -737,7 +737,18 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         }
         await supabase.from("meeting_financials").insert(financialsPayload);
 
-        // Save bank authorized signers
+        // Save non-recurring items
+        const nrItemsToSave = (data.nonRecurringItems || []).filter((item: any) => item.description || item.amount);
+        if (nrItemsToSave.length > 0) {
+          await supabase.from("meeting_non_recurring_items" as any).insert(
+            nrItemsToSave.map((item: any) => ({
+              meeting_id: mid,
+              description: item.description || "",
+              amount: parseFloat(item.amount?.replace(/[,$]/g, "")) || 0,
+            }))
+          );
+        }
+
         const signerRows = data.bankAccounts.filter(b => b.institution && b.signatory).map(b => ({
           meeting_id: mid,
           signer_name: b.signatory,
