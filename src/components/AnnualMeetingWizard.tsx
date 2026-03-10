@@ -464,10 +464,10 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
 
       fiscalYearEnd: company?.fiscal_year_end || "December 31",
       financialItems: [
-        { item: "Total Revenue", amount: "", notes: "" },
+        { item: "Total Revenue/Sales", amount: "", notes: "" },
         { item: "Cost of Goods Sold", amount: "", notes: "" },
         { item: "Gross Profit", amount: "", notes: "" },
-        { item: "Total Expenses", amount: "", notes: "" },
+        { item: "COG Ratio (%)", amount: "", notes: "" },
         { item: "Net Income", amount: "", notes: "" },
       ],
       compensationItems: compensationList,
@@ -715,12 +715,16 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
           const item = finItems.find(f => f.item?.toLowerCase().includes(label.toLowerCase()));
           return item?.amount ? parseFloat(item.amount.replace(/[,$]/g, "")) : null;
         };
+        const currentSales = getFinAmount("revenue") ?? getFinAmount("sales");
+        const currentCog = getFinAmount("cost of goods");
+        const currentCogRatio = (currentSales && currentCog && currentSales > 0) ? (currentCog / currentSales * 100) : getFinAmount("cog ratio");
         const financialsPayload: any = {
           meeting_id: mid,
-          current_total_sales: getFinAmount("revenue") ?? getFinAmount("sales"),
-          current_cog: getFinAmount("cost of goods"),
+          current_total_sales: currentSales,
+          current_cog: currentCog,
           current_gross_profit: getFinAmount("gross profit"),
           current_net_income: getFinAmount("net income"),
+          current_cog_ratio: currentCogRatio,
         };
         // Auto-populate previous year from prior meeting's current year data
         if (priorFinancials) {
@@ -1049,13 +1053,68 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             <div className="space-y-4">
               <h3 className="text-sm font-semibold">Financial Information</h3>
 
+              {priorMeeting && priorFinancials && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-3 py-1.5">
+                  <Info className="h-3 w-3 shrink-0" />
+                  <span>Previous Year auto-filled from meeting on {format(new Date(priorMeeting.meeting_date), "MM/dd/yyyy")}</span>
+                </div>
+              )}
+
               <div>
-                <h4 className="text-xs font-semibold mb-2">Prior Year Financial Review</h4>
-                {renderTable("financialItems", [
-                    { key: "item", label: "Item" },
-                    { key: "amount", label: "Amount" },
-                    { key: "notes", label: "Notes" },
-                  ], { item: "", amount: "", notes: "" })}
+                <h4 className="text-xs font-semibold mb-2">Financial Comparison</h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border">
+                    <thead>
+                      <tr className="bg-muted/50">
+                        <th className="text-left text-xs font-medium p-2 border-r">Metric</th>
+                        <th className="text-left text-xs font-medium p-2 border-r">Current Year</th>
+                        <th className="text-left text-xs font-medium p-2">Previous Year</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { key: "totalSales", label: "Total Sales", priorKey: "current_total_sales" as const, itemMatch: "revenue" },
+                        { key: "cog", label: "Cost of Goods", priorKey: "current_cog" as const, itemMatch: "cost of goods" },
+                        { key: "grossProfit", label: "Gross Profit", priorKey: "current_gross_profit" as const, itemMatch: "gross profit" },
+                        { key: "cogRatio", label: "COG Ratio (%)", priorKey: "current_cog_ratio" as const, itemMatch: "cog ratio" },
+                        { key: "netIncome", label: "Net Income", priorKey: "current_net_income" as const, itemMatch: "net income" },
+                      ].map(metric => {
+                        const finItem = data.financialItems?.find((f: any) => f.item?.toLowerCase().includes(metric.itemMatch));
+                        const prevVal = priorFinancials ? (priorFinancials as any)[metric.priorKey] : null;
+                        return (
+                          <tr key={metric.key} className="border-t">
+                            <td className="p-2 text-xs font-medium border-r">{metric.label}</td>
+                            <td className="p-1 border-r">
+                              <Input
+                                className="h-7 text-sm"
+                                value={finItem?.amount || ""}
+                                onChange={e => {
+                                  const items = [...(data.financialItems || [])];
+                                  const idx = items.findIndex((f: any) => f.item?.toLowerCase().includes(metric.itemMatch));
+                                  if (idx >= 0) {
+                                    items[idx] = { ...items[idx], amount: e.target.value };
+                                  }
+                                  update("financialItems", items);
+                                }}
+                                placeholder="Enter amount"
+                              />
+                            </td>
+                            <td className="p-2 text-xs text-muted-foreground">
+                              {prevVal != null
+                                ? metric.key === "cogRatio"
+                                  ? `${Number(prevVal).toFixed(2)}%`
+                                  : `$${Number(prevVal).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                : "—"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {!priorFinancials && (
+                  <p className="text-xs text-muted-foreground mt-1 italic">No previous meeting data available.</p>
+                )}
               </div>
 
               <div>

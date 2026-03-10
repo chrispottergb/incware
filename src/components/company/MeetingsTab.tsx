@@ -223,7 +223,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
       }
     }
 
-    // Clone financials (one-to-one relationship)
+    // Clone financials: map prior current year → new previous year, leave current year blank
     const { data: priorFinancials } = await supabase
       .from("meeting_financials")
       .select("*")
@@ -231,10 +231,14 @@ export default function MeetingsTab({ companyId, company }: Props) {
       .maybeSingle();
 
     if (priorFinancials) {
-      const { id: _id, meeting_id: _mid, created_at: _ca, updated_at: _ua, ...finData } = priorFinancials;
       await supabase.from("meeting_financials").insert({
         meeting_id: newMeetingId,
-        ...finData,
+        previous_total_sales: priorFinancials.current_total_sales,
+        previous_cog: priorFinancials.current_cog,
+        previous_gross_profit: priorFinancials.current_gross_profit,
+        previous_cog_ratio: priorFinancials.current_cog_ratio,
+        previous_net_income: priorFinancials.current_net_income,
+        // current year fields intentionally left null for user entry
       });
     }
   };
