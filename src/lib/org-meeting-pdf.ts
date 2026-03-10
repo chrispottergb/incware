@@ -185,16 +185,16 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
     : "[Day]";
   para(`The organizational meeting of ${fullName}, a ${data.stateOfFormation} limited liability company, was held on ${dayOfWeek}, ${formattedDate}, at ${data.meetingTime || "[Time]"}, at ${data.meetingLocation || "[Location]"}.`);
 
-  para(`${data.chairperson || "[Chairperson]"} served as Chairperson and ${data.secretary || "[Secretary]"} served as Secretary of the meeting.`);
-
   // Present members
   const memberNames = data.members.map(m => m.name).filter(Boolean);
   if (memberNames.length > 0) {
-    para(`The following members were present at the meeting:`);
+    para(`The following were present at the meeting:`);
     memberNames.forEach(name => {
       para(`• ${name}`, 10);
     });
   }
+
+  para(`${data.chairperson || "[Chairperson]"} served as Chairperson and ${data.secretary || "[Secretary]"} served as Secretary of the meeting.`);
 
   para("The Chairperson called the meeting to order and announced that a quorum was present. The Chairperson stated the purpose of the meeting was to complete the organization of the limited liability company, adopt initial resolutions, and transact such other business as may properly come before the meeting.");
   y += 8;

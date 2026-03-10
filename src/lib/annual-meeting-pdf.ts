@@ -251,14 +251,14 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   para(`The Annual Meeting of ${fullName}, a ${data.stateOfFormation} limited liability company, was held on ${dayOfWeek}, ${formattedDate}, at ${data.meetingTime || "[Time]"}, at ${data.meetingLocation || "[Location]"}.`);
 
-  para(`${data.chairperson || "[Chairperson]"} served as Chairperson and ${data.secretary || "[Secretary]"} served as Secretary of the meeting.`);
-
   if (data.attendees.length > 0) {
-    para("The following members were present at the meeting:");
+    para("The following were present at the meeting:");
     data.attendees.forEach(a => {
       para(`• ${a.name}${a.title ? `, ${a.title}` : ""}`, 10);
     });
   }
+
+  para(`${data.chairperson || "[Chairperson]"} served as Chairperson and ${data.secretary || "[Secretary]"} served as Secretary of the meeting.`);
 
   // ===== SECTION 2: CALL TO ORDER =====
   sectionHeading("Call to Order & Approval of Prior Meeting Minutes");
