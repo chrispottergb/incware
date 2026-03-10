@@ -138,7 +138,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
   const { data: company } = useQuery({
     queryKey: ["company-ledger", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("companies").select("name, par_value, authorized_shares, state_of_incorporation").eq("id", companyId).single();
+      const { data, error } = await supabase.from("companies").select("name, par_value, par_value_type, authorized_shares, state_of_incorporation").eq("id", companyId).single();
       if (error) throw error;
       return data;
     },
@@ -238,7 +238,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     mutationFn: async () => {
       const txType = form.transaction_type;
       const numShares = parseInt(form.num_shares) || 0;
-      const parVal = form.par_value ? parseFloat(form.par_value) : null;
+      const parValText = form.par_value?.trim().toLowerCase();
+      const isNoParValue = parValText && isNaN(parseFloat(parValText));
+      const parVal = isNoParValue ? null : (form.par_value ? parseFloat(form.par_value) : null);
       let issuedCertNum: number | null = form.issued_certificate_number ? parseInt(form.issued_certificate_number) : null;
       let surrenderedCertNum: number | null = form.surrendered_certificate_number ? parseInt(form.surrendered_certificate_number) : null;
       let certId: string | null = null;
@@ -266,7 +268,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         transaction_date: form.transaction_date,
         from_shareholder: form.from_shareholder || null,
         to_shareholder: form.to_shareholder || null,
-        notes: form.notes || null,
+        notes: isNoParValue 
+          ? [form.notes, `Par Value: ${form.par_value.trim()}`].filter(Boolean).join(" | ") 
+          : (form.notes || null),
         par_value: parVal,
         issued_certificate_number: issuedCertNum,
         surrendered_certificate_number: surrenderedCertNum,
@@ -393,7 +397,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   t.shareholders?.name ?? "—",
                   t.share_class,
                   t.num_shares?.toLocaleString(),
-                  t.par_value != null ? `$${Number(t.par_value).toFixed(2)}` : "—",
+                  t.par_value != null ? `$${Number(t.par_value).toFixed(2)}` : (company?.par_value_type === "no_par" ? "No Par Value" : "—"),
                   t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—",
                   t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—",
                   t.consideration_type ?? "—",
@@ -476,7 +480,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 </div>
                 <div className="field-group">
                   <Label className="field-label">Par Value</Label>
-                  <Input className="h-8 text-sm" type="number" step="0.01" value={form.par_value} onChange={(e) => setForm(p => ({ ...p, par_value: e.target.value }))} placeholder={company?.par_value ? `$${company.par_value}` : ""} />
+                  <Input className="h-8 text-sm" type="text" value={form.par_value} onChange={(e) => setForm(p => ({ ...p, par_value: e.target.value }))} placeholder={company?.par_value ? `$${company.par_value}` : "e.g. 1.00 or No Par Value"} />
                 </div>
                 <div className="field-group">
                   <Label className="field-label">{term.pricePerUnit}</Label>
@@ -636,7 +640,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                       <TableCell className="text-xs">{t.shareholders?.name ?? t.to_shareholder ?? "—"}</TableCell>
                       <TableCell className="text-xs">{t.share_class}</TableCell>
                       <TableCell className="text-xs text-right">{t.num_shares?.toLocaleString()}</TableCell>
-                      <TableCell className="text-xs text-right">{(t as any).par_value != null ? `$${Number((t as any).par_value).toFixed(2)}` : "—"}</TableCell>
+                      <TableCell className="text-xs text-right">{(t as any).par_value != null ? `$${Number((t as any).par_value).toFixed(2)}` : (company?.par_value_type === "no_par" ? "No Par Value" : "—")}</TableCell>
                       <TableCell className="text-xs text-right">{t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—"}</TableCell>
                       <TableCell className="text-xs text-right">{t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—"}</TableCell>
                       <TableCell className="text-xs capitalize">{t.consideration_type?.replace("_", " ") ?? "—"}</TableCell>
