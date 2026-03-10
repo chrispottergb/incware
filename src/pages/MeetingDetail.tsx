@@ -18,6 +18,7 @@ import PrintPreviewButton from "@/components/meeting/PrintPreviewButton";
 import DirectorReElection from "@/components/meeting/DirectorReElection";
 import MeetingAttendanceSelector from "@/components/meeting/MeetingAttendanceSelector";
 import MeetingVehicles from "@/components/meeting/MeetingVehicles";
+import MeetingBanking from "@/components/meeting/MeetingBanking";
 import { OFFICER_TITLE_OPTIONS } from "@/components/company/OrganizationTab";
 import CounselTab from "@/components/company/CounselTab";
 import LeasesTab from "@/components/company/LeasesTab";
