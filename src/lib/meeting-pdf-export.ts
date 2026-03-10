@@ -749,7 +749,12 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
     y = checkPageBreak(doc, y, 30 + bankSource.length * 7);
     y = addSectionTitle(doc, y, "Banking Resolutions");
     bankSource.forEach((bank: any) => {
-      const bankSigners = signerSource.filter((s: any) => s.bank_id === bank.id);
+      let bankSigners = signerSource.filter((s: any) => s.bank_id === bank.id);
+      if (bankSigners.length === 0 && data.authorizedSigners && data.authorizedSigners.length > 0) {
+        bankSigners = data.authorizedSigners.filter((s: any) =>
+          s.bank_name && bank.bank_name && s.bank_name.toLowerCase().trim() === bank.bank_name.toLowerCase().trim()
+        );
+      }
       const signerNames = bankSigners.map((s: any) => `${s.signer_name}${s.title ? `, ${s.title}` : ""}`).join("; ");
       y = addResolutionBlock(doc, y, `Authorize Account — ${bank.bank_name}`,
         `RESOLVED, that the ${entityLabel} is hereby authorized to open and maintain a ${bank.account_type || "checking"} account at ${bank.bank_name}${bank.city ? `, ${bank.city}` : ""}${bank.state ? `, ${bank.state}` : ""}${signerNames ? `, and that the following persons are hereby authorized as signatories on said account: ${signerNames}` : ""}.`);
@@ -1458,7 +1463,13 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         }
         y += 2;
         annualBanks.forEach((bank: any) => {
-          const bankSignerList = annualSigners.filter((s: any) => s.bank_id === bank.id);
+          // First try company-level bank signers; fall back to meeting-level authorized signers matched by bank name
+          let bankSignerList = annualSigners.filter((s: any) => s.bank_id === bank.id);
+          if (bankSignerList.length === 0 && data.authorizedSigners && data.authorizedSigners.length > 0) {
+            bankSignerList = data.authorizedSigners.filter((s: any) =>
+              s.bank_name && bank.bank_name && s.bank_name.toLowerCase().trim() === bank.bank_name.toLowerCase().trim()
+            );
+          }
           const signerStr = bankSignerList.map((s: any) => `${s.signer_name}${s.title ? `, ${s.title}` : ""}`).join("; ");
           y = addWhereasResolved(doc, y,
             `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the banking relationship with ${bank.bank_name}; and`,
@@ -1468,22 +1479,29 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         });
       }
       // Also render authorized signers from meeting_authorized_signers if available
-      if (data.authorizedSigners && data.authorizedSigners.length > 0 && annualBanks.length === 0) {
-        y = checkPageBreak(doc, y, 20 + data.authorizedSigners.length * 7);
-        autoTable(doc, {
-          startY: y,
-          head: [["Bank", "Authorized Signatory", "Title"]],
-          body: data.authorizedSigners.map((s: any) => [
-            s.bank_name || "—",
-            s.signer_name || "—",
-            s.title || "—",
-          ]),
-          theme: "grid",
-          headStyles: tableHeadStyles,
-          bodyStyles: { fontSize: 10 },
-          margin: { left: MARGIN, right: R_MARGIN },
-        });
-        y = (doc as any).lastAutoTable.finalY + 10;
+      if (data.authorizedSigners && data.authorizedSigners.length > 0) {
+        // Filter out signers already rendered via bank resolutions above
+        const renderedBankNames = new Set(annualBanks.map((b: any) => b.bank_name?.toLowerCase().trim()));
+        const remainingSigners = data.authorizedSigners.filter((s: any) =>
+          !renderedBankNames.has(s.bank_name?.toLowerCase().trim())
+        );
+        if (remainingSigners.length > 0) {
+          y = checkPageBreak(doc, y, 20 + remainingSigners.length * 7);
+          autoTable(doc, {
+            startY: y,
+            head: [["Bank", "Authorized Signatory", "Title"]],
+            body: remainingSigners.map((s: any) => [
+              s.bank_name || "—",
+              s.signer_name || "—",
+              s.title || "—",
+            ]),
+            theme: "grid",
+            headStyles: tableHeadStyles,
+            bodyStyles: { fontSize: 10 },
+            margin: { left: MARGIN, right: R_MARGIN },
+          });
+          y = (doc as any).lastAutoTable.finalY + 10;
+        }
       }
     }
   }
