@@ -1379,7 +1379,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y += 2;
       const indent = WHEREAS_RESOLVED_INDENT;
       const resolvedPrefix = "RESOLVED, ";
-      const resolvedBody = `that no accountant will be retained by the ${isLLC ? "company" : "corporation"}. When accounting services are required, the ${isLLC ? "authorized binder" : "president"} of the ${isLLC ? "company" : "corporation"} is authorized to engage an accountant as deemed appropriate.`;
+      const resolvedBody = `that no accountant will be retained by the ${isLLC ? "company" : "corporation"}. When accounting services are required, the ${isLLC ? "managing member" : "president"} of the ${isLLC ? "company" : "corporation"} is authorized to engage an accountant as deemed appropriate.`;
       const fullResolved = resolvedPrefix + resolvedBody;
       const rLines = doc.splitTextToSize(fullResolved, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN - indent);
       y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
