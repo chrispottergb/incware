@@ -794,7 +794,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
   y = checkPageBreak(doc, y, 30);
   y = addSectionTitle(doc, y, "General Authorization");
   y = addResolutionBlock(doc, y, "Authorization to Take All Necessary Actions",
-    `RESOLVED, that the ${isLLC ? "authorized binders" : "officers"} of the ${entityLabel} are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.`);
+    `RESOLVED, that the officers of the ${entityLabel} are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.`);
 
   return y;
 }
