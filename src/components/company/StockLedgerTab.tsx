@@ -138,7 +138,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
   const { data: company } = useQuery({
     queryKey: ["company-ledger", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("companies").select("name, par_value, authorized_shares, state_of_incorporation").eq("id", companyId).single();
+      const { data, error } = await supabase.from("companies").select("name, par_value, par_value_type, authorized_shares, state_of_incorporation").eq("id", companyId).single();
       if (error) throw error;
       return data;
     },
