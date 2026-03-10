@@ -57,7 +57,7 @@ export interface AnnualMeetingData {
   equipment: { description: string; manufacturer: string; ownedLeased: string; value: string; notes: string }[];
 
   // Benefits
-  benefitPlans: { planType: string; provider: string; eligibility: string; contribution: string; status: string }[];
+  benefitPlans: { planType: string; provider: string; eligibility: string; eligibility_comments?: string; contribution: string; status: string }[];
   profitSharingAmount: string;
 
   // Special Resolutions
@@ -464,8 +464,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   if (data.benefitPlans.length > 0) {
     addTable(
-      ["Plan Type", "Provider", "Eligibility", "Company Contribution", "Status (Active / New / Terminated)"],
-      data.benefitPlans.map(b => [b.planType || "[Enter]", b.provider || "[Enter]", b.eligibility || "[Enter]", b.contribution || "[Enter]", b.status || "[Enter]"])
+      ["Plan Type", "Provider", "Eligibility / Comments", "Company Contribution", "Status (Active / New / Terminated)"],
+      data.benefitPlans.map(b => [b.planType || "[Enter]", b.provider || "[Enter]", b.eligibility || b.eligibility_comments || "[Enter]", b.contribution || "[Enter]", b.status || "[Enter]"])
     );
   }
 
