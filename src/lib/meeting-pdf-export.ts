@@ -28,6 +28,7 @@ interface MeetingData {
   agreements?: any[];
   other?: any[];
   financials?: any;
+  nonRecurringItems?: any[];
   authorizedSigners?: any[];
   vehiclePurchases?: any[];
   vehicleLeases?: any[];
@@ -1190,23 +1191,74 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       return `${change >= 0 ? "▲" : "▼"} ${Math.abs(change).toFixed(1)}%`;
     };
 
+    const nrItems = (data.nonRecurringItems || []).filter((item: any) => item.description || item.amount);
+    const totalNr = nrItems.reduce((sum: number, item: any) => sum + (Number(item.amount) || 0), 0);
+    const adjCurrentNetIncome = totalNr !== 0 ? (Number(f.current_net_income) || 0) - totalNr : null;
+    const adjPreviousNetIncome = totalNr !== 0 ? (Number(f.previous_net_income) || 0) : null;
+
+    const tableBody: any[][] = [
+      ["Total Sales", fmt(f.current_total_sales), fmt(f.previous_total_sales), yoy(f.current_total_sales, f.previous_total_sales)],
+      ["Cost of Goods", fmt(f.current_cog), fmt(f.previous_cog), yoy(f.current_cog, f.previous_cog)],
+      ["Gross Profit", fmt(f.current_gross_profit), fmt(f.previous_gross_profit), yoy(f.current_gross_profit, f.previous_gross_profit)],
+      ["COG Ratio (%)", f.current_cog_ratio != null ? `${Number(f.current_cog_ratio).toFixed(2)}%` : "—", f.previous_cog_ratio != null ? `${Number(f.previous_cog_ratio).toFixed(2)}%` : "—", yoy(f.current_cog_ratio, f.previous_cog_ratio)],
+      ["Net Income", fmt(f.current_net_income), fmt(f.previous_net_income), yoy(f.current_net_income, f.previous_net_income)],
+    ];
+
+    if (totalNr !== 0) {
+      nrItems.forEach((item: any) => {
+        tableBody.push([`  Non-Recurring: ${item.description || ""}`, fmt(item.amount), "—", "—"]);
+      });
+      tableBody.push([
+        "Adjusted Net Income",
+        fmt(adjCurrentNetIncome),
+        fmt(adjPreviousNetIncome),
+        adjPreviousNetIncome && adjPreviousNetIncome !== 0 && adjCurrentNetIncome != null
+          ? yoy(adjCurrentNetIncome, adjPreviousNetIncome)
+          : "—",
+      ]);
+    }
+
     autoTable(doc, {
       startY: y,
       head: [["", "Current Year", "Previous Year", "YoY Change"]],
-      body: [
-        ["Total Sales", fmt(f.current_total_sales), fmt(f.previous_total_sales), yoy(f.current_total_sales, f.previous_total_sales)],
-        ["Cost of Goods", fmt(f.current_cog), fmt(f.previous_cog), yoy(f.current_cog, f.previous_cog)],
-        ["Gross Profit", fmt(f.current_gross_profit), fmt(f.previous_gross_profit), yoy(f.current_gross_profit, f.previous_gross_profit)],
-        ["COG Ratio (%)", f.current_cog_ratio != null ? `${Number(f.current_cog_ratio).toFixed(2)}%` : "—", f.previous_cog_ratio != null ? `${Number(f.previous_cog_ratio).toFixed(2)}%` : "—", yoy(f.current_cog_ratio, f.previous_cog_ratio)],
-        ["Net Income", fmt(f.current_net_income), fmt(f.previous_net_income), yoy(f.current_net_income, f.previous_net_income)],
-      ],
+      body: tableBody,
       theme: "grid",
       headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       columnStyles: { 1: { halign: "right", fontStyle: "bold" }, 2: { halign: "right" }, 3: { halign: "center", fontStyle: "bold" } },
       margin: { left: MARGIN, right: R_MARGIN },
+      didParseCell: (data: any) => {
+        // Bold the Adjusted Net Income row
+        if (data.section === "body" && data.row.raw?.[0] === "Adjusted Net Income") {
+          data.cell.styles.fontStyle = "bold";
+        }
+        // Indent non-recurring items
+        if (data.section === "body" && typeof data.row.raw?.[0] === "string" && data.row.raw[0].startsWith("  Non-Recurring:")) {
+          data.cell.styles.fontSize = 9;
+          data.cell.styles.textColor = [100, 100, 100];
+        }
+      },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 5;
+
+    // Footnote for non-recurring items
+    if (nrItems.length > 0) {
+      y = checkPageBreak(doc, y, 20);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(100, 100, 100);
+      const meetingDateStr = data.meeting?.meeting_date
+        ? new Date(data.meeting.meeting_date + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+        : "";
+      nrItems.forEach((item: any) => {
+        const noteText = `Note: Current year Net Income includes a one-time ${Number(item.amount) >= 0 ? "gain" : "loss"} of ${fmt(Math.abs(Number(item.amount)))} from ${item.description || "non-recurring transaction"}.`;
+        const lines = doc.splitTextToSize(noteText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+        doc.text(lines, MARGIN, y);
+        y += lines.length * 4 + 2;
+      });
+      doc.setTextColor(...BODY_COLOR);
+      y += 3;
+    }
 
     // Draw simple YoY bar chart in PDF
     const pw = doc.internal.pageSize.getWidth();
@@ -2170,7 +2222,7 @@ export function exportResolutionsPDF(company: any, meeting: any, resolutions: an
   );
 }
 
-export function exportFinancialsPDF(company: any, meeting: any, financials: any) {
+export function exportFinancialsPDF(company: any, meeting: any, financials: any, nonRecurringItems?: any[]) {
   const doc = new jsPDF();
   const companyName = company?.name || "Unknown";
   const entityType = company?.entity_type || "Corporation";
@@ -2191,16 +2243,37 @@ export function exportFinancialsPDF(company: any, meeting: any, financials: any)
       return `${pct >= 0 ? "▲" : "▼"} ${Math.abs(pct).toFixed(1)}%`;
     };
 
+    const nrItems = (nonRecurringItems || []).filter((item: any) => item.description || item.amount);
+    const totalNr = nrItems.reduce((sum: number, item: any) => sum + (Number(item.amount) || 0), 0);
+    const adjCurrentNetIncome = totalNr !== 0 ? (Number(financials.current_net_income) || 0) - totalNr : null;
+    const adjPreviousNetIncome = totalNr !== 0 ? (Number(financials.previous_net_income) || 0) : null;
+
+    const tableBody: any[][] = [
+      ["Total Sales", fmt(financials.current_total_sales), fmt(financials.previous_total_sales), yoy(financials.current_total_sales, financials.previous_total_sales)],
+      ["Cost of Goods", fmt(financials.current_cog), fmt(financials.previous_cog), yoy(financials.current_cog, financials.previous_cog)],
+      ["Gross Profit", fmt(financials.current_gross_profit), fmt(financials.previous_gross_profit), yoy(financials.current_gross_profit, financials.previous_gross_profit)],
+      ["COG Ratio (%)", financials.current_cog_ratio != null ? `${Number(financials.current_cog_ratio).toFixed(2)}%` : "—", financials.previous_cog_ratio != null ? `${Number(financials.previous_cog_ratio).toFixed(2)}%` : "—", yoy(financials.current_cog_ratio, financials.previous_cog_ratio)],
+      ["Net Income", fmt(financials.current_net_income), fmt(financials.previous_net_income), yoy(financials.current_net_income, financials.previous_net_income)],
+    ];
+
+    if (totalNr !== 0) {
+      nrItems.forEach((item: any) => {
+        tableBody.push([`  Non-Recurring: ${item.description || ""}`, fmt(item.amount), "—", "—"]);
+      });
+      tableBody.push([
+        "Adjusted Net Income",
+        fmt(adjCurrentNetIncome),
+        fmt(adjPreviousNetIncome),
+        adjPreviousNetIncome && adjPreviousNetIncome !== 0 && adjCurrentNetIncome != null
+          ? yoy(adjCurrentNetIncome, adjPreviousNetIncome)
+          : "—",
+      ]);
+    }
+
     autoTable(doc, {
       startY: y,
       head: [["", "Current Year", "Previous Year", "YoY Change"]],
-      body: [
-        ["Total Sales", fmt(financials.current_total_sales), fmt(financials.previous_total_sales), yoy(financials.current_total_sales, financials.previous_total_sales)],
-        ["Cost of Goods", fmt(financials.current_cog), fmt(financials.previous_cog), yoy(financials.current_cog, financials.previous_cog)],
-        ["Gross Profit", fmt(financials.current_gross_profit), fmt(financials.previous_gross_profit), yoy(financials.current_gross_profit, financials.previous_gross_profit)],
-        ["COG Ratio (%)", financials.current_cog_ratio != null ? `${Number(financials.current_cog_ratio).toFixed(2)}%` : "—", financials.previous_cog_ratio != null ? `${Number(financials.previous_cog_ratio).toFixed(2)}%` : "—", yoy(financials.current_cog_ratio, financials.previous_cog_ratio)],
-        ["Net Income", fmt(financials.current_net_income), fmt(financials.previous_net_income), yoy(financials.current_net_income, financials.previous_net_income)],
-      ],
+      body: tableBody,
       theme: "grid",
       headStyles: { fillColor: [45, 55, 72], fontSize: 10, fontStyle: "bold" },
       bodyStyles: { fontSize: 10 },
@@ -2208,6 +2281,22 @@ export function exportFinancialsPDF(company: any, meeting: any, financials: any)
       margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 8;
+
+    // Footnote for non-recurring items
+    if (nrItems.length > 0) {
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(100, 100, 100);
+      nrItems.forEach((item: any) => {
+        const noteText = `Note: Current year Net Income includes a one-time ${Number(item.amount) >= 0 ? "gain" : "loss"} of ${fmt(Math.abs(Number(item.amount)))} from ${item.description || "non-recurring transaction"}.`;
+        const lines = doc.splitTextToSize(noteText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+        y = checkPageBreak(doc, y, lines.length * 4 + 4);
+        doc.text(lines, MARGIN, y);
+        y += lines.length * 4 + 2;
+      });
+      doc.setTextColor(40, 40, 40);
+      y += 3;
+    }
 
     // Draw simple bar chart comparison
     const pw = doc.internal.pageSize.getWidth();

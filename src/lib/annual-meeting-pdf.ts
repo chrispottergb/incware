@@ -30,6 +30,7 @@ export interface AnnualMeetingData {
   // Financial Information
   fiscalYearEnd: string;
   financialItems: { item: string; amount: string; notes: string }[];
+  nonRecurringItems?: { description: string; amount: string }[];
   compensationItems: { name: string; title: string; salary: string; bonus: string; notes: string }[];
   distributions: { memberName: string; amount: string; date: string; notes: string }[];
   retainedEarnings: string;

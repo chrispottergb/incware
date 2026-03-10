@@ -470,6 +470,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         { item: "COG Ratio (%)", amount: "", notes: "" },
         { item: "Net Income", amount: "", notes: "" },
       ],
+      nonRecurringItems: [] as { description: string; amount: string }[],
       compensationItems: compensationList,
       distributions: memberList.filter(m => m.name).map(m => ({ memberName: m.name, amount: "", date: "", notes: "" })),
       retainedEarnings: "",
@@ -736,7 +737,18 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         }
         await supabase.from("meeting_financials").insert(financialsPayload);
 
-        // Save bank authorized signers
+        // Save non-recurring items
+        const nrItemsToSave = (data.nonRecurringItems || []).filter((item: any) => item.description || item.amount);
+        if (nrItemsToSave.length > 0) {
+          await supabase.from("meeting_non_recurring_items" as any).insert(
+            nrItemsToSave.map((item: any) => ({
+              meeting_id: mid,
+              description: item.description || "",
+              amount: parseFloat(item.amount?.replace(/[,$]/g, "")) || 0,
+            }))
+          );
+        }
+
         const signerRows = data.bankAccounts.filter(b => b.institution && b.signatory).map(b => ({
           meeting_id: mid,
           signer_name: b.signatory,
@@ -1115,6 +1127,52 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
                 {!priorFinancials && (
                   <p className="text-xs text-muted-foreground mt-1 italic">No previous meeting data available.</p>
                 )}
+              </div>
+
+              {/* Non-Recurring Items */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-semibold">Non-Recurring Items</h4>
+                  <Button type="button" size="sm" variant="outline" className="h-6 text-xs" onClick={() => {
+                    update("nonRecurringItems", [...(data.nonRecurringItems || []), { description: "", amount: "" }]);
+                  }}>
+                    <Plus className="h-3 w-3 mr-1" /> Add Item
+                  </Button>
+                </div>
+                <p className="text-[11px] text-muted-foreground mb-2">Record one-time transactions (asset sales, insurance proceeds, settlements) that should not distort YoY comparison.</p>
+                {(data.nonRecurringItems || []).length === 0 && (
+                  <p className="text-xs text-muted-foreground italic">No non-recurring items.</p>
+                )}
+                {(data.nonRecurringItems || []).map((item: any, idx: number) => (
+                  <div key={idx} className="grid grid-cols-[2fr_1fr_auto] gap-2 mb-2 items-center">
+                    <Input
+                      className="h-7 text-sm"
+                      placeholder="Description (e.g., Sale of assets)"
+                      value={item.description || ""}
+                      onChange={e => {
+                        const items = [...(data.nonRecurringItems || [])];
+                        items[idx] = { ...items[idx], description: e.target.value };
+                        update("nonRecurringItems", items);
+                      }}
+                    />
+                    <Input
+                      className="h-7 text-sm"
+                      placeholder="Amount"
+                      value={item.amount || ""}
+                      onChange={e => {
+                        const items = [...(data.nonRecurringItems || [])];
+                        items[idx] = { ...items[idx], amount: e.target.value };
+                        update("nonRecurringItems", items);
+                      }}
+                    />
+                    <Button type="button" size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => {
+                      const items = (data.nonRecurringItems || []).filter((_: any, i: number) => i !== idx);
+                      update("nonRecurringItems", items);
+                    }}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
               </div>
 
               <div>

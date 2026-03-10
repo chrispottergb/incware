@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Save, TrendingUp, Lock, Info } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Loader2, Save, TrendingUp, Lock, Info, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
@@ -22,6 +23,12 @@ import {
 
 interface Props {
   meetingId: string;
+}
+
+interface NonRecurringItem {
+  id?: string;
+  description: string;
+  amount: string;
 }
 
 export default function MeetingFinancials({ meetingId }: Props) {
@@ -40,7 +47,19 @@ export default function MeetingFinancials({ meetingId }: Props) {
     },
   });
 
-  // Fetch the meeting to find its company_id
+  const { data: nonRecurringItems = [] } = useQuery({
+    queryKey: ["meeting_non_recurring_items", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meeting_non_recurring_items" as any)
+        .select("*")
+        .eq("meeting_id", meetingId)
+        .order("created_at");
+      if (error) throw error;
+      return (data as any[]) || [];
+    },
+  });
+
   const { data: meeting } = useQuery({
     queryKey: ["meeting_for_financials", meetingId],
     queryFn: async () => {
@@ -53,11 +72,9 @@ export default function MeetingFinancials({ meetingId }: Props) {
     },
   });
 
-  // Fetch the most recent prior meeting with current year financial data
   const { data: priorMeetingFinancials } = useQuery({
     queryKey: ["prior_meeting_financials_for_autofill", meeting?.company_id, meetingId],
     queryFn: async () => {
-      // Find the most recent meeting before this one that has financials with current year data
       const { data: priorMeetings } = await supabase
         .from("meetings")
         .select("id, meeting_date")
@@ -84,7 +101,6 @@ export default function MeetingFinancials({ meetingId }: Props) {
     enabled: !!meeting?.company_id,
   });
 
-  // Determine if previous year fields were auto-populated
   const isAutoFilled = !!(
     priorMeetingFinancials?.financials &&
     (!financials || (
@@ -101,7 +117,6 @@ export default function MeetingFinancials({ meetingId }: Props) {
      financials.previous_net_income != null)
   );
 
-  // Previous year fields are locked when they have data (either saved or auto-filled)
   const previousYearLocked = hasSavedPreviousData || isAutoFilled;
 
   const sourceLabel = priorMeetingFinancials?.meetingDate
@@ -121,8 +136,23 @@ export default function MeetingFinancials({ meetingId }: Props) {
     previous_net_income: "",
   });
 
+  const [nrItems, setNrItems] = useState<NonRecurringItem[]>([]);
+  const [excludeNrFromYoy, setExcludeNrFromYoy] = useState(false);
   const [lastFinancials, setLastFinancials] = useState<typeof financials>(undefined);
   const [autoFillApplied, setAutoFillApplied] = useState(false);
+  const [nrInitialized, setNrInitialized] = useState(false);
+
+  // Sync NR items from DB
+  useEffect(() => {
+    if (!nrInitialized && nonRecurringItems.length > 0) {
+      setNrItems(nonRecurringItems.map((item: any) => ({
+        id: item.id,
+        description: item.description || "",
+        amount: item.amount?.toString() || "",
+      })));
+      setNrInitialized(true);
+    }
+  }, [nonRecurringItems, nrInitialized]);
 
   // Sync form from saved financials
   if (financials !== lastFinancials) {
@@ -143,7 +173,6 @@ export default function MeetingFinancials({ meetingId }: Props) {
     }
   }
 
-  // Auto-fill previous year from prior meeting when no saved previous data exists
   useEffect(() => {
     if (
       !autoFillApplied &&
@@ -182,6 +211,19 @@ export default function MeetingFinancials({ meetingId }: Props) {
     });
   };
 
+  // Non-recurring items helpers
+  const totalNrCurrent = nrItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+  const currentNetIncome = toNum(form.current_net_income) ?? 0;
+  const previousNetIncome = toNum(form.previous_net_income) ?? 0;
+  const adjustedCurrentNetIncome = currentNetIncome - totalNrCurrent;
+  const adjustedPreviousNetIncome = previousNetIncome; // Previous year NR items not tracked separately
+
+  const addNrItem = () => setNrItems(prev => [...prev, { description: "", amount: "" }]);
+  const removeNrItem = (idx: number) => setNrItems(prev => prev.filter((_, i) => i !== idx));
+  const updateNrItem = (idx: number, key: "description" | "amount", value: string) => {
+    setNrItems(prev => prev.map((item, i) => i === idx ? { ...item, [key]: value } : item));
+  };
+
   const save = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -207,53 +249,46 @@ export default function MeetingFinancials({ meetingId }: Props) {
         const { error } = await supabase.from("meeting_financials").insert(payload);
         if (error) throw error;
       }
+
+      // Save non-recurring items: delete existing, insert new
+      await supabase.from("meeting_non_recurring_items" as any).delete().eq("meeting_id", meetingId);
+      const nrToSave = nrItems.filter(item => item.description || item.amount);
+      if (nrToSave.length > 0) {
+        const { error: nrError } = await supabase.from("meeting_non_recurring_items" as any).insert(
+          nrToSave.map(item => ({
+            meeting_id: meetingId,
+            description: item.description,
+            amount: parseFloat(item.amount) || 0,
+          }))
+        );
+        if (nrError) throw nrError;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meeting_financials", meetingId] });
+      queryClient.invalidateQueries({ queryKey: ["meeting_non_recurring_items", meetingId] });
       toast.success("Financial data saved!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
-
-  // Chart data
-  const chartData = [
-    {
-      name: "Total Sales",
-      "Current Year": toNum(form.current_total_sales) ?? 0,
-      "Previous Year": toNum(form.previous_total_sales) ?? 0,
-    },
-    {
-      name: "Gross Profit",
-      "Current Year": toNum(form.current_gross_profit) ?? 0,
-      "Previous Year": toNum(form.previous_gross_profit) ?? 0,
-    },
-    {
-      name: "COG",
-      "Current Year": toNum(form.current_cog) ?? 0,
-      "Previous Year": toNum(form.previous_cog) ?? 0,
-    },
-    {
-      name: "Net Income",
-      "Current Year": toNum(form.current_net_income) ?? 0,
-      "Previous Year": toNum(form.previous_net_income) ?? 0,
-    },
-  ];
-
-  const cogChartData = [
-    {
-      name: "COG Ratio",
-      "Current Year": toNum(form.current_cog_ratio) ?? 0,
-      "Previous Year": toNum(form.previous_cog_ratio) ?? 0,
-    },
-  ];
-
-  const hasData = chartData.some((d) => d["Current Year"] > 0 || d["Previous Year"] > 0);
 
   const yoyChange = (currentKey: string, previousKey: string) => {
     const cur = toNum((form as any)[currentKey]);
     const prev = toNum((form as any)[previousKey]);
     if (cur == null || prev == null || prev === 0) return null;
     return ((cur - prev) / Math.abs(prev)) * 100;
+  };
+
+  const adjustedYoyNetIncome = () => {
+    if (adjustedPreviousNetIncome === 0) return null;
+    return ((adjustedCurrentNetIncome - adjustedPreviousNetIncome) / Math.abs(adjustedPreviousNetIncome)) * 100;
+  };
+
+  const getDisplayedYoyNetIncome = () => {
+    if (excludeNrFromYoy && totalNrCurrent !== 0) {
+      return adjustedYoyNetIncome();
+    }
+    return yoyChange("current_net_income", "previous_net_income");
   };
 
   const fields: { key: string; label: string; computed?: boolean }[] = [
@@ -265,6 +300,28 @@ export default function MeetingFinancials({ meetingId }: Props) {
   ];
 
   const noPriorData = !priorMeetingFinancials?.financials && !hasSavedPreviousData;
+
+  // Chart data
+  const chartData = [
+    { name: "Total Sales", "Current Year": toNum(form.current_total_sales) ?? 0, "Previous Year": toNum(form.previous_total_sales) ?? 0 },
+    { name: "Gross Profit", "Current Year": toNum(form.current_gross_profit) ?? 0, "Previous Year": toNum(form.previous_gross_profit) ?? 0 },
+    { name: "COG", "Current Year": toNum(form.current_cog) ?? 0, "Previous Year": toNum(form.previous_cog) ?? 0 },
+    { name: "Net Income", "Current Year": toNum(form.current_net_income) ?? 0, "Previous Year": toNum(form.previous_net_income) ?? 0 },
+  ];
+
+  if (totalNrCurrent !== 0) {
+    chartData.push({
+      name: "Adj. Net Income",
+      "Current Year": adjustedCurrentNetIncome,
+      "Previous Year": adjustedPreviousNetIncome,
+    });
+  }
+
+  const cogChartData = [
+    { name: "COG Ratio", "Current Year": toNum(form.current_cog_ratio) ?? 0, "Previous Year": toNum(form.previous_cog_ratio) ?? 0 },
+  ];
+
+  const hasData = chartData.some((d) => d["Current Year"] > 0 || d["Previous Year"] > 0);
 
   return (
     <div className="space-y-6">
@@ -300,7 +357,8 @@ export default function MeetingFinancials({ meetingId }: Props) {
               <p className="w-16 text-xs font-semibold text-right text-muted-foreground uppercase tracking-wider">YoY</p>
             </div>
             {fields.map((f) => {
-              const change = yoyChange(`current_${f.key}`, `previous_${f.key}`);
+              const isNetIncome = f.key === "net_income";
+              const change = isNetIncome ? getDisplayedYoyNetIncome() : yoyChange(`current_${f.key}`, `previous_${f.key}`);
               const prevValue = (form as any)[`previous_${f.key}`];
               const isPrevLocked = previousYearLocked || f.computed;
               return (
@@ -343,6 +401,74 @@ export default function MeetingFinancials({ meetingId }: Props) {
                 </div>
               );
             })}
+
+            {/* Non-Recurring Items Section */}
+            <div className="border-t border-border mt-4 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-sm font-semibold">Non-Recurring Items</Label>
+                <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={addNrItem}>
+                  <Plus className="h-3 w-3 mr-1" /> Add Item
+                </Button>
+              </div>
+              {nrItems.length === 0 && (
+                <p className="text-xs text-muted-foreground italic mb-3">No non-recurring items. Click "Add Item" to record one-time transactions.</p>
+              )}
+              {nrItems.map((item, idx) => (
+                <div key={idx} className="grid grid-cols-[2fr_1fr_auto] gap-2 mb-2 items-center">
+                  <Input
+                    className="text-sm h-8"
+                    placeholder="Description (e.g., Sale of assets)"
+                    value={item.description}
+                    onChange={(e) => updateNrItem(idx, "description", e.target.value)}
+                  />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    className="text-right font-mono text-sm h-8"
+                    placeholder="Amount"
+                    value={item.amount}
+                    onChange={(e) => updateNrItem(idx, "amount", e.target.value)}
+                  />
+                  <Button type="button" size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" onClick={() => removeNrItem(idx)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+
+              {/* Adjusted Net Income */}
+              {totalNrCurrent !== 0 && (
+                <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 mt-3 items-center bg-muted/30 rounded p-2">
+                  <Label className="text-sm font-semibold">Adjusted Net Income</Label>
+                  <div className="text-right font-mono text-sm font-semibold">
+                    ${adjustedCurrentNetIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+                  <div className="text-right font-mono text-sm text-muted-foreground">
+                    ${adjustedPreviousNetIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+                  <div className="w-16 text-right">
+                    {adjustedYoyNetIncome() != null && (
+                      <span className={`text-[11px] font-mono font-medium ${adjustedYoyNetIncome()! >= 0 ? "text-success" : "text-destructive"}`}>
+                        {adjustedYoyNetIncome()! >= 0 ? "▲" : "▼"} {Math.abs(adjustedYoyNetIncome()!).toFixed(1)}%
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* YOY Toggle */}
+              {totalNrCurrent !== 0 && (
+                <div className="flex items-center gap-3 mt-3">
+                  <Switch
+                    checked={excludeNrFromYoy}
+                    onCheckedChange={setExcludeNrFromYoy}
+                  />
+                  <Label className="text-xs text-muted-foreground cursor-pointer">
+                    Exclude Non-Recurring Items from YoY
+                  </Label>
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-end mt-4">
               <Button type="submit" disabled={save.isPending} size="sm">
                 {save.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
