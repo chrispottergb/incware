@@ -715,12 +715,16 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
           const item = finItems.find(f => f.item?.toLowerCase().includes(label.toLowerCase()));
           return item?.amount ? parseFloat(item.amount.replace(/[,$]/g, "")) : null;
         };
+        const currentSales = getFinAmount("revenue") ?? getFinAmount("sales");
+        const currentCog = getFinAmount("cost of goods");
+        const currentCogRatio = (currentSales && currentCog && currentSales > 0) ? (currentCog / currentSales * 100) : getFinAmount("cog ratio");
         const financialsPayload: any = {
           meeting_id: mid,
-          current_total_sales: getFinAmount("revenue") ?? getFinAmount("sales"),
-          current_cog: getFinAmount("cost of goods"),
+          current_total_sales: currentSales,
+          current_cog: currentCog,
           current_gross_profit: getFinAmount("gross profit"),
           current_net_income: getFinAmount("net income"),
+          current_cog_ratio: currentCogRatio,
         };
         // Auto-populate previous year from prior meeting's current year data
         if (priorFinancials) {
