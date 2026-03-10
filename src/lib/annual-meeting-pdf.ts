@@ -464,8 +464,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   if (data.benefitPlans.length > 0) {
     addTable(
-      ["Plan Type", "Provider", "Eligibility", "Company Contribution", "Status (Active / New / Terminated)"],
-      data.benefitPlans.map(b => [b.planType || "[Enter]", b.provider || "[Enter]", b.eligibility || "[Enter]", b.contribution || "[Enter]", b.status || "[Enter]"])
+      ["Plan Type", "Provider", "Eligibility / Comments", "Company Contribution", "Status (Active / New / Terminated)"],
+      data.benefitPlans.map(b => [b.planType || "[Enter]", b.provider || "[Enter]", b.eligibility || b.eligibility_comments || "[Enter]", b.contribution || "[Enter]", b.status || "[Enter]"])
     );
   }
 
