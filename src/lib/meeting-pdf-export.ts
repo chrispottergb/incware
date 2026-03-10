@@ -662,7 +662,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
     y = addSectionTitle(doc, y, "Registered Agent");
     const agentAddr = [company.registered_agent_address, company.registered_agent_city, company.registered_agent_state, company.registered_agent_zip].filter(Boolean).join(", ");
     y = addResolutionBlock(doc, y, "Appointment of Registered Agent",
-      `RESOLVED, that ${company.registered_agent_name}${agentAddr ? `, located at ${agentAddr},` : ""} is hereby confirmed as the registered agent of the ${entityLabel} in the State of ${stateOfInc}, and the proper ${isLLC ? "authorized binders" : "officers"} are authorized to execute any documents necessary to maintain the registered agent designation.`);
+      `RESOLVED, that ${company.registered_agent_name}${agentAddr ? `, located at ${agentAddr},` : ""} is hereby confirmed as the registered agent of the ${entityLabel} in the State of ${stateOfInc}, and the proper officers are authorized to execute any documents necessary to maintain the registered agent designation.`);
   }
 
   // 3. Fiscal Year & Accounting
