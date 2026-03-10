@@ -1269,7 +1269,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
   if (shouldRenderCounselSection) {
     y = checkPageBreak(doc, y, 20 + counselRows.length * 7);
-    y = section("Selection of Counsel & Banking");
+    y = section("Selection of Counsel");
 
     // Extract attorney and accountant info from counsel records, with fallback to company-level data
     const counselRec = counselRows[0] || {};
@@ -1396,70 +1396,91 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       }
       y += 5;
     }
+  }
 
-    // Banking table
-    y = checkPageBreak(doc, y, 30);
-    // Derive bank name: prefer meeting_counsel record, fallback to company-level banks
+  // Banking Section (separate from counsel)
+  {
+    const counselRec = counselRows[0] || {} as any;
     let bankNameForTable = counselRec.bank_name?.trim() || "";
     if (!bankNameForTable && data.companyBanks && data.companyBanks.length > 0) {
       bankNameForTable = data.companyBanks.map((b: any) => b.bank_name).filter(Boolean).join(", ");
     }
-    // Derive accounting firm for the table
-    const counselNameForTable = accountingFirm || counselRec.counsel_name || "";
-    autoTable(doc, {
-      startY: y,
-      head: [["Counsel", "Bank", "Loans"]],
-      body: [[counselNameForTable || "—", bankNameForTable || "—", counselRec.loans || "—"]],
-      theme: "grid",
-      headStyles: tableHeadStyles,
-      bodyStyles: { fontSize: 10 },
-      margin: { left: MARGIN, right: R_MARGIN },
-    });
-    y = (doc as any).lastAutoTable.finalY + 10;
 
-    // Banking Resolutions for Annual Meetings (use company-level bank data)
-    const annualBanks = data.companyBanks || [];
-    const annualSigners = data.companyBankSigners || [];
-    if (annualBanks.length > 0) {
-      y = checkPageBreak(doc, y, 30 + annualBanks.length * 12);
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(...BODY_COLOR);
-      const bankIntro = `The chairperson then reviewed the banking relationships of the ${isLLC ? "company" : "corporation"} and upon motion duly made and seconded, the following resolution was adopted:`;
-      const bankIntroLines = doc.splitTextToSize(bankIntro, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-      for (const line of bankIntroLines) {
-        y = checkPageBreak(doc, y, 6);
-        doc.text(line, MARGIN, y);
-        y += 5.5;
-      }
-      y += 2;
-      annualBanks.forEach((bank: any) => {
-        const bankSignerList = annualSigners.filter((s: any) => s.bank_id === bank.id);
-        const signerStr = bankSignerList.map((s: any) => `${s.signer_name}${s.title ? `, ${s.title}` : ""}`).join("; ");
-        y = addWhereasResolved(doc, y,
-          `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the banking relationship with ${bank.bank_name}; and`,
-          `NOW, THEREFORE, BE IT RESOLVED, that ${bank.bank_name} is hereby approved and confirmed as a depository for the funds of ${companyName}${signerStr ? `, and that the following persons are hereby authorized as signatories on said account: ${signerStr}` : ""}.`,
-          bt
-        );
-      });
-    }
-    // Also render authorized signers from meeting_authorized_signers if available
-    if (data.authorizedSigners && data.authorizedSigners.length > 0 && annualBanks.length === 0) {
-      y = checkPageBreak(doc, y, 20 + data.authorizedSigners.length * 7);
+    const hasLOC = counselRec.loc_enabled;
+    const locAmount = counselRec.loc_amount;
+    const locRate = counselRec.loc_interest_rate;
+
+    const hasBankingContent = bt || bankNameForTable || hasLOC || (data.companyBanks && data.companyBanks.length > 0) || (data.authorizedSigners && data.authorizedSigners.length > 0);
+
+    if (hasBankingContent) {
+      y = checkPageBreak(doc, y, 40);
+      y = section("Banking");
+
+      // Banking summary table
+      const bankTableBody: string[][] = [];
+      const bankTableHead = ["Bank", "Line of Credit", "LOC Amount", "Interest Rate"];
+      bankTableBody.push([
+        bankNameForTable || "—",
+        hasLOC ? "Yes" : "No",
+        hasLOC && locAmount != null ? fmt(locAmount) : "—",
+        hasLOC && locRate != null ? `${Number(locRate).toFixed(2)}%` : "—",
+      ]);
+
       autoTable(doc, {
         startY: y,
-        head: [["Bank", "Authorized Signatory", "Title"]],
-        body: data.authorizedSigners.map((s: any) => [
-          s.bank_name || "—",
-          s.signer_name || "—",
-          s.title || "—",
-        ]),
+        head: [bankTableHead],
+        body: bankTableBody,
         theme: "grid",
         headStyles: tableHeadStyles,
         bodyStyles: { fontSize: 10 },
         margin: { left: MARGIN, right: R_MARGIN },
       });
       y = (doc as any).lastAutoTable.finalY + 10;
+
+      // Banking Resolutions for Annual Meetings (use company-level bank data)
+      const annualBanks = data.companyBanks || [];
+      const annualSigners = data.companyBankSigners || [];
+      if (annualBanks.length > 0) {
+        y = checkPageBreak(doc, y, 30 + annualBanks.length * 12);
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...BODY_COLOR);
+        const bankIntro = `The chairperson then reviewed the banking relationships of the ${isLLC ? "company" : "corporation"} and upon motion duly made and seconded, the following resolution was adopted:`;
+        const bankIntroLines = doc.splitTextToSize(bankIntro, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+        for (const line of bankIntroLines) {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(line, MARGIN, y);
+          y += 5.5;
+        }
+        y += 2;
+        annualBanks.forEach((bank: any) => {
+          const bankSignerList = annualSigners.filter((s: any) => s.bank_id === bank.id);
+          const signerStr = bankSignerList.map((s: any) => `${s.signer_name}${s.title ? `, ${s.title}` : ""}`).join("; ");
+          y = addWhereasResolved(doc, y,
+            `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the banking relationship with ${bank.bank_name}; and`,
+            `NOW, THEREFORE, BE IT RESOLVED, that ${bank.bank_name} is hereby approved and confirmed as a depository for the funds of ${companyName}${signerStr ? `, and that the following persons are hereby authorized as signatories on said account: ${signerStr}` : ""}.`,
+            bt
+          );
+        });
+      }
+      // Also render authorized signers from meeting_authorized_signers if available
+      if (data.authorizedSigners && data.authorizedSigners.length > 0 && annualBanks.length === 0) {
+        y = checkPageBreak(doc, y, 20 + data.authorizedSigners.length * 7);
+        autoTable(doc, {
+          startY: y,
+          head: [["Bank", "Authorized Signatory", "Title"]],
+          body: data.authorizedSigners.map((s: any) => [
+            s.bank_name || "—",
+            s.signer_name || "—",
+            s.title || "—",
+          ]),
+          theme: "grid",
+          headStyles: tableHeadStyles,
+          bodyStyles: { fontSize: 10 },
+          margin: { left: MARGIN, right: R_MARGIN },
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      }
     }
   }
 

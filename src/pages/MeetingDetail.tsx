@@ -18,6 +18,7 @@ import PrintPreviewButton from "@/components/meeting/PrintPreviewButton";
 import DirectorReElection from "@/components/meeting/DirectorReElection";
 import MeetingAttendanceSelector from "@/components/meeting/MeetingAttendanceSelector";
 import MeetingVehicles from "@/components/meeting/MeetingVehicles";
+import MeetingBanking from "@/components/meeting/MeetingBanking";
 import { OFFICER_TITLE_OPTIONS } from "@/components/company/OrganizationTab";
 import CounselTab from "@/components/company/CounselTab";
 import LeasesTab from "@/components/company/LeasesTab";
@@ -434,7 +435,8 @@ export default function MeetingDetail() {
     { value: "shareholders", label: term.shareholdersSubTab },
     { value: "directors", label: term.directors },
     { value: "officers", label: "Officers" },
-    { value: "counsel", label: "Counsel / Banking" },
+    { value: "counsel", label: "Counsel" },
+    { value: "banking", label: "Banking" },
     { value: "leases", label: "Leases" },
     { value: "vehicles", label: "Vehicles & Equipment" },
     { value: "amendments", label: "Amendments" },
@@ -620,28 +622,36 @@ export default function MeetingDetail() {
         </TabsContent>
         <TabsContent value="counsel" className="mt-5">
           {showCompanyLevelCounselAndLeases ? (
-            <div className="space-y-6">
-              <CounselTab companyId={id!} />
-              <BanksTab companyId={id!} />
-            </div>
+            <CounselTab companyId={id!} />
           ) : (
             <div className="space-y-4">
               <div className="flex justify-end">
                 <PrintPreviewButton
                   label="Print"
-                  generatePDF={() => exportSectionPDF("Counsel / Banking", company, meeting, ["Accountant", "Accounting Firm", "Attorney", "Law Firm", "Bank"], counsel.map(c => [c.accountant_name || "—", c.counsel_name || "—", c.attorney_name || "—", c.law_firm || "—", c.bank_name || "—"]))}
+                  generatePDF={() => exportSectionPDF("Counsel", company, meeting, ["Accountant", "Accounting Firm", "Attorney", "Law Firm"], counsel.map(c => [c.accountant_name || "—", c.counsel_name || "—", c.attorney_name || "—", c.law_firm || "—"]))}
                   fileName={`counsel-${meetingFileName}`}
                 />
               </div>
-              <MeetingSubTable meetingId={meeting.id} tableName="meeting_counsel" title="Counsel / Banking"
+              <MeetingSubTable meetingId={meeting.id} tableName="meeting_counsel" title="Counsel"
                 columns={[
                   { key: "accountant_name", label: "Accountant" },
                   { key: "counsel_name", label: "Accounting Firm" },
                   { key: "attorney_name", label: "Attorney" },
                   { key: "law_firm", label: "Law Firm" },
-                  { key: "bank_name", label: "Bank" },
                 ]}
               />
+            </div>
+          )}
+        </TabsContent>
+        <TabsContent value="banking" className="mt-5">
+          {showCompanyLevelCounselAndLeases ? (
+            <div className="space-y-6">
+              <BanksTab companyId={id!} />
+              <MeetingBanking meetingId={meeting.id} />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <MeetingBanking meetingId={meeting.id} />
               <div className="mt-6">
                 <MeetingAuthorizedSigners meetingId={meeting.id} companyId={meeting.company_id} meetingDate={meeting.meeting_date} />
               </div>
