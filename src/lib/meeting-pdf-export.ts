@@ -867,17 +867,6 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     }
     y += 3;
 
-    const chairText = `${meeting.chairperson || "[Chairperson]"} served as Chairperson and ${meeting.mtg_secretary || "[Secretary]"} served as Secretary of the meeting.`;
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    const chairLines = doc.splitTextToSize(chairText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-    for (const line of chairLines) {
-      y = checkPageBreak(doc, y, 6);
-      doc.text(line, MARGIN, y);
-      y += 5.5;
-    }
-    y += 3;
-
     // Attendees list
     const attendees = new Set<string>();
     (data.shareholders || []).forEach(s => { if (s.shareholder_name) attendees.add(s.shareholder_name); });
@@ -896,6 +885,17 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
       });
       y += 3;
     }
+
+    const chairText = `${meeting.chairperson || "[Chairperson]"} served as Chairperson and ${meeting.mtg_secretary || "[Secretary]"} served as Secretary of the meeting.`;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    const chairLines = doc.splitTextToSize(chairText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+    for (const line of chairLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5.5;
+    }
+    y += 3;
 
     if (meeting.tax_year) {
       y = addLabelValue(doc, y, "Tax Year", String(meeting.tax_year));
