@@ -300,8 +300,8 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
 
   // ===== DESIGNATION OF AUTHORIZED BINDERS =====
   heading("Designation of Authorized Binders");
-  whereasPara(`the members of the limited liability company desire to formally designate the persons authorized to execute documents, instruments, and agreements on behalf of the company, consistent with Wis. Stat. § 183.0407;`);
-  resolvedPara("that the following persons are hereby designated as authorized binders of the limited liability company, each authorized to execute and deliver documents, instruments, contracts, filings, and certificates on behalf of the company within the scope of their designated authority:");
+  whereasPara(`the members of the limited liability company desire to formally designate and record the persons who shall serve as authorized binders, consistent with Wis. Stat. § 183.0407;`);
+  resolvedPara(`that the following persons are hereby designated as authorized binders of the limited liability company for the ensuing year, each authorized to act on behalf of the company in their designated capacity:`);
 
   if (data.authorizedBinders.length > 0) {
     autoTable(doc, {

@@ -308,11 +308,11 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   }
 
   // ===== SECTION 5: AUTHORIZED BINDERS =====
-  sectionHeading("Authorized Binders — Confirmation or Update");
+  sectionHeading("Authorized Binders — Confirmation for Ensuing Year");
 
-  whereasPara("the members desire to confirm or update the persons authorized to execute documents on behalf of the company, consistent with Wis. Stat. § 183.0407;");
+  whereasPara("the members desire to confirm and record the persons serving as authorized binders of the limited liability company for the ensuing year, consistent with Wis. Stat. § 183.0407;");
 
-  resolvedPara("that the following persons are hereby confirmed or newly designated as authorized binders of the limited liability company:");
+  resolvedPara(`that the following persons are hereby confirmed as authorized binders of ${data.companyName || "the limited liability company"} for the ensuing year, authorized to act on behalf of the company in their designated capacity:`);
 
   if (data.authorizedBinders.length > 0) {
     addTable(
