@@ -764,7 +764,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
       ? new Date(company.s_election_date + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
       : "the earliest permissible date";
     y = addResolutionBlock(doc, y, "S Corporation Election (IRC § 1362)",
-      `RESOLVED, that the ${entityLabel} hereby elects to be treated as an S Corporation under Subchapter S of the Internal Revenue Code, effective ${sDate}, and the proper ${isLLC ? "authorized binders" : "officers"} are authorized and directed to prepare and file IRS Form 2553 and any corresponding state forms, with all ${isLLC ? "members" : "shareholders"} consenting to such election.`);
+      `RESOLVED, that the ${entityLabel} hereby elects to be treated as an S Corporation under Subchapter S of the Internal Revenue Code, effective ${sDate}, and the proper officers are authorized and directed to prepare and file IRS Form 2553 and any corresponding state forms, with all ${isLLC ? "members" : "shareholders"} consenting to such election.`);
   }
 
   // 10. Business Purpose
