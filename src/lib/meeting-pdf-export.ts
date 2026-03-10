@@ -1799,7 +1799,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
           if (o.title !== prior.title) {
             autoResolutions.push({
               purpose: `Change Officer Title`,
-              text: `WHEREAS, ${o.name} previously held the title of ${prior.title}, and the ${isLLC ? "members/authorized binders" : "Board"} has determined a change is appropriate, it was\n\nRESOLVED, that ${o.name} is hereby appointed as ${o.title} of the ${entityLabel}, replacing the prior title of ${prior.title}.`,
+              text: `WHEREAS, ${o.name} previously held the title of ${prior.title}, and the ${isLLC ? "members" : "Board"} have determined a change is appropriate, it was\n\nRESOLVED, that ${o.name} is hereby appointed as ${o.title} of the ${entityLabel}, replacing the prior title of ${prior.title}.`,
             });
           }
         }
