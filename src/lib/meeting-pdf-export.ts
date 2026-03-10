@@ -1174,7 +1174,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 80);
     y = section("Financial Comparison — Year to Year");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has reviewed the financial statements of ${companyName} for the current and prior fiscal years; and`,
+      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the financial statements of ${companyName} for the current and prior fiscal years; and`,
       `NOW, THEREFORE, BE IT RESOLVED, that the financial statements as presented are hereby accepted and approved:`,
       bt
     );
