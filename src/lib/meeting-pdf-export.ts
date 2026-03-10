@@ -1855,7 +1855,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         if (!priorNames.has(s.signer_name?.toLowerCase())) {
           autoResolutions.push({
             purpose: `Authorize Bank Signatory`,
-            text: `WHEREAS, the ${isLLC ? "members/authorized binders" : "Board of Directors"} has determined it is necessary to update the authorized signatories, and after discussion, it was\n\nRESOLVED, that ${s.signer_name}${s.title ? `, ${s.title},` : ""} is hereby authorized as a signatory${s.bank_name ? ` on the accounts at ${s.bank_name}` : ""}.`,
+            text: `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have determined it is necessary to update the authorized signatories, and after discussion, it was\n\nRESOLVED, that ${s.signer_name}${s.title ? `, ${s.title},` : ""} is hereby authorized as a signatory${s.bank_name ? ` on the accounts at ${s.bank_name}` : ""}.`,
           });
         }
       });
