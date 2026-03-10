@@ -1059,11 +1059,15 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (data.directors && data.directors.length > 0) {
     y += 3;
     y = checkPageBreak(doc, y, 30 + data.directors.length * 7);
-    y = section(isLLC ? "Authorized Binders Present" : "Directors Present");
+    y = section(isLLC ? "Authorized Binders" : "Directors Present");
     if (mType.includes("annual") || mType.includes("shareholder")) {
       y = addWhereasResolved(doc, y,
-        `WHEREAS, the terms of the current ${isLLC ? "authorized binders" : "directors"} expire at this meeting, and the ${isLLC ? "members" : "shareholders"} are called upon to ${isLLC ? "appoint" : "elect"} the ${isLLC ? "authorized binders" : "Board of Directors"} for the ensuing year; and`,
-        `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby ${isLLC ? "appointed" : "re-elected"} as ${isLLC ? "authorized binders" : "directors"} of ${companyName}, to serve until the next annual meeting and until their successors are duly ${isLLC ? "appointed" : "elected"} and qualified:`,
+        isLLC
+          ? `WHEREAS, the members desire to confirm and record the persons serving as authorized binders of ${companyName} for the ensuing year, consistent with Wis. Stat. § 183.0407; and`
+          : `WHEREAS, the terms of the current directors expire at this meeting, and the shareholders are called upon to elect the Board of Directors for the ensuing year; and`,
+        isLLC
+          ? `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby confirmed as authorized binders of ${companyName} for the ensuing year, authorized to act on behalf of the company in their designated capacity:`
+          : `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby re-elected as directors of ${companyName}, to serve until the next annual meeting and until their successors are duly elected and qualified:`,
         bt
       );
     }
