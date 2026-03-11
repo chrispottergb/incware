@@ -11,7 +11,8 @@ const R_MARGIN = 25.4; // 1 inch right margin — matches left for readability
 const BLUE = { r: 31, g: 78, b: 121 }; // #1F4E79
 const LIGHT_BLUE_BG: [number, number, number] = [214, 228, 240]; // #D6E4F0
 const BODY_COLOR: [number, number, number] = [40, 40, 40];
-const WHEREAS_RESOLVED_INDENT = 8;
+const WHEREAS_INDENT = 0; // Flush left
+const RESOLVED_INDENT = 12.7; // 0.5 inch
 
 interface MeetingData {
   meeting: any;
@@ -275,7 +276,7 @@ function addDFIFooter(doc: jsPDF, companyName: string) {
   }
 }
 
-function addAnnualMeetingFooter(doc: jsPDF, companyName: string) {
+function addAnnualMeetingFooter(doc: jsPDF, companyName: string, documentLabel: string = "Annual Meeting Minutes") {
   const pageCount = doc.getNumberOfPages();
   const generatedDate = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   for (let i = 1; i <= pageCount; i++) {
@@ -289,7 +290,7 @@ function addAnnualMeetingFooter(doc: jsPDF, companyName: string) {
 
     doc.setFontSize(8);
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
-    doc.text(`${companyName} — Annual Meeting Minutes — Generated: ${generatedDate}`, pw / 2, ph - 14, { align: "center" });
+    doc.text(`${companyName} — ${documentLabel} — Generated: ${generatedDate}`, pw / 2, ph - 14, { align: "center" });
     doc.setTextColor(130, 130, 130);
     doc.text(`Page ${i} of ${pageCount}`, pw - R_MARGIN, ph - 14, { align: "right" });
   }
@@ -374,8 +375,8 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
   const pw = doc.internal.pageSize.getWidth();
 
   if (blueTheme) {
-    // WHEREAS: indented, bold italic prefix, italic body
-    const indent = WHEREAS_RESOLVED_INDENT;
+    // WHEREAS: flush left, bold italic prefix, italic body
+    const wIndent = WHEREAS_INDENT;
     const whereasPrefix = "WHEREAS, ";
     doc.setFontSize(11);
     doc.setTextColor(...BODY_COLOR);
@@ -385,7 +386,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       whereasBody = whereasBody.substring(whereasBody.indexOf(",") + 1).trim();
     }
     const fullWhereas = whereasPrefix + whereasBody;
-    const wLines = doc.splitTextToSize(fullWhereas, pw - MARGIN - R_MARGIN - indent);
+    const wLines = doc.splitTextToSize(fullWhereas, pw - MARGIN - R_MARGIN - wIndent);
     y = checkPageBreak(doc, y, wLines.length * 5.5 + 6);
 
     for (let i = 0; i < wLines.length; i++) {
@@ -393,19 +394,20 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       if (i === 0) {
         doc.setFont("helvetica", "bolditalic");
         const prefixWidth = doc.getTextWidth(whereasPrefix);
-        doc.text(whereasPrefix, MARGIN + indent, y);
+        doc.text(whereasPrefix, MARGIN + wIndent, y);
         doc.setFont("helvetica", "italic");
         const remainder = wLines[0].substring(whereasPrefix.length);
-        if (remainder) doc.text(remainder, MARGIN + indent + prefixWidth, y);
+        if (remainder) doc.text(remainder, MARGIN + wIndent + prefixWidth, y);
       } else {
         doc.setFont("helvetica", "italic");
-        doc.text(wLines[i], MARGIN + indent, y);
+        doc.text(wLines[i], MARGIN + wIndent, y);
       }
       y += 5.5;
     }
     y += 3;
 
-    // RESOLVED: indented, bold prefix, normal body
+    // RESOLVED: indented 0.5 inch, bold prefix, normal body
+    const rIndent = RESOLVED_INDENT;
     const resolvedPrefix = "RESOLVED, ";
     let resolvedBody = resolved;
     // Strip "NOW, THEREFORE, BE IT " prefix if present
@@ -418,7 +420,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       resolvedBody = resolvedBody.substring(resolvedBody.indexOf(",") + 1).trim();
     }
     const fullResolved = resolvedPrefix + "that " + resolvedBody;
-    const rLines = doc.splitTextToSize(fullResolved, pw - MARGIN - R_MARGIN - indent);
+    const rLines = doc.splitTextToSize(fullResolved, pw - MARGIN - R_MARGIN - rIndent);
     y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
 
     for (let i = 0; i < rLines.length; i++) {
@@ -426,19 +428,19 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       if (i === 0) {
         doc.setFont("helvetica", "bold");
         const prefixWidth = doc.getTextWidth(resolvedPrefix);
-        doc.text(resolvedPrefix, MARGIN + indent, y);
+        doc.text(resolvedPrefix, MARGIN + rIndent, y);
         doc.setFont("helvetica", "normal");
         const remainder = rLines[0].substring(resolvedPrefix.length);
-        if (remainder) doc.text(remainder, MARGIN + indent + prefixWidth, y);
+        if (remainder) doc.text(remainder, MARGIN + rIndent + prefixWidth, y);
       } else {
         doc.setFont("helvetica", "normal");
-        doc.text(rLines[i], MARGIN + indent, y);
+        doc.text(rLines[i], MARGIN + rIndent, y);
       }
       y += 5.5;
     }
     y += 5;
   } else {
-    // Original gray theme
+    // Non-blue theme: WHEREAS flush left, RESOLVED indented
     y = checkPageBreak(doc, y, 30);
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
@@ -451,10 +453,11 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
     }
     y += 3;
     y = checkPageBreak(doc, y, 20);
-    const resolvedLines = doc.splitTextToSize(resolved, pw - MARGIN - R_MARGIN);
+    const rIndent = RESOLVED_INDENT;
+    const resolvedLines = doc.splitTextToSize(resolved, pw - MARGIN - R_MARGIN - rIndent);
     for (const line of resolvedLines) {
       y = checkPageBreak(doc, y, 6);
-      doc.text(line, MARGIN, y);
+      doc.text(line, MARGIN + rIndent, y);
       y += 5;
     }
     y += 5;
@@ -468,12 +471,13 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
   const entityType = company?.entity_type || "Corporation";
   const isLLC = entityType?.toLowerCase().includes("llc") || entityType?.toLowerCase().includes("limited liability");
   const isNonprofit = entityType?.toLowerCase().includes("nonprofit") || entityType?.toLowerCase().includes("non-profit");
+  const isShareholderMeeting = (meeting?.meeting_type || "").toLowerCase().includes("shareholder");
   const pw = doc.internal.pageSize.getWidth();
   const cx = pw / 2;
 
-  const governingLabel = isLLC ? "Members" : isNonprofit ? "Board of Directors" : "Board of Directors";
-  const governingLabelLower = isLLC ? "members" : "directors";
-  const meetingOfLabel = isLLC ? "Members" : "Directors";
+  const governingLabel = isShareholderMeeting ? "Shareholders" : (isLLC ? "Members" : isNonprofit ? "Board of Directors" : "Board of Directors");
+  const governingLabelLower = isShareholderMeeting ? "shareholders" : (isLLC ? "members" : "directors");
+  const meetingOfLabel = isShareholderMeeting ? "Shareholders" : (isLLC ? "Members" : "Directors");
 
   // Build full date string
   const mtgDate = new Date(meeting.meeting_date + "T12:00:00");
@@ -507,8 +511,8 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
     signerNames.push(n);
   };
 
-  // For Corps use directors, for LLCs use shareholders/members
-  if (isLLC) {
+  // For Corps: use shareholders for shareholder meetings, directors otherwise; for LLCs use members
+  if (isLLC || isShareholderMeeting) {
     (data.shareholders || []).forEach(s => { if (s.shareholder_name) addUnique(s.shareholder_name); });
   } else {
     (data.directors || []).forEach(d => { if (d.director_name) addUnique(d.director_name); });
@@ -535,7 +539,8 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
-  doc.text(`Annual Meeting of ${governingLabel}`, cx, y, { align: "center" });
+  const meetingTypeLabel = isShareholderMeeting ? "Meeting of Shareholders" : `Annual Meeting of ${governingLabel}`;
+  doc.text(meetingTypeLabel, cx, y, { align: "center" });
   y += 10;
 
   doc.setFontSize(12);
@@ -582,14 +587,19 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
-  doc.text(`WAIVER OF NOTICE AND CONSENT TO ANNUAL MEETING OF ${meetingOfLabel.toUpperCase()}`, cx, y, { align: "center" });
+  const waiverTitle = isShareholderMeeting
+    ? `WAIVER OF NOTICE AND CONSENT TO MEETING OF SHAREHOLDERS`
+    : `WAIVER OF NOTICE AND CONSENT TO ANNUAL MEETING OF ${meetingOfLabel.toUpperCase()}`;
+  doc.text(waiverTitle, cx, y, { align: "center" });
   y += 10;
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...BODY_COLOR);
 
-  const waiverText = `We (I), the undersigned, being the ${governingLabelLower} of ${companyName}, do hereby severally waive notice of the time, place and purposes of the annual meeting of said ${governingLabelLower} and do hereby call said meeting and consent to the holding thereof at this time and place: ${locationStr || "[location]"} on ${fullDateStr}${isLLC ? "" : " immediately following the meeting of shareholders"}, and are aware that the purposes of the meeting are to:`;
+  const meetingDescriptor = isShareholderMeeting ? "meeting of shareholders" : `annual meeting of said ${governingLabelLower}`;
+  const followingClause = isShareholderMeeting || isLLC ? "" : " immediately following the meeting of shareholders";
+  const waiverText = `We (I), the undersigned, being the ${governingLabelLower} of ${companyName}, do hereby severally waive notice of the time, place and purposes of the ${meetingDescriptor} and do hereby call said meeting and consent to the holding thereof at this time and place: ${locationStr || "[location]"} on ${fullDateStr}${followingClause}, and are aware that the purposes of the meeting are to:`;
   const waiverLines = doc.splitTextToSize(waiverText, pw - MARGIN - R_MARGIN);
   for (const line of waiverLines) {
     y = checkPageBreak(doc, y, 6);
@@ -814,7 +824,8 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   const isWrittenConsent = meeting.meeting_type === "Written Consent";
   const isLLC = entityType?.toLowerCase().includes("llc") || entityType?.toLowerCase().includes("limited liability");
   const isAnnual = (meeting.meeting_type || "").toLowerCase().includes("annual");
-  const bt = isAnnual; // blue theme flag
+  const isShareholder = (meeting.meeting_type || "").toLowerCase().includes("shareholder");
+  const bt = isAnnual || isShareholder; // blue theme flag for both annual and shareholder meetings
   let sectionNum = 0;
 
   // Helper to get table head styles based on theme
@@ -843,7 +854,8 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
-    doc.text("MINUTES OF THE ANNUAL MEETING", pw / 2, y, { align: "center" });
+    const titleText = isShareholder ? "MINUTES OF THE MEETING OF SHAREHOLDERS" : "MINUTES OF THE ANNUAL MEETING";
+    doc.text(titleText, pw / 2, y, { align: "center" });
     y += 10;
   } else {
     // Meeting Type Header
@@ -864,7 +876,8 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...BODY_COLOR);
-    const introText = `The Annual Meeting of the ${stateOfInc} ${entityLabel} was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${meeting.meeting_location ? `, at ${meeting.meeting_location}` : ""}.`;
+    const meetingLabel = isShareholder ? "Meeting of Shareholders" : "Annual Meeting";
+    const introText = `The ${meetingLabel} of the ${stateOfInc} ${entityLabel} was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${meeting.meeting_location ? `, at ${meeting.meeting_location}` : ""}.`;
     const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of introLines) {
       y = checkPageBreak(doc, y, 6);
@@ -1381,7 +1394,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         y += 5.5;
       }
       y += 2;
-      const indent = WHEREAS_RESOLVED_INDENT;
+      const indent = RESOLVED_INDENT;
       const resolvedPrefix = "RESOLVED, ";
       const resolvedBody = `that no legal counsel will be retained by the ${isLLC ? "company" : "corporation"}. When legal services are required, the ${isLLC ? "managing member" : "president"} of the ${isLLC ? "company" : "corporation"} is authorized to engage legal counsel as deemed appropriate.`;
       const fullResolved = resolvedPrefix + resolvedBody;
@@ -1434,7 +1447,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         y += 5.5;
       }
       y += 2;
-      const indent = WHEREAS_RESOLVED_INDENT;
+      const indent = RESOLVED_INDENT;
       const resolvedPrefix = "RESOLVED, ";
       const resolvedBody = `that no accountant will be retained by the ${isLLC ? "company" : "corporation"}. When accounting services are required, the ${isLLC ? "managing member" : "president"} of the ${isLLC ? "company" : "corporation"} is authorized to engage an accountant as deemed appropriate.`;
       const fullResolved = resolvedPrefix + resolvedBody;
@@ -1711,7 +1724,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y += 5.5;
     }
     y += 2;
-    const indent = WHEREAS_RESOLVED_INDENT;
+    const indent = RESOLVED_INDENT;
     const resolvedPrefix = "RESOLVED, ";
     const resolvedBody = `that the company acquire/dispose of the equipment generally described below:`;
     const fullResolved = resolvedPrefix + resolvedBody;
@@ -2190,7 +2203,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
   // Footer
   if (bt) {
-    addAnnualMeetingFooter(doc, companyName);
+    const docLabel = isShareholder ? "Meeting of Shareholders Minutes" : "Annual Meeting Minutes";
+    addAnnualMeetingFooter(doc, companyName, docLabel);
   } else {
     addDFIFooter(doc, companyName);
   }

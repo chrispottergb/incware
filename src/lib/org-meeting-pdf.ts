@@ -142,9 +142,9 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
     y += lines.length * 16 + 10;
   }
 
-  // WHEREAS: indented, "WHEREAS" in bold italic, remainder in italic
+  // WHEREAS: flush left, "WHEREAS" in bold italic, remainder in italic
   function whereasPara(rest: string) {
-    const indent = 36;
+    const indent = 0;
     const prefix = "WHEREAS, ";
     doc.setFontSize(11);
     doc.setTextColor(...BODY_COLOR as [number, number, number]);
