@@ -27,6 +27,7 @@ import {
   Scale,
   GitBranch,
   UserCheck,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { isLLCType } from "@/lib/entity-terminology";
 
