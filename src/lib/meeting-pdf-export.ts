@@ -1714,7 +1714,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y += 5.5;
     }
     y += 2;
-    const indent = WHEREAS_RESOLVED_INDENT;
+    const indent = RESOLVED_INDENT;
     const resolvedPrefix = "RESOLVED, ";
     const resolvedBody = `that the company acquire/dispose of the equipment generally described below:`;
     const fullResolved = resolvedPrefix + resolvedBody;
