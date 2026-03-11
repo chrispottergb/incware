@@ -522,10 +522,15 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
     (data.officers || []).forEach(o => { if (o.name) addUnique(o.name); });
   }
 
-  const purposes = [
-    `Elect ${isLLC ? "managers/officers" : "officers"}`,
-    "Conduct any other business that properly may be brought before the meeting",
-  ];
+  const purposes = isShareholderMeeting
+    ? [
+        "elect a new board of directors",
+        "conduct any other business that properly may be brought before the meeting",
+      ]
+    : [
+        `Elect ${isLLC ? "managers/officers" : "officers"}`,
+        "Conduct any other business that properly may be brought before the meeting",
+      ];
 
   let y = 30;
 
@@ -876,45 +881,134 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...BODY_COLOR);
-    const meetingLabel = isShareholder ? "Meeting of Shareholders" : "Annual Meeting";
-    const introText = `The ${meetingLabel} of the ${stateOfInc} ${entityLabel} was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${meeting.meeting_location ? `, at ${meeting.meeting_location}` : ""}.`;
-    const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-    for (const line of introLines) {
-      y = checkPageBreak(doc, y, 6);
-      doc.text(line, MARGIN, y);
-      y += 5.5;
-    }
-    y += 3;
 
-    // Attendees list
-    const attendees = new Set<string>();
-    (data.shareholders || []).forEach(s => { if (s.shareholder_name) attendees.add(s.shareholder_name); });
-    (data.directors || []).forEach(d => { if (d.director_name) attendees.add(d.director_name); });
-    (data.officers || []).forEach(o => { if (o.name) attendees.add(o.name); });
-    if (attendees.size > 0) {
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(...BODY_COLOR);
-      doc.text("The following were present at the meeting:", MARGIN, y);
-      y += 5.5;
-      attendees.forEach(name => {
+    if (isShareholder) {
+      // Shareholder meeting intro matches the uploaded template format
+      const locationStr = meeting.meeting_location || "";
+      const cityAtMeeting = meeting.company_city_at_meeting || company?.city || "";
+      const stateAtMeeting = meeting.company_state_at_meeting || company?.state || "";
+      let locPart = "";
+      if (locationStr) {
+        locPart = locationStr;
+        const locLower = locationStr.toLowerCase();
+        const extras = [
+          cityAtMeeting && !locLower.includes(cityAtMeeting.toLowerCase()) ? cityAtMeeting : "",
+          stateAtMeeting && !locLower.includes(stateAtMeeting.toLowerCase()) ? stateAtMeeting : "",
+        ].filter(Boolean);
+        if (extras.length > 0) locPart += `, ${extras.join(", ")}`;
+      }
+      const introText = `Minutes of the annual meeting of shareholders of ${companyName}, held at ${locPart || "[location]"} on ${dateStr}${meeting.meeting_time ? ` at ${meeting.meeting_time}` : ""}, pursuant to the following waiver of notice and consent to the holding of such meeting signed by all of the shareholders of this ${entityLabel} on the records of said meeting, to-wit:`;
+      const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of introLines) {
         y = checkPageBreak(doc, y, 6);
-        doc.text(`•  ${name}`, MARGIN + 6, y);
+        doc.text(line, MARGIN, y);
         y += 5.5;
-      });
+      }
+      y += 3;
+    } else {
+      const meetingLabel = "Annual Meeting";
+      const introText = `The ${meetingLabel} of the ${stateOfInc} ${entityLabel} was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${meeting.meeting_location ? `, at ${meeting.meeting_location}` : ""}.`;
+      const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of introLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
       y += 3;
     }
 
-    const chairText = `${meeting.chairperson || "[Chairperson]"} served as Chairperson and ${meeting.mtg_secretary || "[Secretary]"} served as Secretary of the meeting.`;
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    const chairLines = doc.splitTextToSize(chairText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-    for (const line of chairLines) {
-      y = checkPageBreak(doc, y, 6);
-      doc.text(line, MARGIN, y);
-      y += 5.5;
+    if (isShareholder) {
+      // For shareholder meetings: show shareholders with basis (address)
+      const shareholderData = data.shareholders || [];
+      if (shareholderData.length > 0) {
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...BODY_COLOR);
+        const chairText = `The meeting was called to order by ${meeting.chairperson || "[Chairperson]"}, who chaired the meeting, and ${meeting.mtg_secretary || "[Secretary]"}, acting as secretary, recorded the proceedings.`;
+        const chairLines = doc.splitTextToSize(chairText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+        for (const line of chairLines) {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(line, MARGIN, y);
+          y += 5.5;
+        }
+        y += 3;
+
+        const quorumText = `The secretary announced that there were, present in person or by proxy, the following shareholder(s), representing a quorum of the shareholders and showing the current resident address and the number of shares held by each:`;
+        const quorumLines = doc.splitTextToSize(quorumText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+        for (const line of quorumLines) {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(line, MARGIN, y);
+          y += 5.5;
+        }
+        y += 5;
+
+        // Shareholder table with basis (address)
+        const shareholderTableBody = shareholderData.map(s => {
+          // Build basis from companyShareholders address data if available
+          const matchingShareholder = (data.companyShareholders || []).find(
+            cs => cs.name?.toLowerCase().trim() === s.shareholder_name?.toLowerCase().trim()
+          );
+          let basis = "";
+          if (matchingShareholder) {
+            const parts = [
+              matchingShareholder.address,
+              matchingShareholder.city,
+              matchingShareholder.state,
+              matchingShareholder.zip,
+            ].filter(Boolean);
+            basis = parts.length > 0
+              ? `${matchingShareholder.address || ""}${matchingShareholder.city ? ` ${matchingShareholder.city}` : ""}${matchingShareholder.state ? `, ${matchingShareholder.state}` : ""}${matchingShareholder.zip ? ` ${matchingShareholder.zip}` : ""}`
+              : "";
+          }
+          return [
+            s.shareholder_name,
+            s.common_shares?.toLocaleString() ?? "—",
+            basis || "—",
+          ];
+        });
+
+        autoTable(doc, {
+          startY: y,
+          head: [["Shareholder", "Common Shares", "Shareholder Basis"]],
+          body: shareholderTableBody,
+          theme: "grid",
+          headStyles: tableHeadStyles,
+          bodyStyles: { fontSize: 10 },
+          margin: { left: MARGIN, right: R_MARGIN },
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      }
+    } else {
+      // Annual meeting: attendee list
+      const attendees = new Set<string>();
+      (data.shareholders || []).forEach(s => { if (s.shareholder_name) attendees.add(s.shareholder_name); });
+      (data.directors || []).forEach(d => { if (d.director_name) attendees.add(d.director_name); });
+      (data.officers || []).forEach(o => { if (o.name) attendees.add(o.name); });
+      if (attendees.size > 0) {
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...BODY_COLOR);
+        doc.text("The following were present at the meeting:", MARGIN, y);
+        y += 5.5;
+        attendees.forEach(name => {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(`•  ${name}`, MARGIN + 6, y);
+          y += 5.5;
+        });
+        y += 3;
+      }
+
+      const chairText = `${meeting.chairperson || "[Chairperson]"} served as Chairperson and ${meeting.mtg_secretary || "[Secretary]"} served as Secretary of the meeting.`;
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      const chairLines = doc.splitTextToSize(chairText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of chairLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 3;
     }
-    y += 3;
 
     if (meeting.tax_year) {
       y = addLabelValue(doc, y, "Tax Year", String(meeting.tax_year));
@@ -982,25 +1076,103 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (mType.includes("annual") || mType.includes("shareholder")) {
     y += 3;
     y = checkPageBreak(doc, y, 30);
-    y = section("Call to Order & Approval of Prior Meeting Minutes");
-    y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} and ${isLLC ? "members" : "shareholders"} of ${companyName} have taken various actions and made certain decisions during the prior fiscal year in the ordinary course of business; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that all acts and decisions of the ${isLLC ? "members" : "directors"} and ${isLLC ? "officers" : "officers"} of ${companyName} taken or made since the last annual meeting are hereby ratified, confirmed, and approved in all respects.`,
-      bt
-    );
 
-    if (meeting.prior_mtg_date) {
-      const priorDate = new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    if (isShareholder) {
+      // Shareholder meeting: prior meeting minutes reading + stock ledger presentation
+      y = section("Approval of Prior Meeting Minutes");
+      if (meeting.prior_mtg_date) {
+        const priorDate = new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...BODY_COLOR);
+        const priorText = `The minutes of the last annual meeting of shareholders, having been held on ${priorDate}, were read and approved.`;
+        const priorLines = doc.splitTextToSize(priorText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+        for (const line of priorLines) {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(line, MARGIN, y);
+          y += 5.5;
+        }
+        y += 3;
+      }
+
+      // Old business for shareholder meeting
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...BODY_COLOR);
+      const oldBizText = meeting.old_business?.trim()
+        ? `The first order of business to come before the meeting was a discussion of old business. ${meeting.old_business.trim()}`
+        : `The first order of business to come before the meeting was a discussion of old business. There being none, the meeting proceeded.`;
+      const oldBizLines = doc.splitTextToSize(oldBizText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of oldBizLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 5;
+
+      // Stock ledger and transfer books presentation
+      y = checkPageBreak(doc, y, 40);
+      y = section("Presentation of Corporate Records");
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...BODY_COLOR);
+      const presentText = `Thereupon, the chairperson presented to the meeting the following papers and documents, all of which were laid upon the table and were publicly declared by the chairperson to be open for inspection by any shareholder:`;
+      const presentLines = doc.splitTextToSize(presentText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of presentLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 3;
+      const items = [
+        "the stock ledger and transfer books of the corporation",
+        `minutes of the board of directors, covering all purchases, contracts, contributions, compensations, acts, authorizations, decisions, proceedings, elections, and appointments by the board of directors since the last annual meeting${meeting.prior_mtg_date ? ` which was held on ${new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}` : ""}.`,
+      ];
+      items.forEach((item, i) => {
+        y = checkPageBreak(doc, y, 10);
+        const itemLines = doc.splitTextToSize(`${i + 1}) ${item}`, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN - 8);
+        for (const line of itemLines) {
+          doc.text(line, MARGIN + 4, y);
+          y += 5.5;
+        }
+        y += 2;
+      });
+      y += 3;
+
+      // Ratification resolution
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...BODY_COLOR);
+      const motionText = `On motion duly made and seconded, it was`;
+      doc.text(motionText, MARGIN, y);
+      y += 8;
       y = addWhereasResolved(doc, y,
-        `WHEREAS, the minutes of the previous Annual Meeting held on ${priorDate} have been reviewed by the ${isLLC ? "members" : "shareholders"};`,
-        `NOW, THEREFORE, BE IT RESOLVED, that the minutes of the Annual Meeting held on ${priorDate} are hereby approved and adopted as a true and accurate record of that meeting.`,
+        "",
+        `NOW, THEREFORE, BE IT RESOLVED, that all purchases, contracts, contributions, compensations, acts, decisions, proceedings, elections and appointments by the board of directors since the last annual meeting of the corporation${meeting.tax_year ? `, and all matters referred to in the report to shareholders for the year ending December 31, ${meeting.tax_year}` : ""}, be and the same hereby are approved and ratified.`,
         bt
       );
+    } else {
+      // Annual meeting ratification
+      y = section("Call to Order & Approval of Prior Meeting Minutes");
+      y = addWhereasResolved(doc, y,
+        `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} and ${isLLC ? "members" : "shareholders"} of ${companyName} have taken various actions and made certain decisions during the prior fiscal year in the ordinary course of business; and`,
+        `NOW, THEREFORE, BE IT RESOLVED, that all acts and decisions of the ${isLLC ? "members" : "directors"} and ${isLLC ? "officers" : "officers"} of ${companyName} taken or made since the last annual meeting are hereby ratified, confirmed, and approved in all respects.`,
+        bt
+      );
+
+      if (meeting.prior_mtg_date) {
+        const priorDate = new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+        y = addWhereasResolved(doc, y,
+          `WHEREAS, the minutes of the previous Annual Meeting held on ${priorDate} have been reviewed by the ${isLLC ? "members" : "shareholders"};`,
+          `NOW, THEREFORE, BE IT RESOLVED, that the minutes of the Annual Meeting held on ${priorDate} are hereby approved and adopted as a true and accurate record of that meeting.`,
+          bt
+        );
+      }
     }
   }
 
-  // Old Business
-  if (meeting.old_business?.trim()) {
+  // Old Business (skip for shareholder meetings - already handled above)
+  if (!isShareholder && meeting.old_business?.trim()) {
     y += 3;
     y = checkPageBreak(doc, y, 30);
     y = section("Old Business");
@@ -1028,7 +1200,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   const hasOtherBiz = meeting.other_business?.trim();
   const hasVehiclePolicy = meeting.vehicle_policy_text?.trim();
   const hasProfitPlan = meeting.profit_improvement_plan?.trim();
-  if (hasOtherBiz || hasProfitPlan) {
+  if (!isShareholder && (hasOtherBiz || hasProfitPlan)) {
     y += 3;
     y = checkPageBreak(doc, y, 30);
     y = section("Other Business");
@@ -1074,36 +1246,106 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 5;
   }
 
-  // Directors
+  // Directors / Board Election
   if (data.directors && data.directors.length > 0) {
     y += 3;
     y = checkPageBreak(doc, y, 30 + data.directors.length * 7);
-    y = section(isLLC ? "Authorized Binders" : "Directors Present");
-    if (mType.includes("annual") || mType.includes("shareholder")) {
-      y = addWhereasResolved(doc, y,
-        isLLC
-          ? `WHEREAS, the members desire to confirm and record the persons serving as authorized binders of ${companyName} for the ensuing year, consistent with Wis. Stat. § 183.0407; and`
-          : `WHEREAS, the terms of the current directors expire at this meeting, and the shareholders are called upon to elect the Board of Directors for the ensuing year; and`,
-        isLLC
-          ? `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby confirmed as authorized binders of ${companyName} for the ensuing year, authorized to act on behalf of the company in their designated capacity:`
-          : `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby re-elected as directors of ${companyName}, to serve until the next annual meeting and until their successors are duly elected and qualified:`,
-        bt
-      );
+
+    if (isShareholder) {
+      // Shareholder meeting: director nomination and election per template
+      y = section("Nomination and Election of Board of Directors");
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...BODY_COLOR);
+      const nominationText = `The chairperson announced that the next item of business was the nomination and election of the board of directors in accordance with the bylaws of the corporation. The following nomination(s) for the position of director(s) of the corporation were made and seconded:`;
+      const nomLines = doc.splitTextToSize(nominationText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of nomLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 3;
+      data.directors.forEach(d => {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(`•  ${d.director_name}`, MARGIN + 6, y);
+        y += 5.5;
+      });
+      y += 5;
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...BODY_COLOR);
+      const voteText = `The secretary next took the votes of the shareholders entitled to vote for the election of directors at the meeting and upon motion duly made and seconded, it was unanimously`;
+      const voteLines = doc.splitTextToSize(voteText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of voteLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 3;
+
+      // RESOLVED for director election
+      const rIndent = RESOLVED_INDENT;
+      const resolvedPrefix = "RESOLVED, ";
+      const resolvedBody = `that the following be elected as director(s) of the corporation, to serve for one year or until his/her respective successor should be duly elected and qualified.`;
+      const fullResolved = resolvedPrefix + resolvedBody;
+      const rLines = doc.splitTextToSize(fullResolved, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN - rIndent);
+      y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
+      for (let i = 0; i < rLines.length; i++) {
+        y = checkPageBreak(doc, y, 6);
+        if (i === 0) {
+          doc.setFont("helvetica", "bold");
+          const prefixWidth = doc.getTextWidth(resolvedPrefix);
+          doc.text(resolvedPrefix, MARGIN + rIndent, y);
+          doc.setFont("helvetica", "normal");
+          const remainder = rLines[0].substring(resolvedPrefix.length);
+          if (remainder) doc.text(remainder, MARGIN + rIndent + prefixWidth, y);
+        } else {
+          doc.setFont("helvetica", "normal");
+          doc.text(rLines[i], MARGIN + rIndent, y);
+        }
+        y += 5.5;
+      }
+      y += 5;
+
+      // List elected directors
+      data.directors.forEach(d => {
+        y = checkPageBreak(doc, y, 6);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...BODY_COLOR);
+        doc.text(`•  ${d.director_name}`, MARGIN + 6, y);
+        y += 5.5;
+      });
+      y += 8;
+    } else {
+      // Annual / other meeting: standard directors section
+      y = section(isLLC ? "Authorized Binders" : "Directors Present");
+      if (mType.includes("annual")) {
+        y = addWhereasResolved(doc, y,
+          isLLC
+            ? `WHEREAS, the members desire to confirm and record the persons serving as authorized binders of ${companyName} for the ensuing year, consistent with Wis. Stat. § 183.0407; and`
+            : `WHEREAS, the terms of the current directors expire at this meeting, and the shareholders are called upon to elect the Board of Directors for the ensuing year; and`,
+          isLLC
+            ? `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby confirmed as authorized binders of ${companyName} for the ensuing year, authorized to act on behalf of the company in their designated capacity:`
+            : `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby re-elected as directors of ${companyName}, to serve until the next annual meeting and until their successors are duly elected and qualified:`,
+          bt
+        );
+      }
+      autoTable(doc, {
+        startY: y,
+        head: [[isLLC ? "Authorized Binder Name" : "Director Name"]],
+        body: data.directors.map(d => [d.director_name]),
+        theme: "grid",
+        headStyles: tableHeadStyles,
+        bodyStyles: { fontSize: 10 },
+        margin: { left: MARGIN, right: R_MARGIN },
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
     }
-    autoTable(doc, {
-      startY: y,
-      head: [[isLLC ? "Authorized Binder Name" : "Director Name"]],
-      body: data.directors.map(d => [d.director_name]),
-      theme: "grid",
-      headStyles: tableHeadStyles,
-      bodyStyles: { fontSize: 10 },
-      margin: { left: MARGIN, right: R_MARGIN },
-    });
-    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Officers (with salary/bonus)
-  if (data.officers && data.officers.length > 0) {
+  // Officers (with salary/bonus) — skip for shareholder meetings
+  if (!isShareholder && data.officers && data.officers.length > 0) {
     y = checkPageBreak(doc, y, 30 + data.officers.length * 7);
     y = section("Officers");
     const isSCorp = entityType === "S-Corp";
@@ -1128,8 +1370,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Shareholders
-  if (data.shareholders && data.shareholders.length > 0) {
+  // Shareholders — skip for shareholder meetings (already rendered in meeting info section)
+  if (!isShareholder && data.shareholders && data.shareholders.length > 0) {
     y = checkPageBreak(doc, y, 30 + data.shareholders.length * 7);
     const memberLabel = isLLC ? "Members" : "Shareholders";
     y = section(memberLabel);
@@ -1187,8 +1429,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
   }
 
-  // Financials
-  if (data.financials) {
+  // Financials — skip for shareholder meetings
+  if (!isShareholder && data.financials) {
     const f = data.financials;
     y = checkPageBreak(doc, y, 80);
     y = section("Financial Comparison — Year to Year");
@@ -1337,8 +1579,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = ly + 10;
   }
 
-  // Counsel / Professional Advisors
-  const shouldRenderCounselSection = bt || (data.counsel && data.counsel.length > 0);
+  // Counsel / Professional Advisors — skip for shareholder meetings
+  const shouldRenderCounselSection = !isShareholder && (bt || (data.counsel && data.counsel.length > 0));
   const counselRows = data.counsel && data.counsel.length > 0 ? data.counsel : [{} as any];
 
   if (shouldRenderCounselSection) {
@@ -1472,8 +1714,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
   }
 
-  // Banking Section (separate from counsel)
-  {
+  // Banking Section (separate from counsel) — skip for shareholder meetings
+  if (!isShareholder) {
     const counselRec = counselRows[0] || {} as any;
     let bankNameForTable = counselRec.bank_name?.trim() || "";
     if (!bankNameForTable && data.companyBanks && data.companyBanks.length > 0) {
@@ -1571,8 +1813,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
   }
 
-  // Loans
-  if (data.loans && data.loans.length > 0) {
+  // Loans — skip for shareholder meetings
+  if (!isShareholder && data.loans && data.loans.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.loans.length * 7);
     y = section("Loans");
     y = addWhereasResolved(doc, y,
@@ -1598,11 +1840,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Company Vehicle Policy (if provided)
+  // Company Vehicle Policy (if provided) — skip for shareholder meetings
   const vehiclePolicyText = meeting?.vehicle_policy_text?.trim();
-  const hasVehicleActivity = (data.vehiclePurchases && data.vehiclePurchases.length > 0) ||
+  const hasVehicleActivity = !isShareholder && ((data.vehiclePurchases && data.vehiclePurchases.length > 0) ||
     (data.vehicleSales && data.vehicleSales.length > 0) ||
-    (data.vehicleLeases && data.vehicleLeases.length > 0);
+    (data.vehicleLeases && data.vehicleLeases.length > 0));
 
   if (bt && vehiclePolicyText && hasVehicleActivity) {
     y = checkPageBreak(doc, y, 30);
@@ -1619,8 +1861,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 6;
   }
 
-  // Vehicle Purchases
-  if (data.vehiclePurchases && data.vehiclePurchases.length > 0) {
+  // Vehicle Purchases — skip for shareholder meetings
+  if (!isShareholder && data.vehiclePurchases && data.vehiclePurchases.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.vehiclePurchases.length * 7);
     y = section("Vehicle Purchases Entered Into During the Year");
     y = addWhereasResolved(doc, y,
@@ -1649,8 +1891,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Vehicle Leases
-  if (data.vehicleLeases && data.vehicleLeases.length > 0) {
+  // Vehicle Leases — skip for shareholder meetings
+  if (!isShareholder && data.vehicleLeases && data.vehicleLeases.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.vehicleLeases.length * 7);
     y = section("Vehicle Leases Entered Into During the Year");
     y = addWhereasResolved(doc, y,
@@ -1680,8 +1922,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Vehicle/Equipment Sales
-  if (data.vehicleSales && data.vehicleSales.length > 0) {
+  // Vehicle/Equipment Sales — skip for shareholder meetings
+  if (!isShareholder && data.vehicleSales && data.vehicleSales.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.vehicleSales.length * 7);
     y = section("Vehicles & Equipment Sold During the Year");
     y = addWhereasResolved(doc, y,
@@ -1709,8 +1951,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Equipment Transactions (from meeting_assets)
-  if (data.assets && data.assets.length > 0) {
+  // Equipment Transactions — skip for shareholder meetings
+  if (!isShareholder && data.assets && data.assets.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.assets.length * 7);
     y = section("Equipment Transactions");
     doc.setFontSize(11);
@@ -1764,8 +2006,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Lease Terminations
-  if (data.leaseTerminations && data.leaseTerminations.length > 0) {
+  // Lease Terminations — skip for shareholder meetings
+  if (!isShareholder && data.leaseTerminations && data.leaseTerminations.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.leaseTerminations.length * 7);
     y = section("Leases Ended During the Year");
     y = addWhereasResolved(doc, y,
@@ -1793,8 +2035,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Amendments
-  if (data.amendments && data.amendments.length > 0) {
+  // Amendments — skip for shareholder meetings
+  if (!isShareholder && data.amendments && data.amendments.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.amendments.length * 12);
     y = section("Amendments");
     y = addWhereasResolved(doc, y,
@@ -1846,8 +2088,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     });
   }
 
-  // Auto-generated resolutions from prior year comparison
-  if (data.priorYear) {
+  // Auto-generated resolutions from prior year comparison — skip for shareholder meetings
+  if (!isShareholder && data.priorYear) {
     const autoResolutions: { purpose: string; text: string }[] = [];
     const entityType = company?.entity_type || "Corporation";
     const isLLC = entityType === "LLC";
@@ -1977,7 +2219,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
   }
 
-  if (data.benefits && data.benefits.length > 0) {
+  if (!isShareholder && data.benefits && data.benefits.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.benefits.length * 7);
     y = section("Benefits");
     y = addWhereasResolved(doc, y,
@@ -2004,8 +2246,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Agreements
-  if (data.agreements && data.agreements.length > 0) {
+  // Agreements — skip for shareholder meetings
+  if (!isShareholder && data.agreements && data.agreements.length > 0) {
     const newOrUpdated = data.agreements.filter((a: any) => !a.is_carried_forward);
     const carriedForward = data.agreements.filter((a: any) => a.is_carried_forward && (a.status === "Active" || !a.status));
 
@@ -2106,7 +2348,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Registered Agent Confirmation (Annual Meeting blue theme)
-  if (bt && company?.registered_agent_name) {
+  if (bt && !isShareholder && company?.registered_agent_name) {
     y = checkPageBreak(doc, y, 40);
     y = section("Registered Agent Confirmation");
     const agentAddr = [company.registered_agent_address, company.registered_agent_city, company.registered_agent_state, company.registered_agent_zip].filter(Boolean).join(", ");
@@ -2118,7 +2360,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // General Authorization (Annual Meeting blue theme)
-  if (bt) {
+  if (bt && !isShareholder) {
     y = checkPageBreak(doc, y, 40);
     y = section("General Authorization");
     y = addWhereasResolved(doc, y,
@@ -2129,7 +2371,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Tax Return Filing Acknowledgment (Annual Meeting)
-  if (bt && meeting?.tax_year) {
+  if (bt && !isShareholder && meeting?.tax_year) {
     y = checkPageBreak(doc, y, 30);
     const counselRec = (data.counsel && data.counsel.length > 0) ? data.counsel[0] : null;
     const acctName = counselRec?.accountant_name?.trim() || "";
@@ -2152,7 +2394,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Charitable Contributions (Annual Meeting)
-  if (bt && meeting?.charitable_contribution_amount != null && Number(meeting.charitable_contribution_amount) > 0) {
+  if (bt && !isShareholder && meeting?.charitable_contribution_amount != null && Number(meeting.charitable_contribution_amount) > 0) {
     y = checkPageBreak(doc, y, 30);
     const contribAmt = fmt(meeting.charitable_contribution_amount);
     const contribOrg = meeting.charitable_contribution_org?.trim() || "a recognized charitable organization";
