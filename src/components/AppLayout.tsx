@@ -31,6 +31,16 @@ import {
 } from "lucide-react";
 import { isLLCType } from "@/lib/entity-terminology";
 
+function entityBadge(entityType: string | undefined) {
+  if (entityType === "Corporation") return "Corp";
+  if (entityType === "S-Corp") return "S-Corp";
+  if (entityType === "LLC") return "LLC";
+  if (entityType === "Single Member LLC") return "SMLLC";
+  if (entityType === "Non-Profit") return "N-P";
+  if (entityType === "Partnership") return "Ptnr";
+  return entityType?.slice(0, 4) || "";
+}
+
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
   const location = useLocation();
@@ -53,7 +63,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const inactiveCompanies = useMemo(() => companies.filter((c) => c.status === "inactive"), [companies]);
 
   const filteredActiveCompanies = useMemo(() => {
-    if (!companySearch.trim()) return activeCompanies.slice(0, 8);
+    if (!companySearch.trim()) return activeCompanies;
     return activeCompanies.filter((c) =>
       c.name.toLowerCase().includes(companySearch.toLowerCase())
     );
@@ -92,18 +102,34 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           { label: "Bank", href: `/company/${companyId}#banks`, icon: Landmark },
           { label: "Relationships", href: `/company/${companyId}#relationships`, icon: GitBranch },
           { label: "AI Compliance", href: `/company/${companyId}#ai-compliance`, icon: UserCheck },
+          { label: "Operating Agreement", href: `/company/${companyId}#operating-agreement`, icon: FileText },
           { label: "Record Book", href: `/company/${companyId}#record-book`, icon: FileText },
+          { label: "Documents", href: `/company/${companyId}#documents`, icon: FileText },
         ]
-      : [
-          { label: "Overview", href: `/company/${companyId}#incorporation`, icon: Building2 },
-          { label: "Organization", href: `/company/${companyId}#organization`, icon: Landmark },
-          { label: "Meetings", href: `/company/${companyId}#meetings`, icon: Calendar },
-          { label: "Shareholders", href: `/company/${companyId}#shareholders`, icon: UsersRound },
-          { label: "Timeline", href: `/company/${companyId}#timeline`, icon: Clock },
-          { label: "Counsel", href: `/company/${companyId}#counsel`, icon: Scale },
-          { label: "Banks", href: `/company/${companyId}#banks`, icon: Landmark },
-          { label: "Relationships", href: `/company/${companyId}#relationships`, icon: GitBranch },
-        ]
+      : (() => {
+          const isCorp = currentCompany?.entity_type === "Corporation" || currentCompany?.entity_type === "S-Corp";
+          const isNonprofit = currentCompany?.entity_type === "Non-Profit";
+          const nav = [
+            { label: isCorp ? "Overview" : "Incorporation Info", href: `/company/${companyId}#incorporation`, icon: Building2 },
+            ...(!isCorp ? [{ label: "Organization", href: `/company/${companyId}#organization`, icon: Landmark }] : []),
+            { label: "Meetings", href: `/company/${companyId}#meetings`, icon: Calendar },
+            { label: "Shareholders", href: `/company/${companyId}#shareholders`, icon: UsersRound },
+            { label: "Timeline", href: `/company/${companyId}#timeline`, icon: Clock },
+            { label: "Leases", href: `/company/${companyId}#leases`, icon: FileText },
+            { label: "Counsel", href: `/company/${companyId}#counsel`, icon: Scale },
+            { label: "Banks", href: `/company/${companyId}#banks`, icon: Landmark },
+            { label: "Relationships", href: `/company/${companyId}#relationships`, icon: GitBranch },
+            { label: "AI Compliance", href: `/company/${companyId}#ai-compliance`, icon: UserCheck },
+          ];
+          if (isCorp) nav.push({ label: "Bylaws", href: `/company/${companyId}#bylaws`, icon: FileText });
+          if (isNonprofit) {
+            nav.push({ label: "Bylaws", href: `/company/${companyId}#nonprofit-bylaws`, icon: FileText });
+            nav.push({ label: "Conflict of Interest", href: `/company/${companyId}#conflict-of-interest`, icon: FileText });
+          }
+          nav.push({ label: "Record Book", href: `/company/${companyId}#record-book`, icon: FileText });
+          nav.push({ label: "Documents", href: `/company/${companyId}#documents`, icon: FileText });
+          return nav;
+        })()
     : [];
 
   return (
@@ -155,7 +181,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               />
             </div>
           </div>
-          <div className="max-h-40 overflow-y-auto space-y-0.5">
+          <div className="max-h-52 overflow-y-auto space-y-0.5">
             {filteredActiveCompanies.map((c) => {
               const isActive = location.pathname === `/company/${c.id}`;
               return (
@@ -174,7 +200,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   <Building2 className="h-3 w-3 shrink-0 opacity-50" />
                   <span className="truncate flex-1">{c.name}</span>
                   <span className="shrink-0 rounded bg-sidebar-accent/60 px-1 py-0 text-[9px] font-semibold uppercase text-sidebar-foreground/50">
-                    {c.entity_type === "Corporation" ? "Corp" : c.entity_type === "S-Corp" ? "S-Corp" : c.entity_type === "LLC" ? "LLC" : c.entity_type === "Single Member LLC" ? "SMLLC" : c.entity_type?.slice(0, 4)}
+                    {entityBadge(c.entity_type)}
                   </span>
                 </button>
               );
@@ -223,7 +249,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                         <Building2 className="h-3 w-3 shrink-0 opacity-50" />
                         <span className="truncate flex-1">{c.name}</span>
                         <span className="shrink-0 rounded bg-sidebar-accent/60 px-1 py-0 text-[9px] font-semibold uppercase text-sidebar-foreground/50">
-                          {c.entity_type === "Corporation" ? "Corp" : c.entity_type === "S-Corp" ? "S-Corp" : c.entity_type === "LLC" ? "LLC" : c.entity_type === "Single Member LLC" ? "SMLLC" : c.entity_type?.slice(0, 4)}
+                          {entityBadge(c.entity_type)}
                         </span>
                       </button>
                     );

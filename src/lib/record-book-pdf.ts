@@ -2,8 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { isLLCType } from "@/lib/entity-terminology";
 
-const DFI_HEADER = "STATE OF WISCONSIN";
-const DFI_SUB = "DEPARTMENT OF FINANCIAL INSTITUTIONS";
+const R_MARGIN = 25.4; // 1 inch right margin — matches left
 const MARGIN = 25.4; // 1 inch for binder compatibility
 
 function fmt(val: any): string {
@@ -88,9 +87,9 @@ function addTableSafe(doc: jsPDF, y: number, head: string[], body: string[][]): 
     head: [head],
     body,
     theme: "grid",
-    headStyles: { fillColor: [140, 140, 140], fontSize: 11, fontStyle: "bold" },
+    headStyles: { fillColor: [45, 55, 72], fontSize: 11, fontStyle: "bold" },
     bodyStyles: { fontSize: 11 },
-    margin: { left: MARGIN, right: MARGIN },
+    margin: { left: MARGIN, right: R_MARGIN },
     styles: { overflow: "linebreak", cellWidth: "auto" },
   });
   return (doc as any).lastAutoTable.finalY + 6;
@@ -118,15 +117,16 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
   doc.setFillColor(25, 25, 30);
   doc.rect(0, 0, pw, getPageHeight(doc), "F");
 
-  // DFI header
+  // Company name as header (replaces old DFI branding)
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(200, 200, 200);
-  doc.text(DFI_HEADER, cx, 40, { align: "center" });
+  doc.text(company.name || "Corporate Record Book", cx, 40, { align: "center" });
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(160, 160, 160);
-  doc.text(DFI_SUB, cx, 46, { align: "center" });
+  const coverAddr = [company.address, company.city, company.state, company.zip].filter(Boolean).join(", ");
+  if (coverAddr) doc.text(coverAddr, cx, 46, { align: "center" });
 
   // Lines
   doc.setDrawColor(180, 60, 40);
