@@ -87,9 +87,9 @@ function addTableSafe(doc: jsPDF, y: number, head: string[], body: string[][]): 
     head: [head],
     body,
     theme: "grid",
-    headStyles: { fillColor: [140, 140, 140], fontSize: 11, fontStyle: "bold" },
+    headStyles: { fillColor: [45, 55, 72], fontSize: 11, fontStyle: "bold" },
     bodyStyles: { fontSize: 11 },
-    margin: { left: MARGIN, right: MARGIN },
+    margin: { left: MARGIN, right: R_MARGIN },
     styles: { overflow: "linebreak", cellWidth: "auto" },
   });
   return (doc as any).lastAutoTable.finalY + 6;
