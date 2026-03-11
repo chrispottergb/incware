@@ -1370,8 +1370,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Shareholders
-  if (data.shareholders && data.shareholders.length > 0) {
+  // Shareholders — skip for shareholder meetings (already rendered in meeting info section)
+  if (!isShareholder && data.shareholders && data.shareholders.length > 0) {
     y = checkPageBreak(doc, y, 30 + data.shareholders.length * 7);
     const memberLabel = isLLC ? "Members" : "Shareholders";
     y = section(memberLabel);
