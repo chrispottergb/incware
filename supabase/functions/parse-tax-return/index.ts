@@ -96,7 +96,7 @@ serve(async (req) => {
     // Return job_id immediately, process in background
     // Use EdgeRuntime.waitUntil so the response is sent immediately
     // while the AI processing continues in the background
-    const backgroundPromise = processInBackground(admin, job.id, user.id, fileBuffer, file.type, file.name, fileName, companyId, mode);
+    const backgroundPromise = processInBackground(admin, job.id, user.id, fileBuffer, file.type, file.name, fileName, companyId, mode, pdfPassword);
 
     // Try EdgeRuntime.waitUntil for Deno Deploy / Supabase Edge
     try {
