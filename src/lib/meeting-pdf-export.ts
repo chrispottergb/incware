@@ -2371,7 +2371,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Tax Return Filing Acknowledgment (Annual Meeting)
-  if (bt && meeting?.tax_year) {
+  if (bt && !isShareholder && meeting?.tax_year) {
     y = checkPageBreak(doc, y, 30);
     const counselRec = (data.counsel && data.counsel.length > 0) ? data.counsel[0] : null;
     const acctName = counselRec?.accountant_name?.trim() || "";
