@@ -134,6 +134,7 @@ async function processInBackground(
   storagePath: string,
   companyId: string | null,
   mode: string,
+  pdfPassword: string | null,
 ) {
   try {
     // Convert to base64
