@@ -597,7 +597,9 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...BODY_COLOR);
 
-  const waiverText = `We (I), the undersigned, being the ${governingLabelLower} of ${companyName}, do hereby severally waive notice of the time, place and purposes of the annual meeting of said ${governingLabelLower} and do hereby call said meeting and consent to the holding thereof at this time and place: ${locationStr || "[location]"} on ${fullDateStr}${isLLC ? "" : " immediately following the meeting of shareholders"}, and are aware that the purposes of the meeting are to:`;
+  const meetingDescriptor = isShareholderMeeting ? "meeting of shareholders" : `annual meeting of said ${governingLabelLower}`;
+  const followingClause = isShareholderMeeting || isLLC ? "" : " immediately following the meeting of shareholders";
+  const waiverText = `We (I), the undersigned, being the ${governingLabelLower} of ${companyName}, do hereby severally waive notice of the time, place and purposes of the ${meetingDescriptor} and do hereby call said meeting and consent to the holding thereof at this time and place: ${locationStr || "[location]"} on ${fullDateStr}${followingClause}, and are aware that the purposes of the meeting are to:`;
   const waiverLines = doc.splitTextToSize(waiverText, pw - MARGIN - R_MARGIN);
   for (const line of waiverLines) {
     y = checkPageBreak(doc, y, 6);
