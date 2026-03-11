@@ -2367,17 +2367,25 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       startY: y,
       head: [["Benefit Type", "Provider", "Agent/Admin", "Plan Year", "Contribution", "Eligibility / Comments"]],
       body: data.benefits.map(b => [
-        b.benefit_type || b.benefit_description || "—",
-        b.provider || "—",
-        b.agent_administrator || "—",
-        b.plan_year?.toString() || "—",
-        b.retirement_contribution != null ? fmt(b.retirement_contribution) : "—",
-        b.eligibility_comments || "—",
+        b.benefit_type || b.benefit_description || "--",
+        b.provider || "--",
+        b.agent_administrator || "--",
+        b.plan_year?.toString() || "--",
+        b.retirement_contribution != null ? fmt(b.retirement_contribution) : "--",
+        b.eligibility_comments || "--",
       ]),
       theme: "grid",
       headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
+      columnStyles: {
+        0: { cellWidth: 30 },
+        1: { cellWidth: 28 },
+        2: { cellWidth: 28 },
+        3: { cellWidth: 18 },
+        4: { cellWidth: 24 },
+        5: { cellWidth: 'auto' },
+      },
     });
     y = (doc as any).lastAutoTable.finalY + 10;
   }
