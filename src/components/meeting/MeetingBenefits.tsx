@@ -337,15 +337,15 @@ export default function MeetingBenefits({ meetingId }: Props) {
               <tbody>
                 {rows.map((row: any) => (
                   <>
-                    <TableRow key={row.id} className="cursor-pointer" onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}>
-                      <TableCell className="px-2">
+                    <tr key={row.id} className="border-b transition-colors hover:bg-muted/50 cursor-pointer" onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}>
+                      <td className="p-2 align-middle">
                         {expandedId === row.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                      </TableCell>
-                      <TableCell className="font-medium text-sm whitespace-nowrap">{row.benefit_type || row.benefit_description || "—"}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{row.provider || "—"}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{row.agent_administrator || "—"}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{row.insurance_agency || "—"}</TableCell>
-                      <TableCell>
+                      </td>
+                      <td className="p-4 align-middle font-medium text-sm whitespace-nowrap">{row.benefit_type || row.benefit_description || "—"}</td>
+                      <td className="p-4 align-middle text-sm whitespace-nowrap">{row.provider || "—"}</td>
+                      <td className="p-4 align-middle text-sm whitespace-nowrap">{row.agent_administrator || "—"}</td>
+                      <td className="p-4 align-middle text-sm whitespace-nowrap">{row.insurance_agency || "—"}</td>
+                      <td className="p-4 align-middle">
                         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                           <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                             <Pencil className="h-4 w-4" />
@@ -354,8 +354,8 @@ export default function MeetingBenefits({ meetingId }: Props) {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                      </TableCell>
-                    </TableRow>
+                      </td>
+                    </tr>
                     {expandedId === row.id && (
                       <TableRow key={`${row.id}-detail`} className="bg-muted/30 hover:bg-muted/30">
                         <TableCell colSpan={6} className="px-6 py-3">
