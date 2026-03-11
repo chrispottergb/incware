@@ -2035,8 +2035,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Amendments
-  if (data.amendments && data.amendments.length > 0) {
+  // Amendments — skip for shareholder meetings
+  if (!isShareholder && data.amendments && data.amendments.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.amendments.length * 12);
     y = section("Amendments");
     y = addWhereasResolved(doc, y,
