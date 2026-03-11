@@ -2786,7 +2786,7 @@ export function exportFinancialsPDF(company: any, meeting: any, financials: any,
 }
 
 function fmt(val: any): string {
-  if (val == null) return "—";
+  if (val == null) return "--";
   return `$${Number(val).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 }
 

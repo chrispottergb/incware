@@ -7,7 +7,7 @@ const DFI_SUB = "DEPARTMENT OF FINANCIAL INSTITUTIONS";
 const MARGIN = 25.4; // 1 inch for binder compatibility
 
 function fmt(val: any): string {
-  if (val == null) return "—";
+  if (val == null) return "--";
   return `$${Number(val).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 }
 
