@@ -322,15 +322,15 @@ export default function MeetingBenefits({ meetingId }: Props) {
             <p className="text-sm text-muted-foreground">No benefits recorded</p>
           </div>
         ) : (
-          <div className="rounded-lg border border-border overflow-hidden">
-            <Table>
+          <div className="rounded-lg border border-border overflow-x-auto">
+            <Table className="min-w-[700px]">
               <TableHeader>
                 <TableRow className="bg-muted/50">
                   <TableHead className="w-8" />
-                  <TableHead>Benefit Type</TableHead>
-                  <TableHead>Provider</TableHead>
-                  <TableHead>Agent / Admin</TableHead>
-                  <TableHead>Insurance Agency</TableHead>
+                  <TableHead className="whitespace-nowrap min-w-[220px]">Benefit Type</TableHead>
+                  <TableHead className="whitespace-nowrap min-w-[200px]">Provider</TableHead>
+                  <TableHead className="whitespace-nowrap min-w-[180px]">Agent / Admin</TableHead>
+                  <TableHead className="whitespace-nowrap min-w-[180px]">Insurance Agency</TableHead>
                   <TableHead className="w-20" />
                 </TableRow>
               </TableHeader>
@@ -341,10 +341,10 @@ export default function MeetingBenefits({ meetingId }: Props) {
                       <TableCell className="px-2">
                         {expandedId === row.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                       </TableCell>
-                      <TableCell className="font-medium text-sm">{row.benefit_type || row.benefit_description || "—"}</TableCell>
-                      <TableCell className="text-sm">{row.provider || "—"}</TableCell>
-                      <TableCell className="text-sm">{row.agent_administrator || "—"}</TableCell>
-                      <TableCell className="text-sm">{row.insurance_agency || "—"}</TableCell>
+                      <TableCell className="font-medium text-sm whitespace-nowrap">{row.benefit_type || row.benefit_description || "—"}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{row.provider || "—"}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{row.agent_administrator || "—"}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{row.insurance_agency || "—"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                           <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
