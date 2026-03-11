@@ -300,11 +300,18 @@ Rules:
 }
 
 async function extractPdfText(fileBuffer: ArrayBuffer, password?: string): Promise<string> {
-  const loadingTask = getDocument({
+  // Dynamic import to avoid top-level module resolution issues
+  const pdfjsLib = await import("npm:pdfjs-dist@4.4.168/legacy/build/pdf.mjs");
+  
+  // Disable worker for Deno edge function environment
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+  
+  const loadingTask = pdfjsLib.getDocument({
     data: new Uint8Array(fileBuffer),
-    password,
-    useWorkerFetch: false,
-    isEvalSupported: false,
+    password: password || undefined,
+    disableAutoFetch: true,
+    disableFontFace: true,
+    useSystemFonts: false,
   });
 
   const pdf = await loadingTask.promise;
