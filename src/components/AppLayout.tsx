@@ -92,18 +92,34 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           { label: "Bank", href: `/company/${companyId}#banks`, icon: Landmark },
           { label: "Relationships", href: `/company/${companyId}#relationships`, icon: GitBranch },
           { label: "AI Compliance", href: `/company/${companyId}#ai-compliance`, icon: UserCheck },
+          { label: "Operating Agreement", href: `/company/${companyId}#operating-agreement`, icon: FileText },
           { label: "Record Book", href: `/company/${companyId}#record-book`, icon: FileText },
+          { label: "Documents", href: `/company/${companyId}#documents`, icon: FileText },
         ]
-      : [
-          { label: "Overview", href: `/company/${companyId}#incorporation`, icon: Building2 },
-          { label: "Organization", href: `/company/${companyId}#organization`, icon: Landmark },
-          { label: "Meetings", href: `/company/${companyId}#meetings`, icon: Calendar },
-          { label: "Shareholders", href: `/company/${companyId}#shareholders`, icon: UsersRound },
-          { label: "Timeline", href: `/company/${companyId}#timeline`, icon: Clock },
-          { label: "Counsel", href: `/company/${companyId}#counsel`, icon: Scale },
-          { label: "Banks", href: `/company/${companyId}#banks`, icon: Landmark },
-          { label: "Relationships", href: `/company/${companyId}#relationships`, icon: GitBranch },
-        ]
+      : (() => {
+          const isCorp = currentCompany?.entity_type === "Corporation" || currentCompany?.entity_type === "S-Corp";
+          const isNonprofit = currentCompany?.entity_type === "Non-Profit";
+          const nav = [
+            { label: isCorp ? "Overview" : "Incorporation Info", href: `/company/${companyId}#incorporation`, icon: Building2 },
+            ...(!isCorp ? [{ label: "Organization", href: `/company/${companyId}#organization`, icon: Landmark }] : []),
+            { label: "Meetings", href: `/company/${companyId}#meetings`, icon: Calendar },
+            { label: "Shareholders", href: `/company/${companyId}#shareholders`, icon: UsersRound },
+            { label: "Timeline", href: `/company/${companyId}#timeline`, icon: Clock },
+            { label: "Leases", href: `/company/${companyId}#leases`, icon: FileText },
+            { label: "Counsel", href: `/company/${companyId}#counsel`, icon: Scale },
+            { label: "Banks", href: `/company/${companyId}#banks`, icon: Landmark },
+            { label: "Relationships", href: `/company/${companyId}#relationships`, icon: GitBranch },
+            { label: "AI Compliance", href: `/company/${companyId}#ai-compliance`, icon: UserCheck },
+          ];
+          if (isCorp) nav.push({ label: "Bylaws", href: `/company/${companyId}#bylaws`, icon: FileText });
+          if (isNonprofit) {
+            nav.push({ label: "Bylaws", href: `/company/${companyId}#nonprofit-bylaws`, icon: FileText });
+            nav.push({ label: "Conflict of Interest", href: `/company/${companyId}#conflict-of-interest`, icon: FileText });
+          }
+          nav.push({ label: "Record Book", href: `/company/${companyId}#record-book`, icon: FileText });
+          nav.push({ label: "Documents", href: `/company/${companyId}#documents`, icon: FileText });
+          return nav;
+        })()
     : [];
 
   return (
