@@ -59,15 +59,15 @@ function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text(displayName, cx, 22, { align: "center" });
+  doc.text(displayName, cx, 18, { align: "center" });
 
   const addrLine = meeting?.company_address_at_meeting || company?.address || "";
-  let hy = 29;
+  let hy = 24;
   if (addrLine) {
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.text(addrLine, cx, hy, { align: "center" });
-    hy += 6;
+    hy += 4;
   }
 
   const cityPart = meeting?.company_city_at_meeting || company?.city || "";
@@ -78,15 +78,14 @@ function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.text(cityStateLine, cx, hy, { align: "center" });
-    hy += 6;
+    hy += 4;
   }
 
+  // Blue horizontal line beneath header
   hy += 2;
-  doc.setDrawColor(30, 30, 30);
-  doc.setLineWidth(0.8);
+  doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
+  doc.setLineWidth(1);
   doc.line(MARGIN, hy, pw - R_MARGIN, hy);
-  doc.setLineWidth(0.3);
-  doc.line(MARGIN, hy + 1.5, pw - R_MARGIN, hy + 1.5);
 }
 
 function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, companyName: string, meetingDate: string, isWrittenConsent: boolean, meeting?: any, company?: any, meetingData?: MeetingData): number {
@@ -94,32 +93,33 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
   const cx = pw / 2;
 
   if (isWrittenConsent) {
-    // Written Consent Header
+    // Written Consent Header - compact spacing
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text("WRITTEN CONSENT", cx, y, { align: "center" });
-    y += 7;
+    y += 5;
     doc.setFontSize(12);
     doc.text("IN LIEU OF A MEETING", cx, y, { align: "center" });
-    y += 7;
+    y += 5;
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 60, 60);
     doc.text(`OF THE BOARD OF DIRECTORS / MEMBERS OF`, cx, y, { align: "center" });
-    y += 6;
+    y += 5;
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(companyName.toUpperCase(), cx, y, { align: "center" });
-    y += 6;
+    y += 5;
     doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 60, 60);
     doc.text(`Date: ${meetingDate}`, cx, y, { align: "center" });
-    y += 6;
-    doc.setDrawColor(160, 160, 160);
-    doc.setLineWidth(0.3);
+    y += 4;
+    // Blue horizontal line beneath header
+    doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
+    doc.setLineWidth(1);
     doc.line(MARGIN, y, pw - R_MARGIN, y);
-    y += 8;
+    y += 6;
     // Intro paragraph
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
@@ -129,21 +129,22 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     doc.text(lines, MARGIN, y);
     y += lines.length * 5 + 6;
   } else {
-    // Standard Meeting Type Header
+    // Standard Meeting Type Header - compact spacing
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(`MINUTES OF ${meetingType.toUpperCase()}`, cx, y, { align: "center" });
-    y += 7;
+    y += 5;
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 60, 60);
     doc.text(`${companyName} — ${meetingDate}`, cx, y, { align: "center" });
-    y += 5;
-    doc.setDrawColor(160, 160, 160);
-    doc.setLineWidth(0.3);
+    y += 4;
+    // Blue horizontal line beneath header
+    doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
+    doc.setLineWidth(1);
     doc.line(MARGIN, y, pw - R_MARGIN, y);
-    y += 8;
+    y += 6;
   }
 
   // Add introductory paragraph for all meeting types (non-written-consent)
