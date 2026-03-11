@@ -1579,7 +1579,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const yoy = (cur: number | null | undefined, prev: number | null | undefined): string => {
       if (cur == null || prev == null || prev === 0) return "—";
       const change = ((cur - prev) / Math.abs(prev)) * 100;
-      return `${change >= 0 ? "▲" : "▼"} ${Math.abs(change).toFixed(1)}%`;
+      return `${change >= 0 ? "" : "-"}${Math.abs(change).toFixed(1)}%`;
     };
 
     const nrItems = (data.nonRecurringItems || []).filter((item: any) => item.description || item.amount);
