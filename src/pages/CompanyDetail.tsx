@@ -413,6 +413,10 @@ export default function CompanyDetail() {
         <TabsContent value="record-book" className="mt-5">
           <RecordBookGenerator companyId={company.id} companyName={company.name} entityType={company.entity_type} />
         </TabsContent>
+        <TabsContent value="documents" className="mt-5">
+          <DocumentsTab companyId={company.id} />
+        </TabsContent>
+        </TabsContent>
       </Tabs>
     </div>
   );
