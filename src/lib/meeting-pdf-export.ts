@@ -2670,7 +2670,7 @@ export function exportFinancialsPDF(company: any, meeting: any, financials: any,
     const yoy = (cur: any, prev: any): string => {
       if (cur == null || prev == null || prev === 0) return "";
       const pct = ((Number(cur) - Number(prev)) / Math.abs(Number(prev))) * 100;
-      return `${pct >= 0 ? "▲" : "▼"} ${Math.abs(pct).toFixed(1)}%`;
+      return `${pct >= 0 ? "" : "-"}${Math.abs(pct).toFixed(1)}%`;
     };
 
     const nrItems = (nonRecurringItems || []).filter((item: any) => item.description || item.amount);
