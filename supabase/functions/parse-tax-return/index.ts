@@ -207,13 +207,32 @@ Rules:
 - For retirement, look at deductions section line items
 - Return ONLY the JSON, no other text`;
 
-    // Call AI
-    const result = await callClaudeWithDocument({
-      base64Data: base64,
-      mimeType,
-      prompt: "Extract all entity data from this tax return and return the JSON object.",
-      systemPrompt: extractionPrompt,
-    });
+    // Call AI (document-first, then robust text fallback for problematic PDFs)
+    let result;
+    try {
+      result = await callClaudeWithDocument({
+        base64Data: base64,
+        mimeType,
+        prompt: "Extract all entity data from this tax return and return the JSON object.",
+        systemPrompt: extractionPrompt,
+      });
+    } catch (docErr) {
+      const msg = docErr instanceof Error ? docErr.message : String(docErr);
+      const shouldFallbackToText = mimeType === "application/pdf" && /document has no pages/i.test(msg);
+      if (!shouldFallbackToText) throw docErr;
+
+      console.warn("Document parser returned 'no pages'; using PDF text extraction fallback");
+      const extractedText = await extractPdfText(fileBuffer);
+      if (!extractedText || extractedText.trim().length < 80) {
+        throw new Error("Unable to read text from this PDF. Please upload a text-based PDF (not image-only/scanned).", { cause: docErr as Error });
+      }
+
+      result = await callAI({
+        provider: "lovable",
+        systemPrompt: extractionPrompt,
+        prompt: `Extract structured JSON from this tax return text. Return only valid JSON.\n\n${extractedText.slice(0, 300000)}`,
+      });
+    }
 
     const extracted = parseJsonFromAI(result.content);
 
