@@ -2568,6 +2568,36 @@ export type Database = {
           },
         ]
       }
+      shortcode_expansions: {
+        Row: {
+          category: string | null
+          created_at: string
+          expansion_text: string
+          id: string
+          shortcode: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          expansion_text: string
+          id?: string
+          shortcode: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          expansion_text?: string
+          id?: string
+          shortcode?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       stock_certificates: {
         Row: {
           cancelled_date: string | null
