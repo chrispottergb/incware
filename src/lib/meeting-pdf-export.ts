@@ -540,20 +540,26 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text(companyName, cx, y, { align: "center" });
-  y += 12;
+  y += 8;
 
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
   const meetingTypeLabel = isShareholderMeeting ? "Meeting of Shareholders" : `Annual Meeting of ${governingLabel}`;
   doc.text(meetingTypeLabel, cx, y, { align: "center" });
-  y += 10;
+  y += 7;
 
   doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(30, 30, 30);
   doc.text(fullDateStr, cx, y, { align: "center" });
-  y += 14;
+  y += 4;
+
+  // Blue horizontal line beneath header
+  doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
+  doc.setLineWidth(1);
+  doc.line(MARGIN, y, pw - R_MARGIN, y);
+  y += 10;
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
