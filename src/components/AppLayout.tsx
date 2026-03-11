@@ -181,7 +181,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               />
             </div>
           </div>
-          <div className="max-h-40 overflow-y-auto space-y-0.5">
+          <div className="max-h-52 overflow-y-auto space-y-0.5">
             {filteredActiveCompanies.map((c) => {
               const isActive = location.pathname === `/company/${c.id}`;
               return (
