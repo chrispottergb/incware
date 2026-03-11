@@ -1813,8 +1813,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
   }
 
-  // Loans
-  if (data.loans && data.loans.length > 0) {
+  // Loans — skip for shareholder meetings
+  if (!isShareholder && data.loans && data.loans.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.loans.length * 7);
     y = section("Loans");
     y = addWhereasResolved(doc, y,
