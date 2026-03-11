@@ -340,21 +340,109 @@ function checkPageBreak(doc: jsPDF, y: number, needed: number): number {
 
 function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string): number {
   const pw = doc.internal.pageSize.getWidth();
+  const contentWidth = pw - MARGIN - R_MARGIN;
   y = checkPageBreak(doc, y, 35);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text(purpose, MARGIN, y);
   y += 6;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  const lines = doc.splitTextToSize(text, pw - MARGIN - R_MARGIN);
-  for (const line of lines) {
-    y = checkPageBreak(doc, y, 6);
-    doc.text(line, MARGIN, y);
-    y += 5;
+
+  // Split text into paragraphs and apply WHEREAS/RESOLVED formatting globally
+  const paragraphs = text.split(/\n\n+/).map(p => p.replace(/\n/g, " ").trim()).filter(Boolean);
+
+  for (const para of paragraphs) {
+    const upperPara = para.toUpperCase();
+
+    if (upperPara.startsWith("WHEREAS,") || upperPara.startsWith("WHEREAS ")) {
+      // WHEREAS: flush left (WHEREAS_INDENT = 0), bold-italic prefix, italic body
+      let body = para;
+      if (body.toUpperCase().startsWith("WHEREAS,")) {
+        body = body.substring(body.indexOf(",") + 1).trim();
+      } else if (body.toUpperCase().startsWith("WHEREAS ")) {
+        body = body.substring(8).trim();
+      }
+      const prefix = "WHEREAS, ";
+      const fullText = prefix + body;
+      const lines = doc.splitTextToSize(fullText, contentWidth - WHEREAS_INDENT);
+      y = checkPageBreak(doc, y, lines.length * 5.5 + 6);
+
+      for (let i = 0; i < lines.length; i++) {
+        y = checkPageBreak(doc, y, 6);
+        if (i === 0) {
+          doc.setFont("helvetica", "bolditalic");
+          doc.setTextColor(...BODY_COLOR);
+          const prefixWidth = doc.getTextWidth(prefix);
+          doc.text(prefix, MARGIN + WHEREAS_INDENT, y);
+          doc.setFont("helvetica", "italic");
+          const remainder = lines[0].substring(prefix.length);
+          if (remainder) doc.text(remainder, MARGIN + WHEREAS_INDENT + prefixWidth, y);
+        } else {
+          doc.setFont("helvetica", "italic");
+          doc.setTextColor(...BODY_COLOR);
+          doc.text(lines[i], MARGIN + WHEREAS_INDENT, y);
+        }
+        y += 5.5;
+      }
+      y += 3;
+    } else if (
+      upperPara.startsWith("RESOLVED,") ||
+      upperPara.startsWith("RESOLVED ") ||
+      upperPara.startsWith("NOW, THEREFORE, BE IT RESOLVED") ||
+      upperPara.startsWith("NOW, THEREFORE, BE IT")
+    ) {
+      // RESOLVED: indented 0.5 inch, bold prefix, normal body
+      let body = para;
+      const nowPrefix = "NOW, THEREFORE, BE IT ";
+      if (body.toUpperCase().startsWith(nowPrefix.toUpperCase())) {
+        body = body.substring(nowPrefix.length);
+      }
+      if (body.toUpperCase().startsWith("RESOLVED,")) {
+        body = body.substring(body.indexOf(",") + 1).trim();
+      } else if (body.toUpperCase().startsWith("RESOLVED ")) {
+        body = body.substring(9).trim();
+      }
+      // Ensure "that" prefix
+      const bodyLower = body.toLowerCase();
+      const resolvedBody = bodyLower.startsWith("that ") ? body : "that " + body;
+      const prefix = "RESOLVED, ";
+      const fullText = prefix + resolvedBody;
+      const lines = doc.splitTextToSize(fullText, contentWidth - RESOLVED_INDENT);
+      y = checkPageBreak(doc, y, lines.length * 5.5 + 6);
+
+      for (let i = 0; i < lines.length; i++) {
+        y = checkPageBreak(doc, y, 6);
+        if (i === 0) {
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(...BODY_COLOR);
+          const prefixWidth = doc.getTextWidth(prefix);
+          doc.text(prefix, MARGIN + RESOLVED_INDENT, y);
+          doc.setFont("helvetica", "normal");
+          const remainder = lines[0].substring(prefix.length);
+          if (remainder) doc.text(remainder, MARGIN + RESOLVED_INDENT + prefixWidth, y);
+        } else {
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(...BODY_COLOR);
+          doc.text(lines[i], MARGIN + RESOLVED_INDENT, y);
+        }
+        y += 5.5;
+      }
+      y += 5;
+    } else {
+      // Plain paragraph — normal text flush left
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(30, 30, 30);
+      const lines = doc.splitTextToSize(para, contentWidth);
+      for (const line of lines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5;
+      }
+      y += 3;
+    }
   }
-  y += 5;
+  y += 2;
   return y;
 }
 
