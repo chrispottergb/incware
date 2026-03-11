@@ -2394,7 +2394,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Charitable Contributions (Annual Meeting)
-  if (bt && meeting?.charitable_contribution_amount != null && Number(meeting.charitable_contribution_amount) > 0) {
+  if (bt && !isShareholder && meeting?.charitable_contribution_amount != null && Number(meeting.charitable_contribution_amount) > 0) {
     y = checkPageBreak(doc, y, 30);
     const contribAmt = fmt(meeting.charitable_contribution_amount);
     const contribOrg = meeting.charitable_contribution_org?.trim() || "a recognized charitable organization";
