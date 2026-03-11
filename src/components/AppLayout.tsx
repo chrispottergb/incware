@@ -53,7 +53,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const inactiveCompanies = useMemo(() => companies.filter((c) => c.status === "inactive"), [companies]);
 
   const filteredActiveCompanies = useMemo(() => {
-    if (!companySearch.trim()) return activeCompanies.slice(0, 8);
+    if (!companySearch.trim()) return activeCompanies;
     return activeCompanies.filter((c) =>
       c.name.toLowerCase().includes(companySearch.toLowerCase())
     );
