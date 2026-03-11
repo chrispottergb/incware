@@ -416,7 +416,7 @@ export default function CompanyDetail() {
         <TabsContent value="documents" className="mt-5">
           <DocumentsTab companyId={company.id} />
         </TabsContent>
-        </TabsContent>
+      </Tabs>
       </Tabs>
     </div>
   );
