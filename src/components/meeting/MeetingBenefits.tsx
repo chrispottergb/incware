@@ -322,15 +322,15 @@ export default function MeetingBenefits({ meetingId }: Props) {
             <p className="text-sm text-muted-foreground">No benefits recorded</p>
           </div>
         ) : (
-          <div className="rounded-lg border border-border overflow-hidden">
-            <Table>
+          <div className="rounded-lg border border-border overflow-x-auto">
+            <Table className="min-w-[700px]">
               <TableHeader>
                 <TableRow className="bg-muted/50">
                   <TableHead className="w-8" />
-                  <TableHead>Benefit Type</TableHead>
-                  <TableHead>Provider</TableHead>
-                  <TableHead>Agent / Admin</TableHead>
-                  <TableHead>Insurance Agency</TableHead>
+                  <TableHead className="whitespace-nowrap min-w-[220px]">Benefit Type</TableHead>
+                  <TableHead className="whitespace-nowrap min-w-[200px]">Provider</TableHead>
+                  <TableHead className="whitespace-nowrap min-w-[180px]">Agent / Admin</TableHead>
+                  <TableHead className="whitespace-nowrap min-w-[180px]">Insurance Agency</TableHead>
                   <TableHead className="w-20" />
                 </TableRow>
               </TableHeader>
