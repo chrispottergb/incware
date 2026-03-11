@@ -597,11 +597,12 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     setSummaryData(null);
     setOpen(false);
     setFiles([]);
+    setPdfPassword("");
   };
 
   return (
     <>
-    <Dialog open={open && !showSummary} onOpenChange={(v) => { setOpen(v); if (!v) { setFiles([]); } }}>
+    <Dialog open={open && !showSummary} onOpenChange={(v) => { setOpen(v); if (!v) { setFiles([]); setPdfPassword(""); } }}>
       <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
