@@ -146,6 +146,7 @@ export default function CompanyDetail() {
       tabs.push({ value: "conflict-of-interest", label: "Conflict of Interest" });
     }
     tabs.push({ value: "record-book", label: "Record Book" });
+    tabs.push({ value: "documents", label: "Documents" });
     return tabs;
   }, [isLLC, entityType]);
 
