@@ -297,6 +297,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
       formData.append("file", entry.file);
       formData.append("mode", mode);
       if (companyId) formData.append("company_id", companyId);
+      if (pdfPassword.trim()) formData.append("pdf_password", pdfPassword.trim());
 
       const response = await fetchWithTimeout(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-tax-return`,
