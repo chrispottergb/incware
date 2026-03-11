@@ -323,18 +323,18 @@ export default function MeetingBenefits({ meetingId }: Props) {
           </div>
         ) : (
           <div className="rounded-lg border border-border overflow-x-auto">
-            <Table className="min-w-[700px]">
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="w-8" />
-                  <TableHead className="whitespace-nowrap min-w-[220px]">Benefit Type</TableHead>
-                  <TableHead className="whitespace-nowrap min-w-[200px]">Provider</TableHead>
-                  <TableHead className="whitespace-nowrap min-w-[180px]">Agent / Admin</TableHead>
-                  <TableHead className="whitespace-nowrap min-w-[180px]">Insurance Agency</TableHead>
-                  <TableHead className="w-20" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <table className="w-full caption-bottom text-sm" style={{ minWidth: 800 }}>
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="h-12 px-2 text-left align-middle font-medium text-muted-foreground" style={{ width: 32 }} />
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap" style={{ minWidth: 220 }}>Benefit Type</th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap" style={{ minWidth: 200 }}>Provider</th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap" style={{ minWidth: 180 }}>Agent / Admin</th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap" style={{ minWidth: 180 }}>Insurance Agency</th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground" style={{ width: 80 }} />
+                </tr>
+              </thead>
+              <tbody>
                 {rows.map((row: any) => (
                   <>
                     <TableRow key={row.id} className="cursor-pointer" onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}>
