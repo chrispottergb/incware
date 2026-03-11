@@ -2006,8 +2006,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Lease Terminations
-  if (data.leaseTerminations && data.leaseTerminations.length > 0) {
+  // Lease Terminations — skip for shareholder meetings
+  if (!isShareholder && data.leaseTerminations && data.leaseTerminations.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.leaseTerminations.length * 7);
     y = section("Leases Ended During the Year");
     y = addWhereasResolved(doc, y,
