@@ -1951,8 +1951,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Equipment Transactions (from meeting_assets)
-  if (data.assets && data.assets.length > 0) {
+  // Equipment Transactions — skip for shareholder meetings
+  if (!isShareholder && data.assets && data.assets.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.assets.length * 7);
     y = section("Equipment Transactions");
     doc.setFontSize(11);
