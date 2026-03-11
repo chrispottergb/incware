@@ -249,7 +249,37 @@ export async function callClaudeWithDocument({
     if (!response.ok) {
       const status = response.status;
       const text = await response.text();
-      console.error(`Lovable AI error (${status}):`, text);
+      console.error(`Lovable AI error (${status}) with model ${modelToUse}:`, text);
+      
+      // If the primary model fails with "no pages" error, retry with the other model
+      if (text.includes("no pages") && isPdf) {
+        console.log("Retrying with google/gemini-2.5-pro...");
+        const retryController = new AbortController();
+        const retryTimeout = setTimeout(() => retryController.abort(), 120_000);
+        try {
+          const retryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ model: "google/gemini-2.5-pro", messages }),
+            signal: retryController.signal,
+          });
+          clearTimeout(retryTimeout);
+          if (retryResponse.ok) {
+            const retryResult = await retryResponse.json();
+            console.log("Lovable AI retry succeeded");
+            return { content: retryResult.choices?.[0]?.message?.content || "" };
+          }
+          const retryText = await retryResponse.text();
+          console.error(`Retry also failed (${retryResponse.status}):`, retryText);
+        } catch (retryErr) {
+          clearTimeout(retryTimeout);
+          console.error("Retry failed:", retryErr);
+        }
+      }
+      
       if (status === 429) throw new AIProviderError("AI rate limit exceeded. Please try again in a moment.", 429);
       if (status === 402) throw new AIProviderError("AI credits exhausted. Please add credits to continue.", 402);
       throw new Error(`Lovable AI error (${status}): ${text}`);
