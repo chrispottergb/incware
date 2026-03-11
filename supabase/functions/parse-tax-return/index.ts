@@ -272,6 +272,35 @@ Rules:
   }
 }
 
+async function extractPdfText(fileBuffer: ArrayBuffer): Promise<string> {
+  const pdfData = new Uint8Array(fileBuffer);
+  const loadingTask = getDocument({ data: pdfData, isEvalSupported: false });
+  const pdf = await loadingTask.promise;
+
+  if (!pdf.numPages || pdf.numPages < 1) {
+    throw new Error("PDF appears to have no pages");
+  }
+
+  const maxPages = Math.min(pdf.numPages, 80);
+  const pages: string[] = [];
+
+  for (let pageNo = 1; pageNo <= maxPages; pageNo++) {
+    const page = await pdf.getPage(pageNo);
+    const textContent = await page.getTextContent();
+    const pageText = (textContent.items as Array<{ str?: string }>)
+      .map((item) => item.str ?? "")
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (pageText) {
+      pages.push(`[Page ${pageNo}] ${pageText}`);
+    }
+  }
+
+  return pages.join("\n\n");
+}
+
 async function populateCompanyData(
   admin: any,
   companyId: string,
