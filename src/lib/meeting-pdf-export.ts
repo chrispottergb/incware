@@ -881,45 +881,134 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...BODY_COLOR);
-    const meetingLabel = isShareholder ? "Meeting of Shareholders" : "Annual Meeting";
-    const introText = `The ${meetingLabel} of the ${stateOfInc} ${entityLabel} was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${meeting.meeting_location ? `, at ${meeting.meeting_location}` : ""}.`;
-    const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-    for (const line of introLines) {
-      y = checkPageBreak(doc, y, 6);
-      doc.text(line, MARGIN, y);
-      y += 5.5;
-    }
-    y += 3;
 
-    // Attendees list
-    const attendees = new Set<string>();
-    (data.shareholders || []).forEach(s => { if (s.shareholder_name) attendees.add(s.shareholder_name); });
-    (data.directors || []).forEach(d => { if (d.director_name) attendees.add(d.director_name); });
-    (data.officers || []).forEach(o => { if (o.name) attendees.add(o.name); });
-    if (attendees.size > 0) {
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(...BODY_COLOR);
-      doc.text("The following were present at the meeting:", MARGIN, y);
-      y += 5.5;
-      attendees.forEach(name => {
+    if (isShareholder) {
+      // Shareholder meeting intro matches the uploaded template format
+      const locationStr = meeting.meeting_location || "";
+      const cityAtMeeting = meeting.company_city_at_meeting || company?.city || "";
+      const stateAtMeeting = meeting.company_state_at_meeting || company?.state || "";
+      let locPart = "";
+      if (locationStr) {
+        locPart = locationStr;
+        const locLower = locationStr.toLowerCase();
+        const extras = [
+          cityAtMeeting && !locLower.includes(cityAtMeeting.toLowerCase()) ? cityAtMeeting : "",
+          stateAtMeeting && !locLower.includes(stateAtMeeting.toLowerCase()) ? stateAtMeeting : "",
+        ].filter(Boolean);
+        if (extras.length > 0) locPart += `, ${extras.join(", ")}`;
+      }
+      const introText = `Minutes of the annual meeting of shareholders of ${companyName}, held at ${locPart || "[location]"} on ${dateStr}${meeting.meeting_time ? ` at ${meeting.meeting_time}` : ""}, pursuant to the following waiver of notice and consent to the holding of such meeting signed by all of the shareholders of this ${entityLabel} on the records of said meeting, to-wit:`;
+      const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of introLines) {
         y = checkPageBreak(doc, y, 6);
-        doc.text(`•  ${name}`, MARGIN + 6, y);
+        doc.text(line, MARGIN, y);
         y += 5.5;
-      });
+      }
+      y += 3;
+    } else {
+      const meetingLabel = "Annual Meeting";
+      const introText = `The ${meetingLabel} of the ${stateOfInc} ${entityLabel} was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${meeting.meeting_location ? `, at ${meeting.meeting_location}` : ""}.`;
+      const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of introLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
       y += 3;
     }
 
-    const chairText = `${meeting.chairperson || "[Chairperson]"} served as Chairperson and ${meeting.mtg_secretary || "[Secretary]"} served as Secretary of the meeting.`;
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    const chairLines = doc.splitTextToSize(chairText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-    for (const line of chairLines) {
-      y = checkPageBreak(doc, y, 6);
-      doc.text(line, MARGIN, y);
-      y += 5.5;
+    if (isShareholder) {
+      // For shareholder meetings: show shareholders with basis (address)
+      const shareholderData = data.shareholders || [];
+      if (shareholderData.length > 0) {
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...BODY_COLOR);
+        const chairText = `The meeting was called to order by ${meeting.chairperson || "[Chairperson]"}, who chaired the meeting, and ${meeting.mtg_secretary || "[Secretary]"}, acting as secretary, recorded the proceedings.`;
+        const chairLines = doc.splitTextToSize(chairText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+        for (const line of chairLines) {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(line, MARGIN, y);
+          y += 5.5;
+        }
+        y += 3;
+
+        const quorumText = `The secretary announced that there were, present in person or by proxy, the following shareholder(s), representing a quorum of the shareholders and showing the current resident address and the number of shares held by each:`;
+        const quorumLines = doc.splitTextToSize(quorumText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+        for (const line of quorumLines) {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(line, MARGIN, y);
+          y += 5.5;
+        }
+        y += 5;
+
+        // Shareholder table with basis (address)
+        const shareholderTableBody = shareholderData.map(s => {
+          // Build basis from companyShareholders address data if available
+          const matchingShareholder = (data.companyShareholders || []).find(
+            cs => cs.name?.toLowerCase().trim() === s.shareholder_name?.toLowerCase().trim()
+          );
+          let basis = "";
+          if (matchingShareholder) {
+            const parts = [
+              matchingShareholder.address,
+              matchingShareholder.city,
+              matchingShareholder.state,
+              matchingShareholder.zip,
+            ].filter(Boolean);
+            basis = parts.length > 0
+              ? `${matchingShareholder.address || ""}${matchingShareholder.city ? ` ${matchingShareholder.city}` : ""}${matchingShareholder.state ? `, ${matchingShareholder.state}` : ""}${matchingShareholder.zip ? ` ${matchingShareholder.zip}` : ""}`
+              : "";
+          }
+          return [
+            s.shareholder_name,
+            s.common_shares?.toLocaleString() ?? "—",
+            basis || "—",
+          ];
+        });
+
+        autoTable(doc, {
+          startY: y,
+          head: [["Shareholder", "Common Shares", "Shareholder Basis"]],
+          body: shareholderTableBody,
+          theme: "grid",
+          headStyles: tableHeadStyles,
+          bodyStyles: { fontSize: 10 },
+          margin: { left: MARGIN, right: R_MARGIN },
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+      }
+    } else {
+      // Annual meeting: attendee list
+      const attendees = new Set<string>();
+      (data.shareholders || []).forEach(s => { if (s.shareholder_name) attendees.add(s.shareholder_name); });
+      (data.directors || []).forEach(d => { if (d.director_name) attendees.add(d.director_name); });
+      (data.officers || []).forEach(o => { if (o.name) attendees.add(o.name); });
+      if (attendees.size > 0) {
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...BODY_COLOR);
+        doc.text("The following were present at the meeting:", MARGIN, y);
+        y += 5.5;
+        attendees.forEach(name => {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(`•  ${name}`, MARGIN + 6, y);
+          y += 5.5;
+        });
+        y += 3;
+      }
+
+      const chairText = `${meeting.chairperson || "[Chairperson]"} served as Chairperson and ${meeting.mtg_secretary || "[Secretary]"} served as Secretary of the meeting.`;
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      const chairLines = doc.splitTextToSize(chairText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of chairLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 3;
     }
-    y += 3;
 
     if (meeting.tax_year) {
       y = addLabelValue(doc, y, "Tax Year", String(meeting.tax_year));
