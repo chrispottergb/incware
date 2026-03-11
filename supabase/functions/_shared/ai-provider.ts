@@ -110,6 +110,58 @@ async function callClaude(prompt: string, systemPrompt?: string): Promise<AIResu
   return { content };
 }
 
+async function callGeminiWithDocument({
+  base64Data,
+  mimeType,
+  prompt,
+  systemPrompt,
+}: {
+  base64Data: string;
+  mimeType: string;
+  prompt: string;
+  systemPrompt?: string;
+}): Promise<AIResult> {
+  const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+  if (!GEMINI_API_KEY) throw new AIProviderError("Gemini API key is not configured.", 400);
+
+  const mergedPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: mergedPrompt },
+              {
+                inline_data: {
+                  mime_type: mimeType,
+                  data: base64Data,
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const status = response.status;
+    const text = await response.text();
+    if (status === 429) throw new AIProviderError("Gemini rate limit exceeded. Please try again.", 429);
+    throw new Error(`Gemini document API error (${status}): ${text}`);
+  }
+
+  const result = await response.json();
+  const content = result.candidates?.[0]?.content?.parts?.map((p: any) => p.text || "").join("") || "";
+  if (!content) throw new Error("Gemini document API returned empty content");
+  return { content };
+}
+
 export class AIProviderError extends Error {
   status: number;
   constructor(message: string, status: number) {
