@@ -272,33 +272,75 @@ Rules:
   }
 }
 
-async function extractPdfText(fileBuffer: ArrayBuffer): Promise<string> {
-  const pdfData = new Uint8Array(fileBuffer);
-  const loadingTask = getDocument({ data: pdfData, isEvalSupported: false });
-  const pdf = await loadingTask.promise;
+function extractPdfText(fileBuffer: ArrayBuffer): string {
+  // Lightweight PDF text extraction without pdfjs-dist (works in Deno edge runtime)
+  // Decodes the raw PDF bytes looking for text stream content
+  const bytes = new Uint8Array(fileBuffer);
+  const raw = new TextDecoder("latin1").decode(bytes);
 
-  if (!pdf.numPages || pdf.numPages < 1) {
-    throw new Error("PDF appears to have no pages");
-  }
+  const textChunks: string[] = [];
 
-  const maxPages = Math.min(pdf.numPages, 80);
-  const pages: string[] = [];
-
-  for (let pageNo = 1; pageNo <= maxPages; pageNo++) {
-    const page = await pdf.getPage(pageNo);
-    const textContent = await page.getTextContent();
-    const pageText = (textContent.items as Array<{ str?: string }>)
-      .map((item) => item.str ?? "")
-      .join(" ")
-      .replace(/\s+/g, " ")
-      .trim();
-
-    if (pageText) {
-      pages.push(`[Page ${pageNo}] ${pageText}`);
+  // Extract text between BT (begin text) and ET (end text) operators
+  const btEtRegex = /BT\s([\s\S]*?)ET/g;
+  let match;
+  while ((match = btEtRegex.exec(raw)) !== null) {
+    const block = match[1];
+    // Match text show operators: Tj, TJ, ', "
+    const tjRegex = /\(([^)]*)\)\s*Tj/g;
+    let tjMatch;
+    while ((tjMatch = tjRegex.exec(block)) !== null) {
+      textChunks.push(tjMatch[1]);
+    }
+    // TJ arrays: [(text) kerning (text) ...]
+    const tjArrayRegex = /\[([^\]]*)\]\s*TJ/g;
+    let tjArrMatch;
+    while ((tjArrMatch = tjArrayRegex.exec(block)) !== null) {
+      const inner = tjArrMatch[1];
+      const parts = inner.match(/\(([^)]*)\)/g);
+      if (parts) {
+        textChunks.push(parts.map((p) => p.slice(1, -1)).join(""));
+      }
     }
   }
 
-  return pages.join("\n\n");
+  // Also try to extract from decoded Flate streams (most modern PDFs)
+  // Look for stream content between "stream" and "endstream"
+  const streamRegex = /stream\r?\n([\s\S]*?)endstream/g;
+  let streamMatch;
+  while ((streamMatch = streamRegex.exec(raw)) !== null) {
+    const streamBytes = streamMatch[1];
+    // Only process short streams that might be uncompressed text
+    if (streamBytes.length < 50000) {
+      const btEt2 = /BT\s([\s\S]*?)ET/g;
+      let m2;
+      while ((m2 = btEt2.exec(streamBytes)) !== null) {
+        const block = m2[1];
+        const tj2 = /\(([^)]*)\)\s*Tj/g;
+        let t;
+        while ((t = tj2.exec(block)) !== null) textChunks.push(t[1]);
+        const tja2 = /\[([^\]]*)\]\s*TJ/g;
+        let ta;
+        while ((ta = tja2.exec(block)) !== null) {
+          const parts = ta[1].match(/\(([^)]*)\)/g);
+          if (parts) textChunks.push(parts.map((p) => p.slice(1, -1)).join(""));
+        }
+      }
+    }
+  }
+
+  // Clean up common PDF escape sequences
+  const text = textChunks
+    .join(" ")
+    .replace(/\\n/g, "\n")
+    .replace(/\\r/g, "")
+    .replace(/\\t/g, " ")
+    .replace(/\\\(/g, "(")
+    .replace(/\\\)/g, ")")
+    .replace(/\\\\/g, "\\")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return text;
 }
 
 async function populateCompanyData(
