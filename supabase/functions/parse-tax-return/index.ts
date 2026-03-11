@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Buffer } from "node:buffer";
-import pdfParse from "npm:pdf-parse@1.1.1/lib/pdf-parse.js";
+import { getDocument } from "https://esm.sh/pdfjs-dist@4.9.155/legacy/build/pdf.mjs";
 import { callAI, callClaudeWithDocument, parseJsonFromAI, AIProviderError } from "../_shared/ai-provider.ts";
 
 const corsHeaders = {
@@ -43,6 +42,8 @@ serve(async (req) => {
     const file = formData.get("file") as File;
     const companyId = formData.get("company_id") as string | null;
     const mode = formData.get("mode") as string || "extract";
+    const pdfPasswordRaw = formData.get("pdf_password") as string | null;
+    const pdfPassword = pdfPasswordRaw?.trim() || null;
 
     if (!file) {
       return new Response(JSON.stringify({ error: "No file provided" }), {
@@ -95,7 +96,7 @@ serve(async (req) => {
     // Return job_id immediately, process in background
     // Use EdgeRuntime.waitUntil so the response is sent immediately
     // while the AI processing continues in the background
-    const backgroundPromise = processInBackground(admin, job.id, user.id, fileBuffer, file.type, file.name, fileName, companyId, mode);
+    const backgroundPromise = processInBackground(admin, job.id, user.id, fileBuffer, file.type, file.name, fileName, companyId, mode, pdfPassword);
 
     // Try EdgeRuntime.waitUntil for Deno Deploy / Supabase Edge
     try {
@@ -133,6 +134,7 @@ async function processInBackground(
   storagePath: string,
   companyId: string | null,
   mode: string,
+  pdfPassword: string | null,
 ) {
   try {
     // Convert to base64
@@ -208,32 +210,33 @@ Rules:
 - For retirement, look at deductions section line items
 - Return ONLY the JSON, no other text`;
 
-    // Extract text from PDF first using pdf-parse, then send text to AI
-    // This avoids "document has no pages" errors from multimodal APIs
+    // Prefer native text extraction first (supports password-protected PDFs)
     let result;
     if (mimeType === "application/pdf") {
       let extractedText = "";
       try {
-        const pdfData = await pdfParse(Buffer.from(fileBuffer));
-        extractedText = pdfData.text || "";
-        console.log(`pdf-parse extracted ${extractedText.length} chars from ${pdfData.numpages} pages`);
+        extractedText = await extractPdfText(fileBuffer, pdfPassword || undefined);
+        console.log(`pdf.js extracted ${extractedText.length} chars`);
       } catch (pdfErr) {
-        console.warn("pdf-parse failed:", pdfErr);
+        const msg = pdfErr instanceof Error ? pdfErr.message : String(pdfErr);
+        if (/no password given|incorrect password|password/i.test(msg)) {
+          throw new Error("This PDF is password-protected. Enter the PDF password and retry, or upload an unlocked PDF.");
+        }
+        console.warn("pdf.js extraction failed:", pdfErr);
       }
 
-      const hasGoodText = extractedText.length > 500 && (extractedText.match(/[a-zA-Z]/g) || []).length > 100;
+      const letters = (extractedText.match(/[a-zA-Z]/g) || []).length;
+      const hasGoodText = extractedText.length > 120 && letters > 40;
 
       if (hasGoodText) {
-        // Use extracted text with AI (most reliable path)
-        console.log("Using pdf-parse text extraction path");
+        console.log("Using text extraction path");
         result = await callAI({
           provider: "lovable",
           systemPrompt: extractionPrompt,
           prompt: `Extract structured JSON from this tax return text. Return only valid JSON.\n\n${extractedText.slice(0, 300000)}`,
         });
       } else {
-        // Scanned/image PDF - try multimodal document APIs
-        console.log("PDF text extraction insufficient, trying multimodal document APIs");
+        console.log("Insufficient extracted text, trying multimodal document APIs");
         try {
           result = await callClaudeWithDocument({
             base64Data: base64,
@@ -243,7 +246,10 @@ Rules:
           });
         } catch (docErr) {
           const msg = docErr instanceof Error ? docErr.message : String(docErr);
-          throw new Error(`Unable to read this PDF. It may be image-only/scanned or corrupted. (${msg})`);
+          if (/document has no pages/i.test(msg)) {
+            throw new Error("Unable to read this PDF. If it's password-protected, enter the PDF password. If it's a scanned PDF, upload a clearer copy.");
+          }
+          throw new Error(`Unable to read this PDF. ${msg}`);
         }
       }
     } else {
@@ -294,6 +300,35 @@ Rules:
   }
 }
 
+async function extractPdfText(fileBuffer: ArrayBuffer, password?: string): Promise<string> {
+  const loadingTask = getDocument({
+    data: new Uint8Array(fileBuffer),
+    password,
+    disableWorker: true,
+    useWorkerFetch: false,
+    isEvalSupported: false,
+  });
+
+  const pdf = await loadingTask.promise;
+  const pageCount = Math.min(pdf.numPages, 80);
+  const pageTexts: string[] = [];
+
+  for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items
+      .map((item: any) => ("str" in item ? String(item.str) : ""))
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (pageText) pageTexts.push(pageText);
+  }
+
+  await pdf.destroy();
+
+  return pageTexts.join("\n").trim();
+}
 
 async function populateCompanyData(
   admin: any,

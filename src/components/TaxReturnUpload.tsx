@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import {
   Accordion,
   AccordionContent,
@@ -100,6 +101,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     taxYears: number[];
     companyName: string;
   } | null>(null);
+  const [pdfPassword, setPdfPassword] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const cancelledRef = useRef(false);
@@ -295,6 +297,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
       formData.append("file", entry.file);
       formData.append("mode", mode);
       if (companyId) formData.append("company_id", companyId);
+      if (pdfPassword.trim()) formData.append("pdf_password", pdfPassword.trim());
 
       const response = await fetchWithTimeout(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-tax-return`,
@@ -594,11 +597,12 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     setSummaryData(null);
     setOpen(false);
     setFiles([]);
+    setPdfPassword("");
   };
 
   return (
     <>
-    <Dialog open={open && !showSummary} onOpenChange={(v) => { setOpen(v); if (!v) { setFiles([]); } }}>
+    <Dialog open={open && !showSummary} onOpenChange={(v) => { setOpen(v); if (!v) { setFiles([]); setPdfPassword(""); } }}>
       <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
@@ -644,6 +648,23 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="space-y-1">
+            <label htmlFor="tax-pdf-password" className="text-xs font-medium text-foreground">
+              PDF password (optional)
+            </label>
+            <Input
+              id="tax-pdf-password"
+              type="password"
+              value={pdfPassword}
+              onChange={(e) => setPdfPassword(e.target.value)}
+              placeholder="Enter password for locked PDFs"
+              disabled={processing}
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Only needed for password-protected tax returns.
+            </p>
           </div>
 
           {/* File queue */}
