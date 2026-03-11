@@ -110,7 +110,7 @@ export function exportCompliancePDF(data: ComplianceItem[], overallScore: number
       didParseCell(data) {
         if (data.section === "body" && data.column.index === 1) {
           const text = data.cell.raw as string;
-          if (text.startsWith("✓")) {
+          if (text.startsWith("Complete")) {
             data.cell.styles.textColor = [22, 163, 74];
             data.cell.styles.fontStyle = "bold";
           } else {
