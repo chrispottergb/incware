@@ -1246,36 +1246,106 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 5;
   }
 
-  // Directors
+  // Directors / Board Election
   if (data.directors && data.directors.length > 0) {
     y += 3;
     y = checkPageBreak(doc, y, 30 + data.directors.length * 7);
-    y = section(isLLC ? "Authorized Binders" : "Directors Present");
-    if (mType.includes("annual") || mType.includes("shareholder")) {
-      y = addWhereasResolved(doc, y,
-        isLLC
-          ? `WHEREAS, the members desire to confirm and record the persons serving as authorized binders of ${companyName} for the ensuing year, consistent with Wis. Stat. § 183.0407; and`
-          : `WHEREAS, the terms of the current directors expire at this meeting, and the shareholders are called upon to elect the Board of Directors for the ensuing year; and`,
-        isLLC
-          ? `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby confirmed as authorized binders of ${companyName} for the ensuing year, authorized to act on behalf of the company in their designated capacity:`
-          : `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby re-elected as directors of ${companyName}, to serve until the next annual meeting and until their successors are duly elected and qualified:`,
-        bt
-      );
+
+    if (isShareholder) {
+      // Shareholder meeting: director nomination and election per template
+      y = section("Nomination and Election of Board of Directors");
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...BODY_COLOR);
+      const nominationText = `The chairperson announced that the next item of business was the nomination and election of the board of directors in accordance with the bylaws of the corporation. The following nomination(s) for the position of director(s) of the corporation were made and seconded:`;
+      const nomLines = doc.splitTextToSize(nominationText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of nomLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 3;
+      data.directors.forEach(d => {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(`•  ${d.director_name}`, MARGIN + 6, y);
+        y += 5.5;
+      });
+      y += 5;
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...BODY_COLOR);
+      const voteText = `The secretary next took the votes of the shareholders entitled to vote for the election of directors at the meeting and upon motion duly made and seconded, it was unanimously`;
+      const voteLines = doc.splitTextToSize(voteText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of voteLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 3;
+
+      // RESOLVED for director election
+      const rIndent = RESOLVED_INDENT;
+      const resolvedPrefix = "RESOLVED, ";
+      const resolvedBody = `that the following be elected as director(s) of the corporation, to serve for one year or until his/her respective successor should be duly elected and qualified.`;
+      const fullResolved = resolvedPrefix + resolvedBody;
+      const rLines = doc.splitTextToSize(fullResolved, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN - rIndent);
+      y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
+      for (let i = 0; i < rLines.length; i++) {
+        y = checkPageBreak(doc, y, 6);
+        if (i === 0) {
+          doc.setFont("helvetica", "bold");
+          const prefixWidth = doc.getTextWidth(resolvedPrefix);
+          doc.text(resolvedPrefix, MARGIN + rIndent, y);
+          doc.setFont("helvetica", "normal");
+          const remainder = rLines[0].substring(resolvedPrefix.length);
+          if (remainder) doc.text(remainder, MARGIN + rIndent + prefixWidth, y);
+        } else {
+          doc.setFont("helvetica", "normal");
+          doc.text(rLines[i], MARGIN + rIndent, y);
+        }
+        y += 5.5;
+      }
+      y += 5;
+
+      // List elected directors
+      data.directors.forEach(d => {
+        y = checkPageBreak(doc, y, 6);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...BODY_COLOR);
+        doc.text(`•  ${d.director_name}`, MARGIN + 6, y);
+        y += 5.5;
+      });
+      y += 8;
+    } else {
+      // Annual / other meeting: standard directors section
+      y = section(isLLC ? "Authorized Binders" : "Directors Present");
+      if (mType.includes("annual")) {
+        y = addWhereasResolved(doc, y,
+          isLLC
+            ? `WHEREAS, the members desire to confirm and record the persons serving as authorized binders of ${companyName} for the ensuing year, consistent with Wis. Stat. § 183.0407; and`
+            : `WHEREAS, the terms of the current directors expire at this meeting, and the shareholders are called upon to elect the Board of Directors for the ensuing year; and`,
+          isLLC
+            ? `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby confirmed as authorized binders of ${companyName} for the ensuing year, authorized to act on behalf of the company in their designated capacity:`
+            : `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby re-elected as directors of ${companyName}, to serve until the next annual meeting and until their successors are duly elected and qualified:`,
+          bt
+        );
+      }
+      autoTable(doc, {
+        startY: y,
+        head: [[isLLC ? "Authorized Binder Name" : "Director Name"]],
+        body: data.directors.map(d => [d.director_name]),
+        theme: "grid",
+        headStyles: tableHeadStyles,
+        bodyStyles: { fontSize: 10 },
+        margin: { left: MARGIN, right: R_MARGIN },
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
     }
-    autoTable(doc, {
-      startY: y,
-      head: [[isLLC ? "Authorized Binder Name" : "Director Name"]],
-      body: data.directors.map(d => [d.director_name]),
-      theme: "grid",
-      headStyles: tableHeadStyles,
-      bodyStyles: { fontSize: 10 },
-      margin: { left: MARGIN, right: R_MARGIN },
-    });
-    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Officers (with salary/bonus)
-  if (data.officers && data.officers.length > 0) {
+  // Officers (with salary/bonus) — skip for shareholder meetings
+  if (!isShareholder && data.officers && data.officers.length > 0) {
     y = checkPageBreak(doc, y, 30 + data.officers.length * 7);
     y = section("Officers");
     const isSCorp = entityType === "S-Corp";
