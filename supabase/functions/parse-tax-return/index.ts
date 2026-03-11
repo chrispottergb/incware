@@ -222,7 +222,7 @@ Rules:
       if (!shouldFallbackToText) throw docErr;
 
       console.warn("Document parser returned 'no pages'; using PDF text extraction fallback");
-      const extractedText = await extractPdfText(fileBuffer);
+      const extractedText = extractPdfText(fileBuffer);
       if (!extractedText || extractedText.trim().length < 80) {
         throw new Error("Unable to read text from this PDF. Please upload a text-based PDF (not image-only/scanned).");
       }
