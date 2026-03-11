@@ -122,6 +122,7 @@ export default function CompanyDetail() {
         { value: "ai-compliance", label: "AI Compliance" },
         { value: "operating-agreement", label: "Operating Agreement" },
         { value: "record-book", label: "Record Book" },
+        { value: "documents", label: "Documents" },
       ];
     }
     const isCorp = entityType === "Corporation" || entityType === "S-Corp";
