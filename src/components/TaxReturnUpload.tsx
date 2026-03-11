@@ -650,6 +650,23 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
             </div>
           </div>
 
+          <div className="space-y-1">
+            <label htmlFor="tax-pdf-password" className="text-xs font-medium text-foreground">
+              PDF password (optional)
+            </label>
+            <Input
+              id="tax-pdf-password"
+              type="password"
+              value={pdfPassword}
+              onChange={(e) => setPdfPassword(e.target.value)}
+              placeholder="Enter password for locked PDFs"
+              disabled={processing}
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Only needed for password-protected tax returns.
+            </p>
+          </div>
+
           {/* File queue */}
           {files.length > 0 && (
             <div className="space-y-2">
