@@ -357,8 +357,8 @@ export default function MeetingBenefits({ meetingId }: Props) {
                       </td>
                     </tr>
                     {expandedId === row.id && (
-                      <TableRow key={`${row.id}-detail`} className="bg-muted/30 hover:bg-muted/30">
-                        <TableCell colSpan={6} className="px-6 py-3">
+                      <tr key={`${row.id}-detail`} className="border-b bg-muted/30 hover:bg-muted/30">
+                        <td colSpan={6} className="px-6 py-3">
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2 text-sm">
                             <div>
                               <span className="text-muted-foreground text-xs">Transaction Type</span>
@@ -383,13 +383,13 @@ export default function MeetingBenefits({ meetingId }: Props) {
                               <p className="whitespace-pre-wrap">{row.eligibility_comments || "—"}</p>
                             </div>
                           </div>
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                      </tr>
                     )}
                   </>
                 ))}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
         )}
       </CardContent>
