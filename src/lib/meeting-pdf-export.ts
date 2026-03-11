@@ -2196,7 +2196,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
   // Footer
   if (bt) {
-    addAnnualMeetingFooter(doc, companyName);
+    const docLabel = isShareholder ? "Meeting of Shareholders Minutes" : "Annual Meeting Minutes";
+    addAnnualMeetingFooter(doc, companyName, docLabel);
   } else {
     addDFIFooter(doc, companyName);
   }
