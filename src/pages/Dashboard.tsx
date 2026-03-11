@@ -332,7 +332,7 @@ export default function Dashboard() {
                           : "—"}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">{company.fiscal_year_end || "—"}</TableCell>
-                      <TableCell>{statusBadge(company.corporate_status)}</TableCell>
+                      <TableCell>{statusBadge(company)}</TableCell>
                       <TableCell>
                         <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary transition-colors" />
                       </TableCell>
