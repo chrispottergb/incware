@@ -522,10 +522,15 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
     (data.officers || []).forEach(o => { if (o.name) addUnique(o.name); });
   }
 
-  const purposes = [
-    `Elect ${isLLC ? "managers/officers" : "officers"}`,
-    "Conduct any other business that properly may be brought before the meeting",
-  ];
+  const purposes = isShareholderMeeting
+    ? [
+        "elect a new board of directors",
+        "conduct any other business that properly may be brought before the meeting",
+      ]
+    : [
+        `Elect ${isLLC ? "managers/officers" : "officers"}`,
+        "Conduct any other business that properly may be brought before the meeting",
+      ];
 
   let y = 30;
 
