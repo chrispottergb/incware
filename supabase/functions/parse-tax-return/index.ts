@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getDocument } from "https://esm.sh/pdfjs-dist@4.9.155/legacy/build/pdf.mjs";
+import { Buffer } from "node:buffer";
+import pdfParse from "npm:pdf-parse@1.1.1/lib/pdf-parse.js";
 import { callAI, callClaudeWithDocument, parseJsonFromAI, AIProviderError } from "../_shared/ai-provider.ts";
 
 const corsHeaders = {
@@ -207,30 +208,51 @@ Rules:
 - For retirement, look at deductions section line items
 - Return ONLY the JSON, no other text`;
 
-    // Call AI (document-first, then robust text fallback for problematic PDFs)
+    // Extract text from PDF first using pdf-parse, then send text to AI
+    // This avoids "document has no pages" errors from multimodal APIs
     let result;
-    try {
+    if (mimeType === "application/pdf") {
+      let extractedText = "";
+      try {
+        const pdfData = await pdfParse(Buffer.from(fileBuffer));
+        extractedText = pdfData.text || "";
+        console.log(`pdf-parse extracted ${extractedText.length} chars from ${pdfData.numpages} pages`);
+      } catch (pdfErr) {
+        console.warn("pdf-parse failed:", pdfErr);
+      }
+
+      const hasGoodText = extractedText.length > 500 && (extractedText.match(/[a-zA-Z]/g) || []).length > 100;
+
+      if (hasGoodText) {
+        // Use extracted text with AI (most reliable path)
+        console.log("Using pdf-parse text extraction path");
+        result = await callAI({
+          provider: "lovable",
+          systemPrompt: extractionPrompt,
+          prompt: `Extract structured JSON from this tax return text. Return only valid JSON.\n\n${extractedText.slice(0, 300000)}`,
+        });
+      } else {
+        // Scanned/image PDF - try multimodal document APIs
+        console.log("PDF text extraction insufficient, trying multimodal document APIs");
+        try {
+          result = await callClaudeWithDocument({
+            base64Data: base64,
+            mimeType,
+            prompt: "Extract all entity data from this tax return and return the JSON object.",
+            systemPrompt: extractionPrompt,
+          });
+        } catch (docErr) {
+          const msg = docErr instanceof Error ? docErr.message : String(docErr);
+          throw new Error(`Unable to read this PDF. It may be image-only/scanned or corrupted. (${msg})`);
+        }
+      }
+    } else {
+      // Non-PDF files: use multimodal directly
       result = await callClaudeWithDocument({
         base64Data: base64,
         mimeType,
         prompt: "Extract all entity data from this tax return and return the JSON object.",
         systemPrompt: extractionPrompt,
-      });
-    } catch (docErr) {
-      const msg = docErr instanceof Error ? docErr.message : String(docErr);
-      const shouldFallbackToText = mimeType === "application/pdf" && /document has no pages/i.test(msg);
-      if (!shouldFallbackToText) throw docErr;
-
-      console.warn("Document parser returned 'no pages'; using PDF text extraction fallback");
-      const extractedText = extractPdfText(fileBuffer);
-      if (!extractedText || extractedText.trim().length < 80) {
-        throw new Error("Unable to read text from this PDF. Please upload a text-based PDF (not image-only/scanned).");
-      }
-
-      result = await callAI({
-        provider: "lovable",
-        systemPrompt: extractionPrompt,
-        prompt: `Extract structured JSON from this tax return text. Return only valid JSON.\n\n${extractedText.slice(0, 300000)}`,
       });
     }
 
@@ -272,76 +294,6 @@ Rules:
   }
 }
 
-function extractPdfText(fileBuffer: ArrayBuffer): string {
-  // Lightweight PDF text extraction without pdfjs-dist (works in Deno edge runtime)
-  // Decodes the raw PDF bytes looking for text stream content
-  const bytes = new Uint8Array(fileBuffer);
-  const raw = new TextDecoder("latin1").decode(bytes);
-
-  const textChunks: string[] = [];
-
-  // Extract text between BT (begin text) and ET (end text) operators
-  const btEtRegex = /BT\s([\s\S]*?)ET/g;
-  let match;
-  while ((match = btEtRegex.exec(raw)) !== null) {
-    const block = match[1];
-    // Match text show operators: Tj, TJ, ', "
-    const tjRegex = /\(([^)]*)\)\s*Tj/g;
-    let tjMatch;
-    while ((tjMatch = tjRegex.exec(block)) !== null) {
-      textChunks.push(tjMatch[1]);
-    }
-    // TJ arrays: [(text) kerning (text) ...]
-    const tjArrayRegex = /\[([^\]]*)\]\s*TJ/g;
-    let tjArrMatch;
-    while ((tjArrMatch = tjArrayRegex.exec(block)) !== null) {
-      const inner = tjArrMatch[1];
-      const parts = inner.match(/\(([^)]*)\)/g);
-      if (parts) {
-        textChunks.push(parts.map((p) => p.slice(1, -1)).join(""));
-      }
-    }
-  }
-
-  // Also try to extract from decoded Flate streams (most modern PDFs)
-  // Look for stream content between "stream" and "endstream"
-  const streamRegex = /stream\r?\n([\s\S]*?)endstream/g;
-  let streamMatch;
-  while ((streamMatch = streamRegex.exec(raw)) !== null) {
-    const streamBytes = streamMatch[1];
-    // Only process short streams that might be uncompressed text
-    if (streamBytes.length < 50000) {
-      const btEt2 = /BT\s([\s\S]*?)ET/g;
-      let m2;
-      while ((m2 = btEt2.exec(streamBytes)) !== null) {
-        const block = m2[1];
-        const tj2 = /\(([^)]*)\)\s*Tj/g;
-        let t;
-        while ((t = tj2.exec(block)) !== null) textChunks.push(t[1]);
-        const tja2 = /\[([^\]]*)\]\s*TJ/g;
-        let ta;
-        while ((ta = tja2.exec(block)) !== null) {
-          const parts = ta[1].match(/\(([^)]*)\)/g);
-          if (parts) textChunks.push(parts.map((p) => p.slice(1, -1)).join(""));
-        }
-      }
-    }
-  }
-
-  // Clean up common PDF escape sequences
-  const text = textChunks
-    .join(" ")
-    .replace(/\\n/g, "\n")
-    .replace(/\\r/g, "")
-    .replace(/\\t/g, " ")
-    .replace(/\\\(/g, "(")
-    .replace(/\\\)/g, ")")
-    .replace(/\\\\/g, "\\")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return text;
-}
 
 async function populateCompanyData(
   admin: any,
