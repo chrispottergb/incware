@@ -306,7 +306,6 @@ async function extractPdfText(fileBuffer: ArrayBuffer, password?: string): Promi
   const loadingTask = getDocument({
     data: new Uint8Array(fileBuffer),
     password,
-    disableWorker: true,
     useWorkerFetch: false,
     isEvalSupported: false,
   });
@@ -328,7 +327,6 @@ async function extractPdfText(fileBuffer: ArrayBuffer, password?: string): Promi
   }
 
   await pdf.destroy();
-
   return pageTexts.join("\n").trim();
 }
 
