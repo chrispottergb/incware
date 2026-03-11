@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getDocument, GlobalWorkerOptions } from "https://esm.sh/pdfjs-dist@4.9.155/legacy/build/pdf.mjs";
 import { callAI, callClaudeWithDocument, parseJsonFromAI, AIProviderError } from "../_shared/ai-provider.ts";
 
 const corsHeaders = {
@@ -8,8 +7,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-GlobalWorkerOptions.workerSrc = "https://esm.sh/pdfjs-dist@4.9.155/legacy/build/pdf.worker.min.mjs";
 
 serve(async (req) => {
   if (req.method === "OPTIONS")
@@ -303,11 +300,18 @@ Rules:
 }
 
 async function extractPdfText(fileBuffer: ArrayBuffer, password?: string): Promise<string> {
-  const loadingTask = getDocument({
+  // Dynamic import to avoid top-level module resolution issues
+  const pdfjsLib = await import("npm:pdfjs-dist@4.4.168/legacy/build/pdf.mjs");
+  
+  // Disable worker for Deno edge function environment
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+  
+  const loadingTask = pdfjsLib.getDocument({
     data: new Uint8Array(fileBuffer),
-    password,
-    useWorkerFetch: false,
-    isEvalSupported: false,
+    password: password || undefined,
+    disableAutoFetch: true,
+    disableFontFace: true,
+    useSystemFonts: false,
   });
 
   const pdf = await loadingTask.promise;
