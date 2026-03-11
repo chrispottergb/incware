@@ -124,7 +124,8 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(30, 30, 30);
-    const introText = `The undersigned, being all of the directors/members of ${companyName}, do hereby consent to and adopt the following resolutions and actions without a formal meeting, pursuant to the applicable provisions of the Wisconsin Statutes:`;
+    const purposeText = meeting?.purpose ? ` The purpose of this action is: ${meeting.purpose}.` : "";
+    const introText = `The undersigned, being all of the directors/members of ${companyName}, do hereby consent to and adopt the following resolutions and actions without a formal meeting, pursuant to the applicable provisions of the Wisconsin Statutes.${purposeText}`;
     const lines = doc.splitTextToSize(introText, pw - MARGIN - R_MARGIN);
     doc.text(lines, MARGIN, y);
     y += lines.length * 5 + 6;
@@ -189,7 +190,8 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     let datePart = ` on ${dateStr}`;
     if (timeStr) datePart += ` at ${timeStr}`;
 
-    const introText = `The ${meetingLabel} meeting of ${companyName}, ${entityLabel} duly formed in the state of ${stateOfInc}${locationPart}${datePart}. There were present and participating at the meeting:`;
+    const purposePart = meeting.purpose && meetingLabel === "special" ? ` The purpose of this meeting is: ${meeting.purpose}.` : "";
+    const introText = `The ${meetingLabel} meeting of ${companyName}, ${entityLabel} duly formed in the state of ${stateOfInc}${locationPart}${datePart}. There were present and participating at the meeting:${purposePart ? `\n\n${purposePart}` : ""}`;
 
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");

@@ -135,6 +135,10 @@ export default function MeetingInfoCard({ meeting }: Props) {
     { label: "Zip", field: "company_zip_at_meeting" },
   ];
 
+  const isWrittenConsent = meeting.meeting_type === "Written Consent";
+  const isSpecialMeeting = meeting.meeting_type === "Special Meeting";
+  const showPurpose = isWrittenConsent || isSpecialMeeting;
+
   return (
     <div className="space-y-6">
       <Card>
@@ -145,6 +149,22 @@ export default function MeetingInfoCard({ meeting }: Props) {
           </div>
         </CardHeader>
         <CardContent>
+          {showPurpose && (
+            <div className="mb-4 space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5" />
+                Purpose of Meeting
+              </Label>
+              <Textarea
+                value={getValue("purpose")}
+                onChange={(e) => handleChange("purpose", e.target.value)}
+                onBlur={(e) => handleBlur("purpose", e.target.value)}
+                className="text-sm"
+                rows={3}
+                placeholder="State the purpose for this meeting (e.g., To authorize the purchase of real property at...)"
+              />
+            </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <DateFieldWrapper
               label="Meeting Date"

@@ -2202,6 +2202,7 @@ export type Database = {
           others_present: string | null
           prior_mtg_date: string | null
           profit_improvement_plan: string | null
+          purpose: string | null
           sub_type: string | null
           tax_year: number | null
           updated_at: string
@@ -2232,6 +2233,7 @@ export type Database = {
           others_present?: string | null
           prior_mtg_date?: string | null
           profit_improvement_plan?: string | null
+          purpose?: string | null
           sub_type?: string | null
           tax_year?: number | null
           updated_at?: string
@@ -2262,6 +2264,7 @@ export type Database = {
           others_present?: string | null
           prior_mtg_date?: string | null
           profit_improvement_plan?: string | null
+          purpose?: string | null
           sub_type?: string | null
           tax_year?: number | null
           updated_at?: string
