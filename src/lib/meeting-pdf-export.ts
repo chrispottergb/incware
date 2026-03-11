@@ -2356,38 +2356,57 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   if (!isShareholder && data.benefits && data.benefits.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.benefits.length * 7);
+    y = checkPageBreak(doc, y, 20 + data.benefits.length * 18);
     y = section("Benefits");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the employee benefit plans of ${companyName} for the current plan year; and`,
       `NOW, THEREFORE, BE IT RESOLVED, that the following benefit plans are hereby approved and adopted for the ensuing year:`,
       bt
     );
-    autoTable(doc, {
-      startY: y,
-      head: [["Benefit Type", "Provider", "Agent/Admin", "Plan Year", "Contribution", "Eligibility / Comments"]],
-      body: data.benefits.map(b => [
-        b.benefit_type || b.benefit_description || "--",
-        b.provider || "--",
-        b.agent_administrator || "--",
-        b.plan_year?.toString() || "--",
-        b.retirement_contribution != null ? fmt(b.retirement_contribution) : "--",
-        b.eligibility_comments || "--",
-      ]),
-      theme: "grid",
-      headStyles: tableHeadStyles,
-      bodyStyles: { fontSize: 10 },
-      margin: { left: MARGIN, right: R_MARGIN },
-      columnStyles: {
-        0: { cellWidth: 30 },
-        1: { cellWidth: 28 },
-        2: { cellWidth: 28 },
-        3: { cellWidth: 18 },
-        4: { cellWidth: 24 },
-        5: { cellWidth: 'auto' },
-      },
+
+    data.benefits.forEach((b, index) => {
+      autoTable(doc, {
+        startY: y,
+        head: [["Benefit Type", "Provider", "Agent/Admin"]],
+        body: [[
+          b.benefit_type || b.benefit_description || "--",
+          b.provider || "--",
+          b.agent_administrator || "--",
+        ]],
+        theme: "grid",
+        headStyles: tableHeadStyles,
+        bodyStyles: { fontSize: 10 },
+        margin: { left: MARGIN, right: R_MARGIN },
+        columnStyles: {
+          0: { cellWidth: 48 },
+          1: { cellWidth: 48 },
+          2: { cellWidth: 'auto' },
+        },
+      });
+
+      y = (doc as any).lastAutoTable.finalY;
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Plan Year", "Contribution", "Eligibility / Comments"]],
+        body: [[
+          b.plan_year?.toString() || "--",
+          b.retirement_contribution != null ? fmt(b.retirement_contribution) : "--",
+          b.eligibility_comments || "--",
+        ]],
+        theme: "grid",
+        headStyles: tableHeadStyles,
+        bodyStyles: { fontSize: 10 },
+        margin: { left: MARGIN, right: R_MARGIN },
+        columnStyles: {
+          0: { cellWidth: 24 },
+          1: { cellWidth: 32 },
+          2: { cellWidth: 'auto' },
+        },
+      });
+
+      y = (doc as any).lastAutoTable.finalY + (index < data.benefits.length - 1 ? 5 : 10);
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
   }
 
   // Agreements — skip for shareholder meetings
