@@ -1577,9 +1577,9 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     );
 
     const yoy = (cur: number | null | undefined, prev: number | null | undefined): string => {
-      if (cur == null || prev == null || prev === 0) return "—";
+      if (cur == null || prev == null || prev === 0) return "--";
       const change = ((cur - prev) / Math.abs(prev)) * 100;
-      return `${change >= 0 ? "▲" : "▼"} ${Math.abs(change).toFixed(1)}%`;
+      return `${change >= 0 ? "" : "-"}${Math.abs(change).toFixed(1)}%`;
     };
 
     const nrItems = (data.nonRecurringItems || []).filter((item: any) => item.description || item.amount);
@@ -2670,7 +2670,7 @@ export function exportFinancialsPDF(company: any, meeting: any, financials: any,
     const yoy = (cur: any, prev: any): string => {
       if (cur == null || prev == null || prev === 0) return "";
       const pct = ((Number(cur) - Number(prev)) / Math.abs(Number(prev))) * 100;
-      return `${pct >= 0 ? "▲" : "▼"} ${Math.abs(pct).toFixed(1)}%`;
+      return `${pct >= 0 ? "" : "-"}${Math.abs(pct).toFixed(1)}%`;
     };
 
     const nrItems = (nonRecurringItems || []).filter((item: any) => item.description || item.amount);
@@ -2786,7 +2786,7 @@ export function exportFinancialsPDF(company: any, meeting: any, financials: any,
 }
 
 function fmt(val: any): string {
-  if (val == null) return "—";
+  if (val == null) return "--";
   return `$${Number(val).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 }
 

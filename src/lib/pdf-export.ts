@@ -95,7 +95,7 @@ export function exportCompliancePDF(data: ComplianceItem[], overallScore: number
     autoTable(doc, {
       startY: y,
       head: [["Requirement", "Status"]],
-      body: item.checks.map((c) => [c.label, c.pass ? "✓ Complete" : "✗ Missing"]),
+      body: item.checks.map((c) => [c.label, c.pass ? "Complete" : "Missing"]),
       theme: "grid",
       headStyles: {
         fillColor: [45, 55, 72],
@@ -110,7 +110,7 @@ export function exportCompliancePDF(data: ComplianceItem[], overallScore: number
       didParseCell(data) {
         if (data.section === "body" && data.column.index === 1) {
           const text = data.cell.raw as string;
-          if (text.startsWith("✓")) {
+          if (text.startsWith("Complete")) {
             data.cell.styles.textColor = [22, 163, 74];
             data.cell.styles.fontStyle = "bold";
           } else {
