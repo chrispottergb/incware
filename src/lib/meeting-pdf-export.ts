@@ -276,7 +276,7 @@ function addDFIFooter(doc: jsPDF, companyName: string) {
   }
 }
 
-function addAnnualMeetingFooter(doc: jsPDF, companyName: string) {
+function addAnnualMeetingFooter(doc: jsPDF, companyName: string, documentLabel: string = "Annual Meeting Minutes") {
   const pageCount = doc.getNumberOfPages();
   const generatedDate = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   for (let i = 1; i <= pageCount; i++) {
@@ -290,7 +290,7 @@ function addAnnualMeetingFooter(doc: jsPDF, companyName: string) {
 
     doc.setFontSize(8);
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
-    doc.text(`${companyName} — Annual Meeting Minutes — Generated: ${generatedDate}`, pw / 2, ph - 14, { align: "center" });
+    doc.text(`${companyName} — ${documentLabel} — Generated: ${generatedDate}`, pw / 2, ph - 14, { align: "center" });
     doc.setTextColor(130, 130, 130);
     doc.text(`Page ${i} of ${pageCount}`, pw - R_MARGIN, ph - 14, { align: "right" });
   }
