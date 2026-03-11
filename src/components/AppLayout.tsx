@@ -31,6 +31,16 @@ import {
 } from "lucide-react";
 import { isLLCType } from "@/lib/entity-terminology";
 
+function entityBadge(entityType: string | undefined) {
+  if (entityType === "Corporation") return "Corp";
+  if (entityType === "S-Corp") return "S-Corp";
+  if (entityType === "LLC") return "LLC";
+  if (entityType === "Single Member LLC") return "SMLLC";
+  if (entityType === "Non-Profit") return "N-P";
+  if (entityType === "Partnership") return "Ptnr";
+  return entityType?.slice(0, 4) || "";
+}
+
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
   const location = useLocation();
