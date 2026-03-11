@@ -440,7 +440,7 @@ export default function MeetingDetail() {
 
   const term = getTerminology(company?.entity_type);
 
-  const subTabs = [
+  const allSubTabs = [
     { value: "info", label: "Meeting Info" },
     { value: "financials", label: "Financial" },
     { value: "shareholders", label: term.shareholdersSubTab },
@@ -456,8 +456,13 @@ export default function MeetingDetail() {
     { value: "loans", label: "Loans" },
     { value: "agreements", label: "Agreements" },
     { value: "other", label: "Other" },
-    
   ];
+
+  // Shareholder meetings only need a focused subset of tabs
+  const shareholderTabs = new Set(["info", "shareholders", "directors", "resolutions", "other"]);
+  const subTabs = isShareholderMeeting
+    ? allSubTabs.filter(t => shareholderTabs.has(t.value))
+    : allSubTabs;
 
   const meetingFileName = `${company?.name || "meeting"}-${meeting.meeting_type}-${meeting.meeting_date}.pdf`.replace(/\s+/g, "-").toLowerCase();
 
