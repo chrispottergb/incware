@@ -2219,7 +2219,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
   }
 
-  if (data.benefits && data.benefits.length > 0) {
+  if (!isShareholder && data.benefits && data.benefits.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.benefits.length * 7);
     y = section("Benefits");
     y = addWhereasResolved(doc, y,
