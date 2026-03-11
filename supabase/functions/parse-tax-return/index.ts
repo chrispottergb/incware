@@ -210,32 +210,33 @@ Rules:
 - For retirement, look at deductions section line items
 - Return ONLY the JSON, no other text`;
 
-    // Extract text from PDF first using pdf-parse, then send text to AI
-    // This avoids "document has no pages" errors from multimodal APIs
+    // Prefer native text extraction first (supports password-protected PDFs)
     let result;
     if (mimeType === "application/pdf") {
       let extractedText = "";
       try {
-        const pdfData = await pdfParse(Buffer.from(fileBuffer));
-        extractedText = pdfData.text || "";
-        console.log(`pdf-parse extracted ${extractedText.length} chars from ${pdfData.numpages} pages`);
+        extractedText = await extractPdfText(fileBuffer, pdfPassword || undefined);
+        console.log(`pdf.js extracted ${extractedText.length} chars`);
       } catch (pdfErr) {
-        console.warn("pdf-parse failed:", pdfErr);
+        const msg = pdfErr instanceof Error ? pdfErr.message : String(pdfErr);
+        if (/no password given|incorrect password|password/i.test(msg)) {
+          throw new Error("This PDF is password-protected. Enter the PDF password and retry, or upload an unlocked PDF.");
+        }
+        console.warn("pdf.js extraction failed:", pdfErr);
       }
 
-      const hasGoodText = extractedText.length > 500 && (extractedText.match(/[a-zA-Z]/g) || []).length > 100;
+      const letters = (extractedText.match(/[a-zA-Z]/g) || []).length;
+      const hasGoodText = extractedText.length > 120 && letters > 40;
 
       if (hasGoodText) {
-        // Use extracted text with AI (most reliable path)
-        console.log("Using pdf-parse text extraction path");
+        console.log("Using text extraction path");
         result = await callAI({
           provider: "lovable",
           systemPrompt: extractionPrompt,
           prompt: `Extract structured JSON from this tax return text. Return only valid JSON.\n\n${extractedText.slice(0, 300000)}`,
         });
       } else {
-        // Scanned/image PDF - try multimodal document APIs
-        console.log("PDF text extraction insufficient, trying multimodal document APIs");
+        console.log("Insufficient extracted text, trying multimodal document APIs");
         try {
           result = await callClaudeWithDocument({
             base64Data: base64,
@@ -245,7 +246,10 @@ Rules:
           });
         } catch (docErr) {
           const msg = docErr instanceof Error ? docErr.message : String(docErr);
-          throw new Error(`Unable to read this PDF. It may be image-only/scanned or corrupted. (${msg})`);
+          if (/document has no pages/i.test(msg)) {
+            throw new Error("Unable to read this PDF. If it's password-protected, enter the PDF password. If it's a scanned PDF, upload a clearer copy.");
+          }
+          throw new Error(`Unable to read this PDF. ${msg}`);
         }
       }
     } else {
