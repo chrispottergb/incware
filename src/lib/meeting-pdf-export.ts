@@ -375,8 +375,8 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
   const pw = doc.internal.pageSize.getWidth();
 
   if (blueTheme) {
-    // WHEREAS: indented, bold italic prefix, italic body
-    const indent = WHEREAS_RESOLVED_INDENT;
+    // WHEREAS: flush left, bold italic prefix, italic body
+    const wIndent = WHEREAS_INDENT;
     const whereasPrefix = "WHEREAS, ";
     doc.setFontSize(11);
     doc.setTextColor(...BODY_COLOR);
@@ -386,7 +386,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       whereasBody = whereasBody.substring(whereasBody.indexOf(",") + 1).trim();
     }
     const fullWhereas = whereasPrefix + whereasBody;
-    const wLines = doc.splitTextToSize(fullWhereas, pw - MARGIN - R_MARGIN - indent);
+    const wLines = doc.splitTextToSize(fullWhereas, pw - MARGIN - R_MARGIN - wIndent);
     y = checkPageBreak(doc, y, wLines.length * 5.5 + 6);
 
     for (let i = 0; i < wLines.length; i++) {
@@ -394,19 +394,20 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       if (i === 0) {
         doc.setFont("helvetica", "bolditalic");
         const prefixWidth = doc.getTextWidth(whereasPrefix);
-        doc.text(whereasPrefix, MARGIN + indent, y);
+        doc.text(whereasPrefix, MARGIN + wIndent, y);
         doc.setFont("helvetica", "italic");
         const remainder = wLines[0].substring(whereasPrefix.length);
-        if (remainder) doc.text(remainder, MARGIN + indent + prefixWidth, y);
+        if (remainder) doc.text(remainder, MARGIN + wIndent + prefixWidth, y);
       } else {
         doc.setFont("helvetica", "italic");
-        doc.text(wLines[i], MARGIN + indent, y);
+        doc.text(wLines[i], MARGIN + wIndent, y);
       }
       y += 5.5;
     }
     y += 3;
 
-    // RESOLVED: indented, bold prefix, normal body
+    // RESOLVED: indented 0.5 inch, bold prefix, normal body
+    const rIndent = RESOLVED_INDENT;
     const resolvedPrefix = "RESOLVED, ";
     let resolvedBody = resolved;
     // Strip "NOW, THEREFORE, BE IT " prefix if present
@@ -419,7 +420,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       resolvedBody = resolvedBody.substring(resolvedBody.indexOf(",") + 1).trim();
     }
     const fullResolved = resolvedPrefix + "that " + resolvedBody;
-    const rLines = doc.splitTextToSize(fullResolved, pw - MARGIN - R_MARGIN - indent);
+    const rLines = doc.splitTextToSize(fullResolved, pw - MARGIN - R_MARGIN - rIndent);
     y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
 
     for (let i = 0; i < rLines.length; i++) {
@@ -427,19 +428,19 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       if (i === 0) {
         doc.setFont("helvetica", "bold");
         const prefixWidth = doc.getTextWidth(resolvedPrefix);
-        doc.text(resolvedPrefix, MARGIN + indent, y);
+        doc.text(resolvedPrefix, MARGIN + rIndent, y);
         doc.setFont("helvetica", "normal");
         const remainder = rLines[0].substring(resolvedPrefix.length);
-        if (remainder) doc.text(remainder, MARGIN + indent + prefixWidth, y);
+        if (remainder) doc.text(remainder, MARGIN + rIndent + prefixWidth, y);
       } else {
         doc.setFont("helvetica", "normal");
-        doc.text(rLines[i], MARGIN + indent, y);
+        doc.text(rLines[i], MARGIN + rIndent, y);
       }
       y += 5.5;
     }
     y += 5;
   } else {
-    // Original gray theme
+    // Non-blue theme: WHEREAS flush left, RESOLVED indented
     y = checkPageBreak(doc, y, 30);
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
@@ -452,10 +453,11 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
     }
     y += 3;
     y = checkPageBreak(doc, y, 20);
-    const resolvedLines = doc.splitTextToSize(resolved, pw - MARGIN - R_MARGIN);
+    const rIndent = RESOLVED_INDENT;
+    const resolvedLines = doc.splitTextToSize(resolved, pw - MARGIN - R_MARGIN - rIndent);
     for (const line of resolvedLines) {
       y = checkPageBreak(doc, y, 6);
-      doc.text(line, MARGIN, y);
+      doc.text(line, MARGIN + rIndent, y);
       y += 5;
     }
     y += 5;
