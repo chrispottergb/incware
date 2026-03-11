@@ -817,7 +817,8 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   const isWrittenConsent = meeting.meeting_type === "Written Consent";
   const isLLC = entityType?.toLowerCase().includes("llc") || entityType?.toLowerCase().includes("limited liability");
   const isAnnual = (meeting.meeting_type || "").toLowerCase().includes("annual");
-  const bt = isAnnual; // blue theme flag
+  const isShareholder = (meeting.meeting_type || "").toLowerCase().includes("shareholder");
+  const bt = isAnnual || isShareholder; // blue theme flag for both annual and shareholder meetings
   let sectionNum = 0;
 
   // Helper to get table head styles based on theme
