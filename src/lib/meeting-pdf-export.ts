@@ -1579,8 +1579,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = ly + 10;
   }
 
-  // Counsel / Professional Advisors
-  const shouldRenderCounselSection = bt || (data.counsel && data.counsel.length > 0);
+  // Counsel / Professional Advisors — skip for shareholder meetings
+  const shouldRenderCounselSection = !isShareholder && (bt || (data.counsel && data.counsel.length > 0));
   const counselRows = data.counsel && data.counsel.length > 0 ? data.counsel : [{} as any];
 
   if (shouldRenderCounselSection) {
