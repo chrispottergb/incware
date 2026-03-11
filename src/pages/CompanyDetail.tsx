@@ -38,6 +38,7 @@ import RelationshipsTab from "@/components/company/RelationshipsTab";
 import LeasesTab from "@/components/company/LeasesTab";
 import BuySellWorkflow from "@/components/company/BuySellWorkflow";
 import TransferLedgerTab from "@/components/company/TransferLedgerTab";
+import DocumentsTab from "@/components/company/DocumentsTab";
 import UnifiedLedgerTab from "@/components/company/UnifiedLedgerTab";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { useShareCalculations } from "@/hooks/useShareCalculations";
