@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getDocument, GlobalWorkerOptions } from "https://esm.sh/pdfjs-dist@4.9.155/legacy/build/pdf.mjs";
 import { callAI, callClaudeWithDocument, parseJsonFromAI, AIProviderError } from "../_shared/ai-provider.ts";
 
 const corsHeaders = {
@@ -8,8 +7,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-GlobalWorkerOptions.workerSrc = "https://esm.sh/pdfjs-dist@4.9.155/legacy/build/pdf.worker.min.mjs";
 
 serve(async (req) => {
   if (req.method === "OPTIONS")
