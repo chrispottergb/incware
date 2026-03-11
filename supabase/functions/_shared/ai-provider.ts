@@ -251,22 +251,31 @@ export async function callClaudeWithDocument({
     }
   }
 
-  // Fallback: Lovable AI with file content via multimodal input
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) throw new Error("Neither ANTHROPIC_API_KEY nor LOVABLE_API_KEY is configured");
+  const isPdf = mimeType === "application/pdf";
 
-  console.log("Using Lovable AI fallback for document processing");
+  // First fallback for PDFs: Gemini native document endpoint using inline_data.
+  // This avoids OpenAI image_url transport issues that can trigger
+  // "The document has no pages" for valid PDFs.
+  if (isPdf) {
+    try {
+      console.log("Using Gemini native inline_data fallback for PDF processing");
+      return await callGeminiWithDocument({ base64Data, mimeType, prompt, systemPrompt });
+    } catch (err) {
+      if (err instanceof AIProviderError) throw err;
+      console.warn("Gemini native PDF fallback failed, trying Lovable AI gateway fallback:", err);
+    }
+  }
+
+  // Final fallback: Lovable AI gateway multimodal call.
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) {
+    throw new Error("No available AI provider for document parsing (Claude/Gemini/Lovable)");
+  }
+
+  console.log("Using Lovable AI gateway fallback for document processing");
 
   const messages: any[] = [];
   if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
-
-  // For PDFs, convert to individual page images is not feasible in edge functions,
-  // so we send the document as a file part. Use image_url with data URI.
-  // Some models choke on large PDFs via image_url; if the file is a PDF and large,
-  // we'll use a text-extraction fallback approach.
-  const isPdf = mimeType === "application/pdf";
-
-  // For PDFs, try sending as image_url data URI with a model known to handle PDFs well
   messages.push({
     role: "user",
     content: [
@@ -278,12 +287,8 @@ export async function callClaudeWithDocument({
     ],
   });
 
-  // Add a 120-second timeout to prevent hanging
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 120_000);
-
-  // Use gemini-2.5-flash for document processing - it handles PDFs more reliably via the gateway
-  const modelToUse = isPdf ? "google/gemini-2.5-flash" : "google/gemini-2.5-pro";
 
   try {
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -292,7 +297,7 @@ export async function callClaudeWithDocument({
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ model: modelToUse, messages }),
+      body: JSON.stringify({ model: "google/gemini-3-flash-preview", messages }),
       signal: controller.signal,
     });
 
@@ -301,44 +306,13 @@ export async function callClaudeWithDocument({
     if (!response.ok) {
       const status = response.status;
       const text = await response.text();
-      console.error(`Lovable AI error (${status}) with model ${modelToUse}:`, text);
-      
-      // If the primary model fails with "no pages" error, retry with the other model
-      if (text.includes("no pages") && isPdf) {
-        console.log("Retrying with google/gemini-2.5-pro...");
-        const retryController = new AbortController();
-        const retryTimeout = setTimeout(() => retryController.abort(), 120_000);
-        try {
-          const retryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${LOVABLE_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ model: "google/gemini-2.5-pro", messages }),
-            signal: retryController.signal,
-          });
-          clearTimeout(retryTimeout);
-          if (retryResponse.ok) {
-            const retryResult = await retryResponse.json();
-            console.log("Lovable AI retry succeeded");
-            return { content: retryResult.choices?.[0]?.message?.content || "" };
-          }
-          const retryText = await retryResponse.text();
-          console.error(`Retry also failed (${retryResponse.status}):`, retryText);
-        } catch (retryErr) {
-          clearTimeout(retryTimeout);
-          console.error("Retry failed:", retryErr);
-        }
-      }
-      
+      console.error(`Lovable AI error (${status}):`, text);
       if (status === 429) throw new AIProviderError("AI rate limit exceeded. Please try again in a moment.", 429);
       if (status === 402) throw new AIProviderError("AI credits exhausted. Please add credits to continue.", 402);
       throw new Error(`Lovable AI error (${status}): ${text}`);
     }
 
     const result = await response.json();
-    console.log("Lovable AI response received successfully");
     return { content: result.choices?.[0]?.message?.content || "" };
   } catch (err) {
     clearTimeout(timeoutId);
