@@ -1840,11 +1840,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Company Vehicle Policy (if provided)
+  // Company Vehicle Policy (if provided) — skip for shareholder meetings
   const vehiclePolicyText = meeting?.vehicle_policy_text?.trim();
-  const hasVehicleActivity = (data.vehiclePurchases && data.vehiclePurchases.length > 0) ||
+  const hasVehicleActivity = !isShareholder && ((data.vehiclePurchases && data.vehiclePurchases.length > 0) ||
     (data.vehicleSales && data.vehicleSales.length > 0) ||
-    (data.vehicleLeases && data.vehicleLeases.length > 0);
+    (data.vehicleLeases && data.vehicleLeases.length > 0));
 
   if (bt && vehiclePolicyText && hasVehicleActivity) {
     y = checkPageBreak(doc, y, 30);
