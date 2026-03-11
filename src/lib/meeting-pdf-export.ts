@@ -471,12 +471,13 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
   const entityType = company?.entity_type || "Corporation";
   const isLLC = entityType?.toLowerCase().includes("llc") || entityType?.toLowerCase().includes("limited liability");
   const isNonprofit = entityType?.toLowerCase().includes("nonprofit") || entityType?.toLowerCase().includes("non-profit");
+  const isShareholderMeeting = (meeting?.meeting_type || "").toLowerCase().includes("shareholder");
   const pw = doc.internal.pageSize.getWidth();
   const cx = pw / 2;
 
-  const governingLabel = isLLC ? "Members" : isNonprofit ? "Board of Directors" : "Board of Directors";
-  const governingLabelLower = isLLC ? "members" : "directors";
-  const meetingOfLabel = isLLC ? "Members" : "Directors";
+  const governingLabel = isShareholderMeeting ? "Shareholders" : (isLLC ? "Members" : isNonprofit ? "Board of Directors" : "Board of Directors");
+  const governingLabelLower = isShareholderMeeting ? "shareholders" : (isLLC ? "members" : "directors");
+  const meetingOfLabel = isShareholderMeeting ? "Shareholders" : (isLLC ? "Members" : "Directors");
 
   // Build full date string
   const mtgDate = new Date(meeting.meeting_date + "T12:00:00");
