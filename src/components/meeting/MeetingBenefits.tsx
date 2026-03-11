@@ -123,7 +123,7 @@ export default function MeetingBenefits({ meetingId }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<BenefitForm>(emptyForm);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  
 
   const { data: rows = [] } = useQuery({
     queryKey: ["meeting_benefits", meetingId],
