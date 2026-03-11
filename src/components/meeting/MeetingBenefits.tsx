@@ -323,30 +323,26 @@ export default function MeetingBenefits({ meetingId }: Props) {
           </div>
         ) : (
           <div className="rounded-lg border border-border overflow-x-auto">
-            <table className="w-full caption-bottom text-sm" style={{ minWidth: 800 }}>
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="h-12 px-2 text-left align-middle font-medium text-muted-foreground" style={{ width: 32 }} />
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap" style={{ minWidth: 220 }}>Benefit Type</th>
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap" style={{ minWidth: 200 }}>Provider</th>
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap" style={{ minWidth: 180 }}>Agent / Admin</th>
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap" style={{ minWidth: 180 }}>Insurance Agency</th>
-                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground" style={{ width: 80 }} />
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="whitespace-nowrap">Benefit Type</TableHead>
+                  <TableHead className="whitespace-nowrap">Provider</TableHead>
+                  <TableHead className="whitespace-nowrap">Agent / Admin</TableHead>
+                  <TableHead className="whitespace-nowrap">Insurance Agency</TableHead>
+                  <TableHead className="w-20" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {rows.map((row: any) => (
                   <>
-                    <tr key={row.id} className="border-b transition-colors hover:bg-muted/50 cursor-pointer" onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}>
-                      <td className="p-2 align-middle">
-                        {expandedId === row.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                      </td>
-                      <td className="p-4 align-middle font-medium text-sm whitespace-nowrap">{row.benefit_type || row.benefit_description || "—"}</td>
-                      <td className="p-4 align-middle text-sm whitespace-nowrap">{row.provider || "—"}</td>
-                      <td className="p-4 align-middle text-sm whitespace-nowrap">{row.agent_administrator || "—"}</td>
-                      <td className="p-4 align-middle text-sm whitespace-nowrap">{row.insurance_agency || "—"}</td>
-                      <td className="p-4 align-middle">
-                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    <TableRow key={row.id} className="border-b-0">
+                      <TableCell className="font-medium text-sm whitespace-nowrap pb-1">{row.benefit_type || row.benefit_description || "—"}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap pb-1">{row.provider || "—"}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap pb-1">{row.agent_administrator || "—"}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap pb-1">{row.insurance_agency || "—"}</TableCell>
+                      <TableCell className="pb-1" rowSpan={2}>
+                        <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -354,42 +350,31 @@ export default function MeetingBenefits({ meetingId }: Props) {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                      </td>
-                    </tr>
-                    {expandedId === row.id && (
-                      <tr key={`${row.id}-detail`} className="border-b bg-muted/30 hover:bg-muted/30">
-                        <td colSpan={6} className="px-6 py-3">
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2 text-sm">
-                            <div>
-                              <span className="text-muted-foreground text-xs">Transaction Type</span>
-                              <p>{row.transaction_type || "—"}</p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground text-xs">Plan Year</span>
-                              <p>{row.plan_year || "—"}</p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground text-xs">Effective Date</span>
-                              <p>{row.new_plan_effective_date ? new Date(row.new_plan_effective_date + "T00:00:00").toLocaleDateString() : "—"}</p>
-                            </div>
-                            {isRetirementType(row.benefit_type) && (
-                              <div>
-                                <span className="text-muted-foreground text-xs">Contribution Amount</span>
-                                <p>{row.retirement_contribution != null ? `$${Number(row.retirement_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}</p>
-                              </div>
-                            )}
-                            <div className="col-span-2 md:col-span-4">
-                              <span className="text-muted-foreground text-xs">Eligibility / Comments</span>
-                              <p className="whitespace-pre-wrap">{row.eligibility_comments || "—"}</p>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow key={`${row.id}-row2`}>
+                      <TableCell className="pt-0 text-sm text-muted-foreground" colSpan={4}>
+                        <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
+                          <span><span className="font-medium">Plan Year:</span> {row.plan_year || "—"}</span>
+                          {isRetirementType(row.benefit_type) && (
+                            <span><span className="font-medium">Contribution:</span> {row.retirement_contribution != null ? `$${Number(row.retirement_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}</span>
+                          )}
+                          {row.new_plan_effective_date && (
+                            <span><span className="font-medium">Effective:</span> {new Date(row.new_plan_effective_date + "T00:00:00").toLocaleDateString()}</span>
+                          )}
+                          {row.transaction_type && (
+                            <span><span className="font-medium">Transaction:</span> {row.transaction_type}</span>
+                          )}
+                          {row.eligibility_comments && (
+                            <span><span className="font-medium">Eligibility:</span> {row.eligibility_comments}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   </>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </CardContent>
