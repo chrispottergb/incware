@@ -101,6 +101,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
     taxYears: number[];
     companyName: string;
   } | null>(null);
+  const [pdfPassword, setPdfPassword] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const cancelledRef = useRef(false);
