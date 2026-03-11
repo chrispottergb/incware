@@ -42,6 +42,8 @@ serve(async (req) => {
     const file = formData.get("file") as File;
     const companyId = formData.get("company_id") as string | null;
     const mode = formData.get("mode") as string || "extract";
+    const pdfPasswordRaw = formData.get("pdf_password") as string | null;
+    const pdfPassword = pdfPasswordRaw?.trim() || null;
 
     if (!file) {
       return new Response(JSON.stringify({ error: "No file provided" }), {
