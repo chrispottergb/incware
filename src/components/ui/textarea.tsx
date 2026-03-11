@@ -1,17 +1,51 @@
 import * as React from "react";
-
 import { cn } from "@/lib/utils";
+import { useTextExpansion } from "@/hooks/useTextExpansion";
 
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
 
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(({ className, ...props }, ref) => {
+const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(({ className, value, onChange, ...props }, forwardedRef) => {
+  const internalRef = React.useRef<HTMLTextAreaElement | null>(null);
+
+  // Merge forwarded ref and internal ref
+  const setRefs = React.useCallback(
+    (node: HTMLTextAreaElement | null) => {
+      internalRef.current = node;
+      if (typeof forwardedRef === "function") forwardedRef(node);
+      else if (forwardedRef) (forwardedRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = node;
+    },
+    [forwardedRef],
+  );
+
+  // Only enable expansion for controlled textareas
+  const isControlled = value !== undefined && onChange !== undefined;
+
+  const handleExpansionChange = React.useCallback(
+    (newValue: string) => {
+      if (!onChange) return;
+      // Synthesize a change event
+      const nativeEvent = new Event("input", { bubbles: true });
+      Object.defineProperty(nativeEvent, "target", { writable: false, value: { value: newValue } });
+      onChange(nativeEvent as any);
+    },
+    [onChange],
+  );
+
+  useTextExpansion(
+    internalRef,
+    isControlled ? String(value) : "",
+    handleExpansionChange,
+  );
+
   return (
     <textarea
       className={cn(
         "flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
-      ref={ref}
+      ref={setRefs}
+      value={value}
+      onChange={onChange}
       {...props}
     />
   );
