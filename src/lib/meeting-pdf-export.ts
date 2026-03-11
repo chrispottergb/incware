@@ -2348,7 +2348,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Registered Agent Confirmation (Annual Meeting blue theme)
-  if (bt && company?.registered_agent_name) {
+  if (bt && !isShareholder && company?.registered_agent_name) {
     y = checkPageBreak(doc, y, 40);
     y = section("Registered Agent Confirmation");
     const agentAddr = [company.registered_agent_address, company.registered_agent_city, company.registered_agent_state, company.registered_agent_zip].filter(Boolean).join(", ");
