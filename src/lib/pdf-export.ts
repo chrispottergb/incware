@@ -95,7 +95,7 @@ export function exportCompliancePDF(data: ComplianceItem[], overallScore: number
     autoTable(doc, {
       startY: y,
       head: [["Requirement", "Status"]],
-      body: item.checks.map((c) => [c.label, c.pass ? "✓ Complete" : "✗ Missing"]),
+      body: item.checks.map((c) => [c.label, c.pass ? "Complete" : "Missing"]),
       theme: "grid",
       headStyles: {
         fillColor: [45, 55, 72],
