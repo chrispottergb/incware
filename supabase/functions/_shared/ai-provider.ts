@@ -134,11 +134,12 @@ async function callGeminiWithDocument({
       body: JSON.stringify({
         contents: [
           {
+            role: "user",
             parts: [
               { text: mergedPrompt },
               {
-                inline_data: {
-                  mime_type: mimeType,
+                inlineData: {
+                  mimeType: mimeType,
                   data: base64Data,
                 },
               },
