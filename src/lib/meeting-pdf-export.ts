@@ -847,7 +847,8 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
-    doc.text("MINUTES OF THE ANNUAL MEETING", pw / 2, y, { align: "center" });
+    const titleText = isShareholder ? "MINUTES OF THE MEETING OF SHAREHOLDERS" : "MINUTES OF THE ANNUAL MEETING";
+    doc.text(titleText, pw / 2, y, { align: "center" });
     y += 10;
   } else {
     // Meeting Type Header
