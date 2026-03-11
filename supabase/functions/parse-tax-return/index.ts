@@ -300,6 +300,35 @@ Rules:
   }
 }
 
+async function extractPdfText(fileBuffer: ArrayBuffer, password?: string): Promise<string> {
+  const loadingTask = getDocument({
+    data: new Uint8Array(fileBuffer),
+    password,
+    disableWorker: true,
+    useWorkerFetch: false,
+    isEvalSupported: false,
+  });
+
+  const pdf = await loadingTask.promise;
+  const pageCount = Math.min(pdf.numPages, 80);
+  const pageTexts: string[] = [];
+
+  for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items
+      .map((item: any) => ("str" in item ? String(item.str) : ""))
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (pageText) pageTexts.push(pageText);
+  }
+
+  await pdf.destroy();
+
+  return pageTexts.join("\n").trim();
+}
 
 async function populateCompanyData(
   admin: any,
