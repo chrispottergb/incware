@@ -529,25 +529,66 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
     }
     y += 5;
   } else {
-    // Non-blue theme: WHEREAS flush left, RESOLVED indented
-    y = checkPageBreak(doc, y, 30);
+    // Non-blue theme: WHEREAS flush left (bold-italic prefix, italic body), RESOLVED indented (bold prefix, normal body)
+    // WHEREAS
+    let whereasBody = whereas;
+    const whereasPrefix = "WHEREAS, ";
+    if (whereasBody.toUpperCase().startsWith("WHEREAS,")) {
+      whereasBody = whereasBody.substring(whereasBody.indexOf(",") + 1).trim();
+    }
+    const fullWhereas = whereasPrefix + whereasBody;
+    const wLines = doc.splitTextToSize(fullWhereas, pw - MARGIN - R_MARGIN - WHEREAS_INDENT);
+    y = checkPageBreak(doc, y, wLines.length * 5.5 + 6);
     doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(30, 30, 30);
-    const whereasLines = doc.splitTextToSize(whereas, pw - MARGIN - R_MARGIN);
-    for (const line of whereasLines) {
+    doc.setTextColor(...BODY_COLOR);
+
+    for (let i = 0; i < wLines.length; i++) {
       y = checkPageBreak(doc, y, 6);
-      doc.text(line, MARGIN, y);
-      y += 5;
+      if (i === 0) {
+        doc.setFont("helvetica", "bolditalic");
+        const prefixWidth = doc.getTextWidth(whereasPrefix);
+        doc.text(whereasPrefix, MARGIN + WHEREAS_INDENT, y);
+        doc.setFont("helvetica", "italic");
+        const remainder = wLines[0].substring(whereasPrefix.length);
+        if (remainder) doc.text(remainder, MARGIN + WHEREAS_INDENT + prefixWidth, y);
+      } else {
+        doc.setFont("helvetica", "italic");
+        doc.text(wLines[i], MARGIN + WHEREAS_INDENT, y);
+      }
+      y += 5.5;
     }
     y += 3;
-    y = checkPageBreak(doc, y, 20);
-    const rIndent = RESOLVED_INDENT;
-    const resolvedLines = doc.splitTextToSize(resolved, pw - MARGIN - R_MARGIN - rIndent);
-    for (const line of resolvedLines) {
+
+    // RESOLVED
+    const resolvedPrefix = "RESOLVED, ";
+    let resolvedBody = resolved;
+    const nowPrefix = "NOW, THEREFORE, BE IT ";
+    if (resolvedBody.toUpperCase().startsWith(nowPrefix.toUpperCase())) {
+      resolvedBody = resolvedBody.substring(nowPrefix.length);
+    }
+    if (resolvedBody.toUpperCase().startsWith("RESOLVED,")) {
+      resolvedBody = resolvedBody.substring(resolvedBody.indexOf(",") + 1).trim();
+    }
+    const fullResolved = resolvedPrefix + resolvedBody;
+    const rLines = doc.splitTextToSize(fullResolved, pw - MARGIN - R_MARGIN - RESOLVED_INDENT);
+    y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
+
+    for (let i = 0; i < rLines.length; i++) {
       y = checkPageBreak(doc, y, 6);
-      doc.text(line, MARGIN + rIndent, y);
-      y += 5;
+      if (i === 0) {
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...BODY_COLOR);
+        const prefixWidth = doc.getTextWidth(resolvedPrefix);
+        doc.text(resolvedPrefix, MARGIN + RESOLVED_INDENT, y);
+        doc.setFont("helvetica", "normal");
+        const remainder = rLines[0].substring(resolvedPrefix.length);
+        if (remainder) doc.text(remainder, MARGIN + RESOLVED_INDENT + prefixWidth, y);
+      } else {
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...BODY_COLOR);
+        doc.text(rLines[i], MARGIN + RESOLVED_INDENT, y);
+      }
+      y += 5.5;
     }
     y += 5;
   }
