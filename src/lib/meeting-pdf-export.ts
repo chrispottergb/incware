@@ -1076,20 +1076,98 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (mType.includes("annual") || mType.includes("shareholder")) {
     y += 3;
     y = checkPageBreak(doc, y, 30);
-    y = section("Call to Order & Approval of Prior Meeting Minutes");
-    y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} and ${isLLC ? "members" : "shareholders"} of ${companyName} have taken various actions and made certain decisions during the prior fiscal year in the ordinary course of business; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that all acts and decisions of the ${isLLC ? "members" : "directors"} and ${isLLC ? "officers" : "officers"} of ${companyName} taken or made since the last annual meeting are hereby ratified, confirmed, and approved in all respects.`,
-      bt
-    );
 
-    if (meeting.prior_mtg_date) {
-      const priorDate = new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    if (isShareholder) {
+      // Shareholder meeting: prior meeting minutes reading + stock ledger presentation
+      y = section("Approval of Prior Meeting Minutes");
+      if (meeting.prior_mtg_date) {
+        const priorDate = new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...BODY_COLOR);
+        const priorText = `The minutes of the last annual meeting of shareholders, having been held on ${priorDate}, were read and approved.`;
+        const priorLines = doc.splitTextToSize(priorText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+        for (const line of priorLines) {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(line, MARGIN, y);
+          y += 5.5;
+        }
+        y += 3;
+      }
+
+      // Old business for shareholder meeting
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...BODY_COLOR);
+      const oldBizText = meeting.old_business?.trim()
+        ? `The first order of business to come before the meeting was a discussion of old business. ${meeting.old_business.trim()}`
+        : `The first order of business to come before the meeting was a discussion of old business. There being none, the meeting proceeded.`;
+      const oldBizLines = doc.splitTextToSize(oldBizText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of oldBizLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 5;
+
+      // Stock ledger and transfer books presentation
+      y = checkPageBreak(doc, y, 40);
+      y = section("Presentation of Corporate Records");
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...BODY_COLOR);
+      const presentText = `Thereupon, the chairperson presented to the meeting the following papers and documents, all of which were laid upon the table and were publicly declared by the chairperson to be open for inspection by any shareholder:`;
+      const presentLines = doc.splitTextToSize(presentText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of presentLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 3;
+      const items = [
+        "the stock ledger and transfer books of the corporation",
+        `minutes of the board of directors, covering all purchases, contracts, contributions, compensations, acts, authorizations, decisions, proceedings, elections, and appointments by the board of directors since the last annual meeting${meeting.prior_mtg_date ? ` which was held on ${new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}` : ""}.`,
+      ];
+      items.forEach((item, i) => {
+        y = checkPageBreak(doc, y, 10);
+        const itemLines = doc.splitTextToSize(`${i + 1}) ${item}`, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN - 8);
+        for (const line of itemLines) {
+          doc.text(line, MARGIN + 4, y);
+          y += 5.5;
+        }
+        y += 2;
+      });
+      y += 3;
+
+      // Ratification resolution
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...BODY_COLOR);
+      const motionText = `On motion duly made and seconded, it was`;
+      doc.text(motionText, MARGIN, y);
+      y += 8;
       y = addWhereasResolved(doc, y,
-        `WHEREAS, the minutes of the previous Annual Meeting held on ${priorDate} have been reviewed by the ${isLLC ? "members" : "shareholders"};`,
-        `NOW, THEREFORE, BE IT RESOLVED, that the minutes of the Annual Meeting held on ${priorDate} are hereby approved and adopted as a true and accurate record of that meeting.`,
+        "",
+        `NOW, THEREFORE, BE IT RESOLVED, that all purchases, contracts, contributions, compensations, acts, decisions, proceedings, elections and appointments by the board of directors since the last annual meeting of the corporation${meeting.tax_year ? `, and all matters referred to in the report to shareholders for the year ending December 31, ${meeting.tax_year}` : ""}, be and the same hereby are approved and ratified.`,
         bt
       );
+    } else {
+      // Annual meeting ratification
+      y = section("Call to Order & Approval of Prior Meeting Minutes");
+      y = addWhereasResolved(doc, y,
+        `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} and ${isLLC ? "members" : "shareholders"} of ${companyName} have taken various actions and made certain decisions during the prior fiscal year in the ordinary course of business; and`,
+        `NOW, THEREFORE, BE IT RESOLVED, that all acts and decisions of the ${isLLC ? "members" : "directors"} and ${isLLC ? "officers" : "officers"} of ${companyName} taken or made since the last annual meeting are hereby ratified, confirmed, and approved in all respects.`,
+        bt
+      );
+
+      if (meeting.prior_mtg_date) {
+        const priorDate = new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+        y = addWhereasResolved(doc, y,
+          `WHEREAS, the minutes of the previous Annual Meeting held on ${priorDate} have been reviewed by the ${isLLC ? "members" : "shareholders"};`,
+          `NOW, THEREFORE, BE IT RESOLVED, that the minutes of the Annual Meeting held on ${priorDate} are hereby approved and adopted as a true and accurate record of that meeting.`,
+          bt
+        );
+      }
     }
   }
 
