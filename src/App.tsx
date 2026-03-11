@@ -14,6 +14,7 @@ import MeetingDetail from "@/pages/MeetingDetail";
 import Reports from "@/pages/Reports";
 import ImportAccess from "@/pages/ImportAccess";
 import OrgChart from "@/pages/OrgChart";
+import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
