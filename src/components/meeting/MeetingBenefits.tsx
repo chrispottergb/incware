@@ -30,7 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Pencil, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 const BENEFIT_TYPE_OPTIONS = [
