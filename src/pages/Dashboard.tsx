@@ -84,10 +84,46 @@ export default function Dashboard() {
     return matchesSearch && matchesType && matchesStatus;
   });
 
-  const statusBadge = (corporateStatus: string | null) => {
-    if (corporateStatus === "delinquent") return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-[10px] px-1.5 py-0">Delinquent</Badge>;
-    if (corporateStatus === "admin_dissolved") return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] px-1.5 py-0">Admin. Dissolved</Badge>;
-    return <Badge variant="outline" className="bg-success/10 text-success border-success/20 text-[10px] px-1.5 py-0">Current</Badge>;
+  const statusBadge = (company: typeof companies[0]) => {
+    const status = company.corporate_status;
+    const isActionable = status === "delinquent" || status === "admin_dissolved";
+    const email = company.contact_email;
+    
+    const badgeContent = (className: string, label: string) => (
+      <Badge variant="outline" className={`${className} text-[10px] px-1.5 py-0 ${isActionable && email ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}`}>
+        {label}
+      </Badge>
+    );
+    
+    if (status === "delinquent") {
+      const className = "bg-warning/10 text-warning border-warning/20";
+      if (isActionable && email) {
+        const subject = encodeURIComponent(`Action Required: ${company.name} — State Filing Status`);
+        const body = encodeURIComponent(`Dear ${company.salutation_name || company.contact_full_name || "Client"},\n\nOur records indicate that ${company.name} is currently listed as ${status === "delinquent" ? "Delinquent" : "Administratively Dissolved"} with the Secretary of State.\n\nTo maintain good standing and avoid potential penalties or additional fees, please contact our office to discuss the reinstatement process.\n\nBest regards,\n`);
+        return (
+          <a href={`mailto:${email}?subject=${subject}&body=${body}`} className="no-underline">
+            {badgeContent(className, "Delinquent")}
+          </a>
+        );
+      }
+      return badgeContent(className, "Delinquent");
+    }
+    
+    if (status === "admin_dissolved") {
+      const className = "bg-destructive/10 text-destructive border-destructive/20";
+      if (isActionable && email) {
+        const subject = encodeURIComponent(`Action Required: ${company.name} — State Filing Status`);
+        const body = encodeURIComponent(`Dear ${company.salutation_name || company.contact_full_name || "Client"},\n\nOur records indicate that ${company.name} is currently listed as Administratively Dissolved with the Secretary of State.\n\nTo maintain good standing and avoid potential penalties or additional fees, please contact our office to discuss the reinstatement process.\n\nBest regards,\n`);
+        return (
+          <a href={`mailto:${email}?subject=${subject}&body=${body}`} className="no-underline">
+            {badgeContent(className, "Admin. Dissolved")}
+          </a>
+        );
+      }
+      return badgeContent(className, "Admin. Dissolved");
+    }
+    
+    return badgeContent("bg-success/10 text-success border-success/20", "Current");
   };
 
   return (
