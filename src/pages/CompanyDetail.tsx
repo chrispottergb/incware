@@ -38,6 +38,7 @@ import RelationshipsTab from "@/components/company/RelationshipsTab";
 import LeasesTab from "@/components/company/LeasesTab";
 import BuySellWorkflow from "@/components/company/BuySellWorkflow";
 import TransferLedgerTab from "@/components/company/TransferLedgerTab";
+import DocumentsTab from "@/components/company/DocumentsTab";
 import UnifiedLedgerTab from "@/components/company/UnifiedLedgerTab";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { useShareCalculations } from "@/hooks/useShareCalculations";
@@ -95,7 +96,7 @@ export default function CompanyDetail() {
   const defaultTab = isLLC ? "organization" : "incorporation";
 
   // Valid tab values for LLC vs non-LLC to prevent reversion
-  const LLC_TABS = ["organization", "meetings", "shareholders", "timeline", "leases", "counsel", "banks", "relationships", "ai-compliance", "operating-agreement", "record-book"];
+  const LLC_TABS = ["organization", "meetings", "shareholders", "timeline", "leases", "counsel", "banks", "relationships", "ai-compliance", "operating-agreement", "record-book", "documents"];
   const validLLCTab = isLLC && rawHashTab && !LLC_TABS.includes(rawHashTab);
   const hashTab = (!rawHashTab || (rawHashTab === "incorporation" && isLLC) || validLLCTab) ? defaultTab : rawHashTab;
 
@@ -121,6 +122,7 @@ export default function CompanyDetail() {
         { value: "ai-compliance", label: "AI Compliance" },
         { value: "operating-agreement", label: "Operating Agreement" },
         { value: "record-book", label: "Record Book" },
+        { value: "documents", label: "Documents" },
       ];
     }
     const isCorp = entityType === "Corporation" || entityType === "S-Corp";
@@ -144,6 +146,7 @@ export default function CompanyDetail() {
       tabs.push({ value: "conflict-of-interest", label: "Conflict of Interest" });
     }
     tabs.push({ value: "record-book", label: "Record Book" });
+    tabs.push({ value: "documents", label: "Documents" });
     return tabs;
   }, [isLLC, entityType]);
 
@@ -409,6 +412,9 @@ export default function CompanyDetail() {
         )}
         <TabsContent value="record-book" className="mt-5">
           <RecordBookGenerator companyId={company.id} companyName={company.name} entityType={company.entity_type} />
+        </TabsContent>
+        <TabsContent value="documents" className="mt-5">
+          <DocumentsTab companyId={company.id} />
         </TabsContent>
       </Tabs>
     </div>
