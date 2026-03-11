@@ -1200,7 +1200,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   const hasOtherBiz = meeting.other_business?.trim();
   const hasVehiclePolicy = meeting.vehicle_policy_text?.trim();
   const hasProfitPlan = meeting.profit_improvement_plan?.trim();
-  if (hasOtherBiz || hasProfitPlan) {
+  if (!isShareholder && (hasOtherBiz || hasProfitPlan)) {
     y += 3;
     y = checkPageBreak(doc, y, 30);
     y = section("Other Business");
