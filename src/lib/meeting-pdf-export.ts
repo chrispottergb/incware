@@ -1171,8 +1171,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
   }
 
-  // Old Business
-  if (meeting.old_business?.trim()) {
+  // Old Business (skip for shareholder meetings - already handled above)
+  if (!isShareholder && meeting.old_business?.trim()) {
     y += 3;
     y = checkPageBreak(doc, y, 30);
     y = section("Old Business");
