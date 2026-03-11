@@ -2246,8 +2246,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Agreements
-  if (data.agreements && data.agreements.length > 0) {
+  // Agreements — skip for shareholder meetings
+  if (!isShareholder && data.agreements && data.agreements.length > 0) {
     const newOrUpdated = data.agreements.filter((a: any) => !a.is_carried_forward);
     const carriedForward = data.agreements.filter((a: any) => a.is_carried_forward && (a.status === "Active" || !a.status));
 
