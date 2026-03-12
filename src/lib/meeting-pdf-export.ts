@@ -135,7 +135,7 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(`MINUTES OF ${meetingType.toUpperCase()}`, cx, y, { align: "center" });
-    y += 5;
+    y += 4;
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 60, 60);
