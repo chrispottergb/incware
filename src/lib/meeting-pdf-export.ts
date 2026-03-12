@@ -110,7 +110,7 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(companyName.toUpperCase(), cx, y, { align: "center" });
-    y += 5;
+    y += 4;
     doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 60, 60);
     doc.text(`Date: ${meetingDate}`, cx, y, { align: "center" });
@@ -135,7 +135,7 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(`MINUTES OF ${meetingType.toUpperCase()}`, cx, y, { align: "center" });
-    y += 5;
+    y += 4;
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 60, 60);
@@ -678,7 +678,7 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
   doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
   const meetingTypeLabel = isShareholderMeeting ? "Meeting of Shareholders" : `Annual Meeting of ${governingLabel}`;
   doc.text(meetingTypeLabel, cx, y, { align: "center" });
-  y += 7;
+  y += 4;
 
   doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
@@ -999,7 +999,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
     const titleText = isShareholder ? "MINUTES OF THE MEETING OF SHAREHOLDERS" : "MINUTES OF THE ANNUAL MEETING";
     doc.text(titleText, pw / 2, y, { align: "center" });
-    y += 10;
+    y += 6;
   } else {
     // Meeting Type Header
     y = addMeetingTypeHeader(doc, y, meeting.meeting_type, companyName, meetingDate, isWrittenConsent, meeting, company, data);

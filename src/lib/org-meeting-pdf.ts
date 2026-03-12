@@ -174,7 +174,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   doc.setFont("helvetica", "bold");
   doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
   doc.text("MINUTES OF THE ORGANIZATIONAL MEETING", pw / 2, y, { align: "center" });
-  y += 22;
+  y += 14;
   doc.setFontSize(12);
   doc.text(`OF ${fullName.toUpperCase()}`, pw / 2, y, { align: "center" });
   y += 32;
