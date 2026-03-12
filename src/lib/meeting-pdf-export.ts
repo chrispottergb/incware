@@ -110,7 +110,7 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(companyName.toUpperCase(), cx, y, { align: "center" });
-    y += 5;
+    y += 4;
     doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 60, 60);
     doc.text(`Date: ${meetingDate}`, cx, y, { align: "center" });
