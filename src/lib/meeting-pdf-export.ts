@@ -999,7 +999,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
     const titleText = isShareholder ? "MINUTES OF THE MEETING OF SHAREHOLDERS" : "MINUTES OF THE ANNUAL MEETING";
     doc.text(titleText, pw / 2, y, { align: "center" });
-    y += 10;
+    y += 6;
   } else {
     // Meeting Type Header
     y = addMeetingTypeHeader(doc, y, meeting.meeting_type, companyName, meetingDate, isWrittenConsent, meeting, company, data);
