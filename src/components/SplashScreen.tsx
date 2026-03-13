@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import logo from "@/assets/logo-entity-iq-brand.png";
 
-const DURATION = 7500;
+const DURATION = 10500;
 const EXIT_DURATION = 800;
 
 interface SplashScreenProps {
