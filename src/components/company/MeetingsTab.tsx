@@ -296,6 +296,43 @@ export default function MeetingsTab({ companyId, company }: Props) {
         await cloneSubTables(newMeeting.id, priorAnnualId);
       }
 
+      // Auto-populate shareholders with current share data for Shareholder Meetings
+      if (newMeeting && form.meeting_type === "Shareholder Meeting") {
+        const { data: shareholders } = await supabase
+          .from("shareholders")
+          .select("id, name, is_treasury, ownership_percentage")
+          .eq("company_id", companyId);
+
+        const { data: certificates } = await supabase
+          .from("stock_certificates")
+          .select("shareholder_id, num_shares, share_class, status")
+          .eq("company_id", companyId)
+          .eq("status", "active");
+
+        if (shareholders && shareholders.length > 0) {
+          const shRows = shareholders
+            .filter(s => !s.is_treasury)
+            .map(s => {
+              const memberCerts = (certificates || []).filter(c => c.shareholder_id === s.id);
+              const commonShares = memberCerts
+                .filter(c => c.share_class === "Common")
+                .reduce((sum, c) => sum + (c.num_shares || 0), 0);
+              const preferredShares = memberCerts
+                .filter(c => c.share_class === "Preferred")
+                .reduce((sum, c) => sum + (c.num_shares || 0), 0);
+              return {
+                meeting_id: newMeeting.id,
+                shareholder_name: s.name,
+                common_shares: commonShares,
+                preferred_shares: preferredShares,
+              };
+            });
+          if (shRows.length > 0) {
+            await supabase.from("meeting_shareholders").insert(shRows);
+          }
+        }
+      }
+
       return newMeeting;
     },
     onSuccess: (newMeeting) => {
