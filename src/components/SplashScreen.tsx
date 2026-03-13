@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import logo from "@/assets/logo-entity-iq-brand.png";
 
-const DURATION = 7500;
+const DURATION = 10500;
 const EXIT_DURATION = 800;
 
 interface SplashScreenProps {
@@ -168,22 +169,16 @@ export default function SplashScreen({ duration = DURATION, onComplete }: Splash
           animation: "eiq-fadeUp 1s ease 0.5s forwards",
           position: "relative", zIndex: 2,
         }}>
-          <div style={{ display: "flex", alignItems: "baseline" }}>
-            <span style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: 96,
-              letterSpacing: 10,
-              color: "#e8e8f0",
-              lineHeight: 1,
-              textShadow: "0 0 40px rgba(90,160,255,0.25), 0 0 80px rgba(90,160,255,0.1)",
-            }}>
-              ENTITY
-            </span>
-            <div style={{ position: "relative", display: "flex", alignItems: "baseline", marginLeft: 14 }}>
-              <span className="eiq-iq">IQ</span>
-              <span className="eiq-dot" />
-            </div>
-          </div>
+          <img
+            src={logo}
+            alt="ENTITY IQ"
+            style={{
+              width: 380,
+              height: "auto",
+              objectFit: "contain",
+              filter: "drop-shadow(0 0 40px rgba(180, 60, 50, 0.3))",
+            }}
+          />
 
           {/* Logo divider */}
           <div style={{

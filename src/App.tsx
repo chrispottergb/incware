@@ -21,7 +21,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <>
-    <SplashScreen duration={5000} />
+    <SplashScreen duration={8000} />
     <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
