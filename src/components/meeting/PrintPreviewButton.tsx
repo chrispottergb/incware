@@ -194,10 +194,10 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       if (isEmbeddedPreview) {
         const opened = openPdfUtilityTab(blob, fileName, "download");
         if (!opened) {
-          toast.error("Popup blocked. Allow popups to download this PDF.");
+          toast.error("Popup blocked. Allow popups to open this PDF.");
           return;
         }
-        toast.info("PDF helper opened in a new tab. Click Download PDF there.");
+        toast.info("PDF opened in a new tab. Use the browser viewer to save/download.");
         return;
       }
 
