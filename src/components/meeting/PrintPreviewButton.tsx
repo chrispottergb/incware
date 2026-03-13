@@ -55,6 +55,28 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     try {
       const doc = generatePDF();
       if (!doc) return;
+
+      const isEmbeddedPreview = (() => {
+        try {
+          return window.self !== window.top;
+        } catch {
+          return true;
+        }
+      })();
+
+      if (isEmbeddedPreview) {
+        const blob = doc.output("blob");
+        const url = URL.createObjectURL(blob);
+        const opened = window.open(url, "_blank", "noopener,noreferrer");
+        if (!opened) {
+          toast.error("Popup blocked. Please allow popups for this site to open the PDF.");
+        } else {
+          toast.info("PDF opened in a new tab. Use the viewer's download button to save it.");
+        }
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+        return;
+      }
+
       doc.save(fileName);
     } catch (err: any) {
       console.error("PDF download error:", err);
