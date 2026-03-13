@@ -90,20 +90,9 @@ export default function MeetingInfoCard({ meeting }: Props) {
     const original = (meeting as any)[field] ?? null;
     if (value !== original) {
       const updates: Partial<Meeting> = { [field]: value } as any;
-      // When meeting date changes, always auto-set tax_year = year - 1
-      if (field === "meeting_date" && value) {
-        const year = parseISO(value).getFullYear() - 1;
-        (updates as any).tax_year = year;
-        setValues((prev) => ({ ...prev, tax_year: String(year) }));
-      }
       updateMeeting.mutate(updates);
     }
   };
-
-  // Compute default tax year = meeting year - 1
-  const defaultTaxYear = meeting.meeting_date
-    ? parseISO(meeting.meeting_date).getFullYear() - 1
-    : null;
 
   const getValue = (field: string) => {
     if (field in values) return values[field];
@@ -112,7 +101,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
 
   const getTaxYearValue = () => {
     if ("tax_year" in values) return values["tax_year"];
-    return meeting.tax_year ?? defaultTaxYear ?? "";
+    return meeting.tax_year ?? "";
   };
 
   const handleChange = (field: string, value: string) => {
@@ -186,9 +175,6 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 className="h-9 text-sm"
                 placeholder="e.g. 2024"
               />
-              {defaultTaxYear && !meeting.tax_year && (
-                <p className="text-[10px] text-muted-foreground">Auto: meeting year − 1. Edit to override.</p>
-              )}
             </div>
             {textFields.map((item) => (
               <div key={item.field} className="space-y-1.5">
