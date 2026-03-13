@@ -1002,16 +1002,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
       const locationStr = meeting.meeting_location || "";
       const cityAtMeeting = meeting.company_city_at_meeting || company?.city || "";
       const stateAtMeeting = meeting.company_state_at_meeting || company?.state || "";
-      let locPart = "";
-      if (locationStr) {
-        locPart = locationStr;
-        const locLower = locationStr.toLowerCase();
-        const extras = [
-          cityAtMeeting && !locLower.includes(cityAtMeeting.toLowerCase()) ? cityAtMeeting : "",
-          stateAtMeeting && !locLower.includes(stateAtMeeting.toLowerCase()) ? stateAtMeeting : "",
-        ].filter(Boolean);
-        if (extras.length > 0) locPart += `, ${extras.join(", ")}`;
-      }
+      let locPart = locationStr || "";
       const introText = `Minutes of the annual meeting of shareholders of ${companyName}, held at ${locPart || "[location]"} on ${dateStr}${meeting.meeting_time ? ` at ${meeting.meeting_time}` : ""}, pursuant to the following waiver of notice and consent to the holding of such meeting signed by all of the shareholders of this ${entityLabel} on the records of said meeting, to-wit:`;
       const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
       for (const line of introLines) {
