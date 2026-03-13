@@ -627,13 +627,9 @@ export default function MeetingDetail() {
                 fileName={`officers-${meetingFileName}`}
               />
             </div>
-            <MeetingSubTable meetingId={meeting.id} tableName="meeting_officers" title="Officers"
-              columns={[
-                { key: "title", label: "Title", required: true, type: "select", options: OFFICER_TITLE_OPTIONS[company?.entity_type || "Corporation"] || OFFICER_TITLE_OPTIONS["Corporation"] },
-                { key: "name", label: "Name", required: true },
-                { key: "salary", label: "Salary", type: "number" },
-                { key: "bonus", label: "Bonus", type: "number" },
-              ]}
+            <MeetingOfficersTable
+              meetingId={meeting.id}
+              titleOptions={OFFICER_TITLE_OPTIONS[company?.entity_type || "Corporation"] || OFFICER_TITLE_OPTIONS["Corporation"]}
             />
           </div>
         </TabsContent>
