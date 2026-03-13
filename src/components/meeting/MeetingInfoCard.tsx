@@ -175,9 +175,6 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 className="h-9 text-sm"
                 placeholder="e.g. 2024"
               />
-              {defaultTaxYear && !meeting.tax_year && (
-                <p className="text-[10px] text-muted-foreground">Auto: meeting year − 1. Edit to override.</p>
-              )}
             </div>
             {textFields.map((item) => (
               <div key={item.field} className="space-y-1.5">
