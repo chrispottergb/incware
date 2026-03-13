@@ -154,8 +154,8 @@ export default function MeetingInfoCard({ meeting }: Props) {
               />
             </div>
           )}
-          <div className="grid gap-4 sm:grid-cols-6 lg:grid-cols-12">
-            <div className="sm:col-span-2 lg:col-span-2">
+          <div className="grid gap-4 grid-cols-12">
+            <div className="col-span-2">
               <DateFieldWrapper
                 label="Meeting Date"
                 value={meeting.meeting_date}
@@ -163,7 +163,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 icon={CalendarIcon}
               />
             </div>
-            <div className="sm:col-span-2 lg:col-span-2">
+            <div className="col-span-2">
               <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                 <Hash className="h-3.5 w-3.5" />
                 Tax Year
@@ -177,7 +177,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 placeholder="e.g. 2024"
               />
             </div>
-            <div className="sm:col-span-2 lg:col-span-2">
+            <div className="col-span-2">
               <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5" />
                 Time
@@ -189,7 +189,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 className="h-9 text-sm mt-1.5"
               />
             </div>
-            <div className="sm:col-span-4 lg:col-span-4">
+            <div className="col-span-6">
               <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                 <MapPin className="h-3.5 w-3.5" />
                 Location
@@ -201,7 +201,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 className="h-9 text-sm mt-1.5"
               />
             </div>
-            <div className="sm:col-span-2 lg:col-span-2">
+            <div className="col-span-4">
               <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                 <User className="h-3.5 w-3.5" />
                 Chairperson
@@ -213,7 +213,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 className="h-9 text-sm mt-1.5"
               />
             </div>
-            <div className="sm:col-span-2 lg:col-span-2">
+            <div className="col-span-4">
               <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5" />
                 Secretary
@@ -225,7 +225,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 className="h-9 text-sm mt-1.5"
               />
             </div>
-            <div className="sm:col-span-4 lg:col-span-4">
+            <div className="col-span-4">
               <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5" />
                 Others Present
