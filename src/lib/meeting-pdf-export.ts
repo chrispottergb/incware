@@ -470,6 +470,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
 
   if (blueTheme) {
     // WHEREAS: flush left, bold italic prefix, italic body
+    if (whereas) {
     const wIndent = WHEREAS_INDENT;
     const whereasPrefix = "WHEREAS, ";
     doc.setFontSize(11);
@@ -499,8 +500,10 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       y += 5.5;
     }
     y += 3;
+    }
 
     // RESOLVED: indented 0.5 inch, bold prefix, normal body
+    if (resolved) {
     const rIndent = RESOLVED_INDENT;
     const resolvedPrefix = "RESOLVED, ";
     let resolvedBody = resolved;
