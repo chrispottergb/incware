@@ -175,16 +175,6 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     let locationPart = "";
     if (location) {
       locationPart = `, was held at ${location}`;
-      const locLower = location.toLowerCase();
-      const cityAlreadyInLoc = cityAtMeeting && locLower.includes(cityAtMeeting.toLowerCase());
-      const stateAlreadyInLoc = stateAtMeeting && locLower.includes(stateAtMeeting.toLowerCase());
-      const extras = [
-        !cityAlreadyInLoc ? cityAtMeeting : "",
-        !stateAlreadyInLoc ? stateAtMeeting : "",
-      ].filter(Boolean);
-      if (extras.length > 0) {
-        locationPart += `, ${extras.join(", ")}`;
-      }
     }
 
     let datePart = ` on ${dateStr}`;
