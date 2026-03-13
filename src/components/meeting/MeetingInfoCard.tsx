@@ -258,9 +258,9 @@ export default function MeetingInfoCard({ meeting }: Props) {
           <CardTitle className="font-display text-base">Company at Time of Meeting</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-x-3 gap-y-4 grid-cols-12">
-            {/* Row 1: Company Name + Address */}
-            <div className="col-span-5 space-y-1.5">
+          <div className="flex gap-3">
+            {/* All five fields on single row */}
+            <div className="flex-1 min-w-[180px] space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Company Name</Label>
               <Input
                 value={getValue("company_name_at_meeting")}
@@ -269,7 +269,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 className="h-9 text-sm"
               />
             </div>
-            <div className="col-span-7 space-y-1.5">
+            <div className="flex-1 min-w-[180px] space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Address</Label>
               <Input
                 value={getValue("company_address_at_meeting")}
@@ -278,8 +278,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 className="h-9 text-sm"
               />
             </div>
-            {/* Row 2: City + State + Zip on single line */}
-            <div className="col-span-5 space-y-1.5">
+            <div className="w-[140px] space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">City</Label>
               <Input
                 value={getValue("company_city_at_meeting")}
@@ -288,7 +287,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 className="h-9 text-sm"
               />
             </div>
-            <div className="col-span-2 space-y-1.5">
+            <div className="w-[60px] space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">State</Label>
               <Input
                 value={getValue("company_state_at_meeting")}
@@ -297,7 +296,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 className="h-9 text-sm"
               />
             </div>
-            <div className="col-span-5 space-y-1.5">
+            <div className="w-[100px] space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Zip</Label>
               <Input
                 value={getValue("company_zip_at_meeting")}
