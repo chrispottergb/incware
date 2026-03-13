@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calendar, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import MeetingAuthorizedSigners from "@/components/meeting/MeetingAuthorizedSigners";
 import MeetingInfoCard from "@/components/meeting/MeetingInfoCard";
 import MeetingFinancials from "@/components/meeting/MeetingFinancials";
