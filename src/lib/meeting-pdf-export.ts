@@ -1024,6 +1024,20 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         y += 5.5;
       }
       y += 3;
+
+      // S-Corporation status paragraph for corporations with S-election
+      const hasSElection = company?.s_election_date != null;
+      if (!isLLC && hasSElection) {
+        const fye = company?.fiscal_year_end || "December 31";
+        const sCorpText = `The Secretary noted that the corporation has elected S corporation status under Subchapter S of the Internal Revenue Code, and that said election remains in full force and effect for the tax year ending ${fye}.`;
+        const sCorpLines = doc.splitTextToSize(sCorpText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+        for (const line of sCorpLines) {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(line, MARGIN, y);
+          y += 5.5;
+        }
+        y += 3;
+      }
     } else {
       const meetingLabel = "Annual Meeting";
       const introText = `The ${meetingLabel} of the ${stateOfInc} ${entityLabel} was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${meeting.meeting_location ? `, at ${meeting.meeting_location}` : ""}.`;
