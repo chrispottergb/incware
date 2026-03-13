@@ -51,12 +51,50 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     }
   };
 
+  const isEmbeddedPreview = (() => {
+    try {
+      return window.self !== window.top;
+    } catch {
+      return true;
+    }
+  })();
+
+  const openPdfInNewTab = (blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    const popup = window.open(url, "_blank", "noopener,noreferrer");
+
+    if (!popup) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return Boolean(popup);
+  };
+
   const handleDownload = async () => {
     try {
       const doc = generatePDF();
       if (!doc) return;
 
       const arrayBuffer = doc.output("arraybuffer");
+      const blob = new Blob([arrayBuffer], { type: "application/pdf" });
+
+      // Cross-origin embedded previews cannot use file pickers or direct downloads reliably.
+      if (isEmbeddedPreview) {
+        const opened = openPdfInNewTab(blob);
+        if (opened) {
+          toast.info("PDF opened in a new tab. Use the viewer's download button.");
+        } else {
+          toast.error("Popup blocked. Please allow popups for this site.");
+        }
+        return;
+      }
 
       const savePicker = (window as any).showSaveFilePicker as
         | undefined
@@ -80,20 +118,11 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
           return;
         } catch (pickerErr: any) {
           if (pickerErr?.name === "AbortError") return;
-          console.warn("File picker failed, falling back to browser download", pickerErr);
+          console.warn("File picker failed, using browser download", pickerErr);
         }
       }
 
-      const blob = new Blob([arrayBuffer], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      a.rel = "noopener";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      doc.save(fileName);
     } catch (err: any) {
       console.error("PDF download error:", err);
       toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
@@ -104,18 +133,15 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     try {
       const doc = generatePDF();
       if (!doc) return;
+
       const blob = doc.output("blob");
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.target = "_blank";
-      a.rel = "noopener";
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      toast.info("PDF opened — use Ctrl+P / ⌘+P to print from your PDF viewer.");
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      const opened = openPdfInNewTab(blob);
+
+      if (opened) {
+        toast.info("PDF opened — use Ctrl+P / ⌘+P to print from your PDF viewer.");
+      } else {
+        toast.error("Popup blocked. Please allow popups for this site.");
+      }
     } catch (err: any) {
       console.error("PDF print error:", err);
       toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
