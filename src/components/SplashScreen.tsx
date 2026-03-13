@@ -192,7 +192,7 @@ export default function SplashScreen({ duration = DURATION, onComplete }: Splash
             fontWeight: 300,
             fontSize: 13,
             letterSpacing: 6,
-            color: "rgba(180,190,220,0.5)",
+            color: "rgba(180,190,220,0.9)",
             textTransform: "uppercase",
             marginTop: 10,
             display: "flex",
