@@ -1537,6 +1537,24 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 10;
+
+    // Compensation notes for officers
+    const officersWithNotes = data.officers.filter((o: any) => o.compensation_note);
+    if (officersWithNotes.length > 0) {
+      for (const o of officersWithNotes) {
+        y = checkPageBreak(doc, y, 20);
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...BODY_COLOR);
+        const noteLines = doc.splitTextToSize(o.compensation_note, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+        for (const line of noteLines) {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(line, MARGIN, y);
+          y += 5.5;
+        }
+        y += 4;
+      }
+    }
   }
 
   // Shareholders — skip for shareholder meetings (already rendered in meeting info section)
