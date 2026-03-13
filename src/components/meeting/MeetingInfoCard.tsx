@@ -238,17 +238,62 @@ export default function MeetingInfoCard({ meeting }: Props) {
               />
             </div>
           </div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 border-t pt-4">
-            <DateFieldWrapper
-              label="Prior Meeting Date"
-              value={meeting.prior_mtg_date}
-              onChange={(val) => handleDateChange("prior_mtg_date", val)}
-            />
-            <DateFieldWrapper
-              label="Next Annual Meeting"
-              value={meeting.next_annual_mtg}
-              onChange={(val) => handleDateChange("next_annual_mtg", val)}
-            />
+          {/* Row 2: Chairperson, Secretary, Others Present, Prior Meeting Date, Next Annual Meeting */}
+          <div className="mt-4 flex gap-3">
+            <div className="flex-1 min-w-[120px] space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5" />
+                Chairperson
+              </Label>
+              <Input
+                value={getValue("chairperson")}
+                onChange={(e) => handleChange("chairperson", e.target.value)}
+                onBlur={(e) => handleBlur("chairperson", e.target.value)}
+                className="h-9 text-sm"
+              />
+            </div>
+            <div className="flex-1 min-w-[120px] space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                Secretary
+              </Label>
+              <Input
+                value={getValue("mtg_secretary")}
+                onChange={(e) => handleChange("mtg_secretary", e.target.value)}
+                onBlur={(e) => handleBlur("mtg_secretary", e.target.value)}
+                className="h-9 text-sm"
+              />
+            </div>
+            <div className="flex-1 min-w-[120px] space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                Others Present
+              </Label>
+              <Input
+                value={getValue("others_present")}
+                onChange={(e) => handleChange("others_present", e.target.value)}
+                onBlur={(e) => handleBlur("others_present", e.target.value)}
+                className="h-9 text-sm"
+              />
+            </div>
+            <div className="w-[135px] space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Prior Meeting Date</Label>
+              <DatePickerField
+                value={meeting.prior_mtg_date ?? ""}
+                onChange={(val) => handleDateChange("prior_mtg_date", val || null)}
+                placeholder="Pick date"
+                className="h-9"
+              />
+            </div>
+            <div className="w-[145px] space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Next Annual Meeting</Label>
+              <DatePickerField
+                value={meeting.next_annual_mtg ?? ""}
+                onChange={(val) => handleDateChange("next_annual_mtg", val || null)}
+                placeholder="Pick date"
+                className="h-9"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
