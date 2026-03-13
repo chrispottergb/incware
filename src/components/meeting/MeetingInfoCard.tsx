@@ -257,23 +257,59 @@ export default function MeetingInfoCard({ meeting }: Props) {
         <CardHeader className="pb-3">
           <CardTitle className="font-display text-base">Company at Time of Meeting</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {companyFields.map((item) => (
-            <div key={item.field} className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">{item.label}</Label>
+        <CardContent>
+          <div className="grid gap-4 grid-cols-12">
+            {/* Row 1: Company Name, Address, City */}
+            <div className="col-span-5 space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Company Name</Label>
               <Input
-                value={getValue(item.field)}
-                onChange={(e) => {
-                  handleChange(item.field, e.target.value);
-                  if (item.field === "company_zip_at_meeting") {
-                    handleZipChange(e.target.value);
-                  }
-                }}
-                onBlur={(e) => handleBlur(item.field, e.target.value)}
+                value={getValue("company_name_at_meeting")}
+                onChange={(e) => handleChange("company_name_at_meeting", e.target.value)}
+                onBlur={(e) => handleBlur("company_name_at_meeting", e.target.value)}
                 className="h-9 text-sm"
               />
             </div>
-          ))}
+            <div className="col-span-4 space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Address</Label>
+              <Input
+                value={getValue("company_address_at_meeting")}
+                onChange={(e) => handleChange("company_address_at_meeting", e.target.value)}
+                onBlur={(e) => handleBlur("company_address_at_meeting", e.target.value)}
+                className="h-9 text-sm"
+              />
+            </div>
+            <div className="col-span-3 space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">City</Label>
+              <Input
+                value={getValue("company_city_at_meeting")}
+                onChange={(e) => handleChange("company_city_at_meeting", e.target.value)}
+                onBlur={(e) => handleBlur("company_city_at_meeting", e.target.value)}
+                className="h-9 text-sm"
+              />
+            </div>
+            {/* Row 2: State and Zip on same line */}
+            <div className="col-span-2 space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">State</Label>
+              <Input
+                value={getValue("company_state_at_meeting")}
+                onChange={(e) => handleChange("company_state_at_meeting", e.target.value)}
+                onBlur={(e) => handleBlur("company_state_at_meeting", e.target.value)}
+                className="h-9 text-sm"
+              />
+            </div>
+            <div className="col-span-3 space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Zip</Label>
+              <Input
+                value={getValue("company_zip_at_meeting")}
+                onChange={(e) => {
+                  handleChange("company_zip_at_meeting", e.target.value);
+                  handleZipChange(e.target.value);
+                }}
+                onBlur={(e) => handleBlur("company_zip_at_meeting", e.target.value)}
+                className="h-9 text-sm"
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
