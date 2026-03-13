@@ -54,6 +54,7 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
   const handleDownload = () => {
     try {
       const doc = generatePDF();
+      if (!doc) return;
       doc.save(fileName);
     } catch (err: any) {
       console.error("PDF download error:", err);
