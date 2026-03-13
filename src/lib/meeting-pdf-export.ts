@@ -623,14 +623,6 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
   const cityAtMeeting = meeting.company_city_at_meeting || company?.city || "";
   const stateAtMeeting = meeting.company_state_at_meeting || company?.state || "";
   let locationStr = location;
-  if (locationStr) {
-    const locLower = locationStr.toLowerCase();
-    const extras = [
-      cityAtMeeting && !locLower.includes(cityAtMeeting.toLowerCase()) ? cityAtMeeting : "",
-      stateAtMeeting && !locLower.includes(stateAtMeeting.toLowerCase()) ? stateAtMeeting : "",
-    ].filter(Boolean);
-    if (extras.length > 0) locationStr += `, ${extras.join(", ")}`;
-  }
 
   // Collect director/member names for signatures
   const signerNames: string[] = [];
