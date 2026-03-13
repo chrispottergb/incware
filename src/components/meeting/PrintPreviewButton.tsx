@@ -65,6 +65,7 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
   const handlePrint = () => {
     try {
       const doc = generatePDF();
+      if (!doc) return;
       const blob = doc.output("blob");
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
