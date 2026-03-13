@@ -707,22 +707,6 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
     y += 2;
   });
 
-  y += 6;
-  doc.setFont("helvetica", "normal");
-  doc.text(`DATED: ${fullDateStr}`, MARGIN, y);
-  y += 12;
-
-  // Signature lines for directors/members
-  signerNames.forEach(name => {
-    doc.setDrawColor(30, 30, 30);
-    doc.setLineWidth(0.3);
-    doc.line(MARGIN, y, MARGIN + 70, y);
-    y += 5;
-    doc.setFontSize(10);
-    doc.text(name, MARGIN, y);
-    y += 10;
-  });
-
   // ── WAIVER OF NOTICE SECTION (same page if space, otherwise new page) ──
   y = checkPageBreak(doc, y, 80);
   y += 6;
