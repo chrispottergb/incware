@@ -1880,6 +1880,7 @@ export type Database = {
           compensation_note: string | null
           compensation_status: string | null
           created_at: string
+          dual_role_type: string | null
           id: string
           meeting_id: string
           name: string
@@ -1891,6 +1892,7 @@ export type Database = {
           compensation_note?: string | null
           compensation_status?: string | null
           created_at?: string
+          dual_role_type?: string | null
           id?: string
           meeting_id: string
           name: string
@@ -1902,6 +1904,7 @@ export type Database = {
           compensation_note?: string | null
           compensation_status?: string | null
           created_at?: string
+          dual_role_type?: string | null
           id?: string
           meeting_id?: string
           name?: string

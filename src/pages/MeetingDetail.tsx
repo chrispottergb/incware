@@ -408,9 +408,31 @@ export default function MeetingDetail() {
   const officersHaveReasonIssue = officers.some((o: any) =>
     (o.compensation_status === "below_market" || o.compensation_status === "above_market") && o.compensation_note?.includes("[REASON]")
   );
-  const officerValidationFailed = officers.length > 0 && (officersMissingStatus.length > 0 || officersHaveReasonIssue);
+  // Dual-role validation: detect names appearing multiple times without explicit primary designation
+  const officerNameCounts = new Map<string, any[]>();
+  officers.forEach((o: any) => {
+    const key = (o.name || "").trim().toLowerCase();
+    if (!key) return;
+    if (!officerNameCounts.has(key)) officerNameCounts.set(key, []);
+    officerNameCounts.get(key)!.push(o);
+  });
+  const unresolvedDualRoles: string[] = [];
+  officerNameCounts.forEach((group, _key) => {
+    if (group.length >= 2 && !group.some((o: any) => o.dual_role_type === "primary")) {
+      unresolvedDualRoles.push(group[0].name);
+    }
+  });
+  const officerValidationFailed = officers.length > 0 && (
+    officersMissingStatus.length > 0 ||
+    officersHaveReasonIssue ||
+    unresolvedDualRoles.length > 0
+  );
 
   const generateFullMinutes = () => {
+    if (unresolvedDualRoles.length > 0) {
+      toast.error(`${unresolvedDualRoles.join(", ")} holds multiple titles. Please designate a Primary Role before generating minutes.`);
+      return null as any;
+    }
     if (officerValidationFailed) {
       toast.error("All officers must have a Compensation Status set (with [REASON] resolved) before generating minutes.");
       return null as any;

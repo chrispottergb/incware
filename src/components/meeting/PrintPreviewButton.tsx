@@ -38,6 +38,7 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     setLoading(true);
     try {
       const doc = generatePDF();
+      if (!doc) { setLoading(false); return; }
       const arrayBuf = doc.output("arraybuffer");
       setPdfData(new Uint8Array(arrayBuf));
       setCurrentPage(1);
@@ -53,6 +54,7 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
   const handleDownload = () => {
     try {
       const doc = generatePDF();
+      if (!doc) return;
       doc.save(fileName);
     } catch (err: any) {
       console.error("PDF download error:", err);
