@@ -465,8 +465,12 @@ function addSubHeading(doc: jsPDF, y: number, text: string): number {
 function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: string, blueTheme: boolean = false): number {
   const pw = doc.internal.pageSize.getWidth();
 
+  // Skip empty whereas or resolved
+  if (!whereas && !resolved) return y;
+
   if (blueTheme) {
     // WHEREAS: flush left, bold italic prefix, italic body
+    if (whereas) {
     const wIndent = WHEREAS_INDENT;
     const whereasPrefix = "WHEREAS, ";
     doc.setFontSize(11);
@@ -496,8 +500,10 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       y += 5.5;
     }
     y += 3;
+    }
 
     // RESOLVED: indented 0.5 inch, bold prefix, normal body
+    if (resolved) {
     const rIndent = RESOLVED_INDENT;
     const resolvedPrefix = "RESOLVED, ";
     let resolvedBody = resolved;
@@ -530,9 +536,11 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       y += 5.5;
     }
     y += 5;
+    }
   } else {
     // Non-blue theme: WHEREAS flush left (bold-italic prefix, italic body), RESOLVED indented (bold prefix, normal body)
     // WHEREAS
+    if (whereas) {
     let whereasBody = whereas;
     const whereasPrefix = "WHEREAS, ";
     if (whereasBody.toUpperCase().startsWith("WHEREAS,")) {
@@ -560,8 +568,10 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       y += 5.5;
     }
     y += 3;
+    }
 
     // RESOLVED
+    if (resolved) {
     const resolvedPrefix = "RESOLVED, ";
     let resolvedBody = resolved;
     const nowPrefix = "NOW, THEREFORE, BE IT ";
@@ -593,6 +603,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       y += 5.5;
     }
     y += 5;
+    }
   }
   return y;
 }
@@ -1471,11 +1482,36 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 30 + data.officers.length * 7);
     y = section("Officers");
     const isSCorp = entityType === "S-Corp";
+
+    // Detect if any officers are new (not in prior year) — determines "elected" vs "re-elected"
+    const priorOfficerNames = new Set(
+      (data.priorYear?.officers || []).map((o: any) => o.name?.toLowerCase())
+    );
+    const hasNewOfficers = data.officers.some((o: any) => !priorOfficerNames.has(o.name?.toLowerCase()));
+    const electionVerb = hasNewOfficers ? (isLLC ? "appointed" : "elected") : (isLLC ? "appointed" : "re-elected");
+
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} ${isLLC ? "have" : "has"} reviewed the current ${isLLC ? "management" : "officer"} positions and compensation of ${companyName}${isSCorp ? ", and recognizing the requirement under IRC § 1366 that officer-shareholders receive reasonable compensation" : ""}; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby ${isLLC ? "appointed" : "re-elected"} as ${isLLC ? "managers/officers" : "officers"} of ${companyName}, at the compensation levels set forth below, which the Board has determined to be reasonable compensation for the services performed, and to serve until their successors are duly ${isLLC ? "appointed" : "elected"} and qualified:`,
+      "",
       bt
     );
+
+    // Add second WHEREAS when there are new officer elections
+    if (hasNewOfficers) {
+      y = addWhereasResolved(doc, y,
+        `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} ${isLLC ? "have" : "has"} determined it is in the best interests of the ${isLLC ? "LLC" : "corporation"} to elect the following persons as ${isLLC ? "managers/officers" : "officers"}; now therefore be it`,
+        "",
+        bt
+      );
+    }
+
+    // RESOLVED clause
+    y = addWhereasResolved(doc, y,
+      "",
+      `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby ${electionVerb} as ${isLLC ? "managers/officers" : "officers"} of ${companyName}, at the compensation levels set forth below, which the Board has determined to be reasonable compensation for the services performed, and to serve until their successors are duly ${isLLC ? "appointed" : "elected"} and qualified:`,
+      bt
+    );
+
     const hasSalaryData = data.officers.some(o => o.salary != null || o.bonus != null);
     autoTable(doc, {
       startY: y,
@@ -2226,10 +2262,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       data.officers.forEach((o: any) => {
         const prior = priorByName[o.name?.toLowerCase()];
         if (!prior) {
-          autoResolutions.push({
-            purpose: `Elect ${o.title}`,
-            text: `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have determined it is in the best interests of the ${entityLabel} to elect a new officer, and after discussion, it was\n\nRESOLVED, that ${o.name} is hereby elected as ${o.title} of the ${entityLabel}${o.salary != null ? `, with an annual salary of ${fmt(o.salary)}` : ""}${o.bonus != null ? ` and a bonus of ${fmt(o.bonus)}` : ""}, effective immediately.`,
-          });
+          // New officer elections are now handled in the combined Officers section above
+          // — no separate resolution needed
         } else {
           if (o.salary != null && prior.salary != null && Number(o.salary) !== Number(prior.salary)) {
             autoResolutions.push({
