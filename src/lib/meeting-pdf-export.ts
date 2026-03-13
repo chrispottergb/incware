@@ -1473,7 +1473,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const isSCorp = entityType === "S-Corp";
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} ${isLLC ? "have" : "has"} reviewed the current ${isLLC ? "management" : "officer"} positions and compensation of ${companyName}${isSCorp ? ", and recognizing the requirement under IRC § 1366 that officer-shareholders receive reasonable compensation" : ""}; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby ${isLLC ? "appointed" : "re-elected"} as ${isLLC ? "managers/officers" : "officers"} of ${companyName}, at the compensation levels set forth below, to serve until their successors are duly ${isLLC ? "appointed" : "elected"} and qualified:`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby ${isLLC ? "appointed" : "re-elected"} as ${isLLC ? "managers/officers" : "officers"} of ${companyName}, at the compensation levels set forth below, which the Board has determined to be reasonable compensation for the services performed, and to serve until their successors are duly ${isLLC ? "appointed" : "elected"} and qualified:`,
       bt
     );
     const hasSalaryData = data.officers.some(o => o.salary != null || o.bonus != null);
