@@ -98,7 +98,7 @@ export default function Settings() {
     setEditing(null);
   };
 
-  const filtered = shortcodes.filter((sc) => {
+  const filtered = (Array.isArray(shortcodes) ? shortcodes : []).filter((sc) => {
     const matchSearch = !search || sc.shortcode.toLowerCase().includes(search.toLowerCase()) || sc.expansion_text.toLowerCase().includes(search.toLowerCase());
     const matchCat = filterCategory === "all" || sc.category === filterCategory;
     return matchSearch && matchCat;
