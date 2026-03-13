@@ -75,63 +75,73 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     suggestedName: string,
     mode: "download" | "print"
   ) => {
-    const popup = window.open("", "_blank", "noopener,noreferrer");
+    const popup = window.open("", "_blank");
     if (!popup) return false;
 
     const url = URL.createObjectURL(blob);
-    popup.document.title = suggestedName;
 
-    const root = popup.document.createElement("div");
-    root.style.cssText =
-      "font-family: system-ui, -apple-system, sans-serif; padding: 16px; display: flex; flex-direction: column; gap: 12px; height: calc(100vh - 32px);";
+    try {
+      popup.document.open();
+      popup.document.write(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${suggestedName}</title>
+    <style>
+      body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+      .wrap { display: flex; flex-direction: column; gap: 12px; height: 100vh; padding: 16px; box-sizing: border-box; }
+      .actions { display: flex; gap: 8px; }
+      button, a { border: 1px solid; border-radius: 8px; padding: 8px 12px; text-decoration: none; background: none; color: inherit; font: inherit; cursor: pointer; }
+      iframe { width: 100%; flex: 1; border: 1px solid; border-radius: 10px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <strong>${suggestedName}</strong>
+      <div class="actions">
+        <a id="downloadLink">Download PDF</a>
+        <button id="printButton" type="button">Print PDF</button>
+      </div>
+      <iframe id="pdfFrame"></iframe>
+    </div>
+  </body>
+</html>`);
+      popup.document.close();
 
-    const heading = popup.document.createElement("strong");
-    heading.textContent = suggestedName;
+      const frame = popup.document.getElementById("pdfFrame") as HTMLIFrameElement | null;
+      const downloadLink = popup.document.getElementById("downloadLink") as HTMLAnchorElement | null;
+      const printButton = popup.document.getElementById("printButton") as HTMLButtonElement | null;
 
-    const actions = popup.document.createElement("div");
-    actions.style.cssText = "display: flex; gap: 8px;";
-
-    const downloadLink = popup.document.createElement("a");
-    downloadLink.href = url;
-    downloadLink.download = suggestedName;
-    downloadLink.textContent = "Download PDF";
-    downloadLink.style.cssText =
-      "padding: 8px 12px; border: 1px solid; border-radius: 8px; text-decoration: none;";
-
-    const printButton = popup.document.createElement("button");
-    printButton.type = "button";
-    printButton.textContent = "Print PDF";
-    printButton.style.cssText =
-      "padding: 8px 12px; border: 1px solid; border-radius: 8px; cursor: pointer;";
-
-    const iframe = popup.document.createElement("iframe");
-    iframe.src = url;
-    iframe.style.cssText = "border: 1px solid; border-radius: 10px; width: 100%; flex: 1;";
-
-    printButton.onclick = () => {
-      try {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-      } catch {
-        popup.print();
+      if (frame) frame.src = url;
+      if (downloadLink) {
+        downloadLink.href = url;
+        downloadLink.download = suggestedName;
       }
-    };
+      if (printButton) {
+        printButton.onclick = () => {
+          try {
+            frame?.contentWindow?.focus();
+            frame?.contentWindow?.print();
+          } catch {
+            popup.print();
+          }
+        };
 
-    actions.appendChild(downloadLink);
-    actions.appendChild(printButton);
-    root.appendChild(heading);
-    root.appendChild(actions);
-    root.appendChild(iframe);
-    popup.document.body.innerHTML = "";
-    popup.document.body.appendChild(root);
+        if (mode === "print") {
+          setTimeout(() => printButton.click(), 350);
+        }
+      }
 
-    if (mode === "print") {
-      setTimeout(() => printButton.click(), 350);
+      popup.addEventListener("beforeunload", () => URL.revokeObjectURL(url), { once: true });
+      setTimeout(() => URL.revokeObjectURL(url), 5 * 60 * 1000);
+      return true;
+    } catch (error) {
+      console.error("PDF helper tab error:", error);
+      URL.revokeObjectURL(url);
+      popup.close();
+      return false;
     }
-
-    popup.addEventListener("beforeunload", () => URL.revokeObjectURL(url), { once: true });
-    setTimeout(() => URL.revokeObjectURL(url), 5 * 60 * 1000);
-    return true;
   };
 
   const openPdfInNewTab = (blob: Blob) => {
