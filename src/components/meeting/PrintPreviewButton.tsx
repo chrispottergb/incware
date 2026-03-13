@@ -79,6 +79,30 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     if (!popup) return false;
 
     const url = URL.createObjectURL(blob);
+    let revoked = false;
+    const revokeUrl = () => {
+      if (revoked) return;
+      revoked = true;
+      URL.revokeObjectURL(url);
+    };
+
+    const registerCleanup = () => {
+      popup.addEventListener("beforeunload", revokeUrl, { once: true });
+      setTimeout(revokeUrl, 5 * 60 * 1000);
+    };
+
+    if (mode === "download") {
+      try {
+        registerCleanup();
+        popup.location.replace(url);
+        return true;
+      } catch (error) {
+        console.error("PDF viewer tab error:", error);
+        revokeUrl();
+        popup.close();
+        return false;
+      }
+    }
 
     try {
       popup.document.open();
@@ -94,15 +118,17 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       .actions { display: flex; gap: 8px; }
       button, a { border: 1px solid; border-radius: 8px; padding: 8px 12px; text-decoration: none; background: none; color: inherit; font: inherit; cursor: pointer; }
       iframe { width: 100%; flex: 1; border: 1px solid; border-radius: 10px; }
+      .hint { margin: 0; font-size: 13px; }
     </style>
   </head>
   <body>
     <div class="wrap">
       <strong>${suggestedName}</strong>
       <div class="actions">
-        <a id="downloadLink">Download PDF</a>
+        <a id="openViewerLink" href="#">Open PDF in Viewer</a>
         <button id="printButton" type="button">Print PDF</button>
       </div>
+      <p class="hint">If download is blocked here, open the PDF viewer and use its built-in Save action.</p>
       <iframe id="pdfFrame"></iframe>
     </div>
   </body>
@@ -110,14 +136,17 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       popup.document.close();
 
       const frame = popup.document.getElementById("pdfFrame") as HTMLIFrameElement | null;
-      const downloadLink = popup.document.getElementById("downloadLink") as HTMLAnchorElement | null;
+      const openViewerLink = popup.document.getElementById("openViewerLink") as HTMLAnchorElement | null;
       const printButton = popup.document.getElementById("printButton") as HTMLButtonElement | null;
 
       if (frame) frame.src = url;
-      if (downloadLink) {
-        downloadLink.href = url;
-        downloadLink.download = suggestedName;
+      if (openViewerLink) {
+        openViewerLink.onclick = (event) => {
+          event.preventDefault();
+          popup.location.replace(url);
+        };
       }
+
       if (printButton) {
         printButton.onclick = () => {
           try {
@@ -128,17 +157,14 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
           }
         };
 
-        if (mode === "print") {
-          setTimeout(() => printButton.click(), 350);
-        }
+        setTimeout(() => printButton.click(), 350);
       }
 
-      popup.addEventListener("beforeunload", () => URL.revokeObjectURL(url), { once: true });
-      setTimeout(() => URL.revokeObjectURL(url), 5 * 60 * 1000);
+      registerCleanup();
       return true;
     } catch (error) {
       console.error("PDF helper tab error:", error);
-      URL.revokeObjectURL(url);
+      revokeUrl();
       popup.close();
       return false;
     }
