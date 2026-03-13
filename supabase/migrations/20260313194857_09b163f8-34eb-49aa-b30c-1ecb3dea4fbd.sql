@@ -1,0 +1,1 @@
+ALTER TABLE public.meeting_officers ADD COLUMN dual_role_type text DEFAULT NULL;
