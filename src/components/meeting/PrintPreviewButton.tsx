@@ -59,18 +59,24 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     }
   })();
 
+  const downloadBlob = (blob: Blob, suggestedName: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = suggestedName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  };
+
   const openPdfInNewTab = (blob: Blob) => {
     const url = URL.createObjectURL(blob);
     const popup = window.open(url, "_blank", "noopener,noreferrer");
 
     if (!popup) {
-      const a = document.createElement("a");
-      a.href = url;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      return false;
     }
 
     setTimeout(() => URL.revokeObjectURL(url), 60000);
@@ -85,10 +91,9 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       const arrayBuffer = doc.output("arraybuffer");
       const blob = new Blob([arrayBuffer], { type: "application/pdf" });
 
-      // Cross-origin embedded previews cannot use file pickers or direct downloads reliably.
       if (isEmbeddedPreview) {
-        openPdfInNewTab(blob);
-        toast.info("PDF opened in a new tab. Use the viewer's download button.");
+        downloadBlob(blob, fileName);
+        toast.success("PDF download started.");
         return;
       }
 
@@ -118,7 +123,7 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
         }
       }
 
-      doc.save(fileName);
+      downloadBlob(blob, fileName);
     } catch (err: any) {
       console.error("PDF download error:", err);
       toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
@@ -131,7 +136,20 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       if (!doc) return;
 
       const blob = doc.output("blob");
-      openPdfInNewTab(blob);
+
+      if (isEmbeddedPreview) {
+        downloadBlob(blob, fileName);
+        toast.info("PDF downloaded. Open it and print from your PDF viewer.");
+        return;
+      }
+
+      const opened = openPdfInNewTab(blob);
+      if (!opened) {
+        downloadBlob(blob, fileName);
+        toast.info("Popup blocked. PDF downloaded instead.");
+        return;
+      }
+
       toast.info("PDF opened — use Ctrl+P / ⌘+P to print from your PDF viewer.");
     } catch (err: any) {
       console.error("PDF print error:", err);
