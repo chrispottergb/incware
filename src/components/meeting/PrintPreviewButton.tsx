@@ -183,6 +183,27 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       if (!doc) return;
 
       const arrayBuffer = doc.output("arraybuffer");
+      const blob = new Blob([arrayBuffer], { type: "application/pdf" });
+
+      // In embedded preview, avoid async APIs before opening a tab,
+      // otherwise Chrome treats it as a non-user-initiated popup.
+      if (isEmbeddedPreview) {
+        const openedDirect = openPdfInNewTab(blob);
+        if (openedDirect) {
+          toast.info("PDF opened in a new tab. Use the viewer's Save/Download button.");
+          return;
+        }
+
+        const openedUtility = openPdfUtilityTab(blob, fileName, "download");
+        if (openedUtility) {
+          toast.info("PDF helper opened. Click Download PDF or use Save in viewer.");
+          return;
+        }
+
+        downloadBlob(blob, fileName);
+        toast.info("Popup blocked. Tried direct download instead.");
+        return;
+      }
 
       const savePicker = (window as any).showSaveFilePicker as
         | undefined
@@ -208,18 +229,6 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
           if (pickerErr?.name === "AbortError") return;
           console.warn("File picker failed, using browser fallback", pickerErr);
         }
-      }
-
-      const blob = new Blob([arrayBuffer], { type: "application/pdf" });
-
-      if (isEmbeddedPreview) {
-        const opened = openPdfInNewTab(blob);
-        if (!opened) {
-          toast.error("Popup blocked. Allow popups to open this PDF.");
-          return;
-        }
-        toast.info("PDF opened in a new tab. Use the viewer's Save/Download button.");
-        return;
       }
 
       downloadBlob(blob, fileName);
