@@ -213,12 +213,12 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       const blob = new Blob([arrayBuffer], { type: "application/pdf" });
 
       if (isEmbeddedPreview) {
-        const opened = openPdfUtilityTab(blob, fileName, "download");
+        const opened = openPdfInNewTab(blob);
         if (!opened) {
           toast.error("Popup blocked. Allow popups to open this PDF.");
           return;
         }
-        toast.info("PDF helper opened. Click Download in that tab.");
+        toast.info("PDF opened in a new tab. Use the viewer's Save/Download button.");
         return;
       }
 
