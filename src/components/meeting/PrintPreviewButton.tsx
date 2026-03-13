@@ -131,13 +131,8 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       if (!doc) return;
 
       const blob = doc.output("blob");
-      const opened = openPdfInNewTab(blob);
-
-      if (opened) {
-        toast.info("PDF opened — use Ctrl+P / ⌘+P to print from your PDF viewer.");
-      } else {
-        toast.error("Popup blocked. Please allow popups for this site.");
-      }
+      openPdfInNewTab(blob);
+      toast.info("PDF opened — use Ctrl+P / ⌘+P to print from your PDF viewer.");
     } catch (err: any) {
       console.error("PDF print error:", err);
       toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
