@@ -51,33 +51,49 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     try {
       const doc = generatePDF();
       if (!doc) return;
 
-      const isEmbeddedPreview = (() => {
-        try {
-          return window.self !== window.top;
-        } catch {
-          return true;
-        }
-      })();
+      const arrayBuffer = doc.output("arraybuffer");
 
-      if (isEmbeddedPreview) {
-        const blob = doc.output("blob");
-        const url = URL.createObjectURL(blob);
-        const opened = window.open(url, "_blank", "noopener,noreferrer");
-        if (!opened) {
-          toast.error("Popup blocked. Please allow popups for this site to open the PDF.");
-        } else {
-          toast.info("PDF opened in a new tab. Use the viewer's download button to save it.");
+      const savePicker = (window as any).showSaveFilePicker as
+        | undefined
+        | ((options: any) => Promise<any>);
+
+      if (savePicker && window.isSecureContext) {
+        try {
+          const fileHandle = await savePicker({
+            suggestedName: fileName,
+            types: [
+              {
+                description: "PDF Document",
+                accept: { "application/pdf": [".pdf"] },
+              },
+            ],
+          });
+          const writable = await fileHandle.createWritable();
+          await writable.write(arrayBuffer);
+          await writable.close();
+          toast.success("PDF saved.");
+          return;
+        } catch (pickerErr: any) {
+          if (pickerErr?.name === "AbortError") return;
+          console.warn("File picker failed, falling back to browser download", pickerErr);
         }
-        setTimeout(() => URL.revokeObjectURL(url), 30000);
-        return;
       }
 
-      doc.save(fileName);
+      const blob = new Blob([arrayBuffer], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (err: any) {
       console.error("PDF download error:", err);
       toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
