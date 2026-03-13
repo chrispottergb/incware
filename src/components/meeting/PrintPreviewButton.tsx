@@ -208,26 +208,17 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       const doc = generatePDF();
       if (!doc) return;
 
-      const blob = doc.output("blob");
-
-      if (isEmbeddedPreview) {
-        const opened = openPdfUtilityTab(blob, fileName, "print");
-        if (!opened) {
-          toast.error("Popup blocked. Allow popups to print this PDF.");
-          return;
-        }
-        toast.info("PDF helper opened in a new tab for printing.");
+      // Use base64 data URL to bypass sandbox restrictions
+      const dataUri = doc.output("datauristring", { filename: fileName });
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) {
+        toast.error("Popup blocked. Allow popups to print this PDF.");
         return;
       }
-
-      const opened = openPdfInNewTab(blob);
-      if (!opened) {
-        downloadBlob(blob, fileName);
-        toast.info("Popup blocked. PDF downloaded instead.");
-        return;
-      }
-
-      toast.info("PDF opened — use Ctrl+P / ⌘+P to print from your PDF viewer.");
+      printWindow.document.open();
+      printWindow.document.write(`<!doctype html><html><head><title>${fileName}</title><style>body{margin:0}iframe{width:100%;height:100vh;border:none}</style></head><body><iframe src="${dataUri}"></iframe></body></html>`);
+      printWindow.document.close();
+      toast.info("PDF opened — use Ctrl+P / ⌘+P to print.");
     } catch (err: any) {
       console.error("PDF print error:", err);
       toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
