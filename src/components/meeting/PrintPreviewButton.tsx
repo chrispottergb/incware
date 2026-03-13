@@ -188,46 +188,15 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       const doc = generatePDF();
       if (!doc) return;
 
-      const arrayBuffer = doc.output("arraybuffer");
-      const blob = new Blob([arrayBuffer], { type: "application/pdf" });
-
-      if (isEmbeddedPreview) {
-        const opened = openPdfUtilityTab(blob, fileName, "download");
-        if (!opened) {
-          toast.error("Popup blocked. Allow popups to open this PDF.");
-          return;
-        }
-        toast.info("PDF opened in a new tab. Use the browser viewer to save/download.");
-        return;
-      }
-
-      const savePicker = (window as any).showSaveFilePicker as
-        | undefined
-        | ((options: any) => Promise<any>);
-
-      if (savePicker && window.isSecureContext) {
-        try {
-          const fileHandle = await savePicker({
-            suggestedName: fileName,
-            types: [
-              {
-                description: "PDF Document",
-                accept: { "application/pdf": [".pdf"] },
-              },
-            ],
-          });
-          const writable = await fileHandle.createWritable();
-          await writable.write(arrayBuffer);
-          await writable.close();
-          toast.success("PDF saved.");
-          return;
-        } catch (pickerErr: any) {
-          if (pickerErr?.name === "AbortError") return;
-          console.warn("File picker failed, using browser download", pickerErr);
-        }
-      }
-
-      downloadBlob(blob, fileName);
+      // Use base64 data URL to bypass sandbox/blob restrictions
+      const dataUri = doc.output("datauristring", { filename: fileName });
+      const a = document.createElement("a");
+      a.href = dataUri;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast.success("PDF download started.");
     } catch (err: any) {
       console.error("PDF download error:", err);
       toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
