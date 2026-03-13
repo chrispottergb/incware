@@ -1468,14 +1468,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     } else {
       // Annual / other meeting: standard directors section
       y = section(isLLC ? "Authorized Binders" : "Directors Present");
-      if (mType.includes("annual")) {
+      if (mType.includes("annual") && isLLC) {
         y = addWhereasResolved(doc, y,
-          isLLC
-            ? `WHEREAS, the members desire to confirm and record the persons serving as authorized binders of ${companyName} for the ensuing year, consistent with Wis. Stat. § 183.0407; and`
-            : `WHEREAS, the terms of the current directors expire at this meeting, and the shareholders are called upon to elect the Board of Directors for the ensuing year; and`,
-          isLLC
-            ? `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby confirmed as authorized binders of ${companyName} for the ensuing year, authorized to act on behalf of the company in their designated capacity:`
-            : `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby re-elected as directors of ${companyName}, to serve until the next annual meeting and until their successors are duly elected and qualified:`,
+          `WHEREAS, the members desire to confirm and record the persons serving as authorized binders of ${companyName} for the ensuing year, consistent with Wis. Stat. § 183.0407; and`,
+          `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby confirmed as authorized binders of ${companyName} for the ensuing year, authorized to act on behalf of the company in their designated capacity:`,
           bt
         );
       }
