@@ -76,7 +76,7 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     <style>
       html, body { margin: 0; height: 100%; }
       .wrap { display: flex; flex-direction: column; height: 100%; font-family: system-ui, -apple-system, sans-serif; }
-      .hint { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #ddd; }
+      .hint { padding: 10px 12px; font-size: 13px; }
       iframe { flex: 1; width: 100%; border: none; }
     </style>
   </head>
