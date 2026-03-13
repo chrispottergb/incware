@@ -1877,6 +1877,7 @@ export type Database = {
       meeting_officers: {
         Row: {
           bonus: number | null
+          compensation_note: string | null
           created_at: string
           id: string
           meeting_id: string
@@ -1886,6 +1887,7 @@ export type Database = {
         }
         Insert: {
           bonus?: number | null
+          compensation_note?: string | null
           created_at?: string
           id?: string
           meeting_id: string
@@ -1895,6 +1897,7 @@ export type Database = {
         }
         Update: {
           bonus?: number | null
+          compensation_note?: string | null
           created_at?: string
           id?: string
           meeting_id?: string
