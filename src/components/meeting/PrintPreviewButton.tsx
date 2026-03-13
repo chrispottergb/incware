@@ -70,6 +70,70 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     setTimeout(() => URL.revokeObjectURL(url), 5000);
   };
 
+  const openPdfUtilityTab = (
+    blob: Blob,
+    suggestedName: string,
+    mode: "download" | "print"
+  ) => {
+    const popup = window.open("", "_blank", "noopener,noreferrer");
+    if (!popup) return false;
+
+    const url = URL.createObjectURL(blob);
+    popup.document.title = suggestedName;
+
+    const root = popup.document.createElement("div");
+    root.style.cssText =
+      "font-family: system-ui, -apple-system, sans-serif; padding: 16px; display: flex; flex-direction: column; gap: 12px; height: calc(100vh - 32px);";
+
+    const heading = popup.document.createElement("strong");
+    heading.textContent = suggestedName;
+
+    const actions = popup.document.createElement("div");
+    actions.style.cssText = "display: flex; gap: 8px;";
+
+    const downloadLink = popup.document.createElement("a");
+    downloadLink.href = url;
+    downloadLink.download = suggestedName;
+    downloadLink.textContent = "Download PDF";
+    downloadLink.style.cssText =
+      "padding: 8px 12px; border: 1px solid; border-radius: 8px; text-decoration: none;";
+
+    const printButton = popup.document.createElement("button");
+    printButton.type = "button";
+    printButton.textContent = "Print PDF";
+    printButton.style.cssText =
+      "padding: 8px 12px; border: 1px solid; border-radius: 8px; cursor: pointer;";
+
+    const iframe = popup.document.createElement("iframe");
+    iframe.src = url;
+    iframe.style.cssText = "border: 1px solid; border-radius: 10px; width: 100%; flex: 1;";
+
+    printButton.onclick = () => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch {
+        popup.print();
+      }
+    };
+
+    actions.appendChild(downloadLink);
+    actions.appendChild(printButton);
+    root.appendChild(heading);
+    root.appendChild(actions);
+    root.appendChild(iframe);
+    popup.document.body.innerHTML = "";
+    popup.document.body.appendChild(root);
+
+    if (mode === "print") {
+      setTimeout(() => printButton.click(), 350);
+    }
+
+    popup.addEventListener("beforeunload", () => URL.revokeObjectURL(url), { once: true });
+    setTimeout(() => URL.revokeObjectURL(url), 5 * 60 * 1000);
+    return true;
+  };
+
   const openPdfInNewTab = (blob: Blob) => {
     const url = URL.createObjectURL(blob);
     const popup = window.open(url, "_blank", "noopener,noreferrer");
@@ -92,8 +156,12 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       const blob = new Blob([arrayBuffer], { type: "application/pdf" });
 
       if (isEmbeddedPreview) {
-        downloadBlob(blob, fileName);
-        toast.success("PDF download started.");
+        const opened = openPdfUtilityTab(blob, fileName, "download");
+        if (!opened) {
+          toast.error("Popup blocked. Allow popups to download this PDF.");
+          return;
+        }
+        toast.info("PDF helper opened in a new tab. Click Download PDF there.");
         return;
       }
 
@@ -138,8 +206,12 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       const blob = doc.output("blob");
 
       if (isEmbeddedPreview) {
-        downloadBlob(blob, fileName);
-        toast.info("PDF downloaded. Open it and print from your PDF viewer.");
+        const opened = openPdfUtilityTab(blob, fileName, "print");
+        if (!opened) {
+          toast.error("Popup blocked. Allow popups to print this PDF.");
+          return;
+        }
+        toast.info("PDF helper opened in a new tab for printing.");
         return;
       }
 
