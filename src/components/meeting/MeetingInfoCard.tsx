@@ -154,15 +154,16 @@ export default function MeetingInfoCard({ meeting }: Props) {
               />
             </div>
           )}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <DateFieldWrapper
-              label="Meeting Date"
-              value={meeting.meeting_date}
-              onChange={(val) => handleDateChange("meeting_date", val)}
-              icon={CalendarIcon}
-            />
-            {/* Tax Year - editable, defaults shown but overridable */}
-            <div className="space-y-1.5">
+          <div className="grid gap-4 sm:grid-cols-6 lg:grid-cols-12">
+            <div className="sm:col-span-2 lg:col-span-2">
+              <DateFieldWrapper
+                label="Meeting Date"
+                value={meeting.meeting_date}
+                onChange={(val) => handleDateChange("meeting_date", val)}
+                icon={CalendarIcon}
+              />
+            </div>
+            <div className="sm:col-span-2 lg:col-span-2">
               <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                 <Hash className="h-3.5 w-3.5" />
                 Tax Year
@@ -172,24 +173,70 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 value={getTaxYearValue()}
                 onChange={(e) => handleChange("tax_year", e.target.value)}
                 onBlur={(e) => handleNumericBlur("tax_year", e.target.value)}
-                className="h-9 text-sm"
+                className="h-9 text-sm mt-1.5"
                 placeholder="e.g. 2024"
               />
             </div>
-            {textFields.map((item) => (
-              <div key={item.field} className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <item.icon className="h-3.5 w-3.5" />
-                  {item.label}
-                </Label>
-                <Input
-                  value={getValue(item.field)}
-                  onChange={(e) => handleChange(item.field, e.target.value)}
-                  onBlur={(e) => handleBlur(item.field, e.target.value)}
-                  className="h-9 text-sm"
-                />
-              </div>
-            ))}
+            <div className="sm:col-span-2 lg:col-span-2">
+              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5" />
+                Time
+              </Label>
+              <Input
+                value={getValue("meeting_time")}
+                onChange={(e) => handleChange("meeting_time", e.target.value)}
+                onBlur={(e) => handleBlur("meeting_time", e.target.value)}
+                className="h-9 text-sm mt-1.5"
+              />
+            </div>
+            <div className="sm:col-span-4 lg:col-span-4">
+              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5" />
+                Location
+              </Label>
+              <Input
+                value={getValue("meeting_location")}
+                onChange={(e) => handleChange("meeting_location", e.target.value)}
+                onBlur={(e) => handleBlur("meeting_location", e.target.value)}
+                className="h-9 text-sm mt-1.5"
+              />
+            </div>
+            <div className="sm:col-span-2 lg:col-span-2">
+              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5" />
+                Chairperson
+              </Label>
+              <Input
+                value={getValue("chairperson")}
+                onChange={(e) => handleChange("chairperson", e.target.value)}
+                onBlur={(e) => handleBlur("chairperson", e.target.value)}
+                className="h-9 text-sm mt-1.5"
+              />
+            </div>
+            <div className="sm:col-span-2 lg:col-span-2">
+              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                Secretary
+              </Label>
+              <Input
+                value={getValue("mtg_secretary")}
+                onChange={(e) => handleChange("mtg_secretary", e.target.value)}
+                onBlur={(e) => handleBlur("mtg_secretary", e.target.value)}
+                className="h-9 text-sm mt-1.5"
+              />
+            </div>
+            <div className="sm:col-span-4 lg:col-span-4">
+              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                Others Present
+              </Label>
+              <Input
+                value={getValue("others_present")}
+                onChange={(e) => handleChange("others_present", e.target.value)}
+                onBlur={(e) => handleBlur("others_present", e.target.value)}
+                className="h-9 text-sm mt-1.5"
+              />
+            </div>
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 border-t pt-4">
             <DateFieldWrapper
