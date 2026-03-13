@@ -540,6 +540,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
   } else {
     // Non-blue theme: WHEREAS flush left (bold-italic prefix, italic body), RESOLVED indented (bold prefix, normal body)
     // WHEREAS
+    if (whereas) {
     let whereasBody = whereas;
     const whereasPrefix = "WHEREAS, ";
     if (whereasBody.toUpperCase().startsWith("WHEREAS,")) {
@@ -567,8 +568,10 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       y += 5.5;
     }
     y += 3;
+    }
 
     // RESOLVED
+    if (resolved) {
     const resolvedPrefix = "RESOLVED, ";
     let resolvedBody = resolved;
     const nowPrefix = "NOW, THEREFORE, BE IT ";
@@ -600,6 +603,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       y += 5.5;
     }
     y += 5;
+    }
   }
   return y;
 }
