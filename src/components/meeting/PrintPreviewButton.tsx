@@ -96,17 +96,17 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     downloadLink.download = suggestedName;
     downloadLink.textContent = "Download PDF";
     downloadLink.style.cssText =
-      "padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px; text-decoration: none; color: #111827;";
+      "padding: 8px 12px; border: 1px solid; border-radius: 8px; text-decoration: none;";
 
     const printButton = popup.document.createElement("button");
     printButton.type = "button";
     printButton.textContent = "Print PDF";
     printButton.style.cssText =
-      "padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; color: #111827;";
+      "padding: 8px 12px; border: 1px solid; border-radius: 8px; cursor: pointer;";
 
     const iframe = popup.document.createElement("iframe");
     iframe.src = url;
-    iframe.style.cssText = "border: 1px solid #e5e7eb; border-radius: 10px; width: 100%; flex: 1;";
+    iframe.style.cssText = "border: 1px solid; border-radius: 10px; width: 100%; flex: 1;";
 
     printButton.onclick = () => {
       try {
