@@ -465,6 +465,9 @@ function addSubHeading(doc: jsPDF, y: number, text: string): number {
 function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: string, blueTheme: boolean = false): number {
   const pw = doc.internal.pageSize.getWidth();
 
+  // Skip empty whereas or resolved
+  if (!whereas && !resolved) return y;
+
   if (blueTheme) {
     // WHEREAS: flush left, bold italic prefix, italic body
     const wIndent = WHEREAS_INDENT;
