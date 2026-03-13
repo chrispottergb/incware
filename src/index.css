@@ -309,3 +309,70 @@
     border: 1px solid #e5e5e5 !important;
   }
 }
+
+/* React DatePicker theme overrides */
+.react-datepicker {
+  background-color: hsl(var(--popover)) !important;
+  border-color: hsl(var(--border)) !important;
+  color: hsl(var(--popover-foreground)) !important;
+  font-family: inherit !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+}
+.react-datepicker__header {
+  background-color: hsl(var(--muted)) !important;
+  border-bottom-color: hsl(var(--border)) !important;
+}
+.react-datepicker__current-month,
+.react-datepicker__day-name {
+  color: hsl(var(--popover-foreground)) !important;
+}
+.react-datepicker__day {
+  color: hsl(var(--popover-foreground)) !important;
+  border-radius: 0.375rem !important;
+}
+.react-datepicker__day:hover {
+  background-color: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}
+.react-datepicker__day--today {
+  font-weight: 700 !important;
+}
+.react-datepicker__day--outside-month {
+  opacity: 0.4 !important;
+}
+.react-datepicker__triangle {
+  display: none !important;
+}
+.react-datepicker__month-dropdown,
+.react-datepicker__year-dropdown {
+  background-color: hsl(var(--popover)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+.react-datepicker__month-option,
+.react-datepicker__year-option {
+  color: hsl(var(--popover-foreground)) !important;
+}
+.react-datepicker__month-option:hover,
+.react-datepicker__year-option:hover {
+  background-color: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+.react-datepicker select {
+  background-color: hsl(var(--muted)) !important;
+  color: hsl(var(--popover-foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0.25rem !important;
+  padding: 0.125rem 0.25rem !important;
+}
+.react-datepicker__close-icon::after {
+  background-color: hsl(var(--muted-foreground)) !important;
+}
+.react-datepicker__navigation-icon::before {
+  border-color: hsl(var(--muted-foreground)) !important;
+}

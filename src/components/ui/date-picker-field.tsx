@@ -1,14 +1,8 @@
 import * as React from "react";
-import { format, parseISO } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { format, parse, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 interface DatePickerFieldProps {
   value: string;
@@ -21,46 +15,37 @@ interface DatePickerFieldProps {
 export function DatePickerField({
   value,
   onChange,
-  placeholder = "Pick a date",
+  placeholder = "MM/DD/YYYY",
   className,
   disabled = false,
 }: DatePickerFieldProps) {
-  const [open, setOpen] = React.useState(false);
-  const date = value ? parseISO(value) : undefined;
+  const selected = React.useMemo(() => {
+    if (!value) return null;
+    const d = parse(value, "yyyy-MM-dd", new Date());
+    return isValid(d) ? d : null;
+  }, [value]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          disabled={disabled}
-          className={cn(
-            "w-full h-8 justify-start text-left text-sm font-normal",
-            !date && "text-muted-foreground",
-            className
-          )}
-        >
-          <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-          {date ? format(date, "MM/dd/yyyy") : <span>{placeholder}</span>}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={date}
-          defaultMonth={date ?? new Date()}
-          today={new Date()}
-          onSelect={(d) => {
-            if (d) onChange(format(d, "yyyy-MM-dd"));
-            setOpen(false);
-          }}
-          captionLayout="dropdown-buttons"
-          fromYear={1900}
-          toYear={2099}
-          initialFocus
-          className="p-3 pointer-events-auto"
-        />
-      </PopoverContent>
-    </Popover>
+    <DatePicker
+      selected={selected}
+      onChange={(date: Date | null) => {
+        if (date && isValid(date)) {
+          onChange(format(date, "yyyy-MM-dd"));
+        }
+      }}
+      dateFormat="MM/dd/yyyy"
+      placeholderText={placeholder}
+      disabled={disabled}
+      showMonthDropdown
+      showYearDropdown
+      dropdownMode="select"
+      isClearable={!disabled}
+      className={cn(
+        "flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      )}
+      wrapperClassName="w-full"
+      popperClassName="z-50"
+    />
   );
 }
