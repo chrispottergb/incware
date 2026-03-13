@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Pencil, CheckCircle2, AlertTriangle, Flag, Minus } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil, CheckCircle2, AlertTriangle, Flag, Minus, Link2, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -39,16 +39,32 @@ import {
 } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-type CompensationStatus = "reasonable" | "below_market" | "above_market" | "non_compensable";
+type CompensationStatus = "reasonable" | "below_market" | "above_market" | "included_in_primary" | "non_compensable";
+type DualRoleType = "primary" | "secondary" | null;
+
+const TITLE_RANK: Record<string, number> = {
+  "President": 1, "Managing Member": 1,
+  "Vice President": 2,
+  "Treasurer": 3,
+  "Secretary": 4,
+};
 
 const STATUS_CONFIG: Record<CompensationStatus, { label: string; icon: React.ElementType; color: string; badgeVariant: string }> = {
   reasonable: { label: "Reasonable", icon: CheckCircle2, color: "text-emerald-600", badgeVariant: "bg-emerald-100 text-emerald-700 border-emerald-200" },
   below_market: { label: "Below Market", icon: AlertTriangle, color: "text-amber-500", badgeVariant: "bg-amber-100 text-amber-700 border-amber-200" },
   above_market: { label: "Above Market", icon: Flag, color: "text-orange-500", badgeVariant: "bg-orange-100 text-orange-700 border-orange-200" },
+  included_in_primary: { label: "Included in Primary", icon: Link2, color: "text-blue-500", badgeVariant: "bg-blue-100 text-blue-700 border-blue-200" },
   non_compensable: { label: "Non-Compensable", icon: Minus, color: "text-muted-foreground", badgeVariant: "bg-muted text-muted-foreground border-border" },
 };
 
-function getDefaultNoteText(status: CompensationStatus, name: string, title: string, salary: number | null): string {
+function getDefaultNoteText(
+  status: CompensationStatus,
+  name: string,
+  title: string,
+  salary: number | null,
+  primaryTitle?: string,
+  secondaryTitle?: string,
+): string {
   const amt = salary != null ? `$${Number(salary).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "$[AMOUNT]";
   switch (status) {
     case "reasonable":
@@ -57,9 +73,23 @@ function getDefaultNoteText(status: CompensationStatus, name: string, title: str
       return `The Board has reviewed the compensation of ${name} as ${title} and determined that the salary of ${amt} is below prevailing market rates. The Board finds this level of compensation appropriate at this time for the following reason: [REASON]. The Board intends to review this compensation at the next annual meeting.`;
     case "above_market":
       return `The Board has reviewed the compensation of ${name} as ${title} and determined that the salary of ${amt} exceeds prevailing market rates. The Board finds this level of compensation justified for the following reason: [REASON], and has documented its reasoning in support of this determination.`;
+    case "included_in_primary":
+      return `${name} serves as both ${primaryTitle || "[PRIMARY TITLE]"} and ${secondaryTitle || "[SECONDARY TITLE]"} of the corporation. Compensation is reported under the ${primaryTitle || "[PRIMARY TITLE]"} title. The Board determined that no separate compensation is assigned to the ${secondaryTitle || "[SECONDARY TITLE]"} role, as it is fulfilled by the same individual in conjunction with their primary duties.`;
     case "non_compensable":
       return `The Board determined that the ${title} position is held in a limited, non-compensable capacity, as the duties performed do not constitute substantial services under IRC § 1366.`;
   }
+}
+
+function getTitleRank(title: string): number {
+  return TITLE_RANK[title] ?? 99;
+}
+
+interface DualRoleGroup {
+  name: string;
+  rows: any[];
+  primaryId: string | null;
+  secondaryIds: string[];
+  needsDesignation: boolean;
 }
 
 interface Props {
@@ -90,7 +120,60 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
     },
   });
 
-  // Validation: expose whether all officers have status set
+  // --- Dual-role detection ---
+  const dualRoleGroups = useMemo<Map<string, DualRoleGroup>>(() => {
+    const groups = new Map<string, DualRoleGroup>();
+    const byName = new Map<string, any[]>();
+    rows.forEach((r: any) => {
+      const key = (r.name || "").trim().toLowerCase();
+      if (!key) return;
+      if (!byName.has(key)) byName.set(key, []);
+      byName.get(key)!.push(r);
+    });
+    byName.forEach((rowsForName, key) => {
+      if (rowsForName.length < 2) return;
+      const primaryRow = rowsForName.find((r: any) => r.dual_role_type === "primary");
+      const secondaryRows = rowsForName.filter((r: any) => r.dual_role_type === "secondary");
+      // Auto-detect best primary by title rank if none set
+      let detectedPrimaryId = primaryRow?.id || null;
+      if (!detectedPrimaryId) {
+        const sorted = [...rowsForName].sort((a, b) => getTitleRank(a.title || "") - getTitleRank(b.title || ""));
+        detectedPrimaryId = sorted[0]?.id || null;
+      }
+      groups.set(key, {
+        name: rowsForName[0].name,
+        rows: rowsForName,
+        primaryId: primaryRow?.id || null,
+        secondaryIds: secondaryRows.map((r: any) => r.id),
+        needsDesignation: !primaryRow,
+      });
+    });
+    return groups;
+  }, [rows]);
+
+  const getDualRoleGroup = (row: any): DualRoleGroup | null => {
+    const key = (row.name || "").trim().toLowerCase();
+    return dualRoleGroups.get(key) || null;
+  };
+
+  const isDualRole = (row: any) => getDualRoleGroup(row) !== null;
+  const isPrimary = (row: any) => {
+    const g = getDualRoleGroup(row);
+    if (!g) return false;
+    return row.dual_role_type === "primary" || (g.needsDesignation && g.rows.sort((a: any, b: any) => getTitleRank(a.title || "") - getTitleRank(b.title || ""))[0]?.id === row.id);
+  };
+  const isSecondary = (row: any) => isDualRole(row) && !isPrimary(row);
+
+  // Unresolved dual-role groups (no explicit primary set)
+  const unresolvedDualRoles = useMemo(() => {
+    const unresolved: DualRoleGroup[] = [];
+    dualRoleGroups.forEach((g) => {
+      if (g.needsDesignation) unresolved.push(g);
+    });
+    return unresolved;
+  }, [dualRoleGroups]);
+
+  // Validation
   const missingStatus = rows.filter((r: any) => !r.compensation_status);
   const hasReasonIssue = rows.some((r: any) => {
     if (!r.compensation_status) return false;
@@ -166,6 +249,46 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const setDualRole = useMutation({
+    mutationFn: async ({ rowId, roleType }: { rowId: string; roleType: DualRoleType }) => {
+      const row = rows.find((r: any) => r.id === rowId);
+      if (!row) return;
+      const group = getDualRoleGroup(row);
+      if (!group) return;
+
+      // If setting as primary, set all others in group as secondary and auto-set their status
+      if (roleType === "primary") {
+        // Set this row as primary
+        await supabase.from("meeting_officers").update({ dual_role_type: "primary" } as any).eq("id", rowId);
+        // Set all other rows in group as secondary with "included_in_primary" status
+        const primaryTitle = row.title || "Officer";
+        for (const other of group.rows) {
+          if (other.id === rowId) continue;
+          const noteText = getDefaultNoteText(
+            "included_in_primary",
+            other.name || "Officer",
+            other.title || "Officer",
+            other.salary,
+            primaryTitle,
+            other.title || "Officer",
+          );
+          await supabase.from("meeting_officers").update({
+            dual_role_type: "secondary",
+            compensation_status: "included_in_primary",
+            compensation_note: noteText,
+          } as any).eq("id", other.id);
+        }
+      } else {
+        await supabase.from("meeting_officers").update({ dual_role_type: roleType } as any).eq("id", rowId);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["meeting_officers", meetingId] });
+      toast.success("Dual role updated!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   const closeDialog = () => {
     setDialogOpen(false);
     setEditingId(null);
@@ -190,22 +313,34 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
 
     if (existingStatus) {
       setCompStatus(existingStatus);
-      setCompNote(existingNote || getDefaultNoteText(existingStatus, row.name || "Officer", row.title || "Officer", row.salary));
+      setCompNote(existingNote || "");
     } else {
-      // Auto-suggest based on salary presence
-      const noSalary = row.salary == null;
-      const suggestedStatus: CompensationStatus = noSalary ? "non_compensable" : "reasonable";
-      setCompStatus(suggestedStatus);
-      setCompNote(getDefaultNoteText(suggestedStatus, row.name || "Officer", row.title || "Officer", row.salary));
+      // Auto-suggest
+      if (isSecondary(row)) {
+        const group = getDualRoleGroup(row)!;
+        const primaryRow = group.rows.find((r: any) => r.id === group.primaryId || isPrimary(r));
+        setCompStatus("included_in_primary");
+        setCompNote(getDefaultNoteText("included_in_primary", row.name || "Officer", row.title || "Officer", row.salary, primaryRow?.title || "Officer", row.title || "Officer"));
+      } else {
+        const noSalary = row.salary == null;
+        const suggestedStatus: CompensationStatus = noSalary ? "non_compensable" : "reasonable";
+        setCompStatus(suggestedStatus);
+        setCompNote(getDefaultNoteText(suggestedStatus, row.name || "Officer", row.title || "Officer", row.salary));
+      }
     }
     setCompDialogOpen(true);
   };
 
   const handleStatusChange = (newStatus: CompensationStatus) => {
     setCompStatus(newStatus);
-    // Re-generate default text for new status
     if (compOfficer) {
-      setCompNote(getDefaultNoteText(newStatus, compOfficer.name || "Officer", compOfficer.title || "Officer", compOfficer.salary));
+      if (newStatus === "included_in_primary") {
+        const group = getDualRoleGroup(compOfficer);
+        const primaryRow = group?.rows.find((r: any) => isPrimary(r));
+        setCompNote(getDefaultNoteText(newStatus, compOfficer.name || "Officer", compOfficer.title || "Officer", compOfficer.salary, primaryRow?.title || "Officer", compOfficer.title || "Officer"));
+      } else {
+        setCompNote(getDefaultNoteText(newStatus, compOfficer.name || "Officer", compOfficer.title || "Officer", compOfficer.salary));
+      }
     }
   };
 
@@ -217,10 +352,10 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
 
   const isPending = addRow.isPending || updateRow.isPending;
 
-  const getStatusOptions = (row: any) => {
-    const noSalary = row.salary == null;
+  const getStatusOptions = (row: any): CompensationStatus[] => {
     const options: CompensationStatus[] = ["reasonable", "below_market", "above_market"];
-    if (noSalary) options.push("non_compensable");
+    if (isDualRole(row)) options.push("included_in_primary");
+    options.push("non_compensable");
     return options;
   };
 
@@ -232,20 +367,25 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
 
   return (
     <>
-      {/* Validation warning banner */}
-      {rows.length > 0 && (missingStatus.length > 0 || hasReasonIssue) && (
+      {/* Validation warnings */}
+      {rows.length > 0 && (missingStatus.length > 0 || hasReasonIssue || unresolvedDualRoles.length > 0) && (
         <Alert variant="destructive" className="border-amber-300 bg-amber-50 text-amber-800 [&>svg]:text-amber-600">
           <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="text-xs">
+          <AlertDescription className="text-xs space-y-1">
+            {unresolvedDualRoles.length > 0 && (
+              <p className="font-medium">
+                {unresolvedDualRoles.map(g => g.name).join(", ")} hold{unresolvedDualRoles.length === 1 ? "s" : ""} multiple titles. Please designate a Primary Role before generating minutes.
+              </p>
+            )}
             {missingStatus.length > 0 && (
-              <span>
-                {missingStatus.length} officer{missingStatus.length > 1 ? "s" : ""} missing a Compensation Status.{" "}
-              </span>
+              <p>
+                {missingStatus.length} officer{missingStatus.length > 1 ? "s" : ""} missing a Compensation Status.
+              </p>
             )}
             {hasReasonIssue && (
-              <span>Some officers have an unresolved [REASON] placeholder in their justification text. </span>
+              <p>Some officers have an unresolved [REASON] placeholder in their justification text.</p>
             )}
-            <span className="font-medium">All statuses must be set before minutes can be generated.</span>
+            <p className="font-medium">All statuses must be set before minutes can be generated.</p>
           </AlertDescription>
         </Alert>
       )}
@@ -310,7 +450,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
                     <TableHead className="text-right">Salary</TableHead>
                     <TableHead className="text-right">Bonus</TableHead>
                     <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="w-28" />
+                    <TableHead className="w-24" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -318,9 +458,31 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
                     const status = row.compensation_status as CompensationStatus | null;
                     const cfg = status ? STATUS_CONFIG[status] : null;
                     const StatusIcon = cfg?.icon;
+                    const dual = isDualRole(row);
+                    const primary = isPrimary(row);
+                    const secondary = isSecondary(row);
+                    const group = getDualRoleGroup(row);
+
                     return (
-                      <TableRow key={row.id}>
-                        <TableCell>{row.title ?? "—"}</TableCell>
+                      <TableRow key={row.id} className={dual ? "bg-blue-50/30" : ""}>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            <span>{row.title ?? "—"}</span>
+                            {dual && (
+                              <Badge
+                                variant="outline"
+                                className={`text-[9px] px-1.5 py-0 ${
+                                  primary
+                                    ? "bg-blue-100 text-blue-700 border-blue-200"
+                                    : "bg-slate-100 text-slate-600 border-slate-200"
+                                }`}
+                              >
+                                <Users className="h-2.5 w-2.5 mr-0.5" />
+                                {primary ? "Primary" : "Secondary"}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>{row.name ?? "—"}</TableCell>
                         <TableCell className="text-right font-mono text-sm">
                           {row.salary != null ? Number(row.salary).toLocaleString("en-US", { minimumFractionDigits: 2 }) : "—"}
@@ -360,6 +522,23 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
+                            {dual && group?.needsDesignation && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => setDualRole.mutate({ rowId: row.id, roleType: "primary" })}
+                                      className="h-8 w-8 text-blue-500 hover:text-blue-700"
+                                    >
+                                      <Users className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Set as Primary Role</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
@@ -397,6 +576,19 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {compOfficer && isDualRole(compOfficer) && (
+              <div className="rounded-md bg-blue-50 border border-blue-200 p-3 text-xs text-blue-800">
+                <div className="flex items-center gap-1.5 font-medium mb-1">
+                  <Users className="h-3.5 w-3.5" />
+                  Dual Role Detected
+                </div>
+                <p>
+                  {compOfficer.name} holds multiple officer titles.{" "}
+                  {isPrimary(compOfficer) ? "This is the Primary Role (compensated)." : "This is a Secondary Role."}
+                </p>
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Compensation Status</Label>
               <Select value={compStatus} onValueChange={(v) => handleStatusChange(v as CompensationStatus)}>
