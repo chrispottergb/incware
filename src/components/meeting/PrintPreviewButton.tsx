@@ -115,7 +115,7 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
         <a id="downloadLink" href="#">Download PDF</a>
         <button id="printButton" type="button">Print PDF</button>
       </div>
-      <p class="hint">If Chrome blocks automatic download, click Download PDF above or use Save in the viewer.</p>
+      <p class="hint">If Chrome blocks download here, use Open PDF in Viewer and click Save in the browser PDF toolbar.</p>
       <iframe id="pdfFrame"></iframe>
     </div>
   </body>
@@ -130,22 +130,13 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       if (frame) frame.src = url;
 
       if (openViewerLink) {
-        openViewerLink.onclick = (event) => {
-          event.preventDefault();
-          popup.location.href = url;
-        };
+        openViewerLink.href = url;
+        openViewerLink.target = "_self";
       }
 
       if (downloadLink) {
-        downloadLink.onclick = (event) => {
-          event.preventDefault();
-          const a = popup.document.createElement("a");
-          a.href = url;
-          a.download = suggestedName;
-          popup.document.body.appendChild(a);
-          a.click();
-          popup.document.body.removeChild(a);
-        };
+        downloadLink.href = url;
+        downloadLink.download = suggestedName;
       }
 
       if (printButton) {
@@ -222,12 +213,12 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       const blob = new Blob([arrayBuffer], { type: "application/pdf" });
 
       if (isEmbeddedPreview) {
-        const opened = openPdfUtilityTab(blob, fileName, "download");
+        const opened = openPdfInNewTab(blob);
         if (!opened) {
           toast.error("Popup blocked. Allow popups to open this PDF.");
           return;
         }
-        toast.info("PDF helper opened. Click Download in that tab.");
+        toast.info("PDF opened in a new tab. Use the viewer's Save/Download button.");
         return;
       }
 
