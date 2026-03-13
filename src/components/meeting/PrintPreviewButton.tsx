@@ -90,19 +90,6 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       setTimeout(revokeUrl, 5 * 60 * 1000);
     };
 
-    if (mode === "download") {
-      try {
-        registerCleanup();
-        popup.location.replace(url);
-        return true;
-      } catch (error) {
-        console.error("PDF viewer tab error:", error);
-        revokeUrl();
-        popup.close();
-        return false;
-      }
-    }
-
     try {
       popup.document.open();
       popup.document.write(`<!doctype html>
@@ -114,7 +101,7 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     <style>
       body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
       .wrap { display: flex; flex-direction: column; gap: 12px; height: 100vh; padding: 16px; box-sizing: border-box; }
-      .actions { display: flex; gap: 8px; }
+      .actions { display: flex; gap: 8px; flex-wrap: wrap; }
       button, a { border: 1px solid; border-radius: 8px; padding: 8px 12px; text-decoration: none; background: none; color: inherit; font: inherit; cursor: pointer; }
       iframe { width: 100%; flex: 1; border: 1px solid; border-radius: 10px; }
       .hint { margin: 0; font-size: 13px; }
@@ -125,9 +112,10 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       <strong>${suggestedName}</strong>
       <div class="actions">
         <a id="openViewerLink" href="#">Open PDF in Viewer</a>
+        <a id="downloadLink" href="#">Download PDF</a>
         <button id="printButton" type="button">Print PDF</button>
       </div>
-      <p class="hint">If download is blocked here, open the PDF viewer and use its built-in Save action.</p>
+      <p class="hint">If Chrome blocks automatic download, click Download PDF above or use Save in the viewer.</p>
       <iframe id="pdfFrame"></iframe>
     </div>
   </body>
@@ -136,13 +124,27 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
 
       const frame = popup.document.getElementById("pdfFrame") as HTMLIFrameElement | null;
       const openViewerLink = popup.document.getElementById("openViewerLink") as HTMLAnchorElement | null;
+      const downloadLink = popup.document.getElementById("downloadLink") as HTMLAnchorElement | null;
       const printButton = popup.document.getElementById("printButton") as HTMLButtonElement | null;
 
       if (frame) frame.src = url;
+
       if (openViewerLink) {
         openViewerLink.onclick = (event) => {
           event.preventDefault();
-          popup.location.replace(url);
+          popup.location.href = url;
+        };
+      }
+
+      if (downloadLink) {
+        downloadLink.onclick = (event) => {
+          event.preventDefault();
+          const a = popup.document.createElement("a");
+          a.href = url;
+          a.download = suggestedName;
+          popup.document.body.appendChild(a);
+          a.click();
+          popup.document.body.removeChild(a);
         };
       }
 
@@ -156,7 +158,9 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
           }
         };
 
-        setTimeout(() => printButton.click(), 350);
+        if (mode === "print") {
+          setTimeout(() => printButton.click(), 350);
+        }
       }
 
       registerCleanup();
@@ -188,17 +192,6 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       if (!doc) return;
 
       const arrayBuffer = doc.output("arraybuffer");
-      const blob = new Blob([arrayBuffer], { type: "application/pdf" });
-
-      if (isEmbeddedPreview) {
-        const opened = openPdfUtilityTab(blob, fileName, "download");
-        if (!opened) {
-          toast.error("Popup blocked. Allow popups to open this PDF.");
-          return;
-        }
-        toast.info("PDF opened in a new tab. Use the browser viewer to save/download.");
-        return;
-      }
 
       const savePicker = (window as any).showSaveFilePicker as
         | undefined
@@ -222,8 +215,20 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
           return;
         } catch (pickerErr: any) {
           if (pickerErr?.name === "AbortError") return;
-          console.warn("File picker failed, using browser download", pickerErr);
+          console.warn("File picker failed, using browser fallback", pickerErr);
         }
+      }
+
+      const blob = new Blob([arrayBuffer], { type: "application/pdf" });
+
+      if (isEmbeddedPreview) {
+        const opened = openPdfUtilityTab(blob, fileName, "download");
+        if (!opened) {
+          toast.error("Popup blocked. Allow popups to open this PDF.");
+          return;
+        }
+        toast.info("PDF helper opened. Click Download in that tab.");
+        return;
       }
 
       downloadBlob(blob, fileName);
