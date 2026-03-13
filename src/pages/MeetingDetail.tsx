@@ -402,8 +402,19 @@ export default function MeetingDetail() {
     );
   }
 
-  const generateFullMinutes = () =>
-    exportMeetingMinutesPDF({
+  // Validation: check if all officers have compensation status
+  const officersMissingStatus = officers.filter((o: any) => !o.compensation_status);
+  const officersHaveReasonIssue = officers.some((o: any) =>
+    (o.compensation_status === "below_market" || o.compensation_status === "above_market") && o.compensation_note?.includes("[REASON]")
+  );
+  const officerValidationFailed = officers.length > 0 && (officersMissingStatus.length > 0 || officersHaveReasonIssue);
+
+  const generateFullMinutes = () => {
+    if (officerValidationFailed) {
+      toast.error("All officers must have a Compensation Status set (with [REASON] resolved) before generating minutes.");
+      return null as any;
+    }
+    return exportMeetingMinutesPDF({
       meeting,
       company,
       shareholders,
@@ -438,6 +449,7 @@ export default function MeetingDetail() {
       companyAttorneys,
       companyAccountants,
     });
+  };
 
   const term = getTerminology(company?.entity_type);
 
