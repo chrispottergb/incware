@@ -1080,34 +1080,34 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         }
         y += 5;
 
-        // Shareholder table with basis (address)
+        // Shareholder table with address and basis
         const shareholderTableBody = shareholderData.map(s => {
-          // Build basis from companyShareholders address data if available
           const matchingShareholder = (data.companyShareholders || []).find(
             cs => cs.name?.toLowerCase().trim() === s.shareholder_name?.toLowerCase().trim()
           );
-          let basis = "";
+          let address = "";
           if (matchingShareholder) {
-            const parts = [
-              matchingShareholder.address,
-              matchingShareholder.city,
-              matchingShareholder.state,
-              matchingShareholder.zip,
-            ].filter(Boolean);
-            basis = parts.length > 0
-              ? `${matchingShareholder.address || ""}${matchingShareholder.city ? ` ${matchingShareholder.city}` : ""}${matchingShareholder.state ? `, ${matchingShareholder.state}` : ""}${matchingShareholder.zip ? ` ${matchingShareholder.zip}` : ""}`
-              : "";
+            const addr = matchingShareholder.address || "";
+            const addr2 = (matchingShareholder as any).address_2 || "";
+            const city = matchingShareholder.city || "";
+            const state = matchingShareholder.state || "";
+            const zip = matchingShareholder.zip || "";
+            const line1 = [addr, addr2].filter(Boolean).join(", ");
+            const line2 = [city, state].filter(Boolean).join(", ");
+            address = [line1, line2, zip].filter(Boolean).join(" ");
           }
+          const basisVal = s.basis != null ? `$${Number(s.basis).toLocaleString()}` : "—";
           return [
             s.shareholder_name,
+            address || "—",
             s.common_shares?.toLocaleString() ?? "—",
-            basis || "—",
+            basisVal,
           ];
         });
 
         autoTable(doc, {
           startY: y,
-          head: [["Shareholder", "Common Shares", "Shareholder Basis"]],
+          head: [["Shareholder", "Address", "Common Shares", "Shareholder Basis"]],
           body: shareholderTableBody,
           theme: "grid",
           headStyles: tableHeadStyles,
