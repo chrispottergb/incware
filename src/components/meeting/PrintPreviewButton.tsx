@@ -74,7 +74,7 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     }
 
     setTimeout(() => URL.revokeObjectURL(url), 60000);
-    return Boolean(popup);
+    return true;
   };
 
   const handleDownload = async () => {
