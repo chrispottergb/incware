@@ -87,12 +87,8 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
 
       // Cross-origin embedded previews cannot use file pickers or direct downloads reliably.
       if (isEmbeddedPreview) {
-        const opened = openPdfInNewTab(blob);
-        if (opened) {
-          toast.info("PDF opened in a new tab. Use the viewer's download button.");
-        } else {
-          toast.error("Popup blocked. Please allow popups for this site.");
-        }
+        openPdfInNewTab(blob);
+        toast.info("PDF opened in a new tab. Use the viewer's download button.");
         return;
       }
 
