@@ -1538,9 +1538,22 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     });
     y = (doc as any).lastAutoTable.finalY + 10;
 
-    // Compensation notes for officers
-    const officersWithNotes = data.officers.filter((o: any) => o.compensation_note);
+    // Compensation Determinations block
+    const officersWithNotes = data.officers.filter((o: any) => o.compensation_note && o.compensation_status);
     if (officersWithNotes.length > 0) {
+      y = checkPageBreak(doc, y, 20);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...BODY_COLOR);
+      const introText = `The ${isLLC ? "members" : "Board of Directors"} made the following compensation determinations with respect to the ${isLLC ? "managers/officers" : "officers"} of the ${isLLC ? "LLC" : "corporation"}:`;
+      const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of introLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 3;
+
       for (const o of officersWithNotes) {
         y = checkPageBreak(doc, y, 20);
         doc.setFontSize(11);
