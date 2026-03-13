@@ -2251,10 +2251,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       data.officers.forEach((o: any) => {
         const prior = priorByName[o.name?.toLowerCase()];
         if (!prior) {
-          autoResolutions.push({
-            purpose: `Elect ${o.title}`,
-            text: `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have determined it is in the best interests of the ${entityLabel} to elect a new officer, and after discussion, it was\n\nRESOLVED, that ${o.name} is hereby elected as ${o.title} of the ${entityLabel}${o.salary != null ? `, with an annual salary of ${fmt(o.salary)}` : ""}${o.bonus != null ? ` and a bonus of ${fmt(o.bonus)}` : ""}, effective immediately.`,
-          });
+          // New officer elections are now handled in the combined Officers section above
+          // — no separate resolution needed
         } else {
           if (o.salary != null && prior.salary != null && Number(o.salary) !== Number(prior.salary)) {
             autoResolutions.push({
