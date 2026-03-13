@@ -50,22 +50,114 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       setLoading(false);
     }
   };
+  const isEmbeddedPreview = (() => {
+    try {
+      return window.self !== window.top;
+    } catch {
+      return true;
+    }
+  })();
 
+  const openPdfViewerTab = (
+    dataUri: string,
+    title: string,
+    options?: { autoPrint?: boolean }
+  ) => {
+    const popup = window.open("", "_blank");
+    if (!popup) return false;
 
+    popup.document.open();
+    popup.document.write(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${title}</title>
+    <style>
+      html, body { margin: 0; height: 100%; }
+      .wrap { display: flex; flex-direction: column; height: 100%; font-family: system-ui, -apple-system, sans-serif; }
+      .hint { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #ddd; }
+      iframe { flex: 1; width: 100%; border: none; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="hint">Use your browser PDF viewer controls to save/download this file.</div>
+      <iframe id="pdfFrame"></iframe>
+    </div>
+  </body>
+</html>`);
+    popup.document.close();
+
+    const frame = popup.document.getElementById("pdfFrame") as HTMLIFrameElement | null;
+    if (frame) frame.src = dataUri;
+
+    if (options?.autoPrint) {
+      setTimeout(() => {
+        try {
+          frame?.contentWindow?.focus();
+          frame?.contentWindow?.print();
+        } catch {
+          popup.print();
+        }
+      }, 500);
+    }
+
+    return true;
+  };
 
   const handleDownload = async () => {
     try {
       const doc = generatePDF();
       if (!doc) return;
 
-      // Use base64 data URL to bypass sandbox/blob restrictions
+      const arrayBuffer = doc.output("arraybuffer");
+      const savePicker = (window as any).showSaveFilePicker as
+        | undefined
+        | ((options: any) => Promise<any>);
+
+      if (savePicker && window.isSecureContext) {
+        try {
+          const fileHandle = await savePicker({
+            suggestedName: fileName,
+            types: [
+              {
+                description: "PDF Document",
+                accept: { "application/pdf": [".pdf"] },
+              },
+            ],
+          });
+          const writable = await fileHandle.createWritable();
+          await writable.write(arrayBuffer);
+          await writable.close();
+          toast.success("PDF saved.");
+          return;
+        } catch (pickerErr: any) {
+          if (pickerErr?.name === "AbortError") return;
+        }
+      }
+
       const dataUri = doc.output("datauristring", { filename: fileName });
+
+      if (isEmbeddedPreview) {
+        const opened = openPdfViewerTab(dataUri, fileName);
+        if (!opened) {
+          toast.error("Popup blocked. Allow popups to open this PDF.");
+          return;
+        }
+        toast.info("PDF opened in viewer. Use the Save button there.");
+        return;
+      }
+
+      const blob = new Blob([arrayBuffer], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = dataUri;
+      a.href = url;
       a.download = fileName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
       toast.success("PDF download started.");
     } catch (err: any) {
       console.error("PDF download error:", err);
@@ -78,17 +170,14 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       const doc = generatePDF();
       if (!doc) return;
 
-      // Use base64 data URL to bypass sandbox restrictions
       const dataUri = doc.output("datauristring", { filename: fileName });
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) {
+      const opened = openPdfViewerTab(dataUri, fileName, { autoPrint: true });
+      if (!opened) {
         toast.error("Popup blocked. Allow popups to print this PDF.");
         return;
       }
-      printWindow.document.open();
-      printWindow.document.write(`<!doctype html><html><head><title>${fileName}</title><style>body{margin:0}iframe{width:100%;height:100vh;border:none}</style></head><body><iframe src="${dataUri}"></iframe></body></html>`);
-      printWindow.document.close();
-      toast.info("PDF opened — use Ctrl+P / ⌘+P to print.");
+
+      toast.info("PDF opened — print from the viewer.");
     } catch (err: any) {
       console.error("PDF print error:", err);
       toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
