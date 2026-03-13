@@ -157,8 +157,6 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
         : "a corporation";
     const stateOfInc = company.state_of_incorporation || company.state || "Wisconsin";
     const location = meeting.meeting_location || "";
-    const cityAtMeeting = meeting.company_city_at_meeting || company.city || "";
-    const stateAtMeeting = meeting.company_state_at_meeting || company.state || "";
     const mtgDate = new Date(meeting.meeting_date + "T00:00:00");
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -189,6 +187,21 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     const introLines = doc.splitTextToSize(introText, pw - MARGIN - R_MARGIN);
     doc.text(introLines, MARGIN, y);
     y += introLines.length * 5 + 6;
+
+    // S-Corporation status paragraph for corporations with S-election
+    const isLLC = (company.entity_type || "").toLowerCase().includes("llc");
+    const hasSElection = company.s_election_date != null;
+    if (!isLLC && hasSElection) {
+      const fye = company.fiscal_year_end || "December 31";
+      const sCorpText = `The Secretary noted that the corporation has elected S corporation status under Subchapter S of the Internal Revenue Code, and that said election remains in full force and effect for the tax year ending ${fye}.`;
+      y += 3;
+      const sCorpLines = doc.splitTextToSize(sCorpText, pw - MARGIN - R_MARGIN);
+      for (const line of sCorpLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+    }
 
     // List participants based on meeting sub_type / type
     if (meetingData) {
@@ -1020,6 +1033,21 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         doc.text(line, MARGIN, y);
         y += 5.5;
       }
+
+      // S-Corporation status paragraph for corporations with S-election
+      const hasSElection = company?.s_election_date != null;
+      if (!isLLC && hasSElection) {
+        const fye = company?.fiscal_year_end || "December 31";
+        const sCorpText = `The Secretary noted that the corporation has elected S corporation status under Subchapter S of the Internal Revenue Code, and that said election remains in full force and effect for the tax year ending ${fye}.`;
+        y += 3;
+        const sCorpLines = doc.splitTextToSize(sCorpText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+        for (const line of sCorpLines) {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(line, MARGIN, y);
+          y += 5.5;
+        }
+      }
+
       y += 3;
     }
 
