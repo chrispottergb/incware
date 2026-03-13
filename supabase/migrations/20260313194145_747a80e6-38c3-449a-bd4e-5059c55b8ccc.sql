@@ -1,0 +1,1 @@
+ALTER TABLE public.meeting_officers ADD COLUMN compensation_status text DEFAULT NULL;
