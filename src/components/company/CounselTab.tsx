@@ -261,7 +261,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
         if (error) throw error;
       }
       // Sync to master directory
-      upsertMasterContact.mutate({ contact_name: contactForm.attorney_name, title: contactForm.title, bar_number: contactForm.bar_number, specialty: contactForm.specialty, phone: contactForm.phone, email: contactForm.email, notes: contactForm.notes });
+      upsertMasterContact.mutate({ contact_name: contactForm.attorney_name, specialty: contactForm.specialty, phone: contactForm.phone, email: contactForm.email, notes: contactForm.notes });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["attorneys", companyId] }); setContactDialogOpen(false); toast.success("Attorney saved"); },
     onError: (e: any) => toast.error(e.message),
