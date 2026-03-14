@@ -258,10 +258,11 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
     setPendingDownloadType(null);
   };
 
-  const executePdfDownload = () => {
+  const executePdfDownload = async () => {
     if (pdfDoc) {
       const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_");
-      pdfDoc.save(`${safeName}_Operating_Agreement.pdf`);
+      const { savePdfReliably } = await import("@/lib/pdf-save");
+      await savePdfReliably(pdfDoc, `${safeName}_Operating_Agreement.pdf`);
     }
   };
 

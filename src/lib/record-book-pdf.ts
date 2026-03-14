@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { isLLCType } from "@/lib/entity-terminology";
+import { savePdfReliably } from "./pdf-save";
 
 const R_MARGIN = 25.4; // 1 inch right margin — matches left
 const MARGIN = 25.4; // 1 inch for binder compatibility
@@ -524,9 +525,9 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
   return doc;
 }
 
-export function downloadRecordBookPDF(doc: jsPDF, companyName: string) {
+export async function downloadRecordBookPDF(doc: jsPDF, companyName: string) {
   const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_");
-  doc.save(`${safeName}_Record_Book_${new Date().toISOString().slice(0, 10)}.pdf`);
+  await savePdfReliably(doc, `${safeName}_Record_Book_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 export function getRecordBookBlob(doc: jsPDF): Blob {

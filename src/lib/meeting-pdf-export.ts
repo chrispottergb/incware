@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { savePdfReliably } from "./pdf-save";
 
 // Wisconsin DFI-style document formatting
 const DFI_HEADER = "STATE OF WISCONSIN";
@@ -2910,8 +2911,8 @@ function fmt(val: any): string {
 }
 
 // Save and download
-export function downloadPDF(doc: jsPDF, fileName: string) {
-  doc.save(fileName);
+export async function downloadPDF(doc: jsPDF, fileName: string) {
+  await savePdfReliably(doc, fileName);
 }
 
 // Get PDF as blob URL for preview

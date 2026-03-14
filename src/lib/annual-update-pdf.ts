@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { savePdfReliably } from "./pdf-save";
 
 const MARGIN = 25.4; // 1 inch for binder compatibility
 const R_MARGIN = 25.4; // 1 inch right margin — matches left
@@ -318,9 +319,9 @@ export function generateAnnualUpdatePdf(data: AnnualUpdateData): jsPDF {
   return doc;
 }
 
-export function downloadAnnualUpdatePdf(data: AnnualUpdateData) {
+export async function downloadAnnualUpdatePdf(data: AnnualUpdateData) {
   const doc = generateAnnualUpdatePdf(data);
   const filename = `annual-update-${data.company.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.pdf`;
-  doc.save(filename);
+  await savePdfReliably(doc, filename);
   return doc;
 }

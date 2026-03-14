@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { savePdfReliably } from "./pdf-save";
 
 const MARGIN = 25.4; // 1 inch for binder compatibility
 const R_MARGIN = 25.4; // 1 inch right margin — matches left
@@ -64,7 +65,7 @@ interface ComplianceItem {
   checks: { label: string; pass: boolean }[];
 }
 
-export function exportCompliancePDF(data: ComplianceItem[], overallScore: number) {
+export async function exportCompliancePDF(data: ComplianceItem[], overallScore: number) {
   const doc = new jsPDF();
 
   addHeader(doc, "Compliance Overview Report", `Overall Compliance Score: ${overallScore}%`);
@@ -126,7 +127,7 @@ export function exportCompliancePDF(data: ComplianceItem[], overallScore: number
   });
 
   addFooter(doc);
-  doc.save("compliance-report.pdf");
+  await savePdfReliably(doc, "compliance-report.pdf");
 }
 
 interface CertificateRow {
@@ -140,7 +141,7 @@ interface CertificateRow {
   status: string | null;
 }
 
-export function exportStockLedgerPDF(certificates: CertificateRow[], companyFilter?: string) {
+export async function exportStockLedgerPDF(certificates: CertificateRow[], companyFilter?: string) {
   const doc = new jsPDF({ orientation: "landscape" });
 
   const subtitle = companyFilter && companyFilter !== "all"
@@ -202,7 +203,7 @@ export function exportStockLedgerPDF(certificates: CertificateRow[], companyFilt
   doc.text(`Total Shares: ${totalShares.toLocaleString()}`, MARGIN, finalY + 10);
 
   addFooter(doc);
-  doc.save("stock-ledger.pdf");
+  await savePdfReliably(doc, "stock-ledger.pdf");
 }
 
 interface ShareholderRow {
@@ -213,7 +214,7 @@ interface ShareholderRow {
   dateAdded: string | null;
 }
 
-export function exportShareholderPDF(shareholders: ShareholderRow[]) {
+export async function exportShareholderPDF(shareholders: ShareholderRow[]) {
   const doc = new jsPDF();
 
   addHeader(doc, "Shareholder Summary Report", `${shareholders.length} shareholder(s)`);
@@ -259,7 +260,7 @@ export function exportShareholderPDF(shareholders: ShareholderRow[]) {
   doc.text(`Active: ${activeCount}`, MARGIN, finalY + 5);
 
   addFooter(doc);
-  doc.save("shareholder-summary.pdf");
+  await savePdfReliably(doc, "shareholder-summary.pdf");
 }
 
 // ---------- AI Compliance Audit Report ----------
@@ -312,7 +313,7 @@ export interface AIComplianceData {
   incidents: AIIncidentRow[];
 }
 
-export function exportAICompliancePDF(data: AIComplianceData) {
+export async function exportAICompliancePDF(data: AIComplianceData) {
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.getWidth();
 
@@ -512,5 +513,5 @@ export function exportAICompliancePDF(data: AIComplianceData) {
   }
 
   addFooter(doc);
-  doc.save(`ai-compliance-report-${data.companyName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
+  await savePdfReliably(doc, `ai-compliance-report-${data.companyName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
 }

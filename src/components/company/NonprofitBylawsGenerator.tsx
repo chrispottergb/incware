@@ -104,10 +104,11 @@ export default function NonprofitBylawsGenerator({ companyId, companyName, compa
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (pdfDoc) {
       const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_");
-      pdfDoc.save(`${safeName}_Nonprofit_Bylaws.pdf`);
+      const { savePdfReliably } = await import("@/lib/pdf-save");
+      await savePdfReliably(pdfDoc, `${safeName}_Nonprofit_Bylaws.pdf`);
     }
   };
 

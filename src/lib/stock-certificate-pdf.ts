@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import eagleImg from "@/assets/certificate-eagle.png";
+import { savePdfReliably } from "./pdf-save";
 
 export interface StockCertificateData {
   companyName: string;
@@ -242,5 +243,5 @@ export async function generateStockCertificatePdf(data: StockCertificateData): P
 
 export async function downloadStockCertificatePdf(data: StockCertificateData) {
   const doc = await generateStockCertificatePdf(data);
-  doc.save(`certificate-${data.certificateNumber}.pdf`);
+  await savePdfReliably(doc, `certificate-${data.certificateNumber}.pdf`);
 }
