@@ -361,8 +361,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
                           {firmAttorneys.map((a: any) => (
                             <TableRow key={a.id} className={selectedAttorneys[f.id] === a.id ? "bg-primary/5" : ""}>
                               <TableCell className="font-medium text-xs pl-10">{a.attorney_name}</TableCell>
-                              <TableCell className="hidden sm:table-cell text-xs">{a.title}</TableCell>
-                              <TableCell className="hidden md:table-cell text-xs">{a.bar_number}</TableCell>
+                              <TableCell className="hidden sm:table-cell text-xs">{a.specialty}</TableCell>
                               <TableCell className="hidden lg:table-cell text-xs">{a.phone}</TableCell>
                               <TableCell className="hidden lg:table-cell text-xs">{a.email}</TableCell>
                               <TableCell>
