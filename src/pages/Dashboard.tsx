@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Building2, Plus, Search, Loader2, ChevronRight, UserPlus, FolderOpen, CalendarCheck, SearchIcon, Bot, AlertTriangle, ClipboardCheck, Upload } from "lucide-react";
+import { Building2, Plus, Search, Loader2, ChevronRight, UserPlus, FolderOpen, CalendarCheck, SearchIcon, Bot, AlertTriangle, ClipboardCheck, Upload, FileText, MapPin, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import TaxReturnUpload from "@/components/TaxReturnUpload";
 import CreateCompanyWizard from "@/components/CreateCompanyWizard";
