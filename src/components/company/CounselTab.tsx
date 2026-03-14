@@ -201,8 +201,6 @@ function AttorneySection({ companyId }: { companyId: string }) {
   const selectMasterContact = (c: any) => {
     setContactForm({
       attorney_name: c.contact_name || "",
-      title: c.title || "",
-      bar_number: c.bar_number || "",
       specialty: c.specialty || "",
       phone: c.phone || "",
       email: c.email || "",
