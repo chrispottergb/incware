@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { savePdfReliably } from "./pdf-save";
 
 interface LeaseData {
   landlordName: string;
