@@ -10,6 +10,7 @@ import { Printer, Eye, Download, Loader2, ChevronLeft, ChevronRight } from "luci
 import jsPDF from "jspdf";
 import { toast } from "sonner";
 import * as pdfjsLib from "pdfjs-dist";
+import { savePdfReliably } from "@/lib/pdf-save";
 
 // Use the bundled worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
