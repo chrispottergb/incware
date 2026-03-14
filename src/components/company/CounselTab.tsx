@@ -625,10 +625,9 @@ function AccountantSection({ companyId }: { companyId: string }) {
               <TableBody>
                 {unassignedAccountants.map((a: any) => (
                   <TableRow key={a.id}>
-                    <TableCell className="font-medium text-xs pl-4">{a.accountant_name}</TableCell>
-                    <TableCell className="hidden sm:table-cell text-xs">{a.title}</TableCell>
-                    <TableCell className="hidden md:table-cell text-xs">{a.cpa_number}</TableCell>
-                    <TableCell className="hidden lg:table-cell text-xs">{a.phone}</TableCell>
+                     <TableCell className="font-medium text-xs pl-4">{a.accountant_name}</TableCell>
+                     <TableCell className="hidden sm:table-cell text-xs">{a.specialty}</TableCell>
+                     <TableCell className="hidden lg:table-cell text-xs">{a.phone}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditContact(a)}><Pencil className="h-3 w-3" /></Button>
