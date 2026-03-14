@@ -418,7 +418,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
   const [firmForm, setFirmForm] = useState(emptyFirmForm());
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<any>(null);
-  const [contactForm, setContactForm] = useState({ accountant_name: "", title: "", cpa_number: "", specialty: "", phone: "", email: "", notes: "" });
+  const [contactForm, setContactForm] = useState({ accountant_name: "", specialty: "", phone: "", email: "", notes: "" });
   const [contactFirmId, setContactFirmId] = useState<string | null>(null);
   const [expandedFirms, setExpandedFirms] = useState<Set<string>>(new Set());
   const [selectedAccountants, setSelectedAccountants] = useState<Record<string, string>>({});
