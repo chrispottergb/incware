@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { savePdfReliably } from "./pdf-save";
 
 // Wisconsin DFI-style document formatting
 const DFI_HEADER = "STATE OF WISCONSIN";
