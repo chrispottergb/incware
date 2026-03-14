@@ -260,7 +260,7 @@ export function exportShareholderPDF(shareholders: ShareholderRow[]) {
   doc.text(`Active: ${activeCount}`, MARGIN, finalY + 5);
 
   addFooter(doc);
-  doc.save("shareholder-summary.pdf");
+  await savePdfReliably(doc, "shareholder-summary.pdf");
 }
 
 // ---------- AI Compliance Audit Report ----------
