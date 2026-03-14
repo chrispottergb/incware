@@ -65,7 +65,7 @@ export default function UserAvatarMenu() {
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate("/settings")}>
           <Settings className="mr-2 h-4 w-4" />
-          Account Settings
+          Settings
         </DropdownMenuItem>
         {isAdmin && (
           <DropdownMenuItem onClick={() => navigate("/settings/users")}>
