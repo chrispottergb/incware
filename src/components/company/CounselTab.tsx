@@ -395,8 +395,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
                 {unassignedAttorneys.map((a: any) => (
                   <TableRow key={a.id}>
                     <TableCell className="font-medium text-xs pl-4">{a.attorney_name}</TableCell>
-                    <TableCell className="hidden sm:table-cell text-xs">{a.title}</TableCell>
-                    <TableCell className="hidden md:table-cell text-xs">{a.bar_number}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-xs">{a.specialty}</TableCell>
                     <TableCell className="hidden lg:table-cell text-xs">{a.phone}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
