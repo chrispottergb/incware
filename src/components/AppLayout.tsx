@@ -226,7 +226,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               />
             </div>
           </div>
-          <div className="max-h-52 overflow-y-auto space-y-0.5">
+          <div className="company-list-scrollbar max-h-52 overflow-y-auto space-y-0.5 pr-1">
             {filteredActiveCompanies.map((c) => {
               const isActive = location.pathname === `/company/${c.id}`;
               return (
