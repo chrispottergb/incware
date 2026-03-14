@@ -633,7 +633,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
                         <SelectTrigger className="h-7 text-xs mt-1"><SelectValue placeholder="Select Accountant" /></SelectTrigger>
                         <SelectContent>
                           {firmAccountants.length > 0 ? firmAccountants.map((a: any) => (
-                            <SelectItem key={a.id} value={a.id}>{a.accountant_name}{a.title ? `, ${a.title}` : ""}</SelectItem>
+                            <SelectItem key={a.id} value={a.id}>{a.accountant_name}{a.specialty ? ` — ${a.specialty}` : ""}</SelectItem>
                           )) : (
                             <SelectItem value="__none" disabled>No accountants in this firm</SelectItem>
                           )}
