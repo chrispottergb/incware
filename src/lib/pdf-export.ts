@@ -214,7 +214,7 @@ interface ShareholderRow {
   dateAdded: string | null;
 }
 
-export function exportShareholderPDF(shareholders: ShareholderRow[]) {
+export async function exportShareholderPDF(shareholders: ShareholderRow[]) {
   const doc = new jsPDF();
 
   addHeader(doc, "Shareholder Summary Report", `${shareholders.length} shareholder(s)`);
