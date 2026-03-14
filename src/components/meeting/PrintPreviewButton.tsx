@@ -10,6 +10,7 @@ import { Printer, Eye, Download, Loader2, ChevronLeft, ChevronRight } from "luci
 import jsPDF from "jspdf";
 import { toast } from "sonner";
 import * as pdfjsLib from "pdfjs-dist";
+import { savePdfReliably } from "@/lib/pdf-save";
 
 // Use the bundled worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -181,51 +182,7 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     try {
       const doc = generatePDF();
       if (!doc) return;
-
-      const arrayBuffer = doc.output("arraybuffer");
-      const blob = new Blob([arrayBuffer], { type: "application/pdf" });
-
-      // In embedded preview, avoid direct blob-tab navigation because
-      // Chrome extensions can block it with ERR_BLOCKED_BY_CLIENT.
-      if (isEmbeddedPreview) {
-        const openedUtility = openPdfUtilityTab(blob, fileName, "download");
-        if (openedUtility) {
-          toast.info("PDF helper opened. Click Download PDF in that tab.");
-          return;
-        }
-
-        downloadBlob(blob, fileName);
-        toast.info("Popup blocked. Tried direct download instead.");
-        return;
-      }
-
-      const savePicker = (window as any).showSaveFilePicker as
-        | undefined
-        | ((options: any) => Promise<any>);
-
-      if (savePicker && window.isSecureContext) {
-        try {
-          const fileHandle = await savePicker({
-            suggestedName: fileName,
-            types: [
-              {
-                description: "PDF Document",
-                accept: { "application/pdf": [".pdf"] },
-              },
-            ],
-          });
-          const writable = await fileHandle.createWritable();
-          await writable.write(arrayBuffer);
-          await writable.close();
-          toast.success("PDF saved.");
-          return;
-        } catch (pickerErr: any) {
-          if (pickerErr?.name === "AbortError") return;
-          console.warn("File picker failed, using browser fallback", pickerErr);
-        }
-      }
-
-      downloadBlob(blob, fileName);
+      await savePdfReliably(doc, fileName);
     } catch (err: any) {
       console.error("PDF download error:", err);
       toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
