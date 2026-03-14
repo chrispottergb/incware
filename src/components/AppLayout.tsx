@@ -323,9 +323,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </Button>
           <div className="flex-1" />
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground hidden sm:inline">
             {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </span>
+          <UserAvatarMenu />
         </header>
         <main className="flex-1 overflow-auto p-4 lg:p-6 min-w-0">{children}</main>
       </div>

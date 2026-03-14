@@ -101,6 +101,16 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/settings/users"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <UserManagement />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
