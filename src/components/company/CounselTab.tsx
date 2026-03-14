@@ -185,7 +185,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
   const [firmForm, setFirmForm] = useState(emptyFirmForm());
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<any>(null);
-  const [contactForm, setContactForm] = useState({ attorney_name: "", title: "", bar_number: "", specialty: "", phone: "", email: "", notes: "" });
+  const [contactForm, setContactForm] = useState({ attorney_name: "", specialty: "", phone: "", email: "", notes: "" });
   const [contactFirmId, setContactFirmId] = useState<string | null>(null);
   const [expandedFirms, setExpandedFirms] = useState<Set<string>>(new Set());
   const [selectedAttorneys, setSelectedAttorneys] = useState<Record<string, string>>({});
