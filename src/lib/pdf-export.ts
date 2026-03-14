@@ -127,7 +127,7 @@ export function exportCompliancePDF(data: ComplianceItem[], overallScore: number
   });
 
   addFooter(doc);
-  doc.save("compliance-report.pdf");
+  await savePdfReliably(doc, "compliance-report.pdf");
 }
 
 interface CertificateRow {
