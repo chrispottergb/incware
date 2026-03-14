@@ -95,6 +95,63 @@ function FirmDialog({
   );
 }
 
+const ACCOUNTING_SERVICES = [
+  "Tax Preparation & Planning",
+  "Bookkeeping",
+  "Payroll Services",
+  "Audit & Assurance",
+  "Financial Statement Preparation",
+  "Business Advisory",
+  "Estate & Trust Planning",
+  "Forensic Accounting",
+  "Cost Accounting",
+  "Management Consulting",
+  "IRS Representation",
+  "Business Valuation",
+  "Succession Planning",
+  "Nonprofit Accounting",
+  "International Tax",
+  "Sales Tax Compliance",
+  "Cash Flow Management",
+  "Budgeting & Forecasting",
+  "Controller Services",
+  "CFO Services",
+];
+
+function ScopeOfEngagementCombobox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filtered = ACCOUNTING_SERVICES.filter(s =>
+    s.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="relative">
+      <Input
+        value={value}
+        onChange={e => { onChange(e.target.value); setSearch(e.target.value); }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 200)}
+        placeholder="Select or type engagement scope"
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
+          {filtered.map(s => (
+            <button
+              key={s}
+              className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors"
+              onMouseDown={e => { e.preventDefault(); onChange(s); setOpen(false); setSearch(""); }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const emptyFirmForm = () => ({ firm_name: "", address: "", address_2: "", city: "", state: "", zip: "", phone: "", email: "", website: "" });
 
 // ─── Attorney Firms + Nested Attorneys ───
