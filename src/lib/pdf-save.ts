@@ -112,19 +112,8 @@ function openPdfViewerTab(dataUri: string, filename: string): boolean {
 export async function savePdfReliably(doc: jsPDF, filename: string): Promise<void> {
   const dataUri = doc.output("datauristring");
 
-  // In embedded preview environments, direct downloads are often blocked by client extensions.
-  // Open a top-level viewer tab instead so users can save via the native PDF toolbar.
-  if (isEmbeddedPreview) {
-    const opened = openPdfViewerTab(dataUri, filename);
-    if (!opened) {
-      toast.error("Popup blocked. Please allow popups and try again.");
-      return;
-    }
-    toast.info("PDF opened in a new tab. Click Save PDF in that tab.");
-    return;
-  }
-
-  // Top-level context: try File System Access API first.
+  // Try File System Access API first in every context.
+  // This avoids Chrome download blockers because the user chooses the destination file directly.
   if ("showSaveFilePicker" in window) {
     try {
       const handle = await (window as any).showSaveFilePicker({
@@ -143,8 +132,20 @@ export async function savePdfReliably(doc: jsPDF, filename: string): Promise<voi
       return;
     } catch (err: any) {
       if (err?.name === "AbortError") return;
-      console.warn("showSaveFilePicker failed, falling back to data URI download:", err);
+      console.warn("showSaveFilePicker failed, falling back:", err);
     }
+  }
+
+  // In embedded preview environments, direct downloads are often blocked by extensions/policies.
+  // Open a top-level utility tab with a Save button and fallback link.
+  if (isEmbeddedPreview) {
+    const opened = openPdfViewerTab(dataUri, filename);
+    if (!opened) {
+      toast.error("Popup blocked. Please allow popups and try again.");
+      return;
+    }
+    toast.info("PDF opened in a new tab. Click Save PDF in that tab.");
+    return;
   }
 
   // Fallback: data-URI download (no blob URL).
