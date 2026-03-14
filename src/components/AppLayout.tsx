@@ -178,6 +178,40 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             );
           })}
 
+          {/* Settings with expandable sub-menu */}
+          <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <CollapsibleTrigger className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
+              location.pathname.startsWith("/settings")
+                ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+            }`}>
+              <SettingsIcon className="h-4 w-4 shrink-0" />
+              <span className="flex-1 text-left">Settings</span>
+              <ChevronDown className={`h-3 w-3 transition-transform ${settingsOpen ? "" : "-rotate-90"}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="ml-6 mt-0.5 space-y-0.5 border-l border-sidebar-border pl-2">
+                {settingsSubNav.map((sub) => {
+                  const active = location.pathname === sub.href;
+                  return (
+                    <Link
+                      key={sub.href}
+                      to={sub.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={`block rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                        active
+                          ? "text-primary bg-sidebar-accent"
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                      }`}
+                    >
+                      {sub.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
           <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
             Companies
           </p>
