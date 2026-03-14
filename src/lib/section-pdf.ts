@@ -143,10 +143,10 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
   return doc;
 }
 
-export function downloadSectionPdf(config: SectionPdfConfig) {
+export async function downloadSectionPdf(config: SectionPdfConfig) {
   const doc = generateSectionPdf(config);
   const filename = config.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".pdf";
-  doc.save(filename);
+  await savePdfReliably(doc, filename);
 }
 
 export async function previewSectionPdf(config: SectionPdfConfig) {
