@@ -432,10 +432,8 @@ function AccountantSection({ companyId }: { companyId: string }) {
   );
 
   const selectMasterContact = (c: any) => {
-    setContactForm({
+     setContactForm({
       accountant_name: c.contact_name || "",
-      title: c.title || "",
-      cpa_number: c.cpa_number || "",
       specialty: c.specialty || "",
       phone: c.phone || "",
       email: c.email || "",
