@@ -276,8 +276,8 @@ function AttorneySection({ companyId }: { companyId: string }) {
   const openNewFirm = () => { setEditingFirm(null); setFirmForm(emptyFirmForm()); setFirmDialogOpen(true); };
   const openEditFirm = (f: any) => { setEditingFirm(f); setFirmForm({ firm_name: f.firm_name, address: f.address || "", address_2: f.address_2 || "", city: f.city || "", state: f.state || "", zip: f.zip || "", phone: f.phone || "", email: f.email || "", website: f.website || "" }); setFirmDialogOpen(true); };
 
-  const openNewContact = (firmId: string) => { setEditingContact(null); setContactFirmId(firmId); setContactForm({ attorney_name: "", title: "", bar_number: "", specialty: "", phone: "", email: "", notes: "" }); setContactSearch(""); setContactDialogOpen(true); };
-  const openEditContact = (a: any) => { setEditingContact(a); setContactFirmId(a.firm_id); setContactForm({ attorney_name: a.attorney_name, title: a.title || "", bar_number: a.bar_number || "", specialty: a.specialty || "", phone: a.phone || "", email: a.email || "", notes: a.notes || "" }); setContactSearch(""); setContactDialogOpen(true); };
+  const openNewContact = (firmId: string) => { setEditingContact(null); setContactFirmId(firmId); setContactForm({ attorney_name: "", specialty: "", phone: "", email: "", notes: "" }); setContactSearch(""); setContactDialogOpen(true); };
+  const openEditContact = (a: any) => { setEditingContact(a); setContactFirmId(a.firm_id); setContactForm({ attorney_name: a.attorney_name, specialty: a.specialty || "", phone: a.phone || "", email: a.email || "", notes: a.notes || "" }); setContactSearch(""); setContactDialogOpen(true); };
 
   const selectMasterFirm = (mf: any) => {
     setFirmForm({
