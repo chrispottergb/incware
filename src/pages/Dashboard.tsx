@@ -300,11 +300,36 @@ export default function Dashboard() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead className="font-semibold text-xs">Company Name</TableHead>
-                    <TableHead className="text-xs">Type</TableHead>
-                    <TableHead className="text-xs">State</TableHead>
-                    <TableHead className="text-xs">Inc. Date</TableHead>
-                    <TableHead className="text-xs">Fiscal Year End</TableHead>
+                    <TableHead className="font-semibold text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>Company Name</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>Type</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>State</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>Inc. Date</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>Fiscal Year End</span>
+                      </div>
+                    </TableHead>
                     <TableHead className="text-xs">Status</TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
