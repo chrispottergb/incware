@@ -661,36 +661,34 @@ function AccountantSection({ companyId }: { companyId: string }) {
                 {contactFirmId && <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setContactFirmId(null)}><X className="h-3 w-3" /></Button>}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="relative">
-                <Label className="text-xs">Accountant Name *</Label>
-                <Input
-                  value={contactForm.accountant_name}
-                  onChange={e => {
-                    setContactForm(p => ({ ...p, accountant_name: e.target.value }));
-                    setContactSearch(e.target.value);
-                    setShowContactDropdown(true);
-                  }}
-                  onFocus={() => { if (masterContacts.length > 0 && !editingContact) setShowContactDropdown(true); }}
-                  onBlur={() => setTimeout(() => setShowContactDropdown(false), 200)}
-                  placeholder={!editingContact && masterContacts.length > 0 ? "Type or select from directory" : ""}
-                />
-                {showContactDropdown && !editingContact && filteredMasterContacts.length > 0 && (
-                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
-                    <div className="px-3 py-1 text-[10px] text-muted-foreground font-medium border-b flex items-center gap-1"><BookOpen className="h-2.5 w-2.5" /> Directory</div>
-                    {filteredMasterContacts.map((c: any) => (
-                      <button
-                        key={c.id}
-                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors"
-                        onMouseDown={(e) => { e.preventDefault(); selectMasterContact(c); }}
-                      >
-                        {c.contact_name}
-                        {c.specialty && <span className="text-muted-foreground ml-2">— {c.specialty}</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div className="relative">
+              <Label className="text-xs">Accountant Name *</Label>
+              <Input
+                value={contactForm.accountant_name}
+                onChange={e => {
+                  setContactForm(p => ({ ...p, accountant_name: e.target.value }));
+                  setContactSearch(e.target.value);
+                  setShowContactDropdown(true);
+                }}
+                onFocus={() => { if (masterContacts.length > 0 && !editingContact) setShowContactDropdown(true); }}
+                onBlur={() => setTimeout(() => setShowContactDropdown(false), 200)}
+                placeholder={!editingContact && masterContacts.length > 0 ? "Type or select from directory" : ""}
+              />
+              {showContactDropdown && !editingContact && filteredMasterContacts.length > 0 && (
+                <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                  <div className="px-3 py-1 text-[10px] text-muted-foreground font-medium border-b flex items-center gap-1"><BookOpen className="h-2.5 w-2.5" /> Directory</div>
+                  {filteredMasterContacts.map((c: any) => (
+                    <button
+                      key={c.id}
+                      className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors"
+                      onMouseDown={(e) => { e.preventDefault(); selectMasterContact(c); }}
+                    >
+                      {c.contact_name}
+                      {c.specialty && <span className="text-muted-foreground ml-2">— {c.specialty}</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <Label className="text-xs">Scope of Engagement</Label>
