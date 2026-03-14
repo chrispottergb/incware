@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { isLLCType } from "@/lib/entity-terminology";
+import { savePdfReliably } from "./pdf-save";
 
 const R_MARGIN = 25.4; // 1 inch right margin — matches left
 const MARGIN = 25.4; // 1 inch for binder compatibility
