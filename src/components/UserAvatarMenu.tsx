@@ -34,12 +34,11 @@ export default function UserAvatarMenu() {
   });
 
   const displayName = profile?.full_name || user?.email || "User";
-  const initials = displayName
-    .split(" ")
-    .map((n: string) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  const nameParts = displayName.split(" ").filter(Boolean);
+  const initials =
+    nameParts.length >= 2
+      ? (nameParts[0][0] + nameParts[1][0]).toUpperCase()
+      : displayName.replace(/@.*/, "").slice(0, 2).toUpperCase();
 
   return (
     <DropdownMenu>
