@@ -313,7 +313,7 @@ export interface AIComplianceData {
   incidents: AIIncidentRow[];
 }
 
-export function exportAICompliancePDF(data: AIComplianceData) {
+export async function exportAICompliancePDF(data: AIComplianceData) {
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.getWidth();
 
