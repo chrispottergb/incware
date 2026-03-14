@@ -13,6 +13,9 @@ function openPdfViewerTab(dataUri: string, filename: string): boolean {
   const win = window.open("", "_blank");
   if (!win) return false;
 
+  const safeDataUri = JSON.stringify(dataUri);
+  const safeFilename = JSON.stringify(filename);
+
   win.document.write(`<!doctype html>
 <html>
   <head>
@@ -21,13 +24,82 @@ function openPdfViewerTab(dataUri: string, filename: string): boolean {
     <title>${filename}</title>
     <style>
       body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
-      .bar { padding: 10px 14px; border-bottom: 1px solid #ddd; font-size: 13px; }
-      iframe { width: 100%; height: calc(100vh - 43px); border: 0; }
+      .bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 14px;
+        border-bottom: 1px solid #ddd;
+        font-size: 13px;
+      }
+      .actions { display: flex; gap: 8px; }
+      button, a {
+        border: 1px solid #bbb;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+        background: #fff;
+        color: #111;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      iframe { width: 100%; height: calc(100vh - 52px); border: 0; }
     </style>
   </head>
   <body>
-    <div class="bar">PDF opened successfully. Use the PDF toolbar's download/save button.</div>
-    <iframe src="${dataUri}"></iframe>
+    <div class="bar">
+      <span>PDF opened successfully.</span>
+      <div class="actions">
+        <button id="saveBtn" type="button">Save PDF</button>
+        <a id="downloadLink" href="#">Download fallback</a>
+      </div>
+    </div>
+    <iframe id="pdfFrame"></iframe>
+    <script>
+      const dataUri = ${safeDataUri};
+      const filename = ${safeFilename};
+      const frame = document.getElementById('pdfFrame');
+      const downloadLink = document.getElementById('downloadLink');
+      const saveBtn = document.getElementById('saveBtn');
+
+      if (frame) frame.src = dataUri;
+      if (downloadLink) {
+        downloadLink.href = dataUri;
+        downloadLink.download = filename;
+      }
+
+      if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+          try {
+            if ('showSaveFilePicker' in window) {
+              const handle = await window.showSaveFilePicker({
+                suggestedName: filename,
+                types: [{
+                  description: 'PDF Document',
+                  accept: { 'application/pdf': ['.pdf'] },
+                }],
+              });
+              const response = await fetch(dataUri);
+              const blob = await response.blob();
+              const writable = await handle.createWritable();
+              await writable.write(blob);
+              await writable.close();
+              return;
+            }
+
+            if (downloadLink) {
+              downloadLink.click();
+            }
+          } catch (err) {
+            if (err && err.name === 'AbortError') return;
+            if (downloadLink) {
+              downloadLink.click();
+            }
+          }
+        });
+      }
+    </script>
   </body>
 </html>`);
   win.document.close();
