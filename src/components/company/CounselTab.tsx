@@ -492,7 +492,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
         const { error } = await supabase.from("accountants").insert({ ...payload, company_id: companyId });
         if (error) throw error;
       }
-      upsertMasterContact.mutate({ contact_name: contactForm.accountant_name, title: contactForm.title, cpa_number: contactForm.cpa_number, specialty: contactForm.specialty, phone: contactForm.phone, email: contactForm.email, notes: contactForm.notes });
+      upsertMasterContact.mutate({ contact_name: contactForm.accountant_name, specialty: contactForm.specialty, phone: contactForm.phone, email: contactForm.email, notes: contactForm.notes });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["accountants", companyId] }); setContactDialogOpen(false); toast.success("Accountant saved"); },
     onError: (e: any) => toast.error(e.message),
