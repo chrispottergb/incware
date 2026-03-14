@@ -120,7 +120,7 @@ export async function savePdfReliably(doc: jsPDF, filename: string): Promise<voi
       toast.error("Popup blocked. Please allow popups and try again.");
       return;
     }
-    toast.info("PDF opened in a new tab. Click the PDF toolbar save icon.");
+    toast.info("PDF opened in a new tab. Click Save PDF in that tab.");
     return;
   }
 
