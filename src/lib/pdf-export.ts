@@ -513,5 +513,5 @@ export function exportAICompliancePDF(data: AIComplianceData) {
   }
 
   addFooter(doc);
-  doc.save(`ai-compliance-report-${data.companyName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
+  await savePdfReliably(doc, `ai-compliance-report-${data.companyName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
 }
