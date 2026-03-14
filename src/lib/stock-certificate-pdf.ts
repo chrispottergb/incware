@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import eagleImg from "@/assets/certificate-eagle.png";
+import { savePdfReliably } from "./pdf-save";
 
 export interface StockCertificateData {
   companyName: string;
