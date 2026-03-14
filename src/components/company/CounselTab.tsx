@@ -118,11 +118,32 @@ const ACCOUNTING_SERVICES = [
   "CFO Services",
 ];
 
-function ScopeOfEngagementCombobox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+const LEGAL_SERVICES = [
+  "Corporate Law",
+  "Real Estate",
+  "Litigation",
+  "Estate Planning & Trusts",
+  "Tax Law",
+  "Employment & Labor Law",
+  "Intellectual Property",
+  "Mergers & Acquisitions",
+  "Bankruptcy & Restructuring",
+  "Securities & Capital Markets",
+  "Immigration",
+  "Environmental Law",
+  "Healthcare Law",
+  "Government Relations",
+  "Contract Drafting & Review",
+  "Regulatory Compliance",
+  "Business Formation",
+  "Commercial Transactions",
+];
+
+function ScopeCombobox({ value, onChange, options, placeholder }: { value: string; onChange: (v: string) => void; options: string[]; placeholder?: string }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const filtered = ACCOUNTING_SERVICES.filter(s =>
+  const filtered = options.filter(s =>
     s.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -133,7 +154,7 @@ function ScopeOfEngagementCombobox({ value, onChange }: { value: string; onChang
         onChange={e => { onChange(e.target.value); setSearch(e.target.value); }}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 200)}
-        placeholder="Select or type engagement scope"
+        placeholder={placeholder || "Select or type engagement scope"}
       />
       {open && filtered.length > 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
@@ -164,7 +185,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
   const [firmForm, setFirmForm] = useState(emptyFirmForm());
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<any>(null);
-  const [contactForm, setContactForm] = useState({ attorney_name: "", title: "", bar_number: "", specialty: "", phone: "", email: "", notes: "" });
+  const [contactForm, setContactForm] = useState({ attorney_name: "", specialty: "", phone: "", email: "", notes: "" });
   const [contactFirmId, setContactFirmId] = useState<string | null>(null);
   const [expandedFirms, setExpandedFirms] = useState<Set<string>>(new Set());
   const [selectedAttorneys, setSelectedAttorneys] = useState<Record<string, string>>({});
@@ -180,8 +201,6 @@ function AttorneySection({ companyId }: { companyId: string }) {
   const selectMasterContact = (c: any) => {
     setContactForm({
       attorney_name: c.contact_name || "",
-      title: c.title || "",
-      bar_number: c.bar_number || "",
       specialty: c.specialty || "",
       phone: c.phone || "",
       email: c.email || "",
@@ -242,7 +261,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
         if (error) throw error;
       }
       // Sync to master directory
-      upsertMasterContact.mutate({ contact_name: contactForm.attorney_name, title: contactForm.title, bar_number: contactForm.bar_number, specialty: contactForm.specialty, phone: contactForm.phone, email: contactForm.email, notes: contactForm.notes });
+      upsertMasterContact.mutate({ contact_name: contactForm.attorney_name, specialty: contactForm.specialty, phone: contactForm.phone, email: contactForm.email, notes: contactForm.notes });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["attorneys", companyId] }); setContactDialogOpen(false); toast.success("Attorney saved"); },
     onError: (e: any) => toast.error(e.message),
@@ -257,8 +276,8 @@ function AttorneySection({ companyId }: { companyId: string }) {
   const openNewFirm = () => { setEditingFirm(null); setFirmForm(emptyFirmForm()); setFirmDialogOpen(true); };
   const openEditFirm = (f: any) => { setEditingFirm(f); setFirmForm({ firm_name: f.firm_name, address: f.address || "", address_2: f.address_2 || "", city: f.city || "", state: f.state || "", zip: f.zip || "", phone: f.phone || "", email: f.email || "", website: f.website || "" }); setFirmDialogOpen(true); };
 
-  const openNewContact = (firmId: string) => { setEditingContact(null); setContactFirmId(firmId); setContactForm({ attorney_name: "", title: "", bar_number: "", specialty: "", phone: "", email: "", notes: "" }); setContactSearch(""); setContactDialogOpen(true); };
-  const openEditContact = (a: any) => { setEditingContact(a); setContactFirmId(a.firm_id); setContactForm({ attorney_name: a.attorney_name, title: a.title || "", bar_number: a.bar_number || "", specialty: a.specialty || "", phone: a.phone || "", email: a.email || "", notes: a.notes || "" }); setContactSearch(""); setContactDialogOpen(true); };
+  const openNewContact = (firmId: string) => { setEditingContact(null); setContactFirmId(firmId); setContactForm({ attorney_name: "", specialty: "", phone: "", email: "", notes: "" }); setContactSearch(""); setContactDialogOpen(true); };
+  const openEditContact = (a: any) => { setEditingContact(a); setContactFirmId(a.firm_id); setContactForm({ attorney_name: a.attorney_name, specialty: a.specialty || "", phone: a.phone || "", email: a.email || "", notes: a.notes || "" }); setContactSearch(""); setContactDialogOpen(true); };
 
   const selectMasterFirm = (mf: any) => {
     setFirmForm({
@@ -326,7 +345,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
                         <SelectTrigger className="h-7 text-xs mt-1"><SelectValue placeholder="Select Attorney" /></SelectTrigger>
                         <SelectContent>
                           {firmAttorneys.length > 0 ? firmAttorneys.map((a: any) => (
-                            <SelectItem key={a.id} value={a.id}>{a.attorney_name}{a.title ? `, ${a.title}` : ""}</SelectItem>
+                            <SelectItem key={a.id} value={a.id}>{a.attorney_name}{a.specialty ? ` — ${a.specialty}` : ""}</SelectItem>
                           )) : (
                             <SelectItem value="__none" disabled>No attorneys in this firm</SelectItem>
                           )}
@@ -336,14 +355,13 @@ function AttorneySection({ companyId }: { companyId: string }) {
                     {firmAttorneys.length > 0 ? (
                       <Table>
                         <TableHeader>
-                          <TableRow><TableHead className="pl-10">Name</TableHead><TableHead className="hidden sm:table-cell">Title</TableHead><TableHead className="hidden md:table-cell">Bar #</TableHead><TableHead className="hidden lg:table-cell">Phone</TableHead><TableHead className="hidden lg:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow>
+                          <TableRow><TableHead className="pl-10">Name</TableHead><TableHead className="hidden sm:table-cell">Scope of Engagement</TableHead><TableHead className="hidden lg:table-cell">Phone</TableHead><TableHead className="hidden lg:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow>
                         </TableHeader>
                         <TableBody>
                           {firmAttorneys.map((a: any) => (
                             <TableRow key={a.id} className={selectedAttorneys[f.id] === a.id ? "bg-primary/5" : ""}>
                               <TableCell className="font-medium text-xs pl-10">{a.attorney_name}</TableCell>
-                              <TableCell className="hidden sm:table-cell text-xs">{a.title}</TableCell>
-                              <TableCell className="hidden md:table-cell text-xs">{a.bar_number}</TableCell>
+                              <TableCell className="hidden sm:table-cell text-xs">{a.specialty}</TableCell>
                               <TableCell className="hidden lg:table-cell text-xs">{a.phone}</TableCell>
                               <TableCell className="hidden lg:table-cell text-xs">{a.email}</TableCell>
                               <TableCell>
@@ -377,8 +395,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
                 {unassignedAttorneys.map((a: any) => (
                   <TableRow key={a.id}>
                     <TableCell className="font-medium text-xs pl-4">{a.attorney_name}</TableCell>
-                    <TableCell className="hidden sm:table-cell text-xs">{a.title}</TableCell>
-                    <TableCell className="hidden md:table-cell text-xs">{a.bar_number}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-xs">{a.specialty}</TableCell>
                     <TableCell className="hidden lg:table-cell text-xs">{a.phone}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
@@ -413,41 +430,38 @@ function AttorneySection({ companyId }: { companyId: string }) {
                 {contactFirmId && <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setContactFirmId(null)}><X className="h-3 w-3" /></Button>}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="relative">
-                <Label className="text-xs">Attorney Name *</Label>
-                <Input
-                  value={contactForm.attorney_name}
-                  onChange={e => {
-                    setContactForm(p => ({ ...p, attorney_name: e.target.value }));
-                    setContactSearch(e.target.value);
-                    setShowContactDropdown(true);
-                  }}
-                  onFocus={() => { if (masterContacts.length > 0 && !editingContact) setShowContactDropdown(true); }}
-                  onBlur={() => setTimeout(() => setShowContactDropdown(false), 200)}
-                  placeholder={!editingContact && masterContacts.length > 0 ? "Type or select from directory" : ""}
-                />
-                {showContactDropdown && !editingContact && filteredMasterContacts.length > 0 && (
-                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
-                    <div className="px-3 py-1 text-[10px] text-muted-foreground font-medium border-b flex items-center gap-1"><BookOpen className="h-2.5 w-2.5" /> Directory</div>
-                    {filteredMasterContacts.map((c: any) => (
-                      <button
-                        key={c.id}
-                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors"
-                        onMouseDown={(e) => { e.preventDefault(); selectMasterContact(c); }}
-                      >
-                        {c.contact_name}
-                        {c.specialty && <span className="text-muted-foreground ml-2">— {c.specialty}</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div><Label className="text-xs">Title</Label><Input value={contactForm.title} onChange={e => setContactForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Partner, Associate" /></div>
+            <div className="relative">
+              <Label className="text-xs">Attorney Name *</Label>
+              <Input
+                value={contactForm.attorney_name}
+                onChange={e => {
+                  setContactForm(p => ({ ...p, attorney_name: e.target.value }));
+                  setContactSearch(e.target.value);
+                  setShowContactDropdown(true);
+                }}
+                onFocus={() => { if (masterContacts.length > 0 && !editingContact) setShowContactDropdown(true); }}
+                onBlur={() => setTimeout(() => setShowContactDropdown(false), 200)}
+                placeholder={!editingContact && masterContacts.length > 0 ? "Type or select from directory" : ""}
+              />
+              {showContactDropdown && !editingContact && filteredMasterContacts.length > 0 && (
+                <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                  <div className="px-3 py-1 text-[10px] text-muted-foreground font-medium border-b flex items-center gap-1"><BookOpen className="h-2.5 w-2.5" /> Directory</div>
+                  {filteredMasterContacts.map((c: any) => (
+                    <button
+                      key={c.id}
+                      className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors"
+                      onMouseDown={(e) => { e.preventDefault(); selectMasterContact(c); }}
+                    >
+                      {c.contact_name}
+                      {c.specialty && <span className="text-muted-foreground ml-2">— {c.specialty}</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Bar Number</Label><Input value={contactForm.bar_number} onChange={e => setContactForm(p => ({ ...p, bar_number: e.target.value }))} /></div>
-              <div><Label className="text-xs">Specialty</Label><Input value={contactForm.specialty} onChange={e => setContactForm(p => ({ ...p, specialty: e.target.value }))} /></div>
+            <div>
+              <Label className="text-xs">Scope of Engagement</Label>
+              <ScopeCombobox value={contactForm.specialty} onChange={v => setContactForm(p => ({ ...p, specialty: v }))} options={LEGAL_SERVICES} placeholder="Select or type legal service" />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div><Label className="text-xs">Phone</Label><Input value={contactForm.phone} onChange={e => setContactForm(p => ({ ...p, phone: e.target.value }))} /></div>
@@ -749,7 +763,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
             </div>
             <div>
               <Label className="text-xs">Scope of Engagement</Label>
-              <ScopeOfEngagementCombobox value={contactForm.specialty} onChange={v => setContactForm(p => ({ ...p, specialty: v }))} />
+              <ScopeCombobox value={contactForm.specialty} onChange={v => setContactForm(p => ({ ...p, specialty: v }))} options={ACCOUNTING_SERVICES} />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div><Label className="text-xs">Phone</Label><Input value={contactForm.phone} onChange={e => setContactForm(p => ({ ...p, phone: e.target.value }))} /></div>

@@ -1,30 +1,20 @@
 
+# Add Ownership % Column to Membership Certificates Tab
 
-# Remove Title & Bar Number from Attorney Form, Add Scope of Engagement
+## What Changes
+Add an **Ownership %** column to the Membership Certificates table (StockCertificatesTab) that appears only for LLC entities. Each certificate row will show what percentage of total outstanding units that certificate represents.
 
-## Changes to `src/components/company/CounselTab.tsx` (AttorneySection)
+## How It Works
+- Calculate total issued units by summing `num_shares` across all **active** certificates
+- For each certificate row: `ownership % = (certificate units / total active units) * 100`
+- Only displayed for LLC and Single Member LLC entity types
+- Cancelled certificates show "--" since they no longer represent ownership
 
-### 1. Form state (line ~167)
-Remove `title` and `bar_number` from `contactForm` initial state. Add/keep `specialty` (which maps to "Scope of Engagement").
+## Technical Details
 
-### 2. Form dialog (lines ~446-451)
-- Remove the Title field and Bar Number field
-- Replace with a full-width "Scope of Engagement" combobox (same `ScopeOfEngagementCombobox` pattern used in the Accountant section, but with legal services list)
-- Legal services list: Corporate Law, Real Estate, Litigation, Estate Planning & Trusts, Tax Law, Employment & Labor Law, Intellectual Property, Mergers & Acquisitions, Bankruptcy & Restructuring, Securities & Capital Markets, Immigration, Environmental Law, Healthcare Law, Government Relations, Contract Drafting & Review, Regulatory Compliance, Business Formation, Commercial Transactions
+**File: `src/components/company/StockCertificatesTab.tsx`**
 
-### 3. Table headers & cells (lines ~339, 344-346, 379-381)
-- Remove "Title" and "Bar #" columns
-- Add "Scope of Engagement" column showing `a.specialty`
-
-### 4. Select dropdown display (line ~329)
-- Remove `a.title` from the attorney select display, show specialty instead
-
-### 5. Master directory sync (line ~245)
-- Remove `title` and `bar_number` from the `upsertMasterContact` call
-
-### 6. Edit/open helpers (lines ~260-261)
-- Remove `title` and `bar_number` from form reset objects
-
-### 7. Create a `LegalScopeCombobox` component
-Reuse the same pattern as `ScopeOfEngagementCombobox` but with legal-specific services. Can be a sibling component in the same file.
-
+1. Compute `totalActiveUnits` from the fetched certificates (sum of `num_shares` where status is "active")
+2. Add a new `Ownership %` TableHead column (conditionally rendered when `t.isLLC`)
+3. Add a corresponding TableCell for each row showing `(cert.num_shares / totalActiveUnits * 100).toFixed(2)%` for active certs, or "--" for cancelled ones
+4. Include the column in the PDF export headers and rows array
