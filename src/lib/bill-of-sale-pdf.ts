@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { savePdfReliably } from "./pdf-save";
 
 const MARGIN = 25.4; // 1 inch for binder compatibility
 const R_MARGIN = 25.4; // 1 inch right margin — matches left for binder compatibility
