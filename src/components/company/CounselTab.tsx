@@ -586,7 +586,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
                     {firmAccountants.length > 0 ? (
                       <Table>
                         <TableHeader>
-                          <TableRow><TableHead className="pl-10">Name</TableHead><TableHead className="hidden sm:table-cell">Title</TableHead><TableHead className="hidden md:table-cell">CPA #</TableHead><TableHead className="hidden lg:table-cell">Phone</TableHead><TableHead className="hidden lg:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow>
+                          <TableRow><TableHead className="pl-10">Name</TableHead><TableHead className="hidden sm:table-cell">Scope of Engagement</TableHead><TableHead className="hidden lg:table-cell">Phone</TableHead><TableHead className="hidden lg:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow>
                         </TableHeader>
                         <TableBody>
                           {firmAccountants.map((a: any) => (
