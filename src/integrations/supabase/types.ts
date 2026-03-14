@@ -298,46 +298,115 @@ export type Database = {
       }
       ai_systems: {
         Row: {
+          adverse_action_notice_in_place: boolean | null
           company_id: string
+          compliance_lead: string | null
           created_at: string
           data_categories: string | null
+          data_privacy_basis: string | null
+          decision_domains: string | null
+          deployer_type: string | null
           deployment_date: string | null
+          disparate_impact_analysis_done: boolean | null
+          explainable_output: boolean | null
+          foundation_model: string | null
+          human_override_capability: boolean | null
+          human_override_tested: boolean | null
           id: string
+          impact_justification: string | null
           instructions_for_use: string | null
+          internal_identifier: string | null
+          legal_contact: string | null
+          nist_impact_level: string | null
+          protected_classes_analyzed: string | null
           provider: string | null
+          proxy_features_excluded: boolean | null
           purpose: string | null
           risk_level: string
+          risk_owner: string | null
+          sector_regulatory_hooks: string | null
           status: string
           system_name: string
+          technical_monitor: string | null
+          training_dataset_info: string | null
+          triggered_state_laws: string | null
           updated_at: string
+          vendor_intended_use: string | null
+          version: string | null
         }
         Insert: {
+          adverse_action_notice_in_place?: boolean | null
           company_id: string
+          compliance_lead?: string | null
           created_at?: string
           data_categories?: string | null
+          data_privacy_basis?: string | null
+          decision_domains?: string | null
+          deployer_type?: string | null
           deployment_date?: string | null
+          disparate_impact_analysis_done?: boolean | null
+          explainable_output?: boolean | null
+          foundation_model?: string | null
+          human_override_capability?: boolean | null
+          human_override_tested?: boolean | null
           id?: string
+          impact_justification?: string | null
           instructions_for_use?: string | null
+          internal_identifier?: string | null
+          legal_contact?: string | null
+          nist_impact_level?: string | null
+          protected_classes_analyzed?: string | null
           provider?: string | null
+          proxy_features_excluded?: boolean | null
           purpose?: string | null
           risk_level?: string
+          risk_owner?: string | null
+          sector_regulatory_hooks?: string | null
           status?: string
           system_name: string
+          technical_monitor?: string | null
+          training_dataset_info?: string | null
+          triggered_state_laws?: string | null
           updated_at?: string
+          vendor_intended_use?: string | null
+          version?: string | null
         }
         Update: {
+          adverse_action_notice_in_place?: boolean | null
           company_id?: string
+          compliance_lead?: string | null
           created_at?: string
           data_categories?: string | null
+          data_privacy_basis?: string | null
+          decision_domains?: string | null
+          deployer_type?: string | null
           deployment_date?: string | null
+          disparate_impact_analysis_done?: boolean | null
+          explainable_output?: boolean | null
+          foundation_model?: string | null
+          human_override_capability?: boolean | null
+          human_override_tested?: boolean | null
           id?: string
+          impact_justification?: string | null
           instructions_for_use?: string | null
+          internal_identifier?: string | null
+          legal_contact?: string | null
+          nist_impact_level?: string | null
+          protected_classes_analyzed?: string | null
           provider?: string | null
+          proxy_features_excluded?: boolean | null
           purpose?: string | null
           risk_level?: string
+          risk_owner?: string | null
+          sector_regulatory_hooks?: string | null
           status?: string
           system_name?: string
+          technical_monitor?: string | null
+          training_dataset_info?: string | null
+          triggered_state_laws?: string | null
           updated_at?: string
+          vendor_intended_use?: string | null
+          version?: string | null
         }
         Relationships: [
           {
