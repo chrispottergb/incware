@@ -4,10 +4,12 @@ import { ChevronDown } from "lucide-react";
 import logoEntityIQ from "@/assets/logo-entityiq.png";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import UserAvatarMenu from "@/components/UserAvatarMenu";
 import {
   Building2,
   Database,
@@ -87,7 +89,16 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     { label: "Import Access DB", href: "/import-access", icon: Database },
     { label: "Reports", href: "/reports", icon: ClipboardList },
     { label: "Org Chart", href: "/org-chart", icon: GitBranch },
-    { label: "Settings", href: "/settings", icon: SettingsIcon },
+  ];
+
+  const { isAdmin } = useUserRole();
+  const [settingsOpen, setSettingsOpen] = useState(
+    location.pathname.startsWith("/settings")
+  );
+
+  const settingsSubNav = [
+    { label: "General", href: "/settings" },
+    ...(isAdmin ? [{ label: "User Management", href: "/settings/users" }] : []),
   ];
 
   const companyNav = companyId
@@ -166,6 +177,40 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               </Link>
             );
           })}
+
+          {/* Settings with expandable sub-menu */}
+          <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <CollapsibleTrigger className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
+              location.pathname.startsWith("/settings")
+                ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+            }`}>
+              <SettingsIcon className="h-4 w-4 shrink-0" />
+              <span className="flex-1 text-left">Settings</span>
+              <ChevronDown className={`h-3 w-3 transition-transform ${settingsOpen ? "" : "-rotate-90"}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="ml-6 mt-0.5 space-y-0.5 border-l border-sidebar-border pl-2">
+                {settingsSubNav.map((sub) => {
+                  const active = location.pathname === sub.href;
+                  return (
+                    <Link
+                      key={sub.href}
+                      to={sub.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={`block rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                        active
+                          ? "text-primary bg-sidebar-accent"
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                      }`}
+                    >
+                      {sub.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
             Companies
@@ -322,9 +367,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </Button>
           <div className="flex-1" />
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground hidden sm:inline">
             {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </span>
+          <UserAvatarMenu />
         </header>
         <main className="flex-1 overflow-auto p-4 lg:p-6 min-w-0">{children}</main>
       </div>

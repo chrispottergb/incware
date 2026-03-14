@@ -15,6 +15,7 @@ import Reports from "@/pages/Reports";
 import ImportAccess from "@/pages/ImportAccess";
 import OrgChart from "@/pages/OrgChart";
 import Settings from "@/pages/Settings";
+import UserManagement from "@/pages/UserManagement";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -96,6 +97,16 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <Settings />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings/users"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <UserManagement />
                   </AppLayout>
                 </ProtectedRoute>
               }

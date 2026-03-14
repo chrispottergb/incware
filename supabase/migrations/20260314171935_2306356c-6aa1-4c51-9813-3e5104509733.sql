@@ -1,0 +1,3 @@
+
+ALTER TYPE app_role ADD VALUE IF NOT EXISTS 'editor';
+ALTER TYPE app_role ADD VALUE IF NOT EXISTS 'viewer';
