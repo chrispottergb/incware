@@ -199,19 +199,8 @@ export async function previewSectionPdf(config: SectionPdfConfig) {
   }
 }
 
-export function printSectionPdf(config: SectionPdfConfig) {
+export async function printSectionPdf(config: SectionPdfConfig) {
   const doc = generateSectionPdf(config);
-  const blob = doc.output("blob");
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.target = "_blank";
-  a.rel = "noopener";
-  a.download = `${config.title.replace(/\s+/g, "_")}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  const filename = `${config.title.replace(/\s+/g, "_")}.pdf`;
+  await savePdfReliably(doc, filename);
 }
