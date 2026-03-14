@@ -843,14 +843,15 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!canGenerate()) {
       toast.error("Please fill in all required fields (Company Name, Meeting Date, Chairperson, Secretary).");
       return;
     }
     const doc = generateAnnualMeetingPDF(data);
     const dateStr = data.meetingDate ? format(new Date(data.meetingDate + "T12:00:00"), "yyyy-MM-dd") : "draft";
-    doc.save(`${data.companyName}_Annual_Meeting_Minutes_${dateStr}.pdf`);
+    const { savePdfReliably } = await import("@/lib/pdf-save");
+    await savePdfReliably(doc, `${data.companyName}_Annual_Meeting_Minutes_${dateStr}.pdf`);
     toast.success("PDF downloaded successfully!");
   };
 

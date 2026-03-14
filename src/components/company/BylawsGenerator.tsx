@@ -118,10 +118,11 @@ export default function BylawsGenerator({ companyId, companyName, company }: Pro
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (pdfDoc) {
       const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_");
-      pdfDoc.save(`${safeName}_Bylaws.pdf`);
+      const { savePdfReliably } = await import("@/lib/pdf-save");
+      await savePdfReliably(pdfDoc, `${safeName}_Bylaws.pdf`);
     }
   };
 

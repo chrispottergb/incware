@@ -266,10 +266,11 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
     setPendingDownloadType(null);
   };
 
-  const executePdfDownload = () => {
+  const executePdfDownload = async () => {
     if (pdfDoc) {
       const safeName = formCompanyName.replace(/[^a-zA-Z0-9]/g, "_") || "SMLLC";
-      pdfDoc.save(`${safeName}_SM_Operating_Agreement.pdf`);
+      const { savePdfReliably } = await import("@/lib/pdf-save");
+      await savePdfReliably(pdfDoc, `${safeName}_SM_Operating_Agreement.pdf`);
     }
   };
 

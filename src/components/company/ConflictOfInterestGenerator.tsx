@@ -60,10 +60,11 @@ export default function ConflictOfInterestGenerator({ companyId, companyName, co
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (pdfDoc) {
       const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_");
-      pdfDoc.save(`${safeName}_Conflict_of_Interest_Policy.pdf`);
+      const { savePdfReliably } = await import("@/lib/pdf-save");
+      await savePdfReliably(pdfDoc, `${safeName}_Conflict_of_Interest_Policy.pdf`);
     }
   };
 
