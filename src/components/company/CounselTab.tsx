@@ -118,11 +118,32 @@ const ACCOUNTING_SERVICES = [
   "CFO Services",
 ];
 
-function ScopeOfEngagementCombobox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+const LEGAL_SERVICES = [
+  "Corporate Law",
+  "Real Estate",
+  "Litigation",
+  "Estate Planning & Trusts",
+  "Tax Law",
+  "Employment & Labor Law",
+  "Intellectual Property",
+  "Mergers & Acquisitions",
+  "Bankruptcy & Restructuring",
+  "Securities & Capital Markets",
+  "Immigration",
+  "Environmental Law",
+  "Healthcare Law",
+  "Government Relations",
+  "Contract Drafting & Review",
+  "Regulatory Compliance",
+  "Business Formation",
+  "Commercial Transactions",
+];
+
+function ScopeCombobox({ value, onChange, options, placeholder }: { value: string; onChange: (v: string) => void; options: string[]; placeholder?: string }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const filtered = ACCOUNTING_SERVICES.filter(s =>
+  const filtered = options.filter(s =>
     s.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -133,7 +154,7 @@ function ScopeOfEngagementCombobox({ value, onChange }: { value: string; onChang
         onChange={e => { onChange(e.target.value); setSearch(e.target.value); }}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 200)}
-        placeholder="Select or type engagement scope"
+        placeholder={placeholder || "Select or type engagement scope"}
       />
       {open && filtered.length > 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
