@@ -89,7 +89,16 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     { label: "Import Access DB", href: "/import-access", icon: Database },
     { label: "Reports", href: "/reports", icon: ClipboardList },
     { label: "Org Chart", href: "/org-chart", icon: GitBranch },
-    { label: "Settings", href: "/settings", icon: SettingsIcon },
+  ];
+
+  const { isAdmin } = useUserRole();
+  const [settingsOpen, setSettingsOpen] = useState(
+    location.pathname.startsWith("/settings")
+  );
+
+  const settingsSubNav = [
+    { label: "General", href: "/settings" },
+    ...(isAdmin ? [{ label: "User Management", href: "/settings/users" }] : []),
   ];
 
   const companyNav = companyId
