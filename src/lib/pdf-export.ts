@@ -203,7 +203,7 @@ export function exportStockLedgerPDF(certificates: CertificateRow[], companyFilt
   doc.text(`Total Shares: ${totalShares.toLocaleString()}`, MARGIN, finalY + 10);
 
   addFooter(doc);
-  doc.save("stock-ledger.pdf");
+  await savePdfReliably(doc, "stock-ledger.pdf");
 }
 
 interface ShareholderRow {
