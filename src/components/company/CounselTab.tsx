@@ -763,7 +763,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
             </div>
             <div>
               <Label className="text-xs">Scope of Engagement</Label>
-              <ScopeOfEngagementCombobox value={contactForm.specialty} onChange={v => setContactForm(p => ({ ...p, specialty: v }))} />
+              <ScopeCombobox value={contactForm.specialty} onChange={v => setContactForm(p => ({ ...p, specialty: v }))} options={ACCOUNTING_SERVICES} />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div><Label className="text-xs">Phone</Label><Input value={contactForm.phone} onChange={e => setContactForm(p => ({ ...p, phone: e.target.value }))} /></div>
