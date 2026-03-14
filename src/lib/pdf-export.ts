@@ -65,7 +65,7 @@ interface ComplianceItem {
   checks: { label: string; pass: boolean }[];
 }
 
-export function exportCompliancePDF(data: ComplianceItem[], overallScore: number) {
+export async function exportCompliancePDF(data: ComplianceItem[], overallScore: number) {
   const doc = new jsPDF();
 
   addHeader(doc, "Compliance Overview Report", `Overall Compliance Score: ${overallScore}%`);
