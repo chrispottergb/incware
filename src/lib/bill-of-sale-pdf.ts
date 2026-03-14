@@ -137,8 +137,8 @@ export function generateBillOfSalePdf(data: BillOfSaleData): jsPDF {
   return doc;
 }
 
-export function downloadBillOfSalePdf(data: BillOfSaleData) {
+export async function downloadBillOfSalePdf(data: BillOfSaleData) {
   const doc = generateBillOfSalePdf(data);
   const filename = `bill-of-sale-${data.saleDate}.pdf`;
-  doc.save(filename);
+  await savePdfReliably(doc, filename);
 }

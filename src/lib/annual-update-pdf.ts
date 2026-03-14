@@ -319,9 +319,9 @@ export function generateAnnualUpdatePdf(data: AnnualUpdateData): jsPDF {
   return doc;
 }
 
-export function downloadAnnualUpdatePdf(data: AnnualUpdateData) {
+export async function downloadAnnualUpdatePdf(data: AnnualUpdateData) {
   const doc = generateAnnualUpdatePdf(data);
   const filename = `annual-update-${data.company.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.pdf`;
-  doc.save(filename);
+  await savePdfReliably(doc, filename);
   return doc;
 }

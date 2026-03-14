@@ -189,9 +189,9 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   return doc;
 }
 
-export function downloadLeaseAgreement(data: LeaseData) {
+export async function downloadLeaseAgreement(data: LeaseData) {
   const doc = generateLeaseAgreementPdf(data);
-  doc.save("lease-agreement.pdf");
+  await savePdfReliably(doc, "lease-agreement.pdf");
 }
 
 export function previewLeaseAgreement(data: LeaseData) {
