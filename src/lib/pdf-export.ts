@@ -141,7 +141,7 @@ interface CertificateRow {
   status: string | null;
 }
 
-export function exportStockLedgerPDF(certificates: CertificateRow[], companyFilter?: string) {
+export async function exportStockLedgerPDF(certificates: CertificateRow[], companyFilter?: string) {
   const doc = new jsPDF({ orientation: "landscape" });
 
   const subtitle = companyFilter && companyFilter !== "all"
