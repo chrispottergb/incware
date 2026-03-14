@@ -115,20 +115,20 @@
 
   /* Custom scrollbar styling for dark theme */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
   }
 
   ::-webkit-scrollbar-track {
     background: hsl(var(--background));
-    border-radius: 999px;
-    box-shadow: inset 0 0 0 1px hsl(var(--border));
+    border: 1px solid hsl(0 0% 25%);
+    border-radius: 6px;
   }
 
   ::-webkit-scrollbar-thumb {
     background: hsl(var(--primary) / 0.4);
-    border: 1px solid hsl(var(--border));
-    border-radius: 999px;
+    border: 1px solid hsl(0 0% 25%);
+    border-radius: 6px;
     transition: background 0.2s ease;
   }
 
