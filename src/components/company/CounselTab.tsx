@@ -691,11 +691,10 @@ function AccountantSection({ companyId }: { companyId: string }) {
                   </div>
                 )}
               </div>
-              <div><Label className="text-xs">Title</Label><Input value={contactForm.title} onChange={e => setContactForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Partner, Staff CPA" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">CPA Number</Label><Input value={contactForm.cpa_number} onChange={e => setContactForm(p => ({ ...p, cpa_number: e.target.value }))} /></div>
-              <div><Label className="text-xs">Specialty</Label><Input value={contactForm.specialty} onChange={e => setContactForm(p => ({ ...p, specialty: e.target.value }))} /></div>
+            <div>
+              <Label className="text-xs">Scope of Engagement</Label>
+              <ScopeOfEngagementCombobox value={contactForm.specialty} onChange={v => setContactForm(p => ({ ...p, specialty: v }))} />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div><Label className="text-xs">Phone</Label><Input value={contactForm.phone} onChange={e => setContactForm(p => ({ ...p, phone: e.target.value }))} /></div>
