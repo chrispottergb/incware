@@ -190,12 +190,13 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
       const blob = doc.output("blob");
 
       if (isEmbeddedPreview) {
-        const opened = openPdfUtilityTab(blob, fileName, "print");
+        const opened = openPdfInNewTab(blob);
         if (!opened) {
-          toast.error("Popup blocked. Allow popups to print this PDF.");
+          downloadBlob(blob, fileName);
+          toast.info("Popup blocked. PDF downloaded instead.");
           return;
         }
-        toast.info("PDF helper opened in a new tab for printing.");
+        toast.info("PDF opened — use Ctrl+P / ⌘+P to print from your PDF viewer.");
         return;
       }
 
