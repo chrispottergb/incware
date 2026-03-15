@@ -85,6 +85,87 @@ function openPdfViewerTab(dataUri: string, filename: string): boolean {
       .fallback-link:hover {
         color: #374151;
       }
+
+      .help-button {
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        color: #374151;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 8px 18px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .help-button:hover {
+        background: #f3f4f6;
+      }
+
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+
+      .modal-box {
+        background: #fff;
+        border-radius: 12px;
+        padding: 28px 32px;
+        max-width: 460px;
+        width: 90%;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      }
+
+      .modal-box h2 {
+        margin: 0 0 18px;
+        font-size: 18px;
+        color: #111827;
+      }
+
+      .browser-tip {
+        margin-bottom: 14px;
+        padding: 10px 14px;
+        background: #f9fafb;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+      }
+
+      .browser-tip strong {
+        display: block;
+        margin-bottom: 4px;
+        color: #1f2937;
+        font-size: 14px;
+      }
+
+      .browser-tip p {
+        margin: 0;
+        font-size: 13px;
+        color: #4b5563;
+        line-height: 1.5;
+      }
+
+      .close-button {
+        display: block;
+        margin: 18px auto 0;
+        padding: 10px 28px;
+        border: none;
+        border-radius: 8px;
+        background: #1d4ed8;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .close-button:hover {
+        background: #1e40af;
+      }
     </style>
   </head>
   <body>
