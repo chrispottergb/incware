@@ -712,14 +712,14 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   <Label className="field-label">Address 2</Label>
                   <Input className="h-7 text-sm" value={filingForm.address_2} onChange={(e) => setFilingForm((p) => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor" />
                 </div>
-                <div className="field-group col-span-6 sm:col-span-2">
+                <div className="field-group col-span-6 sm:col-span-3">
                   <Label className="field-label">City</Label>
                   <Input className="h-7 text-sm" value={filingForm.city} onChange={(e) => setFilingForm((p) => ({ ...p, city: e.target.value }))} />
                 </div>
-                <div className="field-group col-span-3 sm:col-span-2">
+                <div className="field-group col-span-3 sm:col-span-1 min-w-[60px]">
                   <Label className="field-label">State</Label>
                   <Select value={filingForm.state} onValueChange={(v) => setFilingForm((p) => ({ ...p, state: v }))}>
-                    <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
+                    <SelectTrigger className="h-7 text-sm min-w-[60px]"><SelectValue placeholder="ST" /></SelectTrigger>
                     <SelectContent>
                       {US_STATES.map((s) => (
                         <SelectItem key={s} value={s}>{s}</SelectItem>
