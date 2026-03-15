@@ -1388,8 +1388,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 9: Leases */}
-          {step === 9 && (
+          {/* STEP: Leases */}
+          {currentStepLabel === "Leases" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Leases</h3>
               <TemplateNote text="Include all property, equipment, and vehicle leases. Mark lease-back arrangements where the lessor is a member or related party." />
