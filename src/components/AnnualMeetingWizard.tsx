@@ -1050,8 +1050,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 2: Professional Advisors */}
-          {step === 2 && (
+          {/* STEP: Professional Advisors */}
+          {currentStepLabel === "Professional Advisors" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Professional Advisors on Record</h3>
               <TemplateNote text="Confirm or update the company's professional support team annually. Include attorneys, accountants, insurance agents, and financial advisors." />
