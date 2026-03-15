@@ -130,7 +130,7 @@ export default function Dashboard() {
     <div className="space-y-6 animate-fade-in min-w-0">
 
       {/* Welcome Action Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 min-w-0">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-3 min-w-0">
         {[
           {
             title: "New Client",
