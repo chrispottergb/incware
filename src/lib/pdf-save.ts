@@ -188,7 +188,7 @@ export async function savePdfReliably(doc: jsPDF, filename: string): Promise<voi
   }
 
   // In embedded preview environments, direct downloads are often blocked by extensions/policies.
-  // Open a top-level utility tab with a Save button and fallback link.
+  // Open a top-level utility tab with a prominent Download PDF button and a small fallback link.
   if (isEmbeddedPreview) {
     const opened = openPdfViewerTab(dataUri, filename);
     if (!opened) {
