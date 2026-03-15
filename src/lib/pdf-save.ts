@@ -183,11 +183,19 @@ function openPdfViewerTab(dataUri: string, filename: string): boolean {
           </div>
           <div class="browser-tip">
             <strong>Edge</strong>
-            <p>PDFs should download automatically. If not, go to <em>Settings → Cookies and Site Permissions → PDF Documents</em> → Turn off <strong>"Always open PDF files externally"</strong></p>
+            <p>Go to <em>Settings → Cookies and Site Permissions → PDF Documents</em> → Turn off <strong>"Always open PDF files externally"</strong></p>
+          </div>
+          <div class="browser-tip">
+            <strong>Safari (Mac)</strong>
+            <p>PDFs will open in the browser. To save, click the <strong>download icon</strong> in the top right of the PDF viewer, or right-click the download link and select <strong>"Save Link As"</strong></p>
+          </div>
+          <div class="browser-tip">
+            <strong>Safari (iPhone/iPad)</strong>
+            <p>Tap the download link → Tap the <strong>Share icon</strong> → Select <strong>"Save to Files"</strong> to save the PDF to your device</p>
           </div>
           <div class="browser-tip">
             <strong>Firefox</strong>
-            <p>PDFs will download automatically by default.</p>
+            <p>PDFs download automatically by default. Check your Downloads folder.</p>
           </div>
           <button id="closeHelp" class="close-button" type="button">Close</button>
         </div>
