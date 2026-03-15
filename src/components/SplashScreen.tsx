@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import logo from "@/assets/logo-entity-iq-brand.png";
+import logo from "@/assets/logo-entityiq-new.png";
 
 const DURATION = 10500;
 const EXIT_DURATION = 800;
