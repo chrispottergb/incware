@@ -1459,8 +1459,13 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 12: Special Resolutions */}
-          {step === 12 && (
+          {/* STEP: Non-Profit Governance (conditional) */}
+          {currentStepLabel === NP_STEP_LABEL && (
+            <NonProfitGovernanceStep data={npGovernance} onChange={setNpGovernance} />
+          )}
+
+          {/* STEP: Special Resolutions */}
+          {currentStepLabel === "Special Resolutions" && (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <Switch checked={data.includeSpecialResolutions} onCheckedChange={v => update("includeSpecialResolutions", v)} />
