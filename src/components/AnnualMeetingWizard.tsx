@@ -16,10 +16,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import * as pdfjsLib from "pdfjs-dist";
+import NonProfitGovernanceStep, { type NonProfitGovernanceData } from "@/components/meeting/NonProfitGovernanceStep";
+import Form1023EZCheck from "@/components/meeting/Form1023EZCheck";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
-const STEPS = [
+const BASE_STEPS = [
   "Meeting Information",
   "Call to Order",
   "Professional Advisors",
@@ -36,6 +38,25 @@ const STEPS = [
   "Registered Agent",
   "General Authorization",
   "Signatures",
+];
+
+const NP_STEP_LABEL = "Non-Profit Governance";
+const NP_STEP_INDEX = 12; // Inserted before Special Resolutions
+
+function getSteps(isNonProfit: boolean) {
+  if (!isNonProfit) return BASE_STEPS;
+  const steps = [...BASE_STEPS];
+  steps.splice(NP_STEP_INDEX, 0, NP_STEP_LABEL);
+  return steps;
+}
+
+const NP_OFFICER_POSITIONS = [
+  "President",
+  "Vice President",
+  "Secretary",
+  "Treasurer",
+  "Executive Director (Ex-Officio)",
+  "Committee Chair",
 ];
 
 interface Props {
@@ -137,6 +158,9 @@ const STORAGE_KEY_PREFIX = "annual_meeting_draft_";
 export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated }: Props) {
   const queryClient = useQueryClient();
   const storageKey = `${STORAGE_KEY_PREFIX}${company?.id || "unknown"}`;
+  const isNonProfit = company?.entity_type === "Non-Profit";
+  const STEPS = getSteps(isNonProfit);
+
   const [step, setStep] = useState(() => {
     try {
       const saved = localStorage.getItem(storageKey);
@@ -144,9 +168,27 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     } catch {}
     return 0;
   });
+
+  const currentStepLabel = STEPS[step] || "";
+
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewCanvas, setPreviewCanvas] = useState<HTMLCanvasElement | null>(null);
   const [previewPages, setPreviewPages] = useState(0);
+  const [npGovernance, setNpGovernance] = useState<NonProfitGovernanceData>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.npGovernance) return parsed.npGovernance;
+      }
+    } catch {}
+    return {
+      missionStatementReview: "",
+      conflictOfInterestConfirmed: false,
+      publicInspectionConfirmed: false,
+      programServiceAccomplishments: "",
+    };
+  });
   const [previewPage, setPreviewPage] = useState(1);
   const [pdfDocRef, setPdfDocRef] = useState<any>(null);
   const [hasDraft, setHasDraft] = useState(false);
@@ -574,10 +616,10 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   useEffect(() => {
     if (initialized) {
       try {
-        localStorage.setItem(storageKey, JSON.stringify({ data, step }));
+        localStorage.setItem(storageKey, JSON.stringify({ data, step, npGovernance }));
       } catch {}
     }
-  }, [data, step, initialized, storageKey]);
+  }, [data, step, initialized, storageKey, npGovernance]);
 
   const clearDraft = () => {
     try { localStorage.removeItem(storageKey); } catch {}
@@ -943,8 +985,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       <Card>
         <CardContent className="pt-4 space-y-4">
 
-          {/* STEP 0: Meeting Information */}
-          {step === 0 && (
+          {/* STEP: Meeting Information */}
+          {currentStepLabel === "Meeting Information" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Meeting Information</h3>
               <div className="grid grid-cols-12 gap-2">
@@ -987,8 +1029,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 1: Call to Order */}
-          {step === 1 && (
+          {/* STEP: Call to Order */}
+          {currentStepLabel === "Call to Order" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Call to Order & Approval of Prior Meeting Minutes</h3>
               <div className="grid grid-cols-12 gap-2">
@@ -1008,8 +1050,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 2: Professional Advisors */}
-          {step === 2 && (
+          {/* STEP: Professional Advisors */}
+          {currentStepLabel === "Professional Advisors" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Professional Advisors on Record</h3>
               <TemplateNote text="Confirm or update the company's professional support team annually. Include attorneys, accountants, insurance agents, and financial advisors." />
@@ -1022,32 +1064,63 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 3: Members & Officers */}
-          {step === 3 && (
+          {/* STEP: Members & Officers */}
+          {currentStepLabel === "Members & Officers" && (
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold">Members, Managers & Officers</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold">
+                  {isNonProfit ? "Board of Trustees/Directors & Officers" : "Members, Managers & Officers"}
+                </h3>
+                {isNonProfit && <Form1023EZCheck />}
+              </div>
               <div>
-                <h4 className="text-xs font-semibold mb-2">Current Members & Ownership</h4>
-                {renderTable("members", [
+                <h4 className="text-xs font-semibold mb-2">
+                  {isNonProfit ? "Current Board of Trustees/Directors" : "Current Members & Ownership"}
+                </h4>
+                {isNonProfit ? (
+                  renderTable("members", [
+                    { key: "name", label: "Name" },
+                    { key: "units", label: "Term End Date", flex: "minmax(130px, 1fr)" },
+                    { key: "interestPct", label: "Officer Position", flex: "minmax(180px, 1.5fr)" },
+                  ], { name: "", units: "", interestPct: "", address: "" }, [{ key: "address", label: "Address" }])
+                ) : (
+                  renderTable("members", [
                     { key: "name", label: "Name" },
                     { key: "units", label: "Membership Units" },
                     { key: "interestPct", label: "Interest %" },
-                  ], { name: "", units: "", interestPct: "", address: "" }, [{ key: "address", label: "Address" }])}
+                  ], { name: "", units: "", interestPct: "", address: "" }, [{ key: "address", label: "Address" }])
+                )}
               </div>
               <div>
-                <h4 className="text-xs font-semibold mb-2">Re-Appointment or Election of Managers / Officers</h4>
-                {renderTable("officers", [
+                <h4 className="text-xs font-semibold mb-2">
+                  {isNonProfit ? "Re-Election of Board & Officers" : "Re-Appointment or Election of Managers / Officers"}
+                </h4>
+                {isNonProfit ? (
+                  renderTable("officers", [
+                    { key: "name", label: "Name", flex: "minmax(200px, 2fr)" },
+                    { key: "title", label: "Officer Position", flex: "minmax(200px, 1.5fr)" },
+                    { key: "salary", label: "Term End Date", flex: "minmax(120px, 1fr)" },
+                    { key: "bonus", label: "Notes", flex: "minmax(120px, 1fr)" },
+                  ], { name: "", title: "", salary: "", bonus: "" })
+                ) : (
+                  renderTable("officers", [
                     { key: "name", label: "Name", flex: "minmax(240px, 2.5fr)" },
                     { key: "title", label: "Title", flex: "minmax(160px, 1.5fr)" },
                     { key: "salary", label: "Salary", flex: "minmax(80px, 0.8fr)" },
                     { key: "bonus", label: "Bonus", flex: "minmax(80px, 0.8fr)" },
-                  ], { name: "", title: "", salary: "", bonus: "" })}
+                  ], { name: "", title: "", salary: "", bonus: "" })
+                )}
+                {isNonProfit && (
+                  <p className="text-[11px] text-muted-foreground mt-2 italic">
+                    Non-profit officer positions: President, Vice President, Secretary, Treasurer, Executive Director (Ex-Officio), Committee Chair
+                  </p>
+                )}
               </div>
             </div>
           )}
 
-          {/* STEP 4: Authorized Binders */}
-          {step === 4 && (
+          {/* STEP: Authorized Binders */}
+          {currentStepLabel === "Authorized Binders" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Authorized Binders — Confirmation or Update</h3>
               <p className="text-xs text-muted-foreground">Wis. Stat. § 183.0407</p>
@@ -1061,8 +1134,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 5: Financial Information */}
-          {step === 5 && (
+          {/* STEP: Financial Information */}
+          {currentStepLabel === "Financial Information" && (
             <div className="space-y-4">
               <h3 className="text-sm font-semibold">Financial Information</h3>
 
@@ -1224,8 +1297,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 6: Banking */}
-          {step === 6 && (
+          {/* STEP: Banking */}
+          {currentStepLabel === "Banking" && (
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <Switch checked={data.includeBanking} onCheckedChange={v => update("includeBanking", v)} />
@@ -1251,8 +1324,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 7: Tax & Accounting */}
-          {step === 7 && (
+          {/* STEP: Tax & Accounting */}
+          {currentStepLabel === "Tax & Accounting" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Tax & Accounting</h3>
 
@@ -1284,8 +1357,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 8: Loans */}
-          {step === 8 && (
+          {/* STEP: Loans */}
+          {currentStepLabel === "Loans" && (
             <div className="space-y-4">
               <h3 className="text-sm font-semibold">Loans</h3>
               <div>
@@ -1315,8 +1388,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 9: Leases */}
-          {step === 9 && (
+          {/* STEP: Leases */}
+          {currentStepLabel === "Leases" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Leases</h3>
               <TemplateNote text="Include all property, equipment, and vehicle leases. Mark lease-back arrangements where the lessor is a member or related party." />
@@ -1331,8 +1404,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 10: Vehicles & Equipment */}
-          {step === 10 && (
+          {/* STEP: Vehicles & Equipment */}
+          {currentStepLabel === "Vehicles & Equipment" && (
             <div className="space-y-4">
               <h3 className="text-sm font-semibold">Vehicles & Equipment</h3>
 
@@ -1362,8 +1435,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 11: Employee Benefits */}
-          {step === 11 && (
+          {/* STEP: Employee Benefits */}
+          {currentStepLabel === "Employee Benefits" && (
             <div className="space-y-4">
               <h3 className="text-sm font-semibold">Employee Benefit Plans</h3>
               {renderTable("benefitPlans", [
@@ -1386,8 +1459,13 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 12: Special Resolutions */}
-          {step === 12 && (
+          {/* STEP: Non-Profit Governance (conditional) */}
+          {currentStepLabel === NP_STEP_LABEL && (
+            <NonProfitGovernanceStep data={npGovernance} onChange={setNpGovernance} />
+          )}
+
+          {/* STEP: Special Resolutions */}
+          {currentStepLabel === "Special Resolutions" && (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <Switch checked={data.includeSpecialResolutions} onCheckedChange={v => update("includeSpecialResolutions", v)} />
@@ -1428,8 +1506,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 13: Registered Agent */}
-          {step === 13 && (
+          {/* STEP: Registered Agent */}
+          {currentStepLabel === "Registered Agent" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Registered Agent Confirmation</h3>
               <p className="text-xs text-muted-foreground">Wis. Stat. § 183.0113</p>
@@ -1449,8 +1527,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 14: General Authorization */}
-          {step === 14 && (
+          {/* STEP: General Authorization */}
+          {currentStepLabel === "General Authorization" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">General Authorization</h3>
               <div className="p-3 rounded-md bg-muted/50 text-sm text-muted-foreground italic">
@@ -1460,8 +1538,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 15: Signatures */}
-          {step === 15 && (
+          {/* STEP: Signatures */}
+          {currentStepLabel === "Signatures" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Signature Lines</h3>
               <p className="text-xs text-muted-foreground">Chairperson ({data.chairperson || "—"}) and Secretary ({data.secretary || "—"}) signature lines are included automatically.</p>
