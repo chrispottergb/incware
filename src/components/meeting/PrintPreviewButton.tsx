@@ -123,36 +123,29 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
 </html>`);
       popup.document.close();
 
-      const frame = popup.document.getElementById("pdfFrame") as HTMLIFrameElement | null;
-      const openViewerLink = popup.document.getElementById("openViewerLink") as HTMLAnchorElement | null;
       const downloadLink = popup.document.getElementById("downloadLink") as HTMLAnchorElement | null;
-      const printButton = popup.document.getElementById("printButton") as HTMLButtonElement | null;
-
-      if (frame) frame.src = url;
-
-      if (openViewerLink) {
-        openViewerLink.href = url;
-        openViewerLink.target = "_self";
-      }
+      const fallbackLink = popup.document.getElementById("fallbackLink") as HTMLButtonElement | null;
 
       if (downloadLink) {
         downloadLink.href = url;
         downloadLink.download = suggestedName;
       }
 
-      if (printButton) {
-        printButton.onclick = () => {
-          try {
-            frame?.contentWindow?.focus();
-            frame?.contentWindow?.print();
-          } catch {
-            popup.print();
-          }
+      if (fallbackLink) {
+        fallbackLink.onclick = () => {
+          const a = popup.document.createElement("a");
+          a.href = url;
+          a.download = suggestedName;
+          a.style.display = "none";
+          popup.document.body.appendChild(a);
+          a.click();
+          popup.document.body.removeChild(a);
         };
+      }
 
-        if (mode === "print") {
-          setTimeout(() => printButton.click(), 350);
-        }
+      // Auto-trigger download for the main button after a brief delay
+      if (downloadLink && mode === "download") {
+        setTimeout(() => downloadLink.click(), 300);
       }
 
       registerCleanup();
