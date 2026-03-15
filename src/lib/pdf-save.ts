@@ -199,21 +199,7 @@ export async function savePdfReliably(doc: jsPDF, filename: string): Promise<voi
     return;
   }
 
-  // Fallback: data-URI download (no blob URL).
-  try {
-    const a = document.createElement("a");
-    a.href = dataUri;
-    a.download = filename;
-    a.style.display = "none";
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => document.body.removeChild(a), 500);
-    toast.success("PDF download started.");
-    return;
-  } catch (err) {
-    console.warn("Data-URI download failed, opening viewer tab:", err);
-  }
-
+  // Use a dedicated helper tab as the universal fallback for consistent UX.
   const opened = openPdfViewerTab(dataUri, filename);
   if (opened) {
     toast.info("PDF opened in a new tab. Click Download PDF in that tab.");
