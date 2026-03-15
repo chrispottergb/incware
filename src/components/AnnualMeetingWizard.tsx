@@ -1324,8 +1324,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 7: Tax & Accounting */}
-          {step === 7 && (
+          {/* STEP: Tax & Accounting */}
+          {currentStepLabel === "Tax & Accounting" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Tax & Accounting</h3>
 
