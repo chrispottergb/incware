@@ -113,58 +113,59 @@
     font-weight: 600;
   }
 
-  /* Global scrollbar */
+  /* Global scrollbar - deep red thumb with gray border */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
 
   ::-webkit-scrollbar-track {
-    background: hsl(var(--background));
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--primary) / 0.4);
-    border-radius: 6px;
-    transition: background 0.2s ease;
+    background-color: hsl(var(--primary));
+    border-radius: 4px;
+    border: 1.5px solid hsl(var(--muted-foreground));
+    background-clip: padding-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--primary) / 0.6);
+    background-color: hsl(4 63% 40%);
+    border-color: hsl(var(--foreground));
   }
 
-  /* Sidebar company list scrollbar (explicit visible border) */
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary)) transparent;
+  }
+
+  /* Sidebar company list scrollbar override */
   .company-list-scrollbar::-webkit-scrollbar {
     width: 10px;
-    background: hsl(var(--sidebar-border));
-    border-radius: 6px;
+    height: 10px;
   }
 
   .company-list-scrollbar::-webkit-scrollbar-track {
-    background: hsl(var(--sidebar-background));
-    border: 1px solid hsl(var(--sidebar-border));
-    border-radius: 6px;
+    background: transparent;
   }
 
   .company-list-scrollbar::-webkit-scrollbar-thumb {
-    background: hsl(var(--primary) / 0.5);
-    border: 1px solid hsl(var(--sidebar-border));
-    border-radius: 6px;
+    background-color: hsl(var(--primary));
+    border-radius: 4px;
+    border: 1.5px solid hsl(var(--muted-foreground));
+    background-clip: padding-box;
   }
 
   .company-list-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--primary) / 0.65);
-  }
-
-  /* Firefox scrollbar */
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--background));
+    background-color: hsl(4 63% 40%);
+    border-color: hsl(var(--foreground));
   }
 
   .company-list-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--primary) / 0.5) hsl(var(--sidebar-background));
+    scrollbar-color: hsl(var(--primary)) transparent;
   }
 }
 
