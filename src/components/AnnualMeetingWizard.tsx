@@ -1134,8 +1134,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 5: Financial Information */}
-          {step === 5 && (
+          {/* STEP: Financial Information */}
+          {currentStepLabel === "Financial Information" && (
             <div className="space-y-4">
               <h3 className="text-sm font-semibold">Financial Information</h3>
 
