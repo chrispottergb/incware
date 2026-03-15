@@ -1064,26 +1064,57 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 3: Members & Officers */}
-          {step === 3 && (
+          {/* STEP: Members & Officers */}
+          {currentStepLabel === "Members & Officers" && (
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold">Members, Managers & Officers</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold">
+                  {isNonProfit ? "Board of Trustees/Directors & Officers" : "Members, Managers & Officers"}
+                </h3>
+                {isNonProfit && <Form1023EZCheck />}
+              </div>
               <div>
-                <h4 className="text-xs font-semibold mb-2">Current Members & Ownership</h4>
-                {renderTable("members", [
+                <h4 className="text-xs font-semibold mb-2">
+                  {isNonProfit ? "Current Board of Trustees/Directors" : "Current Members & Ownership"}
+                </h4>
+                {isNonProfit ? (
+                  renderTable("members", [
+                    { key: "name", label: "Name" },
+                    { key: "units", label: "Term End Date", flex: "minmax(130px, 1fr)" },
+                    { key: "interestPct", label: "Officer Position", flex: "minmax(180px, 1.5fr)" },
+                  ], { name: "", units: "", interestPct: "", address: "" }, [{ key: "address", label: "Address" }])
+                ) : (
+                  renderTable("members", [
                     { key: "name", label: "Name" },
                     { key: "units", label: "Membership Units" },
                     { key: "interestPct", label: "Interest %" },
-                  ], { name: "", units: "", interestPct: "", address: "" }, [{ key: "address", label: "Address" }])}
+                  ], { name: "", units: "", interestPct: "", address: "" }, [{ key: "address", label: "Address" }])
+                )}
               </div>
               <div>
-                <h4 className="text-xs font-semibold mb-2">Re-Appointment or Election of Managers / Officers</h4>
-                {renderTable("officers", [
+                <h4 className="text-xs font-semibold mb-2">
+                  {isNonProfit ? "Re-Election of Board & Officers" : "Re-Appointment or Election of Managers / Officers"}
+                </h4>
+                {isNonProfit ? (
+                  renderTable("officers", [
+                    { key: "name", label: "Name", flex: "minmax(200px, 2fr)" },
+                    { key: "title", label: "Officer Position", flex: "minmax(200px, 1.5fr)" },
+                    { key: "salary", label: "Term End Date", flex: "minmax(120px, 1fr)" },
+                    { key: "bonus", label: "Notes", flex: "minmax(120px, 1fr)" },
+                  ], { name: "", title: "", salary: "", bonus: "" })
+                ) : (
+                  renderTable("officers", [
                     { key: "name", label: "Name", flex: "minmax(240px, 2.5fr)" },
                     { key: "title", label: "Title", flex: "minmax(160px, 1.5fr)" },
                     { key: "salary", label: "Salary", flex: "minmax(80px, 0.8fr)" },
                     { key: "bonus", label: "Bonus", flex: "minmax(80px, 0.8fr)" },
-                  ], { name: "", title: "", salary: "", bonus: "" })}
+                  ], { name: "", title: "", salary: "", bonus: "" })
+                )}
+                {isNonProfit && (
+                  <p className="text-[11px] text-muted-foreground mt-2 italic">
+                    Non-profit officer positions: President, Vice President, Secretary, Treasurer, Executive Director (Ex-Officio), Committee Chair
+                  </p>
+                )}
               </div>
             </div>
           )}
