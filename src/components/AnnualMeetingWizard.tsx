@@ -616,10 +616,10 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   useEffect(() => {
     if (initialized) {
       try {
-        localStorage.setItem(storageKey, JSON.stringify({ data, step }));
+        localStorage.setItem(storageKey, JSON.stringify({ data, step, npGovernance }));
       } catch {}
     }
-  }, [data, step, initialized, storageKey]);
+  }, [data, step, initialized, storageKey, npGovernance]);
 
   const clearDraft = () => {
     try { localStorage.removeItem(storageKey); } catch {}
