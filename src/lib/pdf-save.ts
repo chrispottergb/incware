@@ -251,6 +251,20 @@ function openPdfViewerTab(dataUri: string, filename: string): boolean {
           downloadPdf();
         });
       }
+
+      const helpBtn = document.getElementById('helpBtn');
+      const helpModal = document.getElementById('helpModal');
+      const closeHelp = document.getElementById('closeHelp');
+
+      if (helpBtn && helpModal) {
+        helpBtn.addEventListener('click', () => { helpModal.style.display = 'flex'; });
+      }
+      if (closeHelp && helpModal) {
+        closeHelp.addEventListener('click', () => { helpModal.style.display = 'none'; });
+      }
+      if (helpModal) {
+        helpModal.addEventListener('click', (e) => { if (e.target === helpModal) helpModal.style.display = 'none'; });
+      }
     </script>
   </body>
 </html>`);
