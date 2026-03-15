@@ -160,7 +160,6 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   const storageKey = `${STORAGE_KEY_PREFIX}${company?.id || "unknown"}`;
   const isNonProfit = company?.entity_type === "Non-Profit";
   const STEPS = getSteps(isNonProfit);
-  const currentStepLabel = STEPS[step] || "";
 
   const [step, setStep] = useState(() => {
     try {
@@ -169,6 +168,9 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     } catch {}
     return 0;
   });
+
+  const currentStepLabel = STEPS[step] || "";
+
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewCanvas, setPreviewCanvas] = useState<HTMLCanvasElement | null>(null);
   const [previewPages, setPreviewPages] = useState(0);
