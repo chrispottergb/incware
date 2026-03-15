@@ -705,11 +705,11 @@ export default function OrganizationTab({ companyId, company }: Props) {
               </div>
               <div className="grid grid-cols-12 gap-x-3 gap-y-2">
                 <div className="field-group col-span-12 sm:col-span-4">
-                  <Label className="field-label">Address Line 1</Label>
+                  <Label className="field-label">Address 1</Label>
                   <Input className="h-7 text-sm" value={filingForm.address} onChange={(e) => setFilingForm((p) => ({ ...p, address: e.target.value }))} placeholder="Street address" />
                 </div>
                 <div className="field-group col-span-12 sm:col-span-2">
-                  <Label className="field-label">Address Line 2</Label>
+                  <Label className="field-label">Address 2</Label>
                   <Input className="h-7 text-sm" value={filingForm.address_2} onChange={(e) => setFilingForm((p) => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor" />
                 </div>
                 <div className="field-group col-span-6 sm:col-span-3">
