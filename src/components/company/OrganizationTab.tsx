@@ -562,7 +562,6 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 { label: "Webpage", value: filingForm.contact_webpage },
                 { label: "Address", value: [filingForm.address, filingForm.address_2].filter(Boolean).join(", ") },
                 { label: "City / State / Zip", value: [filingForm.city, filingForm.state, filingForm.zip].filter(Boolean).join(", ") },
-                { label: "Company Phone", value: filingForm.phone },
                 { label: "Business Purpose", value: filingForm.business_purpose },
                 { label: "NAICS Code", value: filingForm.naics_code },
               ],
@@ -705,19 +704,19 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <h3 className="text-sm font-semibold text-foreground">Company Address</h3>
               </div>
               <div className="grid grid-cols-12 gap-x-3 gap-y-2">
-                <div className="field-group col-span-12 sm:col-span-7">
+                <div className="field-group col-span-12 sm:col-span-4">
                   <Label className="field-label">Address Line 1</Label>
                   <Input className="h-7 text-sm" value={filingForm.address} onChange={(e) => setFilingForm((p) => ({ ...p, address: e.target.value }))} placeholder="Street address" />
                 </div>
-                <div className="field-group col-span-12 sm:col-span-5">
+                <div className="field-group col-span-12 sm:col-span-2">
                   <Label className="field-label">Address Line 2</Label>
                   <Input className="h-7 text-sm" value={filingForm.address_2} onChange={(e) => setFilingForm((p) => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor" />
                 </div>
-                <div className="field-group col-span-6 sm:col-span-4">
+                <div className="field-group col-span-6 sm:col-span-3">
                   <Label className="field-label">City</Label>
                   <Input className="h-7 text-sm" value={filingForm.city} onChange={(e) => setFilingForm((p) => ({ ...p, city: e.target.value }))} />
                 </div>
-                <div className="field-group col-span-3 sm:col-span-2">
+                <div className="field-group col-span-3 sm:col-span-1">
                   <Label className="field-label">State</Label>
                   <Select value={filingForm.state} onValueChange={(v) => setFilingForm((p) => ({ ...p, state: v }))}>
                     <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
@@ -731,10 +730,6 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <div className="field-group col-span-3 sm:col-span-2">
                   <Label className="field-label">Zip</Label>
                   <Input className="h-7 text-sm" value={filingForm.zip} onChange={(e) => { const v = e.target.value.replace(/[^\d-]/g, "").slice(0, 10); setFilingForm((p) => ({ ...p, zip: v })); handleFilingZipChange(v); }} placeholder="55555" />
-                </div>
-                <div className="field-group col-span-6 sm:col-span-3">
-                  <Label className="field-label">Company Phone</Label>
-                  <Input className="h-7 text-sm" value={filingForm.phone} onChange={(e) => handlePhoneChange("phone", e.target.value)} placeholder="(555) 555-5555" />
                 </div>
               </div>
             </div>

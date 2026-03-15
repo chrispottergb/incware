@@ -611,10 +611,8 @@ export default function IncorporationTab({ company }: Props) {
                 { label: "Webpage", value: form.contact_webpage },
                 { label: "Address", value: [form.address, form.address_2].filter(Boolean).join(", ") },
                 { label: "City / State / Zip", value: [form.city, form.state, form.zip].filter(Boolean).join(", ") },
-                { label: "Company Phone", value: form.phone },
                 { label: "Business Purpose", value: form.business_purpose },
                 { label: "NAICS Code", value: form.naics_code },
-                { label: "Company Phone", value: form.phone },
               ],
             }} />
           </div>
@@ -734,19 +732,19 @@ export default function IncorporationTab({ company }: Props) {
               <h3 className="text-sm font-semibold text-foreground">Company Address</h3>
             </div>
             <div className="grid grid-cols-12 gap-x-3 gap-y-2">
-              <div className="field-group col-span-12 sm:col-span-7">
+              <div className="field-group col-span-12 sm:col-span-4">
                 <Label className="field-label">Address Line 1</Label>
                 <Input className="h-7 text-sm" value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="Street address" />
               </div>
-              <div className="field-group col-span-12 sm:col-span-5">
+              <div className="field-group col-span-12 sm:col-span-2">
                 <Label className="field-label">Address Line 2</Label>
                 <Input className="h-7 text-sm" value={form.address_2} onChange={(e) => update("address_2", e.target.value)} placeholder="Suite, Unit, Floor" />
               </div>
-              <div className="field-group col-span-6 sm:col-span-4">
+              <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label">City</Label>
                 <Input className="h-7 text-sm" value={form.city} onChange={(e) => update("city", e.target.value)} />
               </div>
-              <div className="field-group col-span-3 sm:col-span-2">
+              <div className="field-group col-span-3 sm:col-span-1">
                 <Label className="field-label">State</Label>
                 <Select value={form.state} onValueChange={(v) => update("state", v)}>
                   <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
@@ -760,10 +758,6 @@ export default function IncorporationTab({ company }: Props) {
               <div className="field-group col-span-3 sm:col-span-2">
                 <Label className="field-label">Zip</Label>
                 <Input className="h-7 text-sm" value={form.zip} onChange={(e) => { const v = e.target.value.replace(/[^\d-]/g, "").slice(0, 10); update("zip", v); handleCompanyZip(v); }} placeholder="55555" />
-              </div>
-              <div className="field-group col-span-6 sm:col-span-3">
-                <Label className="field-label">Company Phone</Label>
-                <Input className="h-7 text-sm" value={form.phone} onChange={(e) => handlePhoneChange("phone", e.target.value)} placeholder="(555) 555-5555" />
               </div>
             </div>
           </div>
