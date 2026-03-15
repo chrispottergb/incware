@@ -100,59 +100,52 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${suggestedName}</title>
     <style>
-      body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
-      .wrap { display: flex; flex-direction: column; gap: 12px; height: 100vh; padding: 16px; box-sizing: border-box; }
-      .actions { display: flex; gap: 8px; flex-wrap: wrap; }
-      button, a { border: 1px solid; border-radius: 8px; padding: 8px 12px; text-decoration: none; background: none; color: inherit; font: inherit; cursor: pointer; }
-      iframe { width: 100%; flex: 1; border: 1px solid; border-radius: 10px; }
-      .hint { margin: 0; font-size: 13px; }
+      body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f3f4f6; }
+      .wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; height: 100vh; padding: 24px; box-sizing: border-box; }
+      .main-button { display: inline-flex; align-items: center; gap: 8px; background: #dc2626; color: white; border: none; border-radius: 8px; padding: 14px 28px; font-size: 16px; font-weight: 600; text-decoration: none; cursor: pointer; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); transition: all 0.2s; }
+      .main-button:hover { background: #b91c1c; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4); }
+      .main-button svg { width: 20px; height: 20px; }
+      .fallback-link { color: #6b7280; font-size: 13px; text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; }
+      .fallback-link:hover { color: #374151; }
+      .filename { color: #1f2937; font-size: 14px; font-weight: 500; margin-bottom: 8px; }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <strong>${suggestedName}</strong>
-      <div class="actions">
-        <a id="openViewerLink" href="#">Open PDF in Viewer</a>
-        <a id="downloadLink" href="#">Download PDF</a>
-        <button id="printButton" type="button">Print PDF</button>
-      </div>
-      <p class="hint">If Chrome blocks download here, use Open PDF in Viewer and click Save in the browser PDF toolbar.</p>
-      <iframe id="pdfFrame"></iframe>
+      <div class="filename">${suggestedName}</div>
+      <a id="downloadLink" class="main-button" href="#">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download PDF
+      </a>
+      <button id="fallbackLink" class="fallback-link" type="button">Having trouble? Click here.</button>
     </div>
   </body>
 </html>`);
       popup.document.close();
 
-      const frame = popup.document.getElementById("pdfFrame") as HTMLIFrameElement | null;
-      const openViewerLink = popup.document.getElementById("openViewerLink") as HTMLAnchorElement | null;
       const downloadLink = popup.document.getElementById("downloadLink") as HTMLAnchorElement | null;
-      const printButton = popup.document.getElementById("printButton") as HTMLButtonElement | null;
-
-      if (frame) frame.src = url;
-
-      if (openViewerLink) {
-        openViewerLink.href = url;
-        openViewerLink.target = "_self";
-      }
+      const fallbackLink = popup.document.getElementById("fallbackLink") as HTMLButtonElement | null;
 
       if (downloadLink) {
         downloadLink.href = url;
         downloadLink.download = suggestedName;
       }
 
-      if (printButton) {
-        printButton.onclick = () => {
-          try {
-            frame?.contentWindow?.focus();
-            frame?.contentWindow?.print();
-          } catch {
-            popup.print();
-          }
+      if (fallbackLink) {
+        fallbackLink.onclick = () => {
+          const a = popup.document.createElement("a");
+          a.href = url;
+          a.download = suggestedName;
+          a.style.display = "none";
+          popup.document.body.appendChild(a);
+          a.click();
+          popup.document.body.removeChild(a);
         };
+      }
 
-        if (mode === "print") {
-          setTimeout(() => printButton.click(), 350);
-        }
+      // Auto-trigger download for the main button after a brief delay
+      if (downloadLink && mode === "download") {
+        setTimeout(() => downloadLink.click(), 300);
       }
 
       registerCleanup();
