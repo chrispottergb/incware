@@ -985,8 +985,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       <Card>
         <CardContent className="pt-4 space-y-4">
 
-          {/* STEP 0: Meeting Information */}
-          {step === 0 && (
+          {/* STEP: Meeting Information */}
+          {currentStepLabel === "Meeting Information" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Meeting Information</h3>
               <div className="grid grid-cols-12 gap-2">
