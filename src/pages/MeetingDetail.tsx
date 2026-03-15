@@ -141,6 +141,17 @@ export default function MeetingDetail() {
     },
     enabled: !!id && !!(isOrganizational || isShareholderMeeting || isAnnualMeeting),
   });
+
+  const { data: companyLeases = [] } = useQuery({
+    queryKey: ["company_leases", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("company_assets").select("*").eq("company_id", id!).eq("asset_type", "lease").order("created_at");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id && !!(isAnnualMeeting || isOrganizational),
+  });
+
   // Fetch prior year meeting for comparison (most recent meeting before this one for same company)
   const { data: priorMeeting } = useQuery({
     queryKey: ["prior_meeting", id, meeting?.meeting_date],
@@ -471,6 +482,7 @@ export default function MeetingDetail() {
       companyBankSigners,
       companyAttorneys,
       companyAccountants,
+      companyLeases,
     });
   };
 
