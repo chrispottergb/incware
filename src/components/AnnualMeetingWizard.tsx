@@ -1119,8 +1119,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 4: Authorized Binders */}
-          {step === 4 && (
+          {/* STEP: Authorized Binders */}
+          {currentStepLabel === "Authorized Binders" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Authorized Binders — Confirmation or Update</h3>
               <p className="text-xs text-muted-foreground">Wis. Stat. § 183.0407</p>
