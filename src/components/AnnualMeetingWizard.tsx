@@ -1527,8 +1527,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 14: General Authorization */}
-          {step === 14 && (
+          {/* STEP: General Authorization */}
+          {currentStepLabel === "General Authorization" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">General Authorization</h3>
               <div className="p-3 rounded-md bg-muted/50 text-sm text-muted-foreground italic">
