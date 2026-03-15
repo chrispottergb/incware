@@ -147,7 +147,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-col bg-sidebar text-sidebar-foreground transition-transform lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-col bg-sidebar text-sidebar-foreground transition-transform md:static md:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -350,7 +350,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-30 bg-foreground/20 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-30 bg-foreground/20 backdrop-blur-sm md:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -361,7 +361,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden h-8 w-8"
+            className="md:hidden h-8 w-8"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
