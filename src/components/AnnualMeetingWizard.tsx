@@ -21,7 +21,7 @@ import Form1023EZCheck from "@/components/meeting/Form1023EZCheck";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
-const STEPS = [
+const BASE_STEPS = [
   "Meeting Information",
   "Call to Order",
   "Professional Advisors",
@@ -38,6 +38,25 @@ const STEPS = [
   "Registered Agent",
   "General Authorization",
   "Signatures",
+];
+
+const NP_STEP_LABEL = "Non-Profit Governance";
+const NP_STEP_INDEX = 12; // Inserted before Special Resolutions
+
+function getSteps(isNonProfit: boolean) {
+  if (!isNonProfit) return BASE_STEPS;
+  const steps = [...BASE_STEPS];
+  steps.splice(NP_STEP_INDEX, 0, NP_STEP_LABEL);
+  return steps;
+}
+
+const NP_OFFICER_POSITIONS = [
+  "President",
+  "Vice President",
+  "Secretary",
+  "Treasurer",
+  "Executive Director (Ex-Officio)",
+  "Committee Chair",
 ];
 
 interface Props {
