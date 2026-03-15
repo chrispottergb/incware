@@ -158,6 +158,10 @@ const STORAGE_KEY_PREFIX = "annual_meeting_draft_";
 export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated }: Props) {
   const queryClient = useQueryClient();
   const storageKey = `${STORAGE_KEY_PREFIX}${company?.id || "unknown"}`;
+  const isNonProfit = company?.entity_type === "Non-Profit";
+  const STEPS = getSteps(isNonProfit);
+  const currentStepLabel = STEPS[step] || "";
+
   const [step, setStep] = useState(() => {
     try {
       const saved = localStorage.getItem(storageKey);
@@ -168,6 +172,21 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewCanvas, setPreviewCanvas] = useState<HTMLCanvasElement | null>(null);
   const [previewPages, setPreviewPages] = useState(0);
+  const [npGovernance, setNpGovernance] = useState<NonProfitGovernanceData>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.npGovernance) return parsed.npGovernance;
+      }
+    } catch {}
+    return {
+      missionStatementReview: "",
+      conflictOfInterestConfirmed: false,
+      publicInspectionConfirmed: false,
+      programServiceAccomplishments: "",
+    };
+  });
   const [previewPage, setPreviewPage] = useState(1);
   const [pdfDocRef, setPdfDocRef] = useState<any>(null);
   const [hasDraft, setHasDraft] = useState(false);
