@@ -1435,8 +1435,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 11: Employee Benefits */}
-          {step === 11 && (
+          {/* STEP: Employee Benefits */}
+          {currentStepLabel === "Employee Benefits" && (
             <div className="space-y-4">
               <h3 className="text-sm font-semibold">Employee Benefit Plans</h3>
               {renderTable("benefitPlans", [
