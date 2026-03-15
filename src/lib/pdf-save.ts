@@ -90,7 +90,27 @@ function openPdfViewerTab(dataUri: string, filename: string): boolean {
   <body>
     <div class="wrap">
       <a id="downloadBtn" class="main-button" href="#"><span aria-hidden="true">⬇️</span><span>Download PDF</span></a>
+      <button id="helpBtn" class="help-button" type="button">Need Help?</button>
       <button id="fallbackLink" class="fallback-link" type="button">Having trouble? Click here.</button>
+
+      <div id="helpModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+          <h2>📄 PDF Not Downloading?</h2>
+          <div class="browser-tip">
+            <strong>Chrome</strong>
+            <p>Go to <em>Settings → Privacy and Security → Site Settings → PDF Documents</em> → Select <strong>"Download PDFs"</strong></p>
+          </div>
+          <div class="browser-tip">
+            <strong>Edge</strong>
+            <p>PDFs should download automatically. If not, go to <em>Settings → Cookies and Site Permissions → PDF Documents</em> → Turn off <strong>"Always open PDF files externally"</strong></p>
+          </div>
+          <div class="browser-tip">
+            <strong>Firefox</strong>
+            <p>PDFs will download automatically by default.</p>
+          </div>
+          <button id="closeHelp" class="close-button" type="button">Close</button>
+        </div>
+      </div>
     </div>
     <script>
       const dataUri = ${safeDataUri};
