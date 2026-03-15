@@ -1029,8 +1029,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 1: Call to Order */}
-          {step === 1 && (
+          {/* STEP: Call to Order */}
+          {currentStepLabel === "Call to Order" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Call to Order & Approval of Prior Meeting Minutes</h3>
               <div className="grid grid-cols-12 gap-2">
