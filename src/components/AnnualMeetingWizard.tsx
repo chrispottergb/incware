@@ -1297,8 +1297,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 6: Banking */}
-          {step === 6 && (
+          {/* STEP: Banking */}
+          {currentStepLabel === "Banking" && (
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <Switch checked={data.includeBanking} onCheckedChange={v => update("includeBanking", v)} />
