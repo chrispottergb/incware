@@ -50,6 +50,7 @@ interface MeetingData {
   companyBankSigners?: any[];
   companyAttorneys?: any[];
   companyAccountants?: any[];
+  companyLeases?: any[];
 }
 
 function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType: string, meeting?: any, company?: any) {

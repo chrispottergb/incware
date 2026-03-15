@@ -482,6 +482,7 @@ export default function MeetingDetail() {
       companyBankSigners,
       companyAttorneys,
       companyAccountants,
+      companyLeases,
     });
   };
 
