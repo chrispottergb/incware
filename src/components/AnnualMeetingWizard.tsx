@@ -1538,8 +1538,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 15: Signatures */}
-          {step === 15 && (
+          {/* STEP: Signatures */}
+          {currentStepLabel === "Signatures" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Signature Lines</h3>
               <p className="text-xs text-muted-foreground">Chairperson ({data.chairperson || "—"}) and Secretary ({data.secretary || "—"}) signature lines are included automatically.</p>
