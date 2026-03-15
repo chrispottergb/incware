@@ -611,10 +611,8 @@ export default function IncorporationTab({ company }: Props) {
                 { label: "Webpage", value: form.contact_webpage },
                 { label: "Address", value: [form.address, form.address_2].filter(Boolean).join(", ") },
                 { label: "City / State / Zip", value: [form.city, form.state, form.zip].filter(Boolean).join(", ") },
-                { label: "Company Phone", value: form.phone },
                 { label: "Business Purpose", value: form.business_purpose },
                 { label: "NAICS Code", value: form.naics_code },
-                { label: "Company Phone", value: form.phone },
               ],
             }} />
           </div>

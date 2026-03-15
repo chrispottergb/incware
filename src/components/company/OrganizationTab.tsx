@@ -562,7 +562,6 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 { label: "Webpage", value: filingForm.contact_webpage },
                 { label: "Address", value: [filingForm.address, filingForm.address_2].filter(Boolean).join(", ") },
                 { label: "City / State / Zip", value: [filingForm.city, filingForm.state, filingForm.zip].filter(Boolean).join(", ") },
-                { label: "Company Phone", value: filingForm.phone },
                 { label: "Business Purpose", value: filingForm.business_purpose },
                 { label: "NAICS Code", value: filingForm.naics_code },
               ],
