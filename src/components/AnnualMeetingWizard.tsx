@@ -1506,8 +1506,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
             </div>
           )}
 
-          {/* STEP 13: Registered Agent */}
-          {step === 13 && (
+          {/* STEP: Registered Agent */}
+          {currentStepLabel === "Registered Agent" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Registered Agent Confirmation</h3>
               <p className="text-xs text-muted-foreground">Wis. Stat. § 183.0113</p>
