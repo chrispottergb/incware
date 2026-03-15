@@ -2123,6 +2123,35 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
+  // Property & Structure Leases (company-level) — skip for shareholder meetings
+  if (!isShareholder && data.companyLeases && data.companyLeases.length > 0) {
+    y = checkPageBreak(doc, y, 20 + data.companyLeases.length * 7);
+    y = section("Property & Structure Leases");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the lease agreements currently in effect for ${companyName}; and`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following lease agreements are hereby ratified and confirmed:`,
+      bt
+    );
+    autoTable(doc, {
+      startY: y,
+      head: [["Property Description", "Landlord", "Lease Start", "Lease End", "Monthly Payment", "Purpose"]],
+      body: data.companyLeases.map((l: any) => [
+        l.description || "—",
+        l.landlord_name || "—",
+        l.lease_start_date ? new Date(l.lease_start_date + "T00:00:00").toLocaleDateString() : "—",
+        l.lease_end_date ? new Date(l.lease_end_date + "T00:00:00").toLocaleDateString() : "—",
+        l.lease_amount != null ? fmt(l.lease_amount) : "—",
+        l.ownership_type || "—",
+      ]),
+      theme: "grid",
+      headStyles: tableHeadStyles,
+      bodyStyles: { fontSize: 10 },
+      margin: { left: MARGIN, right: R_MARGIN },
+      styles: { overflow: "linebreak", cellWidth: "auto" },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+  }
+
   // Vehicle Leases — skip for shareholder meetings
   if (!isShareholder && data.vehicleLeases && data.vehicleLeases.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.vehicleLeases.length * 7);
