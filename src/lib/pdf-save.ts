@@ -85,12 +85,113 @@ function openPdfViewerTab(dataUri: string, filename: string): boolean {
       .fallback-link:hover {
         color: #374151;
       }
+
+      .help-button {
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        color: #374151;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 8px 18px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .help-button:hover {
+        background: #f3f4f6;
+      }
+
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+
+      .modal-box {
+        background: #fff;
+        border-radius: 12px;
+        padding: 28px 32px;
+        max-width: 460px;
+        width: 90%;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      }
+
+      .modal-box h2 {
+        margin: 0 0 18px;
+        font-size: 18px;
+        color: #111827;
+      }
+
+      .browser-tip {
+        margin-bottom: 14px;
+        padding: 10px 14px;
+        background: #f9fafb;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+      }
+
+      .browser-tip strong {
+        display: block;
+        margin-bottom: 4px;
+        color: #1f2937;
+        font-size: 14px;
+      }
+
+      .browser-tip p {
+        margin: 0;
+        font-size: 13px;
+        color: #4b5563;
+        line-height: 1.5;
+      }
+
+      .close-button {
+        display: block;
+        margin: 18px auto 0;
+        padding: 10px 28px;
+        border: none;
+        border-radius: 8px;
+        background: #1d4ed8;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .close-button:hover {
+        background: #1e40af;
+      }
     </style>
   </head>
   <body>
     <div class="wrap">
       <a id="downloadBtn" class="main-button" href="#"><span aria-hidden="true">⬇️</span><span>Download PDF</span></a>
+      <button id="helpBtn" class="help-button" type="button">Need Help?</button>
       <button id="fallbackLink" class="fallback-link" type="button">Having trouble? Click here.</button>
+
+      <div id="helpModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+          <h2>📄 PDF Not Downloading?</h2>
+          <div class="browser-tip">
+            <strong>Chrome</strong>
+            <p>Go to <em>Settings → Privacy and Security → Site Settings → PDF Documents</em> → Select <strong>"Download PDFs"</strong></p>
+          </div>
+          <div class="browser-tip">
+            <strong>Edge</strong>
+            <p>PDFs should download automatically. If not, go to <em>Settings → Cookies and Site Permissions → PDF Documents</em> → Turn off <strong>"Always open PDF files externally"</strong></p>
+          </div>
+          <div class="browser-tip">
+            <strong>Firefox</strong>
+            <p>PDFs will download automatically by default.</p>
+          </div>
+          <button id="closeHelp" class="close-button" type="button">Close</button>
+        </div>
+      </div>
     </div>
     <script>
       const dataUri = ${safeDataUri};
@@ -149,6 +250,20 @@ function openPdfViewerTab(dataUri: string, filename: string): boolean {
           e.preventDefault();
           downloadPdf();
         });
+      }
+
+      const helpBtn = document.getElementById('helpBtn');
+      const helpModal = document.getElementById('helpModal');
+      const closeHelp = document.getElementById('closeHelp');
+
+      if (helpBtn && helpModal) {
+        helpBtn.addEventListener('click', () => { helpModal.style.display = 'flex'; });
+      }
+      if (closeHelp && helpModal) {
+        closeHelp.addEventListener('click', () => { helpModal.style.display = 'none'; });
+      }
+      if (helpModal) {
+        helpModal.addEventListener('click', (e) => { if (e.target === helpModal) helpModal.style.display = 'none'; });
       }
     </script>
   </body>
