@@ -1129,7 +1129,7 @@ export default function IncorporationTab({ company }: Props) {
                     onCheckedChange={(checked) => {
                       const enabled = !!checked;
                       setLlcSElectionEnabled(enabled);
-                      if (!enabled) update("s_election_date", "");
+                      if (!enabled) updateAndSave("s_election_date", "");
                     }}
                   />
                   <div className="flex-1">
