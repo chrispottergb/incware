@@ -243,6 +243,49 @@ export default function IncorporationTab({ company }: Props) {
   };
   const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(isLLCType(company.entity_type) ? !!company.s_election_date : false);
 
+  // Reset form when company changes (e.g. navigating between entities)
+  useEffect(() => {
+    setForm({
+      name: company.name,
+      entity_type: company.entity_type,
+      state_of_incorporation: company.state_of_incorporation ?? "",
+      incorporation_date: company.incorporation_date ?? "",
+      fiscal_year_end: company.fiscal_year_end ?? "",
+      authorized_shares: company.authorized_shares?.toString() ?? "",
+      par_value_type: company.par_value_type ?? "par",
+      par_value: company.par_value?.toString() ?? "",
+      s_election_date: company.s_election_date ?? "",
+      scheduled_annual_meeting: company.scheduled_annual_meeting ?? "",
+      election_1244: company.election_1244 ?? false,
+      seal_type: company.seal_type ?? "no_seal",
+      corporate_status: company.corporate_status ?? "current",
+      verification_date: company.verification_date ?? "",
+      annual_report_year: company.annual_report_year?.toString() ?? "",
+      registered_agent_name: company.registered_agent_name ?? "",
+      registered_agent_address: company.registered_agent_address ?? "",
+      registered_agent_address_2: (company as any).registered_agent_address_2 ?? "",
+      registered_agent_city: company.registered_agent_city ?? "",
+      registered_agent_state: company.registered_agent_state ?? "",
+      registered_agent_zip: company.registered_agent_zip ?? "",
+      address: company.address ?? "",
+      address_2: (company as any).address_2 ?? "",
+      city: company.city ?? "",
+      state: company.state ?? "",
+      zip: company.zip ?? "",
+      phone: company.phone ?? "",
+      contact_full_name: (company as any).contact_full_name ?? "",
+      contact_email: (company as any).contact_email ?? "",
+      salutation_name: (company as any).salutation_name ?? "",
+      contact_phone: (company as any).contact_phone ?? "",
+      contact_cell: (company as any).contact_cell ?? "",
+      contact_webpage: (company as any).contact_webpage ?? "",
+      authorized_binders: (company as any).authorized_binders ?? "",
+      business_purpose: company.business_purpose ?? "",
+      naics_code: company.naics_code ?? "",
+    });
+    setLlcSElectionEnabled(isLLCType(company.entity_type) ? !!company.s_election_date : false);
+  }, [company.id]);
+
   const update = (field: string, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
