@@ -1181,22 +1181,24 @@ export default function IncorporationTab({ company }: Props) {
               <Input className="h-7 text-sm" value={form.registered_agent_name} onChange={(e) => update("registered_agent_name", e.target.value)} />
             </div>
             <div className="field-group col-span-12 sm:col-span-7" />
-            <div className="field-group col-span-12 sm:col-span-7">
+          </div>
+          <div className="grid grid-cols-12 gap-x-2 gap-y-2 mt-2">
+            <div className="field-group col-span-3">
               <Label className="field-label">Address</Label>
               <Input className="h-7 text-sm" value={form.registered_agent_address} onChange={(e) => update("registered_agent_address", e.target.value)} />
             </div>
-            <div className="field-group col-span-12 sm:col-span-5">
+            <div className="field-group col-span-3">
               <Label className="field-label">Address 2</Label>
               <Input className="h-7 text-sm" value={form.registered_agent_address_2} onChange={(e) => update("registered_agent_address_2", e.target.value)} placeholder="Suite, Unit, Floor" />
             </div>
-            <div className="field-group col-span-6 sm:col-span-4">
+            <div className="field-group col-span-2">
               <Label className="field-label">City</Label>
               <Input className="h-7 text-sm" value={form.registered_agent_city} onChange={(e) => update("registered_agent_city", e.target.value)} />
             </div>
-            <div className="field-group col-span-3 sm:col-span-2">
+            <div className="field-group col-span-2">
               <Label className="field-label">State</Label>
               <Select value={form.registered_agent_state} onValueChange={(v) => update("registered_agent_state", v)}>
-                <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
+                <SelectTrigger className="h-7 text-sm min-w-[60px] px-2"><SelectValue placeholder="ST" /></SelectTrigger>
                 <SelectContent>
                   {US_STATES.map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
@@ -1204,7 +1206,7 @@ export default function IncorporationTab({ company }: Props) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="field-group col-span-3 sm:col-span-2">
+            <div className="field-group col-span-2">
               <Label className="field-label">Zip</Label>
               <Input className="h-7 text-sm" value={form.registered_agent_zip} onChange={(e) => { update("registered_agent_zip", e.target.value); handleAgentZip(e.target.value); }} />
             </div>
