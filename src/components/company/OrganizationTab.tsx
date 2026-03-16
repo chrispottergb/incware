@@ -953,7 +953,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                       <Input className="h-7 text-sm" value={raForm.registered_agent_zip} onChange={(e) => { setRaForm(p => ({ ...p, registered_agent_zip: e.target.value })); handleRaZip(e.target.value); }} />
                     </div>
                   </div>
-                    <div className="field-group col-span-6 sm:col-span-4" />
+                  <div className="grid grid-cols-12 gap-x-3 gap-y-2">
                     <div className="field-group col-span-6 sm:col-span-3">
                       <Label className="field-label">Phone</Label>
                       <Input className="h-7 text-sm" value={raForm.registered_agent_phone} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_phone: e.target.value }))} placeholder="(555) 555-5555" />
@@ -968,6 +968,9 @@ export default function OrganizationTab({ companyId, company }: Props) {
                     </div>
                     <div className="field-group col-span-6 sm:col-span-3">
                       <Label className="field-label">Date Resigned / Changed</Label>
+                      <DatePickerField value={raForm.registered_agent_resigned_date} onChange={(v) => setRaForm(p => ({ ...p, registered_agent_resigned_date: v || "" }))} placeholder="Resigned date" />
+                    </div>
+                  </div>
                       <DatePickerField value={raForm.registered_agent_resigned_date} onChange={(v) => setRaForm(p => ({ ...p, registered_agent_resigned_date: v || "" }))} placeholder="Resigned date" />
                     </div>
                   </div>
