@@ -872,33 +872,33 @@ export default function IncorporationTab({ company }: Props) {
 
             {showDirectorForm && (
               <div className="mt-2 rounded-md border border-border bg-muted/30 p-3 space-y-2">
-                <div className="grid grid-cols-12 gap-x-3 gap-y-2">
-                  <div className="field-group col-span-12 sm:col-span-5">
+                <div className="grid grid-cols-12 gap-x-2 gap-y-2">
+                  <div className="field-group col-span-3">
                     <Label className="field-label">Director Name</Label>
                     <Input className="h-7 text-sm" value={newDirector.name} onChange={(e) => setNewDirector(p => ({ ...p, name: e.target.value }))} placeholder="Full name" />
                   </div>
-                  <div className="field-group col-span-12 sm:col-span-4">
+                  <div className="field-group col-span-3">
                     <Label className="field-label">Address</Label>
                     <Input className="h-7 text-sm" value={newDirector.address} onChange={(e) => setNewDirector(p => ({ ...p, address: e.target.value }))} />
                   </div>
-                  <div className="field-group col-span-12 sm:col-span-3">
+                  <div className="field-group col-span-2">
                     <Label className="field-label">Address 2</Label>
                     <Input className="h-7 text-sm" value={newDirector.address_2} onChange={(e) => setNewDirector(p => ({ ...p, address_2: e.target.value }))} />
                   </div>
-                  <div className="field-group col-span-5 sm:col-span-4">
+                  <div className="field-group col-span-2">
                     <Label className="field-label">City</Label>
                     <Input className="h-7 text-sm" value={newDirector.city} onChange={(e) => setNewDirector(p => ({ ...p, city: e.target.value }))} />
                   </div>
-                  <div className="field-group col-span-3 sm:col-span-2">
+                  <div className="field-group col-span-1">
                     <Label className="field-label">State</Label>
                     <Select value={newDirector.state} onValueChange={(v) => setNewDirector(p => ({ ...p, state: v }))}>
-                      <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
+                      <SelectTrigger className="h-7 text-sm min-w-[60px] px-2"><SelectValue placeholder="ST" /></SelectTrigger>
                       <SelectContent>
                         {US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="field-group col-span-4 sm:col-span-2">
+                  <div className="field-group col-span-1">
                     <Label className="field-label">Zip</Label>
                     <Input className="h-7 text-sm" value={newDirector.zip} onChange={(e) => { const v = e.target.value; setNewDirector(p => ({ ...p, zip: v })); handleDirectorZip(v); }} maxLength={10} />
                   </div>
