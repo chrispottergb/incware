@@ -88,11 +88,23 @@ export default function Dashboard() {
     const status = company.corporate_status;
     const isActionable = status === "delinquent" || status === "admin_dissolved";
     const email = company.contact_email;
+    const filedYear = company.annual_report_year;
     
     const badgeContent = (className: string, label: string) => (
       <Badge variant="outline" className={`${className} text-[10px] px-1.5 py-0 ${isActionable && email ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}`}>
         {label}
       </Badge>
+    );
+
+    const filedYearLabel = filedYear ? (
+      <span className="text-[9px] text-muted-foreground leading-none">Last filed: {filedYear}</span>
+    ) : null;
+
+    const wrapWithYear = (badge: React.ReactNode) => (
+      <div className="flex flex-col items-center gap-0.5">
+        {badge}
+        {filedYearLabel}
+      </div>
     );
     
     if (status === "delinquent") {
@@ -100,13 +112,13 @@ export default function Dashboard() {
       if (isActionable && email) {
         const subject = encodeURIComponent(`Action Required: ${company.name} — State Filing Status`);
         const body = encodeURIComponent(`Dear ${company.salutation_name || company.contact_full_name || "Client"},\n\nOur records indicate that ${company.name} is currently listed as ${status === "delinquent" ? "Delinquent" : "Administratively Dissolved"} with the Secretary of State.\n\nTo maintain good standing and avoid potential penalties or additional fees, please contact our office to discuss the reinstatement process.\n\nBest regards,\n`);
-        return (
+        return wrapWithYear(
           <a href={`mailto:${email}?subject=${subject}&body=${body}`} className="no-underline">
             {badgeContent(className, "Delinquent")}
           </a>
         );
       }
-      return badgeContent(className, "Delinquent");
+      return wrapWithYear(badgeContent(className, "Delinquent"));
     }
     
     if (status === "admin_dissolved") {
@@ -114,16 +126,16 @@ export default function Dashboard() {
       if (isActionable && email) {
         const subject = encodeURIComponent(`Action Required: ${company.name} — State Filing Status`);
         const body = encodeURIComponent(`Dear ${company.salutation_name || company.contact_full_name || "Client"},\n\nOur records indicate that ${company.name} is currently listed as Administratively Dissolved with the Secretary of State.\n\nTo maintain good standing and avoid potential penalties or additional fees, please contact our office to discuss the reinstatement process.\n\nBest regards,\n`);
-        return (
+        return wrapWithYear(
           <a href={`mailto:${email}?subject=${subject}&body=${body}`} className="no-underline">
             {badgeContent(className, "Admin. Dissolved")}
           </a>
         );
       }
-      return badgeContent(className, "Admin. Dissolved");
+      return wrapWithYear(badgeContent(className, "Admin. Dissolved"));
     }
     
-    return badgeContent("bg-success/10 text-success border-success/20", "Current");
+    return wrapWithYear(badgeContent("bg-success/10 text-success border-success/20", "Current"));
   };
 
   return (
