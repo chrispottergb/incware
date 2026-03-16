@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,7 +23,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Loader2, Save, Shield, Building2, Share2, UserCheck, ChevronDown, Users, Heart, RefreshCw, ExternalLink, User, Phone, Globe, Plus, Trash2 } from "lucide-react";
+import { Loader2, Shield, Building2, Share2, UserCheck, ChevronDown, Users, Heart, RefreshCw, ExternalLink, User, Phone, Globe, Plus, Trash2, Check, AlertTriangle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
@@ -286,9 +286,31 @@ export default function IncorporationTab({ company }: Props) {
     setLlcSElectionEnabled(isLLCType(company.entity_type) ? !!company.s_election_date : false);
   }, [company.id]);
 
+  const formRef = useRef(form);
+  formRef.current = form;
+
+  // Auto-save state (declared early so updateAndSave can reference them)
+  const lastSavedFormRef = useRef(JSON.stringify(form));
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const saveStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const update = (field: string, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
+  // For Select/Checkbox controls that don't reliably fire blur
+  const updateAndSave = (field: string, value: string | boolean) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      const updated = { ...formRef.current, [field]: value };
+      const currentForm = JSON.stringify(updated);
+      if (currentForm !== lastSavedFormRef.current) {
+        setSaveStatus("saving");
+        save.mutate();
+      }
+    }, 200);
+  };
   const handleAgentZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, registered_agent_city: result.city, registered_agent_state: result.state }));
   }, []);
@@ -519,16 +541,43 @@ export default function IncorporationTab({ company }: Props) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company", company.id] });
       queryClient.invalidateQueries({ queryKey: ["companies"] });
-      toast.success(isLLCType(company.entity_type) ? "Organizational info saved!" : "Incorporation info saved!");
+      lastSavedFormRef.current = JSON.stringify(form);
+      setSaveStatus("saved");
+      if (saveStatusTimer.current) clearTimeout(saveStatusTimer.current);
+      saveStatusTimer.current = setTimeout(() => setSaveStatus("idle"), 3000);
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => {
+      setSaveStatus("error");
+      toast.error(err.message);
+    },
   });
 
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
+
+  // Update ref when company changes
+  useEffect(() => {
+    lastSavedFormRef.current = JSON.stringify(form);
+  }, [company.id]);
+
+  const scheduleAutoSave = useCallback(() => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      const currentForm = JSON.stringify(formRef.current);
+      if (currentForm !== lastSavedFormRef.current) {
+        setSaveStatus("saving");
         save.mutate();
+      }
+    }, 150);
+  }, [save]);
+
+  return (
+    <div
+      onBlur={(e) => {
+        // Auto-save when focus leaves an interactive element
+        const target = e.target as HTMLElement;
+        const tag = target.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.getAttribute("role") === "combobox" || target.getAttribute("role") === "checkbox") {
+          scheduleAutoSave();
+        }
       }}
       className="space-y-5"
     >
@@ -563,7 +612,7 @@ export default function IncorporationTab({ company }: Props) {
               <div className="grid grid-cols-12 gap-x-3 gap-y-2">
                 <div className="field-group col-span-4">
                   <Label className="field-label">Corporate Status</Label>
-                  <Select value={form.corporate_status} onValueChange={(v) => update("corporate_status", v)}>
+                  <Select value={form.corporate_status} onValueChange={(v) => updateAndSave("corporate_status", v)}>
                     <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="current">Current</SelectItem>
@@ -574,7 +623,7 @@ export default function IncorporationTab({ company }: Props) {
                 </div>
                 <div className="field-group col-span-4">
                   <Label className="field-label">Verification Date</Label>
-                  <DatePickerField value={form.verification_date || ""} onChange={(v) => update("verification_date", v)} className="h-7" />
+                  <DatePickerField value={form.verification_date || ""} onChange={(v) => updateAndSave("verification_date", v)} className="h-7" />
                 </div>
                 <div className="field-group col-span-4">
                   <Label className="field-label">Annual Report Year</Label>
@@ -669,7 +718,7 @@ export default function IncorporationTab({ company }: Props) {
             </div>
             <div className="field-group col-span-6 sm:col-span-3">
               <Label className="field-label">Entity Type</Label>
-              <Select value={form.entity_type} onValueChange={(v) => update("entity_type", v)}>
+              <Select value={form.entity_type} onValueChange={(v) => updateAndSave("entity_type", v)}>
                 <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ENTITY_TYPES.map((t) => (
@@ -680,7 +729,7 @@ export default function IncorporationTab({ company }: Props) {
             </div>
             <div className="field-group col-span-6 sm:col-span-2">
               <Label className="field-label">State of Inc.</Label>
-              <Select value={form.state_of_incorporation} onValueChange={(v) => update("state_of_incorporation", v)}>
+              <Select value={form.state_of_incorporation} onValueChange={(v) => updateAndSave("state_of_incorporation", v)}>
                 <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
                 <SelectContent>
                   {US_STATES.map((s) => (
@@ -691,7 +740,7 @@ export default function IncorporationTab({ company }: Props) {
             </div>
             <div className="field-group col-span-6 sm:col-span-2">
               <Label className="field-label">Status</Label>
-              <Select value={form.corporate_status} onValueChange={(v) => update("corporate_status", v)}>
+              <Select value={form.corporate_status} onValueChange={(v) => updateAndSave("corporate_status", v)}>
                 <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="current">Current</SelectItem>
@@ -702,7 +751,7 @@ export default function IncorporationTab({ company }: Props) {
             </div>
             <div className="field-group col-span-6 sm:col-span-3">
               <Label className="field-label">Incorporation Date</Label>
-              <DatePickerField value={form.incorporation_date || ""} onChange={(v) => update("incorporation_date", v)} className="h-7" />
+              <DatePickerField value={form.incorporation_date || ""} onChange={(v) => updateAndSave("incorporation_date", v)} className="h-7" />
             </div>
             <div className="field-group col-span-6 sm:col-span-3">
               <Label className="field-label">Fiscal Year End</Label>
@@ -789,7 +838,7 @@ export default function IncorporationTab({ company }: Props) {
               </div>
               <div className="field-group col-span-3 sm:col-span-1">
                 <Label className="field-label">State</Label>
-                <Select value={form.state} onValueChange={(v) => update("state", v)}>
+                <Select value={form.state} onValueChange={(v) => updateAndSave("state", v)}>
                   <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
                   <SelectContent>
                     {US_STATES.map((s) => (
@@ -1047,7 +1096,7 @@ export default function IncorporationTab({ company }: Props) {
               <>
                 <div className="field-group">
                   <Label className="field-label">Par Value Type</Label>
-                  <Select value={form.par_value_type} onValueChange={(v) => update("par_value_type", v)}>
+                  <Select value={form.par_value_type} onValueChange={(v) => updateAndSave("par_value_type", v)}>
                     <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="par">Par Value</SelectItem>
@@ -1068,7 +1117,7 @@ export default function IncorporationTab({ company }: Props) {
             {equityCard.showSElection && !isLLCType(form.entity_type) && (
               <div className="field-group">
                 <Label className="field-label">S-Election Date</Label>
-                <DatePickerField value={form.s_election_date || ""} onChange={(v) => update("s_election_date", v)} />
+                <DatePickerField value={form.s_election_date || ""} onChange={(v) => updateAndSave("s_election_date", v)} />
               </div>
             )}
             {equityCard.showSElection && isLLCType(form.entity_type) && (
@@ -1080,7 +1129,7 @@ export default function IncorporationTab({ company }: Props) {
                     onCheckedChange={(checked) => {
                       const enabled = !!checked;
                       setLlcSElectionEnabled(enabled);
-                      if (!enabled) update("s_election_date", "");
+                      if (!enabled) updateAndSave("s_election_date", "");
                     }}
                   />
                   <div className="flex-1">
@@ -1089,7 +1138,7 @@ export default function IncorporationTab({ company }: Props) {
                     {llcSElectionEnabled && (
                       <div className="mt-2 max-w-xs">
                         <Label className="field-label">S Election Effective Date</Label>
-                        <DatePickerField value={form.s_election_date || ""} onChange={(v) => update("s_election_date", v)} />
+                        <DatePickerField value={form.s_election_date || ""} onChange={(v) => updateAndSave("s_election_date", v)} />
                         {!form.s_election_date && (
                           <p className="mt-1 text-[11px] text-destructive">S Election Effective Date is required when enabled.</p>
                         )}
@@ -1104,7 +1153,7 @@ export default function IncorporationTab({ company }: Props) {
             {equityCard.showSeal && (
               <div className="field-group">
                 <Label className="field-label">Seal</Label>
-                <Select value={form.seal_type} onValueChange={(v) => update("seal_type", v)}>
+                <Select value={form.seal_type} onValueChange={(v) => updateAndSave("seal_type", v)}>
                   <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="seal">Seal</SelectItem>
@@ -1122,7 +1171,7 @@ export default function IncorporationTab({ company }: Props) {
               <Checkbox
                 id="election_1244"
                 checked={form.election_1244}
-                onCheckedChange={(v) => update("election_1244", !!v)}
+                onCheckedChange={(v) => updateAndSave("election_1244", !!v)}
               />
               <div>
                 <Label htmlFor="election_1244" className="cursor-pointer text-sm font-medium">Section 1244 Election</Label>
@@ -1139,7 +1188,7 @@ export default function IncorporationTab({ company }: Props) {
                 checked={!!form.s_election_date}
                 onCheckedChange={(checked) => {
                   if (!checked) {
-                    update("s_election_date", "");
+                    updateAndSave("s_election_date", "");
                   }
                 }}
               />
@@ -1149,13 +1198,13 @@ export default function IncorporationTab({ company }: Props) {
                 {!!form.s_election_date && (
                   <div className="mt-2 field-group max-w-xs">
                     <Label className="field-label">Date of S Election</Label>
-                    <DatePickerField value={form.s_election_date} onChange={(v) => update("s_election_date", v)} />
+                    <DatePickerField value={form.s_election_date} onChange={(v) => updateAndSave("s_election_date", v)} />
                   </div>
                 )}
                 {!form.s_election_date && (
                   <div className="mt-2 field-group max-w-xs">
                     <Label className="field-label">Date of S Election</Label>
-                    <DatePickerField value="" onChange={(v) => update("s_election_date", v)} />
+                    <DatePickerField value="" onChange={(v) => updateAndSave("s_election_date", v)} />
                   </div>
                 )}
               </div>
@@ -1240,7 +1289,7 @@ export default function IncorporationTab({ company }: Props) {
             </div>
             <div className="field-group col-span-2">
               <Label className="field-label">State</Label>
-              <Select value={form.registered_agent_state} onValueChange={(v) => update("registered_agent_state", v)}>
+              <Select value={form.registered_agent_state} onValueChange={(v) => updateAndSave("registered_agent_state", v)}>
                 <SelectTrigger className="h-7 text-sm min-w-[60px] px-2"><SelectValue placeholder="ST" /></SelectTrigger>
                 <SelectContent>
                   {US_STATES.map((s) => (
@@ -1274,12 +1323,23 @@ export default function IncorporationTab({ company }: Props) {
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Sticky Save Bar */}
+      {/* Auto-save Status Indicator */}
       <div className="sticky bottom-3 flex justify-end">
-        <Button type="submit" disabled={save.isPending} size="sm" className="shadow-lg">
-          {save.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-          Save Changes
-        </Button>
+        {saveStatus === "saving" && (
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground animate-fade-in">
+            <Loader2 className="h-3 w-3 animate-spin" /> Saving…
+          </span>
+        )}
+        {saveStatus === "saved" && (
+          <span className="flex items-center gap-1.5 text-xs text-success animate-fade-in">
+            <Check className="h-3 w-3" /> All changes saved
+          </span>
+        )}
+        {saveStatus === "error" && (
+          <span className="flex items-center gap-1.5 text-xs text-destructive animate-fade-in">
+            <AlertTriangle className="h-3 w-3" /> Failed to save — please try again
+          </span>
+        )}
       </div>
       {/* WDFI Entity Selection Dialog */}
       <Dialog open={showWdfiDialog} onOpenChange={setShowWdfiDialog}>
@@ -1317,6 +1377,6 @@ export default function IncorporationTab({ company }: Props) {
           </div>
         </DialogContent>
       </Dialog>
-    </form>
+    </div>
   );
 }
