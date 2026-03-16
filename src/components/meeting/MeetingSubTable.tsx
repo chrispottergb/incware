@@ -49,7 +49,7 @@ interface Props {
   companyId?: string;
 }
 
-export default function MeetingSubTable({ meetingId, tableName, title, columns }: Props) {
+export default function MeetingSubTable({ meetingId, tableName, title, columns, companyId }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
