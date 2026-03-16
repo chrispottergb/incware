@@ -1302,12 +1302,23 @@ export default function IncorporationTab({ company }: Props) {
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Sticky Save Bar */}
+      {/* Auto-save Status Indicator */}
       <div className="sticky bottom-3 flex justify-end">
-        <Button type="submit" disabled={save.isPending} size="sm" className="shadow-lg">
-          {save.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-          Save Changes
-        </Button>
+        {saveStatus === "saving" && (
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground animate-fade-in">
+            <Loader2 className="h-3 w-3 animate-spin" /> Saving…
+          </span>
+        )}
+        {saveStatus === "saved" && (
+          <span className="flex items-center gap-1.5 text-xs text-success animate-fade-in">
+            <Check className="h-3 w-3" /> All changes saved
+          </span>
+        )}
+        {saveStatus === "error" && (
+          <span className="flex items-center gap-1.5 text-xs text-destructive animate-fade-in">
+            <AlertTriangle className="h-3 w-3" /> Failed to save — please try again
+          </span>
+        )}
       </div>
       {/* WDFI Entity Selection Dialog */}
       <Dialog open={showWdfiDialog} onOpenChange={setShowWdfiDialog}>
@@ -1345,6 +1356,6 @@ export default function IncorporationTab({ company }: Props) {
           </div>
         </DialogContent>
       </Dialog>
-    </form>
+    </div>
   );
 }
