@@ -971,9 +971,6 @@ export default function OrganizationTab({ companyId, company }: Props) {
                       <DatePickerField value={raForm.registered_agent_resigned_date} onChange={(v) => setRaForm(p => ({ ...p, registered_agent_resigned_date: v || "" }))} placeholder="Resigned date" />
                     </div>
                   </div>
-                      <DatePickerField value={raForm.registered_agent_resigned_date} onChange={(v) => setRaForm(p => ({ ...p, registered_agent_resigned_date: v || "" }))} placeholder="Resigned date" />
-                    </div>
-                  </div>
                   <div className="flex justify-end">
                     <Button type="submit" disabled={saveRegisteredAgent.isPending} size="sm">
                       {saveRegisteredAgent.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
