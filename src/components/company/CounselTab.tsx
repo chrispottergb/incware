@@ -81,8 +81,7 @@ function FirmDialog({
             <div className="col-span-5"><Label className="text-xs">City</Label><Input className="h-7 text-sm" value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
             <div className="col-span-3"><Label className="text-xs">State</Label><Input className="h-7 text-sm" value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
             <div className="col-span-4"><Label className="text-xs">Zip</Label><Input className="h-7 text-sm" value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} /></div>
-            <div className="col-span-6"><Label className="text-xs">Phone</Label><Input className="h-7 text-sm" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
-            <div className="col-span-6"><Label className="text-xs">Email</Label><Input className="h-7 text-sm" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
+            <div className="col-span-12"><Label className="text-xs">Phone</Label><Input className="h-7 text-sm" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
           </div>
           <div><Label className="text-xs">Website</Label><Input className="h-7 text-sm" value={form.website} onChange={e => setForm(p => ({ ...p, website: e.target.value }))} /></div>
         </div>
@@ -355,7 +354,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
                     {firmAttorneys.length > 0 ? (
                       <Table>
                         <TableHeader>
-                          <TableRow><TableHead className="pl-10">Name</TableHead><TableHead className="hidden sm:table-cell">Scope of Engagement</TableHead><TableHead className="hidden lg:table-cell">Phone</TableHead><TableHead className="hidden lg:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow>
+                          <TableRow><TableHead className="pl-10">Name</TableHead><TableHead className="hidden sm:table-cell">Scope of Engagement</TableHead><TableHead className="hidden lg:table-cell">Cell Phone</TableHead><TableHead className="hidden lg:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow>
                         </TableHeader>
                         <TableBody>
                           {firmAttorneys.map((a: any) => (
@@ -464,7 +463,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
               <ScopeCombobox value={contactForm.specialty} onChange={v => setContactForm(p => ({ ...p, specialty: v }))} options={LEGAL_SERVICES} placeholder="Select or type legal service" />
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Phone</Label><Input value={contactForm.phone} onChange={e => setContactForm(p => ({ ...p, phone: e.target.value }))} /></div>
+              <div><Label className="text-xs">Cell Phone</Label><Input value={contactForm.phone} onChange={e => setContactForm(p => ({ ...p, phone: e.target.value }))} /></div>
               <div><Label className="text-xs">Email</Label><Input value={contactForm.email} onChange={e => setContactForm(p => ({ ...p, email: e.target.value }))} /></div>
             </div>
             <div><Label className="text-xs">Notes</Label><Textarea value={contactForm.notes} onChange={e => setContactForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
@@ -657,7 +656,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
                     {firmAccountants.length > 0 ? (
                       <Table>
                         <TableHeader>
-                          <TableRow><TableHead className="pl-10">Name</TableHead><TableHead className="hidden sm:table-cell">Scope of Engagement</TableHead><TableHead className="hidden lg:table-cell">Phone</TableHead><TableHead className="hidden lg:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow>
+                          <TableRow><TableHead className="pl-10">Name</TableHead><TableHead className="hidden sm:table-cell">Scope of Engagement</TableHead><TableHead className="hidden lg:table-cell">Cell Phone</TableHead><TableHead className="hidden lg:table-cell">Email</TableHead><TableHead className="w-16" /></TableRow>
                         </TableHeader>
                         <TableBody>
                           {firmAccountants.map((a: any) => (
@@ -766,7 +765,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
               <ScopeCombobox value={contactForm.specialty} onChange={v => setContactForm(p => ({ ...p, specialty: v }))} options={ACCOUNTING_SERVICES} />
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Phone</Label><Input value={contactForm.phone} onChange={e => setContactForm(p => ({ ...p, phone: e.target.value }))} /></div>
+              <div><Label className="text-xs">Cell Phone</Label><Input value={contactForm.phone} onChange={e => setContactForm(p => ({ ...p, phone: e.target.value }))} /></div>
               <div><Label className="text-xs">Email</Label><Input value={contactForm.email} onChange={e => setContactForm(p => ({ ...p, email: e.target.value }))} /></div>
             </div>
             <div><Label className="text-xs">Notes</Label><Textarea value={contactForm.notes} onChange={e => setContactForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
