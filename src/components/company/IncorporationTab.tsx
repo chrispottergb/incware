@@ -1153,7 +1153,7 @@ export default function IncorporationTab({ company }: Props) {
             {equityCard.showSeal && (
               <div className="field-group">
                 <Label className="field-label">Seal</Label>
-                <Select value={form.seal_type} onValueChange={(v) => update("seal_type", v)}>
+                <Select value={form.seal_type} onValueChange={(v) => updateAndSave("seal_type", v)}>
                   <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="seal">Seal</SelectItem>
