@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Plus, Pencil, Trash2, Landmark, PenTool, CalendarIcon, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, Landmark, PenTool, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
