@@ -612,7 +612,7 @@ export default function IncorporationTab({ company }: Props) {
               <div className="grid grid-cols-12 gap-x-3 gap-y-2">
                 <div className="field-group col-span-4">
                   <Label className="field-label">Corporate Status</Label>
-                  <Select value={form.corporate_status} onValueChange={(v) => update("corporate_status", v)}>
+                  <Select value={form.corporate_status} onValueChange={(v) => updateAndSave("corporate_status", v)}>
                     <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="current">Current</SelectItem>
