@@ -81,8 +81,7 @@ function FirmDialog({
             <div className="col-span-5"><Label className="text-xs">City</Label><Input className="h-7 text-sm" value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
             <div className="col-span-3"><Label className="text-xs">State</Label><Input className="h-7 text-sm" value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
             <div className="col-span-4"><Label className="text-xs">Zip</Label><Input className="h-7 text-sm" value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} /></div>
-            <div className="col-span-6"><Label className="text-xs">Phone</Label><Input className="h-7 text-sm" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
-            <div className="col-span-6"><Label className="text-xs">Email</Label><Input className="h-7 text-sm" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
+            <div className="col-span-12"><Label className="text-xs">Phone</Label><Input className="h-7 text-sm" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
           </div>
           <div><Label className="text-xs">Website</Label><Input className="h-7 text-sm" value={form.website} onChange={e => setForm(p => ({ ...p, website: e.target.value }))} /></div>
         </div>
