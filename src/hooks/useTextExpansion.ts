@@ -35,6 +35,13 @@ export function useTextExpansion(
   const shortcodesRef = useRef(shortcodes);
   shortcodesRef.current = shortcodes;
 
+  // Use refs to avoid stale closures — the keydown event can fire
+  // before React re-attaches a new handler after a state change.
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key !== " " && e.key !== "Tab") return;
@@ -44,7 +51,9 @@ export function useTextExpansion(
       if (!map || Object.keys(map).length === 0) return;
 
       const cursorPos = el.selectionStart ?? 0;
-      const textBefore = value.slice(0, cursorPos);
+      // Read current value from the DOM element directly for reliability
+      const currentValue = el.value;
+      const textBefore = currentValue.slice(0, cursorPos);
 
       // Find the last word (token) before cursor
       const match = textBefore.match(/(\S+)$/);
@@ -56,9 +65,9 @@ export function useTextExpansion(
 
       e.preventDefault();
       const before = textBefore.slice(0, textBefore.length - match[1].length);
-      const after = value.slice(cursorPos);
+      const after = currentValue.slice(cursorPos);
       const newValue = before + expansion + (e.key === " " ? " " : "") + after;
-      onChange(newValue);
+      onChangeRef.current(newValue);
 
       // Restore cursor position after React re-render
       const newPos = before.length + expansion.length + (e.key === " " ? 1 : 0);
@@ -66,7 +75,7 @@ export function useTextExpansion(
         el.setSelectionRange(newPos, newPos);
       });
     },
-    [value, onChange, ref],
+    [ref],
   );
 
   useEffect(() => {
