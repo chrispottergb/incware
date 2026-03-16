@@ -23,7 +23,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Loader2, Save, Shield, Building2, Share2, UserCheck, ChevronDown, Users, Heart, RefreshCw, ExternalLink, User, Phone, Globe, Plus, Trash2, Check, AlertTriangle } from "lucide-react";
+import { Loader2, Shield, Building2, Share2, UserCheck, ChevronDown, Users, Heart, RefreshCw, ExternalLink, User, Phone, Globe, Plus, Trash2, Check, AlertTriangle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
