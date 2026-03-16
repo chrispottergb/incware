@@ -13,6 +13,7 @@ import { Plus, Trash2, Download, ChevronLeft, ChevronRight, FileText, Info, Aler
 import { toast } from "sonner";
 import { generateAnnualMeetingPDF, AnnualMeetingData } from "@/lib/annual-meeting-pdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import * as pdfjsLib from "pdfjs-dist";
@@ -1000,7 +1001,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
                 </div>
                 <div className="col-span-4">
                   <RequiredField label="Meeting Date" value={data.meetingDate} />
-                  <Input className={inputClass} type="date" value={data.meetingDate} onChange={e => update("meetingDate", e.target.value)} />
+                  <DatePickerField value={data.meetingDate} onChange={v => update("meetingDate", v)} className={inputClass} />
                 </div>
                 <div className="col-span-4">
                   <Label className={labelClass}>Meeting Time</Label>
@@ -1036,7 +1037,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               <div className="grid grid-cols-12 gap-2">
                 <div className="col-span-6">
                   <Label className={labelClass}>Prior Meeting Date</Label>
-                  <Input className={inputClass} type="date" value={data.priorMeetingDate} onChange={e => update("priorMeetingDate", e.target.value)} />
+                  <DatePickerField value={data.priorMeetingDate} onChange={v => update("priorMeetingDate", v)} className={inputClass} />
                   {priorMeeting?.meeting_date && (
                     <p className="text-xs text-muted-foreground mt-1">Pre-filled from last annual meeting on file</p>
                   )}

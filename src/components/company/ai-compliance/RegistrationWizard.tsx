@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Check, ChevronLeft, ChevronRight, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAIComplianceStore, type AISystem } from "@/stores/ai-compliance-store";
@@ -293,7 +294,7 @@ export default function RegistrationWizard({ open, onClose }: Props) {
                 </div>
               ))}
               <div className="grid grid-cols-2 gap-4">
-                <div><Label className="text-xs">Last override test</Label><Input type="date" value={form.lastOverrideTest} onChange={(e) => set("lastOverrideTest", e.target.value)} /></div>
+                <div><Label className="text-xs">Last override test</Label><DatePickerField value={form.lastOverrideTest} onChange={(v) => set("lastOverrideTest", v)} /></div>
                 <div>
                   <Label className="text-xs">Monitoring cadence</Label>
                   <Select value={form.monitoringCadence} onValueChange={(v) => set("monitoringCadence", v)}>

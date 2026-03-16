@@ -11,6 +11,7 @@ import { Plus, Trash2, Download, ChevronLeft, ChevronRight, FileText, Info } fro
 import { toast } from "sonner";
 import { generateOrgMeetingPDF, OrgMeetingData } from "@/lib/org-meeting-pdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import * as pdfjsLib from "pdfjs-dist";
@@ -229,7 +230,7 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
                 </div>
                 <div className="col-span-4">
                   <Label className={labelClass}>Meeting Date *</Label>
-                  <Input className={inputClass} type="date" value={data.meetingDate} onChange={e => update("meetingDate", e.target.value)} />
+                  <DatePickerField value={data.meetingDate} onChange={v => update("meetingDate", v)} className={inputClass} />
                 </div>
                 <div className="col-span-4">
                   <Label className={labelClass}>Meeting Time</Label>
@@ -264,7 +265,7 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
               <div className="grid grid-cols-12 gap-2">
                 <div className="col-span-6">
                   <Label className={labelClass}>Filing Date of Articles of Organization</Label>
-                  <Input className={inputClass} type="date" value={data.filingDate} onChange={e => update("filingDate", e.target.value)} />
+                  <DatePickerField value={data.filingDate} onChange={v => update("filingDate", v)} className={inputClass} />
                 </div>
                 <div className="col-span-6">
                   <Label className={labelClass}>State Agency Name</Label>
@@ -490,7 +491,7 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
                   <div className="grid grid-cols-12 gap-2">
                     <div className="col-span-6">
                       <Label className={labelClass}>Effective Date</Label>
-                      <Input className={inputClass} type="date" value={data.scorpEffectiveDate} onChange={e => update("scorpEffectiveDate", e.target.value)} />
+                      <DatePickerField value={data.scorpEffectiveDate} onChange={v => update("scorpEffectiveDate", v)} className={inputClass} />
                     </div>
                   </div>
                   <p className="text-xs text-destructive font-medium italic">⚠ IRS Form 2553 must be filed within 75 days of the effective date.</p>
