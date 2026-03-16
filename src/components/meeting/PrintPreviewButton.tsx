@@ -310,9 +310,18 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
             </div>
           </DialogHeader>
 
-          {/* Page navigation */}
+          {/* Page navigation - moved to bottom */}
+          <div ref={containerRef} className="flex-1 overflow-auto flex justify-center p-4 bg-muted/30">
+            {rendering && (
+              <div className="absolute inset-0 flex items-center justify-center z-10">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            <canvas ref={canvasRef} className="shadow-lg rounded" />
+          </div>
+
           {pageCount > 1 && (
-            <div className="flex items-center justify-center gap-3 px-6 py-2 border-b border-border">
+            <div className="flex items-center justify-center gap-3 px-6 py-3 border-t border-border bg-background">
               <Button
                 size="sm"
                 variant="ghost"
@@ -334,15 +343,6 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
               </Button>
             </div>
           )}
-
-          <div ref={containerRef} className="flex-1 overflow-auto flex justify-center p-4 bg-muted/30">
-            {rendering && (
-              <div className="absolute inset-0 flex items-center justify-center z-10">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            )}
-            <canvas ref={canvasRef} className="shadow-lg rounded" />
-          </div>
         </DialogContent>
       </Dialog>
     </>
