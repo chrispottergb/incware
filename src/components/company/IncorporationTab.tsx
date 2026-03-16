@@ -547,13 +547,13 @@ export default function IncorporationTab({ company }: Props) {
   const scheduleAutoSave = useCallback(() => {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
-      const currentForm = JSON.stringify(form);
+      const currentForm = JSON.stringify(formRef.current);
       if (currentForm !== lastSavedFormRef.current) {
         setSaveStatus("saving");
         save.mutate();
       }
     }, 150);
-  }, [form, save]);
+  }, [save]);
 
   return (
     <div
