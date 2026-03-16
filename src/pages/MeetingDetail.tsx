@@ -654,6 +654,7 @@ export default function MeetingDetail() {
             </div>
             <MeetingSubTable meetingId={meeting.id} tableName="meeting_directors" title={term.directors}
               columns={[{ key: "director_name", label: term.directorName, required: true }]}
+              companyId={id}
             />
           </div>
         </TabsContent>
