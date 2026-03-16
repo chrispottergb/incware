@@ -751,7 +751,7 @@ export default function IncorporationTab({ company }: Props) {
             </div>
             <div className="field-group col-span-6 sm:col-span-3">
               <Label className="field-label">Incorporation Date</Label>
-              <DatePickerField value={form.incorporation_date || ""} onChange={(v) => update("incorporation_date", v)} className="h-7" />
+              <DatePickerField value={form.incorporation_date || ""} onChange={(v) => updateAndSave("incorporation_date", v)} className="h-7" />
             </div>
             <div className="field-group col-span-6 sm:col-span-3">
               <Label className="field-label">Fiscal Year End</Label>
