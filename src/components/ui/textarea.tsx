@@ -22,13 +22,18 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(({ classNa
 
   const handleExpansionChange = React.useCallback(
     (newValue: string) => {
-      if (!onChange) return;
-      // Synthesize a change event
-      const nativeEvent = new Event("input", { bubbles: true });
-      Object.defineProperty(nativeEvent, "target", { writable: false, value: { value: newValue } });
-      onChange(nativeEvent as any);
+      const el = internalRef.current;
+      if (!el) return;
+
+      const nativeSetter = Object.getOwnPropertyDescriptor(
+        window.HTMLTextAreaElement.prototype,
+        "value",
+      )?.set;
+
+      nativeSetter?.call(el, newValue);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
     },
-    [onChange],
+    [],
   );
 
   useTextExpansion(
