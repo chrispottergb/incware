@@ -1204,7 +1204,7 @@ export default function IncorporationTab({ company }: Props) {
                 {!form.s_election_date && (
                   <div className="mt-2 field-group max-w-xs">
                     <Label className="field-label">Date of S Election</Label>
-                    <DatePickerField value="" onChange={(v) => update("s_election_date", v)} />
+                    <DatePickerField value="" onChange={(v) => updateAndSave("s_election_date", v)} />
                   </div>
                 )}
               </div>
