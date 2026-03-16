@@ -120,6 +120,8 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shareholders", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["stock-certificate-shareholders", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["shareholders-for-holdings", companyId] });
       toast.success(`${t.shareholder} removed.`);
     },
     onError: (err: Error) => toast.error(err.message),
