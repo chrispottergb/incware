@@ -1096,7 +1096,7 @@ export default function IncorporationTab({ company }: Props) {
               <>
                 <div className="field-group">
                   <Label className="field-label">Par Value Type</Label>
-                  <Select value={form.par_value_type} onValueChange={(v) => update("par_value_type", v)}>
+                  <Select value={form.par_value_type} onValueChange={(v) => updateAndSave("par_value_type", v)}>
                     <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="par">Par Value</SelectItem>
