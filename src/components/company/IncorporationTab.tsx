@@ -534,28 +534,32 @@ export default function IncorporationTab({ company }: Props) {
   const lastSavedFormRef = useRef(JSON.stringify(form));
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Update ref when company changes
   useEffect(() => {
     lastSavedFormRef.current = JSON.stringify(form);
   }, [company.id]);
 
-  const handleBlurSave = useCallback(() => {
-    const currentForm = JSON.stringify(form);
-    if (currentForm === lastSavedFormRef.current) return;
-    setSaveStatus("saving");
-    save.mutate();
+  const scheduleAutoSave = useCallback(() => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      const currentForm = JSON.stringify(form);
+      if (currentForm !== lastSavedFormRef.current) {
+        setSaveStatus("saving");
+        save.mutate();
+      }
+    }, 150);
   }, [form, save]);
 
   return (
     <div
       onBlur={(e) => {
-        // Only auto-save when focus leaves an input/select/textarea within this form
+        // Auto-save when focus leaves an interactive element
         const target = e.target as HTMLElement;
         const tag = target.tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.getAttribute("role") === "combobox") {
-          // Small delay to let React state settle from the blur event
-          setTimeout(handleBlurSave, 100);
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.getAttribute("role") === "combobox" || target.getAttribute("role") === "checkbox") {
+          scheduleAutoSave();
         }
       }}
       className="space-y-5"
