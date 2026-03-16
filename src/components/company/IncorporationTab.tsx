@@ -292,6 +292,20 @@ export default function IncorporationTab({ company }: Props) {
   const update = (field: string, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
+  // For Select/Checkbox controls that don't reliably fire blur
+  const updateAndSave = (field: string, value: string | boolean) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    // scheduleAutoSave will be called after state settles
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      const updated = { ...formRef.current, [field]: value };
+      const currentForm = JSON.stringify(updated);
+      if (currentForm !== lastSavedFormRef.current) {
+        setSaveStatus("saving");
+        save.mutate();
+      }
+    }, 200);
+  };
   const handleAgentZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, registered_agent_city: result.city, registered_agent_state: result.state }));
   }, []);
