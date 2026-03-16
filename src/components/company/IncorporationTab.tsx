@@ -729,7 +729,7 @@ export default function IncorporationTab({ company }: Props) {
             </div>
             <div className="field-group col-span-6 sm:col-span-2">
               <Label className="field-label">State of Inc.</Label>
-              <Select value={form.state_of_incorporation} onValueChange={(v) => update("state_of_incorporation", v)}>
+              <Select value={form.state_of_incorporation} onValueChange={(v) => updateAndSave("state_of_incorporation", v)}>
                 <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
                 <SelectContent>
                   {US_STATES.map((s) => (
