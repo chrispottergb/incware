@@ -312,37 +312,38 @@ export default function BanksTab({ companyId }: BanksTabProps) {
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing ? "Edit" : "Add"} Bank Account</DialogTitle></DialogHeader>
             <div className="grid gap-3">
-              <div className="relative">
-                <Label className="text-xs">Bank Name *</Label>
-                <Input
-                  value={form.bank_name}
-                  onChange={e => {
-                    setForm(p => ({ ...p, bank_name: e.target.value }));
-                    setBankNameSearch(e.target.value);
-                    setShowBankDropdown(true);
-                  }}
-                  onFocus={() => { if (allBankNames.length > 0) setShowBankDropdown(true); }}
-                  onBlur={() => setTimeout(() => setShowBankDropdown(false), 200)}
-                  placeholder="Type or select from existing banks"
-                />
-                {showBankDropdown && filteredBankNames.length > 0 && (
-                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
-                    <div className="px-3 py-1 text-[10px] text-muted-foreground font-medium border-b flex items-center gap-1">📖 Master Directory</div>
-                    {filteredBankNames.map((b: any, i: number) => (
-                      <button
-                        key={i}
-                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors"
-                        onMouseDown={(e) => { e.preventDefault(); selectExistingBank(b); }}
-                      >
-                        {b.firm_name || b.bank_name}
-                        {b.city && b.state && <span className="text-muted-foreground ml-2">— {b.city}, {b.state}</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="grid grid-cols-12 gap-x-2 gap-y-2">
-                <div className="col-span-6">
+              {/* Row 1: Bank Name (~60%) | Account Type (~40%) */}
+              <div className="grid grid-cols-20 gap-2">
+                <div className="col-span-12 relative">
+                  <Label className="text-xs">Bank Name *</Label>
+                  <Input
+                    value={form.bank_name}
+                    onChange={e => {
+                      setForm(p => ({ ...p, bank_name: e.target.value }));
+                      setBankNameSearch(e.target.value);
+                      setShowBankDropdown(true);
+                    }}
+                    onFocus={() => { if (allBankNames.length > 0) setShowBankDropdown(true); }}
+                    onBlur={() => setTimeout(() => setShowBankDropdown(false), 200)}
+                    placeholder="Type or select from existing banks"
+                  />
+                  {showBankDropdown && filteredBankNames.length > 0 && (
+                    <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                      <div className="px-3 py-1 text-[10px] text-muted-foreground font-medium border-b flex items-center gap-1">📖 Master Directory</div>
+                      {filteredBankNames.map((b: any, i: number) => (
+                        <button
+                          key={i}
+                          className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors"
+                          onMouseDown={(e) => { e.preventDefault(); selectExistingBank(b); }}
+                        >
+                          {b.firm_name || b.bank_name}
+                          {b.city && b.state && <span className="text-muted-foreground ml-2">— {b.city}, {b.state}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="col-span-8">
                   <Label className="text-xs">Account Type</Label>
                   <Select value={form.account_type} onValueChange={v => setForm(p => ({ ...p, account_type: v }))}>
                     <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
@@ -351,14 +352,24 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="col-span-6"><Label className="text-xs">Contact Name</Label><Input className="h-7 text-sm" value={form.contact_name} onChange={e => setForm(p => ({ ...p, contact_name: e.target.value }))} /></div>
-                <div className="col-span-4"><Label className="text-xs">Phone</Label><Input className="h-7 text-sm" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
-                <div className="col-span-7"><Label className="text-xs">Address</Label><Input className="h-7 text-sm" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
-                <div className="col-span-5"><Label className="text-xs">Address 2</Label><Input className="h-7 text-sm" value={form.address_2} onChange={e => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit" /></div>
-                <div className="col-span-5"><Label className="text-xs">City</Label><Input className="h-7 text-sm" value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
-                <div className="col-span-3"><Label className="text-xs">State</Label><Input className="h-7 text-sm min-w-[60px]" value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
-                <div className="col-span-4"><Label className="text-xs">Zip</Label><Input className="h-7 text-sm" value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} /></div>
               </div>
+              {/* Row 2: Contact Name (50%) | Phone (50%) */}
+              <div className="grid grid-cols-2 gap-2">
+                <div><Label className="text-xs">Contact Name</Label><Input className="h-7 text-sm" value={form.contact_name} onChange={e => setForm(p => ({ ...p, contact_name: e.target.value }))} /></div>
+                <div><Label className="text-xs">Phone</Label><Input className="h-7 text-sm" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
+              </div>
+              {/* Row 3: Address (65%) | Row 4: Address 2 (35%) */}
+              <div className="grid grid-cols-20 gap-2">
+                <div className="col-span-13"><Label className="text-xs">Address</Label><Input className="h-7 text-sm" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
+                <div className="col-span-7"><Label className="text-xs">Address 2</Label><Input className="h-7 text-sm" value={form.address_2} onChange={e => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit" /></div>
+              </div>
+              {/* Row 5: City (50%) | State (15%) | Zip (30%) — using ~20-col approximation */}
+              <div className="grid grid-cols-20 gap-2">
+                <div className="col-span-10"><Label className="text-xs">City</Label><Input className="h-7 text-sm" value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
+                <div className="col-span-4"><Label className="text-xs">State</Label><Input className="h-7 text-sm min-w-[60px]" value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
+                <div className="col-span-6"><Label className="text-xs">Zip</Label><Input className="h-7 text-sm" value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} /></div>
+              </div>
+              {/* Row 6: Notes — full width */}
               <div><Label className="text-xs">Notes</Label><Textarea className="text-sm min-h-[50px]" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
 
               {/* Authorized Signatories section (only when editing) */}
