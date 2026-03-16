@@ -519,16 +519,44 @@ export default function IncorporationTab({ company }: Props) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company", company.id] });
       queryClient.invalidateQueries({ queryKey: ["companies"] });
-      toast.success(isLLCType(company.entity_type) ? "Organizational info saved!" : "Incorporation info saved!");
+      lastSavedFormRef.current = JSON.stringify(form);
+      setSaveStatus("saved");
+      if (saveStatusTimer.current) clearTimeout(saveStatusTimer.current);
+      saveStatusTimer.current = setTimeout(() => setSaveStatus("idle"), 3000);
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => {
+      setSaveStatus("error");
+      toast.error(err.message);
+    },
   });
 
+  // ─── Auto-save on blur ─────────────────────────────────────────────────────
+  const lastSavedFormRef = useRef(JSON.stringify(form));
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const saveStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Update ref when company changes
+  useEffect(() => {
+    lastSavedFormRef.current = JSON.stringify(form);
+  }, [company.id]);
+
+  const handleBlurSave = useCallback(() => {
+    const currentForm = JSON.stringify(form);
+    if (currentForm === lastSavedFormRef.current) return;
+    setSaveStatus("saving");
+    save.mutate();
+  }, [form, save]);
+
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        save.mutate();
+    <div
+      onBlur={(e) => {
+        // Only auto-save when focus leaves an input/select/textarea within this form
+        const target = e.target as HTMLElement;
+        const tag = target.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.getAttribute("role") === "combobox") {
+          // Small delay to let React state settle from the blur event
+          setTimeout(handleBlurSave, 100);
+        }
       }}
       className="space-y-5"
     >
