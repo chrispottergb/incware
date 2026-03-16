@@ -77,33 +77,33 @@ function getOfficerFields(entityType: string) {
 // Entity-type-specific officer title dropdown options for meeting officers
 export const OFFICER_TITLE_OPTIONS: Record<string, string[]> = {
   Corporation: [
-    "President", "CEO", "Vice President", "Secretary", "Treasurer", "CFO",
+    "President", "CEO", "Vice President", "Secretary", "Treasurer", "Secretary/Treasurer", "CFO",
     "COO", "CTO", "Assistant Secretary", "Assistant Treasurer",
     "Executive Vice President", "Senior Vice President",
   ],
   "S-Corp": [
-    "President", "CEO", "Vice President", "Secretary", "Treasurer", "CFO",
+    "President", "CEO", "Vice President", "Secretary", "Treasurer", "Secretary/Treasurer", "CFO",
     "COO", "CTO", "Assistant Secretary", "Assistant Treasurer",
     "Executive Vice President", "Senior Vice President",
   ],
   LLC: [
     "Managing Member", "Manager", "Assistant Manager", "Secretary",
-    "Treasurer", "Financial Manager", "Organizer", "Member-Manager",
+    "Treasurer", "Secretary/Treasurer", "Financial Manager", "Organizer", "Member-Manager",
     "Chief Manager", "Operations Manager",
   ],
   "Single Member LLC": [
     "Managing Member", "Manager", "Assistant Manager", "Secretary",
-    "Treasurer", "Financial Manager", "Organizer", "Member-Manager",
+    "Treasurer", "Secretary/Treasurer", "Financial Manager", "Organizer", "Member-Manager",
     "Chief Manager", "Operations Manager",
   ],
   "Non-Profit": [
     "President", "Chair", "Vice President", "Vice Chair", "Secretary",
-    "Treasurer", "Executive Director", "Assistant Secretary",
+    "Treasurer", "Secretary/Treasurer", "Executive Director", "Assistant Secretary",
     "Assistant Treasurer", "Board Chair", "Board Vice Chair",
   ],
   Partnership: [
     "Managing Partner", "General Partner", "Limited Partner", "Senior Partner",
-    "Partner", "Secretary", "Treasurer", "Financial Partner",
+    "Partner", "Secretary", "Treasurer", "Secretary/Treasurer", "Financial Partner",
     "Administrative Partner", "Founding Partner",
   ],
 };
