@@ -45,6 +45,8 @@ interface Props {
   tableName: string;
   title: string;
   columns: Column[];
+  /** When provided for meeting_directors, syncs new directors to company-level directors table */
+  companyId?: string;
 }
 
 export default function MeetingSubTable({ meetingId, tableName, title, columns }: Props) {
