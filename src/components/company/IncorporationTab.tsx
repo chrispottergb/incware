@@ -1188,7 +1188,7 @@ export default function IncorporationTab({ company }: Props) {
                 checked={!!form.s_election_date}
                 onCheckedChange={(checked) => {
                   if (!checked) {
-                    update("s_election_date", "");
+                    updateAndSave("s_election_date", "");
                   }
                 }}
               />
