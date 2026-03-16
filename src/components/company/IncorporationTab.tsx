@@ -1138,7 +1138,7 @@ export default function IncorporationTab({ company }: Props) {
                     {llcSElectionEnabled && (
                       <div className="mt-2 max-w-xs">
                         <Label className="field-label">S Election Effective Date</Label>
-                        <DatePickerField value={form.s_election_date || ""} onChange={(v) => update("s_election_date", v)} />
+                        <DatePickerField value={form.s_election_date || ""} onChange={(v) => updateAndSave("s_election_date", v)} />
                         {!form.s_election_date && (
                           <p className="mt-1 text-[11px] text-destructive">S Election Effective Date is required when enabled.</p>
                         )}
