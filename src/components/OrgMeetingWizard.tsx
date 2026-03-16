@@ -229,7 +229,7 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
                 </div>
                 <div className="col-span-4">
                   <Label className={labelClass}>Meeting Date *</Label>
-                  <Input className={inputClass} type="date" value={data.meetingDate} onChange={e => update("meetingDate", e.target.value)} />
+                  <DatePickerField value={data.meetingDate} onChange={v => update("meetingDate", v)} className={inputClass} />
                 </div>
                 <div className="col-span-4">
                   <Label className={labelClass}>Meeting Time</Label>
