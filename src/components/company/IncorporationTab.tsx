@@ -552,11 +552,6 @@ export default function IncorporationTab({ company }: Props) {
     },
   });
 
-  // ─── Auto-save on blur ─────────────────────────────────────────────────────
-  const lastSavedFormRef = useRef(JSON.stringify(form));
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const saveStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Update ref when company changes
   useEffect(() => {
