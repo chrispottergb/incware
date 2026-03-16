@@ -925,31 +925,34 @@ export default function OrganizationTab({ companyId, company }: Props) {
                       </Select>
                     </div>
                     <div className="field-group col-span-6 sm:col-span-4" />
-                    <div className="field-group col-span-12 sm:col-span-7">
-                      <Label className="field-label">Street Address <span className="text-destructive">*</span></Label>
+                  </div>
+                  <div className="grid grid-cols-12 gap-x-2 gap-y-2">
+                    <div className="field-group col-span-3">
+                      <Label className="field-label">Address <span className="text-destructive">*</span></Label>
                       <Input className="h-7 text-sm" value={raForm.registered_agent_address} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_address: e.target.value }))} placeholder="Physical address (no P.O. Boxes)" />
                     </div>
-                    <div className="field-group col-span-12 sm:col-span-5">
+                    <div className="field-group col-span-3">
                       <Label className="field-label">Address 2</Label>
                       <Input className="h-7 text-sm" value={raForm.registered_agent_address_2} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_address_2: e.target.value }))} placeholder="Suite, Unit, Floor" />
                     </div>
-                    <div className="field-group col-span-6 sm:col-span-4">
+                    <div className="field-group col-span-2">
                       <Label className="field-label">City</Label>
                       <Input className="h-7 text-sm" value={raForm.registered_agent_city} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_city: e.target.value }))} />
                     </div>
-                    <div className="field-group col-span-3 sm:col-span-2">
+                    <div className="field-group col-span-2">
                       <Label className="field-label">State <span className="text-destructive">*</span></Label>
                       <Select value={raForm.registered_agent_state} onValueChange={(v) => setRaForm(p => ({ ...p, registered_agent_state: v }))}>
-                        <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
+                        <SelectTrigger className="h-7 text-sm min-w-[60px] px-2"><SelectValue placeholder="ST" /></SelectTrigger>
                         <SelectContent>
                           {US_STATES.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="field-group col-span-3 sm:col-span-2">
+                    <div className="field-group col-span-2">
                       <Label className="field-label">Zip <span className="text-destructive">*</span></Label>
                       <Input className="h-7 text-sm" value={raForm.registered_agent_zip} onChange={(e) => { setRaForm(p => ({ ...p, registered_agent_zip: e.target.value })); handleRaZip(e.target.value); }} />
                     </div>
+                  </div>
                     <div className="field-group col-span-6 sm:col-span-4" />
                     <div className="field-group col-span-6 sm:col-span-3">
                       <Label className="field-label">Phone</Label>
