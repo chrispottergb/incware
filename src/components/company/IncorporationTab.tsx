@@ -1117,7 +1117,7 @@ export default function IncorporationTab({ company }: Props) {
             {equityCard.showSElection && !isLLCType(form.entity_type) && (
               <div className="field-group">
                 <Label className="field-label">S-Election Date</Label>
-                <DatePickerField value={form.s_election_date || ""} onChange={(v) => update("s_election_date", v)} />
+                <DatePickerField value={form.s_election_date || ""} onChange={(v) => updateAndSave("s_election_date", v)} />
               </div>
             )}
             {equityCard.showSElection && isLLCType(form.entity_type) && (
