@@ -289,13 +289,18 @@ export default function IncorporationTab({ company }: Props) {
   const formRef = useRef(form);
   formRef.current = form;
 
+  // Auto-save state (declared early so updateAndSave can reference them)
+  const lastSavedFormRef = useRef(JSON.stringify(form));
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const saveStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const update = (field: string, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
   // For Select/Checkbox controls that don't reliably fire blur
   const updateAndSave = (field: string, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    // scheduleAutoSave will be called after state settles
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       const updated = { ...formRef.current, [field]: value };
