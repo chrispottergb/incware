@@ -342,7 +342,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                 )}
               </div>
               <div className="grid grid-cols-12 gap-x-2 gap-y-2">
-                <div className="col-span-4">
+                <div className="col-span-6">
                   <Label className="text-xs">Account Type</Label>
                   <Select value={form.account_type} onValueChange={v => setForm(p => ({ ...p, account_type: v }))}>
                     <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
@@ -351,11 +351,8 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="col-span-4"><Label className="text-xs">Account #</Label><Input className="h-7 text-sm" value={form.account_number} onChange={e => setForm(p => ({ ...p, account_number: e.target.value }))} /></div>
-                <div className="col-span-4"><Label className="text-xs">Routing #</Label><Input className="h-7 text-sm" value={form.routing_number} onChange={e => setForm(p => ({ ...p, routing_number: e.target.value }))} /></div>
-                <div className="col-span-5"><Label className="text-xs">Contact Name</Label><Input className="h-7 text-sm" value={form.contact_name} onChange={e => setForm(p => ({ ...p, contact_name: e.target.value }))} /></div>
-                <div className="col-span-4"><Label className="text-xs">Contact Title</Label><Input className="h-7 text-sm" value={form.contact_title} onChange={e => setForm(p => ({ ...p, contact_title: e.target.value }))} /></div>
-                <div className="col-span-3"><Label className="text-xs">Phone</Label><Input className="h-7 text-sm" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
+                <div className="col-span-6"><Label className="text-xs">Contact Name</Label><Input className="h-7 text-sm" value={form.contact_name} onChange={e => setForm(p => ({ ...p, contact_name: e.target.value }))} /></div>
+                <div className="col-span-2"><Label className="text-xs">Phone</Label><Input className="h-7 text-sm" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
                 <div className="col-span-7"><Label className="text-xs">Address</Label><Input className="h-7 text-sm" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
                 <div className="col-span-5"><Label className="text-xs">Address 2</Label><Input className="h-7 text-sm" value={form.address_2} onChange={e => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit" /></div>
                 <div className="col-span-5"><Label className="text-xs">City</Label><Input className="h-7 text-sm" value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
