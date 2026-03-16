@@ -286,6 +286,9 @@ export default function IncorporationTab({ company }: Props) {
     setLlcSElectionEnabled(isLLCType(company.entity_type) ? !!company.s_election_date : false);
   }, [company.id]);
 
+  const formRef = useRef(form);
+  formRef.current = form;
+
   const update = (field: string, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
