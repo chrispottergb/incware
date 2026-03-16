@@ -13,6 +13,16 @@ export default {
       },
     },
     extend: {
+      gridTemplateColumns: {
+        '20': 'repeat(20, minmax(0, 1fr))',
+      },
+      gridColumn: {
+        'span-7': 'span 7 / span 7',
+        'span-8': 'span 8 / span 8',
+        'span-10': 'span 10 / span 10',
+        'span-12': 'span 12 / span 12',
+        'span-13': 'span 13 / span 13',
+      },
       fontFamily: {
         sans: ["Inter", "sans-serif"],
         display: ["Inter", "sans-serif"],
