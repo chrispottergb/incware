@@ -490,7 +490,7 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
                   <div className="grid grid-cols-12 gap-2">
                     <div className="col-span-6">
                       <Label className={labelClass}>Effective Date</Label>
-                      <Input className={inputClass} type="date" value={data.scorpEffectiveDate} onChange={e => update("scorpEffectiveDate", e.target.value)} />
+                      <DatePickerField value={data.scorpEffectiveDate} onChange={v => update("scorpEffectiveDate", v)} className={inputClass} />
                     </div>
                   </div>
                   <p className="text-xs text-destructive font-medium italic">⚠ IRS Form 2553 must be filed within 75 days of the effective date.</p>

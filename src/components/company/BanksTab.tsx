@@ -433,31 +433,11 @@ export default function BanksTab({ companyId }: BanksTabProps) {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label className="text-xs">Effective Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal text-xs", !signerForm.effective_date && "text-muted-foreground")}>
-                        <CalendarIcon className="mr-2 h-3 w-3" />
-                        {signerForm.effective_date ? format(new Date(signerForm.effective_date + "T00:00:00"), "PPP") : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={signerForm.effective_date ? new Date(signerForm.effective_date + "T00:00:00") : undefined} onSelect={d => setSignerForm(p => ({ ...p, effective_date: d ? d.toISOString().split("T")[0] : "" }))} initialFocus className="p-3 pointer-events-auto" />
-                    </PopoverContent>
-                  </Popover>
+                  <DatePickerField value={signerForm.effective_date} onChange={v => setSignerForm(p => ({ ...p, effective_date: v }))} />
                 </div>
                 <div>
                   <Label className="text-xs">End Date (optional)</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal text-xs", !signerForm.end_date && "text-muted-foreground")}>
-                        <CalendarIcon className="mr-2 h-3 w-3" />
-                        {signerForm.end_date ? format(new Date(signerForm.end_date + "T00:00:00"), "PPP") : "Still active"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={signerForm.end_date ? new Date(signerForm.end_date + "T00:00:00") : undefined} onSelect={d => setSignerForm(p => ({ ...p, end_date: d ? d.toISOString().split("T")[0] : "" }))} initialFocus className="p-3 pointer-events-auto" />
-                    </PopoverContent>
-                  </Popover>
+                  <DatePickerField value={signerForm.end_date} onChange={v => setSignerForm(p => ({ ...p, end_date: v }))} placeholder="Still active" />
                 </div>
               </div>
             </div>

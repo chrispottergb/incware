@@ -293,7 +293,7 @@ export default function RegistrationWizard({ open, onClose }: Props) {
                 </div>
               ))}
               <div className="grid grid-cols-2 gap-4">
-                <div><Label className="text-xs">Last override test</Label><Input type="date" value={form.lastOverrideTest} onChange={(e) => set("lastOverrideTest", e.target.value)} /></div>
+                <div><Label className="text-xs">Last override test</Label><DatePickerField value={form.lastOverrideTest} onChange={(v) => set("lastOverrideTest", v)} /></div>
                 <div>
                   <Label className="text-xs">Monitoring cadence</Label>
                   <Select value={form.monitoringCadence} onValueChange={(v) => set("monitoringCadence", v)}>

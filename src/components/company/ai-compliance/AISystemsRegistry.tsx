@@ -267,7 +267,7 @@ export default function AISystemsRegistry({ companyId }: Props) {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label className="text-xs">Foundation Model (if applicable)</Label><Input {...f("foundation_model")} placeholder="e.g. GPT-4, Claude 3.5, Gemini" /></div>
-                  <div><Label className="text-xs">Deployment Date</Label><Input type="date" {...f("deployment_date")} /></div>
+                  <div><Label className="text-xs">Deployment Date</Label><DatePickerField value={form.deployment_date || ""} onChange={(v) => setForm(p => ({ ...p, deployment_date: v }))} /></div>
                 </div>
                 <div><Label className="text-xs">Vendor's Stated Intended Use</Label><Textarea rows={2} {...f("vendor_intended_use")} placeholder="As described in vendor documentation or terms of service" /></div>
                 <div><Label className="text-xs">Your Organization's Purpose / Use Case</Label><Textarea rows={2} {...f("purpose")} /></div>
