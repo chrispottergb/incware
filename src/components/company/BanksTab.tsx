@@ -342,7 +342,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                 )}
               </div>
               <div className="grid grid-cols-12 gap-x-2 gap-y-2">
-                <div className="col-span-4">
+                <div className="col-span-6">
                   <Label className="text-xs">Account Type</Label>
                   <Select value={form.account_type} onValueChange={v => setForm(p => ({ ...p, account_type: v }))}>
                     <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
