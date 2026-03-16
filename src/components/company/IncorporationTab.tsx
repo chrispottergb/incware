@@ -1171,7 +1171,7 @@ export default function IncorporationTab({ company }: Props) {
               <Checkbox
                 id="election_1244"
                 checked={form.election_1244}
-                onCheckedChange={(v) => update("election_1244", !!v)}
+                onCheckedChange={(v) => updateAndSave("election_1244", !!v)}
               />
               <div>
                 <Label htmlFor="election_1244" className="cursor-pointer text-sm font-medium">Section 1244 Election</Label>
