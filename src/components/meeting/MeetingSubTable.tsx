@@ -45,9 +45,11 @@ interface Props {
   tableName: string;
   title: string;
   columns: Column[];
+  /** When provided for meeting_directors, syncs new directors to company-level directors table */
+  companyId?: string;
 }
 
-export default function MeetingSubTable({ meetingId, tableName, title, columns }: Props) {
+export default function MeetingSubTable({ meetingId, tableName, title, columns, companyId }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -79,10 +81,33 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns }
     return payload;
   };
 
+  const syncDirectorToCompany = async (directorName: string) => {
+    if (tableName !== "meeting_directors" || !companyId || !directorName) return;
+    // Check if director already exists at company level (case-insensitive)
+    const { data: existing } = await supabase
+      .from("directors")
+      .select("id")
+      .eq("company_id", companyId)
+      .ilike("name", directorName.trim());
+    if (!existing || existing.length === 0) {
+      await supabase.from("directors").insert({
+        company_id: companyId,
+        name: directorName.trim(),
+        added_date: new Date().toISOString().split("T")[0],
+      });
+      queryClient.invalidateQueries({ queryKey: ["directors", companyId] });
+    }
+  };
+
   const addRow = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from(tableName as any).insert(buildPayload() as any);
+      const payload = buildPayload();
+      const { error } = await supabase.from(tableName as any).insert(payload as any);
       if (error) throw error;
+      // Sync director to company-level table
+      if (tableName === "meeting_directors" && payload.director_name) {
+        await syncDirectorToCompany(payload.director_name);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [tableName, meetingId] });
