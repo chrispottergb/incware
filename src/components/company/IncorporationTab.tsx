@@ -718,7 +718,7 @@ export default function IncorporationTab({ company }: Props) {
             </div>
             <div className="field-group col-span-6 sm:col-span-3">
               <Label className="field-label">Entity Type</Label>
-              <Select value={form.entity_type} onValueChange={(v) => update("entity_type", v)}>
+              <Select value={form.entity_type} onValueChange={(v) => updateAndSave("entity_type", v)}>
                 <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ENTITY_TYPES.map((t) => (
