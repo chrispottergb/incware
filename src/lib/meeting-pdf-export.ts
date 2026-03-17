@@ -2494,7 +2494,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
           b.eligibility_comments || "--",
         ]],
         theme: "grid",
-        headStyles: tableHeadStyles,
+        headStyles: { ...tableHeadStyles, fillColor: undefined, fontStyle: "normal", fontSize: 9 },
         bodyStyles: { fontSize: 10 },
         margin: { left: MARGIN, right: R_MARGIN },
         columnStyles: {
