@@ -2445,42 +2445,71 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     );
 
     data.benefits.forEach((b, index) => {
+      // Row 1: Benefit Type / Provider / Agent/Admin (header labels + values, no grid borders on header)
       autoTable(doc, {
         startY: y,
-        head: [["Benefit Type", "Provider", "Agent/Admin"]],
+        head: [["BENEFIT TYPE", "PROVIDER", "AGENT / ADMIN"]],
         body: [[
           b.benefit_type || b.benefit_description || "--",
           b.provider || "--",
           b.agent_administrator || "--",
         ]],
-        theme: "grid",
-        headStyles: tableHeadStyles,
-        bodyStyles: { fontSize: 10 },
+        theme: "plain",
+        headStyles: {
+          ...tableHeadStyles,
+          fillColor: undefined,
+          textColor: bt ? [BLUE.r, BLUE.g, BLUE.b] as [number, number, number] : [80, 80, 80] as [number, number, number],
+          fontStyle: "bold" as const,
+          fontSize: 8,
+          cellPadding: { top: 3, bottom: 1, left: 3, right: 3 },
+        },
+        bodyStyles: { fontSize: 10, fontStyle: "bold" as const, cellPadding: { top: 1, bottom: 4, left: 3, right: 3 } },
         margin: { left: MARGIN, right: R_MARGIN },
         columnStyles: {
-          0: { cellWidth: 48 },
-          1: { cellWidth: 48 },
+          0: { cellWidth: 55 },
+          1: { cellWidth: 55 },
           2: { cellWidth: 'auto' },
         },
       });
 
       y = (doc as any).lastAutoTable.finalY;
 
+      // Divider line
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.3);
+      doc.line(MARGIN, y, doc.internal.pageSize.getWidth() - R_MARGIN, y);
+
+      // Sub-header: PLAN CONTRIBUTIONS
+      y += 1;
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(bt ? BLUE.r : 80, bt ? BLUE.g : 80, bt ? BLUE.b : 80);
+      doc.text("PLAN CONTRIBUTIONS", MARGIN + 3, y + 4);
+      y += 7;
+
+      // Row 2: Plan Year / Contribution / Eligibility-Comments
       autoTable(doc, {
         startY: y,
-        head: [["Plan Year", "Contribution", "Eligibility / Comments"]],
+        head: [["Plan year", "Contribution", "Eligibility / Comments"]],
         body: [[
           b.plan_year?.toString() || "--",
           b.retirement_contribution != null ? fmt(b.retirement_contribution) : "--",
           b.eligibility_comments || "--",
         ]],
-        theme: "grid",
-        headStyles: tableHeadStyles,
-        bodyStyles: { fontSize: 10 },
+        theme: "plain",
+        headStyles: {
+          ...tableHeadStyles,
+          fillColor: undefined,
+          textColor: bt ? [BLUE.r, BLUE.g, BLUE.b] as [number, number, number] : [80, 80, 80] as [number, number, number],
+          fontStyle: "bold" as const,
+          fontSize: 8,
+          cellPadding: { top: 2, bottom: 1, left: 3, right: 3 },
+        },
+        bodyStyles: { fontSize: 10, cellPadding: { top: 1, bottom: 4, left: 3, right: 3 } },
         margin: { left: MARGIN, right: R_MARGIN },
         columnStyles: {
-          0: { cellWidth: 24 },
-          1: { cellWidth: 32 },
+          0: { cellWidth: 30 },
+          1: { cellWidth: 35 },
           2: { cellWidth: 'auto' },
         },
       });
