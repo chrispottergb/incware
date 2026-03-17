@@ -596,6 +596,15 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                             <Download className="h-3.5 w-3.5" />
                           </Button>
                         )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openBalanceDialog(row)}
+                          className="h-7 text-xs gap-1.5"
+                        >
+                          <DollarSign className="h-3.5 w-3.5" />
+                          Add Balance
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-7 w-7 text-muted-foreground hover:text-foreground">
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
