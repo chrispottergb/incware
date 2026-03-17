@@ -33,6 +33,8 @@ interface Props {
   companyAddress?: string;
 }
 
+const leaseOptions = ["Home Office", "Office Space", "Shared / Coworking Space", "Storage Unit", "Warehouse Space", "Garage", "Shed / Outbuilding", "Small Workshop", "Parking Area", "Small Land Parcel"];
+
 const emptyForm = {
   description: "",
   value: "",
