@@ -204,6 +204,34 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const saveBalance = useMutation({
+    mutationFn: async () => {
+      if (!balanceLoan) return;
+      const { error } = await supabase
+        .from("meeting_loans" as any)
+        .update({
+          balance_to_shareholder: balanceTo ? parseFloat(balanceTo) : null,
+          balance_from_shareholder: balanceFrom ? parseFloat(balanceFrom) : null,
+        } as any)
+        .eq("id", balanceLoan.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["meeting_loans", meetingId] });
+      setBalanceDialogOpen(false);
+      setBalanceLoan(null);
+      toast.success("Balance saved!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const openBalanceDialog = (row: any) => {
+    setBalanceLoan(row);
+    setBalanceTo(row.balance_to_shareholder?.toString() || "");
+    setBalanceFrom(row.balance_from_shareholder?.toString() || "");
+    setBalanceDialogOpen(true);
+  };
+
   const closeDialog = () => {
     setDialogOpen(false);
     setEditingId(null);
