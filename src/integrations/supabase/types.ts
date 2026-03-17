@@ -1842,6 +1842,8 @@ export type Database = {
       }
       meeting_loans: {
         Row: {
+          balance_from_shareholder: number | null
+          balance_to_shareholder: number | null
           borrower_name: string | null
           created_at: string
           end_date: string | null
@@ -1862,6 +1864,8 @@ export type Database = {
           start_date: string | null
         }
         Insert: {
+          balance_from_shareholder?: number | null
+          balance_to_shareholder?: number | null
           borrower_name?: string | null
           created_at?: string
           end_date?: string | null
@@ -1882,6 +1886,8 @@ export type Database = {
           start_date?: string | null
         }
         Update: {
+          balance_from_shareholder?: number | null
+          balance_to_shareholder?: number | null
           borrower_name?: string | null
           created_at?: string
           end_date?: string | null
