@@ -495,14 +495,14 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
               {/* Annual Balance Reporting Section */}
               <Separator />
               <div className="rounded-lg bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 p-4 space-y-3">
-                <h4 className="text-sm font-semibold text-foreground">Annual Balance Reporting</h4>
+                <h4 className="text-sm font-semibold" style={{ color: '#000' }}>Annual Balance Reporting</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-foreground">To Shareholder / Member / Related Party</Label>
+                    <Label className="text-xs font-medium" style={{ color: '#000' }}>To Shareholder / Member / Related Party</Label>
                     <Input type="number" step="0.01" value={form.balance_to_shareholder} onChange={(e) => updateField("balance_to_shareholder", e.target.value)} placeholder="0.00" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-foreground">From Shareholder / Member / Related Party</Label>
+                    <Label className="text-xs font-medium" style={{ color: '#000' }}>From Shareholder / Member / Related Party</Label>
                     <Input type="number" step="0.01" value={form.balance_from_shareholder} onChange={(e) => updateField("balance_from_shareholder", e.target.value)} placeholder="0.00" />
                   </div>
                 </div>
@@ -722,11 +722,11 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
               <div className="rounded-lg bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 p-4 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">To Shareholder / Member / Related Party</Label>
+                    <Label className="text-xs font-medium" style={{ color: '#000' }}>To Shareholder / Member / Related Party</Label>
                     <Input type="number" step="0.01" value={balanceTo} onChange={(e) => setBalanceTo(e.target.value)} placeholder="0.00" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">From Shareholder / Member / Related Party</Label>
+                    <Label className="text-xs font-medium" style={{ color: '#000' }}>From Shareholder / Member / Related Party</Label>
                     <Input type="number" step="0.01" value={balanceFrom} onChange={(e) => setBalanceFrom(e.target.value)} placeholder="0.00" />
                   </div>
                 </div>
