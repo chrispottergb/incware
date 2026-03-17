@@ -33,6 +33,8 @@ interface Props {
   companyAddress?: string;
 }
 
+const leaseOptions = ["Home Office", "Office Space", "Shared / Coworking Space", "Storage Unit", "Warehouse Space", "Garage", "Shed / Outbuilding", "Small Workshop", "Parking Area", "Small Land Parcel"];
+
 const emptyForm = {
   description: "",
   value: "",
@@ -196,16 +198,20 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
               <form onSubmit={(e) => { e.preventDefault(); saveLease.mutate(); }} className="space-y-3">
                 <div className="field-group">
                   <Label className="field-label">Lease Description</Label>
-                  <Select value={form.description} onValueChange={(v) => setForm((p) => ({ ...p, description: v }))}>
+                  <Select value={leaseOptions.includes(form.description) ? form.description : "__custom"} onValueChange={(v) => setForm((p) => ({ ...p, description: v === "__custom" ? "" : v }))}>
                     <SelectTrigger className="h-8 text-sm">
                       <SelectValue placeholder="Select lease type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {["Home Office", "Office Space", "Shared / Coworking Space", "Storage Unit", "Warehouse Space", "Garage", "Shed / Outbuilding", "Small Workshop", "Parking Area", "Small Land Parcel"].map((opt) => (
+                      {leaseOptions.map((opt) => (
                         <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                       ))}
+                      <SelectItem value="__custom">Other (type your own)</SelectItem>
                     </SelectContent>
                   </Select>
+                  {!leaseOptions.includes(form.description) && (
+                    <Input className="h-8 text-sm mt-1" placeholder="Enter custom description" value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
+                  )}
                 </div>
                 <div className="field-group">
                   <Label className="field-label">Property Address</Label>
