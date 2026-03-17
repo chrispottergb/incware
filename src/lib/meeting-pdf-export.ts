@@ -2467,22 +2467,6 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
       y = (doc as any).lastAutoTable.finalY;
 
-      // Sub-header: PLAN CONTRIBUTIONS
-      autoTable(doc, {
-        startY: y,
-        head: [["Plan Contributions", "", ""]],
-        body: [],
-        theme: "grid",
-        headStyles: { ...tableHeadStyles, fillColor: undefined, fontStyle: "normal", fontSize: 9 },
-        margin: { left: MARGIN, right: R_MARGIN },
-        columnStyles: {
-          0: { cellWidth: 55 },
-          1: { cellWidth: 55 },
-          2: { cellWidth: 'auto' },
-        },
-      });
-
-      y = (doc as any).lastAutoTable.finalY;
 
       // Row 2: Plan Year / Contribution / Eligibility-Comments
       autoTable(doc, {
