@@ -218,6 +218,8 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
       repayment_terms: row.repayment_terms || "",
       notes: row.notes || "",
       promissory_note_required: row.promissory_note_required || false,
+      balance_to_shareholder: row.balance_to_shareholder?.toString() || "",
+      balance_from_shareholder: row.balance_from_shareholder?.toString() || "",
     });
     setDialogOpen(true);
   };
