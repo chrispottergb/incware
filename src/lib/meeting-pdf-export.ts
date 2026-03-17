@@ -1125,6 +1125,12 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
           headStyles: tableHeadStyles,
           bodyStyles: { fontSize: 10 },
           margin: { left: MARGIN, right: R_MARGIN },
+          columnStyles: {
+            0: { cellWidth: 45 },
+            1: { cellWidth: 'auto' },
+            2: { cellWidth: 25 },
+            3: { cellWidth: 30 },
+          },
         });
         y = (doc as any).lastAutoTable.finalY + 10;
       }
