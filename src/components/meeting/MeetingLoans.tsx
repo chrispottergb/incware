@@ -502,7 +502,7 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                     <Input type="number" step="0.01" value={form.balance_to_shareholder} onChange={(e) => updateField("balance_to_shareholder", e.target.value)} placeholder="0.00" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-foreground/70">From Shareholder / Member / Related Party</Label>
+                    <Label className="text-xs font-medium text-foreground">From Shareholder / Member / Related Party</Label>
                     <Input type="number" step="0.01" value={form.balance_from_shareholder} onChange={(e) => updateField("balance_from_shareholder", e.target.value)} placeholder="0.00" />
                   </div>
                 </div>
