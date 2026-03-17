@@ -99,6 +99,10 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<LoanForm>(emptyForm);
   const [uploading, setUploading] = useState(false);
+  const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
+  const [balanceLoan, setBalanceLoan] = useState<any>(null);
+  const [balanceTo, setBalanceTo] = useState("");
+  const [balanceFrom, setBalanceFrom] = useState("");
 
   // Promissory note wizard state
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
