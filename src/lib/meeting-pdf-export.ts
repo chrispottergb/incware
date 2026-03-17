@@ -1352,55 +1352,6 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 5;
   }
 
-  // Other Business / Vehicle Policy / Profit Improvement Plan
-  const hasOtherBiz = meeting.other_business?.trim();
-  const hasVehiclePolicy = meeting.vehicle_policy_text?.trim();
-  const hasProfitPlan = meeting.profit_improvement_plan?.trim();
-  if (!isShareholder && (hasOtherBiz || hasProfitPlan)) {
-    y += 3;
-    y = checkPageBreak(doc, y, 30);
-    y = section("Other Business");
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...BODY_COLOR);
-    const otherIntro = `The chairperson then reported on other business of the ${isLLC ? "company" : "corporation"} as follows:`;
-    const otherIntroLines = doc.splitTextToSize(otherIntro, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-    for (const line of otherIntroLines) {
-      y = checkPageBreak(doc, y, 6);
-      doc.text(line, MARGIN, y);
-      y += 5;
-    }
-    y += 3;
-
-    if (hasOtherBiz) {
-      doc.setFont("helvetica", "bold");
-      doc.text("Other:", MARGIN, y);
-      doc.setFont("helvetica", "normal");
-      y += 5;
-      const otherLines = doc.splitTextToSize(meeting.other_business.trim(), doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-      for (const line of otherLines) {
-        y = checkPageBreak(doc, y, 6);
-        doc.text(line, MARGIN, y);
-        y += 5;
-      }
-      y += 3;
-    }
-
-    if (hasProfitPlan) {
-      doc.setFont("helvetica", "bold");
-      doc.text("Profit Improvement Plan:", MARGIN, y);
-      doc.setFont("helvetica", "normal");
-      y += 5;
-      const pipLines = doc.splitTextToSize(meeting.profit_improvement_plan.trim(), doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-      for (const line of pipLines) {
-        y = checkPageBreak(doc, y, 6);
-        doc.text(line, MARGIN, y);
-        y += 5;
-      }
-      y += 3;
-    }
-    y += 5;
-  }
 
   // Directors / Board Election
   if (data.directors && data.directors.length > 0) {
@@ -2695,6 +2646,55 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       `NOW, THEREFORE, BE IT RESOLVED, that the ${isLLC ? "company" : "corporation"} approved the contribution of ${contribAmt} to ${contribOrg} as allowed by IRS Code Section 170(c)(2), payment of which is made during this taxable year.`,
       bt
     );
+  }
+
+  // Other Business / Vehicle Policy / Profit Improvement Plan (last section before adjournment)
+  const hasOtherBiz = meeting.other_business?.trim();
+  const hasProfitPlan = meeting.profit_improvement_plan?.trim();
+  if (!isShareholder && (hasOtherBiz || hasProfitPlan)) {
+    y += 3;
+    y = checkPageBreak(doc, y, 30);
+    y = section("Other Business");
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...BODY_COLOR);
+    const otherIntro = `The chairperson then reported on other business of the ${isLLC ? "company" : "corporation"} as follows:`;
+    const otherIntroLines = doc.splitTextToSize(otherIntro, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+    for (const line of otherIntroLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5;
+    }
+    y += 3;
+
+    if (hasOtherBiz) {
+      doc.setFont("helvetica", "bold");
+      doc.text("Other:", MARGIN, y);
+      doc.setFont("helvetica", "normal");
+      y += 5;
+      const otherLines = doc.splitTextToSize(meeting.other_business.trim(), doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of otherLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5;
+      }
+      y += 3;
+    }
+
+    if (hasProfitPlan) {
+      doc.setFont("helvetica", "bold");
+      doc.text("Profit Improvement Plan:", MARGIN, y);
+      doc.setFont("helvetica", "normal");
+      y += 5;
+      const pipLines = doc.splitTextToSize(meeting.profit_improvement_plan.trim(), doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of pipLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5;
+      }
+      y += 3;
+    }
+    y += 5;
   }
 
   // Signature block
