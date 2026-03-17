@@ -485,9 +485,24 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                     After saving, use the table actions to generate a pre-filled promissory note or upload an existing document.
                   </p>
                 )}
+               </div>
+
+              {/* Annual Balance Reporting Section */}
+              <Separator />
+              <div className="rounded-lg bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 p-4 space-y-3">
+                <h4 className="text-sm font-semibold text-foreground">Annual Balance Reporting</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">To Shareholder / Member / Related Party</Label>
+                    <Input type="number" step="0.01" value={form.balance_to_shareholder} onChange={(e) => updateField("balance_to_shareholder", e.target.value)} placeholder="0.00" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">From Shareholder / Member / Related Party</Label>
+                    <Input type="number" step="0.01" value={form.balance_from_shareholder} onChange={(e) => updateField("balance_from_shareholder", e.target.value)} placeholder="0.00" />
+                  </div>
+                </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isPending || !form.loan_type}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {editingId ? "Save Changes" : "Add Loan"}
               </Button>
