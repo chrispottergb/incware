@@ -498,11 +498,11 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                 <h4 className="text-sm font-semibold text-foreground">Annual Balance Reporting</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-foreground/70">To Shareholder / Member / Related Party</Label>
+                    <Label className="text-xs font-medium text-foreground">To Shareholder / Member / Related Party</Label>
                     <Input type="number" step="0.01" value={form.balance_to_shareholder} onChange={(e) => updateField("balance_to_shareholder", e.target.value)} placeholder="0.00" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-foreground/70">From Shareholder / Member / Related Party</Label>
+                    <Label className="text-xs font-medium text-foreground">From Shareholder / Member / Related Party</Label>
                     <Input type="number" step="0.01" value={form.balance_from_shareholder} onChange={(e) => updateField("balance_from_shareholder", e.target.value)} placeholder="0.00" />
                   </div>
                 </div>
