@@ -195,7 +195,16 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
               <form onSubmit={(e) => { e.preventDefault(); saveLease.mutate(); }} className="space-y-3">
                 <div className="field-group">
                   <Label className="field-label">Lease Description</Label>
-                  <Input className="h-8 text-sm" value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} required />
+                  <Select value={form.description} onValueChange={(v) => setForm((p) => ({ ...p, description: v }))}>
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder="Select lease type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["Home Office", "Office Space", "Shared / Coworking Space", "Storage Unit", "Warehouse Space", "Garage", "Shed / Outbuilding", "Small Workshop", "Parking Area", "Small Land Parcel"].map((opt) => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="field-group">
                   <Label className="field-label">Property Address</Label>
