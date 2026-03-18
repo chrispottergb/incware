@@ -914,14 +914,11 @@ export default function OrganizationTab({ companyId, company }: Props) {
                       <Label className="field-label">Agent Name <span className="text-destructive">*</span></Label>
                       <Input className="h-7 text-sm" value={raForm.registered_agent_name} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_name: e.target.value }))} placeholder="Individual or entity name" />
                     </div>
-                    <div className="field-group col-span-12 sm:col-span-7" />
-                  </div>
-                  <div className="grid grid-cols-12 gap-x-3 gap-y-2">
                     <div className="field-group col-span-12 sm:col-span-5">
                       <Label className="field-label">Email Address</Label>
                       <Input type="email" className="h-7 text-sm" value={raForm.registered_agent_email} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_email: e.target.value }))} />
                     </div>
-                    <div className="field-group col-span-12 sm:col-span-7" />
+                    <div className="field-group col-span-12 sm:col-span-2" />
                   </div>
                   <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                     <div className="field-group col-span-3">
