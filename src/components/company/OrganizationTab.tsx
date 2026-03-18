@@ -950,30 +950,6 @@ export default function OrganizationTab({ companyId, company }: Props) {
                       <Input className="h-7 text-sm" value={raForm.registered_agent_zip} onChange={(e) => { setRaForm(p => ({ ...p, registered_agent_zip: e.target.value })); handleRaZip(e.target.value); }} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-12 gap-x-3 gap-y-2">
-                    <div className="field-group col-span-6 sm:col-span-3">
-                      <Label className="field-label">Agent Type</Label>
-                      <Select value={raForm.registered_agent_type} onValueChange={(v) => setRaForm(p => ({ ...p, registered_agent_type: v }))}>
-                        <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select type" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Individual">Individual</SelectItem>
-                          <SelectItem value="Commercial Registered Agent">Commercial Registered Agent</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="field-group col-span-6 sm:col-span-3">
-                      <Label className="field-label">Phone</Label>
-                      <Input className="h-7 text-sm" value={raForm.registered_agent_phone} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_phone: e.target.value }))} placeholder="(555) 555-5555" />
-                    </div>
-                    <div className="field-group col-span-6 sm:col-span-3">
-                      <Label className="field-label">Date Appointed</Label>
-                      <DatePickerField value={raForm.registered_agent_appointed_date} onChange={(v) => setRaForm(p => ({ ...p, registered_agent_appointed_date: v || "" }))} placeholder="Appointed date" />
-                    </div>
-                    <div className="field-group col-span-6 sm:col-span-3">
-                      <Label className="field-label">Date Resigned / Changed</Label>
-                      <DatePickerField value={raForm.registered_agent_resigned_date} onChange={(v) => setRaForm(p => ({ ...p, registered_agent_resigned_date: v || "" }))} placeholder="Resigned date" />
-                    </div>
-                  </div>
                   <div className="flex justify-end">
                     <Button type="submit" disabled={saveRegisteredAgent.isPending} size="sm">
                       {saveRegisteredAgent.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
