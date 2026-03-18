@@ -963,10 +963,6 @@ export default function OrganizationTab({ companyId, company }: Props) {
                       <Label className="field-label">Phone</Label>
                       <Input className="h-7 text-sm" value={raForm.registered_agent_phone} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_phone: e.target.value }))} placeholder="(555) 555-5555" />
                     </div>
-                    <div className="field-group col-span-6 sm:col-span-4">
-                      <Label className="field-label">Email</Label>
-                      <Input type="email" className="h-7 text-sm" value={raForm.registered_agent_email} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_email: e.target.value }))} />
-                    </div>
                     <div className="field-group col-span-6 sm:col-span-3">
                       <Label className="field-label">Date Appointed</Label>
                       <DatePickerField value={raForm.registered_agent_appointed_date} onChange={(v) => setRaForm(p => ({ ...p, registered_agent_appointed_date: v || "" }))} placeholder="Appointed date" />
