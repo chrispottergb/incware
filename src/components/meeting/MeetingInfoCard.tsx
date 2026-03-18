@@ -201,42 +201,6 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 className="h-9 text-sm mt-1.5"
               />
             </div>
-            <div className="col-span-4">
-              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5" />
-                Chairperson
-              </Label>
-              <Input
-                value={getValue("chairperson")}
-                onChange={(e) => handleChange("chairperson", e.target.value)}
-                onBlur={(e) => handleBlur("chairperson", e.target.value)}
-                className="h-9 text-sm mt-1.5"
-              />
-            </div>
-            <div className="col-span-4">
-              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" />
-                Secretary
-              </Label>
-              <Input
-                value={getValue("mtg_secretary")}
-                onChange={(e) => handleChange("mtg_secretary", e.target.value)}
-                onBlur={(e) => handleBlur("mtg_secretary", e.target.value)}
-                className="h-9 text-sm mt-1.5"
-              />
-            </div>
-            <div className="col-span-4">
-              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" />
-                Others Present
-              </Label>
-              <Input
-                value={getValue("others_present")}
-                onChange={(e) => handleChange("others_present", e.target.value)}
-                onBlur={(e) => handleBlur("others_present", e.target.value)}
-                className="h-9 text-sm mt-1.5"
-              />
-            </div>
           </div>
           {/* Row 2: Chairperson, Secretary, Others Present, Prior Meeting Date, Next Annual Meeting */}
           <div className="mt-4 flex gap-3">
