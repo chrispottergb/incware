@@ -516,6 +516,7 @@ export default function IncorporationTab({ company }: Props) {
           verification_date: form.verification_date || null,
           annual_report_year: form.annual_report_year ? parseInt(form.annual_report_year) : null,
           registered_agent_name: form.registered_agent_name || null,
+          registered_agent_email: form.registered_agent_email || null,
           registered_agent_address: form.registered_agent_address || null,
           registered_agent_address_2: form.registered_agent_address_2 || null,
           registered_agent_city: form.registered_agent_city || null,
