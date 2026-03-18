@@ -263,6 +263,7 @@ export default function IncorporationTab({ company }: Props) {
       verification_date: company.verification_date ?? "",
       annual_report_year: company.annual_report_year?.toString() ?? "",
       registered_agent_name: company.registered_agent_name ?? "",
+      registered_agent_email: (company as any).registered_agent_email ?? "",
       registered_agent_address: company.registered_agent_address ?? "",
       registered_agent_address_2: (company as any).registered_agent_address_2 ?? "",
       registered_agent_city: company.registered_agent_city ?? "",
