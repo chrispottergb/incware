@@ -84,7 +84,7 @@ function FirmDialog({
             <div className="col-span-12"><Label className="text-xs">Phone</Label><Input className="h-7 text-sm" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
           </div>
           {type === "Accountant" ? (
-            <div><Label className="text-xs">Email Address</Label><Input className="h-7 text-sm" type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
+            <div><Label className="text-xs">Website</Label><Input className="h-7 text-sm" value={form.website} onChange={e => setForm(p => ({ ...p, website: e.target.value }))} /></div>
           ) : (
             <div><Label className="text-xs">Website</Label><Input className="h-7 text-sm" value={form.website} onChange={e => setForm(p => ({ ...p, website: e.target.value }))} /></div>
           )}
