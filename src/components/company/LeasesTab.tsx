@@ -268,28 +268,31 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
           </div>
         ) : (
           <div className="rounded-md border border-border overflow-hidden">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="text-xs font-semibold h-8">Description</TableHead>
-                  <TableHead className="text-xs h-8">Property Address</TableHead>
-                  <TableHead className="text-xs h-8">Landlord</TableHead>
-                  <TableHead className="text-xs h-8">Term</TableHead>
-                  <TableHead className="text-xs text-right h-8">Monthly</TableHead>
-                  <TableHead className="text-xs text-right h-8">Value</TableHead>
-                  <TableHead className="text-xs h-8">Agreement</TableHead>
-                  <TableHead className="w-10 h-8"></TableHead>
+                <TableRow className="hover:bg-transparent" style={{ backgroundColor: 'hsl(210 40% 90%)' }}>
+                  <TableHead className="text-xs font-bold h-9 whitespace-nowrap" style={{ color: 'hsl(210 30% 25%)' }}>Property Description</TableHead>
+                  <TableHead className="text-xs font-bold h-9 whitespace-nowrap" style={{ color: 'hsl(210 30% 25%)' }}>Property Address</TableHead>
+                  <TableHead className="text-xs font-bold h-9 whitespace-nowrap" style={{ color: 'hsl(210 30% 25%)' }}>Landlord</TableHead>
+                  <TableHead className="text-xs font-bold h-9 whitespace-nowrap" style={{ color: 'hsl(210 30% 25%)' }}>Landlord Address</TableHead>
+                  <TableHead className="text-xs font-bold h-9 whitespace-nowrap" style={{ color: 'hsl(210 30% 25%)' }}>Lease Start</TableHead>
+                  <TableHead className="text-xs font-bold h-9 whitespace-nowrap" style={{ color: 'hsl(210 30% 25%)' }}>Lease End</TableHead>
+                  <TableHead className="text-xs font-bold h-9 whitespace-nowrap text-right" style={{ color: 'hsl(210 30% 25%)' }}>Monthly Payment</TableHead>
+                  <TableHead className="text-xs font-bold h-9 whitespace-nowrap" style={{ color: 'hsl(210 30% 25%)' }}>Agreement</TableHead>
+                  <TableHead className="w-16 h-9"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {leases.map((a: any) => (
-                  <TableRow key={a.id}>
-                    <TableCell className="text-sm py-2 font-medium">{a.description}</TableCell>
-                    <TableCell className="text-sm py-2">{a.address || "—"}</TableCell>
-                    <TableCell className="text-sm py-2">{a.landlord_name || "—"}</TableCell>
-                    <TableCell className="text-sm py-2">{a.lease_term || "—"}</TableCell>
-                    <TableCell className="text-right font-mono text-xs py-2">{fmt(a.monthly_payment)}</TableCell>
-                    <TableCell className="text-right font-mono text-xs py-2">{fmt(a.value)}</TableCell>
+                  <TableRow key={a.id} className="border-b border-border/50">
+                    <TableCell className="text-sm py-2 font-medium whitespace-nowrap">{a.description || "—"}</TableCell>
+                    <TableCell className="text-sm py-2 whitespace-nowrap">{a.address || "—"}</TableCell>
+                    <TableCell className="text-sm py-2 whitespace-nowrap">{a.landlord_name || "—"}</TableCell>
+                    <TableCell className="text-sm py-2 whitespace-nowrap">{a.landlord_address || "—"}</TableCell>
+                    <TableCell className="text-sm py-2 whitespace-nowrap">{a.lease_start_date ? new Date(a.lease_start_date + 'T00:00:00').toLocaleDateString('en-US') : "—"}</TableCell>
+                    <TableCell className="text-sm py-2 whitespace-nowrap">{a.lease_end_date ? new Date(a.lease_end_date + 'T00:00:00').toLocaleDateString('en-US') : "—"}</TableCell>
+                    <TableCell className="text-right font-mono text-xs py-2 whitespace-nowrap">{fmt(a.monthly_payment)}</TableCell>
                     <TableCell className="py-2">
                       <div className="flex gap-0.5">
                         <Button
@@ -326,6 +329,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                 ))}
               </TableBody>
             </Table>
+          </div>
           </div>
         )}
       </CardContent>
