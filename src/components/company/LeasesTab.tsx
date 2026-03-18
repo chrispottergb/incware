@@ -169,16 +169,15 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
               title: "Leases",
               companyName,
               table: {
-                headers: ["Description", "Property Address", "Landlord", "Start", "End", "Term", "Monthly", "Value"],
+                headers: ["Property Description", "Property Address", "Landlord", "Landlord Address", "Lease Start", "Lease End", "Monthly Payment"],
                 rows: leases.map((a: any) => [
-                  a.description || "—",
-                  a.address || "—",
-                  a.landlord_name || "—",
-                  a.lease_start_date || "—",
-                  a.lease_end_date || "—",
-                  a.lease_term || "—",
+                  a.description || "--",
+                  a.address || "--",
+                  a.landlord_name || "--",
+                  a.landlord_address || "--",
+                  a.lease_start_date || "--",
+                  a.lease_end_date || "--",
                   fmt(a.monthly_payment),
-                  fmt(a.value),
                 ]),
               },
             }}
