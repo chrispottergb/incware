@@ -2091,14 +2091,15 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     );
     autoTable(doc, {
       startY: y,
-      head: [["Property Description", "Landlord", "Lease Start", "Lease End", "Monthly Payment", "Purpose"]],
+      head: [["Property Description", "Property Address", "Landlord", "Landlord Address", "Lease Start", "Lease End", "Monthly Payment"]],
       body: data.companyLeases.map((l: any) => [
         l.description || "—",
+        l.address || "—",
         l.landlord_name || "—",
+        l.landlord_address || "—",
         l.lease_start_date ? new Date(l.lease_start_date + "T00:00:00").toLocaleDateString() : "—",
         l.lease_end_date ? new Date(l.lease_end_date + "T00:00:00").toLocaleDateString() : "—",
-        l.lease_amount != null ? fmt(l.lease_amount) : "—",
-        l.ownership_type || "—",
+        l.monthly_payment != null ? fmt(l.monthly_payment) : l.lease_amount != null ? fmt(l.lease_amount) : "—",
       ]),
       theme: "grid",
       headStyles: tableHeadStyles,
