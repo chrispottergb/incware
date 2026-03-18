@@ -914,17 +914,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                       <Label className="field-label">Agent Name <span className="text-destructive">*</span></Label>
                       <Input className="h-7 text-sm" value={raForm.registered_agent_name} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_name: e.target.value }))} placeholder="Individual or entity name" />
                     </div>
-                    <div className="field-group col-span-6 sm:col-span-3">
-                      <Label className="field-label">Agent Type</Label>
-                      <Select value={raForm.registered_agent_type} onValueChange={(v) => setRaForm(p => ({ ...p, registered_agent_type: v }))}>
-                        <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select type" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Individual">Individual</SelectItem>
-                          <SelectItem value="Commercial Registered Agent">Commercial Registered Agent</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="field-group col-span-6 sm:col-span-4" />
+                    <div className="field-group col-span-12 sm:col-span-7" />
                   </div>
                   <div className="grid grid-cols-12 gap-x-3 gap-y-2">
                     <div className="field-group col-span-12 sm:col-span-5">
@@ -961,6 +951,16 @@ export default function OrganizationTab({ companyId, company }: Props) {
                     </div>
                   </div>
                   <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+                    <div className="field-group col-span-6 sm:col-span-3">
+                      <Label className="field-label">Agent Type</Label>
+                      <Select value={raForm.registered_agent_type} onValueChange={(v) => setRaForm(p => ({ ...p, registered_agent_type: v }))}>
+                        <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select type" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Individual">Individual</SelectItem>
+                          <SelectItem value="Commercial Registered Agent">Commercial Registered Agent</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="field-group col-span-6 sm:col-span-3">
                       <Label className="field-label">Phone</Label>
                       <Input className="h-7 text-sm" value={raForm.registered_agent_phone} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_phone: e.target.value }))} placeholder="(555) 555-5555" />
