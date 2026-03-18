@@ -1260,6 +1260,7 @@ export default function IncorporationTab({ company }: Props) {
               companyName: company.name,
               fields: [
                 { label: "Agent Name", value: form.registered_agent_name },
+                { label: "Email", value: form.registered_agent_email },
                 { label: "Address", value: form.registered_agent_address },
                 { label: "Address 2", value: form.registered_agent_address_2 },
                 { label: "City", value: form.registered_agent_city },
