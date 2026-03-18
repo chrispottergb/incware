@@ -1277,6 +1277,11 @@ export default function IncorporationTab({ company }: Props) {
               <Input className="h-7 text-sm" value={form.registered_agent_name} onChange={(e) => update("registered_agent_name", e.target.value)} />
             </div>
             <div className="field-group col-span-12 sm:col-span-7" />
+            <div className="field-group col-span-12 sm:col-span-5">
+              <Label className="field-label">Email Address</Label>
+              <Input type="email" className="h-7 text-sm" value={form.registered_agent_email} onChange={(e) => update("registered_agent_email", e.target.value)} />
+            </div>
+            <div className="field-group col-span-12 sm:col-span-7" />
           </div>
           <div className="grid grid-cols-12 gap-x-2 gap-y-2 mt-2">
             <div className="field-group col-span-3">
