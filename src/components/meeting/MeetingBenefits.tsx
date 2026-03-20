@@ -117,6 +117,62 @@ const emptyForm: BenefitForm = {
   benefit_description: "",
 };
 
+function BenefitTypeCombobox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const filtered = search
+    ? BENEFIT_TYPE_OPTIONS.filter((opt) => opt.toLowerCase().includes(search.toLowerCase()))
+    : BENEFIT_TYPE_OPTIONS;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Input
+          ref={inputRef}
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value);
+            setSearch(e.target.value);
+            if (!open) setOpen(true);
+          }}
+          onFocus={() => { setSearch(value); setOpen(true); }}
+          placeholder="Type or select benefit type…"
+          className="bg-background"
+        />
+      </PopoverTrigger>
+      <PopoverContent
+        className="p-0 w-[var(--radix-popover-trigger-width)]"
+        align="start"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <ScrollArea className="max-h-56">
+          {filtered.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-muted-foreground">No matches — your custom text will be used</div>
+          ) : (
+            filtered.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onChange(opt);
+                  setSearch("");
+                  setOpen(false);
+                }}
+              >
+                {opt}
+              </button>
+            ))
+          )}
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export default function MeetingBenefits({ meetingId }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
