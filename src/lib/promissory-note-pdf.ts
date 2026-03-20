@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { registerArialFont } from "@/lib/arial-font";
 
 interface PromissoryNoteData {
   lenderName: string;
@@ -14,6 +15,7 @@ interface PromissoryNoteData {
 
 export function generatePromissoryNotePDF(data: PromissoryNoteData): jsPDF {
   const doc = new jsPDF();
+  registerArialFont(doc);
   const pw = doc.internal.pageSize.getWidth();
   const cx = pw / 2;
   const margin = 25.4; // 1 inch for binder compatibility
@@ -23,7 +25,7 @@ export function generatePromissoryNotePDF(data: PromissoryNoteData): jsPDF {
 
   // Title
   doc.setFontSize(16);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Arial", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text("PROMISSORY NOTE", cx, y, { align: "center" });
   y += 10;
@@ -38,7 +40,7 @@ export function generatePromissoryNotePDF(data: PromissoryNoteData): jsPDF {
 
   // Header info
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("Arial", "normal");
   doc.setTextColor(60, 60, 60);
 
   const fmt = (v: number | null) =>
@@ -61,17 +63,17 @@ export function generatePromissoryNotePDF(data: PromissoryNoteData): jsPDF {
   y += 8;
 
   // Promise to pay
-  doc.setFont("helvetica", "normal");
+  doc.setFont("Arial", "normal");
   const bodyText = `FOR VALUE RECEIVED, the undersigned ${borrower} ("Borrower") promises to pay to the order of ${lender} ("Lender"), the principal sum of ${amountStr}, together with interest thereon at the rate of ${rateStr} per annum.`;
   const bodyLines = doc.splitTextToSize(bodyText, textWidth);
   doc.text(bodyLines, margin, y);
   y += bodyLines.length * 5 + 6;
 
   // Terms section
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Arial", "bold");
   doc.text("TERMS AND CONDITIONS", margin, y);
   y += 6;
-  doc.setFont("helvetica", "normal");
+  doc.setFont("Arial", "normal");
 
   const terms = [
     `1. PRINCIPAL: The principal amount of this Note is ${amountStr}.`,
@@ -104,11 +106,11 @@ export function generatePromissoryNotePDF(data: PromissoryNoteData): jsPDF {
     y = 20;
   }
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Arial", "bold");
   doc.text("IN WITNESS WHEREOF, the Borrower has executed this Promissory Note as of the date first written above.", margin, y);
   y += 15;
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont("Arial", "normal");
   doc.setDrawColor(100, 100, 100);
   doc.setLineWidth(0.3);
 

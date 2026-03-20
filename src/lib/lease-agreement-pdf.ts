@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import { savePdfReliably } from "./pdf-save";
+import { registerArialFont } from "@/lib/arial-font";
 
 interface LeaseData {
   landlordName: string;
@@ -27,6 +28,7 @@ function fmtCurrency(v: string) {
 
 export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   const doc = new jsPDF();
+  registerArialFont(doc);
   const pw = doc.internal.pageSize.getWidth();
   const margin = 25.4; // 1 inch for binder compatibility
   const maxW = pw - margin * 2;
@@ -35,7 +37,7 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   const addText = (text: string, opts?: { bold?: boolean; size?: number; center?: boolean; indent?: number }) => {
     const sz = opts?.size || 10;
     doc.setFontSize(sz);
-    doc.setFont("helvetica", opts?.bold ? "bold" : "normal");
+    doc.setFont("Arial", opts?.bold ? "bold" : "normal");
     doc.setTextColor(30, 30, 30);
     const x = opts?.indent ? margin + opts.indent : margin;
     const w = maxW - (opts?.indent || 0);

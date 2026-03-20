@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { savePdfReliably } from "./pdf-save";
+import { registerArialFont } from "@/lib/arial-font";
 
 const MARGIN = 25.4; // 1 inch for binder compatibility
 const R_MARGIN = 25.4; // 1 inch right margin — matches left
@@ -12,23 +13,23 @@ function addHeader(doc: jsPDF, title: string, subtitle?: string) {
 
   // Brand header
   doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Arial", "bold");
   doc.text(BRAND, MARGIN, 18);
 
   doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("Arial", "normal");
   doc.setTextColor(120, 120, 120);
   doc.text(BRAND_SUB, MARGIN, 24);
 
   // Title
   doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Arial", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text(title, MARGIN, 36);
 
   if (subtitle) {
     doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("Arial", "normal");
     doc.setTextColor(100, 100, 100);
     doc.text(subtitle, MARGIN, 43);
   }
@@ -67,6 +68,7 @@ interface ComplianceItem {
 
 export async function exportCompliancePDF(data: ComplianceItem[], overallScore: number) {
   const doc = new jsPDF();
+  registerArialFont(doc);
 
   addHeader(doc, "Compliance Overview Report", `Overall Compliance Score: ${overallScore}%`);
 
@@ -82,12 +84,12 @@ export async function exportCompliancePDF(data: ComplianceItem[], overallScore: 
 
     // Company header
     doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Arial", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(item.companyName, MARGIN, y);
 
     doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("Arial", "normal");
     doc.setTextColor(100, 100, 100);
     doc.text(`Score: ${item.passed}/${item.total} — ${item.score}%`, doc.internal.pageSize.getWidth() - 14, y, { align: "right" });
     y += 4;
@@ -143,6 +145,7 @@ interface CertificateRow {
 
 export async function exportStockLedgerPDF(certificates: CertificateRow[], companyFilter?: string) {
   const doc = new jsPDF({ orientation: "landscape" });
+  registerArialFont(doc);
 
   const subtitle = companyFilter && companyFilter !== "all"
     ? `Filtered by company`
@@ -196,7 +199,7 @@ export async function exportStockLedgerPDF(certificates: CertificateRow[], compa
   const finalY = (doc as any).lastAutoTable.finalY + 10;
 
   doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Arial", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text(`Total Certificates: ${certificates.length}`, MARGIN, finalY);
   doc.text(`Active: ${activeCount}`, MARGIN, finalY + 5);
@@ -216,6 +219,7 @@ interface ShareholderRow {
 
 export async function exportShareholderPDF(shareholders: ShareholderRow[]) {
   const doc = new jsPDF();
+  registerArialFont(doc);
 
   addHeader(doc, "Shareholder Summary Report", `${shareholders.length} shareholder(s)`);
 
@@ -254,7 +258,7 @@ export async function exportShareholderPDF(shareholders: ShareholderRow[]) {
   const activeCount = shareholders.filter((s) => s.status === "active").length;
   const finalY = (doc as any).lastAutoTable.finalY + 10;
   doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Arial", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text(`Total Shareholders: ${shareholders.length}`, MARGIN, finalY);
   doc.text(`Active: ${activeCount}`, MARGIN, finalY + 5);
@@ -315,6 +319,7 @@ export interface AIComplianceData {
 
 export async function exportAICompliancePDF(data: AIComplianceData) {
   const doc = new jsPDF();
+  registerArialFont(doc);
   const pw = doc.internal.pageSize.getWidth();
 
   addHeader(doc, "EU AI Act Compliance Report", `${data.companyName} — Regulation (EU) 2024/1689`);
@@ -323,14 +328,14 @@ export async function exportAICompliancePDF(data: AIComplianceData) {
 
   // --- Section 1: AI Systems Registry ---
   doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Arial", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text("1. AI Systems Registry", MARGIN, y);
   y += 2;
 
   if (data.systems.length === 0) {
     doc.setFontSize(9);
-    doc.setFont("helvetica", "italic");
+    doc.setFont("Arial", "italic");
     doc.setTextColor(130, 130, 130);
     doc.text("No AI systems registered.", MARGIN, y + 6);
     y += MARGIN;
@@ -366,14 +371,14 @@ export async function exportAICompliancePDF(data: AIComplianceData) {
   // --- Section 2: Human Oversight (Art. 26.2) ---
   if (y > doc.internal.pageSize.getHeight() - 50) { doc.addPage(); y = 20; }
   doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Arial", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text("2. Human Oversight Assignments (Art. 26.2)", MARGIN, y);
   y += 2;
 
   if (data.oversightPersons.length === 0) {
     doc.setFontSize(9);
-    doc.setFont("helvetica", "italic");
+    doc.setFont("Arial", "italic");
     doc.setTextColor(130, 130, 130);
     doc.text("No oversight persons assigned.", MARGIN, y + 6);
     y += MARGIN;
@@ -400,14 +405,14 @@ export async function exportAICompliancePDF(data: AIComplianceData) {
   // --- Section 3: Usage Log (Art. 26.6) ---
   if (y > doc.internal.pageSize.getHeight() - 50) { doc.addPage(); y = 20; }
   doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Arial", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text("3. AI Usage Log (Art. 26.6 — 6-month retention)", MARGIN, y);
   y += 2;
 
   if (data.usageLogs.length === 0) {
     doc.setFontSize(9);
-    doc.setFont("helvetica", "italic");
+    doc.setFont("Arial", "italic");
     doc.setTextColor(130, 130, 130);
     doc.text("No usage events recorded.", MARGIN, y + 6);
     y += MARGIN;
@@ -444,14 +449,14 @@ export async function exportAICompliancePDF(data: AIComplianceData) {
   // --- Section 4: Risk & Incidents (Art. 26.5) ---
   if (y > doc.internal.pageSize.getHeight() - 50) { doc.addPage(); y = 20; }
   doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Arial", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text("4. Risk & Incidents (Art. 26.5)", MARGIN, y);
   y += 2;
 
   if (data.incidents.length === 0) {
     doc.setFontSize(9);
-    doc.setFont("helvetica", "italic");
+    doc.setFont("Arial", "italic");
     doc.setTextColor(130, 130, 130);
     doc.text("No incidents reported.", MARGIN, y + 6);
     y += MARGIN;
@@ -492,11 +497,11 @@ export async function exportAICompliancePDF(data: AIComplianceData) {
   doc.line(14, y, pw - 14, y);
   y += 8;
   doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Arial", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text("Summary", MARGIN, y);
   y += 6;
-  doc.setFont("helvetica", "normal");
+  doc.setFont("Arial", "normal");
   doc.setFontSize(8);
   const openIncidents = data.incidents.filter(i => i.status !== "resolved").length;
   const pendingReviews = data.usageLogs.filter(l => !l.review_decision).length;
@@ -508,7 +513,7 @@ export async function exportAICompliancePDF(data: AIComplianceData) {
   const highRisk = data.systems.filter(s => s.risk_level === "high" || s.risk_level === "unacceptable").length;
   if (highRisk > 0) {
     doc.setTextColor(220, 38, 38);
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Arial", "bold");
     doc.text(`⚠ ${highRisk} high/unacceptable risk system(s) require enhanced oversight`, MARGIN, y);
   }
 
