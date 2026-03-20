@@ -487,7 +487,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
               <CardTitle className="font-display text-sm">Annual Financial Comparison</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="75%" height={210}>
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
