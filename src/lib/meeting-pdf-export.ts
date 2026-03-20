@@ -1744,7 +1744,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const maxVal = Math.max(...metrics.map(m => Math.max(Math.abs(m.cur || 0), Math.abs(m.prev || 0))), 1);
     const barGroupW = chartW / metrics.length;
     const barW = barGroupW * 0.3;
-    const chartX = 14;
+    const chartX = (pw - chartW) / 2;
     const chartBottom = y + chartH;
 
     // Background
@@ -1776,14 +1776,16 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     // Legend
     const ly = chartBottom + 8;
+    const legendTotalW = 48 + 6 + 40; // approx width of both legend items
+    const legendX = (pw - legendTotalW) / 2;
     doc.setFillColor(bt ? BLUE.r : 45, bt ? BLUE.g : 55, bt ? BLUE.b : 120);
-    doc.rect(chartX, ly, 6, 3, "F");
+    doc.rect(legendX, ly, 6, 3, "F");
     doc.setFontSize(6);
     doc.setTextColor(60, 60, 60);
-    doc.text("Current Year", chartX + 8, ly + 2.5);
+    doc.text("Current Year", legendX + 8, ly + 2.5);
     doc.setFillColor(160, 160, 160);
-    doc.rect(chartX + 40, ly, 6, 3, "F");
-    doc.text("Previous Year", chartX + 48, ly + 2.5);
+    doc.rect(legendX + 40, ly, 6, 3, "F");
+    doc.text("Previous Year", legendX + 48, ly + 2.5);
 
     y = ly + 10;
   }
