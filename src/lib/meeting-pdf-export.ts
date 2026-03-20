@@ -1353,12 +1353,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
 
-  // Directors / Board Election
-  if (data.directors && data.directors.length > 0) {
+  // Directors / Board Election (shareholder meetings only — corp director election)
+  if (data.directors && data.directors.length > 0 && isShareholder) {
     y += 3;
     y = checkPageBreak(doc, y, 30 + data.directors.length * 7);
-
-    if (isShareholder) {
+    {
       // Shareholder meeting: director nomination and election per template
       y = section("Nomination and Election of Board of Directors");
       doc.setFontSize(11);
