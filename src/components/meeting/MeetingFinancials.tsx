@@ -506,6 +506,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
                   <Bar dataKey="Previous Year" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
           <Card>
