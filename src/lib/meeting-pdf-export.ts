@@ -1768,7 +1768,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       doc.rect(gx + barW + 2, chartBottom - prevH, barW, prevH, "F");
 
       // Label
-      doc.setFontSize(6);
+      doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(60, 60, 60);
       doc.text(m.label, gx + barW, chartBottom + 4, { align: "center" });
@@ -1780,7 +1780,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const legendX = (pw - legendTotalW) / 2;
     doc.setFillColor(bt ? BLUE.r : 45, bt ? BLUE.g : 55, bt ? BLUE.b : 120);
     doc.rect(legendX, ly, 6, 3, "F");
-    doc.setFontSize(6);
+    doc.setFontSize(8);
     doc.setTextColor(60, 60, 60);
     doc.text("Current Year", legendX + 8, ly + 2.5);
     doc.setFillColor(160, 160, 160);
