@@ -1726,8 +1726,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     // Draw simple YoY bar chart in PDF
     const pw = doc.internal.pageSize.getWidth();
-    const chartW = pw - 28;
-    const chartH = 50;
+    const chartW = (pw - 28) * 0.75;
+    const chartH = 50 * 0.75;
     y = checkPageBreak(doc, y, chartH + 30);
     if (bt) {
       y = addSubHeading(doc, y, "Year to Year Visual Comparison");
