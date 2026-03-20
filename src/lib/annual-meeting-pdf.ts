@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
+import { registerArialFont } from "@/lib/arial-font";
 
 export interface AnnualMeetingData {
   companyName: string;
@@ -80,6 +81,7 @@ const BODY_COLOR = [40, 40, 40];
 
 export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
+  registerArialFont(doc);
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
   const margin = 72;
@@ -103,7 +105,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     for (let i = 1; i <= totalPages; i++) {
       pageDoc.setPage(i);
       pageDoc.setFontSize(8);
-      pageDoc.setFont("helvetica", "normal");
+      pageDoc.setFont("Arial", "normal");
       pageDoc.setTextColor(120, 120, 120);
       pageDoc.text(footerText, pw / 2, ph - 30, { align: "center" });
       pageDoc.text(`Page ${i} of ${totalPages}`, pw - margin, ph - 30, { align: "right" });
@@ -123,7 +125,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     checkPage(50);
     y += 12;
     doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Arial", "bold");
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
     doc.text(`${sectionNumber}. ${text.toUpperCase()}`, margin, y);
     y += 5;
@@ -138,7 +140,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     checkPage(30);
     y += 6;
     doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Arial", "bold");
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
     doc.text(text, margin, y);
     y += 4;
@@ -150,7 +152,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   function para(text: string, indent: number = 0) {
     doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("Arial", "normal");
     doc.setTextColor(...BODY_COLOR as [number, number, number]);
     const lines = doc.splitTextToSize(text, contentWidth - indent);
     for (const line of lines) {
@@ -174,14 +176,14 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     for (let i = 0; i < lines.length; i++) {
       const lineY = y + i * 16;
       if (i === 0) {
-        doc.setFont("helvetica", "bold");
+        doc.setFont("Arial", "bold");
         const prefixWidth = doc.getTextWidth(prefix);
         doc.text(prefix, margin + indent, lineY);
-        doc.setFont("helvetica", "normal");
+        doc.setFont("Arial", "normal");
         const remainder = lines[0].substring(prefix.length);
         if (remainder) doc.text(remainder, margin + indent + prefixWidth, lineY);
       } else {
-        doc.setFont("helvetica", "normal");
+        doc.setFont("Arial", "normal");
         doc.text(lines[i], margin + indent, lineY);
       }
     }
@@ -201,14 +203,14 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     for (let i = 0; i < lines.length; i++) {
       const lineY = y + i * 16;
       if (i === 0) {
-        doc.setFont("helvetica", "bolditalic");
+        doc.setFont("Arial", "bolditalic");
         const prefixWidth = doc.getTextWidth(prefix);
         doc.text(prefix, margin + indent, lineY);
-        doc.setFont("helvetica", "italic");
+        doc.setFont("Arial", "italic");
         const remainder = lines[0].substring(prefix.length);
         if (remainder) doc.text(remainder, margin + indent + prefixWidth, lineY);
       } else {
-        doc.setFont("helvetica", "italic");
+        doc.setFont("Arial", "italic");
         doc.text(lines[i], margin + indent, lineY);
       }
     }
@@ -222,7 +224,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       head: [headers],
       body: rows,
       margin: { left: margin, right: margin },
-      styles: { fontSize: 10, cellPadding: 5, font: "helvetica" },
+      styles: { fontSize: 10, cellPadding: 5, font: "Arial" },
       headStyles: {
         fillColor: LIGHT_BLUE_BG as [number, number, number],
         textColor: [BLUE.r, BLUE.g, BLUE.b] as [number, number, number],
@@ -235,7 +237,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   // ===== TITLE =====
   doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Arial", "bold");
   doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
   doc.text("MINUTES OF THE ANNUAL MEETING", pw / 2, y, { align: "center" });
   y += 14;
@@ -505,7 +507,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   checkPage(40);
   y += 10;
   doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Arial", "bold");
   doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
   doc.text("ADJOURNMENT", margin, y);
   y += 4;
@@ -528,7 +530,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   doc.line(margin, y, margin + colW - 20, y);
   y += 14;
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("Arial", "normal");
   doc.setTextColor(...BODY_COLOR as [number, number, number]);
   doc.text(data.chairperson || "Chairperson", margin, y);
   doc.text("Chairperson", margin, y + 13);
@@ -555,7 +557,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       doc.setDrawColor(80, 80, 80);
       doc.line(xPos, y, xPos + colW - 20, y);
       doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
+      doc.setFont("Arial", "normal");
       doc.setTextColor(...BODY_COLOR as [number, number, number]);
       doc.text(`Member: ${sig.name || "[Name]"}`, xPos, y + 14);
       doc.text("Date: ________________", xPos, y + 27);
