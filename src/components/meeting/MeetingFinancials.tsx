@@ -487,7 +487,8 @@ export default function MeetingFinancials({ meetingId }: Props) {
               <CardTitle className="font-display text-sm">Annual Financial Comparison</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="75%" height={210}>
+              <div style={{ width: "75%", height: 210 }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -505,6 +506,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
                   <Bar dataKey="Previous Year" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
           <Card>
@@ -512,7 +514,8 @@ export default function MeetingFinancials({ meetingId }: Props) {
               <CardTitle className="font-display text-sm">Annual Cost of Goods Comparison</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="75%" height={210}>
+              <div style={{ width: "75%", height: 210 }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={cogChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -531,6 +534,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
                   <Bar dataKey="Previous Year" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
         </div>
