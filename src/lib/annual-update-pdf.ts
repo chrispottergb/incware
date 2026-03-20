@@ -11,22 +11,22 @@ function addHeader(doc: jsPDF, companyName: string) {
   const pageWidth = doc.internal.pageSize.getWidth();
 
   doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("arial", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text(BRAND, MARGIN, 18);
 
   doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("arial", "normal");
   doc.setTextColor(120, 120, 120);
   doc.text(BRAND_SUB, MARGIN, 24);
 
   doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("arial", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text("Annual Update Review", MARGIN, 36);
 
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("arial", "normal");
   doc.setTextColor(80, 80, 80);
   doc.text(companyName, MARGIN, 43);
 
@@ -59,7 +59,7 @@ function addSectionTitle(doc: jsPDF, title: string, y: number): number {
   }
   y += 6;
   doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("arial", "bold");
   doc.setTextColor(45, 55, 72);
   doc.text(title, MARGIN, y);
   return y + 6;
@@ -68,7 +68,7 @@ function addSectionTitle(doc: jsPDF, title: string, y: number): number {
 function addKeyValueTable(doc: jsPDF, rows: [string, string][], y: number): number {
   if (rows.length === 0) {
     doc.setFontSize(8);
-    doc.setFont("helvetica", "italic");
+    doc.setFont("arial", "italic");
     doc.setTextColor(130, 130, 130);
     doc.text("No data on file.", MARGIN, y + 6);
     return y + MARGIN;
@@ -90,7 +90,7 @@ function addKeyValueTable(doc: jsPDF, rows: [string, string][], y: number): numb
 function addDataTable(doc: jsPDF, headers: string[], rows: string[][], y: number): number {
   if (rows.length === 0) {
     doc.setFontSize(8);
-    doc.setFont("helvetica", "italic");
+    doc.setFont("arial", "italic");
     doc.setTextColor(130, 130, 130);
     doc.text("No records on file.", MARGIN, y + 6);
     return y + MARGIN;
@@ -184,7 +184,7 @@ export function generateAnnualUpdatePdf(data: AnnualUpdateData): jsPDF {
     ], y);
   } else {
     doc.setFontSize(8);
-    doc.setFont("helvetica", "italic");
+    doc.setFont("arial", "italic");
     doc.setTextColor(130, 130, 130);
     doc.text("No officers on file.", MARGIN, y + 6);
     y += MARGIN;
@@ -247,7 +247,7 @@ export function generateAnnualUpdatePdf(data: AnnualUpdateData): jsPDF {
   }
   if (data.attorneyFirms.length === 0 && data.attorneys.length === 0) {
     doc.setFontSize(8);
-    doc.setFont("helvetica", "italic");
+    doc.setFont("arial", "italic");
     doc.setTextColor(130, 130, 130);
     doc.text("No legal counsel on file.", MARGIN, y + 6);
     y += MARGIN;
@@ -282,7 +282,7 @@ export function generateAnnualUpdatePdf(data: AnnualUpdateData): jsPDF {
   }
   if (data.accountantFirms.length === 0 && data.accountants.length === 0) {
     doc.setFontSize(8);
-    doc.setFont("helvetica", "italic");
+    doc.setFont("arial", "italic");
     doc.setTextColor(130, 130, 130);
     doc.text("No accounting records on file.", MARGIN, y + 6);
     y += MARGIN;
@@ -311,7 +311,7 @@ export function generateAnnualUpdatePdf(data: AnnualUpdateData): jsPDF {
   doc.line(14, y, doc.internal.pageSize.getWidth() - 14, y);
   y += 8;
   doc.setFontSize(8);
-  doc.setFont("helvetica", "italic");
+  doc.setFont("arial", "italic");
   doc.setTextColor(100, 100, 100);
   doc.text("Please review all sections above and report any changes or corrections to your service provider.", MARGIN, y);
 

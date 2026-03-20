@@ -13,7 +13,7 @@ function checkBreak(doc: jsPDF, y: number, needed: number): number {
 
 function addParagraph(doc: jsPDF, y: number, text: string, indent = MARGIN): number {
   doc.setFontSize(11);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("arial", "normal");
   doc.setTextColor(30, 30, 30);
   const lines = doc.splitTextToSize(text, pw(doc) - indent - MARGIN);
   for (const line of lines) {
@@ -27,7 +27,7 @@ function addParagraph(doc: jsPDF, y: number, text: string, indent = MARGIN): num
 function addArticleTitle(doc: jsPDF, y: number, num: string, title: string): number {
   y = checkBreak(doc, y, 18);
   doc.setFontSize(13);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("arial", "bold");
   doc.setTextColor(25, 25, 30);
   doc.text(`ARTICLE ${num}`, pw(doc) / 2, y, { align: "center" });
   y += 6;
@@ -43,7 +43,7 @@ function addSectionTitle(doc: jsPDF, y: number, label: string): number {
   y = checkBreak(doc, y, 18);
   y += 4;
   doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("arial", "bold");
   doc.setTextColor(40, 40, 40);
   doc.text(label, MARGIN, y);
   return y + 8;
@@ -79,11 +79,11 @@ export function generateConflictOfInterestPDF(data: ConflictOfInterestData): jsP
   doc.rect(0, 0, pw(doc), ph(doc), "F");
 
   doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("arial", "bold");
   doc.setTextColor(200, 200, 200);
   doc.text("IRS FORM 1023 COMPLIANCE DOCUMENT", cx, 45, { align: "center" });
   doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("arial", "normal");
   doc.setTextColor(160, 160, 160);
   doc.text("Required for 501(c)(3) Tax-Exempt Status", cx, 52, { align: "center" });
 
@@ -94,7 +94,7 @@ export function generateConflictOfInterestPDF(data: ConflictOfInterestData): jsP
   doc.line(40, 64, pw(doc) - 40, 64);
 
   doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("arial", "bold");
   doc.setTextColor(255, 255, 255);
   doc.text("CONFLICT OF INTEREST", cx, 85, { align: "center" });
   doc.text("POLICY", cx, 95, { align: "center" });
@@ -121,7 +121,7 @@ export function generateConflictOfInterestPDF(data: ConflictOfInterestData): jsP
   doc.addPage();
   let y = 25;
   doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("arial", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text("CONFLICT OF INTEREST POLICY", cx, y, { align: "center" });
   doc.text(`OF ${companyName.toUpperCase()}`, cx, y + 6, { align: "center" });
@@ -180,14 +180,14 @@ export function generateConflictOfInterestPDF(data: ConflictOfInterestData): jsP
   doc.addPage();
   y = 30;
   doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("arial", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text("ANNUAL CONFLICT OF INTEREST", cx, y, { align: "center" });
   doc.text("DISCLOSURE STATEMENT", cx, y + 6, { align: "center" });
   y += 18;
 
   doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("arial", "normal");
   doc.setTextColor(50, 50, 50);
   y = addParagraph(doc, y, `Name: _________________________________    Date: ______________`);
   y = addParagraph(doc, y, `Position / Title: _________________________________`);

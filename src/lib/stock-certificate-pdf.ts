@@ -94,7 +94,7 @@ export async function generateStockCertificatePdf(data: StockCertificateData): P
 
   // Certificate Number and Units/Shares boxes (flanking the eagle area)
   doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("arial", "bold");
   doc.setTextColor(80, 80, 80);
 
   // Left box: Certificate No.
@@ -123,7 +123,7 @@ export async function generateStockCertificatePdf(data: StockCertificateData): P
   doc.setLineWidth(0.5);
   doc.roundedRect(35, y, pw - 70, bannerH, 2, 2, "FD");
   doc.setFontSize(16);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("arial", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text(data.companyName.toUpperCase(), pw / 2, y + bannerH / 2 + 2, { align: "center" });
   y += bannerH + 4;
@@ -131,7 +131,7 @@ export async function generateStockCertificatePdf(data: StockCertificateData): P
   // State and type info
   if (data.stateOfIncorporation) {
     doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("arial", "normal");
     doc.setTextColor(80, 80, 80);
     const orgWord = isLLC ? "Organized" : "Incorporated";
     doc.text(`${orgWord} under the laws of the State of ${data.stateOfIncorporation}`, pw / 2, y, { align: "center" });
@@ -146,7 +146,7 @@ export async function generateStockCertificatePdf(data: StockCertificateData): P
 
   // Title
   doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("arial", "bold");
   doc.setTextColor(192, 58, 43); // brick red
   const certTitle = isLLC ? "MEMBERSHIP UNIT CERTIFICATE" : "STOCK CERTIFICATE";
   doc.text(certTitle, pw / 2, y + 2, { align: "center" });
@@ -154,14 +154,14 @@ export async function generateStockCertificatePdf(data: StockCertificateData): P
 
   // "This Certifies that" heading
   doc.setFontSize(13);
-  doc.setFont("helvetica", "bolditalic");
+  doc.setFont("arial", "bolditalic");
   doc.setTextColor(30, 30, 30);
   doc.text("This Certifies that", pw / 2, y, { align: "center" });
   y += 10;
 
   // Holder name with underline
   doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("arial", "bold");
   doc.text(data.shareholderName, pw / 2, y, { align: "center" });
   const nameWidth = doc.getTextWidth(data.shareholderName);
   doc.setDrawColor(100, 100, 100);
@@ -171,7 +171,7 @@ export async function generateStockCertificatePdf(data: StockCertificateData): P
 
   // Body text - differs for LLC vs Corporation
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("arial", "normal");
   doc.setTextColor(40, 40, 40);
 
   let bodyText: string;
@@ -191,10 +191,10 @@ export async function generateStockCertificatePdf(data: StockCertificateData): P
 
   // "In Witness Whereof" clause
   doc.setFontSize(11);
-  doc.setFont("helvetica", "bolditalic");
+  doc.setFont("arial", "bolditalic");
   doc.setTextColor(30, 30, 30);
   doc.text("In Witness Whereof,", 40, y);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("arial", "normal");
   doc.setFontSize(10);
   doc.setTextColor(40, 40, 40);
   const entityLabel = isLLC ? "Limited Liability Company" : "Corporation";

@@ -17,23 +17,23 @@ function addHeader(doc: jsPDF, title: string, subtitle?: string) {
   const pageWidth = doc.internal.pageSize.getWidth();
 
   doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("arial", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text(BRAND, MARGIN, 18);
 
   doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("arial", "normal");
   doc.setTextColor(120, 120, 120);
   doc.text(BRAND_SUB, MARGIN, 24);
 
   doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("arial", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text(title, MARGIN, 36);
 
   if (subtitle) {
     doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("arial", "normal");
     doc.setTextColor(100, 100, 100);
     doc.text(subtitle, MARGIN, 43);
   }
@@ -135,7 +135,7 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
 
   if (config.table && config.table.rows.length === 0) {
     doc.setFontSize(9);
-    doc.setFont("helvetica", "italic");
+    doc.setFont("arial", "italic");
     doc.setTextColor(130, 130, 130);
     doc.text("No records to display.", MARGIN, y + 6);
   }
