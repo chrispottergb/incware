@@ -261,16 +261,10 @@ export default function MeetingBenefits({ meetingId }: Props) {
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2 space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Benefit Type</Label>
-                  <Select value={form.benefit_type} onValueChange={(v) => updateField("benefit_type", v)}>
-                    <SelectTrigger className="bg-background">
-                      <SelectValue placeholder="Select type…" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover z-50">
-                      {BENEFIT_TYPE_OPTIONS.map((opt) => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <BenefitTypeCombobox
+                    value={form.benefit_type}
+                    onChange={(v) => updateField("benefit_type", v)}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Provider</Label>
