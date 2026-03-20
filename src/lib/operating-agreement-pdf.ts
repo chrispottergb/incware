@@ -14,7 +14,7 @@ function checkBreak(doc: jsPDF, y: number, needed: number): number {
 
 function addParagraph(doc: jsPDF, y: number, text: string, indent = MARGIN): number {
   doc.setFontSize(11);
-  doc.setFont("arial", "normal");
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(30, 30, 30);
   const lines = doc.splitTextToSize(text, pw(doc) - indent - MARGIN);
   for (const line of lines) {
@@ -28,7 +28,7 @@ function addParagraph(doc: jsPDF, y: number, text: string, indent = MARGIN): num
 function addArticleTitle(doc: jsPDF, y: number, num: string, title: string): number {
   y = checkBreak(doc, y, 16);
   doc.setFontSize(13);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(25, 25, 30);
   doc.text(`ARTICLE ${num}`, pw(doc) / 2, y, { align: "center" });
   y += 5;
@@ -44,7 +44,7 @@ function addSectionTitle(doc: jsPDF, y: number, label: string): number {
   y = checkBreak(doc, y, 16);
   y += 4;
   doc.setFontSize(12);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(40, 40, 40);
   doc.text(label, MARGIN, y);
   return y + 8;
@@ -54,7 +54,7 @@ function addAiBadge(doc: jsPDF, y: number): number {
   y = checkBreak(doc, y, 8);
   const badgeText = "AI ASSISTED";
   doc.setFontSize(7.5);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   const textWidth = doc.getTextWidth(badgeText);
   const badgeWidth = textWidth + 6;
   const badgeHeight = 4.5;
@@ -111,11 +111,11 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   doc.rect(0, 0, pw(doc), ph(doc), "F");
 
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(80, 80, 80);
   doc.text("STATE OF WISCONSIN", cx, 45, { align: "center" });
   doc.setFontSize(11);
-  doc.setFont("arial", "normal");
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(120, 120, 120);
   doc.text("Wis. Stat. Ch. 183 — Wisconsin Uniform Limited Liability Company Law", cx, 52, { align: "center" });
 
@@ -126,7 +126,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   doc.line(40, 64, pw(doc) - 40, 64);
 
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text("OPERATING AGREEMENT", cx, 85, { align: "center" });
   doc.setFontSize(11);
@@ -162,7 +162,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   doc.addPage();
   let y = 25;
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(120, 120, 120);
   doc.text("TABLE OF CONTENTS", cx, y, { align: "center" });
   y += 10;
@@ -187,7 +187,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   ];
   tocItems.forEach((item) => {
     doc.setFontSize(11);
-    doc.setFont("arial", "normal");
+    doc.setFont("helvetica", "normal");
     doc.setTextColor(50, 50, 50);
     doc.text(item, MARGIN + 5, y);
     y += 6;
@@ -197,7 +197,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   doc.addPage();
   y = 25;
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(120, 120, 120);
   doc.text("OPERATING AGREEMENT", cx, y, { align: "center" });
   doc.text(`OF ${companyName.toUpperCase()}`, cx, y + 6, { align: "center" });
@@ -369,12 +369,12 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   doc.addPage();
   y = 30;
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(120, 120, 120);
   doc.text("IN WITNESS WHEREOF", cx, y, { align: "center" });
   y += 8;
   doc.setFontSize(11);
-  doc.setFont("arial", "normal");
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(50, 50, 50);
   const witnessText = `the undersigned Members have executed this Operating Agreement as of the date first written above.`;
   const wLines = doc.splitTextToSize(witnessText, pw(doc) - MARGIN * 2);
@@ -391,7 +391,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
     doc.line(pw(doc) - MARGIN - 50, y, pw(doc) - MARGIN, y);
     y += 4;
     doc.setFontSize(11);
-    doc.setFont("arial", "normal");
+    doc.setFont("helvetica", "normal");
     doc.setTextColor(80, 80, 80);
     doc.text(m.name || "Member", MARGIN, y);
     doc.text("Date", pw(doc) - MARGIN - 50, y);
@@ -402,7 +402,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   doc.addPage();
   y = 25;
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(120, 120, 120);
   doc.text("SCHEDULE A", cx, y, { align: "center" });
   y += 7;
@@ -415,7 +415,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   y += 8;
 
   doc.setFontSize(11);
-  doc.setFont("arial", "normal");
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(50, 50, 50);
   doc.text(`Company: ${companyName}`, MARGIN, y);
   y += 5;
@@ -467,14 +467,14 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   }, 0);
   if (scheduleMembers.length > 0) {
     doc.setFontSize(11);
-    doc.setFont("arial", "bold");
+    doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(`Total Membership Interests: ${totalPct.toFixed(2)}%`, pw(doc) - MARGIN, y, { align: "right" });
     y += 10;
   }
 
   doc.setFontSize(11);
-  doc.setFont("arial", "italic");
+  doc.setFont("helvetica", "italic");
   doc.setTextColor(120, 120, 120);
   const scheduleNote = "This Schedule A is incorporated into and made a part of the Operating Agreement. Any changes to membership interests shall be reflected by an amended Schedule A executed by all Members.";
   y = addParagraph(doc, y, scheduleNote);

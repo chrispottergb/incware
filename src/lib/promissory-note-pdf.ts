@@ -23,7 +23,7 @@ export function generatePromissoryNotePDF(data: PromissoryNoteData): jsPDF {
 
   // Title
   doc.setFontSize(16);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text("PROMISSORY NOTE", cx, y, { align: "center" });
   y += 10;
@@ -38,7 +38,7 @@ export function generatePromissoryNotePDF(data: PromissoryNoteData): jsPDF {
 
   // Header info
   doc.setFontSize(10);
-  doc.setFont("arial", "normal");
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(60, 60, 60);
 
   const fmt = (v: number | null) =>
@@ -61,17 +61,17 @@ export function generatePromissoryNotePDF(data: PromissoryNoteData): jsPDF {
   y += 8;
 
   // Promise to pay
-  doc.setFont("arial", "normal");
+  doc.setFont("helvetica", "normal");
   const bodyText = `FOR VALUE RECEIVED, the undersigned ${borrower} ("Borrower") promises to pay to the order of ${lender} ("Lender"), the principal sum of ${amountStr}, together with interest thereon at the rate of ${rateStr} per annum.`;
   const bodyLines = doc.splitTextToSize(bodyText, textWidth);
   doc.text(bodyLines, margin, y);
   y += bodyLines.length * 5 + 6;
 
   // Terms section
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.text("TERMS AND CONDITIONS", margin, y);
   y += 6;
-  doc.setFont("arial", "normal");
+  doc.setFont("helvetica", "normal");
 
   const terms = [
     `1. PRINCIPAL: The principal amount of this Note is ${amountStr}.`,
@@ -104,11 +104,11 @@ export function generatePromissoryNotePDF(data: PromissoryNoteData): jsPDF {
     y = 20;
   }
 
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.text("IN WITNESS WHEREOF, the Borrower has executed this Promissory Note as of the date first written above.", margin, y);
   y += 15;
 
-  doc.setFont("arial", "normal");
+  doc.setFont("helvetica", "normal");
   doc.setDrawColor(100, 100, 100);
   doc.setLineWidth(0.3);
 

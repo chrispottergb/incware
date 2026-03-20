@@ -25,12 +25,12 @@ export function generateBillOfSalePdf(data: BillOfSaleData): jsPDF {
 
   // Header
   doc.setFontSize(18);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text("BILL OF SALE", pw / 2, 25, { align: "center" });
 
   doc.setFontSize(10);
-  doc.setFont("arial", "normal");
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
   doc.text(data.companyName, pw / 2, 33, { align: "center" });
 
@@ -78,7 +78,7 @@ export function generateBillOfSalePdf(data: BillOfSaleData): jsPDF {
   // Asset grid if present
   if (data.assets && data.assets.length > 0) {
     doc.setFontSize(11);
-    doc.setFont("arial", "bold");
+    doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text("Non-Cash Consideration — Asset Detail", MARGIN, y);
     y += 6;
@@ -106,7 +106,7 @@ export function generateBillOfSalePdf(data: BillOfSaleData): jsPDF {
 
   // Legal text
   doc.setFontSize(9);
-  doc.setFont("arial", "normal");
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(60, 60, 60);
   const legalText = `FOR VALUE RECEIVED, the undersigned Seller hereby sells, assigns, and transfers to the Buyer the above-described shares of ${data.companyName}, together with all rights, title, and interest therein.`;
   const legalLines = doc.splitTextToSize(legalText, pw - MARGIN - R_MARGIN);

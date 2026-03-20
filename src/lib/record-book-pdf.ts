@@ -31,7 +31,7 @@ function addSectionTitle(doc: jsPDF, y: number, num: number, title: string): num
   y += 4;
   const pw = getPageWidth(doc);
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(120, 120, 120);
   doc.text(`${num}. ${title.toUpperCase()}`, MARGIN, y);
   doc.setDrawColor(140, 140, 140);
@@ -43,7 +43,7 @@ function addSectionTitle(doc: jsPDF, y: number, num: number, title: string): num
 function addSubSection(doc: jsPDF, y: number, title: string): number {
   y = checkBreak(doc, y, 14);
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(120, 120, 120);
   doc.text(title, MARGIN, y);
   return y + 5;
@@ -51,10 +51,10 @@ function addSubSection(doc: jsPDF, y: number, title: string): number {
 
 function addLabelValue(doc: jsPDF, y: number, label: string, value: string, x = MARGIN): number {
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(80, 80, 80);
   doc.text(`${label}:`, x, y);
-  doc.setFont("arial", "normal");
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(30, 30, 30);
   doc.text(value || "—", x + doc.getTextWidth(`${label}: `) + 2, y);
   return y + 5;
@@ -63,7 +63,7 @@ function addLabelValue(doc: jsPDF, y: number, label: string, value: string, x = 
 function addNarrative(doc: jsPDF, y: number, text: string): number {
   if (!text) return y;
   doc.setFontSize(11);
-  doc.setFont("arial", "normal");
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(50, 50, 50);
   const pw = getPageWidth(doc);
   const lines = doc.splitTextToSize(text, pw - MARGIN * 2);
@@ -78,7 +78,7 @@ function addNarrative(doc: jsPDF, y: number, text: string): number {
 function addTableSafe(doc: jsPDF, y: number, head: string[], body: string[][]): number {
   if (body.length === 0) {
     doc.setFontSize(11);
-    doc.setFont("arial", "italic");
+    doc.setFont("helvetica", "italic");
     doc.setTextColor(130, 130, 130);
     doc.text("No records.", MARGIN, y + 4);
     return y + 10;
@@ -120,11 +120,11 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
 
   // Company name as header (replaces old DFI branding)
   doc.setFontSize(10);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(200, 200, 200);
   doc.text(company.name || "Corporate Record Book", cx, 40, { align: "center" });
   doc.setFontSize(8);
-  doc.setFont("arial", "normal");
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(160, 160, 160);
   const coverAddr = [company.address, company.city, company.state, company.zip].filter(Boolean).join(", ");
   if (coverAddr) doc.text(coverAddr, cx, 46, { align: "center" });
@@ -138,7 +138,7 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
 
   // Title
   doc.setFontSize(22);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(255, 255, 255);
   doc.text("CORPORATE RECORD BOOK", cx, 80, { align: "center" });
 
@@ -174,7 +174,7 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
   doc.addPage();
   let y = 20;
   doc.setFontSize(14);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text("TABLE OF CONTENTS", cx, y, { align: "center" });
   y += 10;
@@ -198,7 +198,7 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
 
   sections.forEach((s, i) => {
     doc.setFontSize(9);
-    doc.setFont("arial", "normal");
+    doc.setFont("helvetica", "normal");
     doc.setTextColor(50, 50, 50);
     doc.text(`${i + 1}.  ${s}`, MARGIN + 5, y);
     y += 6;
@@ -256,7 +256,7 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
     ]);
     y = addTableSafe(doc, y, ["President", "Vice President", "Secretary", "Treasurer"], officerRows);
   } else {
-    doc.setFontSize(8); doc.setFont("arial", "italic"); doc.setTextColor(130, 130, 130);
+    doc.setFontSize(8); doc.setFont("helvetica", "italic"); doc.setTextColor(130, 130, 130);
     doc.text("No officers on record.", MARGIN, y); y += 6;
   }
 
@@ -343,7 +343,7 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
   const subData = companyData.meetingSubData || {};
 
   if (meetings.length === 0) {
-    doc.setFontSize(8); doc.setFont("arial", "italic"); doc.setTextColor(130, 130, 130);
+    doc.setFontSize(8); doc.setFont("helvetica", "italic"); doc.setTextColor(130, 130, 130);
     doc.text("No meetings on record.", MARGIN, y); y += 8;
   }
 
@@ -358,13 +358,13 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
     const mResolutions = (subData.resolutions || []).filter((r: any) => r.meeting_id === m.id);
     if (mResolutions.length > 0) {
       y = checkBreak(doc, y, 15);
-      doc.setFontSize(8); doc.setFont("arial", "bold"); doc.setTextColor(60, 60, 60);
+      doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(60, 60, 60);
       doc.text("Resolutions:", MARGIN + 2, y); y += 4;
       mResolutions.forEach((r: any) => {
         y = checkBreak(doc, y, 10);
-        doc.setFont("arial", "bold"); doc.setFontSize(7.5);
+        doc.setFont("helvetica", "bold"); doc.setFontSize(7.5);
         doc.text(`• ${r.purpose}`, MARGIN + 4, y); y += 3.5;
-        doc.setFont("arial", "normal");
+        doc.setFont("helvetica", "normal");
         const rLines = doc.splitTextToSize(r.resolution_text, pw - MARGIN * 2 - 10);
         rLines.forEach((l: string) => {
           y = checkBreak(doc, y, 4);
@@ -467,7 +467,7 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
       );
     }
   } else {
-    doc.setFontSize(8); doc.setFont("arial", "italic"); doc.setTextColor(130, 130, 130);
+    doc.setFontSize(8); doc.setFont("helvetica", "italic"); doc.setTextColor(130, 130, 130);
     doc.text("No AI systems registered.", MARGIN, y); y += 8;
   }
 

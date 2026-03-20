@@ -13,7 +13,7 @@ function checkBreak(doc: jsPDF, y: number, needed: number): number {
 
 function addParagraph(doc: jsPDF, y: number, text: string, indent = MARGIN): number {
   doc.setFontSize(11);
-  doc.setFont("arial", "normal");
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(30, 30, 30);
   const lines = doc.splitTextToSize(text, pw(doc) - indent - MARGIN);
   for (const line of lines) {
@@ -27,7 +27,7 @@ function addParagraph(doc: jsPDF, y: number, text: string, indent = MARGIN): num
 function addArticleTitle(doc: jsPDF, y: number, num: string, title: string): number {
   y = checkBreak(doc, y, 16);
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(120, 120, 120);
   doc.text(`ARTICLE ${num}`, pw(doc) / 2, y, { align: "center" });
   y += 5;
@@ -43,7 +43,7 @@ function addSectionTitle(doc: jsPDF, y: number, label: string): number {
   y = checkBreak(doc, y, 16);
   y += 4;
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(120, 120, 120);
   doc.text(label, MARGIN, y);
   return y + 8;
@@ -83,12 +83,12 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
   doc.rect(0, 0, pw(doc), ph(doc), "F");
 
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(80, 80, 80);
   doc.text("STATE OF WISCONSIN", cx, 45, { align: "center" });
 
   doc.setFontSize(11);
-  doc.setFont("arial", "normal");
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(120, 120, 120);
   doc.text("Wis. Stat. Ch. 183 — Wisconsin Uniform Limited Liability Company Law", cx, 52, { align: "center" });
 
@@ -99,7 +99,7 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
   doc.line(40, 64, pw(doc) - 40, 64);
 
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text("SOLE MEMBER", cx, 82, { align: "center" });
   doc.text("OPERATING AGREEMENT", cx, 92, { align: "center" });
@@ -127,7 +127,7 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
   doc.addPage();
   let y = 25;
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(120, 120, 120);
   doc.text("TABLE OF CONTENTS", cx, y, { align: "center" });
   y += 10;
@@ -145,7 +145,7 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
   ];
   tocItems.forEach((item) => {
     doc.setFontSize(11);
-    doc.setFont("arial", "normal");
+    doc.setFont("helvetica", "normal");
     doc.setTextColor(50, 50, 50);
     doc.text(item, MARGIN + 5, y);
     y += 6;
@@ -155,7 +155,7 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
   doc.addPage();
   y = 25;
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(120, 120, 120);
   doc.text("SOLE MEMBER OPERATING AGREEMENT", cx, y, { align: "center" });
   y += 15;
@@ -167,7 +167,7 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
 
   // Consideration
   doc.setFontSize(11);
-  doc.setFont("arial", "italic");
+  doc.setFont("helvetica", "italic");
   doc.setTextColor(85, 85, 85);
   const considLines = doc.splitTextToSize(
     "NOW, THEREFORE, for good and valuable consideration the receipt and sufficiency of which is hereby acknowledged, it is agreed as follows:",
@@ -181,7 +181,7 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
     doc.text(l, MARGIN + 6, y);
     y += 4.2;
   });
-  doc.setFont("arial", "normal");
+  doc.setFont("helvetica", "normal");
   y += 6;
 
   // ── ARTICLE 1: ORGANIZATION ──
@@ -349,7 +349,7 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
   doc.addPage();
   y = 30;
   doc.setFontSize(11);
-  doc.setFont("arial", "italic");
+  doc.setFont("helvetica", "italic");
   doc.setTextColor(50, 50, 50);
   const witnessText = `IN WITNESS WHEREOF, the Member has hereunto set such Member's hand as of the day and year first above written.`;
   const wLines = doc.splitTextToSize(witnessText, pw(doc) - MARGIN * 2);
@@ -358,14 +358,14 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
 
   // Company name
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
   doc.text(`${companyName}, LLC`, MARGIN, y);
   y += 15;
 
   // Managing Member Signature
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(100, 100, 100);
   doc.text("MANAGING MEMBER'S SIGNATURE", MARGIN, y);
   y += 3;
@@ -376,7 +376,7 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
 
   // Print Name
   doc.setFontSize(11);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(100, 100, 100);
   doc.text("PRINT NAME", MARGIN, y);
   y += 3;

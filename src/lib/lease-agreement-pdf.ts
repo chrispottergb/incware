@@ -35,7 +35,7 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   const addText = (text: string, opts?: { bold?: boolean; size?: number; center?: boolean; indent?: number }) => {
     const sz = opts?.size || 10;
     doc.setFontSize(sz);
-    doc.setFont("arial", opts?.bold ? "bold" : "normal");
+    doc.setFont("helvetica", opts?.bold ? "bold" : "normal");
     doc.setTextColor(30, 30, 30);
     const x = opts?.indent ? margin + opts.indent : margin;
     const w = maxW - (opts?.indent || 0);
