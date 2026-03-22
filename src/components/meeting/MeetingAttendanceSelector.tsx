@@ -99,6 +99,12 @@ export default function MeetingAttendanceSelector({
       const rows = people.map((p) => ({
         meeting_id: meetingId,
         [nameColumn]: p.name,
+        ...(tableName === "meeting_shareholders" ? {
+          address: p.address || null,
+          city: p.city || null,
+          state: p.state || null,
+          zip: p.zip || null,
+        } : {}),
       }));
 
       const { error } = await supabase.from(tableName as any).insert(rows as any);
