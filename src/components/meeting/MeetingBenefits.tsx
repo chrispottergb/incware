@@ -143,11 +143,14 @@ function BenefitTypeCombobox({ value, onChange }: { value: string; onChange: (v:
         />
       </PopoverTrigger>
       <PopoverContent
-        className="p-0 w-[var(--radix-popover-trigger-width)]"
+        className="p-0 w-[var(--radix-popover-trigger-width)] z-[100]"
         align="start"
+        side="bottom"
+        avoidCollisions
+        collisionPadding={8}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <ScrollArea className="max-h-56">
+        <ScrollArea className="max-h-[40vh]">
           {filtered.length === 0 ? (
             <div className="px-3 py-2 text-sm text-muted-foreground">No matches — your custom text will be used</div>
           ) : (
