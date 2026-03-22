@@ -118,15 +118,23 @@ const emptyForm: BenefitForm = {
   benefit_description: "",
 };
 
-function BenefitTypeCombobox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function BenefitTypeCombobox({ value, onChange, customTypes = [] }: { value: string; onChange: (v: string) => void; customTypes?: string[] }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
+  // Merge built-in options with custom types (deduplicated)
+  const allOptions = [...BENEFIT_TYPE_OPTIONS];
+  for (const ct of customTypes) {
+    if (ct && !allOptions.some(o => o.toLowerCase() === ct.toLowerCase())) {
+      allOptions.push(ct);
+    }
+  }
+
   const filtered = search
-    ? BENEFIT_TYPE_OPTIONS.filter((opt) => opt.toLowerCase().includes(search.toLowerCase()))
-    : BENEFIT_TYPE_OPTIONS;
+    ? allOptions.filter((opt) => opt.toLowerCase().includes(search.toLowerCase()))
+    : allOptions;
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -140,7 +148,6 @@ function BenefitTypeCombobox({ value, onChange }: { value: string; onChange: (v:
         }}
         onFocus={() => { setSearch(value); setOpen(true); }}
         onBlur={(e) => {
-          // Don't close if clicking inside the dropdown
           if (wrapperRef.current?.contains(e.relatedTarget as Node)) return;
           setTimeout(() => setOpen(false), 150);
         }}
@@ -183,7 +190,6 @@ export default function MeetingBenefits({ meetingId }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<BenefitForm>(emptyForm);
-  
 
   const { data: rows = [] } = useQuery({
     queryKey: ["meeting_benefits", meetingId],
@@ -197,6 +203,11 @@ export default function MeetingBenefits({ meetingId }: Props) {
       return data as any[];
     },
   });
+
+  // Collect custom benefit types from saved rows
+  const customTypes = rows
+    .map((r: any) => r.benefit_type)
+    .filter((t: string | null): t is string => !!t);
 
   const addRow = useMutation({
     mutationFn: async () => {
@@ -325,6 +336,7 @@ export default function MeetingBenefits({ meetingId }: Props) {
                   <BenefitTypeCombobox
                     value={form.benefit_type}
                     onChange={(v) => updateField("benefit_type", v)}
+                    customTypes={customTypes}
                   />
                 </div>
                 <div className="space-y-1.5">
