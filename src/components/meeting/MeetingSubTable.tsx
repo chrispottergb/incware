@@ -38,6 +38,7 @@ interface Column {
   options?: string[];
   required?: boolean;
   wide?: boolean;
+  width?: string;
 }
 
 interface Props {
