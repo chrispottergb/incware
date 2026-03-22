@@ -1583,20 +1583,44 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       startY: y,
       head: [[
         "Name",
+        "Address",
         isLLC ? "Membership Units" : "Common Shares",
         isLLC ? "Membership Interest %" : "Preferred Shares",
         ...(hasDistribution ? ["Distribution Amount"] : []),
       ]],
-      body: data.shareholders.map(s => [
-        s.shareholder_name,
-        s.common_shares?.toLocaleString() ?? "—",
-        isLLC && s.preferred_shares != null ? `${s.preferred_shares}%` : (s.preferred_shares?.toLocaleString() ?? "—"),
-        ...(hasDistribution ? [s.distribution_amount != null ? fmt(s.distribution_amount) : "—"] : []),
-      ]),
+      body: data.shareholders.map(s => {
+        const matchingShareholder = (data.companyShareholders || []).find(
+          cs => cs.name?.toLowerCase().trim() === s.shareholder_name?.toLowerCase().trim()
+        );
+        let address = "";
+        if (matchingShareholder) {
+          const addr = matchingShareholder.address || "";
+          const addr2 = (matchingShareholder as any).address_2 || "";
+          const city = matchingShareholder.city || "";
+          const state = matchingShareholder.state || "";
+          const zip = matchingShareholder.zip || "";
+          const line1 = [addr, addr2].filter(Boolean).join(", ");
+          const line2 = [city, state].filter(Boolean).join(", ");
+          address = [line1, line2, zip].filter(Boolean).join(" ");
+        }
+        return [
+          s.shareholder_name,
+          address || "---",
+          s.common_shares?.toLocaleString() ?? "---",
+          isLLC && s.preferred_shares != null ? `${s.preferred_shares}%` : (s.preferred_shares?.toLocaleString() ?? "---"),
+          ...(hasDistribution ? [s.distribution_amount != null ? fmt(s.distribution_amount) : "---"] : []),
+        ];
+      }),
       theme: "grid",
       headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
+      columnStyles: {
+        0: { cellWidth: 40 },
+        1: { cellWidth: 'auto' },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 25 },
+      },
     });
     y = (doc as any).lastAutoTable.finalY + 10;
 
