@@ -2060,7 +2060,9 @@ export type Database = {
       meeting_shareholders: {
         Row: {
           additional_capital_contribution: number | null
+          address: string | null
           basis: number | null
+          city: string | null
           common_shares: number | null
           created_at: string
           distribution: string | null
@@ -2069,10 +2071,14 @@ export type Database = {
           meeting_id: string
           preferred_shares: number | null
           shareholder_name: string
+          state: string | null
+          zip: string | null
         }
         Insert: {
           additional_capital_contribution?: number | null
+          address?: string | null
           basis?: number | null
+          city?: string | null
           common_shares?: number | null
           created_at?: string
           distribution?: string | null
@@ -2081,10 +2087,14 @@ export type Database = {
           meeting_id: string
           preferred_shares?: number | null
           shareholder_name: string
+          state?: string | null
+          zip?: string | null
         }
         Update: {
           additional_capital_contribution?: number | null
+          address?: string | null
           basis?: number | null
+          city?: string | null
           common_shares?: number | null
           created_at?: string
           distribution?: string | null
@@ -2093,6 +2103,8 @@ export type Database = {
           meeting_id?: string
           preferred_shares?: number | null
           shareholder_name?: string
+          state?: string | null
+          zip?: string | null
         }
         Relationships: [
           {
