@@ -298,7 +298,10 @@ export default function DocumentsTab({ companyId }: Props) {
             key={cc.name}
             variant={selectedCategory === cc.name ? "default" : "outline"}
             className="cursor-pointer text-[10px] px-2 py-0.5"
-            onClick={() => setSelectedCategory(cc.name)}
+            onClick={() => {
+              setSelectedCategory(cc.name);
+              setUploadCategory(cc.name as Category);
+            }}
           >
             {cc.name} ({cc.count})
           </Badge>
