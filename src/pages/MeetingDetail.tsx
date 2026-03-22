@@ -634,6 +634,21 @@ export default function MeetingDetail() {
                 { key: "basis", label: "Basis", type: "number", width: "90px" },
                 { key: "additional_capital_contribution", label: "Add'l Capital", type: "number", width: "100px" },
               ]}
+              roster={companyShareholders.filter(s => !s.is_treasury).map(s => ({
+                id: s.id,
+                name: s.name,
+                address: s.address,
+                city: s.city,
+                state: s.state,
+                zip: s.zip,
+              }))}
+              rosterFieldMap={{
+                name: "shareholder_name",
+                address: "address",
+                city: "city",
+                state: "state",
+                zip: "zip",
+              }}
             />
           </div>
         </TabsContent>
