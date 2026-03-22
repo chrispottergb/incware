@@ -190,7 +190,12 @@ export default function MeetingBenefits({ meetingId }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<BenefitForm>(emptyForm);
-  
+
+  // Collect custom benefit types from saved rows
+  const customTypes = rows
+    .map((r: any) => r.benefit_type)
+    .filter((t: string | null): t is string => !!t);
+
 
   const { data: rows = [] } = useQuery({
     queryKey: ["meeting_benefits", meetingId],
