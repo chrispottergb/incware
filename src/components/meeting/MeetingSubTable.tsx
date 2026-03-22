@@ -38,6 +38,7 @@ interface Column {
   options?: string[];
   required?: boolean;
   wide?: boolean;
+  width?: string;
 }
 
 interface Props {
@@ -245,7 +246,7 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
               <TableHeader>
                 <TableRow className="bg-muted/50">
                   {columns.map((col) => (
-                    <TableHead key={col.key} className={col.type === "number" ? "text-right" : ""}>
+                    <TableHead key={col.key} className={col.type === "number" ? "text-right" : ""} style={col.width ? { width: col.width, minWidth: col.width } : undefined}>
                       {col.label}
                     </TableHead>
                   ))}
@@ -256,7 +257,7 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
                 {rows.map((row: any) => (
                   <TableRow key={row.id}>
                     {columns.map((col) => (
-                      <TableCell key={col.key} className={col.type === "number" ? "text-right font-mono text-sm" : ""}>
+                      <TableCell key={col.key} className={`whitespace-nowrap ${col.type === "number" ? "text-right font-mono text-sm" : ""}`} style={col.width ? { width: col.width, minWidth: col.width } : undefined}>
                         {col.type === "number" && row[col.key] != null
                           ? Number(row[col.key]).toLocaleString("en-US", { minimumFractionDigits: 2 })
                           : row[col.key] ?? "—"}

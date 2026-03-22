@@ -600,9 +600,13 @@ export default function MeetingDetail() {
                 generatePDF={() => exportSectionPDF(
                   term.shareholders,
                   company, meeting,
-                  ["Name", term.isLLC ? "Membership Units" : "Common Shares", term.isLLC ? "Membership Interest %" : "Preferred Shares", "Dist. Amount", "Basis", "Add'l Capital"],
+                  ["Name", "Address", "City", "St", "ZIP", term.isLLC ? "Units" : "Common", term.isLLC ? "Interest %" : "Preferred", "Dist. Amount", "Basis", "Add'l Capital"],
                   shareholders.map(s => [
                     s.shareholder_name,
+                    (s as any).address ?? "—",
+                    (s as any).city ?? "—",
+                    (s as any).state ?? "—",
+                    (s as any).zip ?? "—",
                     s.common_shares?.toLocaleString() ?? "—",
                     term.isLLC && s.preferred_shares != null ? `${s.preferred_shares}%` : (s.preferred_shares?.toLocaleString() ?? "—"),
                     s.distribution_amount != null ? `$${Number(s.distribution_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
@@ -616,12 +620,16 @@ export default function MeetingDetail() {
             <MeetingSubTable meetingId={meeting.id} tableName="meeting_shareholders"
               title={term.shareholders}
               columns={[
-                { key: "shareholder_name", label: `${term.shareholder} Name`, required: true },
-                { key: "common_shares", label: term.isLLC ? "Membership Units" : "Common Shares", type: "number" },
-                { key: "preferred_shares", label: term.isLLC ? "Membership Interest %" : "Preferred Shares", type: "number" },
-                { key: "distribution_amount", label: "Distribution Amount", type: "number" },
-                { key: "basis", label: `${term.shareholder} Basis`, type: "number" },
-                { key: "additional_capital_contribution", label: "Additional Capital Contribution", type: "number" },
+                { key: "shareholder_name", label: `${term.shareholder} Name`, required: true, width: "160px" },
+                { key: "address", label: "Street Address" },
+                { key: "city", label: "City", width: "120px" },
+                { key: "state", label: "State", width: "60px" },
+                { key: "zip", label: "ZIP", width: "80px" },
+                { key: "common_shares", label: term.isLLC ? "Units" : "Common", type: "number", width: "80px" },
+                { key: "preferred_shares", label: term.isLLC ? "Interest %" : "Preferred", type: "number", width: "80px" },
+                { key: "distribution_amount", label: "Distribution", type: "number", width: "100px" },
+                { key: "basis", label: "Basis", type: "number", width: "90px" },
+                { key: "additional_capital_contribution", label: "Add'l Capital", type: "number", width: "100px" },
               ]}
             />
           </div>
