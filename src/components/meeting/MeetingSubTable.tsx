@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,8 +28,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Pencil } from "lucide-react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Plus, Trash2, Loader2, Pencil, ChevronsUpDown, Check } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Column {
   key: string;
@@ -41,6 +55,12 @@ interface Column {
   width?: string;
 }
 
+export interface RosterRecord {
+  id: string;
+  name: string;
+  [key: string]: any;
+}
+
 interface Props {
   meetingId: string;
   tableName: string;
@@ -48,13 +68,19 @@ interface Props {
   columns: Column[];
   /** When provided for meeting_directors, syncs new directors to company-level directors table */
   companyId?: string;
+  /** When provided, the Add dialog uses a roster picker instead of manual entry for the name/address fields */
+  roster?: RosterRecord[];
+  /** Maps roster field keys to column keys, e.g. { name: "shareholder_name", address: "address" } */
+  rosterFieldMap?: Record<string, string>;
 }
 
-export default function MeetingSubTable({ meetingId, tableName, title, columns, companyId }: Props) {
+export default function MeetingSubTable({ meetingId, tableName, title, columns, companyId, roster, rosterFieldMap }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
+  const [rosterPickerOpen, setRosterPickerOpen] = useState(false);
+  const [selectedRosterId, setSelectedRosterId] = useState<string | null>(null);
 
   const { data: rows = [] } = useQuery({
     queryKey: [tableName, meetingId],
@@ -68,6 +94,18 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
       return data as any[];
     },
   });
+
+  // Filter roster to exclude already-added names
+  const existingNamesLower = useMemo(() => {
+    const nameCol = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "name")?.[1] : undefined;
+    if (!nameCol) return new Set<string>();
+    return new Set(rows.map((r: any) => (r[nameCol] || "").toLowerCase().trim()));
+  }, [rows, rosterFieldMap]);
+
+  const availableRoster = useMemo(() => {
+    if (!roster) return [];
+    return roster.filter((r) => !existingNamesLower.has(r.name.toLowerCase().trim()));
+  }, [roster, existingNamesLower]);
 
   const buildPayload = () => {
     const payload: Record<string, any> = { meeting_id: meetingId };
@@ -84,7 +122,6 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
 
   const syncDirectorToCompany = async (directorName: string) => {
     if (tableName !== "meeting_directors" || !companyId || !directorName) return;
-    // Check if director already exists at company level (case-insensitive)
     const { data: existing } = await supabase
       .from("directors")
       .select("id")
@@ -105,7 +142,6 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
       const payload = buildPayload();
       const { error } = await supabase.from(tableName as any).insert(payload as any);
       if (error) throw error;
-      // Sync director to company-level table
       if (tableName === "meeting_directors" && payload.director_name) {
         await syncDirectorToCompany(payload.director_name);
       }
@@ -149,6 +185,7 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
     setDialogOpen(false);
     setEditingId(null);
     setForm({});
+    setSelectedRosterId(null);
   };
 
   const openEdit = (row: any) => {
@@ -161,6 +198,21 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
     setDialogOpen(true);
   };
 
+  const handleSelectRosterPerson = (person: RosterRecord) => {
+    if (!rosterFieldMap) return;
+    const newForm: Record<string, string> = { ...form };
+    // Map roster fields to form fields
+    Object.entries(rosterFieldMap).forEach(([rosterKey, formKey]) => {
+      const val = person[rosterKey];
+      if (val != null) {
+        newForm[formKey] = String(val);
+      }
+    });
+    setForm(newForm);
+    setSelectedRosterId(person.id);
+    setRosterPickerOpen(false);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) {
@@ -171,6 +223,12 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
   };
 
   const isPending = addRow.isPending || updateRow.isPending;
+
+  // Determine which column keys are auto-filled by roster
+  const rosterAutoFilledKeys = useMemo(() => {
+    if (!rosterFieldMap) return new Set<string>();
+    return new Set(Object.values(rosterFieldMap));
+  }, [rosterFieldMap]);
 
   const renderField = (col: Column) => {
     if (col.type === "select" && col.options) {
@@ -206,28 +264,104 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
     );
   };
 
+  // Check if we're in roster-picker mode (adding, not editing, with roster provided)
+  const useRosterPicker = !!roster && !editingId;
+
   return (
     <Card>
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <CardTitle className="font-display text-base">{title}</CardTitle>
         <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setForm({}); }}>
+            <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setForm({}); setSelectedRosterId(null); }}>
               <Plus className="mr-2 h-4 w-4" /> Add
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="font-display">{editingId ? `Edit ${title}` : `Add ${title}`}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {columns.map((col) => (
-                <div key={col.key} className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">{col.label}</Label>
-                  {renderField(col)}
+              {/* Roster picker when adding */}
+              {useRosterPicker && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Select from Roster</Label>
+                  <Popover open={rosterPickerOpen} onOpenChange={setRosterPickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={rosterPickerOpen}
+                        className="w-full justify-between font-normal"
+                      >
+                        {selectedRosterId
+                          ? availableRoster.find((p) => p.id === selectedRosterId)?.name || roster?.find((p) => p.id === selectedRosterId)?.name || "Selected"
+                          : "Search roster..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search by name..." />
+                        <CommandList>
+                          <CommandEmpty>No matching records.</CommandEmpty>
+                          <CommandGroup>
+                            {availableRoster.map((person) => (
+                              <CommandItem
+                                key={person.id}
+                                value={person.name}
+                                onSelect={() => handleSelectRosterPerson(person)}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", selectedRosterId === person.id ? "opacity-100" : "opacity-0")} />
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-medium">{person.name}</span>
+                                  {person.address && (
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {[person.address, person.city, person.state, person.zip].filter(Boolean).join(", ")}
+                                    </span>
+                                  )}
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {availableRoster.length === 0 && (
+                    <p className="text-xs text-muted-foreground">All roster members have been added.</p>
+                  )}
                 </div>
-              ))}
-              <Button type="submit" className="w-full" disabled={isPending}>
+              )}
+
+              {/* Show remaining editable fields (non-roster-auto-filled when in roster mode, or all fields when editing) */}
+              {columns.map((col) => {
+                // In roster picker mode, hide auto-filled fields but show them as read-only summary
+                if (useRosterPicker && rosterAutoFilledKeys.has(col.key)) {
+                  return null;
+                }
+                return (
+                  <div key={col.key} className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">{col.label}</Label>
+                    {renderField(col)}
+                  </div>
+                );
+              })}
+
+              {/* Show auto-populated summary when a roster person is selected */}
+              {useRosterPicker && selectedRosterId && (
+                <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1">
+                  <p className="text-[10px] uppercase font-medium text-muted-foreground">Auto-populated from roster</p>
+                  {columns.filter(c => rosterAutoFilledKeys.has(c.key) && form[c.key]).map(col => (
+                    <div key={col.key} className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">{col.label}:</span>
+                      <span className="font-medium">{form[col.key]}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Button type="submit" className="w-full" disabled={isPending || (useRosterPicker && !selectedRosterId)}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {editingId ? "Save Changes" : "Add"}
               </Button>
