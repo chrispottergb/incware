@@ -41,6 +41,7 @@ const BENEFIT_TYPE_OPTIONS = [
   "Disability Insurance (Short Term)",
   "Disability Insurance (Long Term)",
   "HSA / FSA Contributions",
+  "HRA",
   "Mental Health Benefits",
   // Retirement & Financial
   "401(k) / Retirement Plan",
