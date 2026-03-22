@@ -336,6 +336,7 @@ export default function MeetingBenefits({ meetingId }: Props) {
                   <BenefitTypeCombobox
                     value={form.benefit_type}
                     onChange={(v) => updateField("benefit_type", v)}
+                    customTypes={customTypes}
                   />
                 </div>
                 <div className="space-y-1.5">
