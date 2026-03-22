@@ -246,7 +246,7 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
               <TableHeader>
                 <TableRow className="bg-muted/50">
                   {columns.map((col) => (
-                    <TableHead key={col.key} className={col.type === "number" ? "text-right" : ""}>
+                    <TableHead key={col.key} className={col.type === "number" ? "text-right" : ""} style={col.width ? { width: col.width, minWidth: col.width } : undefined}>
                       {col.label}
                     </TableHead>
                   ))}
