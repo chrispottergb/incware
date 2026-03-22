@@ -11,10 +11,14 @@ import { toast } from "sonner";
 interface PersonRecord {
   id: string;
   name: string;
-  startDate?: string | null;   // date_added or added_date
-  endDate?: string | null;     // no end date columns exist yet - reserved
+  startDate?: string | null;
+  endDate?: string | null;
   status?: string | null;
   isTreasury?: boolean;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
 }
 
 interface Props {
