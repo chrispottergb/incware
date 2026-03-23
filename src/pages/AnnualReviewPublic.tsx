@@ -489,7 +489,8 @@ export default function AnnualReviewPublic() {
                   onToggle={() => toggleFlag(`shareholder_${i}`)}
                   onNoteChange={(v) => setFlagNote(`shareholder_${i}`, v)}
                 />
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         )}
