@@ -356,13 +356,11 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                             {(shareholderHoldings?.[s.id] ?? 0).toLocaleString()}
                           </TableCell>
                         )}
-                        {t.isLLC && (
-                          <TableCell className="text-xs text-right font-medium">
-                            {s.status === "active" && !s.is_treasury && pct != null && pct > 0
-                              ? `${pct.toFixed(2)}%`
-                              : "—"}
-                          </TableCell>
-                        )}
+                        <TableCell className="text-xs text-right font-medium">
+                          {s.status === "active" && !s.is_treasury && pct != null && pct > 0
+                            ? `${pct.toFixed(2)}%`
+                            : "—"}
+                        </TableCell>
                         {t.isLLC && (
                           <TableCell className="text-xs text-right font-medium font-mono">
                             {(s as any).capital_account_balance != null && Number((s as any).capital_account_balance) !== 0
