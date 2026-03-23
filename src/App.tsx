@@ -123,6 +123,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/annual-review/:token" element={<AnnualReviewPublic />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

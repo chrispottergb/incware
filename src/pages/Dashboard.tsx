@@ -55,6 +55,7 @@ export default function Dashboard() {
   const [showSearch, setShowSearch] = useState(false);
   const [taxReturnOpen, setTaxReturnOpen] = useState(false);
   const [annualUpdateOpen, setAnnualUpdateOpen] = useState(false);
+  const [annualReviewOpen, setAnnualReviewOpen] = useState(false);
   
   useEffect(() => {
     const handler = () => setDialogOpen(true);
