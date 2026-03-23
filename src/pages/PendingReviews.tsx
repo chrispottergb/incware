@@ -549,13 +549,26 @@ export default function PendingReviews() {
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => {
-                      const subject = encodeURIComponent(`Action Required: ${selectedLink.review_year} Annual Review — ${company.name}`);
-                      const salutation = company.salutation_name || "there";
-                      const body = encodeURIComponent(
-                        `Hi ${salutation},\n\nPlease complete your ${selectedLink.review_year} annual review for ${company.name} using the secure link below:\n\n${url}\n\nThis link will expire on ${new Date(selectedLink.expires_at).toLocaleDateString()}.\n\nThank you!`
-                      );
-                      window.open(`mailto:${company.contact_email}?subject=${subject}&body=${body}`, "_blank");
+                    onClick={async () => {
+                      try {
+                        toast.info("Sending reminder email...");
+                        const { data, error } = await supabase.functions.invoke("send-review-reminder", {
+                          body: {
+                            contactName: company.salutation_name || company.contact_full_name || "there",
+                            contactEmail: company.contact_email,
+                            entityName: company.name,
+                            reviewYear: selectedLink.review_year,
+                            reviewUrl: url,
+                            expiresAt: selectedLink.expires_at,
+                          },
+                        });
+                        if (error) throw error;
+                        if (data?.error) throw new Error(data.error);
+                        toast.success(`Reminder sent to ${company.contact_email}`);
+                      } catch (err: any) {
+                        console.error("Send reminder error:", err);
+                        toast.error(`Failed to send reminder: ${err.message || "Unknown error"}`);
+                      }
                     }}
                   >
                     <Send className="mr-2 h-4 w-4" />
