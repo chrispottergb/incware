@@ -155,11 +155,25 @@ export default function PendingReviews() {
     return <Badge variant="outline">{status}</Badge>;
   };
 
-  const flaggedCount = (flags: Record<string, { flagged: boolean; note: string }>) =>
-    Object.values(flags || {}).filter((f) => f.flagged).length;
+  const safeObj = (val: any): Record<string, any> => {
+    if (!val) return {};
+    if (typeof val === "string") {
+      try { return JSON.parse(val); } catch { return {}; }
+    }
+    if (typeof val === "object" && !Array.isArray(val)) return val;
+    return {};
+  };
 
-  const newEntryCount = (entries: Record<string, any[]>) =>
-    Object.values(entries || {}).reduce((sum, arr) => sum + (arr?.length || 0), 0);
+  const safeArr = (val: any): any[] => {
+    if (Array.isArray(val)) return val;
+    return [];
+  };
+
+  const flaggedCount = (flags: any) =>
+    Object.values(safeObj(flags)).filter((f: any) => f?.flagged).length;
+
+  const newEntryCount = (entries: any) =>
+    Object.values(safeObj(entries)).reduce((sum: number, arr: any) => sum + (safeArr(arr).length), 0);
 
   const openReview = (sub: Submission) => {
     setSelectedSubmission(sub);
