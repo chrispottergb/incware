@@ -19,6 +19,7 @@ import UserManagement from "@/pages/UserManagement";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/NotFound";
 import AnnualReviewPublic from "@/pages/AnnualReviewPublic";
+import PendingReviews from "@/pages/PendingReviews";
 
 const queryClient = new QueryClient();
 
@@ -119,6 +120,16 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <Profile />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pending-reviews"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <PendingReviews />
                   </AppLayout>
                 </ProtectedRoute>
               }
