@@ -338,17 +338,19 @@ export default function PendingReviews() {
                               <DropdownMenuItem onClick={() => extendExpiry.mutate({ id: link.id, days: 90 })}>
                                 <Clock className="mr-2 h-3.5 w-3.5" /> Extend 90 days
                               </DropdownMenuItem>
-                              {isAdmin && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                    onClick={() => setDeleteTarget({ type: "link", id: link.id, name: companyName(link.company_id) })}
-                                  >
-                                    <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
-                                  </DropdownMenuItem>
-                                </>
-                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                onClick={() => {
+                                  if (!isAdmin) {
+                                    toast.error("Only admins can delete review records.");
+                                    return;
+                                  }
+                                  setDeleteTarget({ type: "link", id: link.id, name: companyName(link.company_id) });
+                                }}
+                              >
+                                <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
