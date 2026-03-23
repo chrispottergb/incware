@@ -155,11 +155,25 @@ export default function PendingReviews() {
     return <Badge variant="outline">{status}</Badge>;
   };
 
-  const flaggedCount = (flags: Record<string, { flagged: boolean; note: string }>) =>
-    Object.values(flags || {}).filter((f) => f.flagged).length;
+  const safeObj = (val: any): Record<string, any> => {
+    if (!val) return {};
+    if (typeof val === "string") {
+      try { return JSON.parse(val); } catch { return {}; }
+    }
+    if (typeof val === "object" && !Array.isArray(val)) return val;
+    return {};
+  };
 
-  const newEntryCount = (entries: Record<string, any[]>) =>
-    Object.values(entries || {}).reduce((sum, arr) => sum + (arr?.length || 0), 0);
+  const safeArr = (val: any): any[] => {
+    if (Array.isArray(val)) return val;
+    return [];
+  };
+
+  const flaggedCount = (flags: any) =>
+    Object.values(safeObj(flags)).filter((f: any) => f?.flagged).length;
+
+  const newEntryCount = (entries: any) =>
+    Object.values(safeObj(entries)).reduce((sum: number, arr: any) => sum + (safeArr(arr).length), 0);
 
   const openReview = (sub: Submission) => {
     setSelectedSubmission(sub);
@@ -354,9 +368,9 @@ export default function PendingReviews() {
                     Changes Flagged by Client ({flaggedCount(selectedSubmission.change_flags)})
                   </h3>
                   <div className="space-y-2">
-                    {Object.entries(selectedSubmission.change_flags)
-                      .filter(([, v]) => v.flagged)
-                      .map(([key, val]) => (
+                    {Object.entries(safeObj(selectedSubmission.change_flags))
+                      .filter(([, v]: [string, any]) => v?.flagged)
+                      .map(([key, val]: [string, any]) => (
                         <div
                           key={key}
                           className="rounded-md border border-amber-200 bg-amber-50 p-3"
@@ -364,7 +378,7 @@ export default function PendingReviews() {
                           <p className="text-xs font-semibold text-amber-800 mb-1">
                             {key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                           </p>
-                          <p className="text-sm text-amber-900">{val.note || "No details provided"}</p>
+                          <p className="text-sm text-amber-900">{val?.note || "No details provided"}</p>
                         </div>
                       ))}
                   </div>
@@ -372,8 +386,9 @@ export default function PendingReviews() {
               )}
 
               {/* New Entries */}
-              {Object.entries(selectedSubmission.new_entries || {}).map(([section, entries]) => {
-                if (!entries || entries.length === 0) return null;
+              {Object.entries(safeObj(selectedSubmission.new_entries)).map(([section, rawEntries]) => {
+                const entries = safeArr(rawEntries);
+                if (entries.length === 0) return null;
                 return (
                   <div key={section} className="space-y-2">
                     <h3 className="text-sm font-semibold">
@@ -385,7 +400,7 @@ export default function PendingReviews() {
                         className="rounded-md border border-border bg-muted/50 p-3"
                       >
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                          {Object.entries(entry).map(([k, v]) => {
+                          {Object.entries(safeObj(entry)).map(([k, v]) => {
                             if (v === null || v === undefined || v === "") return null;
                             return (
                               <div key={k}>
