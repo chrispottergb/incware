@@ -701,6 +701,118 @@ export default function AnnualReviewPublic() {
           </Card>
         )}
 
+        {/* Current Leases */}
+        {snapshot.leases?.length > 0 && (
+          <Card className="border-border bg-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Home className="h-4 w-4 text-primary" />
+                Current Leases on File
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {snapshot.leases.map((l: any, i: number) => (
+                <div key={i} className="border border-border rounded-md p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-sm font-medium text-foreground">
+                      {l.description || `Lease ${i + 1}`}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                      <Checkbox
+                        checked={!!changeFlags[`lease_${i}`]?.flagged}
+                        onCheckedChange={() => toggleFlag(`lease_${i}`)}
+                        className="h-3.5 w-3.5"
+                      />
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">Change Needed</span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-muted-foreground">
+                    {l.landlord_name && (
+                      <div><span className="font-medium text-foreground">Landlord:</span> {l.landlord_name}{l.landlord_address ? `, ${l.landlord_address}` : ""}</div>
+                    )}
+                    {(l.address || l.address_2) && (
+                      <div><span className="font-medium text-foreground">Property:</span> {[l.address, l.address_2].filter(Boolean).join(", ")}</div>
+                    )}
+                    {l.monthly_payment != null && (
+                      <div><span className="font-medium text-foreground">Monthly Rent:</span> ${Number(l.monthly_payment).toLocaleString()}</div>
+                    )}
+                    {l.lease_start_date && (
+                      <div><span className="font-medium text-foreground">Start:</span> {l.lease_start_date}{l.lease_end_date ? ` — End: ${l.lease_end_date}` : ""}</div>
+                    )}
+                  </div>
+                  {changeFlags[`lease_${i}`]?.flagged && (
+                    <Textarea
+                      placeholder="Describe the change (e.g. lease renewed, rent changed, terminated)..."
+                      value={changeFlags[`lease_${i}`]?.note || ""}
+                      onChange={(e) => setFlagNote(`lease_${i}`, e.target.value)}
+                      className="text-xs min-h-[50px] mt-1"
+                    />
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Current Employee Benefits */}
+        {snapshot.benefits?.length > 0 && (
+          <Card className="border-border bg-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <HeartHandshake className="h-4 w-4 text-primary" />
+                Current Employee Benefits on File
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {snapshot.benefits.map((b: any, i: number) => (
+                <div key={i} className="border border-border rounded-md p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-sm font-medium text-foreground">
+                      {b.benefit_description || b.benefit_type || `Benefit ${i + 1}`}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                      <Checkbox
+                        checked={!!changeFlags[`benefit_${i}`]?.flagged}
+                        onCheckedChange={() => toggleFlag(`benefit_${i}`)}
+                        className="h-3.5 w-3.5"
+                      />
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">Change Needed</span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-muted-foreground">
+                    {b.benefit_type && (
+                      <div><span className="font-medium text-foreground">Type:</span> {b.benefit_type}</div>
+                    )}
+                    {b.provider && (
+                      <div><span className="font-medium text-foreground">Provider:</span> {b.provider}</div>
+                    )}
+                    {b.agent_administrator && (
+                      <div><span className="font-medium text-foreground">Agent/Admin:</span> {b.agent_administrator}</div>
+                    )}
+                    {b.new_plan_effective_date && (
+                      <div><span className="font-medium text-foreground">Effective Date:</span> {b.new_plan_effective_date}</div>
+                    )}
+                    {b.eligibility_comments && (
+                      <div><span className="font-medium text-foreground">Eligibility:</span> {b.eligibility_comments}</div>
+                    )}
+                    {b.insurance_agency && (
+                      <div><span className="font-medium text-foreground">Agency:</span> {b.insurance_agency}</div>
+                    )}
+                  </div>
+                  {changeFlags[`benefit_${i}`]?.flagged && (
+                    <Textarea
+                      placeholder="Describe the change (e.g. provider changed, benefit discontinued, eligibility updated)..."
+                      value={changeFlags[`benefit_${i}`]?.note || ""}
+                      onChange={(e) => setFlagNote(`benefit_${i}`, e.target.value)}
+                      className="text-xs min-h-[50px] mt-1"
+                    />
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         {/* ============ NEW INFORMATION SECTIONS ============ */}
         <div className="pt-4 border-t border-border">
           <h2 className="text-base font-bold text-foreground mb-1">
