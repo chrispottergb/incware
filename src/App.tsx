@@ -19,6 +19,7 @@ import UserManagement from "@/pages/UserManagement";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/NotFound";
 import AnnualReviewPublic from "@/pages/AnnualReviewPublic";
+import PendingReviews from "@/pages/PendingReviews";
 
 const queryClient = new QueryClient();
 
