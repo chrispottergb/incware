@@ -386,22 +386,24 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                       </TableRow>
                     );
                   })}
-                  {/* Total validation row for LLC interest % */}
-                  {t.isLLC && (totalUnits > 0 || (totalPct != null && totalPct > 0)) && (
+                  {/* Total validation row for ownership % */}
+                  {(totalUnits > 0 || (totalPct != null && totalPct > 0)) && (
                     <TableRow className="bg-muted/30 border-t-2">
                       <TableCell colSpan={4} className="text-xs font-semibold text-right">
                         Totals
                       </TableCell>
-                      <TableCell className="text-xs text-right font-semibold">
-                        {totalUnits.toLocaleString()}
-                      </TableCell>
+                      {(shareholderHoldings || t.isLLC) && (
+                        <TableCell className="text-xs text-right font-semibold">
+                          {totalUnits.toLocaleString()}
+                        </TableCell>
+                      )}
                       <TableCell className={`text-xs text-right font-semibold ${totalPct != null && Math.abs(totalPct - 100) > 0.01 ? "text-destructive" : "text-success"}`}>
                         {totalPct != null ? `${totalPct.toFixed(2)}%` : "—"}
                         {totalPct != null && Math.abs(totalPct - 100) > 0.01 && (
                           <span className="block text-[10px] text-destructive font-normal">≠ 100%</span>
                         )}
                       </TableCell>
-                      <TableCell />
+                      {t.isLLC && <TableCell />}
                       <TableCell />
                       <TableCell />
                     </TableRow>
