@@ -124,6 +124,16 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/pending-reviews"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <PendingReviews />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
             <Route path="/annual-review/:token" element={<AnnualReviewPublic />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

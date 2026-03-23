@@ -86,6 +86,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   const mainNav = [
     { label: "Dashboard", href: "/", icon: LayoutDashboard },
+    { label: "Pending Reviews", href: "/pending-reviews", icon: ClipboardList },
     { label: "Import Access DB", href: "/import-access", icon: Database },
     { label: "Reports", href: "/reports", icon: ClipboardList },
     { label: "Org Chart", href: "/org-chart", icon: GitBranch },
