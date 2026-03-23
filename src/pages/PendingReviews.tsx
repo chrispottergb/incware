@@ -368,9 +368,9 @@ export default function PendingReviews() {
                     Changes Flagged by Client ({flaggedCount(selectedSubmission.change_flags)})
                   </h3>
                   <div className="space-y-2">
-                    {Object.entries(selectedSubmission.change_flags)
-                      .filter(([, v]) => v.flagged)
-                      .map(([key, val]) => (
+                    {Object.entries(safeObj(selectedSubmission.change_flags))
+                      .filter(([, v]: [string, any]) => v?.flagged)
+                      .map(([key, val]: [string, any]) => (
                         <div
                           key={key}
                           className="rounded-md border border-amber-200 bg-amber-50 p-3"
@@ -378,7 +378,7 @@ export default function PendingReviews() {
                           <p className="text-xs font-semibold text-amber-800 mb-1">
                             {key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                           </p>
-                          <p className="text-sm text-amber-900">{val.note || "No details provided"}</p>
+                          <p className="text-sm text-amber-900">{val?.note || "No details provided"}</p>
                         </div>
                       ))}
                   </div>
