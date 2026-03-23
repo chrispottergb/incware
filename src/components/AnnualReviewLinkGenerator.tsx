@@ -1,23 +1,18 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useQueryClient } from "@tanstack/react-query";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Link2, Copy, Check, Loader2, ExternalLink, ClipboardCheck } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Link2, Copy, Check, Loader2, ExternalLink, ClipboardCheck, Send } from "lucide-react";
 import { toast } from "sonner";
 
 interface AnnualReviewLinkGeneratorProps {
@@ -38,11 +33,16 @@ export default function AnnualReviewLinkGenerator({
   companies,
 }: AnnualReviewLinkGeneratorProps) {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [reviewYear, setReviewYear] = useState(new Date().getFullYear());
   const [generatedLink, setGeneratedLink] = useState("");
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [autoEmail, setAutoEmail] = useState(true);
+
+  const selectedCompany = companies.find((c) => c.id === selectedCompanyId);
+  const hasEmail = !!selectedCompany?.contact_email;
 
   const handleGenerate = async () => {
     if (!selectedCompanyId || !user) return;
@@ -64,7 +64,25 @@ export default function AnnualReviewLinkGenerator({
       const baseUrl = window.location.origin;
       const link = `${baseUrl}/annual-review/${token}`;
       setGeneratedLink(link);
+
+      // Invalidate the pending reviews query so it picks up the new link
+      qc.invalidateQueries({ queryKey: ["annual_review_links_all"] });
+
       toast.success("Review link generated successfully.");
+
+      // Auto-email if enabled and company has contact email
+      if (autoEmail && hasEmail && selectedCompany) {
+        const subject = encodeURIComponent(
+          `Action Required: ${reviewYear} Annual Review — ${selectedCompany.name}`
+        );
+        const salutation = selectedCompany.salutation_name || "there";
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 90);
+        const body = encodeURIComponent(
+          `Hi ${salutation},\n\nPlease complete your ${reviewYear} annual review for ${selectedCompany.name} using the secure link below:\n\n${link}\n\nThis link will expire on ${expiryDate.toLocaleDateString()}.\n\nThank you!`
+        );
+        window.open(`mailto:${selectedCompany.contact_email}?subject=${subject}&body=${body}`, "_blank");
+      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to generate link");
@@ -90,10 +108,9 @@ export default function AnnualReviewLinkGenerator({
       setSelectedCompanyId("");
       setGeneratedLink("");
       setCopied(false);
+      setAutoEmail(true);
     }, 300);
   };
-
-  const selectedCompany = companies.find((c) => c.id === selectedCompanyId);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -137,6 +154,33 @@ export default function AnnualReviewLinkGenerator({
                 className="h-7"
               />
             </div>
+
+            {/* Auto-email option */}
+            {selectedCompanyId && (
+              <div className="flex items-start gap-2 rounded-md border border-border bg-muted/50 p-3">
+                <Checkbox
+                  id="auto-email"
+                  checked={autoEmail && hasEmail}
+                  onCheckedChange={(checked) => setAutoEmail(!!checked)}
+                  disabled={!hasEmail}
+                />
+                <div className="flex-1">
+                  <Label htmlFor="auto-email" className="text-sm font-medium cursor-pointer">
+                    <Send className="inline mr-1.5 h-3.5 w-3.5" />
+                    Email link to client
+                  </Label>
+                  {hasEmail ? (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Will open email draft to <strong>{selectedCompany?.contact_email}</strong>
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      No contact email on file. Add one in the entity's Incorporation tab.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             <Button
               onClick={handleGenerate}
