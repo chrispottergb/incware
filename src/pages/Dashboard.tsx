@@ -171,21 +171,8 @@ export default function Dashboard() {
             },
           },
           {
-            title: "Annual Update",
-            description: "Generate review & email",
-            image: cardAnnualUpdate,
-            icon: CalendarCheck,
-            onClick: () => {
-              if (companies.length > 0) {
-                setAnnualUpdateOpen(true);
-              } else {
-                toast.info("Add a company first to generate an annual update.");
-              }
-            },
-          },
-          {
-            title: "Client Review",
-            description: "Send annual review form",
+            title: "EntityIQ",
+            description: "Annual review worksheet",
             image: cardAnnualUpdate,
             icon: ClipboardCheck,
             onClick: () => {
