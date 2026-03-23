@@ -126,7 +126,7 @@ export default function PendingReviews() {
 
   const linkMeta = (linkId: string) => links.find((l) => l.id === linkId);
 
-  const buildUrl = (token: string) => `${window.location.origin}/annual-review/${token}`;
+  const buildUrl = (token: string) => `https://incware.lovable.app/annual-review/${token}`;
 
   // --- Mutations ---
 
