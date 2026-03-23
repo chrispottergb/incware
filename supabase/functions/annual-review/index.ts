@@ -355,6 +355,148 @@ Deno.serve(async (req) => {
         .update({ status: "submitted", updated_at: new Date().toISOString() })
         .eq("id", link.id);
 
+      // Send admin notification email via Resend
+      try {
+        const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+        if (RESEND_API_KEY) {
+          const companyName = company?.name || "Unknown Entity";
+          const reviewYear = link.review_year;
+          const submittedAt = new Date().toLocaleDateString("en-US", {
+            year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit",
+          });
+
+          // Build sections filled summary
+          const newEntriesSections: string[] = [];
+          const ne = new_entries || {};
+          if (ne.vehicle_purchases?.length) newEntriesSections.push(`Vehicles (${ne.vehicle_purchases.length})`);
+          if (ne.equipment_purchases?.length) newEntriesSections.push(`Equipment (${ne.equipment_purchases.length})`);
+          if (ne.new_loans?.length) newEntriesSections.push(`Loans (${ne.new_loans.length})`);
+          if (ne.share_transactions?.length) newEntriesSections.push(`Share Transactions (${ne.share_transactions.length})`);
+          if (ne.new_leases?.length) newEntriesSections.push(`Leases (${ne.new_leases.length})`);
+          if (ne.new_benefits?.length) newEntriesSections.push(`Benefits (${ne.new_benefits.length})`);
+          if (ne.investments?.length) newEntriesSections.push(`Investments (${ne.investments.length})`);
+          if (ne.charitable_contributions?.length) newEntriesSections.push(`Charitable Contributions (${ne.charitable_contributions.length})`);
+          if (ne.annual_meeting?.date || ne.annual_meeting?.has_resolutions) newEntriesSections.push("Annual Meeting Details");
+          if (ne.excess_earnings?.has_excess) newEntriesSections.push("Excess Earnings");
+          if (ne.other_notes) newEntriesSections.push("Other Notes");
+
+          const sectionsSummary = newEntriesSections.length > 0
+            ? newEntriesSections.join(", ")
+            : "None";
+
+          // Build flagged items summary
+          const cf = change_flags || {};
+          const flaggedItems = Object.entries(cf)
+            .filter(([_, v]: [string, any]) => v?.flagged)
+            .map(([key]: [string, any]) => {
+              // Convert keys like "company_address" to readable labels
+              return key.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
+            });
+          const flaggedSummary = flaggedItems.length > 0
+            ? flaggedItems.join(", ")
+            : "None";
+
+          // Dashboard link to pending reviews
+          const dashboardUrl = "https://incware.lovable.app/pending-reviews";
+
+          const notificationHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f5f7;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background-color:#1a1a2e;padding:28px 40px;text-align:center;">
+              <h1 style="margin:0;font-size:26px;font-weight:700;color:#ffffff;letter-spacing:0.5px;">EntityIQ</h1>
+              <p style="margin:6px 0 0;font-size:12px;color:#8b8fa3;text-transform:uppercase;letter-spacing:1.5px;">Annual Review Submission</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:36px 40px 20px;">
+              <h2 style="margin:0 0 20px;font-size:20px;color:#1a1a2e;font-weight:600;">New Review Submitted</h2>
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#3c3c4a;">
+                A client has submitted their annual review worksheet. Here's a summary:
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+                <tr>
+                  <td style="padding:10px 14px;background-color:#f8f9fa;border-radius:6px 6px 0 0;border-bottom:1px solid #eee;">
+                    <strong style="color:#1a1a2e;font-size:13px;">Entity:</strong>
+                    <span style="color:#3c3c4a;font-size:14px;margin-left:8px;">${companyName}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 14px;background-color:#f8f9fa;border-bottom:1px solid #eee;">
+                    <strong style="color:#1a1a2e;font-size:13px;">Review Year:</strong>
+                    <span style="color:#3c3c4a;font-size:14px;margin-left:8px;">${reviewYear}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 14px;background-color:#f8f9fa;border-bottom:1px solid #eee;">
+                    <strong style="color:#1a1a2e;font-size:13px;">Submitted:</strong>
+                    <span style="color:#3c3c4a;font-size:14px;margin-left:8px;">${submittedAt}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 14px;background-color:#f8f9fa;border-bottom:1px solid #eee;">
+                    <strong style="color:#1a1a2e;font-size:13px;">Sections Filled:</strong>
+                    <span style="color:#3c3c4a;font-size:14px;margin-left:8px;">${sectionsSummary}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 14px;background-color:#f8f9fa;border-radius:0 0 6px 6px;">
+                    <strong style="color:#1a1a2e;font-size:13px;">Flagged for Changes:</strong>
+                    <span style="color:#3c3c4a;font-size:14px;margin-left:8px;">${flaggedSummary}</span>
+                  </td>
+                </tr>
+              </table>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:8px 0 20px;">
+                    <a href="${dashboardUrl}" target="_blank"
+                       style="display:inline-block;background-color:#2563eb;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:6px;letter-spacing:0.3px;">
+                      View Submission in Dashboard
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 40px 32px;border-top:1px solid #eee;">
+              <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.5;text-align:center;">
+                This is an automated notification from EntityIQ.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+          await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${RESEND_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from: "EntityIQ <noreply@entityiq.net>",
+              to: ["mike@klecknerlaw.com"],
+              subject: `Annual Review Submitted: ${companyName} (${reviewYear})`,
+              html: notificationHtml,
+            }),
+          });
+        }
+      } catch (emailErr) {
+        // Don't fail the submission if notification email fails
+        console.error("Failed to send admin notification email:", emailErr);
+      }
+
       return new Response(JSON.stringify({
         success: true,
         submission_id: result.data.id,
