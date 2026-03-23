@@ -446,14 +446,21 @@ export default function PendingReviews() {
                             View
                           </Button>
                           {isAdmin && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 px-1 text-destructive hover:text-destructive"
-                              onClick={() => setDeleteTarget({ type: "submission", id: sub.id, name: companyName(sub.company_id) })}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="sm" variant="ghost" className="h-7 px-2">
+                                  <MoreHorizontal className="h-3.5 w-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                  onClick={() => setDeleteTarget({ type: "submission", id: sub.id, name: companyName(sub.company_id) })}
+                                >
+                                  <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
                         </div>
                       </TableCell>
