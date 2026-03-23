@@ -470,17 +470,27 @@ export default function AnnualReviewPublic() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {snapshot.shareholders.map((s: any, i: number) => (
+              {snapshot.shareholders.map((s: any, i: number) => {
+                const isLLC = snapshot.company.entity_type?.includes("LLC");
+                const sharesLabel = s.total_shares ? `${s.total_shares.toLocaleString()} shares` : "";
+                const ownershipLabel = s.ownership_percentage != null ? `${s.ownership_percentage}%` : "";
+                const detailParts = [sharesLabel, ownershipLabel].filter(Boolean);
+                const addressStr = [s.address, s.city, s.state, s.zip].filter(Boolean).join(", ") || "No address on file";
+                const valueStr = detailParts.length > 0
+                  ? `${detailParts.join(" · ")} · ${addressStr}`
+                  : addressStr;
+                return (
                 <CurrentInfoItem
                   key={i}
                   label={s.name}
-                  value={`${s.ownership_percentage ?? "—"}% · ${[s.address, s.city, s.state, s.zip].filter(Boolean).join(", ") || "No address on file"}`}
+                  value={valueStr}
                   changeFlag={!!changeFlags[`shareholder_${i}`]?.flagged}
                   changeNote={changeFlags[`shareholder_${i}`]?.note || ""}
                   onToggle={() => toggleFlag(`shareholder_${i}`)}
                   onNoteChange={(v) => setFlagNote(`shareholder_${i}`, v)}
                 />
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         )}

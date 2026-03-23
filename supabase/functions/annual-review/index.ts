@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       const [
         companyRes, officersRes, directorsRes, shareholdersRes,
         banksRes, bankSignersRes, meetingCounselRes, meetingLoansRes,
-        assetsRes
+        assetsRes, certificatesRes
       ] = await Promise.all([
         supabase.from("companies").select("*").eq("id", companyId).single(),
         supabase.from("officers").select("*").eq("company_id", companyId).maybeSingle(),
@@ -87,6 +87,7 @@ Deno.serve(async (req) => {
         // Get loan data from most recent meeting
         supabase.from("meetings").select("id").eq("company_id", companyId).order("meeting_date", { ascending: false }).limit(1),
         supabase.from("company_assets").select("*").eq("company_id", companyId),
+        supabase.from("stock_certificates").select("shareholder_id, num_shares, share_class, status").eq("company_id", companyId).eq("status", "active"),
       ]);
 
       if (companyRes.error) {
@@ -116,6 +117,18 @@ Deno.serve(async (req) => {
         .eq("company_id", companyId);
 
       const company = companyRes.data;
+
+      // Compute share counts per shareholder from active certificates
+      const certsByHolder: Record<string, { total: number; byClass: Record<string, number> }> = {};
+      for (const cert of (certificatesRes.data || [])) {
+        if (!cert.shareholder_id) continue;
+        if (!certsByHolder[cert.shareholder_id]) {
+          certsByHolder[cert.shareholder_id] = { total: 0, byClass: {} };
+        }
+        certsByHolder[cert.shareholder_id].total += cert.num_shares || 0;
+        const cls = cert.share_class || "Common";
+        certsByHolder[cert.shareholder_id].byClass[cls] = (certsByHolder[cert.shareholder_id].byClass[cls] || 0) + (cert.num_shares || 0);
+      }
       
       const snapshot = {
         company: {
@@ -127,14 +140,19 @@ Deno.serve(async (req) => {
           state: company.state,
           zip: company.zip,
         },
-        shareholders: (shareholdersRes.data || []).map((s: any) => ({
-          name: s.name,
-          ownership_percentage: s.ownership_percentage,
-          address: s.address,
-          city: s.city,
-          state: s.state,
-          zip: s.zip,
-        })),
+        shareholders: (shareholdersRes.data || []).map((s: any) => {
+          const shares = certsByHolder[s.id];
+          return {
+            name: s.name,
+            ownership_percentage: s.ownership_percentage,
+            total_shares: shares?.total || 0,
+            shares_by_class: shares?.byClass || {},
+            address: s.address,
+            city: s.city,
+            state: s.state,
+            zip: s.zip,
+          };
+        }),
         directors: (directorsRes.data || []).map((d: any) => ({
           name: d.name,
         })),
