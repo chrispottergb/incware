@@ -99,17 +99,20 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Get meeting counsel & loans from most recent meeting
+      // Get meeting counsel, loans & benefits from most recent meeting
       let counselData = null;
       let loansData: any[] = [];
+      let benefitsData: any[] = [];
       if (meetingCounselRes.data && meetingCounselRes.data.length > 0) {
         const latestMeetingId = meetingCounselRes.data[0].id;
-        const [counselRes, loanRes] = await Promise.all([
+        const [counselRes, loanRes, benefitsRes] = await Promise.all([
           supabase.from("meeting_counsel").select("*").eq("meeting_id", latestMeetingId).maybeSingle(),
           supabase.from("meeting_loans").select("*").eq("meeting_id", latestMeetingId),
+          supabase.from("meeting_benefits").select("*").eq("meeting_id", latestMeetingId),
         ]);
         counselData = counselRes.data;
         loansData = loanRes.data || [];
+        benefitsData = benefitsRes.data || [];
       }
 
       // Get share transactions for share counts
