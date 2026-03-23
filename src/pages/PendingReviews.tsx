@@ -724,14 +724,12 @@ export default function PendingReviews() {
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {deleteTarget?.type === "submission"
-                ? `This will permanently delete the submitted review for "${deleteTarget?.name}". Client-submitted data cannot be recovered.`
-                : `This will permanently delete the review link for "${deleteTarget?.name}". The client will no longer be able to access it.`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this review link? This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
