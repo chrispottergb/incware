@@ -386,8 +386,9 @@ export default function PendingReviews() {
               )}
 
               {/* New Entries */}
-              {Object.entries(selectedSubmission.new_entries || {}).map(([section, entries]) => {
-                if (!entries || entries.length === 0) return null;
+              {Object.entries(safeObj(selectedSubmission.new_entries)).map(([section, rawEntries]) => {
+                const entries = safeArr(rawEntries);
+                if (entries.length === 0) return null;
                 return (
                   <div key={section} className="space-y-2">
                     <h3 className="text-sm font-semibold">
@@ -399,7 +400,7 @@ export default function PendingReviews() {
                         className="rounded-md border border-border bg-muted/50 p-3"
                       >
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                          {Object.entries(entry).map(([k, v]) => {
+                          {Object.entries(safeObj(entry)).map(([k, v]) => {
                             if (v === null || v === undefined || v === "") return null;
                             return (
                               <div key={k}>
