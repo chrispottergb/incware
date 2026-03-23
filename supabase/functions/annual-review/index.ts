@@ -202,6 +202,27 @@ Deno.serve(async (req) => {
           model: v.model,
           vin: v.vin,
         })),
+        leases: (assetsRes.data || []).filter((a: any) => 
+          a.asset_type !== "Vehicle" && a.asset_type !== "Equipment" && (a.landlord_name || a.lease_start_date || a.lease_amount || a.monthly_payment)
+        ).map((l: any) => ({
+          description: l.description,
+          landlord_name: l.landlord_name,
+          landlord_address: l.landlord_address,
+          address: l.address,
+          address_2: l.address_2,
+          lease_start_date: l.lease_start_date,
+          lease_end_date: l.lease_end_date,
+          monthly_payment: l.monthly_payment || l.lease_amount,
+        })),
+        benefits: benefitsData.map((b: any) => ({
+          benefit_type: b.benefit_type,
+          benefit_description: b.benefit_description,
+          provider: b.provider,
+          agent_administrator: b.agent_administrator,
+          insurance_agency: b.insurance_agency,
+          new_plan_effective_date: b.new_plan_effective_date,
+          eligibility_comments: b.eligibility_comments,
+        })),
         review_year: link.review_year,
       };
 
