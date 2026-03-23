@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       const [
         companyRes, officersRes, directorsRes, shareholdersRes,
         banksRes, bankSignersRes, meetingCounselRes, meetingLoansRes,
-        assetsRes
+        assetsRes, certificatesRes
       ] = await Promise.all([
         supabase.from("companies").select("*").eq("id", companyId).single(),
         supabase.from("officers").select("*").eq("company_id", companyId).maybeSingle(),
@@ -87,6 +87,7 @@ Deno.serve(async (req) => {
         // Get loan data from most recent meeting
         supabase.from("meetings").select("id").eq("company_id", companyId).order("meeting_date", { ascending: false }).limit(1),
         supabase.from("company_assets").select("*").eq("company_id", companyId),
+        supabase.from("stock_certificates").select("shareholder_id, num_shares, share_class, status").eq("company_id", companyId).eq("status", "active"),
       ]);
 
       if (companyRes.error) {
