@@ -299,7 +299,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
         ) : shareholders.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-6">No {t.shareholders.toLowerCase()} recorded yet.</p>
         ) : (() => {
-          // Calculate total units for membership interest %
+          // Calculate total units/shares for ownership %
           const activeShareholders = shareholders.filter(s => s.status === "active" && !s.is_treasury);
           const totalUnits = shareholderHoldings
             ? activeShareholders.reduce((sum, s) => sum + (shareholderHoldings[s.id] ?? 0), 0)
@@ -317,9 +317,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
             if (units === 0) return 0;
             return (units / totalUnits) * 100;
           };
-          const totalPct = t.isLLC
-            ? activeShareholders.reduce((sum, s) => sum + (getInterestPct(s) ?? 0), 0)
-            : null;
+          const totalPct = activeShareholders.reduce((sum, s) => sum + (getInterestPct(s) ?? 0), 0);
 
           return (
             <div className="rounded-md border border-border overflow-auto">
