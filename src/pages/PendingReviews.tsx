@@ -111,7 +111,7 @@ export default function PendingReviews() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("companies")
-        .select("id, name, entity_type, contact_email, salutation_name")
+        .select("id, name, entity_type, contact_email, salutation_name, contact_full_name")
         .order("name");
       if (error) throw error;
       return data || [];
