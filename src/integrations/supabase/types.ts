@@ -481,6 +481,113 @@ export type Database = {
           },
         ]
       }
+      annual_review_links: {
+        Row: {
+          company_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          review_year: number
+          status: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          review_year?: number
+          status?: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          review_year?: number
+          status?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annual_review_links_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      annual_review_submissions: {
+        Row: {
+          change_flags: Json
+          company_id: string
+          created_at: string
+          id: string
+          link_id: string
+          new_entries: Json
+          notes: string | null
+          pre_populated_snapshot: Json
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          change_flags?: Json
+          company_id: string
+          created_at?: string
+          id?: string
+          link_id: string
+          new_entries?: Json
+          notes?: string | null
+          pre_populated_snapshot?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          change_flags?: Json
+          company_id?: string
+          created_at?: string
+          id?: string
+          link_id?: string
+          new_entries?: Json
+          notes?: string | null
+          pre_populated_snapshot?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annual_review_submissions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "annual_review_submissions_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "annual_review_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attorney_firms: {
         Row: {
           address: string | null

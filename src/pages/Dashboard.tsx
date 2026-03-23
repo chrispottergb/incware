@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import TaxReturnUpload from "@/components/TaxReturnUpload";
 import CreateCompanyWizard from "@/components/CreateCompanyWizard";
 import AnnualUpdateWorkflow from "@/components/AnnualUpdateWorkflow";
+import AnnualReviewLinkGenerator from "@/components/AnnualReviewLinkGenerator";
 
 import cardNewClient from "@/assets/card-new-client.jpg";
 import cardImportTaxReturn from "@/assets/card-import-tax-return.jpg";
@@ -54,6 +55,7 @@ export default function Dashboard() {
   const [showSearch, setShowSearch] = useState(false);
   const [taxReturnOpen, setTaxReturnOpen] = useState(false);
   const [annualUpdateOpen, setAnnualUpdateOpen] = useState(false);
+  const [annualReviewOpen, setAnnualReviewOpen] = useState(false);
   
   useEffect(() => {
     const handler = () => setDialogOpen(true);
@@ -142,7 +144,7 @@ export default function Dashboard() {
     <div className="space-y-6 animate-fade-in min-w-0">
 
       {/* Welcome Action Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-3 min-w-0">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 min-w-0">
         {[
           {
             title: "New Client",
@@ -178,6 +180,19 @@ export default function Dashboard() {
                 setAnnualUpdateOpen(true);
               } else {
                 toast.info("Add a company first to generate an annual update.");
+              }
+            },
+          },
+          {
+            title: "Client Review",
+            description: "Send annual review form",
+            image: cardAnnualUpdate,
+            icon: ClipboardCheck,
+            onClick: () => {
+              if (companies.length > 0) {
+                setAnnualReviewOpen(true);
+              } else {
+                toast.info("Add a company first to send a review.");
               }
             },
           },
@@ -235,6 +250,9 @@ export default function Dashboard() {
 
       {/* Annual Update Workflow */}
       <AnnualUpdateWorkflow open={annualUpdateOpen} onOpenChange={setAnnualUpdateOpen} companies={companies} />
+
+      {/* Client Annual Review Link Generator */}
+      <AnnualReviewLinkGenerator open={annualReviewOpen} onOpenChange={setAnnualReviewOpen} companies={companies} />
 
       {/* AI Compliance Summary */}
       <AIComplianceSummary />
