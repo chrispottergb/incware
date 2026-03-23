@@ -251,6 +251,9 @@ export default function Dashboard() {
       {/* Annual Update Workflow */}
       <AnnualUpdateWorkflow open={annualUpdateOpen} onOpenChange={setAnnualUpdateOpen} companies={companies} />
 
+      {/* Client Annual Review Link Generator */}
+      <AnnualReviewLinkGenerator open={annualReviewOpen} onOpenChange={setAnnualReviewOpen} companies={companies} />
+
       {/* AI Compliance Summary */}
       <AIComplianceSummary />
 
