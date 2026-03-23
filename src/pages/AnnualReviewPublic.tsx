@@ -812,6 +812,8 @@ export default function AnnualReviewPublic() {
             </CardContent>
           </Card>
         )}
+
+        {/* ============ NEW INFORMATION SECTIONS ============ */}
         <div className="pt-4 border-t border-border">
           <h2 className="text-base font-bold text-foreground mb-1">
             New Activity — {data.review_year}
