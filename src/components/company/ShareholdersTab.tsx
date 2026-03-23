@@ -299,7 +299,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
         ) : shareholders.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-6">No {t.shareholders.toLowerCase()} recorded yet.</p>
         ) : (() => {
-          // Calculate total units for membership interest %
+          // Calculate total units/shares for ownership %
           const activeShareholders = shareholders.filter(s => s.status === "active" && !s.is_treasury);
           const totalUnits = shareholderHoldings
             ? activeShareholders.reduce((sum, s) => sum + (shareholderHoldings[s.id] ?? 0), 0)
@@ -317,9 +317,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
             if (units === 0) return 0;
             return (units / totalUnits) * 100;
           };
-          const totalPct = t.isLLC
-            ? activeShareholders.reduce((sum, s) => sum + (getInterestPct(s) ?? 0), 0)
-            : null;
+          const totalPct = activeShareholders.reduce((sum, s) => sum + (getInterestPct(s) ?? 0), 0);
 
           return (
             <div className="rounded-md border border-border overflow-auto">
@@ -331,7 +329,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                     <TableHead className="text-[10px] uppercase">City/State/Zip</TableHead>
                     <TableHead className="text-[10px] uppercase">SSN/EIN</TableHead>
                     {(shareholderHoldings || t.isLLC) && <TableHead className="text-[10px] uppercase text-right">{t.isLLC ? "Units Held" : "Shares Held"}</TableHead>}
-                    {t.isLLC && <TableHead className="text-[10px] uppercase text-right">Interest %</TableHead>}
+                    <TableHead className="text-[10px] uppercase text-right">{t.isLLC ? "Interest %" : "Ownership %"}</TableHead>
                     {t.isLLC && <TableHead className="text-[10px] uppercase text-right">Capital Account</TableHead>}
                     <TableHead className="text-[10px] uppercase">Status</TableHead>
                     <TableHead className="text-[10px] uppercase w-20">Actions</TableHead>
@@ -358,13 +356,11 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                             {(shareholderHoldings?.[s.id] ?? 0).toLocaleString()}
                           </TableCell>
                         )}
-                        {t.isLLC && (
-                          <TableCell className="text-xs text-right font-medium">
-                            {s.status === "active" && !s.is_treasury && pct != null && pct > 0
-                              ? `${pct.toFixed(2)}%`
-                              : "—"}
-                          </TableCell>
-                        )}
+                        <TableCell className="text-xs text-right font-medium">
+                          {s.status === "active" && !s.is_treasury && pct != null && pct > 0
+                            ? `${pct.toFixed(2)}%`
+                            : "—"}
+                        </TableCell>
                         {t.isLLC && (
                           <TableCell className="text-xs text-right font-medium font-mono">
                             {(s as any).capital_account_balance != null && Number((s as any).capital_account_balance) !== 0
@@ -390,22 +386,24 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                       </TableRow>
                     );
                   })}
-                  {/* Total validation row for LLC interest % */}
-                  {t.isLLC && (totalUnits > 0 || (totalPct != null && totalPct > 0)) && (
+                  {/* Total validation row for ownership % */}
+                  {(totalUnits > 0 || (totalPct != null && totalPct > 0)) && (
                     <TableRow className="bg-muted/30 border-t-2">
                       <TableCell colSpan={4} className="text-xs font-semibold text-right">
                         Totals
                       </TableCell>
-                      <TableCell className="text-xs text-right font-semibold">
-                        {totalUnits.toLocaleString()}
-                      </TableCell>
+                      {(shareholderHoldings || t.isLLC) && (
+                        <TableCell className="text-xs text-right font-semibold">
+                          {totalUnits.toLocaleString()}
+                        </TableCell>
+                      )}
                       <TableCell className={`text-xs text-right font-semibold ${totalPct != null && Math.abs(totalPct - 100) > 0.01 ? "text-destructive" : "text-success"}`}>
                         {totalPct != null ? `${totalPct.toFixed(2)}%` : "—"}
                         {totalPct != null && Math.abs(totalPct - 100) > 0.01 && (
                           <span className="block text-[10px] text-destructive font-normal">≠ 100%</span>
                         )}
                       </TableCell>
-                      <TableCell />
+                      {t.isLLC && <TableCell />}
                       <TableCell />
                       <TableCell />
                     </TableRow>
