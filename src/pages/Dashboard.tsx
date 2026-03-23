@@ -184,6 +184,19 @@ export default function Dashboard() {
             },
           },
           {
+            title: "Client Review",
+            description: "Send annual review form",
+            image: cardAnnualUpdate,
+            icon: ClipboardCheck,
+            onClick: () => {
+              if (companies.length > 0) {
+                setAnnualReviewOpen(true);
+              } else {
+                toast.info("Add a company first to send a review.");
+              }
+            },
+          },
+          {
             title: "Quick Search",
             description: "Find a company fast",
             image: cardQuickSearch,
