@@ -71,7 +71,7 @@ export default function AnnualReviewLinkGenerator({
 
       if (error) throw error;
 
-      const baseUrl = "https://incware.lovable.app";
+      const baseUrl = "https://entityiq.net";
       const link = `${baseUrl}/annual-review/${token}`;
       setGeneratedLink(link);
 
