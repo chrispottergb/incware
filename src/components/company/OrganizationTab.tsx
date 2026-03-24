@@ -417,6 +417,8 @@ export default function OrganizationTab({ companyId, company }: Props) {
           fiscal_year_end: filingForm.fiscal_year_end || null,
           scheduled_annual_meeting: filingForm.scheduled_annual_meeting || null,
           corporate_status: filingForm.corporate_status,
+          verification_date: filingForm.verification_date || null,
+          annual_report_year: filingForm.annual_report_year ? parseInt(filingForm.annual_report_year) : null,
           second_name_choice: filingForm.second_name_choice || null,
           filing_date: filingForm.filing_date || null,
           delayed_effective_filing_date: filingForm.delayed_effective_filing_date || null,
