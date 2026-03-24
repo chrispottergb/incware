@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ import { getTerminology } from "@/lib/entity-terminology";
 export default function MeetingDetail() {
   const { id, meetingId } = useParams<{ id: string; meetingId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: meeting, isLoading } = useQuery({
     queryKey: ["meeting", meetingId],
@@ -501,7 +502,7 @@ export default function MeetingDetail() {
     { value: "amendments", label: "Amendments" },
     { value: "resolutions", label: "Resolutions" },
     { value: "benefits", label: "Benefits" },
-    { value: "loans", label: "Loans" },
+    { value: "loans", label: "Shareholder, Member & Affiliate Loans" },
     { value: "agreements", label: "Agreements" },
     { value: "other", label: "Other" },
   ];
@@ -824,7 +825,23 @@ export default function MeetingDetail() {
                 fileName={`loans-${meetingFileName}`}
               />
             </div>
-            <MeetingLoans meetingId={meeting.id} companyName={company?.name} />
+            <MeetingLoans
+              meetingId={meeting.id}
+              companyName={company?.name}
+              meetingBalanceTo={(meeting as any).balance_to_shareholder}
+              meetingBalanceFrom={(meeting as any).balance_from_shareholder}
+              onSaveBalance={async (to, from) => {
+                const { error } = await supabase
+                  .from("meetings")
+                  .update({
+                    balance_to_shareholder: to,
+                    balance_from_shareholder: from,
+                  } as any)
+                  .eq("id", meeting.id);
+                if (error) throw error;
+                queryClient.invalidateQueries({ queryKey: ["meeting", meeting.id] });
+              }}
+            />
           </div>
         </TabsContent>
         <TabsContent value="agreements" className="mt-5">

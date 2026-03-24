@@ -2077,7 +2077,25 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Company Vehicle Policy (if provided) — skip for shareholder meetings
+  // Annual Balance Reporting — renders independently of loan entries
+  const meetingBalanceTo = meeting?.balance_to_shareholder;
+  const meetingBalanceFrom = meeting?.balance_from_shareholder;
+  if (!isShareholder && (meetingBalanceTo != null || meetingBalanceFrom != null)) {
+    y = checkPageBreak(doc, y, 30);
+    y = section("Annual Balance Reporting");
+    const fmtBal = (v: any) => v != null ? `$${Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "$0.00";
+    autoTable(doc, {
+      startY: y,
+      head: [["To Shareholder / Member / Related Party", "From Shareholder / Member / Related Party"]],
+      body: [[fmtBal(meetingBalanceTo), fmtBal(meetingBalanceFrom)]],
+      theme: "grid",
+      headStyles: tableHeadStyles,
+      bodyStyles: { fontSize: 10 },
+      margin: { left: MARGIN, right: R_MARGIN },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+  }
+
   const vehiclePolicyText = meeting?.vehicle_policy_text?.trim();
   const hasVehicleActivity = !isShareholder && ((data.vehiclePurchases && data.vehiclePurchases.length > 0) ||
     (data.vehicleSales && data.vehicleSales.length > 0) ||

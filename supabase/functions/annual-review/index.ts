@@ -84,8 +84,8 @@ Deno.serve(async (req) => {
         supabase.from("bank_authorized_signers").select("*").eq("company_id", companyId),
         // Get most recent meeting counsel for LOC info
         supabase.from("meetings").select("id").eq("company_id", companyId).order("meeting_date", { ascending: false }).limit(1),
-        // Get loan data from most recent meeting
-        supabase.from("meetings").select("id").eq("company_id", companyId).order("meeting_date", { ascending: false }).limit(1),
+        // Get loan data and balance from most recent meeting
+        supabase.from("meetings").select("id, balance_to_shareholder, balance_from_shareholder").eq("company_id", companyId).order("meeting_date", { ascending: false }).limit(1),
         supabase.from("company_assets").select("*").eq("company_id", companyId),
         supabase.from("stock_certificates").select("shareholder_id, num_shares, share_class, status").eq("company_id", companyId).eq("status", "active"),
         // Get latest meeting id for benefits
@@ -210,9 +210,11 @@ Deno.serve(async (req) => {
           loan_amount: l.loan_amount,
           loan_rate: l.loan_rate,
           loan_direction: l.loan_direction,
-          balance_to_shareholder: l.balance_to_shareholder,
-          balance_from_shareholder: l.balance_from_shareholder,
         })),
+        annual_balance: {
+          balance_to_shareholder: meetingLoansRes.data?.[0]?.balance_to_shareholder ?? null,
+          balance_from_shareholder: meetingLoansRes.data?.[0]?.balance_from_shareholder ?? null,
+        },
         vehicles: (assetsRes.data || []).filter((a: any) => a.asset_type === "Vehicle").map((v: any) => ({
           description: v.description,
           year: v.year,

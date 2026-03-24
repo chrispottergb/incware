@@ -43,6 +43,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs
 interface Props {
   meetingId: string;
   companyName?: string;
+  meetingBalanceTo?: number | null;
+  meetingBalanceFrom?: number | null;
+  onSaveBalance?: (to: number | null, from: number | null) => Promise<void>;
 }
 
 interface LoanForm {
@@ -59,8 +62,6 @@ interface LoanForm {
   repayment_terms: string;
   notes: string;
   promissory_note_required: boolean;
-  balance_to_shareholder: string;
-  balance_from_shareholder: string;
 }
 
 interface NoteForm {
@@ -88,21 +89,18 @@ const emptyForm: LoanForm = {
   repayment_terms: "",
   notes: "",
   promissory_note_required: false,
-  balance_to_shareholder: "",
-  balance_from_shareholder: "",
 };
 
-export default function MeetingLoans({ meetingId, companyName }: Props) {
+export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo, meetingBalanceFrom, onSaveBalance }: Props) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<LoanForm>(emptyForm);
   const [uploading, setUploading] = useState(false);
-  const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
-  const [balanceLoan, setBalanceLoan] = useState<any>(null);
-  const [balanceTo, setBalanceTo] = useState("");
-  const [balanceFrom, setBalanceFrom] = useState("");
+  const [standaloneBalanceTo, setStandaloneBalanceTo] = useState(meetingBalanceTo?.toString() || "");
+  const [standaloneBalanceFrom, setStandaloneBalanceFrom] = useState(meetingBalanceFrom?.toString() || "");
+  const [savingBalance, setSavingBalance] = useState(false);
 
   // Promissory note wizard state
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
@@ -145,8 +143,6 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
         repayment_terms: form.repayment_terms || null,
         notes: form.notes || null,
         promissory_note_required: form.promissory_note_required,
-        balance_to_shareholder: form.balance_to_shareholder ? parseFloat(form.balance_to_shareholder) : null,
-        balance_from_shareholder: form.balance_from_shareholder ? parseFloat(form.balance_from_shareholder) : null,
       };
       const { error } = await supabase.from("meeting_loans" as any).insert(payload as any);
       if (error) throw error;
@@ -175,8 +171,6 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
         repayment_terms: form.repayment_terms || null,
         notes: form.notes || null,
         promissory_note_required: form.promissory_note_required,
-        balance_to_shareholder: form.balance_to_shareholder ? parseFloat(form.balance_to_shareholder) : null,
-        balance_from_shareholder: form.balance_from_shareholder ? parseFloat(form.balance_from_shareholder) : null,
       };
       const { error } = await supabase
         .from("meeting_loans" as any)
@@ -204,32 +198,20 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const saveBalance = useMutation({
-    mutationFn: async () => {
-      if (!balanceLoan) return;
-      const { error } = await supabase
-        .from("meeting_loans" as any)
-        .update({
-          balance_to_shareholder: balanceTo ? parseFloat(balanceTo) : null,
-          balance_from_shareholder: balanceFrom ? parseFloat(balanceFrom) : null,
-        } as any)
-        .eq("id", balanceLoan.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["meeting_loans", meetingId] });
-      setBalanceDialogOpen(false);
-      setBalanceLoan(null);
+  const handleSaveStandaloneBalance = async () => {
+    if (!onSaveBalance) return;
+    setSavingBalance(true);
+    try {
+      await onSaveBalance(
+        standaloneBalanceTo ? parseFloat(standaloneBalanceTo) : null,
+        standaloneBalanceFrom ? parseFloat(standaloneBalanceFrom) : null,
+      );
       toast.success("Balance saved!");
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  const openBalanceDialog = (row: any) => {
-    setBalanceLoan(row);
-    setBalanceTo(row.balance_to_shareholder?.toString() || "");
-    setBalanceFrom(row.balance_from_shareholder?.toString() || "");
-    setBalanceDialogOpen(true);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save balance");
+    } finally {
+      setSavingBalance(false);
+    }
   };
 
   const closeDialog = () => {
@@ -254,8 +236,6 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
       repayment_terms: row.repayment_terms || "",
       notes: row.notes || "",
       promissory_note_required: row.promissory_note_required || false,
-      balance_to_shareholder: row.balance_to_shareholder?.toString() || "",
-      balance_from_shareholder: row.balance_from_shareholder?.toString() || "",
     });
     setDialogOpen(true);
   };
@@ -398,9 +378,10 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
   };
 
   return (
+    <>
     <Card>
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
-        <CardTitle className="font-display text-base">Loans to/from Shareholders, Members & Related Parties</CardTitle>
+        <CardTitle className="font-display text-base">Shareholder, Member & Affiliate Loans</CardTitle>
         <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
           <DialogTrigger asChild>
             <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setForm(emptyForm); }}>
@@ -492,21 +473,6 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                 {editingId ? "Save Changes" : "Add Loan"}
               </Button>
 
-              {/* Annual Balance Reporting Section */}
-              <Separator />
-              <div className="rounded-lg bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 p-4 space-y-3">
-                <h4 className="text-sm font-semibold" style={{ color: '#000' }}>Annual Balance Reporting</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium" style={{ color: '#000' }}>To Shareholder / Member / Related Party</Label>
-                    <Input type="number" step="0.01" value={form.balance_to_shareholder} onChange={(e) => updateField("balance_to_shareholder", e.target.value)} placeholder="0.00" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium" style={{ color: '#000' }}>From Shareholder / Member / Related Party</Label>
-                    <Input type="number" step="0.01" value={form.balance_from_shareholder} onChange={(e) => updateField("balance_from_shareholder", e.target.value)} placeholder="0.00" />
-                  </div>
-                </div>
-              </div>
             </form>
           </DialogContent>
         </Dialog>
@@ -597,15 +563,7 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                             <Download className="h-3.5 w-3.5" />
                           </Button>
                         )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openBalanceDialog(row)}
-                          className="h-7 text-xs gap-1.5"
-                        >
-                          <DollarSign className="h-3.5 w-3.5" />
-                          Add Balance
-                        </Button>
+                        
                         <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-7 w-7 text-muted-foreground hover:text-foreground">
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
@@ -702,43 +660,34 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Annual Balance Reporting Modal */}
-      <Dialog open={balanceDialogOpen} onOpenChange={(open) => { if (!open) { setBalanceDialogOpen(false); setBalanceLoan(null); } }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display flex items-center gap-2">
-              <DollarSign className="h-5 w-5" /> Annual Balance Reporting
-            </DialogTitle>
-            <DialogDescription>Report year-end balance for this loan.</DialogDescription>
-          </DialogHeader>
-          {balanceLoan && (
-            <div className="space-y-4">
-              <div className="rounded-lg bg-muted/50 p-3 space-y-1 text-sm">
-                <div><span className="text-muted-foreground">Lender:</span> <span className="font-medium">{balanceLoan.lender_name || "—"}</span></div>
-                <div><span className="text-muted-foreground">Borrower:</span> <span className="font-medium">{balanceLoan.borrower_name || "—"}</span></div>
-                <div><span className="text-muted-foreground">Principal:</span> <span className="font-medium font-mono">{fmt(balanceLoan.loan_amount)}</span></div>
-              </div>
-              <div className="rounded-lg bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium" style={{ color: '#000' }}>To Shareholder / Member / Related Party</Label>
-                    <Input type="number" step="0.01" value={balanceTo} onChange={(e) => setBalanceTo(e.target.value)} placeholder="0.00" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium" style={{ color: '#000' }}>From Shareholder / Member / Related Party</Label>
-                    <Input type="number" step="0.01" value={balanceFrom} onChange={(e) => setBalanceFrom(e.target.value)} placeholder="0.00" />
-                  </div>
-                </div>
-              </div>
-              <Button className="w-full" onClick={() => saveBalance.mutate()} disabled={saveBalance.isPending}>
-                {saveBalance.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Balance
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </Card>
+
+      {/* Annual Balance Reporting — standalone card, saves independently of loan entries, renders in minutes separately. DO NOT move back inside Add Loan modal. */}
+      <Card className="mt-4">
+        <CardHeader className="pb-3">
+          <CardTitle className="font-display text-base flex items-center gap-2">
+            <DollarSign className="h-4 w-4" /> Annual Balance Reporting
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 p-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium" style={{ color: '#000' }}>To Shareholder / Member / Related Party</Label>
+                <Input type="number" step="0.01" value={standaloneBalanceTo} onChange={(e) => setStandaloneBalanceTo(e.target.value)} placeholder="0.00" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium" style={{ color: '#000' }}>From Shareholder / Member / Related Party</Label>
+                <Input type="number" step="0.01" value={standaloneBalanceFrom} onChange={(e) => setStandaloneBalanceFrom(e.target.value)} placeholder="0.00" />
+              </div>
+            </div>
+          </div>
+          <Button className="w-full mt-3" onClick={handleSaveStandaloneBalance} disabled={savingBalance}>
+            {savingBalance && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Balance
+          </Button>
+        </CardContent>
+      </Card>
+    </>
   );
 }
