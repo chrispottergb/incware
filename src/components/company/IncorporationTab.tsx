@@ -126,6 +126,7 @@ function getEquityCardConfig(entityType: string) {
         show1244: true,
         showSeal: true,
         showMembershipUnits: false,
+        showManagementType: false,
         showPartnershipInterest: false,
         authorizedLabel: "Authorized Shares",
       };
@@ -140,6 +141,7 @@ function getEquityCardConfig(entityType: string) {
         show1244: false,
         showSeal: false,
         showMembershipUnits: false,
+        showManagementType: false,
         showPartnershipInterest: true,
         authorizedLabel: "Total Partnership Units",
       };
@@ -154,6 +156,7 @@ function getEquityCardConfig(entityType: string) {
         show1244: false,
         showSeal: true,
         showMembershipUnits: false,
+        showManagementType: false,
         showPartnershipInterest: false,
         authorizedLabel: "",
       };
@@ -168,6 +171,7 @@ function getEquityCardConfig(entityType: string) {
         show1244: true,
         showSeal: true,
         showMembershipUnits: false,
+        showManagementType: false,
         showPartnershipInterest: false,
         authorizedLabel: "Authorized Shares",
       };
