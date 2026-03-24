@@ -824,7 +824,23 @@ export default function MeetingDetail() {
                 fileName={`loans-${meetingFileName}`}
               />
             </div>
-            <MeetingLoans meetingId={meeting.id} companyName={company?.name} />
+            <MeetingLoans
+              meetingId={meeting.id}
+              companyName={company?.name}
+              meetingBalanceTo={(meeting as any).balance_to_shareholder}
+              meetingBalanceFrom={(meeting as any).balance_from_shareholder}
+              onSaveBalance={async (to, from) => {
+                const { error } = await supabase
+                  .from("meetings")
+                  .update({
+                    balance_to_shareholder: to,
+                    balance_from_shareholder: from,
+                  } as any)
+                  .eq("id", meeting.id);
+                if (error) throw error;
+                queryClient.invalidateQueries({ queryKey: ["meeting", meeting.id] });
+              }}
+            />
           </div>
         </TabsContent>
         <TabsContent value="agreements" className="mt-5">
