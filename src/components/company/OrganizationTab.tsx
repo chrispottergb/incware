@@ -743,17 +743,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="field-group col-span-6 sm:col-span-2">
-                <Label className="field-label">Status</Label>
-                <Select value={filingForm.corporate_status} onValueChange={(v) => setFilingForm((p) => ({ ...p, corporate_status: v }))}>
-                  <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="current">Current</SelectItem>
-                    <SelectItem value="delinquent">Delinquent</SelectItem>
-                    <SelectItem value="admin_dissolved">Administratively Dissolved</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Status field moved to Verification of Corporate Status collapsible section above */}
               <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label">Organization Date</Label>
                 <DatePickerField value={filingForm.incorporation_date || ""} onChange={(v) => setFilingForm((p) => ({ ...p, incorporation_date: v }))} className="h-7" />
