@@ -89,8 +89,6 @@ const emptyForm: LoanForm = {
   repayment_terms: "",
   notes: "",
   promissory_note_required: false,
-  balance_to_shareholder: "",
-  balance_from_shareholder: "",
 };
 
 export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo, meetingBalanceFrom, onSaveBalance }: Props) {
