@@ -378,6 +378,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
   };
 
   return (
+    <>
     <Card>
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <CardTitle className="font-display text-base">Shareholder, Member & Affiliate Loans</CardTitle>
