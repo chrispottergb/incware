@@ -210,9 +210,11 @@ Deno.serve(async (req) => {
           loan_amount: l.loan_amount,
           loan_rate: l.loan_rate,
           loan_direction: l.loan_direction,
-          balance_to_shareholder: l.balance_to_shareholder,
-          balance_from_shareholder: l.balance_from_shareholder,
         })),
+        annual_balance: {
+          balance_to_shareholder: meetingLoansRes.data?.[0]?.balance_to_shareholder ?? null,
+          balance_from_shareholder: meetingLoansRes.data?.[0]?.balance_from_shareholder ?? null,
+        },
         vehicles: (assetsRes.data || []).filter((a: any) => a.asset_type === "Vehicle").map((v: any) => ({
           description: v.description,
           year: v.year,
