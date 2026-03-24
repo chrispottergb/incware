@@ -594,6 +594,85 @@ export default function OrganizationTab({ companyId, company }: Props) {
 
   return (
     <div className="space-y-5">
+      {/* Verification of Corporate Status — mirrors IncorporationTab section for LLC entities */}
+      <Collapsible>
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" className="w-full justify-between text-sm font-medium border-l-2 border-l-warning">
+            <span className="flex items-center gap-2">
+              <Shield className="h-3.5 w-3.5 text-warning" />
+              Verification of Corporate Status
+            </span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-3">
+          <Card className="border-l-2 border-l-warning">
+            <CardHeader className="pb-2 pt-4 px-4">
+              <div className="flex items-center justify-between">
+                <CardDescription className="text-[11px]">Always verify corporate status with the Secretary of State</CardDescription>
+                <SectionPdfActions config={{
+                  title: "Verification of Corporate Status",
+                  companyName: company.name,
+                  fields: [
+                    { label: "Corporate Status", value: filingForm.corporate_status },
+                    { label: "Verification Date", value: filingForm.verification_date ? new Date(filingForm.verification_date + "T00:00:00").toLocaleDateString() : "" },
+                    { label: "Annual Report Filed Year", value: filingForm.annual_report_year },
+                  ],
+                }} />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3 px-4 pb-4">
+              <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+                <div className="field-group col-span-4">
+                  <Label className="field-label">Corporate Status</Label>
+                  <Select value={filingForm.corporate_status} onValueChange={(v) => setFilingForm((p) => ({ ...p, corporate_status: v }))}>
+                    <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="current">Current</SelectItem>
+                      <SelectItem value="delinquent">Delinquent</SelectItem>
+                      <SelectItem value="admin_dissolved">Administratively Dissolved</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="field-group col-span-4">
+                  <Label className="field-label">Verification Date</Label>
+                  <DatePickerField value={filingForm.verification_date || ""} onChange={(v) => setFilingForm((p) => ({ ...p, verification_date: v }))} className="h-7" />
+                </div>
+                <div className="field-group col-span-4">
+                  <Label className="field-label">Annual Report Year</Label>
+                  <Input type="number" className="h-7 text-sm" value={filingForm.annual_report_year} onChange={(e) => setFilingForm((p) => ({ ...p, annual_report_year: e.target.value }))} placeholder="2024" />
+                </div>
+              </div>
+              {filingForm.state_of_incorporation && (() => {
+                const sosInfo = STATE_SOS_INFO[filingForm.state_of_incorporation];
+                const isWI = filingForm.state_of_incorporation === "WI";
+                if (!sosInfo) return null;
+                return (
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => {
+                        let url = sosInfo.url;
+                        if (isWI && filingForm.name) {
+                          url = `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?type=Simple&q=${encodeURIComponent(filingForm.name)}`;
+                        }
+                        window.open(url, "_blank");
+                      }}
+                    >
+                      <ExternalLink className="h-3 w-3 mr-1" />
+                      {isWI ? "Open" : "Verify at"} {sosInfo.name}
+                    </Button>
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
+
       {/* Organizational Info */}
       <Card>
         <CardHeader className="pb-2 pt-4 px-4">
