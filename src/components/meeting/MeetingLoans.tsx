@@ -682,8 +682,12 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium" style={{ color: '#000' }}>From Shareholder / Member / Related Party</Label>
                 <Input type="number" step="0.01" value={standaloneBalanceFrom} onChange={(e) => setStandaloneBalanceFrom(e.target.value)} placeholder="0.00" />
-              </div>
             </div>
+            <div className="space-y-1.5 mt-3">
+              <Label className="text-xs font-medium" style={{ color: '#000' }}>Loan Balance Comment</Label>
+              <Textarea value={standaloneBalanceComment} onChange={(e) => setStandaloneBalanceComment(e.target.value)} rows={2} placeholder="Optional notes about year-end balances…" />
+            </div>
+          </div>
           </div>
           <Button className="w-full mt-3" onClick={handleSaveStandaloneBalance} disabled={savingBalance}>
             {savingBalance && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
