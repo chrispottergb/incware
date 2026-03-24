@@ -2384,6 +2384,8 @@ export type Database = {
       }
       meetings: {
         Row: {
+          balance_from_shareholder: number | null
+          balance_to_shareholder: number | null
           chairperson: string | null
           charitable_contribution_amount: number | null
           charitable_contribution_org: string | null
@@ -2415,6 +2417,8 @@ export type Database = {
           vehicle_policy_text: string | null
         }
         Insert: {
+          balance_from_shareholder?: number | null
+          balance_to_shareholder?: number | null
           chairperson?: string | null
           charitable_contribution_amount?: number | null
           charitable_contribution_org?: string | null
@@ -2446,6 +2450,8 @@ export type Database = {
           vehicle_policy_text?: string | null
         }
         Update: {
+          balance_from_shareholder?: number | null
+          balance_to_shareholder?: number | null
           chairperson?: string | null
           charitable_contribution_amount?: number | null
           charitable_contribution_org?: string | null
