@@ -108,6 +108,60 @@ export const OFFICER_TITLE_OPTIONS: Record<string, string[]> = {
   ],
 };
 
+const STATE_SOS_INFO: Record<string, { name: string; url: string }> = {
+  AL: { name: "AL Secretary of State", url: "https://www.sos.alabama.gov/business-services" },
+  AK: { name: "AK Div. of Corporations", url: "https://www.commerce.alaska.gov/cbp/main/search/entities" },
+  AZ: { name: "AZ Corporation Commission", url: "https://ecorp.azcc.gov/EntitySearch/Index" },
+  AR: { name: "AR Secretary of State", url: "https://www.sos.arkansas.gov/corps/search_all.php" },
+  CA: { name: "CA Secretary of State", url: "https://bizfileonline.sos.ca.gov/search/business" },
+  CO: { name: "CO Secretary of State", url: "https://www.sos.state.co.us/biz/BusinessEntityCriteriaExt.do" },
+  CT: { name: "CT Secretary of State", url: "https://service.ct.gov/business/s/onlinebusinesssearch" },
+  DE: { name: "DE Div. of Corporations", url: "https://icis.corp.delaware.gov/ecorp/entitysearch/namesearch.aspx" },
+  FL: { name: "FL Div. of Corporations", url: "https://search.sunbiz.org/Inquiry/CorporationSearch/ByName" },
+  GA: { name: "GA Secretary of State", url: "https://ecorp.sos.ga.gov/BusinessSearch" },
+  HI: { name: "HI DCCA", url: "https://hbe.ehawaii.gov/documents/search.html" },
+  ID: { name: "ID Secretary of State", url: "https://sosbiz.idaho.gov/search/business" },
+  IL: { name: "IL Secretary of State", url: "https://www.ilsos.gov/corporatellc/" },
+  IN: { name: "IN Secretary of State", url: "https://bsd.sos.in.gov/publicbusinesssearch" },
+  IA: { name: "IA Secretary of State", url: "https://sos.iowa.gov/search/business/(S(search))/search.aspx" },
+  KS: { name: "KS Secretary of State", url: "https://www.kansas.gov/bess/flow/main?execution=e1s1" },
+  KY: { name: "KY Secretary of State", url: "https://web.sos.ky.gov/bussearchnew/search" },
+  LA: { name: "LA Secretary of State", url: "https://coraweb.sos.la.gov/CommercialSearch/CommercialSearch.aspx" },
+  ME: { name: "ME Secretary of State", url: "https://icrs.informe.org/nei-sos-icrs/ICRS?MainPage=x" },
+  MD: { name: "MD SDAT", url: "https://egov.maryland.gov/BusinessExpress/EntitySearch" },
+  MA: { name: "MA Secretary of State", url: "https://corp.sec.state.ma.us/corpweb/CorpSearch/CorpSearch.aspx" },
+  MI: { name: "MI LARA", url: "https://cofs.lara.state.mi.us/SearchApi/Search/Search" },
+  MN: { name: "MN Secretary of State", url: "https://mblsportal.sos.state.mn.us/Business/Search" },
+  MS: { name: "MS Secretary of State", url: "https://corp.sos.ms.gov/corp/portal/c/page/corpBusinessIdSearch/portal.aspx" },
+  MO: { name: "MO Secretary of State", url: "https://bsd.sos.mo.gov/BusinessEntity/BESearch.aspx" },
+  MT: { name: "MT Secretary of State", url: "https://sosmt.gov/business/" },
+  NE: { name: "NE Secretary of State", url: "https://www.nebraska.gov/sos/corp/corpsearch.cgi" },
+  NV: { name: "NV Secretary of State", url: "https://esos.nv.gov/EntitySearch/OnlineEntitySearch" },
+  NH: { name: "NH Secretary of State", url: "https://quickstart.sos.nh.gov/online/BusinessInquire" },
+  NJ: { name: "NJ DORES", url: "https://www.njportal.com/DOR/BusinessNameSearch" },
+  NM: { name: "NM Secretary of State", url: "https://portal.sos.state.nm.us/BFS/online/CorporationBusinessSearch" },
+  NY: { name: "NY Dept. of State", url: "https://apps.dos.ny.gov/publicInquiry/" },
+  NC: { name: "NC Secretary of State", url: "https://www.sosnc.gov/online_services/search/by_title/_Business_Registration" },
+  ND: { name: "ND Secretary of State", url: "https://firststop.sos.nd.gov/search/business" },
+  OH: { name: "OH Secretary of State", url: "https://businesssearch.ohiosos.gov/" },
+  OK: { name: "OK Secretary of State", url: "https://www.sos.ok.gov/corp/corpInquiryFind.aspx" },
+  OR: { name: "OR Secretary of State", url: "http://egov.sos.state.or.us/br/pkg_web_name_srch_inq.login" },
+  PA: { name: "PA Dept. of State", url: "https://www.corporations.pa.gov/search/corpsearch" },
+  RI: { name: "RI Secretary of State", url: "http://business.sos.ri.gov/CorpWeb/CorpSearch/CorpSearch.aspx" },
+  SC: { name: "SC Secretary of State", url: "https://businessfilings.sc.gov/BusinessFiling/Entity/Search" },
+  SD: { name: "SD Secretary of State", url: "https://sosenterprise.sd.gov/BusinessServices/Business/FilingSearch.aspx" },
+  TN: { name: "TN Secretary of State", url: "https://tnbear.tn.gov/ECommerce/FilingSearch.aspx" },
+  TX: { name: "TX Secretary of State", url: "https://mycpa.cpa.state.tx.us/coa/" },
+  UT: { name: "UT Dept. of Commerce", url: "https://secure.utah.gov/bes/" },
+  VT: { name: "VT Secretary of State", url: "https://bizfilings.vermont.gov/online/BusinessInquire" },
+  VA: { name: "VA SCC", url: "https://cis.scc.virginia.gov/EntitySearch/Index" },
+  WA: { name: "WA Secretary of State", url: "https://ccfs.sos.wa.gov/" },
+  WV: { name: "WV Secretary of State", url: "https://apps.wv.gov/SOS/BusinessEntity/" },
+  WI: { name: "WI DFI", url: "https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx" },
+  WY: { name: "WY Secretary of State", url: "https://wyobiz.wyo.gov/Business/FilingSearch.aspx" },
+  DC: { name: "DC DCRA", url: "https://corponline.dcra.dc.gov/BizEntity.aspx" },
+};
+
 
 interface Props {
   companyId: string;
@@ -232,6 +286,8 @@ export default function OrganizationTab({ companyId, company }: Props) {
     fiscal_year_end: company.fiscal_year_end ?? "",
     scheduled_annual_meeting: company.scheduled_annual_meeting ?? "",
     corporate_status: company.corporate_status ?? "current",
+    verification_date: (company as any).verification_date ?? "",
+    annual_report_year: (company as any).annual_report_year?.toString() ?? "",
     second_name_choice: company.second_name_choice ?? "",
     filing_date: company.filing_date ?? "",
     delayed_effective_filing_date: company.delayed_effective_filing_date ?? "",
@@ -361,6 +417,8 @@ export default function OrganizationTab({ companyId, company }: Props) {
           fiscal_year_end: filingForm.fiscal_year_end || null,
           scheduled_annual_meeting: filingForm.scheduled_annual_meeting || null,
           corporate_status: filingForm.corporate_status,
+          verification_date: filingForm.verification_date || null,
+          annual_report_year: filingForm.annual_report_year ? parseInt(filingForm.annual_report_year) : null,
           second_name_choice: filingForm.second_name_choice || null,
           filing_date: filingForm.filing_date || null,
           delayed_effective_filing_date: filingForm.delayed_effective_filing_date || null,
@@ -536,6 +594,85 @@ export default function OrganizationTab({ companyId, company }: Props) {
 
   return (
     <div className="space-y-5">
+      {/* Verification of Corporate Status — mirrors IncorporationTab section for LLC entities */}
+      <Collapsible>
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" className="w-full justify-between text-sm font-medium border-l-2 border-l-warning">
+            <span className="flex items-center gap-2">
+              <Shield className="h-3.5 w-3.5 text-warning" />
+              Verification of Corporate Status
+            </span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-3">
+          <Card className="border-l-2 border-l-warning">
+            <CardHeader className="pb-2 pt-4 px-4">
+              <div className="flex items-center justify-between">
+                <CardDescription className="text-[11px]">Always verify corporate status with the Secretary of State</CardDescription>
+                <SectionPdfActions config={{
+                  title: "Verification of Corporate Status",
+                  companyName: company.name,
+                  fields: [
+                    { label: "Corporate Status", value: filingForm.corporate_status },
+                    { label: "Verification Date", value: filingForm.verification_date ? new Date(filingForm.verification_date + "T00:00:00").toLocaleDateString() : "" },
+                    { label: "Annual Report Filed Year", value: filingForm.annual_report_year },
+                  ],
+                }} />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3 px-4 pb-4">
+              <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+                <div className="field-group col-span-4">
+                  <Label className="field-label">Corporate Status</Label>
+                  <Select value={filingForm.corporate_status} onValueChange={(v) => setFilingForm((p) => ({ ...p, corporate_status: v }))}>
+                    <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="current">Current</SelectItem>
+                      <SelectItem value="delinquent">Delinquent</SelectItem>
+                      <SelectItem value="admin_dissolved">Administratively Dissolved</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="field-group col-span-4">
+                  <Label className="field-label">Verification Date</Label>
+                  <DatePickerField value={filingForm.verification_date || ""} onChange={(v) => setFilingForm((p) => ({ ...p, verification_date: v }))} className="h-7" />
+                </div>
+                <div className="field-group col-span-4">
+                  <Label className="field-label">Annual Report Year</Label>
+                  <Input type="number" className="h-7 text-sm" value={filingForm.annual_report_year} onChange={(e) => setFilingForm((p) => ({ ...p, annual_report_year: e.target.value }))} placeholder="2024" />
+                </div>
+              </div>
+              {filingForm.state_of_incorporation && (() => {
+                const sosInfo = STATE_SOS_INFO[filingForm.state_of_incorporation];
+                const isWI = filingForm.state_of_incorporation === "WI";
+                if (!sosInfo) return null;
+                return (
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => {
+                        let url = sosInfo.url;
+                        if (isWI && filingForm.name) {
+                          url = `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?type=Simple&q=${encodeURIComponent(filingForm.name)}`;
+                        }
+                        window.open(url, "_blank");
+                      }}
+                    >
+                      <ExternalLink className="h-3 w-3 mr-1" />
+                      {isWI ? "Open" : "Verify at"} {sosInfo.name}
+                    </Button>
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
+
       {/* Organizational Info */}
       <Card>
         <CardHeader className="pb-2 pt-4 px-4">
@@ -606,17 +743,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="field-group col-span-6 sm:col-span-2">
-                <Label className="field-label">Status</Label>
-                <Select value={filingForm.corporate_status} onValueChange={(v) => setFilingForm((p) => ({ ...p, corporate_status: v }))}>
-                  <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="current">Current</SelectItem>
-                    <SelectItem value="delinquent">Delinquent</SelectItem>
-                    <SelectItem value="admin_dissolved">Administratively Dissolved</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Status field moved to Verification of Corporate Status collapsible section above */}
               <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label">Organization Date</Label>
                 <DatePickerField value={filingForm.incorporation_date || ""} onChange={(v) => setFilingForm((p) => ({ ...p, incorporation_date: v }))} className="h-7" />
