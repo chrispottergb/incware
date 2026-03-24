@@ -62,8 +62,6 @@ interface LoanForm {
   repayment_terms: string;
   notes: string;
   promissory_note_required: boolean;
-  balance_to_shareholder: string;
-  balance_from_shareholder: string;
 }
 
 interface NoteForm {
