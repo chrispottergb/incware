@@ -403,7 +403,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
   return (
     <Card>
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
-        <CardTitle className="font-display text-base">Loans to/from Shareholders, Members & Related Parties</CardTitle>
+        <CardTitle className="font-display text-base">Shareholder, Member & Affiliate Loans</CardTitle>
         <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
           <DialogTrigger asChild>
             <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setForm(emptyForm); }}>
