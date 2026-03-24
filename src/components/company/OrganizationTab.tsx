@@ -286,6 +286,8 @@ export default function OrganizationTab({ companyId, company }: Props) {
     fiscal_year_end: company.fiscal_year_end ?? "",
     scheduled_annual_meeting: company.scheduled_annual_meeting ?? "",
     corporate_status: company.corporate_status ?? "current",
+    verification_date: (company as any).verification_date ?? "",
+    annual_report_year: (company as any).annual_report_year?.toString() ?? "",
     second_name_choice: company.second_name_choice ?? "",
     filing_date: company.filing_date ?? "",
     delayed_effective_filing_date: company.delayed_effective_filing_date ?? "",
