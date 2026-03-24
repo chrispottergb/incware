@@ -660,6 +660,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
           )}
         </DialogContent>
       </Dialog>
+    </Card>
 
       {/* Annual Balance Reporting — standalone card, saves independently of loan entries, renders in minutes separately. DO NOT move back inside Add Loan modal. */}
       <Card className="mt-4">
