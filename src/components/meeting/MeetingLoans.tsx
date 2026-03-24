@@ -92,7 +92,7 @@ const emptyForm: LoanForm = {
   promissory_note_required: false,
 };
 
-export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo, meetingBalanceFrom, onSaveBalance }: Props) {
+export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo, meetingBalanceFrom, meetingBalanceComment, onSaveBalance }: Props) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -101,6 +101,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
   const [uploading, setUploading] = useState(false);
   const [standaloneBalanceTo, setStandaloneBalanceTo] = useState(meetingBalanceTo?.toString() || "");
   const [standaloneBalanceFrom, setStandaloneBalanceFrom] = useState(meetingBalanceFrom?.toString() || "");
+  const [standaloneBalanceComment, setStandaloneBalanceComment] = useState(meetingBalanceComment || "");
   const [savingBalance, setSavingBalance] = useState(false);
 
   // Promissory note wizard state
