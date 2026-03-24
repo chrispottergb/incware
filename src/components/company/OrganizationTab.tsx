@@ -256,6 +256,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
     contact_phone: (company as any).contact_phone ?? "",
     contact_cell: (company as any).contact_cell ?? "",
     contact_webpage: (company as any).contact_webpage ?? "",
+    management_type: (company as any).management_type ?? "",
   });
 
   const { handleZipChange: handleFilingZipChange } = useZipLookup(({ city, state }) => {
