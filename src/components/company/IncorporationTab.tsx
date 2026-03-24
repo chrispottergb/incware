@@ -96,22 +96,24 @@ const STATE_SOS_INFO: Record<string, { name: string; url: string }> = {
 };
 
 // ─── Entity-aware card config ────────────────────────────────────────────────
+// LLC FORM RULES: Members not Directors. Section renamed to Management & Elections. Management Type dropdown: Member Managed / Manager Managed. No share/par value fields. Keep: S-Election, Seal. DO NOT REVERT.
 function getEquityCardConfig(entityType: string) {
   switch (entityType) {
     case "LLC":
     case "Single Member LLC":
       return {
-        title: "Membership Interest",
+        title: "Management & Elections",
         icon: <Users className="h-3.5 w-3.5 text-primary" />,
-        description: "LLC membership units and governance structure",
+        description: "LLC management structure and elections",
         showAuthorizedShares: false,
         showParValue: false,
         showSElection: true,
         show1244: false,
         showSeal: true,
         showMembershipUnits: true,
+        showManagementType: true,
         showPartnershipInterest: false,
-        authorizedLabel: "Authorized Units",
+        authorizedLabel: "",
       };
     case "S-Corp":
       return {
@@ -124,6 +126,7 @@ function getEquityCardConfig(entityType: string) {
         show1244: true,
         showSeal: true,
         showMembershipUnits: false,
+        showManagementType: false,
         showPartnershipInterest: false,
         authorizedLabel: "Authorized Shares",
       };
@@ -138,6 +141,7 @@ function getEquityCardConfig(entityType: string) {
         show1244: false,
         showSeal: false,
         showMembershipUnits: false,
+        showManagementType: false,
         showPartnershipInterest: true,
         authorizedLabel: "Total Partnership Units",
       };
@@ -152,6 +156,7 @@ function getEquityCardConfig(entityType: string) {
         show1244: false,
         showSeal: true,
         showMembershipUnits: false,
+        showManagementType: false,
         showPartnershipInterest: false,
         authorizedLabel: "",
       };
@@ -166,6 +171,7 @@ function getEquityCardConfig(entityType: string) {
         show1244: true,
         showSeal: true,
         showMembershipUnits: false,
+        showManagementType: false,
         showPartnershipInterest: false,
         authorizedLabel: "Authorized Shares",
       };
@@ -933,20 +939,25 @@ export default function IncorporationTab({ company }: Props) {
             )}
           </div>
 
-          {/* Initial Directors */}
+          {/* Initial Directors / Initial Members (LLC) */}
+          {/* LLC FORM RULES: Members not Directors. Section renamed to Management & Elections. Management Type dropdown: Member Managed / Manager Managed. No share/par value fields. Keep: S-Election, Seal. DO NOT REVERT. */}
           <div className="border-t border-border pt-3">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <UserCheck className="h-3.5 w-3.5 text-primary" />
-                <h3 className="text-sm font-semibold text-foreground">Initial Director(s)</h3>
+                <h3 className="text-sm font-semibold text-foreground">
+                  {isLLCType(form.entity_type) ? "Initial Member(s)" : "Initial Director(s)"}
+                </h3>
               </div>
               <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowDirectorForm(true)}>
-                <Plus className="h-3 w-3 mr-1" /> Add Director
+                <Plus className="h-3 w-3 mr-1" /> {isLLCType(form.entity_type) ? "Add Member" : "Add Director"}
               </Button>
             </div>
 
             {directors.length === 0 && !showDirectorForm && (
-              <p className="text-sm text-muted-foreground text-center py-3">No initial directors added yet.</p>
+              <p className="text-sm text-muted-foreground text-center py-3">
+                {isLLCType(form.entity_type) ? "No initial members added yet." : "No initial directors added yet."}
+              </p>
             )}
 
             {directors.map((dir) => (
@@ -969,7 +980,7 @@ export default function IncorporationTab({ company }: Props) {
               <div className="mt-2 rounded-md border border-border bg-muted/30 p-3 space-y-2">
                 <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                   <div className="field-group col-span-3">
-                    <Label className="field-label">Director Name</Label>
+                    <Label className="field-label">{isLLCType(form.entity_type) ? "Member Name" : "Director Name"}</Label>
                     <Input className="h-7 text-sm" value={newDirector.name} onChange={(e) => setNewDirector(p => ({ ...p, name: e.target.value }))} placeholder="Full name" />
                   </div>
                   <div className="field-group col-span-3">
@@ -1043,26 +1054,18 @@ export default function IncorporationTab({ company }: Props) {
         <CardContent className="px-4 pb-4">
           <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
 
-            {/* LLC: Membership Units */}
-            {equityCard.showMembershipUnits && (
-              <>
-                <div className="field-group">
-                  <Label className="field-label">Total Membership Units</Label>
-                  <Input type="number" className="h-8 text-sm" value={form.authorized_shares} onChange={(e) => update("authorized_shares", e.target.value)} placeholder="e.g. 1000" />
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Voting Structure</Label>
-                  <Select defaultValue="one_per_unit">
-                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="one_per_unit">One Vote Per Unit</SelectItem>
-                      <SelectItem value="majority_in_interest">Majority in Interest</SelectItem>
-                      <SelectItem value="manager_managed">Manager Managed</SelectItem>
-                      <SelectItem value="member_managed">Member Managed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
+            {/* LLC: Management Type — DO NOT add share/par value fields here. See LLC FORM RULES comment above. */}
+            {equityCard.showManagementType && (
+              <div className="field-group">
+                <Label className="field-label">Management Type</Label>
+                <Select defaultValue="member_managed">
+                  <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="member_managed">Member Managed</SelectItem>
+                    <SelectItem value="manager_managed">Manager Managed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             )}
 
             {/* Partnership: Partnership Interest */}
