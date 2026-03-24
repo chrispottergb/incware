@@ -207,6 +207,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
       await onSaveBalance(
         standaloneBalanceTo ? parseFloat(standaloneBalanceTo) : null,
         standaloneBalanceFrom ? parseFloat(standaloneBalanceFrom) : null,
+        standaloneBalanceComment.trim() || null,
       );
       toast.success("Balance saved!");
     } catch (err: any) {
