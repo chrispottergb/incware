@@ -1054,26 +1054,18 @@ export default function IncorporationTab({ company }: Props) {
         <CardContent className="px-4 pb-4">
           <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
 
-            {/* LLC: Membership Units */}
-            {equityCard.showMembershipUnits && (
-              <>
-                <div className="field-group">
-                  <Label className="field-label">Total Membership Units</Label>
-                  <Input type="number" className="h-8 text-sm" value={form.authorized_shares} onChange={(e) => update("authorized_shares", e.target.value)} placeholder="e.g. 1000" />
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Voting Structure</Label>
-                  <Select defaultValue="one_per_unit">
-                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="one_per_unit">One Vote Per Unit</SelectItem>
-                      <SelectItem value="majority_in_interest">Majority in Interest</SelectItem>
-                      <SelectItem value="manager_managed">Manager Managed</SelectItem>
-                      <SelectItem value="member_managed">Member Managed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
+            {/* LLC: Management Type — DO NOT add share/par value fields here. See LLC FORM RULES comment above. */}
+            {equityCard.showManagementType && (
+              <div className="field-group">
+                <Label className="field-label">Management Type</Label>
+                <Select defaultValue="member_managed">
+                  <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="member_managed">Member Managed</SelectItem>
+                    <SelectItem value="manager_managed">Manager Managed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             )}
 
             {/* Partnership: Partnership Interest */}
