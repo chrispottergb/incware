@@ -921,6 +921,7 @@ export type Database = {
           id: string
           incorporation_date: string | null
           initial_directors_count: number | null
+          management_type: string | null
           max_directors_allowed: number | null
           max_vps_allowed: number | null
           naics_code: string | null
@@ -978,6 +979,7 @@ export type Database = {
           id?: string
           incorporation_date?: string | null
           initial_directors_count?: number | null
+          management_type?: string | null
           max_directors_allowed?: number | null
           max_vps_allowed?: number | null
           naics_code?: string | null
@@ -1035,6 +1037,7 @@ export type Database = {
           id?: string
           incorporation_date?: string | null
           initial_directors_count?: number | null
+          management_type?: string | null
           max_directors_allowed?: number | null
           max_vps_allowed?: number | null
           naics_code?: string | null
