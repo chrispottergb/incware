@@ -45,7 +45,8 @@ interface Props {
   companyName?: string;
   meetingBalanceTo?: number | null;
   meetingBalanceFrom?: number | null;
-  onSaveBalance?: (to: number | null, from: number | null) => Promise<void>;
+  meetingBalanceComment?: string | null;
+  onSaveBalance?: (to: number | null, from: number | null, comment: string | null) => Promise<void>;
 }
 
 interface LoanForm {
