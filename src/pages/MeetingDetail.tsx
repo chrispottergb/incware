@@ -830,12 +830,14 @@ export default function MeetingDetail() {
               companyName={company?.name}
               meetingBalanceTo={(meeting as any).balance_to_shareholder}
               meetingBalanceFrom={(meeting as any).balance_from_shareholder}
-              onSaveBalance={async (to, from) => {
+              meetingBalanceComment={(meeting as any).loan_balance_comment}
+              onSaveBalance={async (to, from, comment) => {
                 const { error } = await supabase
                   .from("meetings")
                   .update({
                     balance_to_shareholder: to,
                     balance_from_shareholder: from,
+                    loan_balance_comment: comment,
                   } as any)
                   .eq("id", meeting.id);
                 if (error) throw error;
