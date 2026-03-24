@@ -2399,6 +2399,7 @@ export type Database = {
           created_at: string
           document_status: string | null
           id: string
+          loan_balance_comment: string | null
           meeting_date: string
           meeting_location: string | null
           meeting_time: string | null
@@ -2432,6 +2433,7 @@ export type Database = {
           created_at?: string
           document_status?: string | null
           id?: string
+          loan_balance_comment?: string | null
           meeting_date: string
           meeting_location?: string | null
           meeting_time?: string | null
@@ -2465,6 +2467,7 @@ export type Database = {
           created_at?: string
           document_status?: string | null
           id?: string
+          loan_balance_comment?: string | null
           meeting_date?: string
           meeting_location?: string | null
           meeting_time?: string | null

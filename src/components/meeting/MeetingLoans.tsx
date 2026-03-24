@@ -45,7 +45,8 @@ interface Props {
   companyName?: string;
   meetingBalanceTo?: number | null;
   meetingBalanceFrom?: number | null;
-  onSaveBalance?: (to: number | null, from: number | null) => Promise<void>;
+  meetingBalanceComment?: string | null;
+  onSaveBalance?: (to: number | null, from: number | null, comment: string | null) => Promise<void>;
 }
 
 interface LoanForm {
@@ -91,7 +92,7 @@ const emptyForm: LoanForm = {
   promissory_note_required: false,
 };
 
-export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo, meetingBalanceFrom, onSaveBalance }: Props) {
+export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo, meetingBalanceFrom, meetingBalanceComment, onSaveBalance }: Props) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -100,6 +101,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
   const [uploading, setUploading] = useState(false);
   const [standaloneBalanceTo, setStandaloneBalanceTo] = useState(meetingBalanceTo?.toString() || "");
   const [standaloneBalanceFrom, setStandaloneBalanceFrom] = useState(meetingBalanceFrom?.toString() || "");
+  const [standaloneBalanceComment, setStandaloneBalanceComment] = useState(meetingBalanceComment || "");
   const [savingBalance, setSavingBalance] = useState(false);
 
   // Promissory note wizard state
@@ -205,6 +207,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
       await onSaveBalance(
         standaloneBalanceTo ? parseFloat(standaloneBalanceTo) : null,
         standaloneBalanceFrom ? parseFloat(standaloneBalanceFrom) : null,
+        standaloneBalanceComment.trim() || null,
       );
       toast.success("Balance saved!");
     } catch (err: any) {
@@ -679,8 +682,12 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium" style={{ color: '#000' }}>From Shareholder / Member / Related Party</Label>
                 <Input type="number" step="0.01" value={standaloneBalanceFrom} onChange={(e) => setStandaloneBalanceFrom(e.target.value)} placeholder="0.00" />
-              </div>
             </div>
+            <div className="space-y-1.5 mt-3">
+              <Label className="text-xs font-medium" style={{ color: '#000' }}>Loan Balance Comment</Label>
+              <Textarea value={standaloneBalanceComment} onChange={(e) => setStandaloneBalanceComment(e.target.value)} rows={2} placeholder="Optional notes about year-end balances…" />
+            </div>
+          </div>
           </div>
           <Button className="w-full mt-3" onClick={handleSaveStandaloneBalance} disabled={savingBalance}>
             {savingBalance && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
