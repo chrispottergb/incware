@@ -980,7 +980,7 @@ export default function IncorporationTab({ company }: Props) {
               <div className="mt-2 rounded-md border border-border bg-muted/30 p-3 space-y-2">
                 <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                   <div className="field-group col-span-3">
-                    <Label className="field-label">Director Name</Label>
+                    <Label className="field-label">{isLLCType(form.entity_type) ? "Member Name" : "Director Name"}</Label>
                     <Input className="h-7 text-sm" value={newDirector.name} onChange={(e) => setNewDirector(p => ({ ...p, name: e.target.value }))} placeholder="Full name" />
                   </div>
                   <div className="field-group col-span-3">
