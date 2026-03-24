@@ -96,22 +96,24 @@ const STATE_SOS_INFO: Record<string, { name: string; url: string }> = {
 };
 
 // ─── Entity-aware card config ────────────────────────────────────────────────
+// LLC FORM RULES: Members not Directors. Section renamed to Management & Elections. Management Type dropdown: Member Managed / Manager Managed. No share/par value fields. Keep: S-Election, Seal. DO NOT REVERT.
 function getEquityCardConfig(entityType: string) {
   switch (entityType) {
     case "LLC":
     case "Single Member LLC":
       return {
-        title: "Membership Interest",
+        title: "Management & Elections",
         icon: <Users className="h-3.5 w-3.5 text-primary" />,
-        description: "LLC membership units and governance structure",
+        description: "LLC management structure and elections",
         showAuthorizedShares: false,
         showParValue: false,
         showSElection: true,
         show1244: false,
         showSeal: true,
         showMembershipUnits: true,
+        showManagementType: true,
         showPartnershipInterest: false,
-        authorizedLabel: "Authorized Units",
+        authorizedLabel: "",
       };
     case "S-Corp":
       return {
