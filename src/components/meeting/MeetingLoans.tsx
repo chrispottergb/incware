@@ -171,8 +171,6 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
         repayment_terms: form.repayment_terms || null,
         notes: form.notes || null,
         promissory_note_required: form.promissory_note_required,
-        balance_to_shareholder: form.balance_to_shareholder ? parseFloat(form.balance_to_shareholder) : null,
-        balance_from_shareholder: form.balance_from_shareholder ? parseFloat(form.balance_from_shareholder) : null,
       };
       const { error } = await supabase
         .from("meeting_loans" as any)
