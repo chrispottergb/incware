@@ -660,42 +660,32 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
         </DialogContent>
       </Dialog>
 
-      {/* Annual Balance Reporting Modal */}
-      <Dialog open={balanceDialogOpen} onOpenChange={(open) => { if (!open) { setBalanceDialogOpen(false); setBalanceLoan(null); } }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display flex items-center gap-2">
-              <DollarSign className="h-5 w-5" /> Annual Balance Reporting
-            </DialogTitle>
-            <DialogDescription>Report year-end balance for this loan.</DialogDescription>
-          </DialogHeader>
-          {balanceLoan && (
-            <div className="space-y-4">
-              <div className="rounded-lg bg-muted/50 p-3 space-y-1 text-sm">
-                <div><span className="text-muted-foreground">Lender:</span> <span className="font-medium">{balanceLoan.lender_name || "—"}</span></div>
-                <div><span className="text-muted-foreground">Borrower:</span> <span className="font-medium">{balanceLoan.borrower_name || "—"}</span></div>
-                <div><span className="text-muted-foreground">Principal:</span> <span className="font-medium font-mono">{fmt(balanceLoan.loan_amount)}</span></div>
+      {/* Annual Balance Reporting — standalone card, saves independently of loan entries, renders in minutes separately. DO NOT move back inside Add Loan modal. */}
+      <Card className="mt-4">
+        <CardHeader className="pb-3">
+          <CardTitle className="font-display text-base flex items-center gap-2">
+            <DollarSign className="h-4 w-4" /> Annual Balance Reporting
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 p-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium" style={{ color: '#000' }}>To Shareholder / Member / Related Party</Label>
+                <Input type="number" step="0.01" value={standaloneBalanceTo} onChange={(e) => setStandaloneBalanceTo(e.target.value)} placeholder="0.00" />
               </div>
-              <div className="rounded-lg bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium" style={{ color: '#000' }}>To Shareholder / Member / Related Party</Label>
-                    <Input type="number" step="0.01" value={balanceTo} onChange={(e) => setBalanceTo(e.target.value)} placeholder="0.00" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium" style={{ color: '#000' }}>From Shareholder / Member / Related Party</Label>
-                    <Input type="number" step="0.01" value={balanceFrom} onChange={(e) => setBalanceFrom(e.target.value)} placeholder="0.00" />
-                  </div>
-                </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium" style={{ color: '#000' }}>From Shareholder / Member / Related Party</Label>
+                <Input type="number" step="0.01" value={standaloneBalanceFrom} onChange={(e) => setStandaloneBalanceFrom(e.target.value)} placeholder="0.00" />
               </div>
-              <Button className="w-full" onClick={() => saveBalance.mutate()} disabled={saveBalance.isPending}>
-                {saveBalance.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Balance
-              </Button>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </Card>
+          </div>
+          <Button className="w-full mt-3" onClick={handleSaveStandaloneBalance} disabled={savingBalance}>
+            {savingBalance && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Balance
+          </Button>
+        </CardContent>
+      </Card>
+    </>
   );
 }
