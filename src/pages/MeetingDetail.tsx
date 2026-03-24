@@ -501,7 +501,7 @@ export default function MeetingDetail() {
     { value: "amendments", label: "Amendments" },
     { value: "resolutions", label: "Resolutions" },
     { value: "benefits", label: "Benefits" },
-    { value: "loans", label: "Loans" },
+    { value: "loans", label: "Shareholder, Member & Affiliate Loans" },
     { value: "agreements", label: "Agreements" },
     { value: "other", label: "Other" },
   ];
