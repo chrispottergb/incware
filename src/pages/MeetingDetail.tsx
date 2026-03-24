@@ -38,6 +38,7 @@ import { getTerminology } from "@/lib/entity-terminology";
 export default function MeetingDetail() {
   const { id, meetingId } = useParams<{ id: string; meetingId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: meeting, isLoading } = useQuery({
     queryKey: ["meeting", meetingId],
