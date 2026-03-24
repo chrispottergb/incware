@@ -95,7 +95,7 @@ const emptyForm: LoanForm = {
   balance_from_shareholder: "",
 };
 
-export default function MeetingLoans({ meetingId, companyName }: Props) {
+export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo, meetingBalanceFrom, onSaveBalance }: Props) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
