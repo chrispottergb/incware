@@ -939,20 +939,25 @@ export default function IncorporationTab({ company }: Props) {
             )}
           </div>
 
-          {/* Initial Directors */}
+          {/* Initial Directors / Initial Members (LLC) */}
+          {/* LLC FORM RULES: Members not Directors. Section renamed to Management & Elections. Management Type dropdown: Member Managed / Manager Managed. No share/par value fields. Keep: S-Election, Seal. DO NOT REVERT. */}
           <div className="border-t border-border pt-3">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <UserCheck className="h-3.5 w-3.5 text-primary" />
-                <h3 className="text-sm font-semibold text-foreground">Initial Director(s)</h3>
+                <h3 className="text-sm font-semibold text-foreground">
+                  {isLLCType(form.entity_type) ? "Initial Member(s)" : "Initial Director(s)"}
+                </h3>
               </div>
               <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowDirectorForm(true)}>
-                <Plus className="h-3 w-3 mr-1" /> Add Director
+                <Plus className="h-3 w-3 mr-1" /> {isLLCType(form.entity_type) ? "Add Member" : "Add Director"}
               </Button>
             </div>
 
             {directors.length === 0 && !showDirectorForm && (
-              <p className="text-sm text-muted-foreground text-center py-3">No initial directors added yet.</p>
+              <p className="text-sm text-muted-foreground text-center py-3">
+                {isLLCType(form.entity_type) ? "No initial members added yet." : "No initial directors added yet."}
+              </p>
             )}
 
             {directors.map((dir) => (
