@@ -98,10 +98,9 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<LoanForm>(emptyForm);
   const [uploading, setUploading] = useState(false);
-  const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
-  const [balanceLoan, setBalanceLoan] = useState<any>(null);
-  const [balanceTo, setBalanceTo] = useState("");
-  const [balanceFrom, setBalanceFrom] = useState("");
+  const [standaloneBalanceTo, setStandaloneBalanceTo] = useState(meetingBalanceTo?.toString() || "");
+  const [standaloneBalanceFrom, setStandaloneBalanceFrom] = useState(meetingBalanceFrom?.toString() || "");
+  const [savingBalance, setSavingBalance] = useState(false);
 
   // Promissory note wizard state
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
