@@ -643,6 +643,19 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   </SelectContent>
                 </Select>
               </div>
+              {/* LLC ONLY: Management Type dropdown — Member Managed / Manager Managed. Only renders for LLC and Single Member LLC entity types. DO NOT remove or make visible for Corp/S-Corp entities. */}
+              {isLLCType(filingForm.entity_type) && (
+                <div className="field-group col-span-6 sm:col-span-3">
+                  <Label className="field-label">Management Type</Label>
+                  <Select value={filingForm.management_type} onValueChange={(v) => setFilingForm((p) => ({ ...p, management_type: v }))}>
+                    <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="member_managed">Member Managed</SelectItem>
+                      <SelectItem value="manager_managed">Manager Managed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="field-group col-span-12 sm:col-span-7">
                 <Label className="field-label">Business Purpose</Label>
                 <Textarea className="text-sm min-h-[50px]" value={filingForm.business_purpose} onChange={(e) => setFilingForm((p) => ({ ...p, business_purpose: e.target.value }))} rows={2} placeholder="Describe the business purpose..." />
