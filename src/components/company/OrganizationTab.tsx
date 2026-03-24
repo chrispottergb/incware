@@ -387,6 +387,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
           s_election_date: isLLCType(company.entity_type)
             ? (llcSElectionEnabled ? (filingForm.s_election_date || null) : null)
             : company.s_election_date,
+          management_type: isLLCType(company.entity_type) ? (filingForm.management_type || null) : (company as any).management_type,
         } as any)
         .eq("id", companyId);
       if (error) throw error;
