@@ -66,6 +66,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   const resetForm = () => {
     setForm({ name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active" });
     setEditId(null);
+    resetZip();
   };
 
   const save = useMutation({
