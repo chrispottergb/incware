@@ -106,6 +106,8 @@ export default function MeetingAttendanceSelector({
           city: p.city || null,
           state: p.state || null,
           zip: p.zip || null,
+          common_shares: p.commonShares != null && p.commonShares !== "" ? Number(p.commonShares) : 0,
+          preferred_shares: p.preferredShares != null && p.preferredShares !== "" ? Number(p.preferredShares) : 0,
         } : {}),
       }));
 
