@@ -408,7 +408,7 @@ export default function IncorporationTab({ company }: Props) {
   const handleDirectorZipResult = useCallback((result: { city: string; state: string }) => {
     setNewDirector(prev => ({ ...prev, city: result.city, state: result.state }));
   }, []);
-  const { handleZipChange: handleDirectorZip } = useZipLookup(handleDirectorZipResult);
+  const { handleZipChange: handleDirectorZip, zipError: directorZipError } = useZipLookup(handleDirectorZipResult);
 
   const addDirector = useMutation({
     mutationFn: async () => {
