@@ -274,6 +274,13 @@ export default function MeetingFinancials({ meetingId }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // Auto-save for financials (covers both form and NR items)
+  const financialsAutoSave = useAutoSave({
+    data: { form, nrItems },
+    onSave: async () => { await save.mutateAsync(); },
+    enabled: !!meetingId,
+  });
+
   const yoyChange = (currentKey: string, previousKey: string) => {
     const cur = toNum((form as any)[currentKey]);
     const prev = toNum((form as any)[previousKey]);
