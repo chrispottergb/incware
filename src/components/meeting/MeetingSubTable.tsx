@@ -232,6 +232,15 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
 
   const isPending = addRow.isPending || updateRow.isPending;
 
+  useEffect(() => {
+    if (!useRosterPicker || !selectedRosterId || !roster) return;
+
+    const selectedPerson = roster.find((person) => person.id === selectedRosterId);
+    if (!selectedPerson) return;
+
+    applyRosterPersonToForm(selectedPerson, true);
+  }, [applyRosterPersonToForm, roster, selectedRosterId, useRosterPicker]);
+
   // Determine which column keys are auto-filled by roster
   const rosterAutoFilledKeys = useMemo(() => {
     if (!rosterFieldMap) return new Set<string>();
