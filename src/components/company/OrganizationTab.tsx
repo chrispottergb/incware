@@ -1078,10 +1078,8 @@ export default function OrganizationTab({ companyId, company }: Props) {
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    saveRegisteredAgent.mutate();
-                  }}
+                  onSubmit={(e) => e.preventDefault()}
+                  onBlur={raAutoSave.handleBlur}
                   className="space-y-3"
                 >
                   <div className="grid grid-cols-12 gap-x-3 gap-y-2">
