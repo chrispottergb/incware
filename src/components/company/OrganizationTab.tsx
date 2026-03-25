@@ -1285,10 +1285,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   ))}
                 </div>
                 <div className="flex justify-end">
-                  <Button type="submit" disabled={saveOfficers.isPending} size="sm">
-                    {saveOfficers.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-                    Save {isLLCType(company.entity_type) ? "Managers" : company.entity_type === "Partnership" ? "Partners" : "Officers"}
-                  </Button>
+                  <SaveStatusIndicator status={officersAutoSave.status} lastSavedAt={officersAutoSave.lastSavedAt} />
                 </div>
               </form>
             </CardContent>
