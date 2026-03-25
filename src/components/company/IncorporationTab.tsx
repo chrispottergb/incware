@@ -1316,6 +1316,7 @@ export default function IncorporationTab({ company }: Props) {
             <div className="field-group col-span-2">
               <Label className="field-label">Zip</Label>
               <Input className="h-7 text-sm" value={form.registered_agent_zip} onChange={(e) => { update("registered_agent_zip", e.target.value); handleAgentZip(e.target.value); }} />
+              {agentZipError && <p className="text-[10px] text-destructive mt-0.5">{agentZipError}</p>}
             </div>
           </div>
         </CardContent>
