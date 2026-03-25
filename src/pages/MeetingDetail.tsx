@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,6 +35,7 @@ import {
   exportFinancialsPDF,
 } from "@/lib/meeting-pdf-export";
 import { getTerminology } from "@/lib/entity-terminology";
+import { useShareCalculations } from "@/hooks/useShareCalculations";
 
 export default function MeetingDetail() {
   const { id, meetingId } = useParams<{ id: string; meetingId: string }>();
@@ -92,6 +94,29 @@ export default function MeetingDetail() {
     },
     enabled: !!id,
   });
+
+  // Share/unit calculations for roster auto-population
+  const { shareholderHoldings, totalIssuedShares } = useShareCalculations(id!);
+
+  // Build enriched roster with holdings + ownership %
+  const enrichedShareholderRoster = useMemo(() => {
+    return companyShareholders.filter(s => !s.is_treasury).map(s => {
+      const holdings = shareholderHoldings[s.id] || 0;
+      const ownershipPct = totalIssuedShares > 0
+        ? Math.round((holdings / totalIssuedShares) * 10000) / 100
+        : 0;
+      return {
+        id: s.id,
+        name: s.name,
+        address: s.address,
+        city: s.city,
+        state: s.state,
+        zip: s.zip,
+        common_shares: holdings > 0 ? String(holdings) : undefined,
+        preferred_shares: ownershipPct > 0 ? String(ownershipPct) : undefined,
+      };
+    });
+  }, [companyShareholders, shareholderHoldings, totalIssuedShares]);
 
   const { data: companyDirectors = [] } = useQuery({
     queryKey: ["directors", id],
@@ -635,20 +660,15 @@ export default function MeetingDetail() {
                 { key: "basis", label: "Basis", type: "number", width: "90px" },
                 { key: "additional_capital_contribution", label: "Add'l Capital", type: "number", width: "100px" },
               ]}
-              roster={companyShareholders.filter(s => !s.is_treasury).map(s => ({
-                id: s.id,
-                name: s.name,
-                address: s.address,
-                city: s.city,
-                state: s.state,
-                zip: s.zip,
-              }))}
+              roster={enrichedShareholderRoster}
               rosterFieldMap={{
                 name: "shareholder_name",
                 address: "address",
                 city: "city",
                 state: "state",
                 zip: "zip",
+                common_shares: "common_shares",
+                preferred_shares: "preferred_shares",
               }}
             />
           </div>
