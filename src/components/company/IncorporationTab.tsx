@@ -860,6 +860,7 @@ export default function IncorporationTab({ company }: Props) {
               <div className="field-group col-span-3 sm:col-span-2">
                 <Label className="field-label">Zip</Label>
                 <Input className="h-7 text-sm" value={form.zip} onChange={(e) => { const v = e.target.value.replace(/[^\d-]/g, "").slice(0, 10); update("zip", v); handleCompanyZip(v); }} placeholder="55555" />
+                {companyZipError && <p className="text-[10px] text-destructive mt-0.5">{companyZipError}</p>}
               </div>
             </div>
           </div>
