@@ -1089,6 +1089,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                     <div className="field-group col-span-2">
                       <Label className="field-label">Zip <span className="text-destructive">*</span></Label>
                       <Input className="h-7 text-sm" value={raForm.registered_agent_zip} onChange={(e) => { setRaForm(p => ({ ...p, registered_agent_zip: e.target.value })); handleRaZip(e.target.value); }} />
+                      {raZipError && <p className="text-[10px] text-destructive mt-0.5">{raZipError}</p>}
                     </div>
                   </div>
                   <div className="flex justify-end">
