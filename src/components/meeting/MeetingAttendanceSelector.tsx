@@ -19,6 +19,8 @@ interface PersonRecord {
   city?: string | null;
   state?: string | null;
   zip?: string | null;
+  commonShares?: number | string | null;
+  preferredShares?: number | string | null;
 }
 
 interface Props {
