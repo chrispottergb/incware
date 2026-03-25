@@ -379,6 +379,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
                 <div className="field-group">
                   <Label className="field-label">Zip</Label>
                   <Input className="h-7 text-xs" value={editingSh.zip} onChange={(e) => { setEditingSh(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} />
+                  {zipError && <p className="text-[10px] text-destructive mt-0.5">{zipError}</p>}
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-1.5">
