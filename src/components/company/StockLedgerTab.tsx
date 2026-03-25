@@ -95,6 +95,19 @@ const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string
     { value: "dissociation_buyout", label: "Dissociation Buyout", statute: "§ 183.0701" },
     { value: "gift", label: "Gift of Membership Interest", statute: "§ 183.0706" },
   ],
+  "LLC-S": [
+    { value: "initial_contribution", label: "Initial Capital Contribution", statute: "§ 183.0401 / IRC § 1361" },
+    { value: "additional_contribution", label: "Additional Contribution", statute: "§ 183.0401" },
+    { value: "membership_issuance", label: "Membership Interest Issuance", statute: "§ 183.0501" },
+    { value: "interest_transfer", label: "Transfer of Membership Interest", statute: "§ 183.0706 / IRC § 1361(b)" },
+    { value: "interest_assignment", label: "Assignment of Interest", statute: "§ 183.0706" },
+    { value: "distribution", label: "S-Corp Distribution to Members", statute: "§ 183.0404 / IRC § 1368" },
+    { value: "interim_distribution", label: "Interim Distribution", statute: "§ 183.0404" },
+    { value: "withdrawal_distribution", label: "Withdrawal Distribution", statute: "§ 183.0602" },
+    { value: "redemption", label: "Interest Redemption", statute: "§ 183.0602 / IRC § 302" },
+    { value: "dissociation_buyout", label: "Dissociation Buyout", statute: "§ 183.0701" },
+    { value: "gift", label: "Gift of Membership Interest", statute: "§ 183.0706 / IRC § 1361(b)(1)" },
+  ],
 };
 
 const DEFAULT_TRANSACTION_TYPES = [
