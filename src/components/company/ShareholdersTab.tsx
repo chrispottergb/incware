@@ -49,7 +49,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
   }, []);
-  const { handleZipChange } = useZipLookup(handleZipResult);
+  const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(handleZipResult);
 
   const t = getTerminology(entityType);
 
@@ -263,6 +263,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                   <div className="field-group col-span-4">
                     <Label className="field-label">Zip</Label>
                     <Input className="h-7 text-sm" value={form.zip} onChange={(e) => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} />
+                    {zipError && <p className="text-[10px] text-destructive mt-0.5">{zipError}</p>}
                   </div>
                   <div className="field-group col-span-5">
                     <Label className="field-label">SSN / EIN</Label>

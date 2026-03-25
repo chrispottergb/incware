@@ -328,8 +328,8 @@ export default function IncorporationTab({ company }: Props) {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
   }, []);
 
-  const { handleZipChange: handleAgentZip } = useZipLookup(handleAgentZipResult);
-  const { handleZipChange: handleCompanyZip } = useZipLookup(handleCompanyZipResult);
+  const { handleZipChange: handleAgentZip, isLoading: agentZipLoading, zipError: agentZipError } = useZipLookup(handleAgentZipResult);
+  const { handleZipChange: handleCompanyZip, isLoading: companyZipLoading, zipError: companyZipError } = useZipLookup(handleCompanyZipResult);
 
   // ─── Organizers ────────────────────────────────────────────────────────────
   const { data: organizers = [], refetch: refetchOrganizers } = useQuery({
@@ -351,7 +351,7 @@ export default function IncorporationTab({ company }: Props) {
   const handleOrganizerZipResult = useCallback((result: { city: string; state: string }) => {
     setNewOrganizer(prev => ({ ...prev, city: result.city, state: result.state }));
   }, []);
-  const { handleZipChange: handleOrganizerZip } = useZipLookup(handleOrganizerZipResult);
+  const { handleZipChange: handleOrganizerZip, zipError: organizerZipError } = useZipLookup(handleOrganizerZipResult);
 
   const addOrganizer = useMutation({
     mutationFn: async () => {
@@ -408,7 +408,7 @@ export default function IncorporationTab({ company }: Props) {
   const handleDirectorZipResult = useCallback((result: { city: string; state: string }) => {
     setNewDirector(prev => ({ ...prev, city: result.city, state: result.state }));
   }, []);
-  const { handleZipChange: handleDirectorZip } = useZipLookup(handleDirectorZipResult);
+  const { handleZipChange: handleDirectorZip, zipError: directorZipError } = useZipLookup(handleDirectorZipResult);
 
   const addDirector = useMutation({
     mutationFn: async () => {
@@ -860,6 +860,7 @@ export default function IncorporationTab({ company }: Props) {
               <div className="field-group col-span-3 sm:col-span-2">
                 <Label className="field-label">Zip</Label>
                 <Input className="h-7 text-sm" value={form.zip} onChange={(e) => { const v = e.target.value.replace(/[^\d-]/g, "").slice(0, 10); update("zip", v); handleCompanyZip(v); }} placeholder="55555" />
+                {companyZipError && <p className="text-[10px] text-destructive mt-0.5">{companyZipError}</p>}
               </div>
             </div>
           </div>
@@ -927,6 +928,7 @@ export default function IncorporationTab({ company }: Props) {
                   <div className="field-group col-span-1">
                     <Label className="field-label">Zip</Label>
                     <Input className="h-7 text-sm" value={newOrganizer.zip} onChange={(e) => { const v = e.target.value; setNewOrganizer(p => ({ ...p, zip: v })); handleOrganizerZip(v); }} maxLength={10} />
+                    {organizerZipError && <p className="text-[10px] text-destructive mt-0.5">{organizerZipError}</p>}
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
@@ -1008,6 +1010,7 @@ export default function IncorporationTab({ company }: Props) {
                   <div className="field-group col-span-1">
                     <Label className="field-label">Zip</Label>
                     <Input className="h-7 text-sm" value={newDirector.zip} onChange={(e) => { const v = e.target.value; setNewDirector(p => ({ ...p, zip: v })); handleDirectorZip(v); }} maxLength={10} />
+                    {directorZipError && <p className="text-[10px] text-destructive mt-0.5">{directorZipError}</p>}
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
@@ -1313,6 +1316,7 @@ export default function IncorporationTab({ company }: Props) {
             <div className="field-group col-span-2">
               <Label className="field-label">Zip</Label>
               <Input className="h-7 text-sm" value={form.registered_agent_zip} onChange={(e) => { update("registered_agent_zip", e.target.value); handleAgentZip(e.target.value); }} />
+              {agentZipError && <p className="text-[10px] text-destructive mt-0.5">{agentZipError}</p>}
             </div>
           </div>
         </CardContent>

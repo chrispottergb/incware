@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useZipLookup } from "@/hooks/useZipLookup";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -111,6 +112,11 @@ export default function MeetingsTab({ companyId, company }: Props) {
 
   const [form, setForm] = useState(defaultForm());
   const [prefilled, setPrefilled] = useState(false);
+
+  const handleMeetingZipResult = useCallback((result: { city: string; state: string }) => {
+    setForm(prev => ({ ...prev, company_city_at_meeting: result.city, company_state_at_meeting: result.state }));
+  }, []);
+  const { handleZipChange: handleMeetingZipChange, isLoading: zipLoading, zipError } = useZipLookup(handleMeetingZipResult);
 
   const { data: meetings = [], isLoading } = useQuery({
     queryKey: ["meetings", companyId],
@@ -569,6 +575,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
                     <Input
                       value={form.company_city_at_meeting}
                       onChange={(e) => setForm((p) => ({ ...p, company_city_at_meeting: e.target.value }))}
+                      placeholder={zipLoading ? "Loading..." : ""}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -577,14 +584,16 @@ export default function MeetingsTab({ companyId, company }: Props) {
                       <Input
                         value={form.company_state_at_meeting}
                         onChange={(e) => setForm((p) => ({ ...p, company_state_at_meeting: e.target.value }))}
+                        placeholder={zipLoading ? "Loading..." : ""}
                       />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs font-medium text-muted-foreground">Zip</Label>
                       <Input
                         value={form.company_zip_at_meeting}
-                        onChange={(e) => setForm((p) => ({ ...p, company_zip_at_meeting: e.target.value }))}
+                        onChange={(e) => { setForm((p) => ({ ...p, company_zip_at_meeting: e.target.value })); handleMeetingZipChange(e.target.value); }}
                       />
+                      {zipError && <p className="text-[10px] text-destructive mt-0.5">{zipError}</p>}
                     </div>
                   </div>
                 </div>

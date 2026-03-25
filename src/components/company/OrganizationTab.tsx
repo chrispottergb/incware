@@ -206,7 +206,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
   const handleRaZipResult = useCallback((result: { city: string; state: string }) => {
     setRaForm(prev => ({ ...prev, registered_agent_city: result.city, registered_agent_state: result.state }));
   }, []);
-  const { handleZipChange: handleRaZip } = useZipLookup(handleRaZipResult);
+  const { handleZipChange: handleRaZip, zipError: raZipError } = useZipLookup(handleRaZipResult);
 
   // Fetch history
   const { data: raHistory = [] } = useQuery({
@@ -315,7 +315,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
     management_type: (company as any).management_type ?? "",
   });
 
-  const { handleZipChange: handleFilingZipChange } = useZipLookup(({ city, state }) => {
+  const { handleZipChange: handleFilingZipChange, zipError: filingZipError } = useZipLookup(({ city, state }) => {
     setFilingForm((p) => ({ ...p, city, state }));
   });
   // ─── Organizers ────────────────────────────────────────────────────────────
@@ -338,7 +338,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
   const handleOrganizerZipResult = useCallback((result: { city: string; state: string }) => {
     setNewOrganizer(prev => ({ ...prev, city: result.city, state: result.state }));
   }, []);
-  const { handleZipChange: handleOrganizerZip } = useZipLookup(handleOrganizerZipResult);
+  const { handleZipChange: handleOrganizerZip, zipError: organizerZipError } = useZipLookup(handleOrganizerZipResult);
 
   const addOrganizer = useMutation({
     mutationFn: async () => {
@@ -872,6 +872,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <div className="field-group col-span-3 sm:col-span-2">
                   <Label className="field-label">Zip</Label>
                   <Input className="h-7 text-sm" value={filingForm.zip} onChange={(e) => { const v = e.target.value.replace(/[^\d-]/g, "").slice(0, 10); setFilingForm((p) => ({ ...p, zip: v })); handleFilingZipChange(v); }} placeholder="55555" />
+                  {filingZipError && <p className="text-[10px] text-destructive mt-0.5">{filingZipError}</p>}
                 </div>
               </div>
             </div>
@@ -939,6 +940,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                     <div className="field-group col-span-1">
                       <Label className="field-label">Zip</Label>
                       <Input className="h-7 text-sm" value={newOrganizer.zip} onChange={(e) => { const v = e.target.value; setNewOrganizer(p => ({ ...p, zip: v })); handleOrganizerZip(v); }} maxLength={10} />
+                      {organizerZipError && <p className="text-[10px] text-destructive mt-0.5">{organizerZipError}</p>}
                     </div>
                   </div>
                   <div className="flex justify-end gap-2">
@@ -1087,6 +1089,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                     <div className="field-group col-span-2">
                       <Label className="field-label">Zip <span className="text-destructive">*</span></Label>
                       <Input className="h-7 text-sm" value={raForm.registered_agent_zip} onChange={(e) => { setRaForm(p => ({ ...p, registered_agent_zip: e.target.value })); handleRaZip(e.target.value); }} />
+                      {raZipError && <p className="text-[10px] text-destructive mt-0.5">{raZipError}</p>}
                     </div>
                   </div>
                   <div className="flex justify-end">

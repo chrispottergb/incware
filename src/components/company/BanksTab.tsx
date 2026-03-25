@@ -43,7 +43,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
   }, []);
-  const { handleZipChange } = useZipLookup(handleZipResult);
+  const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(handleZipResult);
 
   const { data: banks = [] } = useQuery({
     queryKey: ["company_banks", companyId],
@@ -365,9 +365,9 @@ export default function BanksTab({ companyId }: BanksTabProps) {
               </div>
               {/* Row 5: City (50%) | State (15%) | Zip (30%) — using ~20-col approximation */}
               <div className="grid grid-cols-20 gap-2">
-                <div className="col-span-10"><Label className="text-xs">City</Label><Input className="h-7 text-sm" value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
-                <div className="col-span-4"><Label className="text-xs">State</Label><Input className="h-7 text-sm min-w-[60px]" value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
-                <div className="col-span-6"><Label className="text-xs">Zip</Label><Input className="h-7 text-sm" value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} /></div>
+                <div className="col-span-10"><Label className="text-xs">City</Label><Input className="h-7 text-sm" value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} placeholder={zipLoading ? "Loading..." : ""} /></div>
+                <div className="col-span-4"><Label className="text-xs">State</Label><Input className="h-7 text-sm min-w-[60px]" value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} placeholder={zipLoading ? "..." : ""} /></div>
+                <div className="col-span-6"><Label className="text-xs">Zip</Label><Input className="h-7 text-sm" value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} />{zipError && <p className="text-[10px] text-destructive mt-0.5">{zipError}</p>}</div>
               </div>
               {/* Row 6: Notes — full width */}
               <div><Label className="text-xs">Notes</Label><Textarea className="text-sm min-h-[50px]" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>

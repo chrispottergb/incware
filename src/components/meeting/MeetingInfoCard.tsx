@@ -49,7 +49,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
   const queryClient = useQueryClient();
   const [values, setValues] = useState<Record<string, string>>({});
 
-  const { handleZipChange } = useZipLookup(
+  const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(
     useCallback(({ city, state }: { city: string; state: string }) => {
       setValues((prev) => ({ ...prev, company_city_at_meeting: city, company_state_at_meeting: state }));
       updateMeeting.mutate({ company_city_at_meeting: city, company_state_at_meeting: state } as any);
@@ -294,6 +294,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 onChange={(e) => handleChange("company_city_at_meeting", e.target.value)}
                 onBlur={(e) => handleBlur("company_city_at_meeting", e.target.value)}
                 className="h-9 text-sm"
+                placeholder={zipLoading ? "Loading..." : ""}
               />
             </div>
             <div className="w-[60px] space-y-1.5">
@@ -303,6 +304,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 onChange={(e) => handleChange("company_state_at_meeting", e.target.value)}
                 onBlur={(e) => handleBlur("company_state_at_meeting", e.target.value)}
                 className="h-9 text-sm"
+                placeholder={zipLoading ? "..." : ""}
               />
             </div>
             <div className="w-[100px] space-y-1.5">
@@ -316,6 +318,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 onBlur={(e) => handleBlur("company_zip_at_meeting", e.target.value)}
                 className="h-9 text-sm"
               />
+              {zipError && <p className="text-[10px] text-destructive mt-0.5">{zipError}</p>}
             </div>
           </div>
         </CardContent>
