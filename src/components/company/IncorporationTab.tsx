@@ -1098,15 +1098,7 @@ export default function IncorporationTab({ company }: Props) {
             )}
 
             {/* S-election controls */}
-            {/* S-Corp: date field only, no checkbox — election is implied by entity type */}
-            {equityCard.showSElection && form.entity_type === "S-Corp" && (
-              <div className="field-group">
-                <Label className="field-label">Date of S Election</Label>
-                <p className="text-[11px] text-muted-foreground mb-1">Date the S Corporation election was filed with the IRS</p>
-                <DatePickerField value={form.s_election_date || ""} onChange={(v) => updateAndSave("s_election_date", v)} />
-              </div>
-            )}
-            {/* LLC-S: date field only, no checkbox — election is implied by entity type */}
+            {/* LLC-S: date field only, no checkbox — election is implied by entity type (S-Corp moved to main grid) */}
             {equityCard.showSElection && form.entity_type === "LLC-S" && (
               <div className="field-group">
                 <Label className="field-label">Date of S Election</Label>
