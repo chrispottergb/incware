@@ -315,7 +315,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
     management_type: (company as any).management_type ?? "",
   });
 
-  const { handleZipChange: handleFilingZipChange } = useZipLookup(({ city, state }) => {
+  const { handleZipChange: handleFilingZipChange, zipError: filingZipError } = useZipLookup(({ city, state }) => {
     setFilingForm((p) => ({ ...p, city, state }));
   });
   // ─── Organizers ────────────────────────────────────────────────────────────
