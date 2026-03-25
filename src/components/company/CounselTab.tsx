@@ -32,7 +32,7 @@ function FirmDialog({
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
   }, [setForm]);
-  const { handleZipChange } = useZipLookup(handleZipResult);
+  const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(handleZipResult);
 
   const [search, setSearch] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
