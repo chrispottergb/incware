@@ -43,7 +43,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
   }, []);
-  const { handleZipChange } = useZipLookup(handleZipResult);
+  const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(handleZipResult);
 
   const { data: banks = [] } = useQuery({
     queryKey: ["company_banks", companyId],
