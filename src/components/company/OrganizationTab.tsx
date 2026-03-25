@@ -285,6 +285,14 @@ export default function OrganizationTab({ companyId, company }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // Auto-save for registered agent
+  const raAutoSave = useAutoSave({
+    data: raForm,
+    onSave: async () => { await saveRegisteredAgent.mutateAsync(); },
+    enabled: !!company.id && isLLC,
+  });
+
+
   // Filing details form
   const [filingForm, setFilingForm] = useState({
     name: company.name,
