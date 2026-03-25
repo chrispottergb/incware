@@ -1,4 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import SaveStatusIndicator from "@/components/SaveStatusIndicator";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -102,8 +104,25 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
   const [standaloneBalanceTo, setStandaloneBalanceTo] = useState(meetingBalanceTo?.toString() || "");
   const [standaloneBalanceFrom, setStandaloneBalanceFrom] = useState(meetingBalanceFrom?.toString() || "");
   const [standaloneBalanceComment, setStandaloneBalanceComment] = useState(meetingBalanceComment || "");
-  const [savingBalance, setSavingBalance] = useState(false);
 
+  const balanceData = useMemo(() => ({
+    to: standaloneBalanceTo,
+    from: standaloneBalanceFrom,
+    comment: standaloneBalanceComment,
+  }), [standaloneBalanceTo, standaloneBalanceFrom, standaloneBalanceComment]);
+
+  const { status: balanceSaveStatus, lastSavedAt: balanceLastSaved, handleBlur: balanceHandleBlur, triggerSave: balanceTriggerSave } = useAutoSave({
+    data: balanceData,
+    onSave: async (d) => {
+      if (!onSaveBalance) return;
+      await onSaveBalance(
+        d.to ? parseFloat(d.to) : null,
+        d.from ? parseFloat(d.from) : null,
+        d.comment.trim() || null,
+      );
+    },
+    enabled: !!onSaveBalance,
+  });
   // Promissory note wizard state
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [noteForm, setNoteForm] = useState<NoteForm>({
@@ -201,20 +220,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
   });
 
   const handleSaveStandaloneBalance = async () => {
-    if (!onSaveBalance) return;
-    setSavingBalance(true);
-    try {
-      await onSaveBalance(
-        standaloneBalanceTo ? parseFloat(standaloneBalanceTo) : null,
-        standaloneBalanceFrom ? parseFloat(standaloneBalanceFrom) : null,
-        standaloneBalanceComment.trim() || null,
-      );
-      toast.success("Balance saved!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save balance");
-    } finally {
-      setSavingBalance(false);
-    }
+    balanceTriggerSave();
   };
 
   const closeDialog = () => {
@@ -672,7 +678,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
             <DollarSign className="h-4 w-4" /> Annual Balance Reporting
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent onBlur={balanceHandleBlur}>
           <div className="rounded-lg bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 p-4 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -689,10 +695,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
             </div>
           </div>
           </div>
-          <Button className="w-full mt-3" onClick={handleSaveStandaloneBalance} disabled={savingBalance}>
-            {savingBalance && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save Balance
-          </Button>
+          <SaveStatusIndicator status={balanceSaveStatus} lastSavedAt={balanceLastSaved} className="mt-2 justify-end" />
         </CardContent>
       </Card>
     </>
