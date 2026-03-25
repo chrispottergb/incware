@@ -35,6 +35,7 @@ import {
   exportFinancialsPDF,
 } from "@/lib/meeting-pdf-export";
 import { getTerminology } from "@/lib/entity-terminology";
+import { useShareCalculations } from "@/hooks/useShareCalculations";
 
 export default function MeetingDetail() {
   const { id, meetingId } = useParams<{ id: string; meetingId: string }>();
