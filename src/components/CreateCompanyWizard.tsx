@@ -77,7 +77,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setEditingSh(prev => ({ ...prev, city: result.city, state: result.state }));
   }, []);
-  const { handleZipChange } = useZipLookup(handleZipResult);
+  const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(handleZipResult);
 
   const isCorp = CORP_TYPES.includes(newType);
   const authSharesNum = parseInt(authorizedShares) || 0;
