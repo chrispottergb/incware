@@ -1267,10 +1267,8 @@ export default function OrganizationTab({ companyId, company }: Props) {
             </CardHeader>
             <CardContent className="px-4 pb-4">
               <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  saveOfficers.mutate();
-                }}
+                onSubmit={(e) => e.preventDefault()}
+                onBlur={officersAutoSave.handleBlur}
                 className="space-y-3"
               >
                 <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
