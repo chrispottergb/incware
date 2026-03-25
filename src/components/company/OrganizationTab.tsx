@@ -536,6 +536,13 @@ export default function OrganizationTab({ companyId, company }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // Auto-save for officers
+  const officersAutoSave = useAutoSave({
+    data: officerForm,
+    onSave: async () => { await saveOfficers.mutateAsync(); },
+    enabled: !!company.id,
+  });
+
   // Directors - simple name fields like officers
   const { data: directors = [] } = useQuery({
     queryKey: ["directors", companyId],
