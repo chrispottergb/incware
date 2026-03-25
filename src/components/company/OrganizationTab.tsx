@@ -1122,10 +1122,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                     </div>
                   </div>
                   <div className="flex justify-end">
-                    <Button type="submit" disabled={saveRegisteredAgent.isPending} size="sm">
-                      {saveRegisteredAgent.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-                      Save Registered Agent
-                    </Button>
+                    <SaveStatusIndicator status={raAutoSave.status} lastSavedAt={raAutoSave.lastSavedAt} />
                   </div>
                 </form>
 
