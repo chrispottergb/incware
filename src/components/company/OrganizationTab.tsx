@@ -1024,10 +1024,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
               </div>
             )}
             <div className="flex justify-end">
-              <Button type="submit" disabled={saveFiling.isPending} size="sm">
-                {saveFiling.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-                Save Organizational Info
-              </Button>
+              <SaveStatusIndicator status={filingAutoSave.status} lastSavedAt={filingAutoSave.lastSavedAt} />
             </div>
           </form>
         </CardContent>
