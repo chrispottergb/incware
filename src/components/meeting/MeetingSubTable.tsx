@@ -232,6 +232,9 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
 
   const isPending = addRow.isPending || updateRow.isPending;
 
+  // Check if we're in roster-picker mode (adding, not editing, with roster provided)
+  const useRosterPicker = !!roster && !editingId;
+
   useEffect(() => {
     if (!useRosterPicker || !selectedRosterId || !roster) return;
 
