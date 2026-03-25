@@ -613,6 +613,12 @@ export default function OrganizationTab({ companyId, company }: Props) {
     setDirectorNames((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Auto-save for directors
+  const directorsAutoSave = useAutoSave({
+    data: directorNames,
+    onSave: async () => { await saveDirectors.mutateAsync(); },
+    enabled: !!company.id,
+  });
 
   return (
     <div className="space-y-5">
