@@ -1225,10 +1225,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={addDirectorSlot}>
                     <Plus className="mr-1 h-3 w-3" /> {isLLCType(company.entity_type) ? "Add Another Binder" : "Add Another Director"}
                   </Button>
-                  <Button type="submit" disabled={saveDirectors.isPending} size="sm">
-                    {saveDirectors.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-                    {isLLCType(company.entity_type) ? "Save Authorized Binders" : "Save Directors"}
-                  </Button>
+                  <SaveStatusIndicator status={directorsAutoSave.status} lastSavedAt={directorsAutoSave.lastSavedAt} />
                 </div>
               </form>
             </CardContent>
