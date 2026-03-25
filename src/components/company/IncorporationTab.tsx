@@ -1010,6 +1010,7 @@ export default function IncorporationTab({ company }: Props) {
                   <div className="field-group col-span-1">
                     <Label className="field-label">Zip</Label>
                     <Input className="h-7 text-sm" value={newDirector.zip} onChange={(e) => { const v = e.target.value; setNewDirector(p => ({ ...p, zip: v })); handleDirectorZip(v); }} maxLength={10} />
+                    {directorZipError && <p className="text-[10px] text-destructive mt-0.5">{directorZipError}</p>}
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
