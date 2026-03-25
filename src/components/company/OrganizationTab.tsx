@@ -1241,7 +1241,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   {company.entity_type === "Partnership" && "Partners per Wis. Stat. § 178.0401"}
                 </CardDescription>
                 <SectionPdfActions config={{
-                  title: company.entity_type === "LLC" ? "Managers / Officers" : "Officers",
+                  title: isLLCType(company.entity_type) ? "Managers / Officers" : "Officers",
                   companyName: company.name,
                   fields: getOfficerFields(company.entity_type).map((f) => ({
                     label: f.label,
