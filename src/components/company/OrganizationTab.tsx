@@ -35,6 +35,7 @@ const US_STATES = [
 function getOfficerFields(entityType: string) {
   switch (entityType) {
     case "LLC":
+    case "LLC-S":
     case "Single Member LLC":
       return [
         { key: "president", label: "Managing Member / Manager", placeholder: "Name" },
