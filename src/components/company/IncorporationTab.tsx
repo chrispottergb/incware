@@ -741,7 +741,6 @@ export default function IncorporationTab({ company }: Props) {
             {form.entity_type === "S-Corp" && (
               <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label">Date of S Election</Label>
-                <p className="text-[11px] text-muted-foreground mb-1">Date the S Corporation election was filed with the IRS</p>
                 <DatePickerField value={form.s_election_date || ""} onChange={(v) => updateAndSave("s_election_date", v)} className="h-7" />
               </div>
             )}

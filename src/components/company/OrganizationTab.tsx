@@ -821,7 +821,6 @@ export default function OrganizationTab({ companyId, company }: Props) {
               {company.entity_type === "LLC-S" && (
                 <div className="field-group col-span-6 sm:col-span-3">
                   <Label className="field-label">Date of S Election</Label>
-                  <p className="text-[11px] text-muted-foreground mb-1">Date the S Corporation election was filed with the IRS</p>
                   <DatePickerField
                     value={filingForm.s_election_date}
                     onChange={(v) => setFilingForm((p) => ({ ...p, s_election_date: v || "" }))}
