@@ -351,7 +351,7 @@ export default function IncorporationTab({ company }: Props) {
   const handleOrganizerZipResult = useCallback((result: { city: string; state: string }) => {
     setNewOrganizer(prev => ({ ...prev, city: result.city, state: result.state }));
   }, []);
-  const { handleZipChange: handleOrganizerZip } = useZipLookup(handleOrganizerZipResult);
+  const { handleZipChange: handleOrganizerZip, zipError: organizerZipError } = useZipLookup(handleOrganizerZipResult);
 
   const addOrganizer = useMutation({
     mutationFn: async () => {
