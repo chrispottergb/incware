@@ -48,6 +48,15 @@ const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string
     { value: "dissociation_buyout", label: "Dissociation Buyout" },
     { value: "gift", label: "Gift of Membership Interest" },
   ],
+  "LLC-S": [
+    { value: "initial_contribution", label: "Initial Capital Contribution" },
+    { value: "additional_contribution", label: "Additional Contribution" },
+    { value: "interest_transfer", label: "Transfer of Membership Interest" },
+    { value: "interest_assignment", label: "Assignment of Interest" },
+    { value: "redemption", label: "Interest Redemption" },
+    { value: "dissociation_buyout", label: "Dissociation Buyout" },
+    { value: "gift", label: "Gift of Membership Interest" },
+  ],
 };
 
 const CONSIDERATION_TYPES = [

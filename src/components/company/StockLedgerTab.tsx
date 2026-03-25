@@ -33,7 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, BookOpen, Link2, Lock, Trash2, FileText, Award } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
-import { getTerminology } from "@/lib/entity-terminology";
+import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { downloadStockCertificatePdf } from "@/lib/stock-certificate-pdf";
 import { downloadBillOfSalePdf } from "@/lib/bill-of-sale-pdf";
 
