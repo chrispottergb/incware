@@ -417,9 +417,10 @@ export default function OrganizationTab({ companyId, company }: Props) {
     setFilingForm((prev) => ({ ...prev, s_election_date: company.s_election_date ?? "" }));
   }, [company.id, company.s_election_date]);
 
-  const saveFiling = useMutation({
+   const saveFiling = useMutation({
     mutationFn: async () => {
-      if (isLLCType(company.entity_type) && llcSElectionEnabled && !filingForm.s_election_date) {
+      // Only validate checkbox-based S-election for LLC/Single Member LLC (not LLC-S where it's implied)
+      if (isLLCType(company.entity_type) && company.entity_type !== "LLC-S" && llcSElectionEnabled && !filingForm.s_election_date) {
         throw new Error("S Election Effective Date is required when LLC S Corporation tax status is enabled.");
       }
 
@@ -458,9 +459,9 @@ export default function OrganizationTab({ companyId, company }: Props) {
           contact_phone: filingForm.contact_phone || null,
           contact_cell: filingForm.contact_cell || null,
           contact_webpage: filingForm.contact_webpage ? formatWebpage(filingForm.contact_webpage) : null,
-          s_election_date: isLLCType(company.entity_type)
+          s_election_date: isLLCType(company.entity_type) && company.entity_type !== "LLC-S"
             ? (llcSElectionEnabled ? (filingForm.s_election_date || null) : null)
-            : company.s_election_date,
+            : (filingForm.s_election_date || null),
           management_type: isLLCType(company.entity_type) ? (filingForm.management_type || null) : (company as any).management_type,
         } as any)
         .eq("id", companyId);
@@ -990,8 +991,23 @@ export default function OrganizationTab({ companyId, company }: Props) {
 
 
 
-            {/* S Corporation Tax Status — LLC only */}
-            {isLLCType(company.entity_type) && (
+            {/* S Corporation Tax Status — LLC-S: date field only, no checkbox */}
+            {company.entity_type === "LLC-S" && (
+              <div className="mt-3 rounded-md border border-border bg-muted/30 px-3 py-2.5">
+                <div className="field-group max-w-xs">
+                  <Label className="field-label">Date of S Election</Label>
+                  <p className="text-[11px] text-muted-foreground mb-1">Date the S Corporation election was filed with the IRS</p>
+                  <DatePickerField
+                    value={filingForm.s_election_date}
+                    onChange={(v) => setFilingForm((p) => ({ ...p, s_election_date: v || "" }))}
+                    placeholder="Select date"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* S Corporation Tax Status — LLC (not LLC-S): checkbox + date */}
+            {isLLCType(company.entity_type) && company.entity_type !== "LLC-S" && (
               <div className="mt-3 flex items-start gap-2.5 rounded-md border border-border bg-muted/30 px-3 py-2.5">
                 <Checkbox
                   id="s_election_llc"

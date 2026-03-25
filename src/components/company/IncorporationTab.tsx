@@ -486,7 +486,8 @@ export default function IncorporationTab({ company }: Props) {
 
   const save = useMutation({
     mutationFn: async () => {
-      if (isLLCType(form.entity_type) && llcSElectionEnabled && !form.s_election_date) {
+      // Only validate checkbox-based S-election for LLC/Single Member LLC (not LLC-S where it's implied)
+      if (isLLCType(form.entity_type) && form.entity_type !== "LLC-S" && llcSElectionEnabled && !form.s_election_date) {
         throw new Error("S Election Effective Date is required when LLC S Corporation tax status is enabled.");
       }
 
@@ -501,7 +502,7 @@ export default function IncorporationTab({ company }: Props) {
           authorized_shares: form.authorized_shares ? parseInt(form.authorized_shares) : null,
           par_value_type: form.par_value_type,
           par_value: form.par_value ? parseFloat(form.par_value) : null,
-          s_election_date: isLLCType(form.entity_type)
+          s_election_date: isLLCType(form.entity_type) && form.entity_type !== "LLC-S"
             ? (llcSElectionEnabled ? (form.s_election_date || null) : null)
             : (form.s_election_date || null),
           scheduled_annual_meeting: form.scheduled_annual_meeting || null,
@@ -1090,13 +1091,24 @@ export default function IncorporationTab({ company }: Props) {
             )}
 
             {/* S-election controls */}
-            {equityCard.showSElection && !isLLCType(form.entity_type) && (
+            {/* S-Corp: date field only, no checkbox — election is implied by entity type */}
+            {equityCard.showSElection && form.entity_type === "S-Corp" && (
               <div className="field-group">
-                <Label className="field-label">S-Election Date</Label>
+                <Label className="field-label">Date of S Election</Label>
+                <p className="text-[11px] text-muted-foreground mb-1">Date the S Corporation election was filed with the IRS</p>
                 <DatePickerField value={form.s_election_date || ""} onChange={(v) => updateAndSave("s_election_date", v)} />
               </div>
             )}
-            {equityCard.showSElection && isLLCType(form.entity_type) && (
+            {/* LLC-S: date field only, no checkbox — election is implied by entity type */}
+            {equityCard.showSElection && form.entity_type === "LLC-S" && (
+              <div className="field-group">
+                <Label className="field-label">Date of S Election</Label>
+                <p className="text-[11px] text-muted-foreground mb-1">Date the S Corporation election was filed with the IRS</p>
+                <DatePickerField value={form.s_election_date || ""} onChange={(v) => updateAndSave("s_election_date", v)} />
+              </div>
+            )}
+            {/* LLC / Single Member LLC: checkbox + date field */}
+            {equityCard.showSElection && isLLCType(form.entity_type) && form.entity_type !== "LLC-S" && (
               <div className="col-span-full mt-1 rounded-md border border-border bg-muted/30 px-3 py-2.5">
                 <div className="flex items-start gap-2.5">
                   <Checkbox
