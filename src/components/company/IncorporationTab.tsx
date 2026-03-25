@@ -738,6 +738,13 @@ export default function IncorporationTab({ company }: Props) {
               <Label className="field-label">Sched. Annual Mtg Date</Label>
               <Input className="h-7 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
             </div>
+            {form.entity_type === "S-Corp" && (
+              <div className="field-group col-span-6 sm:col-span-3">
+                <Label className="field-label">Date of S Election</Label>
+                <p className="text-[11px] text-muted-foreground mb-1">Date the S Corporation election was filed with the IRS</p>
+                <DatePickerField value={form.s_election_date || ""} onChange={(v) => updateAndSave("s_election_date", v)} className="h-7" />
+              </div>
+            )}
             <div className="field-group col-span-12 sm:col-span-10">
               <Label className="field-label">Business Purpose</Label>
               <Textarea className="text-sm min-h-[50px]" value={form.business_purpose} onChange={(e) => update("business_purpose", e.target.value)} placeholder="Describe the business purpose..." rows={2} />
@@ -1091,15 +1098,7 @@ export default function IncorporationTab({ company }: Props) {
             )}
 
             {/* S-election controls */}
-            {/* S-Corp: date field only, no checkbox — election is implied by entity type */}
-            {equityCard.showSElection && form.entity_type === "S-Corp" && (
-              <div className="field-group">
-                <Label className="field-label">Date of S Election</Label>
-                <p className="text-[11px] text-muted-foreground mb-1">Date the S Corporation election was filed with the IRS</p>
-                <DatePickerField value={form.s_election_date || ""} onChange={(v) => updateAndSave("s_election_date", v)} />
-              </div>
-            )}
-            {/* LLC-S: date field only, no checkbox — election is implied by entity type */}
+            {/* LLC-S: date field only, no checkbox — election is implied by entity type (S-Corp moved to main grid) */}
             {equityCard.showSElection && form.entity_type === "LLC-S" && (
               <div className="field-group">
                 <Label className="field-label">Date of S Election</Label>

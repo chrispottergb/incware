@@ -818,6 +818,17 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   </Select>
                 </div>
               )}
+              {company.entity_type === "LLC-S" && (
+                <div className="field-group col-span-6 sm:col-span-3">
+                  <Label className="field-label">Date of S Election</Label>
+                  <p className="text-[11px] text-muted-foreground mb-1">Date the S Corporation election was filed with the IRS</p>
+                  <DatePickerField
+                    value={filingForm.s_election_date}
+                    onChange={(v) => setFilingForm((p) => ({ ...p, s_election_date: v || "" }))}
+                    placeholder="Select date"
+                  />
+                </div>
+              )}
               <div className="field-group col-span-12 sm:col-span-7">
                 <Label className="field-label">Business Purpose</Label>
                 <Textarea className="text-sm min-h-[50px]" value={filingForm.business_purpose} onChange={(e) => setFilingForm((p) => ({ ...p, business_purpose: e.target.value }))} rows={2} placeholder="Describe the business purpose..." />
@@ -991,20 +1002,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
 
 
 
-            {/* S Corporation Tax Status — LLC-S: date field only, no checkbox */}
-            {company.entity_type === "LLC-S" && (
-              <div className="mt-3 rounded-md border border-border bg-muted/30 px-3 py-2.5">
-                <div className="field-group max-w-xs">
-                  <Label className="field-label">Date of S Election</Label>
-                  <p className="text-[11px] text-muted-foreground mb-1">Date the S Corporation election was filed with the IRS</p>
-                  <DatePickerField
-                    value={filingForm.s_election_date}
-                    onChange={(v) => setFilingForm((p) => ({ ...p, s_election_date: v || "" }))}
-                    placeholder="Select date"
-                  />
-                </div>
-              </div>
-            )}
+            {/* LLC-S S Election date moved inline next to Management Type */}
 
             {/* S Corporation Tax Status — LLC (not LLC-S): checkbox + date */}
             {isLLCType(company.entity_type) && company.entity_type !== "LLC-S" && (
