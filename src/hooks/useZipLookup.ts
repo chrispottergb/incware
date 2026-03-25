@@ -60,6 +60,7 @@ export function useZipLookup(onResult: (result: ZipLookupResult) => void) {
   );
 
   const clearError = useCallback(() => setZipError(null), []);
+  const reset = useCallback(() => { lastLookedUp.current = ""; setZipError(null); }, []);
 
-  return { handleZipChange, isLoading, zipError, clearError };
+  return { handleZipChange, isLoading, zipError, clearError, reset };
 }
