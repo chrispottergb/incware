@@ -1307,21 +1307,7 @@ export default function IncorporationTab({ company }: Props) {
 
       {/* Auto-save Status Indicator */}
       <div className="sticky bottom-3 flex justify-end">
-        {saveStatus === "saving" && (
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground animate-fade-in">
-            <Loader2 className="h-3 w-3 animate-spin" /> Saving…
-          </span>
-        )}
-        {saveStatus === "saved" && (
-          <span className="flex items-center gap-1.5 text-xs text-success animate-fade-in">
-            <Check className="h-3 w-3" /> All changes saved
-          </span>
-        )}
-        {saveStatus === "error" && (
-          <span className="flex items-center gap-1.5 text-xs text-destructive animate-fade-in">
-            <AlertTriangle className="h-3 w-3" /> Failed to save — please try again
-          </span>
-        )}
+        <SaveStatusIndicator status={incAutoSave.status} lastSavedAt={incAutoSave.lastSavedAt} />
       </div>
       {/* WDFI Entity Selection Dialog */}
       <Dialog open={showWdfiDialog} onOpenChange={setShowWdfiDialog}>
