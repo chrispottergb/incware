@@ -220,20 +220,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
   });
 
   const handleSaveStandaloneBalance = async () => {
-    if (!onSaveBalance) return;
-    setSavingBalance(true);
-    try {
-      await onSaveBalance(
-        standaloneBalanceTo ? parseFloat(standaloneBalanceTo) : null,
-        standaloneBalanceFrom ? parseFloat(standaloneBalanceFrom) : null,
-        standaloneBalanceComment.trim() || null,
-      );
-      toast.success("Balance saved!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save balance");
-    } finally {
-      setSavingBalance(false);
-    }
+    balanceTriggerSave();
   };
 
   const closeDialog = () => {
