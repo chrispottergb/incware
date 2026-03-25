@@ -159,7 +159,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
   });
 
   const { data: certificates = [] } = useQuery({
-    queryKey: ["stock_certificates", companyId],
+    queryKey: ["stock_certificates_ledger", companyId],
     queryFn: async () => {
       const { data, error } = await supabase.from("stock_certificates").select("*").eq("company_id", companyId).order("certificate_number");
       if (error) throw error;
