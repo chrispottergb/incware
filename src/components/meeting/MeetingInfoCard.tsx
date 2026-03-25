@@ -49,7 +49,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
   const queryClient = useQueryClient();
   const [values, setValues] = useState<Record<string, string>>({});
 
-  const { handleZipChange } = useZipLookup(
+  const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(
     useCallback(({ city, state }: { city: string; state: string }) => {
       setValues((prev) => ({ ...prev, company_city_at_meeting: city, company_state_at_meeting: state }));
       updateMeeting.mutate({ company_city_at_meeting: city, company_state_at_meeting: state } as any);
