@@ -298,14 +298,6 @@ export default function IncorporationTab({ company }: Props) {
     setLlcSElectionEnabled(isLLCType(company.entity_type) ? !!company.s_election_date : false);
   }, [company.id]);
 
-  const formRef = useRef(form);
-  formRef.current = form;
-
-  // Auto-save state (declared early so updateAndSave can reference them)
-  const lastSavedFormRef = useRef(JSON.stringify(form));
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const saveStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const update = (field: string, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -313,15 +305,8 @@ export default function IncorporationTab({ company }: Props) {
   // For Select/Checkbox controls that don't reliably fire blur
   const updateAndSave = (field: string, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    autoSaveTimer.current = setTimeout(() => {
-      const updated = { ...formRef.current, [field]: value };
-      const currentForm = JSON.stringify(updated);
-      if (currentForm !== lastSavedFormRef.current) {
-        setSaveStatus("saving");
-        save.mutate();
-      }
-    }, 200);
+    // triggerSave is called after state settles (via useAutoSave debounce)
+    setTimeout(() => incAutoSave.triggerSave(), 50);
   };
   const handleAgentZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, registered_agent_city: result.city, registered_agent_state: result.state }));
