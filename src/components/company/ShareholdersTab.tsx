@@ -49,7 +49,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
   }, []);
-  const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(handleZipResult);
+  const { handleZipChange, isLoading: zipLoading, zipError, reset: resetZip } = useZipLookup(handleZipResult);
 
   const t = getTerminology(entityType);
 
