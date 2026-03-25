@@ -4,7 +4,14 @@ import { cn } from "@/lib/utils";
 import { useTextExpansion } from "@/hooks/useTextExpansion";
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, value, onChange, ...props }, forwardedRef) => {
+  ({ className, type, value, onChange, autoComplete, ...props }, forwardedRef) => {
+    // Default autoComplete to "off" for address-prone fields, but preserve explicit overrides
+    // and keep browser defaults for email/password/tel fields
+    const resolvedAutoComplete = autoComplete !== undefined
+      ? autoComplete
+      : (type === "email" || type === "password" || type === "tel")
+        ? undefined
+        : "off";
     const internalRef = React.useRef<HTMLInputElement | null>(null);
 
     const setRefs = React.useCallback(
