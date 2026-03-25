@@ -554,14 +554,7 @@ export default function IncorporationTab({ company }: Props) {
 
   return (
     <div
-      onBlur={(e) => {
-        // Auto-save when focus leaves an interactive element
-        const target = e.target as HTMLElement;
-        const tag = target.tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.getAttribute("role") === "combobox" || target.getAttribute("role") === "checkbox") {
-          scheduleAutoSave();
-        }
-      }}
+      onBlur={incAutoSave.handleBlur}
       className="space-y-5"
     >
       {/* Corporate Status Verification - Collapsible */}
