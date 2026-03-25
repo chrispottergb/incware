@@ -539,33 +539,18 @@ export default function IncorporationTab({ company }: Props) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company", company.id] });
       queryClient.invalidateQueries({ queryKey: ["companies"] });
-      lastSavedFormRef.current = JSON.stringify(form);
-      setSaveStatus("saved");
-      if (saveStatusTimer.current) clearTimeout(saveStatusTimer.current);
-      saveStatusTimer.current = setTimeout(() => setSaveStatus("idle"), 3000);
     },
     onError: (err: Error) => {
-      setSaveStatus("error");
       toast.error(err.message);
     },
   });
 
-
-  // Update ref when company changes
-  useEffect(() => {
-    lastSavedFormRef.current = JSON.stringify(form);
-  }, [company.id]);
-
-  const scheduleAutoSave = useCallback(() => {
-    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    autoSaveTimer.current = setTimeout(() => {
-      const currentForm = JSON.stringify(formRef.current);
-      if (currentForm !== lastSavedFormRef.current) {
-        setSaveStatus("saving");
-        save.mutate();
-      }
-    }, 150);
-  }, [save]);
+  // Auto-save using shared hook
+  const incAutoSave = useAutoSave({
+    data: form,
+    onSave: async () => { await save.mutateAsync(); },
+    enabled: !!company.id,
+  });
 
   return (
     <div
