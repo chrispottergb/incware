@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { isLLCType } from "@/lib/entity-terminology";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Loader2, Save, Users, FileText, ChevronDown, ExternalLink, Shield, History, Building2, User, Phone, Globe } from "lucide-react";
+import { Plus, Trash2, Loader2, Users, FileText, ChevronDown, ExternalLink, Shield, History, Building2, User, Phone, Globe } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 import { toast } from "sonner";
@@ -23,6 +23,8 @@ import SectionPdfActions from "./SectionPdfActions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useZipLookup } from "@/hooks/useZipLookup";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import SaveStatusIndicator from "@/components/SaveStatusIndicator";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
@@ -283,6 +285,14 @@ export default function OrganizationTab({ companyId, company }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // Auto-save for registered agent
+  const raAutoSave = useAutoSave({
+    data: raForm,
+    onSave: async () => { await saveRegisteredAgent.mutateAsync(); },
+    enabled: !!company.id && isLLC,
+  });
+
+
   // Filing details form
   const [filingForm, setFilingForm] = useState({
     name: company.name,
@@ -464,6 +474,13 @@ export default function OrganizationTab({ companyId, company }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // Auto-save for filing form
+  const filingAutoSave = useAutoSave({
+    data: filingForm,
+    onSave: async () => { await saveFiling.mutateAsync(); },
+    enabled: !!company.id,
+  });
+
   // Officers
   const { data: officers } = useQuery({
     queryKey: ["officers", companyId],
@@ -525,6 +542,13 @@ export default function OrganizationTab({ companyId, company }: Props) {
       toast.success("Officers saved!");
     },
     onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Auto-save for officers
+  const officersAutoSave = useAutoSave({
+    data: officerForm,
+    onSave: async () => { await saveOfficers.mutateAsync(); },
+    enabled: !!company.id,
   });
 
   // Directors - simple name fields like officers
@@ -597,6 +621,12 @@ export default function OrganizationTab({ companyId, company }: Props) {
     setDirectorNames((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Auto-save for directors
+  const directorsAutoSave = useAutoSave({
+    data: directorNames,
+    onSave: async () => { await saveDirectors.mutateAsync(); },
+    enabled: !!company.id,
+  });
 
   return (
     <div className="space-y-5">
@@ -715,10 +745,8 @@ export default function OrganizationTab({ companyId, company }: Props) {
         </CardHeader>
         <CardContent className="px-4 pb-4 space-y-5">
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              saveFiling.mutate();
-            }}
+            onSubmit={(e) => e.preventDefault()}
+            onBlur={filingAutoSave.handleBlur}
             className="space-y-3"
           >
             {/* Company Details - compact grid */}
@@ -996,10 +1024,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
               </div>
             )}
             <div className="flex justify-end">
-              <Button type="submit" disabled={saveFiling.isPending} size="sm">
-                {saveFiling.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-                Save Organizational Info
-              </Button>
+              <SaveStatusIndicator status={filingAutoSave.status} lastSavedAt={filingAutoSave.lastSavedAt} />
             </div>
           </form>
         </CardContent>
@@ -1053,10 +1078,8 @@ export default function OrganizationTab({ companyId, company }: Props) {
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    saveRegisteredAgent.mutate();
-                  }}
+                  onSubmit={(e) => e.preventDefault()}
+                  onBlur={raAutoSave.handleBlur}
                   className="space-y-3"
                 >
                   <div className="grid grid-cols-12 gap-x-3 gap-y-2">
@@ -1099,10 +1122,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                     </div>
                   </div>
                   <div className="flex justify-end">
-                    <Button type="submit" disabled={saveRegisteredAgent.isPending} size="sm">
-                      {saveRegisteredAgent.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-                      Save Registered Agent
-                    </Button>
+                    <SaveStatusIndicator status={raAutoSave.status} lastSavedAt={raAutoSave.lastSavedAt} />
                   </div>
                 </form>
 
@@ -1166,13 +1186,11 @@ export default function OrganizationTab({ companyId, company }: Props) {
               </div>
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  saveDirectors.mutate();
-                }}
-                className="space-y-3"
-              >
+                <form
+                  onSubmit={(e) => e.preventDefault()}
+                  onBlur={directorsAutoSave.handleBlur}
+                  className="space-y-3"
+                >
                 <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
                   {directorNames.map((name, index) => (
                     <div key={index} className="field-group">
@@ -1207,10 +1225,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={addDirectorSlot}>
                     <Plus className="mr-1 h-3 w-3" /> {isLLCType(company.entity_type) ? "Add Another Binder" : "Add Another Director"}
                   </Button>
-                  <Button type="submit" disabled={saveDirectors.isPending} size="sm">
-                    {saveDirectors.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-                    {isLLCType(company.entity_type) ? "Save Authorized Binders" : "Save Directors"}
-                  </Button>
+                  <SaveStatusIndicator status={directorsAutoSave.status} lastSavedAt={directorsAutoSave.lastSavedAt} />
                 </div>
               </form>
             </CardContent>
@@ -1252,10 +1267,8 @@ export default function OrganizationTab({ companyId, company }: Props) {
             </CardHeader>
             <CardContent className="px-4 pb-4">
               <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  saveOfficers.mutate();
-                }}
+                onSubmit={(e) => e.preventDefault()}
+                onBlur={officersAutoSave.handleBlur}
                 className="space-y-3"
               >
                 <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
@@ -1272,10 +1285,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   ))}
                 </div>
                 <div className="flex justify-end">
-                  <Button type="submit" disabled={saveOfficers.isPending} size="sm">
-                    {saveOfficers.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-                    Save {isLLCType(company.entity_type) ? "Managers" : company.entity_type === "Partnership" ? "Partners" : "Officers"}
-                  </Button>
+                  <SaveStatusIndicator status={officersAutoSave.status} lastSavedAt={officersAutoSave.lastSavedAt} />
                 </div>
               </form>
             </CardContent>

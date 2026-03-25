@@ -1,5 +1,7 @@
 // LLC-SPECIFIC RULES ACTIVE — See LLC FORM RULES comments at lines ~99, ~948, ~1057 before editing. DO NOT regenerate this component from a template.
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import SaveStatusIndicator from "@/components/SaveStatusIndicator";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -296,14 +298,6 @@ export default function IncorporationTab({ company }: Props) {
     setLlcSElectionEnabled(isLLCType(company.entity_type) ? !!company.s_election_date : false);
   }, [company.id]);
 
-  const formRef = useRef(form);
-  formRef.current = form;
-
-  // Auto-save state (declared early so updateAndSave can reference them)
-  const lastSavedFormRef = useRef(JSON.stringify(form));
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const saveStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const update = (field: string, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -311,15 +305,8 @@ export default function IncorporationTab({ company }: Props) {
   // For Select/Checkbox controls that don't reliably fire blur
   const updateAndSave = (field: string, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    autoSaveTimer.current = setTimeout(() => {
-      const updated = { ...formRef.current, [field]: value };
-      const currentForm = JSON.stringify(updated);
-      if (currentForm !== lastSavedFormRef.current) {
-        setSaveStatus("saving");
-        save.mutate();
-      }
-    }, 200);
+    // triggerSave is called after state settles (via useAutoSave debounce)
+    setTimeout(() => incAutoSave.triggerSave(), 50);
   };
   const handleAgentZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, registered_agent_city: result.city, registered_agent_state: result.state }));
@@ -552,44 +539,22 @@ export default function IncorporationTab({ company }: Props) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company", company.id] });
       queryClient.invalidateQueries({ queryKey: ["companies"] });
-      lastSavedFormRef.current = JSON.stringify(form);
-      setSaveStatus("saved");
-      if (saveStatusTimer.current) clearTimeout(saveStatusTimer.current);
-      saveStatusTimer.current = setTimeout(() => setSaveStatus("idle"), 3000);
     },
     onError: (err: Error) => {
-      setSaveStatus("error");
       toast.error(err.message);
     },
   });
 
-
-  // Update ref when company changes
-  useEffect(() => {
-    lastSavedFormRef.current = JSON.stringify(form);
-  }, [company.id]);
-
-  const scheduleAutoSave = useCallback(() => {
-    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    autoSaveTimer.current = setTimeout(() => {
-      const currentForm = JSON.stringify(formRef.current);
-      if (currentForm !== lastSavedFormRef.current) {
-        setSaveStatus("saving");
-        save.mutate();
-      }
-    }, 150);
-  }, [save]);
+  // Auto-save using shared hook
+  const incAutoSave = useAutoSave({
+    data: form,
+    onSave: async () => { await save.mutateAsync(); },
+    enabled: !!company.id,
+  });
 
   return (
     <div
-      onBlur={(e) => {
-        // Auto-save when focus leaves an interactive element
-        const target = e.target as HTMLElement;
-        const tag = target.tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.getAttribute("role") === "combobox" || target.getAttribute("role") === "checkbox") {
-          scheduleAutoSave();
-        }
-      }}
+      onBlur={incAutoSave.handleBlur}
       className="space-y-5"
     >
       {/* Corporate Status Verification - Collapsible */}
@@ -1342,21 +1307,7 @@ export default function IncorporationTab({ company }: Props) {
 
       {/* Auto-save Status Indicator */}
       <div className="sticky bottom-3 flex justify-end">
-        {saveStatus === "saving" && (
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground animate-fade-in">
-            <Loader2 className="h-3 w-3 animate-spin" /> Saving…
-          </span>
-        )}
-        {saveStatus === "saved" && (
-          <span className="flex items-center gap-1.5 text-xs text-success animate-fade-in">
-            <Check className="h-3 w-3" /> All changes saved
-          </span>
-        )}
-        {saveStatus === "error" && (
-          <span className="flex items-center gap-1.5 text-xs text-destructive animate-fade-in">
-            <AlertTriangle className="h-3 w-3" /> Failed to save — please try again
-          </span>
-        )}
+        <SaveStatusIndicator status={incAutoSave.status} lastSavedAt={incAutoSave.lastSavedAt} />
       </div>
       {/* WDFI Entity Selection Dialog */}
       <Dialog open={showWdfiDialog} onOpenChange={setShowWdfiDialog}>

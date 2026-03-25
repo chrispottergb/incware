@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,9 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Save, TrendingUp, Lock, Info, Plus, Trash2 } from "lucide-react";
+import { Loader2, TrendingUp, Lock, Info, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import SaveStatusIndicator from "@/components/SaveStatusIndicator";
 import {
   BarChart,
   Bar,
@@ -272,6 +274,13 @@ export default function MeetingFinancials({ meetingId }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // Auto-save for financials (covers both form and NR items)
+  const financialsAutoSave = useAutoSave({
+    data: { form, nrItems },
+    onSave: async () => { await save.mutateAsync(); },
+    enabled: !!meetingId,
+  });
+
   const yoyChange = (currentKey: string, previousKey: string) => {
     const cur = toNum((form as any)[currentKey]);
     const prev = toNum((form as any)[previousKey]);
@@ -342,10 +351,8 @@ export default function MeetingFinancials({ meetingId }: Props) {
         </CardHeader>
         <CardContent>
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              save.mutate();
-            }}
+            onSubmit={(e) => e.preventDefault()}
+            onBlur={financialsAutoSave.handleBlur}
           >
             <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 mb-4">
               <div></div>
@@ -470,10 +477,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
             </div>
 
             <div className="flex justify-end mt-4">
-              <Button type="submit" disabled={save.isPending} size="sm">
-                {save.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Save Financials
-              </Button>
+              <SaveStatusIndicator status={financialsAutoSave.status} lastSavedAt={financialsAutoSave.lastSavedAt} />
             </div>
           </form>
         </CardContent>
