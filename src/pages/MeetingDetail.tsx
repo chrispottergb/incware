@@ -95,6 +95,29 @@ export default function MeetingDetail() {
     enabled: !!id,
   });
 
+  // Share/unit calculations for roster auto-population
+  const { shareholderHoldings, totalIssuedShares } = useShareCalculations(id!);
+
+  // Build enriched roster with holdings + ownership %
+  const enrichedShareholderRoster = useMemo(() => {
+    return companyShareholders.filter(s => !s.is_treasury).map(s => {
+      const holdings = shareholderHoldings[s.id] || 0;
+      const ownershipPct = totalIssuedShares > 0
+        ? Math.round((holdings / totalIssuedShares) * 10000) / 100
+        : 0;
+      return {
+        id: s.id,
+        name: s.name,
+        address: s.address,
+        city: s.city,
+        state: s.state,
+        zip: s.zip,
+        common_shares: holdings > 0 ? String(holdings) : undefined,
+        preferred_shares: ownershipPct > 0 ? String(ownershipPct) : undefined,
+      };
+    });
+  }, [companyShareholders, shareholderHoldings, totalIssuedShares]);
+
   const { data: companyDirectors = [] } = useQuery({
     queryKey: ["directors", id],
     queryFn: async () => {
