@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Loader2, Save, Users, FileText, ChevronDown, ExternalLink, Shield, History, Building2, User, Phone, Globe } from "lucide-react";
+import { Plus, Trash2, Loader2, Users, FileText, ChevronDown, ExternalLink, Shield, History, Building2, User, Phone, Globe } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 import { toast } from "sonner";
