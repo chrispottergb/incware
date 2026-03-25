@@ -1274,7 +1274,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <div className="flex justify-end">
                   <Button type="submit" disabled={saveOfficers.isPending} size="sm">
                     {saveOfficers.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-                    Save {company.entity_type === "LLC" ? "Managers" : company.entity_type === "Partnership" ? "Partners" : "Officers"}
+                    Save {isLLCType(company.entity_type) ? "Managers" : company.entity_type === "Partnership" ? "Partners" : "Officers"}
                   </Button>
                 </div>
               </form>

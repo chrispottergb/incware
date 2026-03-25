@@ -467,7 +467,7 @@ export default function WIComplianceChecklist({ company }: Props) {
   const allItems = [...corpItems, ...llcItems];
   const checklist = allItems.filter((item) =>
     item.entityTypes.some((et) => {
-      if (isLLC) return et === "LLC";
+      if (isLLC) return et === "LLC" || et === "LLC-S";
       return et === "Corporation" || et === "S-Corp";
     })
   );
