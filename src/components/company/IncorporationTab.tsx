@@ -486,7 +486,8 @@ export default function IncorporationTab({ company }: Props) {
 
   const save = useMutation({
     mutationFn: async () => {
-      if (isLLCType(form.entity_type) && llcSElectionEnabled && !form.s_election_date) {
+      // Only validate checkbox-based S-election for LLC/Single Member LLC (not LLC-S where it's implied)
+      if (isLLCType(form.entity_type) && form.entity_type !== "LLC-S" && llcSElectionEnabled && !form.s_election_date) {
         throw new Error("S Election Effective Date is required when LLC S Corporation tax status is enabled.");
       }
 
@@ -501,7 +502,7 @@ export default function IncorporationTab({ company }: Props) {
           authorized_shares: form.authorized_shares ? parseInt(form.authorized_shares) : null,
           par_value_type: form.par_value_type,
           par_value: form.par_value ? parseFloat(form.par_value) : null,
-          s_election_date: isLLCType(form.entity_type)
+          s_election_date: isLLCType(form.entity_type) && form.entity_type !== "LLC-S"
             ? (llcSElectionEnabled ? (form.s_election_date || null) : null)
             : (form.s_election_date || null),
           scheduled_annual_meeting: form.scheduled_annual_meeting || null,
