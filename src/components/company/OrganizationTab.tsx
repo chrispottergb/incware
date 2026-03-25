@@ -745,10 +745,8 @@ export default function OrganizationTab({ companyId, company }: Props) {
         </CardHeader>
         <CardContent className="px-4 pb-4 space-y-5">
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              saveFiling.mutate();
-            }}
+            onSubmit={(e) => e.preventDefault()}
+            onBlur={filingAutoSave.handleBlur}
             className="space-y-3"
           >
             {/* Company Details - compact grid */}
