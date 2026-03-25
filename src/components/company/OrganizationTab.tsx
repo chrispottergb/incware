@@ -1002,6 +1002,38 @@ export default function OrganizationTab({ companyId, company }: Props) {
                     onChange={(v) => setFilingForm((p) => ({ ...p, s_election_date: v || "" }))}
                     placeholder="Select date"
                   />
+                </div>
+              </div>
+            )}
+
+            {/* S Corporation Tax Status — LLC (not LLC-S): checkbox + date */}
+            {isLLCType(company.entity_type) && company.entity_type !== "LLC-S" && (
+              <div className="mt-3 flex items-start gap-2.5 rounded-md border border-border bg-muted/30 px-3 py-2.5">
+                <Checkbox
+                  id="s_election_llc"
+                  checked={llcSElectionEnabled}
+                  onCheckedChange={(checked) => {
+                    const enabled = !!checked;
+                    setLlcSElectionEnabled(enabled);
+                    if (!enabled) {
+                      setFilingForm((p) => ({ ...p, s_election_date: "" }));
+                    }
+                  }}
+                />
+                <div className="flex-1">
+                  <Label htmlFor="s_election_llc" className="cursor-pointer text-sm font-medium">Is this LLC electing S Corporation tax status?</Label>
+                  <p className="text-[11px] text-muted-foreground">Check if this LLC is electing to be taxed as an S Corporation.</p>
+                  {llcSElectionEnabled && (
+                    <div className="mt-2 field-group max-w-xs">
+                      <Label className="field-label">S Election Effective Date</Label>
+                      <DatePickerField
+                        value={filingForm.s_election_date}
+                        onChange={(v) => setFilingForm((p) => ({ ...p, s_election_date: v || "" }))}
+                        placeholder="Select effective date"
+                      />
+                      {!filingForm.s_election_date && (
+                        <p className="mt-1 text-[11px] text-destructive">S Election Effective Date is required when enabled.</p>
+                      )}
                     </div>
                   )}
                 </div>
