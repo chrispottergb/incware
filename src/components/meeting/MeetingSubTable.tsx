@@ -284,8 +284,6 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
     );
   };
 
-  // Check if we're in roster-picker mode (adding, not editing, with roster provided)
-  const useRosterPicker = !!roster && !editingId;
 
   return (
     <Card>
