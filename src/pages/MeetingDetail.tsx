@@ -101,10 +101,11 @@ export default function MeetingDetail() {
   // Build enriched roster with holdings + ownership %
   const enrichedShareholderRoster = useMemo(() => {
     return companyShareholders.filter(s => !s.is_treasury).map(s => {
-      const holdings = shareholderHoldings[s.id] || 0;
+      const holdings = shareholderHoldings[s.id] ?? 0;
       const ownershipPct = totalIssuedShares > 0
-        ? Math.round((holdings / totalIssuedShares) * 10000) / 100
+        ? (holdings / totalIssuedShares) * 100
         : 0;
+
       return {
         id: s.id,
         name: s.name,
@@ -112,8 +113,8 @@ export default function MeetingDetail() {
         city: s.city,
         state: s.state,
         zip: s.zip,
-        common_shares: holdings > 0 ? String(holdings) : undefined,
-        preferred_shares: ownershipPct > 0 ? String(ownershipPct) : undefined,
+        common_shares: String(holdings),
+        preferred_shares: ownershipPct.toFixed(2),
       };
     });
   }, [companyShareholders, shareholderHoldings, totalIssuedShares]);

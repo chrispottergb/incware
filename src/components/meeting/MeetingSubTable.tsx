@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -198,17 +198,25 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
     setDialogOpen(true);
   };
 
-  const handleSelectRosterPerson = (person: RosterRecord) => {
+  const applyRosterPersonToForm = useCallback((person: RosterRecord, preserveExisting = false) => {
     if (!rosterFieldMap) return;
-    const newForm: Record<string, string> = { ...form };
-    // Map roster fields to form fields
-    Object.entries(rosterFieldMap).forEach(([rosterKey, formKey]) => {
-      const val = person[rosterKey];
-      if (val != null) {
-        newForm[formKey] = String(val);
-      }
+
+    setForm((prev) => {
+      const next = preserveExisting ? { ...prev } : {};
+
+      Object.entries(rosterFieldMap).forEach(([rosterKey, formKey]) => {
+        const val = person[rosterKey];
+        if (val != null) {
+          next[formKey] = String(val);
+        }
+      });
+
+      return next;
     });
-    setForm(newForm);
+  }, [rosterFieldMap]);
+
+  const handleSelectRosterPerson = (person: RosterRecord) => {
+    applyRosterPersonToForm(person);
     setSelectedRosterId(person.id);
     setRosterPickerOpen(false);
   };
@@ -223,6 +231,18 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
   };
 
   const isPending = addRow.isPending || updateRow.isPending;
+
+  // Check if we're in roster-picker mode (adding, not editing, with roster provided)
+  const useRosterPicker = !!roster && !editingId;
+
+  useEffect(() => {
+    if (!useRosterPicker || !selectedRosterId || !roster) return;
+
+    const selectedPerson = roster.find((person) => person.id === selectedRosterId);
+    if (!selectedPerson) return;
+
+    applyRosterPersonToForm(selectedPerson, true);
+  }, [applyRosterPersonToForm, roster, selectedRosterId, useRosterPicker]);
 
   // Determine which column keys are auto-filled by roster
   const rosterAutoFilledKeys = useMemo(() => {
@@ -264,8 +284,6 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
     );
   };
 
-  // Check if we're in roster-picker mode (adding, not editing, with roster provided)
-  const useRosterPicker = !!roster && !editingId;
 
   return (
     <Card>
