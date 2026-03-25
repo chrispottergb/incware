@@ -113,6 +113,11 @@ export default function MeetingsTab({ companyId, company }: Props) {
   const [form, setForm] = useState(defaultForm());
   const [prefilled, setPrefilled] = useState(false);
 
+  const handleMeetingZipResult = useCallback((result: { city: string; state: string }) => {
+    setForm(prev => ({ ...prev, company_city_at_meeting: result.city, company_state_at_meeting: result.state }));
+  }, []);
+  const { handleZipChange: handleMeetingZipChange, isLoading: zipLoading, zipError } = useZipLookup(handleMeetingZipResult);
+
   const { data: meetings = [], isLoading } = useQuery({
     queryKey: ["meetings", companyId],
     queryFn: async () => {
