@@ -1224,7 +1224,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
           <Button variant="outline" className="w-full justify-between text-sm font-medium">
             <span className="flex items-center gap-2">
               <Users className="h-3.5 w-3.5 text-primary" />
-              {company.entity_type === "LLC" ? "Managers / Officers" : company.entity_type === "Partnership" ? "Partners" : "Officers"}
+              {isLLCType(company.entity_type) ? "Managers / Officers" : company.entity_type === "Partnership" ? "Partners" : "Officers"}
             </span>
             <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
           </Button>
