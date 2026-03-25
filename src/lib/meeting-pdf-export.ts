@@ -777,7 +777,7 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
 function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData): number {
   const { company, meeting } = data;
   const entityType = company?.entity_type || "Corporation";
-  const isLLC = entityType === "LLC";
+  const isLLC = entityType === "LLC" || entityType === "LLC-S" || entityType === "Single Member LLC";
   const isNonprofit = entityType === "Non-Profit";
   const isSCorp = entityType === "S-Corp";
   const entityLabel = isLLC ? "limited liability company" : isNonprofit ? "nonprofit corporation" : "corporation";
@@ -2377,7 +2377,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (!isShareholder && data.priorYear) {
     const autoResolutions: { purpose: string; text: string }[] = [];
     const entityType = company?.entity_type || "Corporation";
-    const isLLC = entityType === "LLC";
+    const isLLC = entityType === "LLC" || entityType === "LLC-S" || entityType === "Single Member LLC";
     const entityLabel = isLLC ? "LLC" : "corporation";
 
     // Officer changes: new officers, title changes, salary/bonus changes

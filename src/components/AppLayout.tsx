@@ -37,6 +37,7 @@ function entityBadge(entityType: string | undefined) {
   if (entityType === "Corporation") return "Corp";
   if (entityType === "S-Corp") return "S-Corp";
   if (entityType === "LLC") return "LLC";
+  if (entityType === "LLC-S") return "LLC-S";
   if (entityType === "Single Member LLC") return "SMLLC";
   if (entityType === "Non-Profit") return "N-P";
   if (entityType === "Partnership") return "Ptnr";

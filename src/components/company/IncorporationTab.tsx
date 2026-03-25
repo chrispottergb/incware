@@ -34,7 +34,7 @@ import { DatePickerField } from "@/components/ui/date-picker-field";
 import { cn } from "@/lib/utils";
 import { isLLCType } from "@/lib/entity-terminology";
 
-const ENTITY_TYPES = ["Corporation", "LLC", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"];
+const ENTITY_TYPES = ["Corporation", "LLC", "LLC-S", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"];
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
   "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
@@ -101,6 +101,7 @@ const STATE_SOS_INFO: Record<string, { name: string; url: string }> = {
 function getEquityCardConfig(entityType: string) {
   switch (entityType) {
     case "LLC":
+    case "LLC-S":
     case "Single Member LLC":
       return {
         title: "Management & Elections",

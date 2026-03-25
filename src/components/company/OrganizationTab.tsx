@@ -35,6 +35,7 @@ const US_STATES = [
 function getOfficerFields(entityType: string) {
   switch (entityType) {
     case "LLC":
+    case "LLC-S":
     case "Single Member LLC":
       return [
         { key: "president", label: "Managing Member / Manager", placeholder: "Name" },
@@ -92,6 +93,11 @@ export const OFFICER_TITLE_OPTIONS: Record<string, string[]> = {
     "Chief Manager", "Operations Manager",
   ],
   "Single Member LLC": [
+    "Managing Member", "Manager", "Assistant Manager", "Secretary",
+    "Treasurer", "Secretary/Treasurer", "Financial Manager", "Organizer", "Member-Manager",
+    "Chief Manager", "Operations Manager",
+  ],
+  "LLC-S": [
     "Managing Member", "Manager", "Assistant Manager", "Secretary",
     "Treasurer", "Secretary/Treasurer", "Financial Manager", "Organizer", "Member-Manager",
     "Chief Manager", "Operations Manager",
@@ -726,7 +732,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <Select value={filingForm.entity_type} onValueChange={(v) => setFilingForm((p) => ({ ...p, entity_type: v }))}>
                   <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {["Corporation", "LLC", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"].map((t) => (
+                    {["Corporation", "LLC", "LLC-S", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"].map((t) => (
                       <SelectItem key={t} value={t}>{t}</SelectItem>
                     ))}
                   </SelectContent>
@@ -1218,7 +1224,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
           <Button variant="outline" className="w-full justify-between text-sm font-medium">
             <span className="flex items-center gap-2">
               <Users className="h-3.5 w-3.5 text-primary" />
-              {company.entity_type === "LLC" ? "Managers / Officers" : company.entity_type === "Partnership" ? "Partners" : "Officers"}
+              {isLLCType(company.entity_type) ? "Managers / Officers" : company.entity_type === "Partnership" ? "Partners" : "Officers"}
             </span>
             <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
           </Button>
@@ -1228,14 +1234,14 @@ export default function OrganizationTab({ companyId, company }: Props) {
             <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-center justify-between">
                 <CardDescription className="text-[11px] mt-0.5">
-                  {company.entity_type === "LLC" && "Manager-managed or member-managed officers per Wis. Stat. § 183.0401"}
-                  {company.entity_type === "Corporation" && "Officers per Wis. Stat. § 180.0840"}
-                  {company.entity_type === "S-Corp" && "Officers per Wis. Stat. § 180.0840"}
+                   {isLLCType(company.entity_type) && "Manager-managed or member-managed officers per Wis. Stat. § 183.0401"}
+                   {company.entity_type === "Corporation" && "Officers per Wis. Stat. § 180.0840"}
+                   {company.entity_type === "S-Corp" && "Officers per Wis. Stat. § 180.0840"}
                   {company.entity_type === "Non-Profit" && "Officers per Wis. Stat. § 181.0840"}
                   {company.entity_type === "Partnership" && "Partners per Wis. Stat. § 178.0401"}
                 </CardDescription>
                 <SectionPdfActions config={{
-                  title: company.entity_type === "LLC" ? "Managers / Officers" : "Officers",
+                  title: isLLCType(company.entity_type) ? "Managers / Officers" : "Officers",
                   companyName: company.name,
                   fields: getOfficerFields(company.entity_type).map((f) => ({
                     label: f.label,
@@ -1268,7 +1274,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <div className="flex justify-end">
                   <Button type="submit" disabled={saveOfficers.isPending} size="sm">
                     {saveOfficers.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-                    Save {company.entity_type === "LLC" ? "Managers" : company.entity_type === "Partnership" ? "Partners" : "Officers"}
+                    Save {isLLCType(company.entity_type) ? "Managers" : company.entity_type === "Partnership" ? "Partners" : "Officers"}
                   </Button>
                 </div>
               </form>

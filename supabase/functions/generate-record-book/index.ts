@@ -136,7 +136,7 @@ serve(async (req) => {
       oversightPersons,
     };
 
-    const isLLC = company.entity_type === "LLC";
+    const isLLC = company.entity_type === "LLC" || company.entity_type === "LLC-S" || company.entity_type === "Single Member LLC";
     const statuteRef = isLLC ? "Wis. Stat. Ch. 183" : "Wis. Stat. Ch. 180";
     const entityTerms = isLLC
       ? "members, membership units, membership interest"

@@ -430,7 +430,7 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
     };
   }, [previewPage, previewPages]);
 
-  const isLLC = company.entity_type === "LLC" || company.entity_type === "Single Member LLC";
+  const isLLC = company.entity_type === "LLC" || company.entity_type === "LLC-S" || company.entity_type === "Single Member LLC";
   if (!isLLC) return null;
 
   return (

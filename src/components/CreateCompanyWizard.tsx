@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import TaxReturnUpload from "@/components/TaxReturnUpload";
 import { Upload } from "lucide-react";
 
-const ENTITY_TYPES = ["Corporation", "LLC", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"];
+const ENTITY_TYPES = ["Corporation", "LLC", "LLC-S", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"];
 const CORP_TYPES = ["Corporation", "S-Corp"];
 
 const US_STATES = [

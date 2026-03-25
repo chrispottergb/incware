@@ -60,7 +60,7 @@ export interface EntityTerminology {
   isLLC: boolean;
 }
 
-/** Returns true for LLC variants (e.g., "LLC", "Single Member LLC", "Single-Member LLC"). */
+/** Returns true for LLC variants (e.g., "LLC", "Single Member LLC", "LLC-S"). */
 export function isLLCType(entityType?: string): boolean {
   const normalized = (entityType || "")
     .toLowerCase()
@@ -69,7 +69,7 @@ export function isLLCType(entityType?: string): boolean {
     .replace(/\s+/g, " ")
     .trim();
 
-  return normalized === "llc" || normalized === "single member llc";
+  return normalized === "llc" || normalized === "single member llc" || normalized === "llc s";
 }
 
 export function getTerminology(entityType?: string): EntityTerminology {
