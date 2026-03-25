@@ -328,8 +328,8 @@ export default function IncorporationTab({ company }: Props) {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
   }, []);
 
-  const { handleZipChange: handleAgentZip } = useZipLookup(handleAgentZipResult);
-  const { handleZipChange: handleCompanyZip } = useZipLookup(handleCompanyZipResult);
+  const { handleZipChange: handleAgentZip, isLoading: agentZipLoading, zipError: agentZipError } = useZipLookup(handleAgentZipResult);
+  const { handleZipChange: handleCompanyZip, isLoading: companyZipLoading, zipError: companyZipError } = useZipLookup(handleCompanyZipResult);
 
   // ─── Organizers ────────────────────────────────────────────────────────────
   const { data: organizers = [], refetch: refetchOrganizers } = useQuery({
