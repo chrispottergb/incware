@@ -1234,9 +1234,9 @@ export default function OrganizationTab({ companyId, company }: Props) {
             <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-center justify-between">
                 <CardDescription className="text-[11px] mt-0.5">
-                  {company.entity_type === "LLC" && "Manager-managed or member-managed officers per Wis. Stat. § 183.0401"}
-                  {company.entity_type === "Corporation" && "Officers per Wis. Stat. § 180.0840"}
-                  {company.entity_type === "S-Corp" && "Officers per Wis. Stat. § 180.0840"}
+                   {isLLCType(company.entity_type) && "Manager-managed or member-managed officers per Wis. Stat. § 183.0401"}
+                   {company.entity_type === "Corporation" && "Officers per Wis. Stat. § 180.0840"}
+                   {company.entity_type === "S-Corp" && "Officers per Wis. Stat. § 180.0840"}
                   {company.entity_type === "Non-Profit" && "Officers per Wis. Stat. § 181.0840"}
                   {company.entity_type === "Partnership" && "Partners per Wis. Stat. § 178.0401"}
                 </CardDescription>
