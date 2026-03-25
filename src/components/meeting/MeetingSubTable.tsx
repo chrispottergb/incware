@@ -198,17 +198,25 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
     setDialogOpen(true);
   };
 
-  const handleSelectRosterPerson = (person: RosterRecord) => {
+  const applyRosterPersonToForm = useCallback((person: RosterRecord, preserveExisting = false) => {
     if (!rosterFieldMap) return;
-    const newForm: Record<string, string> = { ...form };
-    // Map roster fields to form fields
-    Object.entries(rosterFieldMap).forEach(([rosterKey, formKey]) => {
-      const val = person[rosterKey];
-      if (val != null) {
-        newForm[formKey] = String(val);
-      }
+
+    setForm((prev) => {
+      const next = preserveExisting ? { ...prev } : {};
+
+      Object.entries(rosterFieldMap).forEach(([rosterKey, formKey]) => {
+        const val = person[rosterKey];
+        if (val != null) {
+          next[formKey] = String(val);
+        }
+      });
+
+      return next;
     });
-    setForm(newForm);
+  }, [rosterFieldMap]);
+
+  const handleSelectRosterPerson = (person: RosterRecord) => {
+    applyRosterPersonToForm(person);
     setSelectedRosterId(person.id);
     setRosterPickerOpen(false);
   };
