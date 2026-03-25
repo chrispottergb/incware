@@ -78,9 +78,9 @@ function FirmDialog({
           <div className="grid grid-cols-12 gap-x-2 gap-y-2">
             <div className="col-span-7"><Label className="text-xs">Address</Label><Input className="h-7 text-sm" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
             <div className="col-span-5"><Label className="text-xs">Address 2</Label><Input className="h-7 text-sm" value={form.address_2} onChange={e => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit" /></div>
-            <div className="col-span-5"><Label className="text-xs">City</Label><Input className="h-7 text-sm" value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
-            <div className="col-span-3"><Label className="text-xs">State</Label><Input className="h-7 text-sm" value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} /></div>
-            <div className="col-span-4"><Label className="text-xs">Zip</Label><Input className="h-7 text-sm" value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} /></div>
+            <div className="col-span-5"><Label className="text-xs">City</Label><Input className="h-7 text-sm" value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} placeholder={zipLoading ? "Loading..." : ""} /></div>
+            <div className="col-span-3"><Label className="text-xs">State</Label><Input className="h-7 text-sm" value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} placeholder={zipLoading ? "..." : ""} /></div>
+            <div className="col-span-4"><Label className="text-xs">Zip</Label><Input className="h-7 text-sm" value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} />{zipError && <p className="text-[10px] text-destructive mt-0.5">{zipError}</p>}</div>
             <div className="col-span-12"><Label className="text-xs">Phone</Label><Input className="h-7 text-sm" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
           </div>
           {type === "Accountant" ? (
