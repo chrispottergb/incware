@@ -608,16 +608,23 @@ export default function MeetingDetail() {
             <MeetingAttendanceSelector
               meetingId={meeting.id}
               meetingDate={meeting.meeting_date}
-              roster={companyShareholders.map((s) => ({
-                id: s.id,
-                name: s.name,
-                address: s.address,
-                city: s.city,
-                state: s.state,
-                zip: s.zip,
-                status: s.status,
-                isTreasury: s.is_treasury,
-              }))}
+              roster={companyShareholders.map((s) => {
+                const holdings = shareholderHoldings[s.id] ?? 0;
+                const ownershipPct = totalIssuedShares > 0 ? Number((((shareholderHoldings[s.id] ?? 0) / totalIssuedShares) * 100).toFixed(2)) : 0;
+
+                return {
+                  id: s.id,
+                  name: s.name,
+                  address: s.address,
+                  city: s.city,
+                  state: s.state,
+                  zip: s.zip,
+                  status: s.status,
+                  isTreasury: s.is_treasury,
+                  commonShares: holdings,
+                  preferredShares: ownershipPct,
+                };
+              })}
               existingNames={shareholders.map((s) => s.shareholder_name)}
               roleLabel={term.shareholder}
               roleLabelPlural={term.shareholders}
