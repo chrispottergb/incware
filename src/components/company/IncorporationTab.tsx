@@ -101,6 +101,7 @@ const STATE_SOS_INFO: Record<string, { name: string; url: string }> = {
 function getEquityCardConfig(entityType: string) {
   switch (entityType) {
     case "LLC":
+    case "LLC-S":
     case "Single Member LLC":
       return {
         title: "Management & Elections",

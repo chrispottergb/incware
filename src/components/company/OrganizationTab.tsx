@@ -727,7 +727,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <Select value={filingForm.entity_type} onValueChange={(v) => setFilingForm((p) => ({ ...p, entity_type: v }))}>
                   <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {["Corporation", "LLC", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"].map((t) => (
+                    {["Corporation", "LLC", "LLC-S", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"].map((t) => (
                       <SelectItem key={t} value={t}>{t}</SelectItem>
                     ))}
                   </SelectContent>
