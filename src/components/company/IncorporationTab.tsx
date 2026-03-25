@@ -928,6 +928,7 @@ export default function IncorporationTab({ company }: Props) {
                   <div className="field-group col-span-1">
                     <Label className="field-label">Zip</Label>
                     <Input className="h-7 text-sm" value={newOrganizer.zip} onChange={(e) => { const v = e.target.value; setNewOrganizer(p => ({ ...p, zip: v })); handleOrganizerZip(v); }} maxLength={10} />
+                    {organizerZipError && <p className="text-[10px] text-destructive mt-0.5">{organizerZipError}</p>}
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
