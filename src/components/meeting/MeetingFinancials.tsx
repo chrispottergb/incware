@@ -351,10 +351,8 @@ export default function MeetingFinancials({ meetingId }: Props) {
         </CardHeader>
         <CardContent>
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              save.mutate();
-            }}
+            onSubmit={(e) => e.preventDefault()}
+            onBlur={financialsAutoSave.handleBlur}
           >
             <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 mb-4">
               <div></div>
