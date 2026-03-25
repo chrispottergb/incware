@@ -466,6 +466,13 @@ export default function OrganizationTab({ companyId, company }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // Auto-save for filing form
+  const filingAutoSave = useAutoSave({
+    data: filingForm,
+    onSave: async () => { await saveFiling.mutateAsync(); },
+    enabled: !!company.id,
+  });
+
   // Officers
   const { data: officers } = useQuery({
     queryKey: ["officers", companyId],
