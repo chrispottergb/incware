@@ -104,8 +104,25 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
   const [standaloneBalanceTo, setStandaloneBalanceTo] = useState(meetingBalanceTo?.toString() || "");
   const [standaloneBalanceFrom, setStandaloneBalanceFrom] = useState(meetingBalanceFrom?.toString() || "");
   const [standaloneBalanceComment, setStandaloneBalanceComment] = useState(meetingBalanceComment || "");
-  const [savingBalance, setSavingBalance] = useState(false);
 
+  const balanceData = useMemo(() => ({
+    to: standaloneBalanceTo,
+    from: standaloneBalanceFrom,
+    comment: standaloneBalanceComment,
+  }), [standaloneBalanceTo, standaloneBalanceFrom, standaloneBalanceComment]);
+
+  const { status: balanceSaveStatus, lastSavedAt: balanceLastSaved, handleBlur: balanceHandleBlur, triggerSave: balanceTriggerSave } = useAutoSave({
+    data: balanceData,
+    onSave: async (d) => {
+      if (!onSaveBalance) return;
+      await onSaveBalance(
+        d.to ? parseFloat(d.to) : null,
+        d.from ? parseFloat(d.from) : null,
+        d.comment.trim() || null,
+      );
+    },
+    enabled: !!onSaveBalance,
+  });
   // Promissory note wizard state
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [noteForm, setNoteForm] = useState<NoteForm>({
