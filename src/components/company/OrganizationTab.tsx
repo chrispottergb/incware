@@ -872,6 +872,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <div className="field-group col-span-3 sm:col-span-2">
                   <Label className="field-label">Zip</Label>
                   <Input className="h-7 text-sm" value={filingForm.zip} onChange={(e) => { const v = e.target.value.replace(/[^\d-]/g, "").slice(0, 10); setFilingForm((p) => ({ ...p, zip: v })); handleFilingZipChange(v); }} placeholder="55555" />
+                  {filingZipError && <p className="text-[10px] text-destructive mt-0.5">{filingZipError}</p>}
                 </div>
               </div>
             </div>
