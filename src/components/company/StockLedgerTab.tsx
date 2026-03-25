@@ -370,7 +370,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     });
   };
 
-  const statuteDescription = entityType === "LLC"
+  const statuteDescription = isLLCType(entityType)
     ? "Wis. Stat. Ch. 183 — Uniform Limited Liability Company Law"
     : entityType === "S-Corp"
     ? "Wis. Stat. Ch. 180 / IRC Subchapter S — S-Corporation share transactions"

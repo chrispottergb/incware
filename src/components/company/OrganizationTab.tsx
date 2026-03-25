@@ -97,6 +97,11 @@ export const OFFICER_TITLE_OPTIONS: Record<string, string[]> = {
     "Treasurer", "Secretary/Treasurer", "Financial Manager", "Organizer", "Member-Manager",
     "Chief Manager", "Operations Manager",
   ],
+  "LLC-S": [
+    "Managing Member", "Manager", "Assistant Manager", "Secretary",
+    "Treasurer", "Secretary/Treasurer", "Financial Manager", "Organizer", "Member-Manager",
+    "Chief Manager", "Operations Manager",
+  ],
   "Non-Profit": [
     "President", "Chair", "Vice President", "Vice Chair", "Secretary",
     "Treasurer", "Secretary/Treasurer", "Executive Director", "Assistant Secretary",
