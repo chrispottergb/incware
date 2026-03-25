@@ -481,8 +481,24 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       notes: l.notes || "",
     }));
 
-    // Build attendees from members
-    const attendeeList = memberList.filter(m => m.name).map(m => ({ name: m.name, title: "" }));
+    // Build attendees from members + chairperson + secretary, deduplicated
+    const chairName = priorMeeting?.chairperson || "";
+    const secName = priorMeeting?.mtg_secretary || "";
+    const seen = new Set<string>();
+    const attendeeList: { name: string; title: string }[] = [];
+    const addAttendee = (name: string, title: string) => {
+      const key = name.replace(/\./g, "").replace(/\s+/g, " ").trim().toLowerCase();
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        attendeeList.push({ name, title });
+      }
+    };
+    memberList.filter(m => m.name).forEach(m => addAttendee(m.name, "Member"));
+    // Add officers who aren't already listed
+    officerList.filter(o => o.name).forEach(o => addAttendee(o.name, o.title));
+    // Ensure chairperson and secretary are always present
+    if (chairName) addAttendee(chairName, "Chairperson");
+    if (secName) addAttendee(secName, "Secretary");
     if (attendeeList.length === 0) attendeeList.push({ name: "", title: "" });
 
     // Registered agent
