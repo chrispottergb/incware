@@ -678,7 +678,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
             <DollarSign className="h-4 w-4" /> Annual Balance Reporting
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent onBlur={balanceHandleBlur}>
           <div className="rounded-lg bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 p-4 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -695,10 +695,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
             </div>
           </div>
           </div>
-          <Button className="w-full mt-3" onClick={handleSaveStandaloneBalance} disabled={savingBalance}>
-            {savingBalance && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save Balance
-          </Button>
+          <SaveStatusIndicator status={balanceSaveStatus} lastSavedAt={balanceLastSaved} className="mt-2 justify-end" />
         </CardContent>
       </Card>
     </>
