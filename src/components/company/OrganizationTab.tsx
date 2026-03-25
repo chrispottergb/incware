@@ -206,7 +206,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
   const handleRaZipResult = useCallback((result: { city: string; state: string }) => {
     setRaForm(prev => ({ ...prev, registered_agent_city: result.city, registered_agent_state: result.state }));
   }, []);
-  const { handleZipChange: handleRaZip } = useZipLookup(handleRaZipResult);
+  const { handleZipChange: handleRaZip, zipError: raZipError } = useZipLookup(handleRaZipResult);
 
   // Fetch history
   const { data: raHistory = [] } = useQuery({
