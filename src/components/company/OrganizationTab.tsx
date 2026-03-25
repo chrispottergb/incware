@@ -1186,13 +1186,11 @@ export default function OrganizationTab({ companyId, company }: Props) {
               </div>
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  saveDirectors.mutate();
-                }}
-                className="space-y-3"
-              >
+                <form
+                  onSubmit={(e) => e.preventDefault()}
+                  onBlur={directorsAutoSave.handleBlur}
+                  className="space-y-3"
+                >
                 <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
                   {directorNames.map((name, index) => (
                     <div key={index} className="field-group">
