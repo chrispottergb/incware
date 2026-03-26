@@ -40,6 +40,18 @@ import {
   type ResolutionType,
 } from "@/lib/resolution-types";
 import { format } from "date-fns";
+import { generatePromissoryNotePDF } from "@/lib/promissory-note-pdf";
+import * as pdfjsLib from "pdfjs-dist";
+import { Download, ArrowLeft } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 const STEPS = ["Entity", "Action", "Resolution", "Signers", "Review"];
 
