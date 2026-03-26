@@ -629,6 +629,34 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
               </AlertDescription>
             </Alert>
           )}
+
+          {/* Promissory Note button for loan resolutions */}
+          {isLoanResolution && (
+            <div className="border-t pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setNoteForm({
+                    lenderName: "", borrowerName: "", loanAmount: "", interestRate: "",
+                    loanDuration: "", startDate: effectiveDate, endDate: "", repaymentTerms: "",
+                  });
+                  setNoteStep("edit");
+                  setPreviewPages([]);
+                  setCurrentPdfBytes(null);
+                  setNoteDialogOpen(true);
+                }}
+                className="gap-1.5"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Create Promissory Note
+              </Button>
+              <p className="text-[10px] text-muted-foreground mt-1.5">
+                Generate a pre-filled promissory note to accompany this resolution.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
