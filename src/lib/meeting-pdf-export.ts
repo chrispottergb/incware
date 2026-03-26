@@ -2146,8 +2146,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Property & Structure Leases (company-level) — skip for shareholder meetings
-  if (!isShareholder && data.companyLeases && data.companyLeases.length > 0) {
+  // Property & Structure Leases (company-level) — skip for shareholder meetings and written consents
+  if (!isShareholder && !isWrittenConsent && data.companyLeases && data.companyLeases.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.companyLeases.length * 7);
     y = section("Property & Structure Leases");
     y = addWhereasResolved(doc, y,
