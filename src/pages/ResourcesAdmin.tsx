@@ -219,7 +219,40 @@ export default function ResourcesAdmin() {
                 />
               </div>
             )}
-            {(form.content_type === "pdf" || form.content_type === "image" || form.content_type === "link") && (
+            {(form.content_type === "pdf" || form.content_type === "image") && (
+              <div className="space-y-2">
+                <Label>Upload File</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept={form.content_type === "image" ? "image/*" : "application/pdf"}
+                    disabled={uploading}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploading(true);
+                      const ext = file.name.split(".").pop();
+                      const path = `${crypto.randomUUID()}.${ext}`;
+                      const { error } = await supabase.storage.from("resource-images").upload(path, file);
+                      if (error) {
+                        toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+                        setUploading(false);
+                        return;
+                      }
+                      const { data: urlData } = supabase.storage.from("resource-images").getPublicUrl(path);
+                      setForm((f) => ({ ...f, content_url: urlData.publicUrl }));
+                      setUploading(false);
+                      toast({ title: "File uploaded" });
+                    }}
+                  />
+                  {uploading && <span className="text-xs text-muted-foreground">Uploading…</span>}
+                </div>
+                {form.content_url && (
+                  <p className="text-xs text-muted-foreground truncate">Current: {form.content_url}</p>
+                )}
+              </div>
+            )}
+            {form.content_type === "link" && (
               <div>
                 <Label>URL</Label>
                 <Input value={form.content_url} onChange={(e) => setForm({ ...form, content_url: e.target.value })} />
