@@ -70,6 +70,9 @@ const CATEGORY_MAP: Record<string, ActionCategory> = {
   "Approve Partner Distributions": "Compensation",
   "Admit New Partner": "Ownership",
   "Approve Transfer of Partnership Interest": "Ownership",
+  "Approve Loan from Related Party": "Banking",
+  "Approve Loan to Related Party": "Banking",
+  "Approve Related Party Loan Agreement": "Banking",
   "Other": "Other",
 };
 
