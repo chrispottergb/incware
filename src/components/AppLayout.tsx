@@ -189,11 +189,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
           {/* Resources & Governance */}
           <Collapsible open={resourcesOpen} onOpenChange={setResourcesOpen}>
-            <CollapsibleTrigger className="flex w-full items-center gap-1 px-3 pt-4 pb-1">
-              <ChevronDown className={`h-3 w-3 text-sidebar-foreground/40 transition-transform ${resourcesOpen ? "" : "-rotate-90"}`} />
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
-                Resources &amp; Governance
-              </span>
+            <CollapsibleTrigger className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
+              resourcesOpen
+                ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+            }`}>
+              <BookOpen className="h-4 w-4 shrink-0" />
+              <span className="flex-1 text-left">Resources &amp; Governance</span>
+              <ChevronDown className={`h-3 w-3 transition-transform ${resourcesOpen ? "" : "-rotate-90"}`} />
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="space-y-0.5 mt-0.5">
