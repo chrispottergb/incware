@@ -334,11 +334,13 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">Tax Year</Label>
-              <div className="flex items-center gap-2">
-                <Input value={new Date().getFullYear().toString()} disabled className="bg-muted/50" />
-                <Badge variant="secondary" className="text-[10px] shrink-0">Auto-filled</Badge>
-              </div>
+              <Label className="text-xs font-medium text-muted-foreground">Tax Year *</Label>
+              <Input
+                type="number"
+                value={taxYear}
+                onChange={(e) => setTaxYear(e.target.value)}
+                placeholder="e.g. 2025"
+              />
             </div>
           </div>
 
