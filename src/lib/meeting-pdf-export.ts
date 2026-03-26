@@ -2097,7 +2097,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   const vehiclePolicyText = meeting?.vehicle_policy_text?.trim();
-  const hasVehicleActivity = !isShareholder && ((data.vehiclePurchases && data.vehiclePurchases.length > 0) ||
+  const hasVehicleActivity = !isShareholder && !isWrittenConsent && ((data.vehiclePurchases && data.vehiclePurchases.length > 0) ||
     (data.vehicleSales && data.vehicleSales.length > 0) ||
     (data.vehicleLeases && data.vehicleLeases.length > 0));
 
