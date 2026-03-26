@@ -2776,34 +2776,108 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   doc.setFontSize(11);
   doc.setFont("Arial", "normal");
   doc.setTextColor(80, 80, 80);
-  doc.text("There being no further business, the meeting was adjourned.", MARGIN, y);
-  y += 4;
 
-  // Meeting date
-  if (bt && meeting?.meeting_date) {
-    const mtgDate = new Date(meeting.meeting_date + "T12:00:00");
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const dateStr = `${days[mtgDate.getDay()]}, ${months[mtgDate.getMonth()]} ${mtgDate.getDate()}, ${mtgDate.getFullYear()}`;
-    doc.text(`Dated: ${dateStr}`, MARGIN, y + 6);
-    y += 10;
+  if (isWrittenConsent) {
+    // Written Consents: no adjournment language; signatures from governing body
+    const isManagerManaged = company?.management_type?.toLowerCase().includes("manager");
+
+    // Determine signer role label based on entity type
+    let signerRoleLabel: string;
+    if (isLLC) {
+      signerRoleLabel = isManagerManaged ? "Manager" : "Member";
+    } else if (isShareholder) {
+      signerRoleLabel = "Shareholder";
+    } else {
+      signerRoleLabel = "Director";
+    }
+
+    // Collect signers: for LLCs use shareholders (members), for shareholder actions use shareholders, otherwise directors
+    const wcSignerNames: string[] = [];
+    const wcSeen = new Set<string>();
+    const wcAddUnique = (name: string) => {
+      const n = name.trim();
+      if (!n) return;
+      const key = n.toLowerCase().replace(/\s+/g, " ").trim();
+      if (wcSeen.has(key)) return;
+      wcSeen.add(key);
+      wcSignerNames.push(n);
+    };
+
+    if (isLLC || isShareholder) {
+      (data.shareholders || []).forEach(s => { if (s.shareholder_name) wcAddUnique(s.shareholder_name); });
+    } else {
+      (data.directors || []).forEach(d => { if (d.director_name) wcAddUnique(d.director_name); });
+    }
+    // Fallback: use officers if no signers found
+    if (wcSignerNames.length === 0) {
+      (data.officers || []).forEach(o => { if (o.name) wcAddUnique(o.name); });
+    }
+
+    // Date line
+    if (meeting?.meeting_date) {
+      const mtgDate = new Date(meeting.meeting_date + "T12:00:00");
+      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      const dateStr = `${days[mtgDate.getDay()]}, ${months[mtgDate.getMonth()]} ${mtgDate.getDate()}, ${mtgDate.getFullYear()}`;
+      doc.text(`DATED: ${dateStr}`, MARGIN, y);
+      y += 12;
+    } else {
+      y += 4;
+    }
+
+    // Render signature lines for each signer
+    doc.setFontSize(10);
+    wcSignerNames.forEach(name => {
+      y = checkPageBreak(doc, y, 15);
+      doc.setDrawColor(30, 30, 30);
+      doc.setLineWidth(0.3);
+      doc.line(MARGIN, y, MARGIN + 70, y);
+      y += 5;
+      doc.text(`${name}, ${signerRoleLabel}`, MARGIN, y);
+      y += 10;
+    });
+
+    // If no signers found, show blank signature lines
+    if (wcSignerNames.length === 0) {
+      const pw = doc.internal.pageSize.getWidth();
+      const sigLineW = (pw - MARGIN - R_MARGIN - 20) / 2;
+      doc.line(MARGIN, y, MARGIN + sigLineW, y);
+      doc.text(signerRoleLabel, MARGIN, y + 5);
+      const rightX = MARGIN + sigLineW + 20;
+      doc.line(rightX, y, rightX + sigLineW, y);
+      doc.text(signerRoleLabel, rightX, y + 5);
+    }
+  } else {
+    // Regular meetings: adjournment + Chairperson/Secretary signatures
+    doc.text("There being no further business, the meeting was adjourned.", MARGIN, y);
+    y += 4;
+
+    // Meeting date
+    if (bt && meeting?.meeting_date) {
+      const mtgDate = new Date(meeting.meeting_date + "T12:00:00");
+      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      const dateStr = `${days[mtgDate.getDay()]}, ${months[mtgDate.getMonth()]} ${mtgDate.getDate()}, ${mtgDate.getFullYear()}`;
+      doc.text(`Dated: ${dateStr}`, MARGIN, y + 6);
+      y += 10;
+    }
+    y += 8;
+
+    const pw = doc.internal.pageSize.getWidth();
+    const sigLineW = (pw - MARGIN - R_MARGIN - 20) / 2;
+    const chairName = meeting?.chairperson?.trim() || "";
+    const secName = meeting?.mtg_secretary?.trim() || "";
+
+    doc.setFontSize(10);
+    // Left signature
+    doc.line(MARGIN, y, MARGIN + sigLineW, y);
+    doc.text(chairName ? `${chairName}, Meeting Chairperson` : "Chairperson", MARGIN, y + 5);
+
+    // Right signature
+    const rightX = MARGIN + sigLineW + 20;
+    doc.line(rightX, y, rightX + sigLineW, y);
+    doc.text(secName ? `${secName}, Meeting Secretary` : "Secretary", rightX, y + 5);
   }
-  y += 8;
-
-  const pw = doc.internal.pageSize.getWidth();
-  const sigLineW = (pw - MARGIN - R_MARGIN - 20) / 2;
-  const chairName = meeting?.chairperson?.trim() || "";
-  const secName = meeting?.mtg_secretary?.trim() || "";
-
-  doc.setFontSize(10);
-  // Left signature
-  doc.line(MARGIN, y, MARGIN + sigLineW, y);
-  doc.text(chairName ? `${chairName}, Meeting Chairperson` : "Chairperson", MARGIN, y + 5);
-
-  // Right signature
-  const rightX = MARGIN + sigLineW + 20;
-  doc.line(rightX, y, rightX + sigLineW, y);
-  doc.text(secName ? `${secName}, Meeting Secretary` : "Secretary", rightX, y + 5);
 
   // Footer
   if (bt) {
