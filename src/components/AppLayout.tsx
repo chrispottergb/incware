@@ -196,7 +196,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
             }`}>
               <BookOpen className="h-4 w-4 shrink-0" />
-              <span className="flex-1 text-left">Resources &amp; Governance</span>
+              <span className="flex-1 text-left">Resources</span>
               <ChevronDown className={`h-3 w-3 transition-transform ${resourcesOpen ? "" : "-rotate-90"}`} />
             </CollapsibleTrigger>
             <CollapsibleContent>
