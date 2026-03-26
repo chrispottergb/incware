@@ -30,8 +30,13 @@ import {
   GitBranch,
   UserCheck,
   Settings as SettingsIcon,
+  BookOpen,
+  PenTool,
+  Lightbulb,
+  ShieldCheck,
 } from "lucide-react";
 import { isLLCType } from "@/lib/entity-terminology";
+import ResourcesPanel from "@/components/ResourcesPanel";
 
 function entityBadge(entityType: string | undefined) {
   if (entityType === "Corporation") return "Corp";
@@ -52,6 +57,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [companySearch, setCompanySearch] = useState("");
 
   const [inactiveOpen, setInactiveOpen] = useState(false);
+  const [resourcesOpen, setResourcesOpen] = useState(false);
+  const [activeResourceCategory, setActiveResourceCategory] = useState<string | null>(null);
 
   const { data: companies = [] } = useQuery({
     queryKey: ["companies"],
@@ -306,6 +313,42 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </Collapsible>
           )}
 
+          {/* Resources & Governance */}
+          <Collapsible open={resourcesOpen} onOpenChange={setResourcesOpen}>
+            <CollapsibleTrigger className="flex w-full items-center gap-1 px-3 pt-4 pb-1">
+              <ChevronDown className={`h-3 w-3 text-sidebar-foreground/40 transition-transform ${resourcesOpen ? "" : "-rotate-90"}`} />
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
+                Resources &amp; Governance
+              </span>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="space-y-0.5 mt-0.5">
+                {[
+                  { label: "Corporate Governance", icon: Building2 },
+                  { label: "Document Signing", icon: PenTool },
+                  { label: "Helpful Hints", icon: Lightbulb },
+                  { label: "Compliance Reminders", icon: ShieldCheck },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => {
+                      setActiveResourceCategory(item.label);
+                      setMobileOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
+                      activeResourceCategory === item.label
+                        ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
           {companyNav.length > 0 && (
             <>
               <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
@@ -376,6 +419,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </header>
         <main className="flex-1 overflow-auto p-4 lg:p-6 min-w-0">{children}</main>
       </div>
+
+      {/* Resources slide-out panel */}
+      {activeResourceCategory && (
+        <ResourcesPanel
+          category={activeResourceCategory}
+          onClose={() => setActiveResourceCategory(null)}
+        />
+      )}
     </div>
   );
 }
