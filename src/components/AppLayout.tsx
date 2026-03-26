@@ -196,7 +196,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
             }`}>
               <BookOpen className="h-4 w-4 shrink-0" />
-              <span className="flex-1 text-left">Resources &amp; Governance</span>
+              <span className="flex-1 text-left">Resources</span>
               <ChevronDown className={`h-3 w-3 transition-transform ${resourcesOpen ? "" : "-rotate-90"}`} />
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -279,7 +279,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <Collapsible open={companiesOpen} onOpenChange={setCompaniesOpen}>
             <CollapsibleTrigger className="flex w-full items-center gap-1 px-3 pt-2 pb-1">
               <ChevronDown className={`h-3 w-3 text-primary/60 transition-transform ${companiesOpen ? "" : "-rotate-90"}`} />
-              <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/60">
+              <span className="text-[13px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/60">
                 Companies
               </span>
             </CollapsibleTrigger>
@@ -344,7 +344,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <Collapsible open={inactiveOpen} onOpenChange={setInactiveOpen}>
                 <CollapsibleTrigger className="flex w-full items-center gap-1 px-3 pt-2 pb-1">
                   <ChevronDown className={`h-3 w-3 text-primary/60 transition-transform ${inactiveOpen ? "" : "-rotate-90"}`} />
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/60">
+                  <span className="text-[13px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/60">
                     Inactive Clients ({filteredInactiveCompanies.length})
                   </span>
                 </CollapsibleTrigger>
