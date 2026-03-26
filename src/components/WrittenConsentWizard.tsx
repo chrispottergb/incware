@@ -247,11 +247,21 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
           await supabase.from("meeting_directors").insert(directorRows);
         }
       } else {
-        // Save as meeting_shareholders
-        const memberRows = signers.map((s) => ({
-          meeting_id: meetingId,
-          shareholder_name: s.name,
-        }));
+        // Save as meeting_shareholders with full roster data
+        const memberRows = signers.map((s) => {
+          // Look up the full shareholder record to populate address & units
+          const sh = shareholders.find((sh) => sh.id === s.id);
+          return {
+            meeting_id: meetingId,
+            shareholder_name: s.name,
+            address: sh?.address || null,
+            city: sh?.city || null,
+            state: sh?.state || null,
+            zip: sh?.zip || null,
+            common_shares: sh?.common_shares ?? 0,
+            preferred_shares: sh?.preferred_shares ?? 0,
+          };
+        });
         if (memberRows.length > 0) {
           await supabase.from("meeting_shareholders").insert(memberRows);
         }
