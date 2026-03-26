@@ -523,9 +523,9 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
           </div>
 
           {resolutionText.includes("______") && (
-            <Alert className="py-2 border-amber-500/20 bg-amber-500/5">
-              <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
-              <AlertDescription className="text-xs text-amber-700">
+            <Alert className="py-2 border-warning/20 bg-warning/5">
+              <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+              <AlertDescription className="text-xs text-warning-foreground">
                 This resolution contains blank fields (______) that should be filled in before creating the consent.
               </AlertDescription>
             </Alert>
