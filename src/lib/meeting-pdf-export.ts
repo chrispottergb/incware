@@ -1664,8 +1664,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
   }
 
-  // Financials — skip for shareholder meetings
-  if (!isShareholder && data.financials) {
+  // Financials — skip for shareholder meetings and written consents
+  if (!isShareholder && !isWrittenConsent && data.financials) {
     const f = data.financials;
     y = checkPageBreak(doc, y, 80);
     y = section("Financial Comparison — Year to Year");
