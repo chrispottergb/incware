@@ -2669,6 +2669,39 @@ export type Database = {
           },
         ]
       }
+      resources: {
+        Row: {
+          category: string
+          content: string | null
+          content_type: string
+          content_url: string | null
+          created_at: string
+          id: string
+          sort_order: number | null
+          title: string
+        }
+        Insert: {
+          category: string
+          content?: string | null
+          content_type: string
+          content_url?: string | null
+          created_at?: string
+          id?: string
+          sort_order?: number | null
+          title: string
+        }
+        Update: {
+          category?: string
+          content?: string | null
+          content_type?: string
+          content_url?: string | null
+          created_at?: string
+          id?: string
+          sort_order?: number | null
+          title?: string
+        }
+        Relationships: []
+      }
       share_transactions: {
         Row: {
           bill_of_sale_id: string | null
