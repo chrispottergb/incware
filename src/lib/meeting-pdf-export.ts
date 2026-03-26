@@ -1423,8 +1423,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 8;
   }
 
-  // Non-shareholder corp: Directors Present (before officers)
-  if (data.directors && data.directors.length > 0 && !isShareholder && !isLLC) {
+  // Non-shareholder corp: Directors Present (before officers) — skip for written consents
+  if (data.directors && data.directors.length > 0 && !isShareholder && !isWrittenConsent && !isLLC) {
     y += 3;
     y = checkPageBreak(doc, y, 30 + data.directors.length * 7);
     y = section("Directors Present");
