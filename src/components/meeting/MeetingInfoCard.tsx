@@ -48,6 +48,7 @@ function DateFieldWrapper({
 export default function MeetingInfoCard({ meeting }: Props) {
   const queryClient = useQueryClient();
   const [values, setValues] = useState<Record<string, string>>({});
+  const isWrittenConsent = meeting.meeting_type === "Written Consent";
 
   const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(
     useCallback(({ city, state }: { city: string; state: string }) => {
