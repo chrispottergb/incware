@@ -1440,8 +1440,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Officers (with salary/bonus) — skip for shareholder meetings
-  if (!isShareholder && data.officers && data.officers.length > 0) {
+  // Officers (with salary/bonus) — skip for shareholder meetings and written consents
+  if (!isShareholder && !isWrittenConsent && data.officers && data.officers.length > 0) {
     y = checkPageBreak(doc, y, 30 + data.officers.length * 7);
     y = section("Officers");
     const isSCorp = entityType === "S-Corp";
