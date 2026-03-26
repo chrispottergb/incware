@@ -94,7 +94,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
   const defaultForm = () => ({
     meeting_date: "",
     meeting_time: "10:00 AM",
-    tax_year: new Date().getFullYear().toString(),
+    tax_year: "",
     meeting_type: "Annual Meeting",
     sub_type: "",
     meeting_location: company.address

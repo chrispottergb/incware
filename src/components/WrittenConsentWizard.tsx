@@ -214,7 +214,7 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
           meeting_date: effectiveDate,
           meeting_type: "Written Consent",
           sub_type: selectedAction || null,
-          tax_year: new Date().getFullYear(),
+          tax_year: taxYear ? parseInt(taxYear) : null,
           purpose: `Written Consent — ${selectedAction}`,
           company_name_at_meeting: company.name,
           company_address_at_meeting: company.address || null,
