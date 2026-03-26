@@ -2080,7 +2080,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Annual Balance Reporting — renders independently of loan entries
   const meetingBalanceTo = meeting?.balance_to_shareholder;
   const meetingBalanceFrom = meeting?.balance_from_shareholder;
-  if (!isShareholder && (meetingBalanceTo != null || meetingBalanceFrom != null)) {
+  if (!isShareholder && !isWrittenConsent && (meetingBalanceTo != null || meetingBalanceFrom != null)) {
     y = checkPageBreak(doc, y, 30);
     y = section("Annual Balance Reporting");
     const fmtBal = (v: any) => v != null ? `$${Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "$0.00";
