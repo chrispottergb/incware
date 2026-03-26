@@ -122,6 +122,7 @@ export default function CompanyDetail() {
         { value: "relationships", label: "Relationships" },
         { value: "ai-compliance", label: "AI Compliance" },
         { value: "operating-agreement", label: "Operating Agreement" },
+        { value: "filing-compliance", label: "Filing & Compliance" },
         { value: "record-book", label: "Record Book" },
         { value: "documents", label: "Documents" },
       ];
