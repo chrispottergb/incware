@@ -30,8 +30,13 @@ import {
   GitBranch,
   UserCheck,
   Settings as SettingsIcon,
+  BookOpen,
+  PenTool,
+  Lightbulb,
+  ShieldCheck,
 } from "lucide-react";
 import { isLLCType } from "@/lib/entity-terminology";
+import ResourcesPanel from "@/components/ResourcesPanel";
 
 function entityBadge(entityType: string | undefined) {
   if (entityType === "Corporation") return "Corp";
