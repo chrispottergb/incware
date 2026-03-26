@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { isLLCType, getTerminology } from "@/lib/entity-terminology";
+import { useShareCalculations } from "@/hooks/useShareCalculations";
 import {
   RESOLUTION_TYPES,
   ACTION_CATEGORIES,
@@ -55,6 +56,9 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
   const isSMLLC = company.entity_type === "Single Member LLC";
   const isLLC = isLLCType(company.entity_type);
   const isCorp = company.entity_type === "Corporation" || company.entity_type === "S-Corp";
+
+  // Share/unit calculations for populating member holdings
+  const { shareholderHoldings, totalIssuedShares } = useShareCalculations(company.id);
 
   const [step, setStep] = useState(0);
 
@@ -247,11 +251,24 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
           await supabase.from("meeting_directors").insert(directorRows);
         }
       } else {
-        // Save as meeting_shareholders
-        const memberRows = signers.map((s) => ({
-          meeting_id: meetingId,
-          shareholder_name: s.name,
-        }));
+        // Save as meeting_shareholders with full roster data
+        const memberRows = signers.map((s) => {
+          const sh = shareholders.find((sh) => sh.id === s.id);
+          const holdings = sh ? (shareholderHoldings[sh.id] ?? 0) : 0;
+          const ownershipPct = totalIssuedShares > 0 && sh
+            ? Number(((holdings / totalIssuedShares) * 100).toFixed(2))
+            : (sh?.ownership_percentage ?? 0);
+          return {
+            meeting_id: meetingId,
+            shareholder_name: s.name,
+            address: sh?.address || null,
+            city: sh?.city || null,
+            state: sh?.state || null,
+            zip: sh?.zip || null,
+            common_shares: holdings,
+            preferred_shares: ownershipPct,
+          };
+        });
         if (memberRows.length > 0) {
           await supabase.from("meeting_shareholders").insert(memberRows);
         }
