@@ -101,7 +101,7 @@ export async function exportCompliancePDF(data: ComplianceItem[], overallScore: 
       body: item.checks.map((c) => [c.label, c.pass ? "Complete" : "Missing"]),
       theme: "grid",
       headStyles: {
-        fillColor: [45, 55, 72],
+        fillColor: [100, 149, 237],
         fontSize: 10,
         fontStyle: "bold",
       },
@@ -168,7 +168,7 @@ export async function exportStockLedgerPDF(certificates: CertificateRow[], compa
     ]),
     theme: "grid",
     headStyles: {
-      fillColor: [45, 55, 72],
+      fillColor: [100, 149, 237],
         fontSize: 10,
         fontStyle: "bold",
       },
@@ -235,7 +235,7 @@ export async function exportShareholderPDF(shareholders: ShareholderRow[]) {
     ]),
     theme: "grid",
     headStyles: {
-      fillColor: [45, 55, 72],
+      fillColor: [100, 149, 237],
         fontSize: 10,
         fontStyle: "bold",
       },
@@ -352,7 +352,7 @@ export async function exportAICompliancePDF(data: AIComplianceData) {
         s.purpose || "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: "bold" },
+      headStyles: { fillColor: [100, 149, 237], fontSize: 9, fontStyle: "bold" },
       bodyStyles: { fontSize: 9 },
       didParseCell(data) {
         if (data.section === "body" && data.column.index === 2) {
@@ -395,7 +395,7 @@ export async function exportAICompliancePDF(data: AIComplianceData) {
         p.status,
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: "bold" },
+      headStyles: { fillColor: [100, 149, 237], fontSize: 9, fontStyle: "bold" },
       bodyStyles: { fontSize: 9 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
@@ -430,7 +430,7 @@ export async function exportAICompliancePDF(data: AIComplianceData) {
         l.affected_persons_notified ? "Yes" : "No",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: "bold" },
+      headStyles: { fillColor: [100, 149, 237], fontSize: 9, fontStyle: "bold" },
       bodyStyles: { fontSize: 9 },
       didParseCell(data) {
         if (data.section === "body" && data.column.index === 5) {
@@ -475,7 +475,7 @@ export async function exportAICompliancePDF(data: AIComplianceData) {
         i.authority_notified ? "Yes" : "No",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: "bold" },
+      headStyles: { fillColor: [100, 149, 237], fontSize: 9, fontStyle: "bold" },
       bodyStyles: { fontSize: 9 },
       didParseCell(data) {
         if (data.section === "body" && data.column.index === 2) {

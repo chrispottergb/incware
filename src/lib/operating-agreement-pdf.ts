@@ -258,7 +258,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
         m.status || "Active",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [140, 140, 140], fontSize: 11, fontStyle: "bold" },
+      headStyles: { fillColor: [100, 149, 237], fontSize: 11, fontStyle: "bold" },
       bodyStyles: { fontSize: 11 },
       margin: { left: MARGIN, right: MARGIN },
     });
@@ -450,7 +450,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
         ];
       }),
       theme: "grid",
-      headStyles: { fillColor: [140, 140, 140], fontSize: 11, fontStyle: "bold" },
+      headStyles: { fillColor: [100, 149, 237], fontSize: 11, fontStyle: "bold" },
       bodyStyles: { fontSize: 11 },
       margin: { left: MARGIN, right: MARGIN },
       columnStyles: {

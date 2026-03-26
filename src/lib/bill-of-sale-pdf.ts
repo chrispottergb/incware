@@ -69,7 +69,7 @@ export function generateBillOfSalePdf(data: BillOfSaleData): jsPDF {
     head: [["Field", "Value"]],
     body: details,
     theme: "grid",
-    headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: "bold" },
+    headStyles: { fillColor: [100, 149, 237], fontSize: 9, fontStyle: "bold" },
     bodyStyles: { fontSize: 9 },
     columnStyles: { 0: { cellWidth: 55, fontStyle: "bold" } },
     margin: { left: MARGIN, right: R_MARGIN },
@@ -94,7 +94,7 @@ export function generateBillOfSalePdf(data: BillOfSaleData): jsPDF {
       head: [["Description", "Value"]],
       body: assetRows,
       theme: "grid",
-      headStyles: { fillColor: [45, 55, 72], fontSize: 9, fontStyle: "bold" },
+      headStyles: { fillColor: [100, 149, 237], fontSize: 9, fontStyle: "bold" },
       bodyStyles: { fontSize: 9 },
       margin: { left: MARGIN, right: R_MARGIN },
       didParseCell(cellData) {
