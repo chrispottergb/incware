@@ -48,6 +48,7 @@ import TaxReturnUpload from "@/components/TaxReturnUpload";
 import { isLLCType } from "@/lib/entity-terminology";
 import OrgMeetingWizard from "@/components/OrgMeetingWizard";
 import AnnualMeetingWizard from "@/components/AnnualMeetingWizard";
+import WrittenConsentWizard from "@/components/WrittenConsentWizard";
 
 const MEETING_TYPES = [
   "Annual Meeting",
