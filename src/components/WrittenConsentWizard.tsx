@@ -833,6 +833,82 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
           </Button>
         )}
       </div>
+
+      {/* Promissory Note Wizard Dialog */}
+      <Dialog open={noteDialogOpen} onOpenChange={(open) => { if (!open) { setNoteDialogOpen(false); setNoteStep("edit"); } }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {noteStep === "edit" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display flex items-center gap-2">
+                  <FileText className="h-5 w-5" /> Create Promissory Note
+                </DialogTitle>
+                <DialogDescription>Review and edit the details below, then click Preview to see the formatted document.</DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Lender Name</Label>
+                  <Input value={noteForm.lenderName} onChange={(e) => updateNoteField("lenderName", e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Borrower Name</Label>
+                  <Input value={noteForm.borrowerName} onChange={(e) => updateNoteField("borrowerName", e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Principal Amount ($)</Label>
+                  <Input type="number" step="0.01" value={noteForm.loanAmount} onChange={(e) => updateNoteField("loanAmount", e.target.value)} placeholder="0.00" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Interest Rate (%)</Label>
+                  <Input type="number" step="0.01" value={noteForm.interestRate} onChange={(e) => updateNoteField("interestRate", e.target.value)} placeholder="0.00" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Loan Duration</Label>
+                  <Input value={noteForm.loanDuration} onChange={(e) => updateNoteField("loanDuration", e.target.value)} placeholder="e.g., 5 years" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Start Date</Label>
+                  <DatePickerField value={noteForm.startDate} onChange={(v) => updateNoteField("startDate", v)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">End Date</Label>
+                  <DatePickerField value={noteForm.endDate} onChange={(v) => updateNoteField("endDate", v)} />
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Repayment Terms</Label>
+                  <Textarea value={noteForm.repaymentTerms} onChange={(e) => updateNoteField("repaymentTerms", e.target.value)} rows={3} placeholder="Monthly payments, balloon payment, etc." />
+                </div>
+              </div>
+              <div className="flex justify-end mt-4">
+                <Button onClick={renderNotePreview} disabled={previewLoading}>
+                  {previewLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Preview
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display">Promissory Note Preview</DialogTitle>
+                <DialogDescription>Review the document below. You can go back to edit or save as PDF.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 mt-2">
+                {previewPages.map((src, i) => (
+                  <img key={i} src={src} alt={`Page ${i + 1}`} className="w-full rounded border border-border shadow-sm" />
+                ))}
+              </div>
+              <div className="flex items-center justify-between mt-4">
+                <Button variant="outline" onClick={() => setNoteStep("edit")}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Back / Edit
+                </Button>
+                <Button onClick={handleSaveNotePdf}>
+                  <Download className="mr-2 h-4 w-4" /> Save as PDF
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
