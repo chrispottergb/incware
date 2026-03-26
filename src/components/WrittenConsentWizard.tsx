@@ -40,6 +40,18 @@ import {
   type ResolutionType,
 } from "@/lib/resolution-types";
 import { format } from "date-fns";
+import { generatePromissoryNotePDF } from "@/lib/promissory-note-pdf";
+import * as pdfjsLib from "pdfjs-dist";
+import { Download, ArrowLeft } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 const STEPS = ["Entity", "Action", "Resolution", "Signers", "Review"];
 
@@ -77,6 +89,78 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
 
   // Step 3: Resolution
   const [resolutionText, setResolutionText] = useState("");
+
+  // Promissory Note wizard state
+  const LOAN_RESOLUTION_LABELS = [
+    "Approve Loan from Related Party",
+    "Approve Loan to Related Party",
+    "Approve Related Party Loan Agreement",
+  ];
+  const isLoanResolution = LOAN_RESOLUTION_LABELS.includes(selectedAction);
+
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [noteForm, setNoteForm] = useState({
+    lenderName: "", borrowerName: "", loanAmount: "", interestRate: "",
+    loanDuration: "", startDate: "", endDate: "", repaymentTerms: "",
+  });
+  const [noteStep, setNoteStep] = useState<"edit" | "preview">("edit");
+  const [previewPages, setPreviewPages] = useState<string[]>([]);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [currentPdfBytes, setCurrentPdfBytes] = useState<Uint8Array | null>(null);
+
+  const updateNoteField = (key: string, value: string) =>
+    setNoteForm((prev) => ({ ...prev, [key]: value }));
+
+  const renderNotePreview = async () => {
+    setPreviewLoading(true);
+    try {
+      const doc = generatePromissoryNotePDF({
+        lenderName: noteForm.lenderName,
+        borrowerName: noteForm.borrowerName,
+        loanAmount: noteForm.loanAmount ? parseFloat(noteForm.loanAmount) : null,
+        interestRate: noteForm.interestRate ? parseFloat(noteForm.interestRate) : null,
+        loanDuration: noteForm.loanDuration,
+        startDate: noteForm.startDate,
+        endDate: noteForm.endDate,
+        repaymentTerms: noteForm.repaymentTerms,
+        companyName: company.name || "",
+      });
+      const bytes = doc.output("arraybuffer");
+      setCurrentPdfBytes(new Uint8Array(bytes));
+      const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+      const pages: string[] = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const scale = 2;
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext("2d")!;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        pages.push(canvas.toDataURL("image/png"));
+      }
+      setPreviewPages(pages);
+      setNoteStep("preview");
+    } catch {
+      toast.error("Failed to generate preview");
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleSaveNotePdf = () => {
+    if (!currentPdfBytes) return;
+    const blob = new Blob([currentPdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `promissory-note-${noteForm.borrowerName || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase();
+    a.click();
+    URL.revokeObjectURL(url);
+    setNoteDialogOpen(false);
+    toast.success("Promissory note saved!");
+  };
 
   // Step 4: Signers (auto-populated)
   // No additional state needed — computed from queries
@@ -545,6 +629,34 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
               </AlertDescription>
             </Alert>
           )}
+
+          {/* Promissory Note button for loan resolutions */}
+          {isLoanResolution && (
+            <div className="border-t pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setNoteForm({
+                    lenderName: "", borrowerName: "", loanAmount: "", interestRate: "",
+                    loanDuration: "", startDate: effectiveDate, endDate: "", repaymentTerms: "",
+                  });
+                  setNoteStep("edit");
+                  setPreviewPages([]);
+                  setCurrentPdfBytes(null);
+                  setNoteDialogOpen(true);
+                }}
+                className="gap-1.5"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Create Promissory Note
+              </Button>
+              <p className="text-[10px] text-muted-foreground mt-1.5">
+                Generate a pre-filled promissory note to accompany this resolution.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -721,6 +833,82 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
           </Button>
         )}
       </div>
+
+      {/* Promissory Note Wizard Dialog */}
+      <Dialog open={noteDialogOpen} onOpenChange={(open) => { if (!open) { setNoteDialogOpen(false); setNoteStep("edit"); } }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {noteStep === "edit" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display flex items-center gap-2">
+                  <FileText className="h-5 w-5" /> Create Promissory Note
+                </DialogTitle>
+                <DialogDescription>Review and edit the details below, then click Preview to see the formatted document.</DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Lender Name</Label>
+                  <Input value={noteForm.lenderName} onChange={(e) => updateNoteField("lenderName", e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Borrower Name</Label>
+                  <Input value={noteForm.borrowerName} onChange={(e) => updateNoteField("borrowerName", e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Principal Amount ($)</Label>
+                  <Input type="number" step="0.01" value={noteForm.loanAmount} onChange={(e) => updateNoteField("loanAmount", e.target.value)} placeholder="0.00" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Interest Rate (%)</Label>
+                  <Input type="number" step="0.01" value={noteForm.interestRate} onChange={(e) => updateNoteField("interestRate", e.target.value)} placeholder="0.00" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Loan Duration</Label>
+                  <Input value={noteForm.loanDuration} onChange={(e) => updateNoteField("loanDuration", e.target.value)} placeholder="e.g., 5 years" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Start Date</Label>
+                  <DatePickerField value={noteForm.startDate} onChange={(v) => updateNoteField("startDate", v)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">End Date</Label>
+                  <DatePickerField value={noteForm.endDate} onChange={(v) => updateNoteField("endDate", v)} />
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Repayment Terms</Label>
+                  <Textarea value={noteForm.repaymentTerms} onChange={(e) => updateNoteField("repaymentTerms", e.target.value)} rows={3} placeholder="Monthly payments, balloon payment, etc." />
+                </div>
+              </div>
+              <div className="flex justify-end mt-4">
+                <Button onClick={renderNotePreview} disabled={previewLoading}>
+                  {previewLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Preview
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display">Promissory Note Preview</DialogTitle>
+                <DialogDescription>Review the document below. You can go back to edit or save as PDF.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 mt-2">
+                {previewPages.map((src, i) => (
+                  <img key={i} src={src} alt={`Page ${i + 1}`} className="w-full rounded border border-border shadow-sm" />
+                ))}
+              </div>
+              <div className="flex items-center justify-between mt-4">
+                <Button variant="outline" onClick={() => setNoteStep("edit")}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Back / Edit
+                </Button>
+                <Button onClick={handleSaveNotePdf}>
+                  <Download className="mr-2 h-4 w-4" /> Save as PDF
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
