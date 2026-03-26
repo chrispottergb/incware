@@ -60,6 +60,7 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
 
   // Step 1: Entity
   const [effectiveDate, setEffectiveDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [taxYear, setTaxYear] = useState("");
   const [managementType, setManagementType] = useState(company.management_type || "Member Managed");
 
   // Step 2: Action
