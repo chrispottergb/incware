@@ -706,7 +706,23 @@ export default function MeetingsTab({ companyId, company }: Props) {
         </DialogContent>
       </Dialog>
 
-      {/* Two-step delete confirmation */}
+      {/* Written Consent Wizard Dialog */}
+      <Dialog open={consentWizardOpen} onOpenChange={setConsentWizardOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display">Written Consent Wizard</DialogTitle>
+          </DialogHeader>
+          <WrittenConsentWizard
+            company={company}
+            onClose={() => setConsentWizardOpen(false)}
+            onConsentCreated={() => {
+              queryClient.invalidateQueries({ queryKey: ["meetings", companyId] });
+              setConsentWizardOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={deleteStep === 1} onOpenChange={(open) => { if (!open) { setDeleteStep(0); setDeletingId(null); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
