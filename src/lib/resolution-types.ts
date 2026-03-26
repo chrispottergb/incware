@@ -26,7 +26,6 @@ export type ActionCategory = (typeof ACTION_CATEGORIES)[number];
 
 // Maps resolution labels to categories
 const CATEGORY_MAP: Record<string, ActionCategory> = {
-  "Authorize a Line of Credit": "Banking",
   "Approve Officer Bonuses": "Compensation",
   "Approve Officer Bonuses (Reasonable Compensation)": "Compensation",
   "Approve Annual Officer Compensation": "Compensation",
@@ -36,9 +35,6 @@ const CATEGORY_MAP: Record<string, ActionCategory> = {
   "Approve Transfer/Sale of Shares": "Ownership",
   "Approve Transfer of Membership Interest": "Ownership",
   "Admit New Member": "Ownership",
-  "Approve Distributions/Dividends": "Compensation",
-  "Approve Distributions": "Compensation",
-  "Approve Member Distributions": "Compensation",
   "Elect Officers": "Governance",
   "Elect Directors": "Governance",
   "Elect Directors/Board Members": "Governance",
@@ -68,14 +64,18 @@ const CATEGORY_MAP: Record<string, ActionCategory> = {
   "Approve Fundraising Activity": "Operations",
   "Approve Conflict of Interest Policy": "Governance",
   "Approve Charitable Purpose Activity": "Operations",
-  "Approve Partner Distributions": "Compensation",
   "Admit New Partner": "Ownership",
   "Approve Transfer of Partnership Interest": "Ownership",
-  "Approve Loan from Related Party": "Banking",
-  "Approve Loan to Related Party": "Banking",
-  "Approve Related Party Loan Agreement": "Banking",
   "Approve AI Governance Policy": "Governance",
   "Universal Resolution": "Governance",
+  "Authorize a Line of Credit": "Financial/Capital Transactions",
+  "Approve Loan from Related Party": "Financial/Capital Transactions",
+  "Approve Loan to Related Party": "Financial/Capital Transactions",
+  "Approve Related Party Loan Agreement": "Financial/Capital Transactions",
+  "Approve Distributions/Dividends": "Financial/Capital Transactions",
+  "Approve Distributions": "Financial/Capital Transactions",
+  "Approve Member Distributions": "Financial/Capital Transactions",
+  "Approve Partner Distributions": "Financial/Capital Transactions",
   "Other": "Other",
 };
 
