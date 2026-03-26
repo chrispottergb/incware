@@ -148,6 +148,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             nav.push({ label: "Bylaws", href: `/company/${companyId}#nonprofit-bylaws`, icon: FileText });
             nav.push({ label: "Conflict of Interest", href: `/company/${companyId}#conflict-of-interest`, icon: FileText });
           }
+          nav.push({ label: "Filing & Compliance", href: `/company/${companyId}#filing-compliance`, icon: ClipboardList });
           nav.push({ label: "Record Book", href: `/company/${companyId}#record-book`, icon: FileText });
           nav.push({ label: "Documents", href: `/company/${companyId}#documents`, icon: FileText });
           return nav;
