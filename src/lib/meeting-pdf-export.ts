@@ -968,7 +968,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   // Helper to get table head styles based on theme
   const tableHeadStyles = bt
     ? { fillColor: LIGHT_BLUE_BG as [number, number, number], textColor: [BLUE.r, BLUE.g, BLUE.b] as [number, number, number], fontStyle: "bold" as const, fontSize: 10 }
-    : { fillColor: [200, 215, 235], textColor: [30, 30, 30] as [number, number, number], fontSize: 10, fontStyle: "bold" as const };
+    : { fillColor: [200, 215, 235] as [number, number, number], textColor: [30, 30, 30] as [number, number, number], fontSize: 10, fontStyle: "bold" as const };
 
   // Helper for numbered section titles in blue theme
   const section = (title: string) => {
