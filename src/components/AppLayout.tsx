@@ -56,6 +56,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [companySearch, setCompanySearch] = useState("");
 
+  const [companiesOpen, setCompaniesOpen] = useState(false);
   const [inactiveOpen, setInactiveOpen] = useState(false);
   const [resourcesOpen, setResourcesOpen] = useState(false);
   const [activeResourceCategory, setActiveResourceCategory] = useState<string | null>(null);
