@@ -187,7 +187,56 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             );
           })}
 
-          {/* Settings with expandable sub-menu */}
+          {/* Resources & Governance */}
+          <Collapsible open={resourcesOpen} onOpenChange={setResourcesOpen}>
+            <CollapsibleTrigger className="flex w-full items-center gap-1 px-3 pt-4 pb-1">
+              <ChevronDown className={`h-3 w-3 text-sidebar-foreground/40 transition-transform ${resourcesOpen ? "" : "-rotate-90"}`} />
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
+                Resources &amp; Governance
+              </span>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="space-y-0.5 mt-0.5">
+                {[
+                  { label: "Corporate Governance", icon: Building2 },
+                  { label: "Document Signing", icon: PenTool },
+                  { label: "Helpful Hints", icon: Lightbulb },
+                  { label: "Compliance Reminders", icon: ShieldCheck },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => {
+                      setActiveResourceCategory(item.label);
+                      setMobileOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
+                      activeResourceCategory === item.label
+                        ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {item.label}
+                  </button>
+                ))}
+                {isAdmin && (
+                  <Link
+                    to="/settings/resources"
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
+                      location.pathname === "/settings/resources"
+                        ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    <SettingsIcon className="h-4 w-4 shrink-0" />
+                    Manage Resources
+                  </Link>
+                )}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
           <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen}>
             <CollapsibleTrigger className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
               location.pathname.startsWith("/settings")
