@@ -16,6 +16,7 @@ import ImportAccess from "@/pages/ImportAccess";
 import OrgChart from "@/pages/OrgChart";
 import Settings from "@/pages/Settings";
 import UserManagement from "@/pages/UserManagement";
+import ResourcesAdmin from "@/pages/ResourcesAdmin";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/NotFound";
 import AnnualReviewPublic from "@/pages/AnnualReviewPublic";
@@ -110,6 +111,16 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <UserManagement />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings/resources"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <ResourcesAdmin />
                   </AppLayout>
                 </ProtectedRoute>
               }
