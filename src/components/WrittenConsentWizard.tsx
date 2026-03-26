@@ -90,6 +90,78 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
   // Step 3: Resolution
   const [resolutionText, setResolutionText] = useState("");
 
+  // Promissory Note wizard state
+  const LOAN_RESOLUTION_LABELS = [
+    "Approve Loan from Related Party",
+    "Approve Loan to Related Party",
+    "Approve Related Party Loan Agreement",
+  ];
+  const isLoanResolution = LOAN_RESOLUTION_LABELS.includes(selectedAction);
+
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [noteForm, setNoteForm] = useState({
+    lenderName: "", borrowerName: "", loanAmount: "", interestRate: "",
+    loanDuration: "", startDate: "", endDate: "", repaymentTerms: "",
+  });
+  const [noteStep, setNoteStep] = useState<"edit" | "preview">("edit");
+  const [previewPages, setPreviewPages] = useState<string[]>([]);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [currentPdfBytes, setCurrentPdfBytes] = useState<Uint8Array | null>(null);
+
+  const updateNoteField = (key: string, value: string) =>
+    setNoteForm((prev) => ({ ...prev, [key]: value }));
+
+  const renderNotePreview = async () => {
+    setPreviewLoading(true);
+    try {
+      const doc = generatePromissoryNotePDF({
+        lenderName: noteForm.lenderName,
+        borrowerName: noteForm.borrowerName,
+        loanAmount: noteForm.loanAmount ? parseFloat(noteForm.loanAmount) : null,
+        interestRate: noteForm.interestRate ? parseFloat(noteForm.interestRate) : null,
+        loanDuration: noteForm.loanDuration,
+        startDate: noteForm.startDate,
+        endDate: noteForm.endDate,
+        repaymentTerms: noteForm.repaymentTerms,
+        companyName: company.name || "",
+      });
+      const bytes = doc.output("arraybuffer");
+      setCurrentPdfBytes(new Uint8Array(bytes));
+      const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+      const pages: string[] = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const scale = 2;
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext("2d")!;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        pages.push(canvas.toDataURL("image/png"));
+      }
+      setPreviewPages(pages);
+      setNoteStep("preview");
+    } catch {
+      toast.error("Failed to generate preview");
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleSaveNotePdf = () => {
+    if (!currentPdfBytes) return;
+    const blob = new Blob([currentPdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `promissory-note-${noteForm.borrowerName || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase();
+    a.click();
+    URL.revokeObjectURL(url);
+    setNoteDialogOpen(false);
+    toast.success("Promissory note saved!");
+  };
+
   // Step 4: Signers (auto-populated)
   // No additional state needed — computed from queries
 
