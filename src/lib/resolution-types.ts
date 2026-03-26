@@ -73,6 +73,7 @@ const CATEGORY_MAP: Record<string, ActionCategory> = {
   "Approve Loan from Related Party": "Banking",
   "Approve Loan to Related Party": "Banking",
   "Approve Related Party Loan Agreement": "Banking",
+  "Approve AI Governance Policy": "Governance",
   "Universal Resolution": "Governance",
   "Other": "Other",
 };
