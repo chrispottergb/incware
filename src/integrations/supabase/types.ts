@@ -1472,6 +1472,56 @@ export type Database = {
           },
         ]
       }
+      filing_checklist: {
+        Row: {
+          company_id: string
+          created_at: string
+          document_file_name: string | null
+          document_file_path: string | null
+          ein_number: string | null
+          filed_date: string | null
+          id: string
+          item_name: string
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          document_file_name?: string | null
+          document_file_path?: string | null
+          ein_number?: string | null
+          filed_date?: string | null
+          id?: string
+          item_name: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          document_file_name?: string | null
+          document_file_path?: string | null
+          ein_number?: string | null
+          filed_date?: string | null
+          id?: string
+          item_name?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "filing_checklist_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       master_contacts: {
         Row: {
           bar_number: string | null
