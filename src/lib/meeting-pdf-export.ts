@@ -2639,8 +2639,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Authorized Signatories
-  if (data.authorizedSigners && data.authorizedSigners.length > 0) {
+  // Authorized Signatories — skip for written consents
+  if (!isWrittenConsent && data.authorizedSigners && data.authorizedSigners.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.authorizedSigners.length * 7);
     y = section("Authorized Signatories");
     y = addWhereasResolved(doc, y,
