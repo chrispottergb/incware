@@ -98,7 +98,7 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
       head: [["Field", "Value"]],
       body: fieldRows,
       theme: "grid",
-      headStyles: { fillColor: [100, 149, 237], fontSize: 10, fontStyle: "bold" },
+      headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 10, fontStyle: "bold" },
       bodyStyles: { fontSize: 10 },
       columnStyles: {
         0: { cellWidth: 60, fontStyle: "bold" },
@@ -115,7 +115,7 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
       head: [config.table.headers],
       body: config.table.rows,
       theme: "grid",
-      headStyles: { fillColor: [100, 149, 237], fontSize: 10, fontStyle: "bold" },
+      headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 10, fontStyle: "bold" },
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       didParseCell(data) {

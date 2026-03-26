@@ -89,7 +89,7 @@ function addTableSafe(doc: jsPDF, y: number, head: string[], body: string[][]): 
     head: [head],
     body,
     theme: "grid",
-    headStyles: { fillColor: [100, 149, 237], fontSize: 11, fontStyle: "bold" },
+    headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 11, fontStyle: "bold" },
     bodyStyles: { fontSize: 11 },
     margin: { left: MARGIN, right: R_MARGIN },
     styles: { overflow: "linebreak", cellWidth: "auto" },
