@@ -210,6 +210,38 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
+  const hydratedMeetingShareholders = useMemo(() => {
+    const normalizeName = (value: string | null | undefined) =>
+      (value || "").toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim();
+
+    return shareholders.map((shareholder: any) => {
+      const rosterMatch = companyShareholders.find(
+        (candidate: any) => normalizeName(candidate.name) === normalizeName(shareholder.shareholder_name)
+      );
+
+      if (!rosterMatch) return shareholder;
+
+      const liveHoldings = shareholderHoldings[rosterMatch.id] ?? 0;
+      const liveInterest = totalIssuedShares > 0
+        ? Number(((liveHoldings / totalIssuedShares) * 100).toFixed(2))
+        : null;
+
+      return {
+        ...shareholder,
+        address: shareholder.address || rosterMatch.address || null,
+        city: shareholder.city || rosterMatch.city || null,
+        state: shareholder.state || rosterMatch.state || null,
+        zip: shareholder.zip || rosterMatch.zip || null,
+        common_shares: shareholder.common_shares && Number(shareholder.common_shares) > 0
+          ? shareholder.common_shares
+          : liveHoldings,
+        preferred_shares: shareholder.preferred_shares && Number(shareholder.preferred_shares) > 0
+          ? shareholder.preferred_shares
+          : liveInterest,
+      };
+    });
+  }, [shareholders, companyShareholders, shareholderHoldings, totalIssuedShares]);
+
   const { data: directors = [] } = useQuery({
     queryKey: ["meeting_directors", meetingId],
     queryFn: async () => {
@@ -478,7 +510,7 @@ export default function MeetingDetail() {
     return exportMeetingMinutesPDF({
       meeting,
       company,
-      shareholders,
+      shareholders: hydratedMeetingShareholders,
       directors,
       officers,
       counsel,
@@ -638,7 +670,7 @@ export default function MeetingDetail() {
                   term.shareholders,
                   company, meeting,
                   ["Name", "Address", "City", "St", "ZIP", term.isLLC ? "Units" : "Common", term.isLLC ? "Interest %" : "Preferred", "Dist. Amount", "Basis", "Add'l Capital"],
-                  shareholders.map(s => [
+                  hydratedMeetingShareholders.map(s => [
                     s.shareholder_name,
                     (s as any).address ?? "—",
                     (s as any).city ?? "—",
@@ -668,6 +700,7 @@ export default function MeetingDetail() {
                 { key: "basis", label: "Basis", type: "number", width: "90px" },
                 { key: "additional_capital_contribution", label: "Add'l Capital", type: "number", width: "100px" },
               ]}
+              displayRows={hydratedMeetingShareholders}
               roster={enrichedShareholderRoster}
               rosterFieldMap={{
                 name: "shareholder_name",

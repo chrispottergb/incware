@@ -66,6 +66,7 @@ interface Props {
   tableName: string;
   title: string;
   columns: Column[];
+  displayRows?: any[];
   /** When provided for meeting_directors, syncs new directors to company-level directors table */
   companyId?: string;
   /** When provided, the Add dialog uses a roster picker instead of manual entry for the name/address fields */
@@ -74,7 +75,7 @@ interface Props {
   rosterFieldMap?: Record<string, string>;
 }
 
-export default function MeetingSubTable({ meetingId, tableName, title, columns, companyId, roster, rosterFieldMap }: Props) {
+export default function MeetingSubTable({ meetingId, tableName, title, columns, displayRows, companyId, roster, rosterFieldMap }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -94,6 +95,8 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
       return data as any[];
     },
   });
+
+  const renderedRows = displayRows ?? rows;
 
   // Filter roster to exclude already-added names
   const existingNamesLower = useMemo(() => {
@@ -388,7 +391,7 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
         </Dialog>
       </CardHeader>
       <CardContent>
-        {rows.length === 0 ? (
+        {renderedRows.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border py-8 text-center">
             <p className="text-sm text-muted-foreground">No entries yet</p>
           </div>
@@ -406,7 +409,7 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((row: any) => (
+                {renderedRows.map((row: any) => (
                   <TableRow key={row.id}>
                     {columns.map((col) => (
                       <TableCell key={col.key} className={`whitespace-nowrap ${col.type === "number" ? "text-right font-mono text-sm" : ""}`} style={col.width ? { width: col.width, minWidth: col.width } : undefined}>
