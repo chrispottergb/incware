@@ -57,6 +57,9 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
   const isLLC = isLLCType(company.entity_type);
   const isCorp = company.entity_type === "Corporation" || company.entity_type === "S-Corp";
 
+  // Share/unit calculations for populating member holdings
+  const { shareholderHoldings, totalIssuedShares } = useShareCalculations(company.id);
+
   const [step, setStep] = useState(0);
 
   // Step 1: Entity
