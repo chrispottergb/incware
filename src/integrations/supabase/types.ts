@@ -913,6 +913,7 @@ export type Database = {
           corporate_status: string | null
           created_at: string
           delayed_effective_filing_date: string | null
+          ein: string | null
           election_1244: boolean | null
           entity_type: string
           filing_date: string | null
@@ -971,6 +972,7 @@ export type Database = {
           corporate_status?: string | null
           created_at?: string
           delayed_effective_filing_date?: string | null
+          ein?: string | null
           election_1244?: boolean | null
           entity_type?: string
           filing_date?: string | null
@@ -1029,6 +1031,7 @@ export type Database = {
           corporate_status?: string | null
           created_at?: string
           delayed_effective_filing_date?: string | null
+          ein?: string | null
           election_1244?: boolean | null
           entity_type?: string
           filing_date?: string | null
