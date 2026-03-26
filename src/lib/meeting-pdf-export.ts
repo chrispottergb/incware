@@ -2373,8 +2373,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     });
   }
 
-  // Auto-generated resolutions from prior year comparison — skip for shareholder meetings
-  if (!isShareholder && data.priorYear) {
+  // Auto-generated resolutions from prior year comparison — skip for shareholder meetings and written consents
+  if (!isShareholder && !isWrittenConsent && data.priorYear) {
     const autoResolutions: { purpose: string; text: string }[] = [];
     const entityType = company?.entity_type || "Corporation";
     const isLLC = entityType === "LLC" || entityType === "LLC-S" || entityType === "Single Member LLC";
