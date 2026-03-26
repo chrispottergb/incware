@@ -843,7 +843,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
       head: [["Title", "Name"]],
       body: officerSource.map((o: any) => [o.title, o.name]),
       theme: "grid",
-      headStyles: { fillColor: [100, 149, 237], fontSize: 10, fontStyle: "bold" },
+      headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 10, fontStyle: "bold" },
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
@@ -968,7 +968,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   // Helper to get table head styles based on theme
   const tableHeadStyles = bt
     ? { fillColor: LIGHT_BLUE_BG as [number, number, number], textColor: [BLUE.r, BLUE.g, BLUE.b] as [number, number, number], fontStyle: "bold" as const, fontSize: 10 }
-    : { fillColor: [100, 149, 237] as [number, number, number], fontSize: 10, fontStyle: "bold" as const };
+    : { fillColor: [200, 215, 235], textColor: [30, 30, 30] as [number, number, number], fontSize: 10, fontStyle: "bold" as const };
 
   // Helper for numbered section titles in blue theme
   const section = (title: string) => {
@@ -2917,7 +2917,7 @@ export function exportSectionPDF(
       head: [tableHead],
       body: tableBody,
       theme: "grid",
-      headStyles: { fillColor: [100, 149, 237], fontSize: 10, fontStyle: "bold" },
+      headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 10, fontStyle: "bold" },
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
@@ -3007,7 +3007,7 @@ export function exportFinancialsPDF(company: any, meeting: any, financials: any,
       head: [["", "Current Year", "Previous Year", "YoY Change"]],
       body: tableBody,
       theme: "grid",
-      headStyles: { fillColor: [100, 149, 237], fontSize: 10, fontStyle: "bold" },
+      headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 10, fontStyle: "bold" },
       bodyStyles: { fontSize: 10 },
       columnStyles: { 1: { halign: "right", fontStyle: "bold" }, 2: { halign: "right" }, 3: { halign: "center", fontSize: 9 } },
       margin: { left: MARGIN, right: R_MARGIN },

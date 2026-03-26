@@ -101,7 +101,7 @@ function addDataTable(doc: jsPDF, headers: string[], rows: string[][], y: number
     head: [headers],
     body: rows,
     theme: "grid",
-    headStyles: { fillColor: [100, 149, 237], fontSize: 10, fontStyle: "bold" },
+    headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 10, fontStyle: "bold" },
     bodyStyles: { fontSize: 10 },
     margin: { left: MARGIN, right: R_MARGIN },
   });
