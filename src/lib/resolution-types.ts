@@ -13,6 +13,7 @@ export interface ResolutionType {
 export const ACTION_CATEGORIES = [
   "Banking",
   "Compensation",
+  "Financial/Capital Transactions",
   "Governance",
   "Operations",
   "Ownership",

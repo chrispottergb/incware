@@ -179,12 +179,7 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
     if (signers.length === 0 && step >= 3) {
       w.push(`No ${isCorp ? "directors" : "members"} found. Please add them to the company record first.`);
     }
-    const effectiveDateObj = new Date(effectiveDate + "T00:00:00");
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (effectiveDateObj < today) {
-      w.push("Effective date is in the past.");
-    }
+    
     return w;
   }, [consentType, ownershipThreshold, resolutionText, signers, step, isCorp, isSMLLC, effectiveDate]);
 
