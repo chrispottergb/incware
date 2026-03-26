@@ -116,6 +116,16 @@ const App = () => (
               }
             />
             <Route
+              path="/settings/resources"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <ResourcesAdmin />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/profile"
               element={
                 <ProtectedRoute>
