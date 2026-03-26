@@ -57,6 +57,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [companySearch, setCompanySearch] = useState("");
 
   const [inactiveOpen, setInactiveOpen] = useState(false);
+  const [resourcesOpen, setResourcesOpen] = useState(false);
+  const [activeResourceCategory, setActiveResourceCategory] = useState<string | null>(null);
 
   const { data: companies = [] } = useQuery({
     queryKey: ["companies"],
