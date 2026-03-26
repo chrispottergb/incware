@@ -253,8 +253,11 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
       } else {
         // Save as meeting_shareholders with full roster data
         const memberRows = signers.map((s) => {
-          // Look up the full shareholder record to populate address & units
           const sh = shareholders.find((sh) => sh.id === s.id);
+          const holdings = sh ? (shareholderHoldings[sh.id] ?? 0) : 0;
+          const ownershipPct = totalIssuedShares > 0 && sh
+            ? Number(((holdings / totalIssuedShares) * 100).toFixed(2))
+            : (sh?.ownership_percentage ?? 0);
           return {
             meeting_id: meetingId,
             shareholder_name: s.name,
@@ -262,8 +265,8 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
             city: sh?.city || null,
             state: sh?.state || null,
             zip: sh?.zip || null,
-            common_shares: sh?.common_shares ?? 0,
-            preferred_shares: sh?.preferred_shares ?? 0,
+            common_shares: holdings,
+            preferred_shares: ownershipPct,
           };
         });
         if (memberRows.length > 0) {
