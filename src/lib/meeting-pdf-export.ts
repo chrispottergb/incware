@@ -2623,8 +2623,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Other
-  if (data.other && data.other.length > 0) {
+  // Other — skip for written consents
+  if (!isWrittenConsent && data.other && data.other.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.other.length * 7);
     y = section("Other Notes");
     autoTable(doc, {
