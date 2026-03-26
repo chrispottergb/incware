@@ -124,6 +124,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           { label: "Relationships", href: `/company/${companyId}#relationships`, icon: GitBranch },
           { label: "AI Compliance", href: `/company/${companyId}#ai-compliance`, icon: UserCheck },
           { label: "Operating Agreement", href: `/company/${companyId}#operating-agreement`, icon: FileText },
+          { label: "Filing & Compliance", href: `/company/${companyId}#filing-compliance`, icon: ClipboardList },
           { label: "Record Book", href: `/company/${companyId}#record-book`, icon: FileText },
           { label: "Documents", href: `/company/${companyId}#documents`, icon: FileText },
         ]
