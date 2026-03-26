@@ -1544,8 +1544,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
   }
 
-  // Authorized Binders (LLC only, non-shareholder) — AFTER officers
-  if (data.directors && data.directors.length > 0 && !isShareholder && isLLC) {
+  // Authorized Binders (LLC only, non-shareholder) — AFTER officers — skip for written consents
+  if (data.directors && data.directors.length > 0 && !isShareholder && !isWrittenConsent && isLLC) {
     y += 3;
     y = checkPageBreak(doc, y, 30 + data.directors.length * 7);
     y = section("Authorized Binders");
