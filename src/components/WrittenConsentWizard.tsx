@@ -1,0 +1,711 @@
+import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DatePickerField } from "@/components/ui/date-picker-field";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Info,
+  AlertTriangle,
+  User,
+  Loader2,
+  Check,
+} from "lucide-react";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { isLLCType, getTerminology } from "@/lib/entity-terminology";
+import {
+  RESOLUTION_TYPES,
+  ACTION_CATEGORIES,
+  filterByCategory,
+  getResolutionCategory,
+  type ActionCategory,
+  type ResolutionType,
+} from "@/lib/resolution-types";
+import { format } from "date-fns";
+
+const STEPS = ["Entity", "Action", "Resolution", "Signers", "Review"];
+
+interface Props {
+  company: any;
+  onClose?: () => void;
+  onConsentCreated?: () => void;
+}
+
+export default function WrittenConsentWizard({ company, onClose, onConsentCreated }: Props) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const t = getTerminology(company.entity_type);
+  const isSMLLC = company.entity_type === "Single Member LLC";
+  const isLLC = isLLCType(company.entity_type);
+  const isCorp = company.entity_type === "Corporation" || company.entity_type === "S-Corp";
+
+  const [step, setStep] = useState(0);
+
+  // Step 1: Entity
+  const [effectiveDate, setEffectiveDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [managementType, setManagementType] = useState(company.management_type || "Member Managed");
+
+  // Step 2: Action
+  const [actionCategory, setActionCategory] = useState<ActionCategory | "">("");
+  const [selectedAction, setSelectedAction] = useState("");
+  const [consentType, setConsentType] = useState<"Unanimous" | "Majority">(
+    isCorp ? "Unanimous" : "Unanimous"
+  );
+  const [ownershipThreshold, setOwnershipThreshold] = useState("100");
+
+  // Step 3: Resolution
+  const [resolutionText, setResolutionText] = useState("");
+
+  // Step 4: Signers (auto-populated)
+  // No additional state needed — computed from queries
+
+  // Queries for signers
+  const { data: directors = [] } = useQuery({
+    queryKey: ["directors", company.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("directors")
+        .select("*")
+        .eq("company_id", company.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!company.id,
+  });
+
+  const { data: shareholders = [] } = useQuery({
+    queryKey: ["shareholders-for-consent", company.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shareholders")
+        .select("*")
+        .eq("company_id", company.id)
+        .eq("status", "active")
+        .eq("is_treasury", false);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!company.id,
+  });
+
+  // Get resolution options for this entity type
+  const resolutionOptions = RESOLUTION_TYPES[company.entity_type] || RESOLUTION_TYPES["Corporation"];
+
+  // Filtered actions by category
+  const filteredActions = useMemo(() => {
+    if (!actionCategory) return [];
+    return filterByCategory(resolutionOptions, actionCategory);
+  }, [actionCategory, resolutionOptions]);
+
+  // Selected resolution template
+  const selectedResolution = useMemo(() => {
+    return resolutionOptions.find((r) => r.label === selectedAction);
+  }, [selectedAction, resolutionOptions]);
+
+  // Compute signers based on entity type
+  const signers = useMemo(() => {
+    if (isCorp) {
+      return directors.map((d) => ({
+        name: d.name,
+        role: t.director,
+        id: d.id,
+      }));
+    }
+    if (isLLC) {
+      if (isSMLLC) {
+        return shareholders.slice(0, 1).map((s) => ({
+          name: s.name,
+          role: "Sole Member",
+          id: s.id,
+        }));
+      }
+      if (managementType === "Manager Managed") {
+        // For manager-managed, use directors (authorized binders)
+        return directors.map((d) => ({
+          name: d.name,
+          role: "Manager",
+          id: d.id,
+        }));
+      }
+      // Member managed — all members
+      return shareholders.map((s) => ({
+        name: s.name,
+        role: "Member",
+        id: s.id,
+        ownershipPct: s.ownership_percentage,
+      }));
+    }
+    return [];
+  }, [isCorp, isLLC, isSMLLC, managementType, directors, shareholders, t]);
+
+  // Voting statute
+  const votingStatute = useMemo(() => {
+    if (isCorp) return "Wis. Stat. § 180.0704";
+    if (isLLC) return "Wis. Stat. § 183.0404";
+    return "";
+  }, [isCorp, isLLC]);
+
+  // Validation warnings
+  const warnings = useMemo(() => {
+    const w: string[] = [];
+    if (consentType === "Unanimous" && ownershipThreshold !== "100" && !isSMLLC) {
+      w.push("Unanimous consent requires 100% ownership threshold.");
+    }
+    if (!resolutionText.trim() && step >= 2) {
+      w.push("Resolution text is required.");
+    }
+    if (signers.length === 0 && step >= 3) {
+      w.push(`No ${isCorp ? "directors" : "members"} found. Please add them to the company record first.`);
+    }
+    const effectiveDateObj = new Date(effectiveDate + "T00:00:00");
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (effectiveDateObj < today) {
+      w.push("Effective date is in the past.");
+    }
+    return w;
+  }, [consentType, ownershipThreshold, resolutionText, signers, step, isCorp, isSMLLC, effectiveDate]);
+
+  // Can advance to next step
+  const canAdvance = useMemo(() => {
+    if (step === 0) return !!effectiveDate;
+    if (step === 1) return !!actionCategory && !!selectedAction;
+    if (step === 2) return !!resolutionText.trim();
+    if (step === 3) return signers.length > 0;
+    return true;
+  }, [step, effectiveDate, actionCategory, selectedAction, resolutionText, signers]);
+
+  // Handle action selection — auto-fill resolution template
+  const handleActionSelect = (action: string) => {
+    setSelectedAction(action);
+    const match = resolutionOptions.find((r) => r.label === action);
+    if (match?.template) {
+      setResolutionText(match.template);
+    } else {
+      setResolutionText("");
+    }
+  };
+
+  // Create consent mutation
+  const createConsent = useMutation({
+    mutationFn: async () => {
+      // 1. Create the meeting record
+      const { data: meeting, error: meetingError } = await supabase
+        .from("meetings")
+        .insert({
+          company_id: company.id,
+          meeting_date: effectiveDate,
+          meeting_type: "Written Consent",
+          sub_type: selectedAction || null,
+          tax_year: new Date().getFullYear(),
+          purpose: `Written Consent — ${selectedAction}`,
+          company_name_at_meeting: company.name,
+          company_address_at_meeting: company.address || null,
+          company_city_at_meeting: company.city || null,
+          company_state_at_meeting: company.state || null,
+          company_zip_at_meeting: company.zip || null,
+        })
+        .select("id")
+        .single();
+
+      if (meetingError) throw meetingError;
+      const meetingId = meeting.id;
+
+      // 2. Save the resolution
+      await supabase.from("meeting_resolutions").insert({
+        meeting_id: meetingId,
+        purpose: selectedAction || "Written Consent",
+        resolution_text: resolutionText,
+      });
+
+      // 3. Save signers
+      if (isCorp) {
+        // Save as meeting_directors
+        const directorRows = signers.map((s) => ({
+          meeting_id: meetingId,
+          director_name: s.name,
+        }));
+        if (directorRows.length > 0) {
+          await supabase.from("meeting_directors").insert(directorRows);
+        }
+      } else {
+        // Save as meeting_shareholders
+        const memberRows = signers.map((s) => ({
+          meeting_id: meetingId,
+          shareholder_name: s.name,
+        }));
+        if (memberRows.length > 0) {
+          await supabase.from("meeting_shareholders").insert(memberRows);
+        }
+      }
+
+      return meeting;
+    },
+    onSuccess: (meeting) => {
+      queryClient.invalidateQueries({ queryKey: ["meetings", company.id] });
+      toast.success("Written consent created!");
+      onConsentCreated?.();
+      navigate(`/company/${company.id}/meetings/${meeting.id}`);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const progressPct = ((step + 1) / STEPS.length) * 100;
+
+  return (
+    <div className="space-y-6">
+      {/* Progress */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Step {step + 1} of {STEPS.length}: {STEPS[step]}</span>
+          <span>{Math.round(progressPct)}%</span>
+        </div>
+        <Progress value={progressPct} className="h-1.5" />
+        <div className="flex justify-between">
+          {STEPS.map((s, i) => (
+            <span
+              key={s}
+              className={`text-[10px] ${
+                i <= step ? "text-primary font-medium" : "text-muted-foreground"
+              }`}
+            >
+              {s}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Warnings */}
+      {warnings.length > 0 && step >= 1 && (
+        <div className="space-y-1">
+          {warnings.map((w, i) => (
+            <Alert key={i} variant="destructive" className="py-2">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <AlertDescription className="text-xs">{w}</AlertDescription>
+            </Alert>
+          ))}
+        </div>
+      )}
+
+      {/* === STEP 1: Entity === */}
+      {step === 0 && (
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Company Name</Label>
+              <div className="flex items-center gap-2">
+                <Input value={company.name} disabled className="bg-muted/50" />
+                <Badge variant="secondary" className="text-[10px] shrink-0">Auto-filled</Badge>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Entity Type</Label>
+              <div className="flex items-center gap-2">
+                <Input value={company.entity_type} disabled className="bg-muted/50" />
+                <Badge variant="secondary" className="text-[10px] shrink-0">Auto-filled</Badge>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">State</Label>
+              <div className="flex items-center gap-2">
+                <Input value={company.state_of_incorporation || company.state || "WI"} disabled className="bg-muted/50" />
+                <Badge variant="secondary" className="text-[10px] shrink-0">Auto-filled</Badge>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Tax Year</Label>
+              <div className="flex items-center gap-2">
+                <Input value={new Date().getFullYear().toString()} disabled className="bg-muted/50" />
+                <Badge variant="secondary" className="text-[10px] shrink-0">Auto-filled</Badge>
+              </div>
+            </div>
+          </div>
+
+          {isLLC && !isSMLLC && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Management Structure</Label>
+              <Select value={managementType} onValueChange={setManagementType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Member Managed">Member Managed</SelectItem>
+                  <SelectItem value="Manager Managed">Manager Managed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Effective Date *</Label>
+              <DatePickerField
+                value={effectiveDate}
+                onChange={setEffectiveDate}
+                placeholder="Pick effective date"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Date Drafted</Label>
+              <div className="flex items-center gap-2">
+                <Input value={format(new Date(), "MM/dd/yyyy")} disabled className="bg-muted/50" />
+                <Badge variant="secondary" className="text-[10px] shrink-0">Today</Badge>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Address</Label>
+            <Input
+              value={[company.address, company.city, company.state, company.zip].filter(Boolean).join(", ")}
+              disabled
+              className="bg-muted/50"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* === STEP 2: Action === */}
+      {step === 1 && (
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Action Category *</Label>
+            <Select
+              value={actionCategory}
+              onValueChange={(v) => {
+                setActionCategory(v as ActionCategory);
+                setSelectedAction("");
+                setResolutionText("");
+              }}
+            >
+              <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
+              <SelectContent>
+                {ACTION_CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {actionCategory && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Specific Action *</Label>
+              <Select value={selectedAction} onValueChange={handleActionSelect}>
+                <SelectTrigger><SelectValue placeholder="Select an action" /></SelectTrigger>
+                <SelectContent>
+                  {filteredActions.map((a) => (
+                    <SelectItem key={a.label} value={a.label}>{a.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedResolution?.statute && (
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  📜 {selectedResolution.statute}
+                </p>
+              )}
+            </div>
+          )}
+
+          {!isSMLLC && (
+            <div className="border-t pt-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Info className="h-3.5 w-3.5 text-primary" />
+                <Label className="text-xs font-medium">Voting Threshold</Label>
+              </div>
+
+              {isCorp && (
+                <Alert className="py-2 border-primary/20 bg-primary/5">
+                  <AlertDescription className="text-xs">
+                    <strong>Unanimous consent required</strong> — {votingStatute} requires all directors to consent in writing for action without a meeting.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {isLLC && !isSMLLC && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Consent Type</Label>
+                    <Select
+                      value={consentType}
+                      onValueChange={(v) => {
+                        setConsentType(v as "Unanimous" | "Majority");
+                        if (v === "Unanimous") setOwnershipThreshold("100");
+                      }}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Unanimous">Unanimous</SelectItem>
+                        <SelectItem value="Majority">Majority</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Ownership % Required</Label>
+                    <Input
+                      type="number"
+                      value={ownershipThreshold}
+                      onChange={(e) => setOwnershipThreshold(e.target.value)}
+                      disabled={consentType === "Unanimous"}
+                      min="1"
+                      max="100"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {votingStatute && !isCorp && (
+                <p className="text-[10px] text-muted-foreground">
+                  📜 {votingStatute}
+                </p>
+              )}
+            </div>
+          )}
+
+          {isSMLLC && (
+            <Alert className="py-2 border-primary/20 bg-primary/5">
+              <AlertDescription className="text-xs">
+                As a Single Member LLC, this consent is valid by the sole member's signature. No voting threshold applies.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      )}
+
+      {/* === STEP 3: Resolution === */}
+      {step === 2 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-sm font-semibold">{selectedAction || "Custom Resolution"}</h4>
+              {selectedResolution?.statute && (
+                <p className="text-[10px] text-muted-foreground">📜 {selectedResolution.statute}</p>
+              )}
+            </div>
+            <Badge variant="outline" className="text-[10px]">{company.entity_type}</Badge>
+          </div>
+
+          {!resolutionText.trim() && (
+            <Alert variant="destructive" className="py-2">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <AlertDescription className="text-xs">
+                Fill in the resolution text below. Replace all blank fields (______) with the required information.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Resolution Text *</Label>
+            <Textarea
+              value={resolutionText}
+              onChange={(e) => setResolutionText(e.target.value)}
+              rows={12}
+              className="font-mono text-sm"
+              placeholder="Enter or modify the resolution text..."
+            />
+          </div>
+
+          {resolutionText.includes("______") && (
+            <Alert className="py-2 border-amber-500/20 bg-amber-500/5">
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+              <AlertDescription className="text-xs text-amber-700">
+                This resolution contains blank fields (______) that should be filled in before creating the consent.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      )}
+
+      {/* === STEP 4: Signers === */}
+      {step === 3 && (
+        <div className="space-y-4">
+          <Alert className="py-2 border-primary/20 bg-primary/5">
+            <Info className="h-3.5 w-3.5" />
+            <AlertDescription className="text-xs">
+              {isCorp
+                ? "All directors are listed as signers for this written consent. Under Wis. Stat. § 180.0704, unanimous written consent of all directors is required."
+                : isSMLLC
+                ? "As the sole member, your signature constitutes valid consent."
+                : managementType === "Manager Managed"
+                ? "All managers are listed as signers for this consent."
+                : "All members are listed as signers for this consent."
+              }
+            </AlertDescription>
+          </Alert>
+
+          {signers.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+                <User className="mb-3 h-8 w-8 text-muted-foreground/40" />
+                <p className="text-sm font-medium">No {isCorp ? "directors" : "members"} found</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add {isCorp ? "directors" : "members"} to the company record before creating a consent.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {signers.map((s, i) => (
+                <Card key={s.id || i} className="border">
+                  <CardContent className="flex items-center gap-3 py-3">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold">
+                      {s.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{s.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{s.role}</p>
+                    </div>
+                    {"ownershipPct" in s && s.ownershipPct != null && (
+                      <Badge variant="outline" className="text-[10px] shrink-0">
+                        {Number(s.ownershipPct).toFixed(1)}%
+                      </Badge>
+                    )}
+                    <Badge variant="secondary" className="text-[10px] shrink-0">
+                      Pending
+                    </Badge>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* === STEP 5: Review === */}
+      {step === 4 && (
+        <div className="space-y-4">
+          <h4 className="text-sm font-semibold">Review Written Consent</h4>
+
+          <div className="space-y-3">
+            <Card>
+              <CardContent className="py-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Company</span>
+                  <span className="text-sm font-medium">{company.name}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Entity Type</span>
+                  <span className="text-sm">{company.entity_type}</span>
+                </div>
+                {isLLC && !isSMLLC && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Management</span>
+                    <span className="text-sm">{managementType}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Effective Date</span>
+                  <span className="text-sm">
+                    {effectiveDate ? new Date(effectiveDate + "T00:00:00").toLocaleDateString() : "—"}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="py-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Category</span>
+                  <Badge variant="outline" className="text-[10px]">{actionCategory}</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Action</span>
+                  <span className="text-sm font-medium">{selectedAction}</span>
+                </div>
+                {selectedResolution?.statute && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Statute</span>
+                    <span className="text-[10px]">{selectedResolution.statute}</span>
+                  </div>
+                )}
+                {!isSMLLC && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Consent Type</span>
+                    <span className="text-sm">{isCorp ? "Unanimous" : consentType}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="py-3">
+                <p className="text-xs text-muted-foreground mb-1">Resolution</p>
+                <pre className="text-xs whitespace-pre-wrap font-mono bg-muted/30 rounded-md p-3 max-h-32 overflow-y-auto">
+                  {resolutionText}
+                </pre>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="py-3">
+                <p className="text-xs text-muted-foreground mb-2">
+                  Signers ({signers.length})
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {signers.map((s, i) => (
+                    <Badge key={i} variant="secondary" className="text-xs">
+                      {s.name} — {s.role}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Navigation */}
+      <div className="flex items-center justify-between pt-2 border-t">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => (step === 0 ? onClose?.() : setStep(step - 1))}
+        >
+          <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+          {step === 0 ? "Cancel" : "Back"}
+        </Button>
+
+        {step < STEPS.length - 1 ? (
+          <Button
+            size="sm"
+            onClick={() => setStep(step + 1)}
+            disabled={!canAdvance}
+          >
+            Next
+            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            onClick={() => createConsent.mutate()}
+            disabled={createConsent.isPending || !canAdvance || signers.length === 0}
+          >
+            {createConsent.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+            ) : (
+              <Check className="h-3.5 w-3.5 mr-1" />
+            )}
+            Create Consent
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
