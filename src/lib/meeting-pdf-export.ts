@@ -2207,8 +2207,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Vehicle/Equipment Sales — skip for shareholder meetings
-  if (!isShareholder && data.vehicleSales && data.vehicleSales.length > 0) {
+  // Vehicle/Equipment Sales — skip for shareholder meetings and written consents
+  if (!isShareholder && !isWrittenConsent && data.vehicleSales && data.vehicleSales.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.vehicleSales.length * 7);
     y = section("Vehicles & Equipment Sold During the Year");
     y = addWhereasResolved(doc, y,
