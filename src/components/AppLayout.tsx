@@ -56,6 +56,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [companySearch, setCompanySearch] = useState("");
 
+  const [companiesOpen, setCompaniesOpen] = useState(false);
   const [inactiveOpen, setInactiveOpen] = useState(false);
   const [resourcesOpen, setResourcesOpen] = useState(false);
   const [activeResourceCategory, setActiveResourceCategory] = useState<string | null>(null);
@@ -273,96 +274,109 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </CollapsibleContent>
           </Collapsible>
 
-          <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
-            Companies
-          </p>
-          <div className="px-2 pb-1">
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-sidebar-foreground/40" />
-              <Input
-                value={companySearch}
-                onChange={(e) => setCompanySearch(e.target.value)}
-                placeholder="Search companies…"
-                className="h-7 pl-7 text-[12px] bg-sidebar-accent/30 border-sidebar-border text-sidebar-foreground placeholder:text-sidebar-foreground/30"
-              />
-            </div>
-          </div>
-          <div className="company-list-scrollbar max-h-52 overflow-y-auto space-y-0.5 pr-1">
-            {filteredActiveCompanies.map((c) => {
-              const isActive = location.pathname === `/company/${c.id}`;
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => {
-                    navigate(`/company/${c.id}`);
-                    setMobileOpen(false);
-                  }}
-                  className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors text-left ${
-                    isActive
-                      ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                  }`}
-                >
-                  <Building2 className="h-3 w-3 shrink-0 opacity-50" />
-                  <span className="truncate flex-1">{c.name}</span>
-                  <span className="shrink-0 rounded bg-sidebar-accent/60 px-1 py-0 text-[9px] font-semibold uppercase text-sidebar-foreground/50">
-                    {entityBadge(c.entity_type)}
-                  </span>
-                </button>
-              );
-            })}
-            {filteredActiveCompanies.length === 0 && (
-              <p className="px-3 py-2 text-[11px] text-sidebar-foreground/40">No matches</p>
-            )}
-          </div>
-          <button
-            onClick={() => {
-              navigate("/");
-              setMobileOpen(false);
-              setTimeout(() => window.dispatchEvent(new CustomEvent("open-add-company")), 100);
-            }}
-            className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-[12px] font-medium text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
-          >
-            <Plus className="h-3 w-3 shrink-0" />
-            <span>Add Company</span>
-          </button>
+          {/* Divider above Companies */}
+          <div className="mx-3 mt-3 border-t border-sidebar-border" />
+          <Collapsible open={companiesOpen} onOpenChange={setCompaniesOpen}>
+            <CollapsibleTrigger className="flex w-full items-center gap-1 px-3 pt-2 pb-1">
+              <ChevronDown className={`h-3 w-3 text-primary/60 transition-transform ${companiesOpen ? "" : "-rotate-90"}`} />
+              <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/60">
+                Companies
+              </span>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-2 pb-1">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-sidebar-foreground/40" />
+                  <Input
+                    value={companySearch}
+                    onChange={(e) => setCompanySearch(e.target.value)}
+                    placeholder="Search companies…"
+                    className="h-7 pl-7 text-[12px] bg-sidebar-accent/30 border-sidebar-border text-sidebar-foreground placeholder:text-sidebar-foreground/30"
+                  />
+                </div>
+              </div>
+              <div className="company-list-scrollbar max-h-[250px] overflow-y-auto space-y-0.5 pr-1">
+                {filteredActiveCompanies.map((c) => {
+                  const isActive = location.pathname === `/company/${c.id}`;
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => {
+                        navigate(`/company/${c.id}`);
+                        setMobileOpen(false);
+                      }}
+                      className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors text-left ${
+                        isActive
+                          ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                      }`}
+                    >
+                      <Building2 className="h-3 w-3 shrink-0 opacity-50" />
+                      <span className="truncate flex-1">{c.name}</span>
+                      <span className="shrink-0 rounded bg-sidebar-accent/60 px-1 py-0 text-[9px] font-semibold uppercase text-sidebar-foreground/50">
+                        {entityBadge(c.entity_type)}
+                      </span>
+                    </button>
+                  );
+                })}
+                {filteredActiveCompanies.length === 0 && (
+                  <p className="px-3 py-2 text-[11px] text-sidebar-foreground/40">No matches</p>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  navigate("/");
+                  setMobileOpen(false);
+                  setTimeout(() => window.dispatchEvent(new CustomEvent("open-add-company")), 100);
+                }}
+                className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-[12px] font-medium text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
+              >
+                <Plus className="h-3 w-3 shrink-0" />
+                <span>Add Company</span>
+              </button>
+            </CollapsibleContent>
+          </Collapsible>
 
           {filteredInactiveCompanies.length > 0 && (
-            <Collapsible open={inactiveOpen} onOpenChange={setInactiveOpen}>
-              <CollapsibleTrigger className="flex w-full items-center gap-1 px-3 pt-3 pb-1">
-                <ChevronDown className={`h-3 w-3 text-sidebar-foreground/40 transition-transform ${inactiveOpen ? "" : "-rotate-90"}`} />
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
-                  Inactive Clients ({filteredInactiveCompanies.length})
-                </span>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="company-list-scrollbar max-h-32 overflow-y-auto space-y-0.5 pr-1">
-                  {filteredInactiveCompanies.map((c) => {
-                    const isActive = location.pathname === `/company/${c.id}`;
-                    return (
-                      <button
-                        key={c.id}
-                        onClick={() => {
-                          navigate(`/company/${c.id}`);
-                          setMobileOpen(false);
-                        }}
-                        className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors text-left opacity-60 ${
-                          isActive
-                            ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                        }`}
-                      >
-                        <Building2 className="h-3 w-3 shrink-0 opacity-50" />
-                        <span className="truncate flex-1">{c.name}</span>
-                        <span className="shrink-0 rounded bg-sidebar-accent/60 px-1 py-0 text-[9px] font-semibold uppercase text-sidebar-foreground/50">
-                          {entityBadge(c.entity_type)}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+            <>
+              {/* Divider above Inactive Clients */}
+              <div className="mx-3 mt-2 border-t border-sidebar-border" />
+              <Collapsible open={inactiveOpen} onOpenChange={setInactiveOpen}>
+                <CollapsibleTrigger className="flex w-full items-center gap-1 px-3 pt-2 pb-1">
+                  <ChevronDown className={`h-3 w-3 text-primary/60 transition-transform ${inactiveOpen ? "" : "-rotate-90"}`} />
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/60">
+                    Inactive Clients ({filteredInactiveCompanies.length})
+                  </span>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="company-list-scrollbar max-h-[250px] overflow-y-auto space-y-0.5 pr-1">
+                    {filteredInactiveCompanies.map((c) => {
+                      const isActive = location.pathname === `/company/${c.id}`;
+                      return (
+                        <button
+                          key={c.id}
+                          onClick={() => {
+                            navigate(`/company/${c.id}`);
+                            setMobileOpen(false);
+                          }}
+                          className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors text-left opacity-60 ${
+                            isActive
+                              ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
+                              : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                          }`}
+                        >
+                          <Building2 className="h-3 w-3 shrink-0 opacity-50" />
+                          <span className="truncate flex-1">{c.name}</span>
+                          <span className="shrink-0 rounded bg-sidebar-accent/60 px-1 py-0 text-[9px] font-semibold uppercase text-sidebar-foreground/50">
+                            {entityBadge(c.entity_type)}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </>
           )}
 
 
