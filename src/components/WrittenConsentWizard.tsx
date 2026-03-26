@@ -60,6 +60,7 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
 
   // Step 1: Entity
   const [effectiveDate, setEffectiveDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [taxYear, setTaxYear] = useState("");
   const [managementType, setManagementType] = useState(company.management_type || "Member Managed");
 
   // Step 2: Action
@@ -214,7 +215,7 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
           meeting_date: effectiveDate,
           meeting_type: "Written Consent",
           sub_type: selectedAction || null,
-          tax_year: new Date().getFullYear(),
+          tax_year: taxYear ? parseInt(taxYear) : null,
           purpose: `Written Consent — ${selectedAction}`,
           company_name_at_meeting: company.name,
           company_address_at_meeting: company.address || null,
@@ -333,11 +334,13 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">Tax Year</Label>
-              <div className="flex items-center gap-2">
-                <Input value={new Date().getFullYear().toString()} disabled className="bg-muted/50" />
-                <Badge variant="secondary" className="text-[10px] shrink-0">Auto-filled</Badge>
-              </div>
+              <Label className="text-xs font-medium text-muted-foreground">Tax Year *</Label>
+              <Input
+                type="number"
+                value={taxYear}
+                onChange={(e) => setTaxYear(e.target.value)}
+                placeholder="e.g. 2025"
+              />
             </div>
           </div>
 

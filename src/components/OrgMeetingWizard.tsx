@@ -77,7 +77,7 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
       : "",
     chairperson: "",
     secretary: "",
-    taxYear: new Date().getFullYear().toString(),
+    taxYear: "",
     filingDate: company?.filing_date || company?.incorporation_date || "",
     stateAgency: "WI Department of Financial Institutions",
     registeredAgentName: company?.registered_agent_name || "",

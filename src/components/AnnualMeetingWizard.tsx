@@ -512,7 +512,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       meetingLocation: priorMeeting?.meeting_location || (company?.address ? `${company.address}, ${company.city || ""}, ${company.state || ""}` : ""),
       chairperson: priorMeeting?.chairperson || "",
       secretary: priorMeeting?.mtg_secretary || "",
-      taxYear: new Date().getFullYear().toString(),
+      taxYear: "",
       priorMeetingDate: priorMeeting?.meeting_date || "",
 
       attendees: attendeeList,
