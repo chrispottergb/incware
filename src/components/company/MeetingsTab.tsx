@@ -48,6 +48,7 @@ import TaxReturnUpload from "@/components/TaxReturnUpload";
 import { isLLCType } from "@/lib/entity-terminology";
 import OrgMeetingWizard from "@/components/OrgMeetingWizard";
 import AnnualMeetingWizard from "@/components/AnnualMeetingWizard";
+import WrittenConsentWizard from "@/components/WrittenConsentWizard";
 
 const MEETING_TYPES = [
   "Annual Meeting",
@@ -88,6 +89,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [orgWizardOpen, setOrgWizardOpen] = useState(false);
   const [annualWizardOpen, setAnnualWizardOpen] = useState(false);
+  const [consentWizardOpen, setConsentWizardOpen] = useState(false);
 
   const defaultForm = () => ({
     meeting_date: "",
@@ -388,6 +390,9 @@ export default function MeetingsTab({ companyId, company }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setConsentWizardOpen(true)}>
+            <FileText className="h-3.5 w-3.5 mr-1.5" /> Written Consent
+          </Button>
           {isLLCType(company.entity_type) && (
             <>
               <Button variant="outline" size="sm" onClick={() => setAnnualWizardOpen(true)}>
@@ -701,7 +706,23 @@ export default function MeetingsTab({ companyId, company }: Props) {
         </DialogContent>
       </Dialog>
 
-      {/* Two-step delete confirmation */}
+      {/* Written Consent Wizard Dialog */}
+      <Dialog open={consentWizardOpen} onOpenChange={setConsentWizardOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display">Written Consent Wizard</DialogTitle>
+          </DialogHeader>
+          <WrittenConsentWizard
+            company={company}
+            onClose={() => setConsentWizardOpen(false)}
+            onConsentCreated={() => {
+              queryClient.invalidateQueries({ queryKey: ["meetings", companyId] });
+              setConsentWizardOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={deleteStep === 1} onOpenChange={(open) => { if (!open) { setDeleteStep(0); setDeletingId(null); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
