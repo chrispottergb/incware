@@ -345,6 +345,20 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     {item.label}
                   </button>
                 ))}
+                {isAdmin && (
+                  <Link
+                    to="/settings/resources"
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
+                      location.pathname === "/settings/resources"
+                        ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    <SettingsIcon className="h-4 w-4 shrink-0" />
+                    Manage Resources
+                  </Link>
+                )}
               </div>
             </CollapsibleContent>
           </Collapsible>
