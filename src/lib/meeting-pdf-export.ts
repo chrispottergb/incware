@@ -2721,7 +2721,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Other Business / Vehicle Policy / Profit Improvement Plan (last section before adjournment)
   const hasOtherBiz = meeting.other_business?.trim();
   const hasProfitPlan = meeting.profit_improvement_plan?.trim();
-  if (!isShareholder && (hasOtherBiz || hasProfitPlan)) {
+  if (!isShareholder && !isWrittenConsent && (hasOtherBiz || hasProfitPlan)) {
     y += 3;
     y = checkPageBreak(doc, y, 30);
     y = section("Other Business");
