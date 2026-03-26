@@ -1951,8 +1951,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
   }
 
-  // Banking Section (separate from counsel) — skip for shareholder meetings
-  if (!isShareholder) {
+  // Banking Section (separate from counsel) — skip for shareholder meetings and written consents
+  if (!isShareholder && !isWrittenConsent) {
     const counselRec = counselRows[0] || {} as any;
     let bankNameForTable = counselRec.bank_name?.trim() || "";
     if (!bankNameForTable && data.companyBanks && data.companyBanks.length > 0) {
