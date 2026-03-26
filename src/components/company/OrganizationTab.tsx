@@ -298,6 +298,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
     name: company.name,
     entity_type: company.entity_type,
     state_of_incorporation: company.state_of_incorporation ?? "",
+    ein: (company as any).ein ?? "",
     incorporation_date: company.incorporation_date ?? "",
     fiscal_year_end: company.fiscal_year_end ?? "",
     scheduled_annual_meeting: company.scheduled_annual_meeting ?? "",
@@ -430,6 +431,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
           name: filingForm.name,
           entity_type: filingForm.entity_type,
           state_of_incorporation: filingForm.state_of_incorporation || null,
+          ein: (filingForm as any).ein || null,
           incorporation_date: filingForm.incorporation_date || null,
           fiscal_year_end: filingForm.fiscal_year_end || null,
           scheduled_annual_meeting: filingForm.scheduled_annual_meeting || null,
@@ -727,6 +729,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 { label: "Company Name", value: filingForm.name },
                 { label: "Entity Type", value: filingForm.entity_type },
                 { label: "State of Organization", value: filingForm.state_of_incorporation },
+                { label: "EIN", value: (filingForm as any).ein },
                 { label: "Organization Date", value: filingForm.incorporation_date ? new Date(filingForm.incorporation_date + "T00:00:00").toLocaleDateString() : "" },
                 { label: "Fiscal Year End", value: filingForm.fiscal_year_end },
                 { label: "Scheduled Annual Meeting", value: filingForm.scheduled_annual_meeting },
@@ -777,6 +780,21 @@ export default function OrganizationTab({ companyId, company }: Props) {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="field-group col-span-6 sm:col-span-2">
+                <Label className="field-label">EIN</Label>
+                <Input
+                  className="h-7 text-sm"
+                  value={(filingForm as any).ein}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
+                    let formatted = digits;
+                    if (digits.length > 2) formatted = digits.slice(0, 2) + "-" + digits.slice(2);
+                    setFilingForm((p) => ({ ...p, ein: formatted }));
+                  }}
+                  placeholder="XX-XXXXXXX"
+                  maxLength={10}
+                />
               </div>
               {/* Status field moved to Verification of Corporate Status collapsible section above */}
               <div className="field-group col-span-6 sm:col-span-3">

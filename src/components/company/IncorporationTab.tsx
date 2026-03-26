@@ -198,6 +198,7 @@ export default function IncorporationTab({ company }: Props) {
     name: company.name,
     entity_type: company.entity_type,
     state_of_incorporation: company.state_of_incorporation ?? "",
+    ein: (company as any).ein ?? "",
     incorporation_date: company.incorporation_date ?? "",
     fiscal_year_end: company.fiscal_year_end ?? "",
     authorized_shares: company.authorized_shares?.toString() ?? "",
@@ -260,6 +261,7 @@ export default function IncorporationTab({ company }: Props) {
       name: company.name,
       entity_type: company.entity_type,
       state_of_incorporation: company.state_of_incorporation ?? "",
+      ein: (company as any).ein ?? "",
       incorporation_date: company.incorporation_date ?? "",
       fiscal_year_end: company.fiscal_year_end ?? "",
       authorized_shares: company.authorized_shares?.toString() ?? "",
@@ -497,6 +499,7 @@ export default function IncorporationTab({ company }: Props) {
           name: form.name,
           entity_type: form.entity_type,
           state_of_incorporation: form.state_of_incorporation || null,
+          ein: (form as any).ein || null,
           incorporation_date: form.incorporation_date || null,
           fiscal_year_end: form.fiscal_year_end || null,
           authorized_shares: form.authorized_shares ? parseInt(form.authorized_shares) : null,
@@ -669,6 +672,7 @@ export default function IncorporationTab({ company }: Props) {
                 { label: "Company Name", value: form.name },
                 { label: "Entity Type", value: form.entity_type },
                 { label: "State of Incorporation", value: form.state_of_incorporation },
+                { label: "EIN", value: (form as any).ein },
                 { label: "Incorporation Date", value: form.incorporation_date ? new Date(form.incorporation_date + "T00:00:00").toLocaleDateString() : "" },
                 { label: "Fiscal Year End", value: form.fiscal_year_end },
                 { label: "Scheduled Annual Meeting", value: form.scheduled_annual_meeting },
@@ -714,6 +718,21 @@ export default function IncorporationTab({ company }: Props) {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="field-group col-span-6 sm:col-span-2">
+              <Label className="field-label">EIN</Label>
+              <Input
+                className="h-7 text-sm"
+                value={(form as any).ein}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
+                  let formatted = digits;
+                  if (digits.length > 2) formatted = digits.slice(0, 2) + "-" + digits.slice(2);
+                  updateAndSave("ein", formatted);
+                }}
+                placeholder="XX-XXXXXXX"
+                maxLength={10}
+              />
             </div>
             <div className="field-group col-span-6 sm:col-span-2">
               <Label className="field-label">Status</Label>
