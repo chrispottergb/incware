@@ -48,6 +48,7 @@ function DateFieldWrapper({
 export default function MeetingInfoCard({ meeting }: Props) {
   const queryClient = useQueryClient();
   const [values, setValues] = useState<Record<string, string>>({});
+  const isWrittenConsent = meeting.meeting_type === "Written Consent";
 
   const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(
     useCallback(({ city, state }: { city: string; state: string }) => {
@@ -124,7 +125,6 @@ export default function MeetingInfoCard({ meeting }: Props) {
     { label: "Zip", field: "company_zip_at_meeting" },
   ];
 
-  const isWrittenConsent = meeting.meeting_type === "Written Consent";
   const isSpecialMeeting = meeting.meeting_type === "Special Meeting";
   const showPurpose = isWrittenConsent || isSpecialMeeting;
 
@@ -177,32 +177,37 @@ export default function MeetingInfoCard({ meeting }: Props) {
                 placeholder="e.g. 2024"
               />
             </div>
-            <div className="col-span-2">
-              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5" />
-                Time
-              </Label>
-              <Input
-                value={getValue("meeting_time")}
-                onChange={(e) => handleChange("meeting_time", e.target.value)}
-                onBlur={(e) => handleBlur("meeting_time", e.target.value)}
-                className="h-9 text-sm mt-1.5"
-              />
-            </div>
-            <div className="col-span-6">
-              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5" />
-                Location
-              </Label>
-              <Input
-                value={getValue("meeting_location")}
-                onChange={(e) => handleChange("meeting_location", e.target.value)}
-                onBlur={(e) => handleBlur("meeting_location", e.target.value)}
-                className="h-9 text-sm mt-1.5"
-              />
-            </div>
+            {!isWrittenConsent && (
+              <div className="col-span-2">
+                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5" />
+                  Time
+                </Label>
+                <Input
+                  value={getValue("meeting_time")}
+                  onChange={(e) => handleChange("meeting_time", e.target.value)}
+                  onBlur={(e) => handleBlur("meeting_time", e.target.value)}
+                  className="h-9 text-sm mt-1.5"
+                />
+              </div>
+            )}
+            {!isWrittenConsent && (
+              <div className="col-span-6">
+                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5" />
+                  Location
+                </Label>
+                <Input
+                  value={getValue("meeting_location")}
+                  onChange={(e) => handleChange("meeting_location", e.target.value)}
+                  onBlur={(e) => handleBlur("meeting_location", e.target.value)}
+                  className="h-9 text-sm mt-1.5"
+                />
+              </div>
+            )}
           </div>
-          {/* Row 2: Chairperson, Secretary, Others Present, Prior Meeting Date, Next Annual Meeting */}
+          {/* Row 2: Chairperson, Secretary, Others Present, Prior Meeting Date, Next Annual Meeting — hidden for Written Consents */}
+          {!isWrittenConsent && (
           <div className="mt-4 flex gap-3">
             <div className="flex-1 min-w-[120px] space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
@@ -259,6 +264,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
               />
             </div>
           </div>
+          )}
         </CardContent>
       </Card>
 
