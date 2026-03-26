@@ -41,6 +41,7 @@ export default function ResourcesAdmin() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<ResourceForm>({ ...emptyForm });
   const [editing, setEditing] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const { data: resources = [], isLoading } = useQuery({
     queryKey: ["resources-admin"],
