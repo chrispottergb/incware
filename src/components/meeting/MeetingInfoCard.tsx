@@ -125,7 +125,6 @@ export default function MeetingInfoCard({ meeting }: Props) {
     { label: "Zip", field: "company_zip_at_meeting" },
   ];
 
-  const isWrittenConsent = meeting.meeting_type === "Written Consent";
   const isSpecialMeeting = meeting.meeting_type === "Special Meeting";
   const showPurpose = isWrittenConsent || isSpecialMeeting;
 
