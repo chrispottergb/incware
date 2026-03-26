@@ -419,6 +419,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </header>
         <main className="flex-1 overflow-auto p-4 lg:p-6 min-w-0">{children}</main>
       </div>
+
+      {/* Resources slide-out panel */}
+      {activeResourceCategory && (
+        <ResourcesPanel
+          category={activeResourceCategory}
+          onClose={() => setActiveResourceCategory(null)}
+        />
+      )}
     </div>
   );
 }
