@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Trash2, Loader2, FileText, Pencil, Eye, Download } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { previewLeaseAgreement, downloadLeaseAgreement } from "@/lib/lease-agreement-pdf";
