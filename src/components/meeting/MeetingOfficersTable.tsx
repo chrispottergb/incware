@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -150,6 +150,39 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
     });
     return groups;
   }, [rows]);
+
+  // Auto-persist primary/secondary designations when dual roles are detected
+  const autoPersistedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const autoPersist = async () => {
+      for (const [key, group] of dualRoleGroups) {
+        if (!group.needsDesignation || autoPersistedRef.current.has(key)) continue;
+        autoPersistedRef.current.add(key);
+        const sorted = [...group.rows].sort((a, b) => getTitleRank(a.title || "") - getTitleRank(b.title || ""));
+        const primaryRow = sorted[0];
+        if (!primaryRow) continue;
+        const primaryTitle = primaryRow.title || "Officer";
+        await supabase.from("meeting_officers").update({ dual_role_type: "primary" } as any).eq("id", primaryRow.id);
+        for (const other of sorted.slice(1)) {
+          const noteText = getDefaultNoteText(
+            "included_in_primary",
+            other.name || "Officer",
+            other.title || "Officer",
+            other.salary,
+            primaryTitle,
+            other.title || "Officer",
+          );
+          await supabase.from("meeting_officers").update({
+            dual_role_type: "secondary",
+            compensation_status: "included_in_primary",
+            compensation_note: noteText,
+          } as any).eq("id", other.id);
+        }
+        queryClient.invalidateQueries({ queryKey: ["meeting_officers", meetingId] });
+      }
+    };
+    autoPersist();
+  }, [dualRoleGroups, meetingId, queryClient]);
 
   const getDualRoleGroup = (row: any): DualRoleGroup | null => {
     const key = (row.name || "").trim().toLowerCase();
