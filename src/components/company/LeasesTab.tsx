@@ -14,14 +14,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Plus, Trash2, Loader2, FileText, Pencil, Eye, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
