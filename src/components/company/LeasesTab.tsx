@@ -266,65 +266,92 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
             <p className="text-xs text-muted-foreground">No leases added yet</p>
           </div>
         ) : (
-          <div className="rounded-md border border-border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="text-xs font-semibold h-8">Description</TableHead>
-                  <TableHead className="text-xs h-8">Property Address</TableHead>
-                  <TableHead className="text-xs h-8">Landlord</TableHead>
-                  <TableHead className="text-xs h-8">Term</TableHead>
-                  <TableHead className="text-xs text-right h-8">Monthly</TableHead>
-                  <TableHead className="text-xs text-right h-8">Value</TableHead>
-                  <TableHead className="text-xs h-8">Agreement</TableHead>
-                  <TableHead className="w-10 h-8"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {leases.map((a: any) => (
-                  <TableRow key={a.id}>
-                    <TableCell className="text-sm py-2 font-medium">{a.description}</TableCell>
-                    <TableCell className="text-sm py-2">{a.address || "—"}</TableCell>
-                    <TableCell className="text-sm py-2">{a.landlord_name || "—"}</TableCell>
-                    <TableCell className="text-sm py-2">{a.lease_term || "—"}</TableCell>
-                    <TableCell className="text-right font-mono text-xs py-2">{fmt(a.monthly_payment)}</TableCell>
-                    <TableCell className="text-right font-mono text-xs py-2">{fmt(a.value)}</TableCell>
-                    <TableCell className="py-2">
+          <div className="space-y-3">
+            {leases.map((a: any) => {
+              const hasEndDate = !!a.lease_end_date;
+              const isExpired = hasEndDate && new Date(a.lease_end_date) < new Date();
+              const statusLabel = isExpired ? "Expired" : "Active";
+              const statusClass = isExpired
+                ? "bg-destructive/15 text-destructive border-destructive/30"
+                : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
+
+              const termDisplay = [
+                a.lease_start_date || "",
+                hasEndDate ? a.lease_end_date : "Ongoing",
+              ]
+                .filter(Boolean)
+                .join(" — ");
+
+              return (
+                <div key={a.id} className="rounded-lg border border-border overflow-hidden">
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-primary/90">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-3.5 w-3.5 text-primary-foreground/80" />
+                      <span className="text-sm font-semibold text-primary-foreground">Lease Agreement</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={`text-[10px] px-2 py-0.5 font-semibold ${statusClass}`}>
+                        {statusLabel}
+                      </Badge>
                       <div className="flex gap-0.5">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          title="Preview Lease Agreement"
-                          onClick={() => generateAgreement(a, "preview")}
-                        >
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10" title="Preview Lease Agreement" onClick={() => generateAgreement(a, "preview")}>
                           <Eye className="h-3 w-3" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          title="Download Lease Agreement"
-                          onClick={() => generateAgreement(a, "download")}
-                        >
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10" title="Download Lease Agreement" onClick={() => generateAgreement(a, "download")}>
                           <Download className="h-3 w-3" />
                         </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-2">
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(a)} className="h-6 w-6">
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10" onClick={() => openEdit(a)}>
                           <Pencil className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteLease.mutate(a.id)} className="h-6 w-6 text-destructive/50 hover:text-destructive">
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-primary-foreground/70 hover:text-destructive hover:bg-primary-foreground/10" onClick={() => deleteLease.mutate(a.id)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </div>
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="bg-card divide-y divide-border">
+                    {/* Row 1: Description & Address */}
+                    <div className="grid grid-cols-2 divide-x divide-border">
+                      <div className="px-4 py-3">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Property Description</p>
+                        <p className="text-sm text-foreground">{a.description || "—"}</p>
+                      </div>
+                      <div className="px-4 py-3">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Property Address</p>
+                        <p className="text-sm text-foreground leading-relaxed">{a.address || "—"}</p>
+                      </div>
+                    </div>
+
+                    {/* Row 2: Landlord & Landlord Address */}
+                    <div className="grid grid-cols-2 divide-x divide-border">
+                      <div className="px-4 py-3">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Landlord</p>
+                        <p className="text-sm text-foreground">{a.landlord_name || "—"}</p>
+                      </div>
+                      <div className="px-4 py-3">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Landlord Address</p>
+                        <p className="text-sm text-foreground leading-relaxed">{a.landlord_address || "—"}</p>
+                      </div>
+                    </div>
+
+                    {/* Row 3: Term & Monthly Payment */}
+                    <div className="grid grid-cols-2 divide-x divide-border">
+                      <div className="px-4 py-3">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Lease Term</p>
+                        <p className="text-sm text-foreground">{termDisplay || "—"}</p>
+                      </div>
+                      <div className="px-4 py-3">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Monthly Payment</p>
+                        <p className="text-base font-bold text-foreground font-mono">{fmt(a.monthly_payment)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </CardContent>
