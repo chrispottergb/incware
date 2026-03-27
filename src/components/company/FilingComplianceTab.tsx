@@ -87,11 +87,7 @@ function getRequiredFilings(entityType: string | undefined): string[] {
   }
 }
 
-// For Corps, add S-Corp election as optional if applicable
-function getOptionalFilings(entityType: string | undefined): string[] {
-  if (entityType === "Corporation") {
-    return ["IRS S-Corp Election (Form 2553)"];
-  }
+function getOptionalFilings(_entityType: string | undefined): string[] {
   return [];
 }
 
