@@ -50,7 +50,7 @@ function getRequiredFilings(entityType: string | undefined): string[] {
       return [
         "Articles of Incorporation",
         "EIN Registration",
-        "Initial Board Meeting Minutes",
+        "IRS Form 2553",
       ];
     case "S-Corp":
       return [
@@ -64,7 +64,7 @@ function getRequiredFilings(entityType: string | undefined): string[] {
       return [
         "Articles of Organization",
         "EIN Registration",
-        "Operating Agreement",
+        "IRS Form 2553",
       ];
     case "Non-Profit":
       return [
@@ -87,11 +87,7 @@ function getRequiredFilings(entityType: string | undefined): string[] {
   }
 }
 
-// For Corps, add S-Corp election as optional if applicable
-function getOptionalFilings(entityType: string | undefined): string[] {
-  if (entityType === "Corporation") {
-    return ["IRS S-Corp Election (Form 2553)"];
-  }
+function getOptionalFilings(_entityType: string | undefined): string[] {
   return [];
 }
 
@@ -252,7 +248,7 @@ export default function FilingComplianceTab({ companyId, entityType }: Props) {
             {completedCount} of {orderedItems.length} items complete
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" className="h-7 text-xs" asChild>
             <a href={DFI_SEARCH_URL} target="_blank" rel="noopener noreferrer">
               <Search className="h-3 w-3 mr-1.5" />
@@ -264,6 +260,20 @@ export default function FilingComplianceTab({ companyId, entityType }: Props) {
             <a href={DFI_FILING_URL} target="_blank" rel="noopener noreferrer">
               <FileText className="h-3 w-3 mr-1.5" />
               WI DFI File Online
+              <ExternalLink className="h-3 w-3 ml-1.5 opacity-50" />
+            </a>
+          </Button>
+          <Button variant="outline" size="sm" className="h-7 text-xs" asChild>
+            <a href="https://www.revenue.wi.gov/Pages/FAQS/pcs-btr.aspx" target="_blank" rel="noopener noreferrer">
+              <FileText className="h-3 w-3 mr-1.5" />
+              WI Business Tax Registration
+              <ExternalLink className="h-3 w-3 ml-1.5 opacity-50" />
+            </a>
+          </Button>
+          <Button variant="outline" size="sm" className="h-7 text-xs" asChild>
+            <a href="https://dsps.wi.gov/Pages/Professions/Default.aspx" target="_blank" rel="noopener noreferrer">
+              <FileText className="h-3 w-3 mr-1.5" />
+              Professional Licenses
               <ExternalLink className="h-3 w-3 ml-1.5 opacity-50" />
             </a>
           </Button>
