@@ -278,26 +278,26 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
               return (
                 <div key={a.id} className="rounded-lg border border-border overflow-hidden">
                   {/* Card Header */}
-                  <div className="flex items-center justify-between px-4 py-2.5 bg-primary/90">
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-[hsl(210,33%,89%)]">
                     <div className="flex items-center gap-2">
-                      <FileText className="h-3.5 w-3.5 text-primary-foreground/80" />
-                      <span className="text-sm font-semibold text-primary-foreground">Lease Agreement</span>
+                      <FileText className="h-3.5 w-3.5 text-[hsl(210,59%,30%)]/80" />
+                      <span className="text-sm font-semibold text-[hsl(210,59%,30%)]">Lease Agreement</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge className={`text-[10px] px-2 py-0.5 font-semibold ${statusClass}`}>
                         {statusLabel}
                       </Badge>
                       <div className="flex gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10" title="Preview Lease Agreement" onClick={() => generateAgreement(a, "preview")}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-[hsl(210,59%,30%)]/70 hover:text-[hsl(210,59%,30%)] hover:bg-[hsl(210,59%,30%)]/10" title="Preview Lease Agreement" onClick={() => generateAgreement(a, "preview")}>
                           <Eye className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10" title="Download Lease Agreement" onClick={() => generateAgreement(a, "download")}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-[hsl(210,59%,30%)]/70 hover:text-[hsl(210,59%,30%)] hover:bg-[hsl(210,59%,30%)]/10" title="Download Lease Agreement" onClick={() => generateAgreement(a, "download")}>
                           <Download className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10" onClick={() => openEdit(a)}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-[hsl(210,59%,30%)]/70 hover:text-[hsl(210,59%,30%)] hover:bg-[hsl(210,59%,30%)]/10" onClick={() => openEdit(a)}>
                           <Pencil className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-primary-foreground/70 hover:text-destructive hover:bg-primary-foreground/10" onClick={() => deleteLease.mutate(a.id)}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-[hsl(210,59%,30%)]/70 hover:text-destructive hover:bg-[hsl(210,59%,30%)]/10" onClick={() => deleteLease.mutate(a.id)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
