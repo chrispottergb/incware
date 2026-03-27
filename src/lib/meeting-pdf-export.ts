@@ -2146,34 +2146,117 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // Property & Structure Leases (company-level) — skip for shareholder meetings and written consents
+  // Property & Structure Leases (company-level) — card layout matching UI
   if (!isShareholder && !isWrittenConsent && data.companyLeases && data.companyLeases.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.companyLeases.length * 7);
+    y = checkPageBreak(doc, y, 20);
     y = section("Property & Structure Leases");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the lease agreements currently in effect for ${companyName}; and`,
       `NOW, THEREFORE, BE IT RESOLVED, that the following lease agreements are hereby ratified and confirmed:`,
       bt
     );
-    autoTable(doc, {
-      startY: y,
-      head: [["Property Description", "Property Address", "Landlord", "Landlord Address", "Lease Start", "Lease End", "Monthly Payment"]],
-      body: data.companyLeases.map((l: any) => [
-        l.description || "—",
-        l.address || "—",
-        l.landlord_name || "—",
-        l.landlord_address || "—",
-        l.lease_start_date ? new Date(l.lease_start_date + "T00:00:00").toLocaleDateString() : "—",
-        l.lease_end_date ? new Date(l.lease_end_date + "T00:00:00").toLocaleDateString() : "—",
-        l.monthly_payment != null ? fmt(l.monthly_payment) : l.lease_amount != null ? fmt(l.lease_amount) : "—",
-      ]),
-      theme: "grid",
-      headStyles: tableHeadStyles,
-      bodyStyles: { fontSize: 10 },
-      margin: { left: MARGIN, right: R_MARGIN },
-      styles: { overflow: "linebreak", cellWidth: "auto" },
-    });
-    y = (doc as any).lastAutoTable.finalY + 10;
+
+    const pw = doc.internal.pageSize.getWidth();
+    const cardLeft = MARGIN;
+    const cardWidth = pw - MARGIN - R_MARGIN;
+    const colMid = cardLeft + cardWidth / 2;
+    const cellPadX = 4;
+    const headerH = 8;
+    const rowH = 14;
+    const labelFontSize = 7;
+    const valueFontSize = 10;
+    const paymentFontSize = 12;
+    const cornerR = 2;
+
+    for (const l of data.companyLeases) {
+      const totalCardH = headerH + rowH * 3 + 1;
+      y = checkPageBreak(doc, y, totalCardH + 8);
+
+      // Determine status
+      const hasEndDate = !!l.lease_end_date;
+      const isExpired = hasEndDate && new Date(l.lease_end_date + "T00:00:00") < new Date();
+      const statusLabel = isExpired ? "Expired" : "Active";
+
+      // Card border (rounded rect)
+      doc.setDrawColor(180, 180, 180);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(cardLeft, y, cardWidth, totalCardH, cornerR, cornerR, "S");
+
+      // Header bar (blue fill)
+      doc.setFillColor(BLUE.r, BLUE.g, BLUE.b);
+      // Top rounded corners via clip — draw filled rect clipped by the card
+      doc.roundedRect(cardLeft, y, cardWidth, headerH, cornerR, cornerR, "F");
+      // Patch bottom corners of header (they should be square)
+      doc.rect(cardLeft, y + headerH - cornerR, cardWidth, cornerR, "F");
+
+      // Header text
+      doc.setFontSize(9);
+      doc.setFont("Arial", "bold");
+      doc.setTextColor(255, 255, 255);
+      doc.text("Lease Agreement", cardLeft + cellPadX, y + 5.5);
+
+      // Status badge
+      const badgeText = statusLabel;
+      const badgeW = doc.getTextWidth(badgeText) + 6;
+      const badgeX = cardLeft + cardWidth - cellPadX - badgeW;
+      const badgeY = y + 1.5;
+      const badgeH = 5;
+      if (isExpired) {
+        doc.setFillColor(220, 50, 50);
+      } else {
+        doc.setFillColor(34, 139, 34);
+      }
+      doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1.5, 1.5, "F");
+      doc.setFontSize(7);
+      doc.setFont("Arial", "bold");
+      doc.setTextColor(255, 255, 255);
+      doc.text(badgeText, badgeX + 3, badgeY + 3.6);
+
+      const bodyTop = y + headerH;
+
+      // Helper to draw a field (label + value)
+      const drawField = (fx: number, fy: number, maxW: number, label: string, value: string, bold = false, fontSize = valueFontSize) => {
+        doc.setFontSize(labelFontSize);
+        doc.setFont("Arial", "bold");
+        doc.setTextColor(140, 140, 140);
+        doc.text(label.toUpperCase(), fx, fy + 4);
+        doc.setFontSize(fontSize);
+        doc.setFont("Arial", bold ? "bold" : "normal");
+        doc.setTextColor(30, 30, 30);
+        const lines = doc.splitTextToSize(value || "—", maxW - 2);
+        doc.text(lines, fx, fy + 9);
+      };
+
+      const fieldW = (cardWidth / 2) - cellPadX * 2;
+
+      // Divider lines between rows
+      doc.setDrawColor(210, 210, 210);
+      doc.setLineWidth(0.2);
+      doc.line(cardLeft, bodyTop + rowH, cardLeft + cardWidth, bodyTop + rowH);
+      doc.line(cardLeft, bodyTop + rowH * 2, cardLeft + cardWidth, bodyTop + rowH * 2);
+
+      // Vertical divider
+      doc.line(colMid, bodyTop, colMid, bodyTop + rowH * 3);
+
+      // Row 1: Property Description | Property Address
+      drawField(cardLeft + cellPadX, bodyTop, fieldW, "Property Description", l.description || "—");
+      drawField(colMid + cellPadX, bodyTop, fieldW, "Property Address", l.address || "—");
+
+      // Row 2: Landlord | Landlord Address
+      drawField(cardLeft + cellPadX, bodyTop + rowH, fieldW, "Landlord", l.landlord_name || "—");
+      drawField(colMid + cellPadX, bodyTop + rowH, fieldW, "Landlord Address", l.landlord_address || "—");
+
+      // Row 3: Lease Term | Monthly Payment
+      const startDate = l.lease_start_date ? new Date(l.lease_start_date + "T00:00:00").toLocaleDateString() : "";
+      const endDate = l.lease_end_date ? new Date(l.lease_end_date + "T00:00:00").toLocaleDateString() : "Ongoing";
+      const termDisplay = startDate ? `${startDate} — ${endDate}` : "—";
+      const paymentVal = l.monthly_payment != null ? fmt(l.monthly_payment) : l.lease_amount != null ? fmt(l.lease_amount) : "—";
+
+      drawField(cardLeft + cellPadX, bodyTop + rowH * 2, fieldW, "Lease Term", termDisplay);
+      drawField(colMid + cellPadX, bodyTop + rowH * 2, fieldW, "Monthly Payment", paymentVal, true, paymentFontSize);
+
+      y = y + totalCardH + 6;
+    }
   }
 
   // Vehicle Leases — skip for shareholder meetings and written consents
