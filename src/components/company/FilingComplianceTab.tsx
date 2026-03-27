@@ -50,7 +50,7 @@ function getRequiredFilings(entityType: string | undefined): string[] {
       return [
         "Articles of Incorporation",
         "EIN Registration",
-        "Initial Board Meeting Minutes",
+        "IRS Form 2553",
       ];
     case "S-Corp":
       return [
@@ -64,7 +64,7 @@ function getRequiredFilings(entityType: string | undefined): string[] {
       return [
         "Articles of Organization",
         "EIN Registration",
-        "Operating Agreement",
+        "IRS Form 2553",
       ];
     case "Non-Profit":
       return [
