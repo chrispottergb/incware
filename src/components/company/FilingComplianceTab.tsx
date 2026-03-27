@@ -145,13 +145,13 @@ export default function FilingComplianceTab({ companyId, entityType }: Props) {
         item_name: name,
         status: "pending",
       }));
-      promises.push(supabase.from("filing_checklist").insert(rows));
+      promises.push(supabase.from("filing_checklist").insert(rows).then());
     }
 
     if (stale.length > 0) {
       const staleIds = stale.map((i) => i.id);
       promises.push(
-        supabase.from("filing_checklist").delete().in("id", staleIds)
+        supabase.from("filing_checklist").delete().in("id", staleIds).then()
       );
     }
 
