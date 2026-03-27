@@ -137,28 +137,32 @@ export default function FilingComplianceTab({ companyId, entityType }: Props) {
     const missing = allFilings.filter((f) => !existing.has(f));
     const stale = items.filter((i) => !allFilings.includes(i.item_name));
 
-    const promises: Promise<any>[] = [];
+    let changed = false;
 
-    if (missing.length > 0) {
-      const rows = missing.map((name) => ({
-        company_id: companyId,
-        item_name: name,
-        status: "pending",
-      }));
-      promises.push(supabase.from("filing_checklist").insert(rows).then());
-    }
+    const run = async () => {
+      if (missing.length > 0) {
+        const rows = missing.map((name) => ({
+          company_id: companyId,
+          item_name: name,
+          status: "pending",
+        }));
+        await supabase.from("filing_checklist").insert(rows);
+        changed = true;
+      }
 
-    if (stale.length > 0) {
-      const staleIds = stale.map((i) => i.id);
-      promises.push(
-        supabase.from("filing_checklist").delete().in("id", staleIds).then()
-      );
-    }
+      if (stale.length > 0) {
+        const staleIds = stale.map((i) => i.id);
+        await supabase.from("filing_checklist").delete().in("id", staleIds);
+        changed = true;
+      }
 
-    if (promises.length > 0) {
-      Promise.all(promises).then(() => {
+      if (changed) {
         queryClient.invalidateQueries({ queryKey: ["filing-checklist", companyId] });
-      });
+      }
+    };
+
+    if (missing.length > 0 || stale.length > 0) {
+      run();
     }
   }, [isLoading, items, allFilings, companyId, queryClient]);
 
