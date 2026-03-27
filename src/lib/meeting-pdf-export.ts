@@ -2850,9 +2850,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 5;
   }
 
-  // Signature block
-  y = checkPageBreak(doc, y, 60);
-  y += 10;
+  // Signature block — estimate height needed based on type
+  const sigBlockHeight = isWrittenConsent ? 60 : 35;
+  y = checkPageBreak(doc, y, sigBlockHeight);
+  y += 6;
   doc.setDrawColor(160, 160, 160);
   doc.setLineWidth(0.3);
 
