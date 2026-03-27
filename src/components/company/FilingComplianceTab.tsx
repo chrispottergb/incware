@@ -95,6 +95,13 @@ function getOptionalFilings(entityType: string | undefined): string[] {
   return [];
 }
 
+function getFileOnlineUrl(itemName: string): string {
+  if (itemName.toLowerCase().includes("ein")) return "https://sa.www4.irs.gov/applyein/";
+  if (itemName.toLowerCase().includes("2553")) return "https://www.irs.gov/forms-pubs/about-form-2553";
+  if (itemName.toLowerCase().includes("1023")) return "https://www.irs.gov/forms-pubs/about-form-1023-ez";
+  return DFI_FILING_URL;
+}
+
 const statusConfig: Record<string, { label: string; color: string; icon: typeof Circle }> = {
   pending: { label: "Pending", color: "bg-muted text-muted-foreground border-muted", icon: Circle },
   filed: { label: "Filed", color: "bg-amber-500/10 text-amber-500 border-amber-500/20", icon: Clock },
