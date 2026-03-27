@@ -470,17 +470,27 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
 
           {/* Generation Buttons */}
           <div className="flex flex-wrap gap-2">
-            <Button onClick={handleClientGenerate} disabled={isGenerating || isAiGenerating} variant="outline">
-              {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-              Generate Standard
-            </Button>
-            <Button onClick={handleAiGenerate} disabled={isGenerating || isAiGenerating}>
-              {isAiGenerating ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Drafting with AI…</>
-              ) : (
-                <><Sparkles className="h-4 w-4" /> AI-Assisted Draft</>
-              )}
-            </Button>
+            <div className="relative group">
+              <Button onClick={handleClientGenerate} disabled={isGenerating || isAiGenerating} variant="outline">
+                {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                {isGenerating ? "Generating…" : "Generate Standard"}
+              </Button>
+              <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] bg-popover text-popover-foreground border border-border px-2 py-0.5 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                Instant template-based agreement
+              </span>
+            </div>
+            <div className="relative group">
+              <Button onClick={handleAiGenerate} disabled={isGenerating || isAiGenerating}>
+                {isAiGenerating ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Drafting with AI…</>
+                ) : (
+                  <><Sparkles className="h-4 w-4" /> AI-Assisted Draft</>
+                )}
+              </Button>
+              <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] bg-popover text-popover-foreground border border-border px-2 py-0.5 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                Customized using AI — takes a moment
+              </span>
+            </div>
           </div>
 
           {/* AI Section Controls */}
