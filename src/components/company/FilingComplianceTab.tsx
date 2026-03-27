@@ -391,7 +391,7 @@ export default function FilingComplianceTab({ companyId, entityType }: Props) {
                 )}
 
                 <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" asChild>
-                  <a href={DFI_FILING_URL} target="_blank" rel="noopener noreferrer">
+                  <a href={getFileOnlineUrl(item.item_name)} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-3 w-3 mr-1" />
                     File Online
                   </a>
