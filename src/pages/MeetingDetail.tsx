@@ -478,7 +478,8 @@ export default function MeetingDetail() {
   const officersHaveReasonIssue = officers.some((o: any) =>
     (o.compensation_status === "below_market" || o.compensation_status === "above_market") && o.compensation_note?.includes("[REASON]")
   );
-  // Dual-role validation: detect names appearing multiple times without explicit primary designation
+  // Dual-role validation: treat a group as resolved when one compensated role remains
+  // and all additional duplicate-title rows are marked as included in that primary role.
   const officerNameCounts = new Map<string, any[]>();
   officers.forEach((o: any) => {
     const key = (o.name || "").trim().toLowerCase();
@@ -487,8 +488,14 @@ export default function MeetingDetail() {
     officerNameCounts.get(key)!.push(o);
   });
   const unresolvedDualRoles: string[] = [];
-  officerNameCounts.forEach((group, _key) => {
-    if (group.length >= 2 && !group.some((o: any) => o.dual_role_type === "primary")) {
+  officerNameCounts.forEach((group) => {
+    if (group.length < 2) return;
+
+    const hasExplicitPrimary = group.some((o: any) => o.dual_role_type === "primary");
+    const primaryCandidates = group.filter((o: any) => o.compensation_status !== "included_in_primary");
+    const hasInferredPrimary = primaryCandidates.length === 1;
+
+    if (!hasExplicitPrimary && !hasInferredPrimary) {
       unresolvedDualRoles.push(group[0].name);
     }
   });
