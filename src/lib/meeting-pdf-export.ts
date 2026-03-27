@@ -2182,17 +2182,17 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       doc.setLineWidth(0.3);
       doc.roundedRect(cardLeft, y, cardWidth, totalCardH, cornerR, cornerR, "S");
 
-      // Header bar (blue fill)
-      doc.setFillColor(BLUE.r, BLUE.g, BLUE.b);
+      // Header bar (light blue fill — matches other table headers)
+      doc.setFillColor(LIGHT_BLUE_BG[0], LIGHT_BLUE_BG[1], LIGHT_BLUE_BG[2]);
       // Top rounded corners via clip — draw filled rect clipped by the card
       doc.roundedRect(cardLeft, y, cardWidth, headerH, cornerR, cornerR, "F");
       // Patch bottom corners of header (they should be square)
       doc.rect(cardLeft, y + headerH - cornerR, cardWidth, cornerR, "F");
 
-      // Header text
+      // Header text (dark blue to match other table headers)
       doc.setFontSize(9);
       doc.setFont("Arial", "bold");
-      doc.setTextColor(255, 255, 255);
+      doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
       doc.text("Lease Agreement", cardLeft + cellPadX, y + 5.5);
 
       // Status badge
