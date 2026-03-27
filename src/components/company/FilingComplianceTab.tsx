@@ -130,27 +130,40 @@ export default function FilingComplianceTab({ companyId, entityType }: Props) {
     },
   });
 
-  // Seed missing checklist items
+  // Seed missing checklist items and remove stale ones
   useEffect(() => {
     if (isLoading) return;
     const existing = new Set(items.map((i) => i.item_name));
     const missing = allFilings.filter((f) => !existing.has(f));
-    if (missing.length === 0) return;
+    const stale = items.filter((i) => !allFilings.includes(i.item_name));
 
-    const rows = missing.map((name) => ({
-      company_id: companyId,
-      item_name: name,
-      status: "pending",
-    }));
+    let changed = false;
 
-    supabase
-      .from("filing_checklist")
-      .insert(rows)
-      .then(({ error }) => {
-        if (!error) {
-          queryClient.invalidateQueries({ queryKey: ["filing-checklist", companyId] });
-        }
-      });
+    const run = async () => {
+      if (missing.length > 0) {
+        const rows = missing.map((name) => ({
+          company_id: companyId,
+          item_name: name,
+          status: "pending",
+        }));
+        await supabase.from("filing_checklist").insert(rows);
+        changed = true;
+      }
+
+      if (stale.length > 0) {
+        const staleIds = stale.map((i) => i.id);
+        await supabase.from("filing_checklist").delete().in("id", staleIds);
+        changed = true;
+      }
+
+      if (changed) {
+        queryClient.invalidateQueries({ queryKey: ["filing-checklist", companyId] });
+      }
+    };
+
+    if (missing.length > 0 || stale.length > 0) {
+      run();
+    }
   }, [isLoading, items, allFilings, companyId, queryClient]);
 
   const updateItem = useMutation({
