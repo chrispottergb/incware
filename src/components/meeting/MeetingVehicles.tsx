@@ -393,8 +393,8 @@ export default function MeetingVehicles({ meetingId }: Props) {
                     <TableHead>Type</TableHead>
                     <TableHead>Transaction</TableHead>
                     <TableHead>VIN / Serial No.</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
+                     <TableHead>Date</TableHead>
+                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead>Seller / Buyer</TableHead>
                     <TableHead className="w-20" />
                   </TableRow>
