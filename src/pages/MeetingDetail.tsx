@@ -342,20 +342,10 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
-  const { data: vehiclePurchases = [] } = useQuery({
+  const { data: capitalAssets = [] } = useQuery({
     queryKey: ["meeting_vehicle_purchases", meetingId],
     queryFn: async () => {
       const { data, error } = await supabase.from("meeting_vehicle_purchases").select("*").eq("meeting_id", meetingId!).order("created_at");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!meetingId,
-  });
-
-  const { data: vehicleLeases = [] } = useQuery({
-    queryKey: ["meeting_vehicle_leases", meetingId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("meeting_vehicle_leases").select("*").eq("meeting_id", meetingId!).order("created_at");
       if (error) throw error;
       return data;
     },
