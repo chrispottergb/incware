@@ -352,6 +352,16 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
+  const { data: vehicleLeases = [] } = useQuery({
+    queryKey: ["meeting_vehicle_leases", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_vehicle_leases").select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!meetingId,
+  });
+
   const { data: authorizedSigners = [] } = useQuery({
     queryKey: ["meeting_authorized_signers", meetingId],
     queryFn: async () => {
