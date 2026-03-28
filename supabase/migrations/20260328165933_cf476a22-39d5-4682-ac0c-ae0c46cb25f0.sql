@@ -1,0 +1,2 @@
+ALTER TABLE meeting_shareholders ALTER COLUMN common_shares TYPE numeric USING common_shares::numeric;
+ALTER TABLE meeting_shareholders ALTER COLUMN preferred_shares TYPE numeric USING preferred_shares::numeric;
