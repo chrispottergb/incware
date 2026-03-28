@@ -847,7 +847,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;
   }
 
   // 5. Directors (Corp only)
@@ -1134,7 +1134,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
             3: { cellWidth: 30 },
           },
         });
-        y = (doc as any).lastAutoTable.finalY + 10;
+        y = (doc as any).lastAutoTable.finalY + 6;
       }
     } else {
       // Annual meeting: attendee list
@@ -1437,7 +1437,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;
   }
 
   // Officers (with salary/bonus) — skip for shareholder meetings and written consents
@@ -1485,7 +1485,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;
 
     // Compensation Determinations block
     const processedNames = new Set<string>();
@@ -1565,7 +1565,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;
   }
 
   // Shareholders — skip for shareholder meetings and written consents
@@ -1622,7 +1622,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         3: { cellWidth: 25 },
       },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;
 
     // Distribution resolution for each member/shareholder with a distribution amount
     if (hasDistribution) {
@@ -1988,7 +1988,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         bodyStyles: { fontSize: 10 },
         margin: { left: MARGIN, right: R_MARGIN },
       });
-      y = (doc as any).lastAutoTable.finalY + 10;
+      y = (doc as any).lastAutoTable.finalY + 6;
 
       // Banking Resolutions for Annual Meetings (use company-level bank data)
       const annualBanks = data.companyBanks || [];
@@ -2044,7 +2044,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
             bodyStyles: { fontSize: 10 },
             margin: { left: MARGIN, right: R_MARGIN },
           });
-          y = (doc as any).lastAutoTable.finalY + 10;
+          y = (doc as any).lastAutoTable.finalY + 6;
         }
       }
     }
@@ -2074,7 +2074,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;
   }
 
   // Annual Balance Reporting — renders independently of loan entries
@@ -2093,7 +2093,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;
   }
 
   const vehiclePolicyText = meeting?.vehicle_policy_text?.trim();
@@ -2143,7 +2143,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;
   }
 
   // Property & Structure Leases (company-level) — card layout matching UI
@@ -2287,7 +2287,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;
   }
 
   // Vehicle/Equipment Sales — skip for shareholder meetings and written consents
@@ -2316,7 +2316,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;
   }
 
   // Equipment Transactions — skip for shareholder meetings and written consents
@@ -2371,7 +2371,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;
   }
 
   // Lease Terminations — skip for shareholder meetings and written consents
@@ -2400,7 +2400,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;
   }
 
   // Amendments — skip for shareholder meetings and written consents
@@ -2703,7 +2703,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;
   }
 
   // Other — skip for written consents
@@ -2719,7 +2719,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;
   }
 
   // Authorized Signatories — skip for written consents
@@ -2740,7 +2740,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;
   }
 
   // Registered Agent Confirmation (Annual Meeting blue theme)
