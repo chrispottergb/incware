@@ -2136,14 +2136,14 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     autoTable(doc, {
       startY: y,
-      head: [["Year / Make / Model", "Type", "Transaction", "VIN / Serial No.", "Purchase\nDate", "Price", "Seller"]],
+      head: [["Year / Make / Model", "Type", "Transaction", "VIN / Serial No.", "Date", "Amount", "Seller / Buyer"]],
       body: data.capitalAssets.map((v: any) => [
         v.year_make_model || "—",
         v.asset_type || "Vehicle",
         v.transaction_type || "Purchased",
         v.vin || "—",
-        v.purchase_date ? new Date(v.purchase_date + "T00:00:00").toLocaleDateString() : "—",
-        v.purchase_price != null ? fmt(v.purchase_price) : "—",
+        v.date ? new Date(v.date + "T00:00:00").toLocaleDateString() : "—",
+        v.amount != null ? fmt(v.amount) : "—",
         v.seller || "—",
       ]),
       theme: "grid",
