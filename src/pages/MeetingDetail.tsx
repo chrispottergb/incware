@@ -514,9 +514,7 @@ export default function MeetingDetail() {
       financials,
       nonRecurringItems,
       authorizedSigners,
-      vehiclePurchases,
-      vehicleLeases,
-      vehicleSales,
+      capitalAssets,
       leaseTerminations,
       priorYear: priorMeetingId ? {
         officers: priorOfficers,
