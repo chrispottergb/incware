@@ -306,7 +306,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
       {/* ════ Unified Capital Asset Additions ════ */}
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
-          <CardTitle className="font-display text-base">Capital Asset Additions During the Year</CardTitle>
+          <CardTitle className="font-display text-base">Capital Asset Additions and Disposals During the Year</CardTitle>
           <Dialog open={assetOpen} onOpenChange={(open) => { if (!open) closeAssetDialog(); else setAssetOpen(true); }}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline" onClick={() => { setEditingAssetId(null); setAssetForm(emptyAsset); }}>
