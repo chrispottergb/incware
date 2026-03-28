@@ -34,6 +34,7 @@ interface MeetingData {
   nonRecurringItems?: any[];
   authorizedSigners?: any[];
   capitalAssets?: any[];
+  vehicleLeases?: any[];
   leaseTerminations?: any[];
   priorYear?: {
     officers?: any[];
