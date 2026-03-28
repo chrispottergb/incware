@@ -79,18 +79,31 @@ export default function AnnualReviewLinkGenerator({
 
       toast.success(replaceExistingId ? "Previous link replaced. New link generated." : "Review link generated successfully.");
 
-      // Auto-email if enabled and company has contact email
+      // Auto-email via Resend (HTML email with clickable link)
       if (autoEmail && hasEmail && selectedCompany) {
-        const subject = encodeURIComponent(
-          `Action Required: ${reviewYear} Annual Review — ${selectedCompany.name}`
-        );
-        const salutation = selectedCompany.salutation_name || "there";
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 90);
-        const body = encodeURIComponent(
-          `Hi ${salutation},\n\nPlease complete your ${reviewYear} annual review for ${selectedCompany.name} using the secure link below:\n\n${link}\n\nThis link will expire on ${expiryDate.toLocaleDateString()}.\n\nThank you!`
-        );
-        window.open(`mailto:${selectedCompany.contact_email}?subject=${subject}&body=${body}`, "_blank");
+        try {
+          const { error: emailError } = await supabase.functions.invoke("send-review-reminder", {
+            body: {
+              contactName: selectedCompany.salutation_name || selectedCompany.contact_full_name || null,
+              contactEmail: selectedCompany.contact_email,
+              entityName: selectedCompany.name,
+              reviewYear,
+              reviewUrl: link,
+              expiresAt: expiryDate.toISOString(),
+            },
+          });
+          if (emailError) {
+            console.error("Email send error:", emailError);
+            toast.error("Link generated but email failed to send. You can copy the link manually.");
+          } else {
+            toast.success("Email sent to " + selectedCompany.contact_email);
+          }
+        } catch (emailErr) {
+          console.error("Email send error:", emailErr);
+          toast.error("Link generated but email failed to send.");
+        }
       }
     } catch (err: any) {
       console.error(err);
@@ -210,7 +223,7 @@ export default function AnnualReviewLinkGenerator({
                     </Label>
                     {hasEmail ? (
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Will open email draft to <strong>{selectedCompany?.contact_email}</strong>
+                        Will send a branded email with clickable link to <strong>{selectedCompany?.contact_email}</strong>
                       </p>
                     ) : (
                       <p className="text-xs text-muted-foreground mt-0.5">
