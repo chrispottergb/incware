@@ -85,6 +85,9 @@ const transactionColors: Record<string, string> = {
   Leased: "bg-blue-100 text-blue-800 border-blue-200",
   Sold: "bg-amber-100 text-amber-800 border-amber-200",
   "Trade-in": "bg-purple-100 text-purple-800 border-purple-200",
+  Scrapped: "bg-gray-100 text-gray-800 border-gray-200",
+  Donated: "bg-teal-100 text-teal-800 border-teal-200",
+  "Insurance Totaled": "bg-red-100 text-red-800 border-red-200",
 };
 
 const typeColors: Record<string, string> = {
