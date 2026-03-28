@@ -2112,27 +2112,36 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 6;
   }
 
-  // Capital Asset Additions — unified table
+  // Capital Asset Additions and Disposals — unified table
   if (!isShareholder && !isWrittenConsent && data.capitalAssets && data.capitalAssets.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.capitalAssets.length * 7);
+    // Estimate total height: header ~10 + rows ~8 each + whereas/resolved ~30 + closing ~15
+    const estimatedHeight = 60 + data.capitalAssets.length * 8;
+    y = checkPageBreak(doc, y, estimatedHeight);
     y = section("Capital Asset Additions and Disposals During the Year");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, it is necessary for the company to obtain vehicles and equipment for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} decided that it would be in the best interests of the company to acquire the following asset(s);`,
-      `RESOLVED, that the following capital asset purchases are hereby approved and ratified:`,
+      `WHEREAS, it is necessary for the company to obtain vehicles and equipment for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} decided that it would be in the best interests of the company to acquire or dispose of the following asset(s);`,
+      `RESOLVED, that the following capital asset transactions are hereby approved and ratified:`,
       bt
     );
 
-    // Badge color map for PDF
-    const txnColors: Record<string, [number, number, number]> = {
-      Purchased: [16, 130, 80],
-      Leased: [59, 130, 246],
-      Sold: [180, 120, 10],
-      "Trade-in": [139, 92, 246],
+    // Badge colors for Type column
+    const typeBadgeStyles: Record<string, { bg: [number, number, number]; text: [number, number, number] }> = {
+      Vehicle:   { bg: [220, 232, 243], text: [26, 63, 92] },    // #dce8f3 / #1a3f5c
+      Equipment: { bg: [225, 240, 232], text: [26, 69, 48] },    // #e1f0e8 / #1a4530
     };
-    const typeColorsMap: Record<string, [number, number, number]> = {
-      Vehicle: [59, 130, 246],
-      Equipment: [234, 88, 12],
+    // Badge colors for Transaction column
+    const txnBadgeStyles: Record<string, { bg: [number, number, number]; text: [number, number, number] }> = {
+      Purchased:  { bg: [232, 240, 220], text: [42, 64, 16] },   // #e8f0dc / #2a4010
+      Leased:     { bg: [243, 234, 216], text: [74, 46, 8] },    // #f3ead8 / #4a2e08
+      Sold:       { bg: [253, 232, 232], text: [92, 26, 26] },   // #fde8e8 / #5c1a1a
+      "Trade-in": { bg: [237, 232, 243], text: [46, 26, 92] },   // #ede8f3 / #2e1a5c
     };
+
+    const headerBg: [number, number, number] = [220, 232, 243];       // #dce8f3
+    const headerText: [number, number, number] = [26, 63, 92];        // #1a3f5c
+    const headerBorder: [number, number, number] = [176, 200, 222];   // #b0c8de
+    const cellBorder: [number, number, number] = [205, 218, 234];     // #cddaea
+    const altRowBg: [number, number, number] = [245, 248, 252];
 
     autoTable(doc, {
       startY: y,
@@ -2147,25 +2156,44 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         v.seller || "—",
       ]),
       theme: "grid",
-      headStyles: tableHeadStyles,
-      bodyStyles: { fontSize: 10 },
+      headStyles: {
+        fillColor: headerBg,
+        textColor: headerText,
+        fontSize: 8.2,
+        fontStyle: "bold",
+        lineWidth: 0.18,
+        lineColor: headerBorder,
+      },
+      bodyStyles: {
+        fontSize: 8.8,
+        lineWidth: 0.18,
+        lineColor: cellBorder,
+        cellPadding: 2.5,
+      },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
+      pageBreak: "avoid",
       didParseCell: (hookData: any) => {
         if (hookData.section === "body") {
+          // Alternating row shading
+          if (hookData.row.index % 2 === 1) {
+            hookData.cell.styles.fillColor = altRowBg;
+          }
+          // Type badge (col 1)
           if (hookData.column.index === 1) {
-            const val = hookData.cell.raw as string;
-            const c = typeColorsMap[val];
-            if (c) {
-              hookData.cell.styles.textColor = c;
+            const style = typeBadgeStyles[hookData.cell.raw as string];
+            if (style) {
+              hookData.cell.styles.fillColor = style.bg;
+              hookData.cell.styles.textColor = style.text;
               hookData.cell.styles.fontStyle = "bold";
             }
           }
+          // Transaction badge (col 2)
           if (hookData.column.index === 2) {
-            const val = hookData.cell.raw as string;
-            const c = txnColors[val];
-            if (c) {
-              hookData.cell.styles.textColor = c;
+            const style = txnBadgeStyles[hookData.cell.raw as string];
+            if (style) {
+              hookData.cell.styles.fillColor = style.bg;
+              hookData.cell.styles.textColor = style.text;
               hookData.cell.styles.fontStyle = "bold";
             }
           }
@@ -2178,7 +2206,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     doc.setFontSize(10);
     doc.setFont("Arial", "italic");
     doc.setTextColor(...BODY_COLOR);
-    const closingText = "A summary of total capital expenditures for the year is maintained in the financial statements and will be depreciated in accordance with the company's accounting policies. Supporting documentation for all purchases is retained in the corporate records.";
+    const closingText = "A summary of total capital expenditures and disposals for the year is maintained in the financial statements and will be depreciated or adjusted in accordance with the company's accounting policies. Supporting documentation for all transactions is retained in the corporate records.";
     const closingLines = doc.splitTextToSize(closingText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of closingLines) {
       y = checkPageBreak(doc, y, 5);
