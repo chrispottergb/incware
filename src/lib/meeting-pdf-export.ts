@@ -339,7 +339,7 @@ function addLabelValue(doc: jsPDF, y: number, label: string, value: string, x = 
 }
 
 function checkPageBreak(doc: jsPDF, y: number, needed: number): number {
-  if (y + needed > doc.internal.pageSize.getHeight() - 35) {
+  if (y + needed > doc.internal.pageSize.getHeight() - 25) {
     doc.addPage();
     return 25;
   }
