@@ -2281,47 +2281,56 @@ export type Database = {
       }
       meeting_vehicle_leases: {
         Row: {
+          asset_type: string
           business_use_description: string | null
           created_at: string
           fmv_notes: string | null
           fmv_verified: boolean | null
           id: string
+          lease_end_date: string | null
           lease_start_date: string | null
           lessor_name: string | null
           meeting_id: string
           monthly_lease_payment: number | null
           notes: string | null
           relationship_to_company: string | null
+          total_lease_value: number | null
           vin: string | null
           year_make_model: string
         }
         Insert: {
+          asset_type?: string
           business_use_description?: string | null
           created_at?: string
           fmv_notes?: string | null
           fmv_verified?: boolean | null
           id?: string
+          lease_end_date?: string | null
           lease_start_date?: string | null
           lessor_name?: string | null
           meeting_id: string
           monthly_lease_payment?: number | null
           notes?: string | null
           relationship_to_company?: string | null
+          total_lease_value?: number | null
           vin?: string | null
           year_make_model?: string
         }
         Update: {
+          asset_type?: string
           business_use_description?: string | null
           created_at?: string
           fmv_notes?: string | null
           fmv_verified?: boolean | null
           id?: string
+          lease_end_date?: string | null
           lease_start_date?: string | null
           lessor_name?: string | null
           meeting_id?: string
           monthly_lease_payment?: number | null
           notes?: string | null
           relationship_to_company?: string | null
+          total_lease_value?: number | null
           vin?: string | null
           year_make_model?: string
         }
