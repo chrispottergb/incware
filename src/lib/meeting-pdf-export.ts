@@ -1136,11 +1136,19 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         y = (doc as any).lastAutoTable.finalY + 6;
       }
     } else {
-      // Annual meeting: attendee list
-      const attendees = new Set<string>();
-      (data.shareholders || []).forEach(s => { if (s.shareholder_name) attendees.add(s.shareholder_name); });
-      (data.directors || []).forEach(d => { if (d.director_name) attendees.add(d.director_name); });
-      (data.officers || []).forEach(o => { if (o.name) attendees.add(o.name); });
+      // Annual meeting: attendee list (deduplicate by normalized name)
+      const attendeeMap = new Map<string, string>(); // normalized → first-seen display name
+      const normKey = (n: string) => n.toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim();
+      const addAttendee = (name: string | null | undefined) => {
+        if (!name) return;
+        const key = normKey(name);
+        if (!key || attendeeMap.has(key)) return;
+        attendeeMap.set(key, name.trim());
+      };
+      (data.shareholders || []).forEach(s => addAttendee(s.shareholder_name));
+      (data.directors || []).forEach(d => addAttendee(d.director_name));
+      (data.officers || []).forEach(o => addAttendee(o.name));
+      const attendees = new Set(attendeeMap.values());
       if (attendees.size > 0) {
         doc.setFontSize(11);
         doc.setFont("Arial", "normal");
