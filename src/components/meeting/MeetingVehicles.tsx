@@ -44,8 +44,8 @@ interface AssetForm {
   asset_type: string;
   transaction_type: string;
   vin: string;
-  purchase_date: string;
-  purchase_price: string;
+  date: string;
+  amount: string;
   seller: string;
   business_use_description: string;
   authorized_drivers: string;
@@ -57,8 +57,8 @@ const emptyAsset: AssetForm = {
   asset_type: "Vehicle",
   transaction_type: "Purchased",
   vin: "",
-  purchase_date: "",
-  purchase_price: "",
+  date: "",
+  amount: "",
   seller: "",
   business_use_description: "",
   authorized_drivers: "",
@@ -139,8 +139,8 @@ export default function MeetingVehicles({ meetingId }: Props) {
         asset_type: assetForm.asset_type,
         transaction_type: assetForm.transaction_type,
         vin: assetForm.vin || null,
-        purchase_date: assetForm.purchase_date || null,
-        purchase_price: assetForm.purchase_price ? parseFloat(assetForm.purchase_price) : null,
+        date: assetForm.date || null,
+        amount: assetForm.amount ? parseFloat(assetForm.amount) : null,
         seller: assetForm.seller || null,
         business_use_description: assetForm.business_use_description || null,
         authorized_drivers: assetForm.authorized_drivers || null,
@@ -164,8 +164,8 @@ export default function MeetingVehicles({ meetingId }: Props) {
         asset_type: assetForm.asset_type,
         transaction_type: assetForm.transaction_type,
         vin: assetForm.vin || null,
-        purchase_date: assetForm.purchase_date || null,
-        purchase_price: assetForm.purchase_price ? parseFloat(assetForm.purchase_price) : null,
+        date: assetForm.date || null,
+        amount: assetForm.amount ? parseFloat(assetForm.amount) : null,
         seller: assetForm.seller || null,
         business_use_description: assetForm.business_use_description || null,
         authorized_drivers: assetForm.authorized_drivers || null,
@@ -266,8 +266,8 @@ export default function MeetingVehicles({ meetingId }: Props) {
       asset_type: row.asset_type || "Vehicle",
       transaction_type: row.transaction_type || "Purchased",
       vin: row.vin || "",
-      purchase_date: row.purchase_date || "",
-      purchase_price: row.purchase_price?.toString() || "",
+      date: row.date || "",
+      amount: row.amount?.toString() || "",
       seller: row.seller || "",
       business_use_description: row.business_use_description || "",
       authorized_drivers: row.authorized_drivers || "",
@@ -299,14 +299,14 @@ export default function MeetingVehicles({ meetingId }: Props) {
   const af = (key: keyof AssetForm, value: string | boolean) => setAssetForm(prev => ({ ...prev, [key]: value as any }));
   const ltf = (key: keyof LeaseTermForm, value: string | boolean) => setLeaseTermForm(prev => ({ ...prev, [key]: value }));
 
-  const sellerLabel = assetForm.transaction_type === "Sold" ? "Buyer" : assetForm.transaction_type === "Leased" ? "Lessor" : "Seller";
+  const sellerLabel = assetForm.transaction_type === "Sold" ? "Buyer" : "Seller";
 
   return (
     <div className="space-y-6">
       {/* ════ Unified Capital Asset Additions ════ */}
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
-          <CardTitle className="font-display text-base">Capital Asset Additions During the Year</CardTitle>
+          <CardTitle className="font-display text-base">Capital Asset Additions and Disposals During the Year</CardTitle>
           <Dialog open={assetOpen} onOpenChange={(open) => { if (!open) closeAssetDialog(); else setAssetOpen(true); }}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline" onClick={() => { setEditingAssetId(null); setAssetForm(emptyAsset); }}>
@@ -352,11 +352,11 @@ export default function MeetingVehicles({ meetingId }: Props) {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">Date</Label>
-                    <DatePickerField value={assetForm.purchase_date} onChange={(v) => af("purchase_date", v)} />
+                    <DatePickerField value={assetForm.date} onChange={(v) => af("date", v)} />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">Price ($)</Label>
-                    <Input type="number" step="0.01" value={assetForm.purchase_price} onChange={(e) => af("purchase_price", e.target.value)} placeholder="0.00" />
+                    <Label className="text-xs font-medium text-muted-foreground">Amount ($)</Label>
+                    <Input type="number" step="0.01" value={assetForm.amount} onChange={(e) => af("amount", e.target.value)} placeholder="0.00" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">{sellerLabel}</Label>
@@ -393,8 +393,8 @@ export default function MeetingVehicles({ meetingId }: Props) {
                     <TableHead>Type</TableHead>
                     <TableHead>Transaction</TableHead>
                     <TableHead>VIN / Serial No.</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
+                     <TableHead>Date</TableHead>
+                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead>Seller / Buyer</TableHead>
                     <TableHead className="w-20" />
                   </TableRow>
@@ -414,8 +414,8 @@ export default function MeetingVehicles({ meetingId }: Props) {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-xs font-mono">{row.vin || "—"}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{fmtDate(row.purchase_date)}</TableCell>
-                      <TableCell className="text-right font-mono text-xs">{fmt(row.purchase_price)}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{fmtDate(row.date)}</TableCell>
+                       <TableCell className="text-right font-mono text-xs">{fmt(row.amount)}</TableCell>
                       <TableCell className="text-sm">{row.seller || "—"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">

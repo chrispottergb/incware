@@ -2337,45 +2337,45 @@ export type Database = {
       }
       meeting_vehicle_purchases: {
         Row: {
+          amount: number | null
           asset_type: string
           authorized_drivers: string | null
           business_use_description: string | null
           created_at: string
+          date: string | null
           id: string
           meeting_id: string
           notes: string | null
-          purchase_date: string | null
-          purchase_price: number | null
           seller: string | null
           transaction_type: string
           vin: string | null
           year_make_model: string
         }
         Insert: {
+          amount?: number | null
           asset_type?: string
           authorized_drivers?: string | null
           business_use_description?: string | null
           created_at?: string
+          date?: string | null
           id?: string
           meeting_id: string
           notes?: string | null
-          purchase_date?: string | null
-          purchase_price?: number | null
           seller?: string | null
           transaction_type?: string
           vin?: string | null
           year_make_model?: string
         }
         Update: {
+          amount?: number | null
           asset_type?: string
           authorized_drivers?: string | null
           business_use_description?: string | null
           created_at?: string
+          date?: string | null
           id?: string
           meeting_id?: string
           notes?: string | null
-          purchase_date?: string | null
-          purchase_price?: number | null
           seller?: string | null
           transaction_type?: string
           vin?: string | null
