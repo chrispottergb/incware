@@ -355,8 +355,8 @@ export default function MeetingVehicles({ meetingId }: Props) {
                     <DatePickerField value={assetForm.date} onChange={(v) => af("date", v)} />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">Price ($)</Label>
-                    <Input type="number" step="0.01" value={assetForm.purchase_price} onChange={(e) => af("purchase_price", e.target.value)} placeholder="0.00" />
+                    <Label className="text-xs font-medium text-muted-foreground">Amount ($)</Label>
+                    <Input type="number" step="0.01" value={assetForm.amount} onChange={(e) => af("amount", e.target.value)} placeholder="0.00" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">{sellerLabel}</Label>
