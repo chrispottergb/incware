@@ -414,8 +414,8 @@ export default function MeetingVehicles({ meetingId }: Props) {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-xs font-mono">{row.vin || "—"}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{fmtDate(row.purchase_date)}</TableCell>
-                      <TableCell className="text-right font-mono text-xs">{fmt(row.purchase_price)}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{fmtDate(row.date)}</TableCell>
+                       <TableCell className="text-right font-mono text-xs">{fmt(row.amount)}</TableCell>
                       <TableCell className="text-sm">{row.seller || "—"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
