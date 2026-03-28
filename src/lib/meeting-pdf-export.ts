@@ -2117,26 +2117,26 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + data.capitalAssets.length * 7);
     y = section("Capital Asset Additions During the Year");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the capital asset transactions of ${companyName} during the year, including purchases, leases, sales, and trade-ins of vehicles and equipment; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following capital asset transactions are hereby approved and ratified:`,
+      `WHEREAS, it is necessary for the company to obtain vehicles and equipment for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} decided that it would be in the best interests of the company to acquire the following asset(s);`,
+      `RESOLVED, that the following capital asset purchases are hereby approved and ratified:`,
       bt
     );
 
     // Badge color map for PDF
     const txnColors: Record<string, [number, number, number]> = {
-      Purchased: [16, 185, 129],
+      Purchased: [16, 130, 80],
       Leased: [59, 130, 246],
-      Sold: [245, 158, 11],
+      Sold: [180, 120, 10],
       "Trade-in": [139, 92, 246],
     };
     const typeColorsMap: Record<string, [number, number, number]> = {
-      Vehicle: [100, 116, 139],
+      Vehicle: [59, 130, 246],
       Equipment: [234, 88, 12],
     };
 
     autoTable(doc, {
       startY: y,
-      head: [["Year / Make / Model", "Type", "Transaction", "VIN / Serial No.", "Date", "Price", "Seller / Buyer"]],
+      head: [["Year / Make / Model", "Type", "Transaction", "VIN / Serial No.", "Purchase\nDate", "Price", "Seller"]],
       body: data.capitalAssets.map((v: any) => [
         v.year_make_model || "—",
         v.asset_type || "Vehicle",
@@ -2153,7 +2153,6 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       styles: { overflow: "linebreak", cellWidth: "auto" },
       didParseCell: (hookData: any) => {
         if (hookData.section === "body") {
-          // Type column (index 1) - badge coloring
           if (hookData.column.index === 1) {
             const val = hookData.cell.raw as string;
             const c = typeColorsMap[val];
@@ -2162,7 +2161,6 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
               hookData.cell.styles.fontStyle = "bold";
             }
           }
-          // Transaction column (index 2) - badge coloring
           if (hookData.column.index === 2) {
             const val = hookData.cell.raw as string;
             const c = txnColors[val];
@@ -2174,7 +2172,20 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         }
       },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as any).lastAutoTable.finalY + 4;
+
+    // Closing paragraph
+    doc.setFontSize(10);
+    doc.setFont("Arial", "italic");
+    doc.setTextColor(...BODY_COLOR);
+    const closingText = "A summary of total capital expenditures for the year is maintained in the financial statements and will be depreciated in accordance with the company's accounting policies. Supporting documentation for all purchases is retained in the corporate records.";
+    const closingLines = doc.splitTextToSize(closingText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+    for (const line of closingLines) {
+      y = checkPageBreak(doc, y, 5);
+      doc.text(line, MARGIN, y);
+      y += 4.5;
+    }
+    y += 6;
   }
 
   // Equipment Transactions — skip for shareholder meetings and written consents
