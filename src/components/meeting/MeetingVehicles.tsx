@@ -85,6 +85,9 @@ const transactionColors: Record<string, string> = {
   Leased: "bg-blue-100 text-blue-800 border-blue-200",
   Sold: "bg-amber-100 text-amber-800 border-amber-200",
   "Trade-in": "bg-purple-100 text-purple-800 border-purple-200",
+  Scrapped: "bg-gray-100 text-gray-800 border-gray-200",
+  Donated: "bg-teal-100 text-teal-800 border-teal-200",
+  "Insurance Totaled": "bg-red-100 text-red-800 border-red-200",
 };
 
 const typeColors: Record<string, string> = {
@@ -299,7 +302,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
   const af = (key: keyof AssetForm, value: string | boolean) => setAssetForm(prev => ({ ...prev, [key]: value as any }));
   const ltf = (key: keyof LeaseTermForm, value: string | boolean) => setLeaseTermForm(prev => ({ ...prev, [key]: value }));
 
-  const sellerLabel = assetForm.transaction_type === "Sold" ? "Buyer" : "Seller";
+  const sellerLabel = ["Sold", "Donated"].includes(assetForm.transaction_type) ? "Buyer / Recipient" : "Seller";
 
   return (
     <div className="space-y-6">
@@ -343,6 +346,9 @@ export default function MeetingVehicles({ meetingId }: Props) {
                         <SelectItem value="Leased">Leased</SelectItem>
                         <SelectItem value="Sold">Sold</SelectItem>
                         <SelectItem value="Trade-in">Trade-in</SelectItem>
+                        <SelectItem value="Scrapped">Scrapped</SelectItem>
+                        <SelectItem value="Donated">Donated</SelectItem>
+                        <SelectItem value="Insurance Totaled">Insurance Totaled</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
