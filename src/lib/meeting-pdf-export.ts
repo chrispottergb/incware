@@ -324,7 +324,7 @@ function addSectionTitle(doc: jsPDF, y: number, title: string, blueTheme: boolea
     doc.setLineWidth(0.3);
     doc.line(MARGIN, y + 2, doc.internal.pageSize.getWidth() - R_MARGIN, y + 2);
   }
-  return y + 12;
+  return y + 8;
 }
 
 function addLabelValue(doc: jsPDF, y: number, label: string, value: string, x = MARGIN): number {
