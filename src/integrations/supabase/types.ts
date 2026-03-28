@@ -2337,6 +2337,7 @@ export type Database = {
       }
       meeting_vehicle_purchases: {
         Row: {
+          asset_type: string
           authorized_drivers: string | null
           business_use_description: string | null
           created_at: string
@@ -2346,10 +2347,12 @@ export type Database = {
           purchase_date: string | null
           purchase_price: number | null
           seller: string | null
+          transaction_type: string
           vin: string | null
           year_make_model: string
         }
         Insert: {
+          asset_type?: string
           authorized_drivers?: string | null
           business_use_description?: string | null
           created_at?: string
@@ -2359,10 +2362,12 @@ export type Database = {
           purchase_date?: string | null
           purchase_price?: number | null
           seller?: string | null
+          transaction_type?: string
           vin?: string | null
           year_make_model?: string
         }
         Update: {
+          asset_type?: string
           authorized_drivers?: string | null
           business_use_description?: string | null
           created_at?: string
@@ -2372,6 +2377,7 @@ export type Database = {
           purchase_date?: string | null
           purchase_price?: number | null
           seller?: string | null
+          transaction_type?: string
           vin?: string | null
           year_make_model?: string
         }
