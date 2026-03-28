@@ -2133,7 +2133,6 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     // Badge colors for Transaction column
     const txnBadgeStyles: Record<string, { bg: [number, number, number]; text: [number, number, number] }> = {
       Purchased:  { bg: [232, 240, 220], text: [42, 64, 16] },   // #e8f0dc / #2a4010
-      Leased:     { bg: [243, 234, 216], text: [74, 46, 8] },    // #f3ead8 / #4a2e08
       Sold:       { bg: [253, 232, 232], text: [92, 26, 26] },   // #fde8e8 / #5c1a1a
       "Trade-in": { bg: [237, 232, 243], text: [46, 26, 92] },   // #ede8f3 / #2e1a5c
       Scrapped:   { bg: [229, 229, 229], text: [55, 55, 55] },    // #e5e5e5 / #373737
