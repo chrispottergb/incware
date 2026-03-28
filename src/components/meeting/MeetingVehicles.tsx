@@ -302,7 +302,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
   const af = (key: keyof AssetForm, value: string | boolean) => setAssetForm(prev => ({ ...prev, [key]: value as any }));
   const ltf = (key: keyof LeaseTermForm, value: string | boolean) => setLeaseTermForm(prev => ({ ...prev, [key]: value }));
 
-  const sellerLabel = assetForm.transaction_type === "Sold" ? "Buyer" : "Seller";
+  const sellerLabel = ["Sold", "Donated"].includes(assetForm.transaction_type) ? "Buyer / Recipient" : "Seller";
 
   return (
     <div className="space-y-6">
