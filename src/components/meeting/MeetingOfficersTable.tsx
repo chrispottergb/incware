@@ -439,14 +439,17 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Title</Label>
-                  <Select value={form.title ?? ""} onValueChange={(v) => setForm((p) => ({ ...p, title: v }))}>
-                    <SelectTrigger className="bg-background"><SelectValue placeholder="Select Title..." /></SelectTrigger>
-                    <SelectContent className="bg-popover z-50 max-h-[300px]">
-                      {titleOptions.map((opt) => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    list="officer-title-options"
+                    value={form.title ?? ""}
+                    onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+                    placeholder="Select or type a title..."
+                  />
+                  <datalist id="officer-title-options">
+                    {titleOptions.map((opt) => (
+                      <option key={opt} value={opt} />
+                    ))}
+                  </datalist>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Name</Label>
