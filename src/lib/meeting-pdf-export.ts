@@ -2115,7 +2115,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Capital Asset Additions — unified table
   if (!isShareholder && !isWrittenConsent && data.capitalAssets && data.capitalAssets.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.capitalAssets.length * 7);
-    y = section("Capital Asset Additions During the Year");
+    y = section("Capital Asset Additions and Disposals During the Year");
     y = addWhereasResolved(doc, y,
       `WHEREAS, it is necessary for the company to obtain vehicles and equipment for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} decided that it would be in the best interests of the company to acquire the following asset(s);`,
       `RESOLVED, that the following capital asset purchases are hereby approved and ratified:`,
