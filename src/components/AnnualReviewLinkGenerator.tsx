@@ -223,7 +223,7 @@ export default function AnnualReviewLinkGenerator({
                     </Label>
                     {hasEmail ? (
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Will open email draft to <strong>{selectedCompany?.contact_email}</strong>
+                        Will send a branded email with clickable link to <strong>{selectedCompany?.contact_email}</strong>
                       </p>
                     ) : (
                       <p className="text-xs text-muted-foreground mt-0.5">
