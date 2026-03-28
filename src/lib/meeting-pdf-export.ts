@@ -465,7 +465,7 @@ function addSubHeading(doc: jsPDF, y: number, text: string): number {
   doc.setDrawColor(180, 180, 180);
   doc.setLineWidth(0.5);
   doc.line(MARGIN, y, doc.internal.pageSize.getWidth() - R_MARGIN, y);
-  return y + 8;
+  return y + 5;
 }
 
 function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: string, blueTheme: boolean = false): number {
