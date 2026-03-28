@@ -402,12 +402,12 @@ export default function MeetingBenefits({ meetingId }: Props) {
               <TableBody>
                 {rows.map((row: any) => (
                   <>
-                    <TableRow key={row.id} className="border-b-0">
-                      <TableCell className="font-medium text-sm whitespace-nowrap pb-1">{row.benefit_type || row.benefit_description || "—"}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap pb-1">{row.provider || "—"}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap pb-1">{row.agent_administrator || "—"}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap pb-1">{row.insurance_agency || "—"}</TableCell>
-                      <TableCell className="pb-1" rowSpan={2}>
+                    <TableRow key={row.id} className="border-b border-border">
+                      <TableCell className="font-medium text-sm whitespace-nowrap">{row.benefit_type || row.benefit_description || "—"}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{row.provider || "—"}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{row.agent_administrator || "—"}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{row.insurance_agency || "—"}</TableCell>
+                      <TableCell rowSpan={2}>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                             <Pencil className="h-4 w-4" />
@@ -418,10 +418,12 @@ export default function MeetingBenefits({ meetingId }: Props) {
                         </div>
                       </TableCell>
                     </TableRow>
-                    <TableRow key={`${row.id}-row2`}>
-                      <TableCell className="pt-0 text-sm text-muted-foreground" colSpan={4}>
-                        <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
-                          <span><span className="font-medium">Plan Year:</span> {row.plan_year || "—"}</span>
+                    <TableRow key={`${row.id}-row2`} className="border-b border-border">
+                      <TableCell className="text-sm text-muted-foreground border-l border-r border-border" colSpan={1}>
+                        <span className="text-xs"><span className="font-medium">Plan Year:</span> {row.plan_year || "—"}</span>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground border-r border-border" colSpan={1}>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
                           {isRetirementType(row.benefit_type) && (
                             <span><span className="font-medium">Contribution:</span> {row.retirement_contribution != null ? `$${Number(row.retirement_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}</span>
                           )}
@@ -431,10 +433,10 @@ export default function MeetingBenefits({ meetingId }: Props) {
                           {row.transaction_type && (
                             <span><span className="font-medium">Transaction:</span> {row.transaction_type}</span>
                           )}
-                          {row.eligibility_comments && (
-                            <span><span className="font-medium">Eligibility:</span> {row.eligibility_comments}</span>
-                          )}
                         </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground border-r border-border" colSpan={2}>
+                        <span className="text-xs">{row.eligibility_comments ? <><span className="font-medium">Eligibility:</span> {row.eligibility_comments}</> : "—"}</span>
                       </TableCell>
                     </TableRow>
                   </>
