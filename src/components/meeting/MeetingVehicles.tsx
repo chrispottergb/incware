@@ -44,8 +44,8 @@ interface AssetForm {
   asset_type: string;
   transaction_type: string;
   vin: string;
-  purchase_date: string;
-  purchase_price: string;
+  date: string;
+  amount: string;
   seller: string;
   business_use_description: string;
   authorized_drivers: string;
