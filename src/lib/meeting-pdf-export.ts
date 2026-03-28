@@ -2225,8 +2225,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, leaseEstHeight);
     y = section("Vehicle and Equipment Leases Entered Into During the Year");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, it is necessary for the company to lease vehicles and equipment for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} decided that it would be in the best interests of the company to enter into the following lease(s);`,
-      `RESOLVED, that the following vehicle and equipment leases are hereby approved and ratified:`,
+      `WHEREAS, it is in the best interests of the company to lease certain vehicles and equipment necessary for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} approved entering into the following lease agreement(s);`,
+      `RESOLVED, that the following lease agreements are hereby approved and ratified:`,
       bt
     );
 
@@ -2293,7 +2293,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     doc.setFontSize(10);
     doc.setFont("Arial", "italic");
     doc.setTextColor(...BODY_COLOR);
-    const leaseClosing = "All lease agreements are maintained in the corporate records. Lease payments will be recorded as operating expenses in accordance with the company's accounting policies.";
+    const leaseClosing = "Leased assets are not owned by the company and are not recorded as capital assets on the balance sheet. Lease obligations are recorded in accordance with the company's accounting policies. Supporting documentation for all lease agreements is retained in the corporate records.";
     const leaseClosingLines = doc.splitTextToSize(leaseClosing, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of leaseClosingLines) {
       y = checkPageBreak(doc, y, 5);
