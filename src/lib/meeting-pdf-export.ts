@@ -2225,8 +2225,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, leaseEstHeight);
     y = section("Vehicle and Equipment Leases Entered Into During the Year");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, it is necessary for the company to lease vehicles and equipment for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} decided that it would be in the best interests of the company to enter into the following lease(s);`,
-      `RESOLVED, that the following vehicle and equipment leases are hereby approved and ratified:`,
+      `WHEREAS, it is in the best interests of the company to lease certain vehicles and equipment necessary for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} approved entering into the following lease agreement(s);`,
+      `RESOLVED, that the following lease agreements are hereby approved and ratified:`,
       bt
     );
 
