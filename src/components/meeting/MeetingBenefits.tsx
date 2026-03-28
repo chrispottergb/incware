@@ -407,7 +407,7 @@ export default function MeetingBenefits({ meetingId }: Props) {
                       <TableCell className="text-sm whitespace-nowrap">{row.provider || "—"}</TableCell>
                       <TableCell className="text-sm whitespace-nowrap">{row.agent_administrator || "—"}</TableCell>
                       <TableCell className="text-sm whitespace-nowrap">{row.insurance_agency || "—"}</TableCell>
-                      <TableCell rowSpan={2}>
+                      <TableCell rowSpan={3}>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                             <Pencil className="h-4 w-4" />
@@ -418,25 +418,30 @@ export default function MeetingBenefits({ meetingId }: Props) {
                         </div>
                       </TableCell>
                     </TableRow>
-                    <TableRow key={`${row.id}-row2`} className="border-b border-border">
-                      <TableCell className="text-sm text-muted-foreground border-l border-r border-border" colSpan={1}>
-                        <span className="text-xs"><span className="font-medium">Plan Year:</span> {row.plan_year || "—"}</span>
+                    {/* Sub-header row */}
+                    <TableRow key={`${row.id}-subhead`} className="border-b border-border bg-muted/30">
+                      <TableCell className="py-1 text-xs font-medium text-muted-foreground border-r border-border">
+                        Plan Year
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground border-r border-border" colSpan={1}>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-                          {isRetirementType(row.benefit_type) && (
-                            <span><span className="font-medium">Contribution:</span> {row.retirement_contribution != null ? `$${Number(row.retirement_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}</span>
-                          )}
-                          {row.new_plan_effective_date && (
-                            <span><span className="font-medium">Effective:</span> {new Date(row.new_plan_effective_date + "T00:00:00").toLocaleDateString()}</span>
-                          )}
-                          {row.transaction_type && (
-                            <span><span className="font-medium">Transaction:</span> {row.transaction_type}</span>
-                          )}
-                        </div>
+                      <TableCell className="py-1 text-xs font-medium text-muted-foreground border-r border-border">
+                        Contribution
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground border-r border-border" colSpan={2}>
-                        <span className="text-xs">{row.eligibility_comments ? <><span className="font-medium">Eligibility:</span> {row.eligibility_comments}</> : "—"}</span>
+                      <TableCell className="py-1 text-xs font-medium text-muted-foreground" colSpan={2}>
+                        Eligibility / Comments
+                      </TableCell>
+                    </TableRow>
+                    {/* Sub-data row */}
+                    <TableRow key={`${row.id}-subdata`} className="border-b border-border">
+                      <TableCell className="py-1.5 text-xs border-r border-border">
+                        {row.plan_year || "—"}
+                      </TableCell>
+                      <TableCell className="py-1.5 text-xs border-r border-border">
+                        {isRetirementType(row.benefit_type) && row.retirement_contribution != null
+                          ? `$${Number(row.retirement_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="py-1.5 text-xs" colSpan={2}>
+                        {row.eligibility_comments || "—"}
                       </TableCell>
                     </TableRow>
                   </>
