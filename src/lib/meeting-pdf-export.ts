@@ -2293,7 +2293,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     doc.setFontSize(10);
     doc.setFont("Arial", "italic");
     doc.setTextColor(...BODY_COLOR);
-    const leaseClosing = "All lease agreements are maintained in the corporate records. Lease payments will be recorded as operating expenses in accordance with the company's accounting policies.";
+    const leaseClosing = "Leased assets are not owned by the company and are not recorded as capital assets on the balance sheet. Lease obligations are recorded in accordance with the company's accounting policies. Supporting documentation for all lease agreements is retained in the corporate records.";
     const leaseClosingLines = doc.splitTextToSize(leaseClosing, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of leaseClosingLines) {
       y = checkPageBreak(doc, y, 5);
