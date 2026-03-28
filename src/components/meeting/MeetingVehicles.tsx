@@ -346,6 +346,9 @@ export default function MeetingVehicles({ meetingId }: Props) {
                         <SelectItem value="Leased">Leased</SelectItem>
                         <SelectItem value="Sold">Sold</SelectItem>
                         <SelectItem value="Trade-in">Trade-in</SelectItem>
+                        <SelectItem value="Scrapped">Scrapped</SelectItem>
+                        <SelectItem value="Donated">Donated</SelectItem>
+                        <SelectItem value="Insurance Totaled">Insurance Totaled</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
