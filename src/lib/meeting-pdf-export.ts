@@ -2095,9 +2095,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   const vehiclePolicyText = meeting?.vehicle_policy_text?.trim();
-  const hasVehicleActivity = !isShareholder && !isWrittenConsent && ((data.vehiclePurchases && data.vehiclePurchases.length > 0) ||
-    (data.vehicleSales && data.vehicleSales.length > 0) ||
-    (data.vehicleLeases && data.vehicleLeases.length > 0));
+  const hasVehicleActivity = !isShareholder && !isWrittenConsent && data.capitalAssets && data.capitalAssets.length > 0;
 
   if (bt && vehiclePolicyText && hasVehicleActivity) {
     y = checkPageBreak(doc, y, 30);
@@ -2114,205 +2112,67 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 6;
   }
 
-  // Vehicle Purchases — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.vehiclePurchases && data.vehiclePurchases.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.vehiclePurchases.length * 7);
-    y = section("Vehicle Purchases Entered Into During the Year");
+  // Capital Asset Additions — unified table
+  if (!isShareholder && !isWrittenConsent && data.capitalAssets && data.capitalAssets.length > 0) {
+    y = checkPageBreak(doc, y, 20 + data.capitalAssets.length * 7);
+    y = section("Capital Asset Additions During the Year");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, it is necessary for the company to obtain vehicles for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} decided that it would be in the best interests of the company to acquire the following vehicle(s);`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following vehicle purchases are hereby approved and ratified:`,
+      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the capital asset transactions of ${companyName} during the year, including purchases, leases, sales, and trade-ins of vehicles and equipment; and`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following capital asset transactions are hereby approved and ratified:`,
       bt
     );
+
+    // Badge color map for PDF
+    const txnColors: Record<string, [number, number, number]> = {
+      Purchased: [16, 185, 129],
+      Leased: [59, 130, 246],
+      Sold: [245, 158, 11],
+      "Trade-in": [139, 92, 246],
+    };
+    const typeColorsMap: Record<string, [number, number, number]> = {
+      Vehicle: [100, 116, 139],
+      Equipment: [234, 88, 12],
+    };
+
     autoTable(doc, {
       startY: y,
-      head: [["Year / Make / Model", "VIN", "Purchase Date", "Price", "Seller", "Business Use", "Authorized Drivers"]],
-      body: data.vehiclePurchases.map((v: any) => [
+      head: [["Year / Make / Model", "Type", "Transaction", "VIN / Serial No.", "Date", "Price", "Seller / Buyer"]],
+      body: data.capitalAssets.map((v: any) => [
         v.year_make_model || "—",
+        v.asset_type || "Vehicle",
+        v.transaction_type || "Purchased",
         v.vin || "—",
         v.purchase_date ? new Date(v.purchase_date + "T00:00:00").toLocaleDateString() : "—",
         v.purchase_price != null ? fmt(v.purchase_price) : "—",
         v.seller || "—",
-        v.business_use_description || "—",
-        v.authorized_drivers || "—",
       ]),
       theme: "grid",
       headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
-    });
-    y = (doc as any).lastAutoTable.finalY + 6;
-  }
-
-  // Property & Structure Leases (company-level) — card layout matching UI
-  if (!isShareholder && !isWrittenConsent && data.companyLeases && data.companyLeases.length > 0) {
-    y = checkPageBreak(doc, y, 20);
-    y = section("Property & Structure Leases");
-    y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the lease agreements currently in effect for ${companyName}; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following lease agreements are hereby ratified and confirmed:`,
-      bt
-    );
-
-    const pw = doc.internal.pageSize.getWidth();
-    const cardLeft = MARGIN;
-    const cardWidth = pw - MARGIN - R_MARGIN;
-    const colMid = cardLeft + cardWidth / 2;
-    const cellPadX = 4;
-    const headerH = 8;
-    const rowH = 14;
-    const labelFontSize = 7;
-    const valueFontSize = 10;
-    const paymentFontSize = 12;
-    const cornerR = 2;
-
-    for (const l of data.companyLeases) {
-      const totalCardH = headerH + rowH * 3 + 1;
-      y = checkPageBreak(doc, y, totalCardH + 8);
-
-      // Determine status
-      const hasEndDate = !!l.lease_end_date;
-      const isExpired = hasEndDate && new Date(l.lease_end_date + "T00:00:00") < new Date();
-      const statusLabel = isExpired ? "Expired" : "Active";
-
-      // Card border (rounded rect)
-      doc.setDrawColor(180, 180, 180);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(cardLeft, y, cardWidth, totalCardH, cornerR, cornerR, "S");
-
-      // Header bar (light blue fill — matches other table headers)
-      doc.setFillColor(LIGHT_BLUE_BG[0], LIGHT_BLUE_BG[1], LIGHT_BLUE_BG[2]);
-      // Top rounded corners via clip — draw filled rect clipped by the card
-      doc.roundedRect(cardLeft, y, cardWidth, headerH, cornerR, cornerR, "F");
-      // Patch bottom corners of header (they should be square)
-      doc.rect(cardLeft, y + headerH - cornerR, cardWidth, cornerR, "F");
-
-      // Header text (dark blue to match other table headers)
-      doc.setFontSize(9);
-      doc.setFont("Arial", "bold");
-      doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
-      doc.text("Lease Agreement", cardLeft + cellPadX, y + 5.5);
-
-      // Status badge
-      const badgeText = statusLabel;
-      const badgeW = doc.getTextWidth(badgeText) + 6;
-      const badgeX = cardLeft + cardWidth - cellPadX - badgeW;
-      const badgeY = y + 1.5;
-      const badgeH = 5;
-      if (isExpired) {
-        doc.setFillColor(220, 50, 50);
-      } else {
-        doc.setFillColor(34, 139, 34);
-      }
-      doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1.5, 1.5, "F");
-      doc.setFontSize(7);
-      doc.setFont("Arial", "bold");
-      doc.setTextColor(255, 255, 255);
-      doc.text(badgeText, badgeX + 3, badgeY + 3.6);
-
-      const bodyTop = y + headerH;
-
-      // Helper to draw a field (label + value)
-      const drawField = (fx: number, fy: number, maxW: number, label: string, value: string, bold = false, fontSize = valueFontSize) => {
-        doc.setFontSize(labelFontSize);
-        doc.setFont("Arial", "bold");
-        doc.setTextColor(140, 140, 140);
-        doc.text(label.toUpperCase(), fx, fy + 4);
-        doc.setFontSize(fontSize);
-        doc.setFont("Arial", bold ? "bold" : "normal");
-        doc.setTextColor(30, 30, 30);
-        const lines = doc.splitTextToSize(value || "—", maxW - 2);
-        doc.text(lines, fx, fy + 9);
-      };
-
-      const fieldW = (cardWidth / 2) - cellPadX * 2;
-
-      // Divider lines between rows
-      doc.setDrawColor(210, 210, 210);
-      doc.setLineWidth(0.2);
-      doc.line(cardLeft, bodyTop + rowH, cardLeft + cardWidth, bodyTop + rowH);
-      doc.line(cardLeft, bodyTop + rowH * 2, cardLeft + cardWidth, bodyTop + rowH * 2);
-
-      // Vertical divider
-      doc.line(colMid, bodyTop, colMid, bodyTop + rowH * 3);
-
-      // Row 1: Property Description | Property Address
-      drawField(cardLeft + cellPadX, bodyTop, fieldW, "Property Description", l.description || "—");
-      drawField(colMid + cellPadX, bodyTop, fieldW, "Property Address", l.address || "—");
-
-      // Row 2: Landlord | Landlord Address
-      drawField(cardLeft + cellPadX, bodyTop + rowH, fieldW, "Landlord", l.landlord_name || "—");
-      drawField(colMid + cellPadX, bodyTop + rowH, fieldW, "Landlord Address", l.landlord_address || "—");
-
-      // Row 3: Lease Term | Monthly Payment
-      const startDate = l.lease_start_date ? new Date(l.lease_start_date + "T00:00:00").toLocaleDateString() : "";
-      const endDate = l.lease_end_date ? new Date(l.lease_end_date + "T00:00:00").toLocaleDateString() : "Ongoing";
-      const termDisplay = startDate ? `${startDate} — ${endDate}` : "—";
-      const paymentVal = l.monthly_payment != null ? fmt(l.monthly_payment) : l.lease_amount != null ? fmt(l.lease_amount) : "—";
-
-      drawField(cardLeft + cellPadX, bodyTop + rowH * 2, fieldW, "Lease Term", termDisplay);
-      drawField(colMid + cellPadX, bodyTop + rowH * 2, fieldW, "Monthly Payment", paymentVal, true, paymentFontSize);
-
-      y = y + totalCardH + 6;
-    }
-  }
-
-  // Vehicle Leases — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.vehicleLeases && data.vehicleLeases.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.vehicleLeases.length * 7);
-    y = section("Vehicle Leases Entered Into During the Year");
-    y = addWhereasResolved(doc, y,
-      `WHEREAS, it is necessary for the company to lease vehicles for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} decided that it would be in the best interests of the company to enter into the following vehicle lease(s);`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following vehicle leases are hereby approved and ratified:`,
-      bt
-    );
-    autoTable(doc, {
-      startY: y,
-      head: [["Year / Make / Model", "VIN", "Lease Start", "Monthly Payment", "Lessor", "Relationship", "FMV Verified", "Business Use"]],
-      body: data.vehicleLeases.map((v: any) => [
-        v.year_make_model || "—",
-        v.vin || "—",
-        v.lease_start_date ? new Date(v.lease_start_date + "T00:00:00").toLocaleDateString() : "—",
-        v.monthly_lease_payment != null ? fmt(v.monthly_lease_payment) : "—",
-        v.lessor_name || "—",
-        v.relationship_to_company || "—",
-        v.fmv_verified ? "Yes" : "No",
-        v.business_use_description || "—",
-      ]),
-      theme: "grid",
-      headStyles: tableHeadStyles,
-      bodyStyles: { fontSize: 10 },
-      margin: { left: MARGIN, right: R_MARGIN },
-      styles: { overflow: "linebreak", cellWidth: "auto" },
-    });
-    y = (doc as any).lastAutoTable.finalY + 6;
-  }
-
-  // Vehicle/Equipment Sales — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.vehicleSales && data.vehicleSales.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.vehicleSales.length * 7);
-    y = section("Vehicles & Equipment Sold During the Year");
-    y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the disposition of vehicles and equipment by ${companyName} during the year, and after discussion;`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following vehicle and equipment sales are hereby ratified and approved:`,
-      bt
-    );
-    autoTable(doc, {
-      startY: y,
-      head: [["Description", "VIN", "Sale Date", "Sale Price", "Buyer", "Reason"]],
-      body: data.vehicleSales.map((v: any) => [
-        v.year_make_model || "—",
-        v.vin || "—",
-        v.sale_date ? new Date(v.sale_date + "T00:00:00").toLocaleDateString() : "—",
-        v.sale_price != null ? fmt(v.sale_price) : "—",
-        v.buyer_name || "—",
-        v.reason_for_sale || "—",
-      ]),
-      theme: "grid",
-      headStyles: tableHeadStyles,
-      bodyStyles: { fontSize: 10 },
-      margin: { left: MARGIN, right: R_MARGIN },
-      styles: { overflow: "linebreak", cellWidth: "auto" },
+      didParseCell: (hookData: any) => {
+        if (hookData.section === "body") {
+          // Type column (index 1) - badge coloring
+          if (hookData.column.index === 1) {
+            const val = hookData.cell.raw as string;
+            const c = typeColorsMap[val];
+            if (c) {
+              hookData.cell.styles.textColor = c;
+              hookData.cell.styles.fontStyle = "bold";
+            }
+          }
+          // Transaction column (index 2) - badge coloring
+          if (hookData.column.index === 2) {
+            const val = hookData.cell.raw as string;
+            const c = txnColors[val];
+            if (c) {
+              hookData.cell.styles.textColor = c;
+              hookData.cell.styles.fontStyle = "bold";
+            }
+          }
+        }
+      },
     });
     y = (doc as any).lastAutoTable.finalY + 6;
   }
