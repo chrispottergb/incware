@@ -2219,7 +2219,90 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 6;
   }
 
-  // Equipment Transactions — skip for shareholder meetings and written consents
+  // Vehicle and Equipment Leases section
+  if (!isShareholder && !isWrittenConsent && data.vehicleLeases && data.vehicleLeases.length > 0) {
+    const leaseEstHeight = 60 + data.vehicleLeases.length * 8;
+    y = checkPageBreak(doc, y, leaseEstHeight);
+    y = section("Vehicle and Equipment Leases Entered Into During the Year");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, it is necessary for the company to lease vehicles and equipment for the efficient operation of the business, and after discussion, the ${isLLC ? "members" : "directors"} decided that it would be in the best interests of the company to enter into the following lease(s);`,
+      `RESOLVED, that the following vehicle and equipment leases are hereby approved and ratified:`,
+      bt
+    );
+
+    const leaseHeaderBg: [number, number, number] = [220, 232, 243];
+    const leaseHeaderText: [number, number, number] = [26, 63, 92];
+    const leaseHeaderBorder: [number, number, number] = [176, 200, 222];
+    const leaseCellBorder: [number, number, number] = [205, 218, 234];
+    const leaseAltRowBg: [number, number, number] = [245, 248, 252];
+
+    const leaseTypeBadgeStyles: Record<string, { bg: [number, number, number]; text: [number, number, number] }> = {
+      Vehicle:   { bg: [220, 232, 243], text: [26, 63, 92] },
+      Equipment: { bg: [225, 240, 232], text: [26, 69, 48] },
+    };
+
+    autoTable(doc, {
+      startY: y,
+      head: [["Year / Make / Model", "Type", "VIN / Serial No.", "Lessor", "Start Date", "End Date", "Monthly\nPayment", "Total Lease\nValue"]],
+      body: data.vehicleLeases.map((v: any) => [
+        v.year_make_model || "—",
+        v.asset_type || "Vehicle",
+        v.vin || "—",
+        v.lessor_name || "—",
+        v.lease_start_date ? new Date(v.lease_start_date + "T00:00:00").toLocaleDateString() : "—",
+        v.lease_end_date ? new Date(v.lease_end_date + "T00:00:00").toLocaleDateString() : "—",
+        v.monthly_lease_payment != null ? fmt(v.monthly_lease_payment) : "—",
+        v.total_lease_value != null ? fmt(v.total_lease_value) : "—",
+      ]),
+      theme: "grid",
+      headStyles: {
+        fillColor: leaseHeaderBg,
+        textColor: leaseHeaderText,
+        fontSize: 8.2,
+        fontStyle: "bold",
+        lineWidth: 0.18,
+        lineColor: leaseHeaderBorder,
+      },
+      bodyStyles: {
+        fontSize: 8.8,
+        lineWidth: 0.18,
+        lineColor: leaseCellBorder,
+        cellPadding: 2.5,
+      },
+      margin: { left: MARGIN, right: R_MARGIN },
+      styles: { overflow: "linebreak", cellWidth: "auto" },
+      pageBreak: "avoid",
+      didParseCell: (hookData: any) => {
+        if (hookData.section === "body") {
+          if (hookData.row.index % 2 === 1) {
+            hookData.cell.styles.fillColor = leaseAltRowBg;
+          }
+          if (hookData.column.index === 1) {
+            const style = leaseTypeBadgeStyles[hookData.cell.raw as string];
+            if (style) {
+              hookData.cell.styles.fillColor = style.bg;
+              hookData.cell.styles.textColor = style.text;
+              hookData.cell.styles.fontStyle = "bold";
+            }
+          }
+        }
+      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 4;
+
+    doc.setFontSize(10);
+    doc.setFont("Arial", "italic");
+    doc.setTextColor(...BODY_COLOR);
+    const leaseClosing = "All lease agreements are maintained in the corporate records. Lease payments will be recorded as operating expenses in accordance with the company's accounting policies.";
+    const leaseClosingLines = doc.splitTextToSize(leaseClosing, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+    for (const line of leaseClosingLines) {
+      y = checkPageBreak(doc, y, 5);
+      doc.text(line, MARGIN, y);
+      y += 4.5;
+    }
+    y += 6;
+  }
+
   if (!isShareholder && !isWrittenConsent && data.assets && data.assets.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.assets.length * 7);
     y = section("Equipment Transactions");
