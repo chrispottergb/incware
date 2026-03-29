@@ -1,33 +1,28 @@
 
 
-# Mask EIN Numbers Across the App
+# Unmask EIN in PDF Exports, Keep Masked on Screen
 
 ## Overview
-Create a utility function to mask EIN values (showing only last 3 digits as `XX-XXXX123`) and apply it to all read-only display contexts while keeping the full EIN editable in form inputs.
+The EIN masking was applied to both on-screen display and PDF export fields. The user wants full EINs visible in generated PDFs but masked on screen to prevent exposure in AI training data.
 
 ## What Changes
 
-### 1. Create EIN masking utility
-Add a `maskEin` function to `src/lib/utils.ts`:
-- Input: `"12-3456789"` → Output: `"XX-XXXX789"`
-- Handles null/empty/short values gracefully
+### 1. IncorporationTab (`src/components/company/IncorporationTab.tsx`)
+- **Line 675**: Change `maskEin((form as any).ein)` back to `(form as any).ein || ""` so the PDF export shows the full EIN
+- The edit input already shows the full EIN — no change needed there
+- Add masking to any **on-screen read-only display** of the EIN (the label text shown in the UI, not the PDF fields)
 
-### 2. IncorporationTab (`src/components/company/IncorporationTab.tsx`)
-- **PDF export fields** (line ~675): Mask the EIN value passed to `SectionPdfActions`
-- **Edit input** (lines 722-735): Keep full EIN visible and editable — no change
+### 2. OrganizationTab (`src/components/company/OrganizationTab.tsx`)
+- **Line 733**: Change `maskEin((filingForm as any).ein)` back to `(filingForm as any).ein || ""` so the PDF export shows the full EIN
+- Same approach: mask only the on-screen display label, not the PDF data
 
-### 3. OrganizationTab (`src/components/company/OrganizationTab.tsx`)
-- **PDF export fields** (line ~732): Mask the EIN value passed to `SectionPdfActions`
-- **Edit input** (lines 784-797): Keep full EIN visible and editable — no change
+### 3. TaxReturnUpload (`src/components/TaxReturnUpload.tsx`)
+- **Line 544**: Keep `maskEin` here — this is an on-screen preview card, not a PDF
 
-### 4. TaxReturnUpload (`src/components/TaxReturnUpload.tsx`)
-- Line ~543: Mask the EIN in the preview card display
-
-### 5. FilingComplianceTab (`src/components/company/FilingComplianceTab.tsx`)
-- Line ~356: Display masked EIN in the read-only filing compliance view (if shown as read-only; keep editable if it's an input)
+### Summary
+- **PDFs**: Full EIN (unmasked) — 2 lines reverted in IncorporationTab and OrganizationTab
+- **Screen displays**: Masked EIN — TaxReturnUpload stays as-is, and any other on-screen read-only labels continue using `maskEin`
 
 ## Technical Details
-- Single `maskEin(ein: string | null | undefined): string` function in `src/lib/utils.ts`
-- Returns `"—"` for empty/null, returns as-is if fewer than 3 characters, otherwise replaces all but last 3 chars with `X` while preserving the dash position
-- Import and apply in each display-only context listed above
+Two single-line changes reverting `maskEin(...)` to the raw value in the `SectionPdfActions` config objects.
 
