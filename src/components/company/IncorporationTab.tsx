@@ -33,7 +33,7 @@ import { toast } from "sonner";
 import WIComplianceChecklist from "./WIComplianceChecklist";
 import SectionPdfActions from "./SectionPdfActions";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { cn } from "@/lib/utils";
+import { cn, maskEin } from "@/lib/utils";
 import { isLLCType } from "@/lib/entity-terminology";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "LLC-S", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"];
