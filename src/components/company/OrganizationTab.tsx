@@ -294,6 +294,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
   });
 
 
+  const [einFocused, setEinFocused] = useState(false);
   // Filing details form
   const [filingForm, setFilingForm] = useState({
     name: company.name,

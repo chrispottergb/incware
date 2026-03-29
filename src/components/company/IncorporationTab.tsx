@@ -189,6 +189,7 @@ interface Props {
 }
 
 export default function IncorporationTab({ company }: Props) {
+  const [einFocused, setEinFocused] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [wdfiResults, setWdfiResults] = useState<any[]>([]);
   const [wdfiVerificationDate, setWdfiVerificationDate] = useState("");
