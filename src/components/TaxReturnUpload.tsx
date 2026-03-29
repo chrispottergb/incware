@@ -21,6 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { maskEin } from "@/lib/utils";
 import {
   Upload, FileText, Loader2, CheckCircle2, Building2,
   DollarSign, Users, Car, Wrench, PiggyBank, AlertCircle,
@@ -540,7 +541,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
           </CardHeader>
           <CardContent className="px-3 pb-3 space-y-1 text-xs">
             <p><span className="text-muted-foreground">Name:</span> {d.company.name}</p>
-            <p><span className="text-muted-foreground">EIN:</span> {d.company.ein || "—"}</p>
+            <p><span className="text-muted-foreground">EIN:</span> {maskEin(d.company.ein)}</p>
             <p><span className="text-muted-foreground">Type:</span> {d.company.entity_type}</p>
             <p><span className="text-muted-foreground">Address:</span> {[d.company.address, d.company.city, d.company.state, d.company.zip].filter(Boolean).join(", ") || "—"}</p>
           </CardContent>

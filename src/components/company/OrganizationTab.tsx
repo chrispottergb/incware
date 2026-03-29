@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { isLLCType } from "@/lib/entity-terminology";
+import { maskEin } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -729,7 +730,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 { label: "Company Name", value: filingForm.name },
                 { label: "Entity Type", value: filingForm.entity_type },
                 { label: "State of Organization", value: filingForm.state_of_incorporation },
-                { label: "EIN", value: (filingForm as any).ein },
+                { label: "EIN", value: maskEin((filingForm as any).ein) },
                 { label: "Organization Date", value: filingForm.incorporation_date ? new Date(filingForm.incorporation_date + "T00:00:00").toLocaleDateString() : "" },
                 { label: "Fiscal Year End", value: filingForm.fiscal_year_end },
                 { label: "Scheduled Annual Meeting", value: filingForm.scheduled_annual_meeting },

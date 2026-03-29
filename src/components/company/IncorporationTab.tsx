@@ -33,7 +33,7 @@ import { toast } from "sonner";
 import WIComplianceChecklist from "./WIComplianceChecklist";
 import SectionPdfActions from "./SectionPdfActions";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { cn } from "@/lib/utils";
+import { cn, maskEin } from "@/lib/utils";
 import { isLLCType } from "@/lib/entity-terminology";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "LLC-S", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"];
@@ -672,7 +672,7 @@ export default function IncorporationTab({ company }: Props) {
                 { label: "Company Name", value: form.name },
                 { label: "Entity Type", value: form.entity_type },
                 { label: "State of Incorporation", value: form.state_of_incorporation },
-                { label: "EIN", value: (form as any).ein },
+                { label: "EIN", value: maskEin((form as any).ein) },
                 { label: "Incorporation Date", value: form.incorporation_date ? new Date(form.incorporation_date + "T00:00:00").toLocaleDateString() : "" },
                 { label: "Fiscal Year End", value: form.fiscal_year_end },
                 { label: "Scheduled Annual Meeting", value: form.scheduled_annual_meeting },
