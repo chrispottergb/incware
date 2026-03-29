@@ -1,21 +1,33 @@
 
 
-# Upgrade "Approve Loan from Related Party" Resolution Template
+# Mask EIN Numbers Across the App
 
-## What changes
+## Overview
+Create a utility function to mask EIN values (showing only last 3 digits as `XX-XXXX123`) and apply it to all read-only display contexts while keeping the full EIN editable in form inputs.
 
-Replace the existing "Approve Loan from Related Party" template across all entity types in `src/lib/resolution-types.ts` with the expanded version that includes:
+## What Changes
 
-- **WHEREAS recitals** establishing context (capital need, lender offer, approving body review)
-- **Structured loan terms** (Interest Rate, Maturity Date, Repayment Terms, optional Collateral)
-- **Entity-aware approving body language** (Board of Directors / Members / Managers per entity type)
-- **Arm's-length comparison** and conflict of interest compliance language
+### 1. Create EIN masking utility
+Add a `maskEin` function to `src/lib/utils.ts`:
+- Input: `"12-3456789"` → Output: `"XX-XXXX789"`
+- Handles null/empty/short values gracefully
 
-## File to modify
+### 2. IncorporationTab (`src/components/company/IncorporationTab.tsx`)
+- **PDF export fields** (line ~675): Mask the EIN value passed to `SectionPdfActions`
+- **Edit input** (lines 722-735): Keep full EIN visible and editable — no change
 
-**`src/lib/resolution-types.ts`** — Update the `template` string for "Approve Loan from Related Party" in each entity type array (Corporation, S-Corp, LLC, SMLLC, LLC-S, Non-Profit, Partnership), substituting the appropriate governing body term in each.
+### 3. OrganizationTab (`src/components/company/OrganizationTab.tsx`)
+- **PDF export fields** (line ~732): Mask the EIN value passed to `SectionPdfActions`
+- **Edit input** (lines 784-797): Keep full EIN visible and editable — no change
 
-Note: The user's message appears cut off after "comparable to those that could be obtained from an" — I will complete the sentence with standard legal language ("...arm's-length transaction") and include the remaining FURTHER RESOLVED clauses consistent with the pattern (authorized person, conflict disclosure).
+### 4. TaxReturnUpload (`src/components/TaxReturnUpload.tsx`)
+- Line ~543: Mask the EIN in the preview card display
 
-No new files, no schema changes, no new resolution types — just a template text upgrade for one existing resolution across all entity arrays.
+### 5. FilingComplianceTab (`src/components/company/FilingComplianceTab.tsx`)
+- Line ~356: Display masked EIN in the read-only filing compliance view (if shown as read-only; keep editable if it's an input)
+
+## Technical Details
+- Single `maskEin(ein: string | null | undefined): string` function in `src/lib/utils.ts`
+- Returns `"—"` for empty/null, returns as-is if fewer than 3 characters, otherwise replaces all but last 3 chars with `X` while preserving the dash position
+- Import and apply in each display-only context listed above
 
