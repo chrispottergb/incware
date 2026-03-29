@@ -21,6 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { maskEin } from "@/lib/utils";
 import {
   Upload, FileText, Loader2, CheckCircle2, Building2,
   DollarSign, Users, Car, Wrench, PiggyBank, AlertCircle,
