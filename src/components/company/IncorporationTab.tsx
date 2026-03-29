@@ -723,7 +723,9 @@ export default function IncorporationTab({ company }: Props) {
               <Label className="field-label">EIN</Label>
               <Input
                 className="h-7 text-sm"
-                value={(form as any).ein}
+                value={einFocused ? (form as any).ein : maskEin((form as any).ein)}
+                onFocus={() => setEinFocused(true)}
+                onBlur={() => setEinFocused(false)}
                 onChange={(e) => {
                   const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
                   let formatted = digits;

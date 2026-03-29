@@ -786,7 +786,9 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <Label className="field-label">EIN</Label>
                 <Input
                   className="h-7 text-sm"
-                  value={(filingForm as any).ein}
+                  value={einFocused ? (filingForm as any).ein : maskEin((filingForm as any).ein)}
+                  onFocus={() => setEinFocused(true)}
+                  onBlur={() => setEinFocused(false)}
                   onChange={(e) => {
                     const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
                     let formatted = digits;
