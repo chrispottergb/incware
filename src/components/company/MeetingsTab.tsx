@@ -90,6 +90,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
   const [orgWizardOpen, setOrgWizardOpen] = useState(false);
   const [annualWizardOpen, setAnnualWizardOpen] = useState(false);
   const [consentWizardOpen, setConsentWizardOpen] = useState(false);
+  const [editingConsentId, setEditingConsentId] = useState<string | null>(null);
 
   const defaultForm = () => ({
     meeting_date: "",
@@ -635,7 +636,14 @@ export default function MeetingsTab({ companyId, company }: Props) {
             <Card
               key={m.id}
               className="group cursor-pointer transition-all hover:shadow-md hover:border-primary/20"
-              onClick={() => navigate(`/company/${companyId}/meetings/${m.id}`)}
+              onClick={() => {
+                if (m.meeting_type === "Written Consent") {
+                  setEditingConsentId(m.id);
+                  setConsentWizardOpen(true);
+                } else {
+                  navigate(`/company/${companyId}/meetings/${m.id}`);
+                }
+              }}
             >
               <CardContent className="flex items-center gap-4 py-4">
                 <div className="flex-1 min-w-0">
@@ -707,17 +715,25 @@ export default function MeetingsTab({ companyId, company }: Props) {
       </Dialog>
 
       {/* Written Consent Wizard Dialog */}
-      <Dialog open={consentWizardOpen} onOpenChange={setConsentWizardOpen}>
+      <Dialog open={consentWizardOpen} onOpenChange={(open) => {
+        setConsentWizardOpen(open);
+        if (!open) setEditingConsentId(null);
+      }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display">Written Consent Wizard</DialogTitle>
+            <DialogTitle className="font-display">
+              {editingConsentId ? "Edit Written Consent" : "Written Consent Wizard"}
+            </DialogTitle>
           </DialogHeader>
           <WrittenConsentWizard
+            key={editingConsentId || "new"}
             company={company}
-            onClose={() => setConsentWizardOpen(false)}
+            existingMeetingId={editingConsentId || undefined}
+            onClose={() => { setConsentWizardOpen(false); setEditingConsentId(null); }}
             onConsentCreated={() => {
               queryClient.invalidateQueries({ queryKey: ["meetings", companyId] });
               setConsentWizardOpen(false);
+              setEditingConsentId(null);
             }}
           />
         </DialogContent>

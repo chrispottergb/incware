@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,11 +58,12 @@ const STEPS = ["Entity", "Action", "Resolution", "Signers", "Review"];
 
 interface Props {
   company: any;
+  existingMeetingId?: string;
   onClose?: () => void;
   onConsentCreated?: () => void;
 }
 
-export default function WrittenConsentWizard({ company, onClose, onConsentCreated }: Props) {
+export default function WrittenConsentWizard({ company, existingMeetingId, onClose, onConsentCreated }: Props) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -75,6 +76,8 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
   const { shareholderHoldings, totalIssuedShares } = useShareCalculations(company.id);
 
   const [step, setStep] = useState(0);
+  const [draftMeetingId, setDraftMeetingId] = useState<string | null>(existingMeetingId || null);
+  const [loadingExisting, setLoadingExisting] = useState(!!existingMeetingId);
 
   // Step 1: Entity
   const [effectiveDate, setEffectiveDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -311,73 +314,159 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
     }
   };
 
-  // Create consent mutation
-  const createConsent = useMutation({
-    mutationFn: async () => {
-      // 1. Create the meeting record
-      const { data: meeting, error: meetingError } = await supabase
+  // ---------- DRAFT SAVE LOGIC ----------
+  const buildMeetingPayload = useCallback(() => ({
+    company_id: company.id,
+    meeting_date: effectiveDate,
+    meeting_type: "Written Consent" as const,
+    sub_type: selectedAction || null,
+    tax_year: taxYear ? parseInt(taxYear) : null,
+    purpose: selectedAction ? `Written Consent — ${selectedAction}` : "Written Consent",
+    company_name_at_meeting: company.name,
+    company_address_at_meeting: company.address || null,
+    company_city_at_meeting: company.city || null,
+    company_state_at_meeting: company.state || null,
+    company_zip_at_meeting: company.zip || null,
+  }), [company, effectiveDate, selectedAction, taxYear]);
+
+  const saveDraft = useCallback(async (): Promise<string> => {
+    const payload = buildMeetingPayload();
+
+    let meetingId = draftMeetingId;
+
+    if (!meetingId) {
+      // INSERT new draft
+      const { data, error } = await supabase
         .from("meetings")
-        .insert({
-          company_id: company.id,
-          meeting_date: effectiveDate,
-          meeting_type: "Written Consent",
-          sub_type: selectedAction || null,
-          tax_year: taxYear ? parseInt(taxYear) : null,
-          purpose: `Written Consent — ${selectedAction}`,
-          company_name_at_meeting: company.name,
-          company_address_at_meeting: company.address || null,
-          company_city_at_meeting: company.city || null,
-          company_state_at_meeting: company.state || null,
-          company_zip_at_meeting: company.zip || null,
-        })
+        .insert(payload)
         .select("id")
         .single();
+      if (error) throw error;
+      meetingId = data.id;
+      setDraftMeetingId(meetingId);
+    } else {
+      // UPDATE existing
+      const { error } = await supabase
+        .from("meetings")
+        .update(payload)
+        .eq("id", meetingId);
+      if (error) throw error;
+    }
 
-      if (meetingError) throw meetingError;
-      const meetingId = meeting.id;
-
-      // 2. Save the resolution
+    // Save resolution (delete + re-insert)
+    if (resolutionText.trim()) {
+      await supabase.from("meeting_resolutions").delete().eq("meeting_id", meetingId);
       await supabase.from("meeting_resolutions").insert({
         meeting_id: meetingId,
         purpose: selectedAction || "Written Consent",
         resolution_text: resolutionText,
       });
+    }
 
-      // 3. Save signers
-      if (isCorp) {
-        // Save as meeting_directors
-        const directorRows = signers.map((s) => ({
-          meeting_id: meetingId,
-          director_name: s.name,
-        }));
-        if (directorRows.length > 0) {
-          await supabase.from("meeting_directors").insert(directorRows);
-        }
-      } else {
-        // Save as meeting_shareholders with full roster data
-        const memberRows = signers.map((s) => {
-          const sh = shareholders.find((sh) => sh.id === s.id);
-          const holdings = sh ? (shareholderHoldings[sh.id] ?? 0) : 0;
-          const ownershipPct = totalIssuedShares > 0 && sh
-            ? Number(((holdings / totalIssuedShares) * 100).toFixed(2))
-            : (sh?.ownership_percentage ?? 0);
-          return {
-            meeting_id: meetingId,
-            shareholder_name: s.name,
-            address: sh?.address || null,
-            city: sh?.city || null,
-            state: sh?.state || null,
-            zip: sh?.zip || null,
-            common_shares: holdings,
-            preferred_shares: ownershipPct,
-          };
-        });
-        if (memberRows.length > 0) {
-          await supabase.from("meeting_shareholders").insert(memberRows);
-        }
+    // Save signers (delete + re-insert)
+    if (isCorp) {
+      await supabase.from("meeting_directors").delete().eq("meeting_id", meetingId);
+      const directorRows = signers.map((s) => ({
+        meeting_id: meetingId!,
+        director_name: s.name,
+      }));
+      if (directorRows.length > 0) {
+        await supabase.from("meeting_directors").insert(directorRows);
       }
+    } else {
+      await supabase.from("meeting_shareholders").delete().eq("meeting_id", meetingId);
+      const memberRows = signers.map((s) => {
+        const sh = shareholders.find((sh) => sh.id === s.id);
+        const holdings = sh ? (shareholderHoldings[sh.id] ?? 0) : 0;
+        const ownershipPct = totalIssuedShares > 0 && sh
+          ? Number(((holdings / totalIssuedShares) * 100).toFixed(2))
+          : (sh?.ownership_percentage ?? 0);
+        return {
+          meeting_id: meetingId!,
+          shareholder_name: s.name,
+          address: sh?.address || null,
+          city: sh?.city || null,
+          state: sh?.state || null,
+          zip: sh?.zip || null,
+          common_shares: holdings,
+          preferred_shares: ownershipPct,
+        };
+      });
+      if (memberRows.length > 0) {
+        await supabase.from("meeting_shareholders").insert(memberRows);
+      }
+    }
 
-      return meeting;
+    return meetingId;
+  }, [draftMeetingId, buildMeetingPayload, resolutionText, selectedAction, isCorp, signers, shareholders, shareholderHoldings, totalIssuedShares]);
+
+  // ---------- LOAD EXISTING DATA ----------
+  useEffect(() => {
+    if (!existingMeetingId) return;
+
+    const loadExisting = async () => {
+      setLoadingExisting(true);
+      try {
+        // Load meeting
+        const { data: meeting, error: meetingErr } = await supabase
+          .from("meetings")
+          .select("*")
+          .eq("id", existingMeetingId)
+          .single();
+        if (meetingErr || !meeting) throw meetingErr || new Error("Meeting not found");
+
+        setEffectiveDate(meeting.meeting_date || format(new Date(), "yyyy-MM-dd"));
+        setTaxYear(meeting.tax_year ? String(meeting.tax_year) : "");
+
+        // Derive action category from sub_type
+        if (meeting.sub_type) {
+          setSelectedAction(meeting.sub_type);
+          // Find the category for this action
+          const cat = getResolutionCategory(meeting.sub_type);
+          if (cat) {
+            setActionCategory(cat);
+          }
+        }
+
+        // Load resolution
+        const { data: resolutions } = await supabase
+          .from("meeting_resolutions")
+          .select("*")
+          .eq("meeting_id", existingMeetingId)
+          .limit(1);
+        if (resolutions && resolutions.length > 0) {
+          setResolutionText(resolutions[0].resolution_text || "");
+          if (!meeting.sub_type && resolutions[0].purpose) {
+            setSelectedAction(resolutions[0].purpose);
+          }
+        }
+      } catch (err: any) {
+        toast.error("Failed to load consent data");
+        console.error(err);
+      } finally {
+        setLoadingExisting(false);
+      }
+    };
+
+    loadExisting();
+  }, [existingMeetingId]);
+
+  // Step advance with auto-save
+  const handleNext = async () => {
+    try {
+      await saveDraft();
+    } catch (err: any) {
+      console.error("Draft save failed:", err);
+      // Don't block navigation on save failure, but log it
+    }
+    setStep(step + 1);
+  };
+
+  // Create consent mutation (final save)
+  const createConsent = useMutation({
+    mutationFn: async () => {
+      const meetingId = await saveDraft();
+      return { id: meetingId };
     },
     onSuccess: (meeting) => {
       queryClient.invalidateQueries({ queryKey: ["meetings", company.id] });
@@ -389,6 +478,15 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
   });
 
   const progressPct = ((step + 1) / STEPS.length) * 100;
+
+  if (loadingExisting) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <span className="ml-2 text-sm text-muted-foreground">Loading consent data...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -661,7 +759,13 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => {
+                onClick={async () => {
+                  // Auto-save draft before opening promissory note dialog
+                  try {
+                    await saveDraft();
+                  } catch (err: any) {
+                    console.error("Draft save before promissory note failed:", err);
+                  }
                   setNoteForm({
                     lenderName: "", borrowerName: "", loanAmount: "", interestRate: "",
                     loanDuration: "", startDate: effectiveDate, endDate: "", repaymentTerms: "",
@@ -836,7 +940,7 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
         {step < STEPS.length - 1 ? (
           <Button
             size="sm"
-            onClick={() => setStep(step + 1)}
+            onClick={handleNext}
             disabled={!canAdvance}
           >
             Next
@@ -853,7 +957,7 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
             ) : (
               <Check className="h-3.5 w-3.5 mr-1" />
             )}
-            Create Consent
+            {existingMeetingId ? "Update Consent" : "Create Consent"}
           </Button>
         )}
       </div>

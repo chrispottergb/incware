@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -70,10 +70,18 @@ export default function MeetingDetail() {
     enabled: !!id,
   });
 
+  const isWrittenConsent = meeting?.meeting_type === "Written Consent";
   const isOrganizational = meeting?.meeting_type === "Organizational Meeting";
   const isAnnualMeeting = meeting?.meeting_type === "Annual Meeting";
   const isShareholderMeeting = meeting?.meeting_type === "Shareholder Meeting";
   const showCompanyLevelCounselAndLeases = isAnnualMeeting || isOrganizational;
+
+  // Redirect Written Consent entries back to company page (edit via wizard)
+  useEffect(() => {
+    if (isWrittenConsent && id) {
+      navigate(`/company/${id}#meetings`, { replace: true });
+    }
+  }, [isWrittenConsent, id, navigate]);
   // Fetch company-level data for organizational meeting boilerplate
   const { data: companyOfficers } = useQuery({
     queryKey: ["officers", id],
