@@ -90,6 +90,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
   const [orgWizardOpen, setOrgWizardOpen] = useState(false);
   const [annualWizardOpen, setAnnualWizardOpen] = useState(false);
   const [consentWizardOpen, setConsentWizardOpen] = useState(false);
+  const [editingConsentId, setEditingConsentId] = useState<string | null>(null);
 
   const defaultForm = () => ({
     meeting_date: "",
