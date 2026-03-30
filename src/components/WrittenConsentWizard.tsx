@@ -1412,9 +1412,9 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
                 <DialogTitle className="font-display flex items-center gap-2">
                   <FileText className="h-5 w-5" /> Create Promissory Note
                 </DialogTitle>
-                <DialogDescription>Review and edit the details below, then click Preview to see the formatted document.</DialogDescription>
+                <DialogDescription>Review and edit the details below, then save the draft or preview the document.</DialogDescription>
               </DialogHeader>
-              <div className="grid grid-cols-2 gap-3 mt-2">
+              <div className="grid grid-cols-2 gap-3 mt-2" onBlur={noteHandleBlur}>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Lender Name</Label>
                   <Input value={noteForm.lenderName} onChange={(e) => updateNoteField("lenderName", e.target.value)} />
@@ -1437,22 +1437,28 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Start Date</Label>
-                  <DatePickerField value={noteForm.startDate} onChange={(v) => updateNoteField("startDate", v)} />
+                  <DatePickerField value={noteForm.startDate} onChange={(v) => { updateNoteField("startDate", v); noteTriggerSave(); }} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">End Date</Label>
-                  <DatePickerField value={noteForm.endDate} onChange={(v) => updateNoteField("endDate", v)} />
+                  <DatePickerField value={noteForm.endDate} onChange={(v) => { updateNoteField("endDate", v); noteTriggerSave(); }} />
                 </div>
                 <div className="col-span-2 space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Repayment Terms</Label>
                   <Textarea value={noteForm.repaymentTerms} onChange={(e) => updateNoteField("repaymentTerms", e.target.value)} rows={3} placeholder="Monthly payments, balloon payment, etc." />
                 </div>
               </div>
-              <div className="flex justify-end mt-4">
-                <Button onClick={renderNotePreview} disabled={previewLoading}>
-                  {previewLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Preview
-                </Button>
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <SaveStatusIndicator status={noteSaveStatus} lastSavedAt={noteLastSaved} />
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" onClick={handleSaveNoteDraft}>
+                    Save Draft
+                  </Button>
+                  <Button onClick={renderNotePreview} disabled={previewLoading}>
+                    {previewLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Preview
+                  </Button>
+                </div>
               </div>
             </>
           ) : (
