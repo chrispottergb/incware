@@ -618,17 +618,37 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     }
 
     const metadata = JSON.stringify({
+      kind: "written-consent-meta",
       managementType,
       actionCategory,
       consentType,
       ownershipThreshold,
     });
 
-    const { error: deleteMetadataError } = await supabase
+    const { data: existingOtherRows, error: existingOtherRowsError } = await supabase
       .from("meeting_other")
-      .delete()
+      .select("id, notes")
       .eq("meeting_id", meetingId);
-    if (deleteMetadataError) throw deleteMetadataError;
+    if (existingOtherRowsError) throw existingOtherRowsError;
+
+    const metadataRowIds = (existingOtherRows || [])
+      .filter((row) => {
+        try {
+          const parsed = JSON.parse(row.notes);
+          return parsed?.kind !== "promissory-note-draft";
+        } catch {
+          return true;
+        }
+      })
+      .map((row) => row.id);
+
+    if (metadataRowIds.length > 0) {
+      const { error: deleteMetadataError } = await supabase
+        .from("meeting_other")
+        .delete()
+        .in("id", metadataRowIds);
+      if (deleteMetadataError) throw deleteMetadataError;
+    }
 
     const { error: insertMetadataError } = await supabase.from("meeting_other").insert({
       meeting_id: meetingId,
