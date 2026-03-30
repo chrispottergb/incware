@@ -130,7 +130,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       .replace(/^-+|-+$/g, "")}.pdf`;
   }, [company.name, effectiveDate]);
 
-  const buildConsentPdfData = useCallback((meetingId: string) => {
+
     const shareholderRows = !isCorp
       ? signers.map((signer) => {
           const shareholder = shareholders.find((row) => row.id === signer.id);
