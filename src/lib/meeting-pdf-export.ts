@@ -2088,8 +2088,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
   // Annual Balance Reporting — two stacked tables from meeting_balance_entries
   if (!isShareholder && !isWrittenConsent) {
-    const { data: balEntries } = await supabase.from("meeting_balance_entries").select("*").eq("meeting_id", meeting.id).order("created_at", { ascending: true });
-    const toRows = (balEntries || []).filter((e: any) => e.direction === "to");
+    const toRows = (data.balanceEntries || []).filter((e: any) => e.direction === "to");
+    const fromRows = (data.balanceEntries || []).filter((e: any) => e.direction === "from");
     const fromRows = (balEntries || []).filter((e: any) => e.direction === "from");
     const fmtBal = (v: any) => v != null ? `$${Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "$0.00";
     const balHead = [["Name / Party", "Relationship", "Beg. Balance", "Advances", "Repayments", "End. Balance"]];
