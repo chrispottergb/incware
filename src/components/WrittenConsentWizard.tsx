@@ -717,10 +717,18 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         const { data: metadataRows } = await supabase
           .from("meeting_other")
           .select("notes")
-          .eq("meeting_id", existingMeetingId)
-          .limit(1);
+          .eq("meeting_id", existingMeetingId);
 
-        const rawMetadata = metadataRows?.[0]?.notes;
+        const metadataRow = (metadataRows || []).find((row) => {
+          try {
+            const parsed = JSON.parse(row.notes);
+            return !parsed?.kind || parsed.kind === "written-consent-meta";
+          } catch {
+            return true;
+          }
+        });
+
+        const rawMetadata = metadataRow?.notes;
         if (rawMetadata) {
           try {
             const parsed = JSON.parse(rawMetadata);
