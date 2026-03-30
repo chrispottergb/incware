@@ -2090,7 +2090,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (!isShareholder && !isWrittenConsent) {
     const toRows = (data.balanceEntries || []).filter((e: any) => e.direction === "to");
     const fromRows = (data.balanceEntries || []).filter((e: any) => e.direction === "from");
-    const fromRows = (balEntries || []).filter((e: any) => e.direction === "from");
+    
     const fmtBal = (v: any) => v != null ? `$${Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "$0.00";
     const balHead = [["Name / Party", "Relationship", "Beg. Balance", "Advances", "Repayments", "End. Balance"]];
     const mapRow = (e: any) => [e.party_name || "—", e.relationship || "—", fmtBal(e.beginning_balance), fmtBal(e.advances), fmtBal(e.repayments), fmtBal(e.ending_balance)];
