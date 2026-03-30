@@ -133,6 +133,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
   const [previewPages, setPreviewPages] = useState<string[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [currentPdfBytes, setCurrentPdfBytes] = useState<Uint8Array | null>(null);
+  const [editingNoteRowId, setEditingNoteRowId] = useState<string | null>(null);
 
   const { data: rows = [] } = useQuery({
     queryKey: ["meeting_loans", meetingId],
