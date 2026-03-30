@@ -780,33 +780,131 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
       </Dialog>
     </Card>
 
-      {/* Annual Balance Reporting — standalone card, saves independently of loan entries, renders in minutes separately. DO NOT move back inside Add Loan modal. */}
+      {/* Annual Balance Reporting — two stacked tables */}
       <Card className="mt-4">
         <CardHeader className="pb-3">
           <CardTitle className="font-display text-base flex items-center gap-2">
             <DollarSign className="h-4 w-4" /> Annual Balance Reporting
           </CardTitle>
         </CardHeader>
-        <CardContent onBlur={balanceHandleBlur}>
-          <div className="rounded-lg bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 p-4 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium" style={{ color: '#000' }}>To Shareholder / Member / Related Party</Label>
-                <Input type="number" step="0.01" value={standaloneBalanceTo} onChange={(e) => setStandaloneBalanceTo(e.target.value)} placeholder="0.00" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium" style={{ color: '#000' }}>From Shareholder / Member / Related Party</Label>
-                <Input type="number" step="0.01" value={standaloneBalanceFrom} onChange={(e) => setStandaloneBalanceFrom(e.target.value)} placeholder="0.00" />
-            </div>
-            <div className="space-y-1.5 mt-3">
-              <Label className="text-xs font-medium" style={{ color: '#000' }}>Loan Balance Comment</Label>
-              <Textarea value={standaloneBalanceComment} onChange={(e) => setStandaloneBalanceComment(e.target.value)} rows={2} placeholder="Optional notes about year-end balances…" />
-            </div>
-          </div>
-          </div>
-          <SaveStatusIndicator status={balanceSaveStatus} lastSavedAt={balanceLastSaved} className="mt-2 justify-end" />
+        <CardContent className="space-y-6">
+          {/* Loans TO table */}
+          <BalanceTable
+            title="Loans TO Shareholders / Members / Related Parties"
+            entries={toEntries}
+            onAdd={() => addBalanceEntry("to")}
+            onUpdate={updateBalanceEntry}
+            onDelete={deleteBalanceEntry}
+          />
+          {/* Loans FROM table */}
+          <BalanceTable
+            title="Loans FROM Shareholders / Members / Related Parties"
+            entries={fromEntries}
+            onAdd={() => addBalanceEntry("from")}
+            onUpdate={updateBalanceEntry}
+            onDelete={deleteBalanceEntry}
+          />
         </CardContent>
       </Card>
     </>
+  );
+}
+
+/* ---- Balance Table sub-component ---- */
+function BalanceTable({ title, entries, onAdd, onUpdate, onDelete }: {
+  title: string;
+  entries: BalanceEntry[];
+  onAdd: () => void;
+  onUpdate: (id: string, field: string, value: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+      <div className="rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-xs">Name / Party</TableHead>
+              <TableHead className="text-xs">Relationship</TableHead>
+              <TableHead className="text-xs text-right">Beg. Balance</TableHead>
+              <TableHead className="text-xs text-right">Advances</TableHead>
+              <TableHead className="text-xs text-right">Repayments</TableHead>
+              <TableHead className="text-xs text-right">End. Balance</TableHead>
+              <TableHead className="w-10" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {entries.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-muted-foreground text-sm py-4">
+                  No entries yet
+                </TableCell>
+              </TableRow>
+            )}
+            {entries.map((entry) => (
+              <BalanceRow key={entry.id} entry={entry} onUpdate={onUpdate} onDelete={onDelete} />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <Button variant="outline" size="sm" onClick={onAdd}>
+        <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Row
+      </Button>
+    </div>
+  );
+}
+
+/* ---- Individual row — saves on blur ---- */
+function BalanceRow({ entry, onUpdate, onDelete }: {
+  entry: BalanceEntry;
+  onUpdate: (id: string, field: string, value: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [local, setLocal] = useState({
+    party_name: entry.party_name || "",
+    relationship: entry.relationship || "",
+    beginning_balance: entry.beginning_balance?.toString() || "0",
+    advances: entry.advances?.toString() || "0",
+    repayments: entry.repayments?.toString() || "0",
+    ending_balance: entry.ending_balance?.toString() || "0",
+  });
+
+  const handleBlur = (field: string) => {
+    const val = (local as any)[field];
+    const orig = field === "party_name" || field === "relationship"
+      ? ((entry as any)[field] || "")
+      : ((entry as any)[field]?.toString() || "0");
+    if (val !== orig) {
+      onUpdate(entry.id, field, val);
+    }
+  };
+
+  return (
+    <TableRow>
+      <TableCell className="p-1">
+        <Input className="h-8 text-sm" value={local.party_name} onChange={(e) => setLocal(p => ({ ...p, party_name: e.target.value }))} onBlur={() => handleBlur("party_name")} placeholder="Name" />
+      </TableCell>
+      <TableCell className="p-1">
+        <Input className="h-8 text-sm" value={local.relationship} onChange={(e) => setLocal(p => ({ ...p, relationship: e.target.value }))} onBlur={() => handleBlur("relationship")} placeholder="Relationship" />
+      </TableCell>
+      <TableCell className="p-1">
+        <Input className="h-8 text-sm text-right" type="number" step="0.01" value={local.beginning_balance} onChange={(e) => setLocal(p => ({ ...p, beginning_balance: e.target.value }))} onBlur={() => handleBlur("beginning_balance")} />
+      </TableCell>
+      <TableCell className="p-1">
+        <Input className="h-8 text-sm text-right" type="number" step="0.01" value={local.advances} onChange={(e) => setLocal(p => ({ ...p, advances: e.target.value }))} onBlur={() => handleBlur("advances")} />
+      </TableCell>
+      <TableCell className="p-1">
+        <Input className="h-8 text-sm text-right" type="number" step="0.01" value={local.repayments} onChange={(e) => setLocal(p => ({ ...p, repayments: e.target.value }))} onBlur={() => handleBlur("repayments")} />
+      </TableCell>
+      <TableCell className="p-1">
+        <Input className="h-8 text-sm text-right" type="number" step="0.01" value={local.ending_balance} onChange={(e) => setLocal(p => ({ ...p, ending_balance: e.target.value }))} onBlur={() => handleBlur("ending_balance")} />
+      </TableCell>
+      <TableCell className="p-1">
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(entry.id)}>
+          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+        </Button>
+      </TableCell>
+    </TableRow>
   );
 }
