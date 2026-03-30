@@ -102,35 +102,60 @@ const emptyForm: LoanForm = {
   promissory_note_required: false,
 };
 
-export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo, meetingBalanceFrom, meetingBalanceComment, onSaveBalance }: Props) {
+export default function MeetingLoans({ meetingId, companyName }: Props) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<LoanForm>(emptyForm);
   const [uploading, setUploading] = useState(false);
-  const [standaloneBalanceTo, setStandaloneBalanceTo] = useState(meetingBalanceTo?.toString() || "");
-  const [standaloneBalanceFrom, setStandaloneBalanceFrom] = useState(meetingBalanceFrom?.toString() || "");
-  const [standaloneBalanceComment, setStandaloneBalanceComment] = useState(meetingBalanceComment || "");
 
-  const balanceData = useMemo(() => ({
-    to: standaloneBalanceTo,
-    from: standaloneBalanceFrom,
-    comment: standaloneBalanceComment,
-  }), [standaloneBalanceTo, standaloneBalanceFrom, standaloneBalanceComment]);
-
-  const { status: balanceSaveStatus, lastSavedAt: balanceLastSaved, handleBlur: balanceHandleBlur, triggerSave: balanceTriggerSave } = useAutoSave({
-    data: balanceData,
-    onSave: async (d) => {
-      if (!onSaveBalance) return;
-      await onSaveBalance(
-        d.to ? parseFloat(d.to) : null,
-        d.from ? parseFloat(d.from) : null,
-        d.comment.trim() || null,
-      );
+  // Balance entries queries
+  const { data: balanceEntries = [] } = useQuery({
+    queryKey: ["meeting-balance-entries", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meeting_balance_entries")
+        .select("*")
+        .eq("meeting_id", meetingId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data || []) as BalanceEntry[];
     },
-    enabled: !!onSaveBalance,
+    enabled: !!meetingId,
   });
+
+  const toEntries = useMemo(() => balanceEntries.filter(e => e.direction === "to"), [balanceEntries]);
+  const fromEntries = useMemo(() => balanceEntries.filter(e => e.direction === "from"), [balanceEntries]);
+
+  const addBalanceEntry = useCallback(async (direction: string) => {
+    const { error } = await supabase.from("meeting_balance_entries").insert({
+      meeting_id: meetingId,
+      direction,
+      party_name: "",
+      relationship: "",
+      beginning_balance: 0,
+      advances: 0,
+      repayments: 0,
+      ending_balance: 0,
+    } as any);
+    if (error) { toast.error("Failed to add row"); return; }
+    queryClient.invalidateQueries({ queryKey: ["meeting-balance-entries", meetingId] });
+  }, [meetingId, queryClient]);
+
+  const updateBalanceEntry = useCallback(async (id: string, field: string, value: string) => {
+    const numFields = ["beginning_balance", "advances", "repayments", "ending_balance"];
+    const updateVal = numFields.includes(field) ? (value ? parseFloat(value) : 0) : value;
+    const { error } = await supabase.from("meeting_balance_entries").update({ [field]: updateVal } as any).eq("id", id);
+    if (error) { toast.error("Failed to save"); return; }
+    queryClient.invalidateQueries({ queryKey: ["meeting-balance-entries", meetingId] });
+  }, [meetingId, queryClient]);
+
+  const deleteBalanceEntry = useCallback(async (id: string) => {
+    const { error } = await supabase.from("meeting_balance_entries").delete().eq("id", id);
+    if (error) { toast.error("Failed to delete"); return; }
+    queryClient.invalidateQueries({ queryKey: ["meeting-balance-entries", meetingId] });
+  }, [meetingId, queryClient]);
   // Promissory note wizard state
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [noteForm, setNoteForm] = useState<NoteForm>({
