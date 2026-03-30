@@ -279,7 +279,7 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
   });
 
   const handleSaveStandaloneBalance = async () => {
-    balanceTriggerSave();
+    // Balance entries now self-manage via inline blur saves
   };
 
   const closeDialog = () => {
