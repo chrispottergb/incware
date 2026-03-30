@@ -174,35 +174,79 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
 
   const handleSaveNotePdf = async () => {
     if (!currentPdfBytes) return;
+    if (!user?.id) {
+      toast.error("You must be signed in to save this PDF.");
+      return;
+    }
     const filename = `promissory-note-${noteForm.borrowerName || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase();
     const blob = new Blob([currentPdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
 
-    // Upload to storage if user is authenticated
-    if (user?.id) {
-      setSavingNotePdf(true);
-      try {
-        const filePath = `${user.id}/promissory-notes/${company.id}/${filename}`;
-        const { error: uploadError } = await supabase.storage
-          .from("generated-documents")
-          .upload(filePath, blob, { upsert: true, contentType: "application/pdf" });
-        if (uploadError) throw uploadError;
-      } catch (err: any) {
-        toast.error(err.message || "Failed to upload promissory note");
-        setSavingNotePdf(false);
-        return;
+    setSavingNotePdf(true);
+    try {
+      const filePath = `${user.id}/promissory-notes/${company.id}/${Date.now()}-${filename}`;
+
+      // 1. Upload blob to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from("generated-documents")
+        .upload(filePath, blob, { upsert: true, contentType: "application/pdf" });
+      if (uploadError) throw uploadError;
+
+      // 2. Get the persistent public URL
+      const { data: publicUrlData } = supabase.storage
+        .from("generated-documents")
+        .getPublicUrl(filePath);
+      const publicUrl = publicUrlData?.publicUrl;
+      if (!publicUrl) throw new Error("Failed to generate public URL for the uploaded file.");
+
+      // 3. Write/update a company_documents record with the public URL
+      const documentMarker = `promissory-note:${company.id}:${filename}`;
+      const { data: existingDoc } = await supabase
+        .from("company_documents")
+        .select("id")
+        .eq("company_id", company.id)
+        .eq("notes", documentMarker)
+        .maybeSingle();
+
+      if (existingDoc?.id) {
+        await supabase.from("company_documents").update({
+          file_name: filename,
+          file_path: publicUrl,
+          file_size: blob.size,
+          file_type: "application/pdf",
+          category: "Meeting Minutes & Resolutions",
+        }).eq("id", existingDoc.id);
+      } else {
+        const { error: insertError } = await supabase.from("company_documents").insert({
+          company_id: company.id,
+          user_id: user.id,
+          file_name: filename,
+          file_path: publicUrl,
+          file_size: blob.size,
+          file_type: "application/pdf",
+          category: "Meeting Minutes & Resolutions",
+          notes: documentMarker,
+        });
+        if (insertError) throw insertError;
       }
+
+      queryClient.invalidateQueries({ queryKey: ["company_documents", company.id] });
+
+      // 4. Also trigger a local download
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(blobUrl);
+
+      setNoteDialogOpen(false);
+      toast.success("Promissory note saved to documents and downloaded!");
+    } catch (err: any) {
+      console.error("Promissory note save failed:", err);
+      toast.error(err.message || "Failed to save promissory note");
+    } finally {
       setSavingNotePdf(false);
     }
-
-    // Local download
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-    setNoteDialogOpen(false);
-    toast.success("Promissory note saved!");
   };
 
   // Step 4: Signers (auto-populated)
