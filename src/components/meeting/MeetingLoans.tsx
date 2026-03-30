@@ -45,10 +45,18 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs
 interface Props {
   meetingId: string;
   companyName?: string;
-  meetingBalanceTo?: number | null;
-  meetingBalanceFrom?: number | null;
-  meetingBalanceComment?: string | null;
-  onSaveBalance?: (to: number | null, from: number | null, comment: string | null) => Promise<void>;
+}
+
+interface BalanceEntry {
+  id: string;
+  meeting_id: string;
+  direction: string;
+  party_name: string;
+  relationship: string;
+  beginning_balance: number;
+  advances: number;
+  repayments: number;
+  ending_balance: number;
 }
 
 interface LoanForm {
