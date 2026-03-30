@@ -120,30 +120,67 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   const [consentPreviewPages, setConsentPreviewPages] = useState<string[]>([]);
   const [consentPreviewLoading, setConsentPreviewLoading] = useState(false);
   const [savingConsentPdf, setSavingConsentPdf] = useState(false);
+  const [savingNotePdf, setSavingNotePdf] = useState(false);
+
+  const getDefaultNoteForm = useCallback(() => ({
+    lenderName: "",
+    borrowerName: "",
+    loanAmount: "",
+    interestRate: "",
+    loanDuration: "",
+    startDate: effectiveDate,
+    endDate: "",
+    repaymentTerms: "",
+  }), [effectiveDate]);
 
   const updateNoteField = (key: string, value: string) =>
     setNoteForm((prev) => ({ ...prev, [key]: value }));
 
-  const { status: noteSaveStatus, lastSavedAt: noteLastSaved, handleBlur: noteHandleBlur, triggerSave: noteTriggerSave, saveNow: saveNoteNow } = useAutoSave({
-    data: noteForm,
-    onSave: async (draft) => {
-      const meetingId = draftMeetingId ?? await saveDraft();
-      const notePayload = JSON.stringify({ promissoryNoteDraft: draft });
-      const { error: deleteNoteDraftError } = await supabase
-        .from("meeting_other")
-        .delete()
-        .eq("meeting_id", meetingId)
-        .like("notes", '{"promissoryNoteDraft"%');
-      if (deleteNoteDraftError) throw deleteNoteDraftError;
+  async function loadSavedNoteDraft(meetingId: string): Promise<typeof noteForm | null> {
+    const { data, error } = await supabase
+      .from("meeting_other")
+      .select("notes")
+      .eq("meeting_id", meetingId)
+      .like("notes", '{"kind":"promissory-note-draft"%')
+      .limit(1)
+      .maybeSingle();
 
-      const { error: insertNoteDraftError } = await supabase
-        .from("meeting_other")
-        .insert({
-          meeting_id: meetingId,
-          notes: notePayload,
-        });
-      if (insertNoteDraftError) throw insertNoteDraftError;
-    },
+    if (error) throw error;
+    if (!data?.notes) return null;
+
+    try {
+      const parsed = JSON.parse(data.notes);
+      return parsed?.draft ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function persistNoteDraft(draft: typeof noteForm = noteForm) {
+    const meetingId = draftMeetingId ?? await saveDraft();
+    const notePayload = JSON.stringify({ kind: "promissory-note-draft", draft });
+
+    const { error: deleteNoteDraftError } = await supabase
+      .from("meeting_other")
+      .delete()
+      .eq("meeting_id", meetingId)
+      .like("notes", '{"kind":"promissory-note-draft"%');
+    if (deleteNoteDraftError) throw deleteNoteDraftError;
+
+    const { error: insertNoteDraftError } = await supabase
+      .from("meeting_other")
+      .insert({
+        meeting_id: meetingId,
+        notes: notePayload,
+      });
+    if (insertNoteDraftError) throw insertNoteDraftError;
+
+    return meetingId;
+  }
+
+  const { status: noteSaveStatus, lastSavedAt: noteLastSaved, handleBlur: noteHandleBlur, triggerSave: noteTriggerSave } = useAutoSave({
+    data: noteForm,
+    onSave: persistNoteDraft,
     enabled: noteDialogOpen,
     debounceMs: 1200,
   });
@@ -156,22 +193,23 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       .replace(/^-+|-+$/g, "")}.pdf`;
   }, [company.name, effectiveDate]);
 
-
+  const buildPromissoryNoteDoc = useCallback(() => generatePromissoryNotePDF({
+    lenderName: noteForm.lenderName,
+    borrowerName: noteForm.borrowerName,
+    loanAmount: noteForm.loanAmount ? parseFloat(noteForm.loanAmount) : null,
+    interestRate: noteForm.interestRate ? parseFloat(noteForm.interestRate) : null,
+    loanDuration: noteForm.loanDuration,
+    startDate: noteForm.startDate,
+    endDate: noteForm.endDate,
+    repaymentTerms: noteForm.repaymentTerms,
+    companyName: company.name || "",
+  }), [company.name, noteForm]);
 
   const renderNotePreview = async () => {
     setPreviewLoading(true);
     try {
-      const doc = generatePromissoryNotePDF({
-        lenderName: noteForm.lenderName,
-        borrowerName: noteForm.borrowerName,
-        loanAmount: noteForm.loanAmount ? parseFloat(noteForm.loanAmount) : null,
-        interestRate: noteForm.interestRate ? parseFloat(noteForm.interestRate) : null,
-        loanDuration: noteForm.loanDuration,
-        startDate: noteForm.startDate,
-        endDate: noteForm.endDate,
-        repaymentTerms: noteForm.repaymentTerms,
-        companyName: company.name || "",
-      });
+      await persistNoteDraft(noteForm);
+      const doc = buildPromissoryNoteDoc();
       const bytes = doc.output("arraybuffer");
       setCurrentPdfBytes(new Uint8Array(bytes));
       const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
@@ -189,58 +227,71 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       }
       setPreviewPages(pages);
       setNoteStep("preview");
-    } catch {
-      toast.error("Failed to generate preview");
+    } catch (err: any) {
+      console.error("Promissory note preview failed:", err);
+      toast.error(err.message || "Failed to generate preview");
     } finally {
       setPreviewLoading(false);
     }
   };
 
-  const [savingNotePdf, setSavingNotePdf] = useState(false);
+  const handleSaveNoteDraft = async () => {
+    try {
+      await persistNoteDraft(noteForm);
+      toast.success("Promissory note draft saved.");
+    } catch (err: any) {
+      console.error("Promissory note draft save failed:", err);
+      toast.error(err.message || "Failed to save promissory note draft.");
+    }
+  };
 
   const handleSaveNotePdf = async () => {
-    if (!currentPdfBytes) return;
     if (!user?.id) {
       toast.error("You must be signed in to save this PDF.");
       return;
     }
-    const filename = `promissory-note-${noteForm.borrowerName || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase();
-    const blob = new Blob([currentPdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
 
     setSavingNotePdf(true);
     try {
-      const filePath = `${user.id}/promissory-notes/${company.id}/${Date.now()}-${filename}`;
+      const meetingId = await persistNoteDraft(noteForm);
+      const doc = buildPromissoryNoteDoc();
+      const filename = `promissory-note-${noteForm.borrowerName || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase();
+      const blob = doc.output("blob");
 
-      // 1. Upload blob to Supabase Storage
+      if (!(blob instanceof Blob) || blob.size === 0) {
+        throw new Error("Generated PDF was empty.");
+      }
+
+      const filePath = `${user.id}/promissory-notes/${meetingId}/${Date.now()}-${filename}`;
       const { error: uploadError } = await supabase.storage
         .from("generated-documents")
         .upload(filePath, blob, { upsert: true, contentType: "application/pdf" });
       if (uploadError) throw uploadError;
 
-      // 2. Get the persistent public URL
       const { data: publicUrlData } = supabase.storage
         .from("generated-documents")
         .getPublicUrl(filePath);
       const publicUrl = publicUrlData?.publicUrl;
       if (!publicUrl) throw new Error("Failed to generate public URL for the uploaded file.");
 
-      // 3. Write/update a company_documents record with the public URL
-      const documentMarker = `promissory-note:${company.id}:${filename}`;
-      const { data: existingDoc } = await supabase
+      const documentMarker = `promissory-note:${meetingId}`;
+      const { data: existingDoc, error: existingDocError } = await supabase
         .from("company_documents")
         .select("id")
         .eq("company_id", company.id)
         .eq("notes", documentMarker)
         .maybeSingle();
+      if (existingDocError) throw existingDocError;
 
       if (existingDoc?.id) {
-        await supabase.from("company_documents").update({
+        const { error: updateDocumentError } = await supabase.from("company_documents").update({
           file_name: filename,
           file_path: publicUrl,
           file_size: blob.size,
           file_type: "application/pdf",
           category: "Meeting Minutes & Resolutions",
         }).eq("id", existingDoc.id);
+        if (updateDocumentError) throw updateDocumentError;
       } else {
         const { error: insertError } = await supabase.from("company_documents").insert({
           company_id: company.id,
@@ -256,17 +307,10 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       }
 
       queryClient.invalidateQueries({ queryKey: ["company_documents", company.id] });
-
-      // 4. Also trigger a local download
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(blobUrl);
-
+      window.open(publicUrl, "_blank", "noopener,noreferrer");
       setNoteDialogOpen(false);
-      toast.success("Promissory note saved to documents and downloaded!");
+      setNoteStep("edit");
+      toast.success("Promissory note saved.");
     } catch (err: any) {
       console.error("Promissory note save failed:", err);
       toast.error(err.message || "Failed to save promissory note");
