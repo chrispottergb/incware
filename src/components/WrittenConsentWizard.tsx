@@ -156,8 +156,8 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     }
   }
 
-  async function persistNoteDraft(draft: typeof noteForm = noteForm) {
-    const meetingId = draftMeetingId ?? await saveDraft();
+  async function persistNoteDraft(draft: typeof noteForm = noteForm, meetingIdOverride?: string): Promise<void> {
+    const meetingId = meetingIdOverride ?? draftMeetingId ?? await saveDraft();
     const notePayload = JSON.stringify({ kind: "promissory-note-draft", draft });
 
     const { error: deleteNoteDraftError } = await supabase
@@ -174,13 +174,13 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         notes: notePayload,
       });
     if (insertNoteDraftError) throw insertNoteDraftError;
-
-    return meetingId;
   }
 
   const { status: noteSaveStatus, lastSavedAt: noteLastSaved, handleBlur: noteHandleBlur, triggerSave: noteTriggerSave } = useAutoSave({
     data: noteForm,
-    onSave: persistNoteDraft,
+    onSave: async (draft) => {
+      await persistNoteDraft(draft);
+    },
     enabled: noteDialogOpen,
     debounceMs: 1200,
   });
