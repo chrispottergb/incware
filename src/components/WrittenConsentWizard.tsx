@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import SaveStatusIndicator from "@/components/SaveStatusIndicator";
 import {
   Select,
   SelectContent,
