@@ -165,6 +165,12 @@ export default function DocumentsTab({ companyId }: Props) {
 
   const handleDownload = async (doc: (typeof documents)[0]) => {
     try {
+      // If file_path is a full URL (public Supabase URL or any https URL), open directly
+      if (doc.file_path.startsWith("http://") || doc.file_path.startsWith("https://")) {
+        window.open(doc.file_path, "_blank");
+        return;
+      }
+      // Otherwise treat as a relative storage path in company-documents bucket
       const { data, error } = await supabase.storage
         .from("company-documents")
         .download(doc.file_path);
