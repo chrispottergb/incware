@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,7 @@ interface Props {
 export default function WrittenConsentWizard({ company, onClose, onConsentCreated }: Props) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const t = getTerminology(company.entity_type);
   const isSMLLC = company.entity_type === "Single Member LLC";
   const isLLC = isLLCType(company.entity_type);
@@ -149,13 +151,35 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
     }
   };
 
-  const handleSaveNotePdf = () => {
+  const [savingNotePdf, setSavingNotePdf] = useState(false);
+
+  const handleSaveNotePdf = async () => {
     if (!currentPdfBytes) return;
+    const filename = `promissory-note-${noteForm.borrowerName || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase();
     const blob = new Blob([currentPdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
+
+    // Upload to storage if user is authenticated
+    if (user?.id) {
+      setSavingNotePdf(true);
+      try {
+        const filePath = `${user.id}/promissory-notes/${company.id}/${filename}`;
+        const { error: uploadError } = await supabase.storage
+          .from("generated-documents")
+          .upload(filePath, blob, { upsert: true, contentType: "application/pdf" });
+        if (uploadError) throw uploadError;
+      } catch (err: any) {
+        toast.error(err.message || "Failed to upload promissory note");
+        setSavingNotePdf(false);
+        return;
+      }
+      setSavingNotePdf(false);
+    }
+
+    // Local download
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `promissory-note-${noteForm.borrowerName || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase();
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
     setNoteDialogOpen(false);
@@ -901,8 +925,9 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
                 <Button variant="outline" onClick={() => setNoteStep("edit")}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Back / Edit
                 </Button>
-                <Button onClick={handleSaveNotePdf}>
-                  <Download className="mr-2 h-4 w-4" /> Save as PDF
+                <Button onClick={handleSaveNotePdf} disabled={savingNotePdf}>
+                  {savingNotePdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                  {savingNotePdf ? "Saving…" : "Save as PDF"}
                 </Button>
               </div>
             </>

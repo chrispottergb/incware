@@ -133,6 +133,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
   const [previewPages, setPreviewPages] = useState<string[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [currentPdfBytes, setCurrentPdfBytes] = useState<Uint8Array | null>(null);
+  const [editingNoteRowId, setEditingNoteRowId] = useState<string | null>(null);
 
   const { data: rows = [] } = useQuery({
     queryKey: ["meeting_loans", meetingId],
@@ -257,6 +258,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
 
   // --- Promissory Note Wizard ---
   const openNoteWizard = (row: any) => {
+    setEditingNoteRowId(row.id);
     setNoteForm({
       lenderName: row.lender_name || "",
       borrowerName: row.borrower_name || "",
@@ -312,17 +314,51 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
     }
   }, [noteForm, companyName]);
 
-  const handleSavePdf = () => {
-    if (!currentPdfBytes) return;
-    const blob = new Blob([currentPdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `promissory-note-${noteForm.borrowerName || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase();
-    a.click();
-    URL.revokeObjectURL(url);
-    setNoteDialogOpen(false);
-    toast.success("Promissory note saved!");
+  const [savingPdf, setSavingPdf] = useState(false);
+
+  const handleSavePdf = async () => {
+    if (!currentPdfBytes || !user?.id || !editingNoteRowId) return;
+    setSavingPdf(true);
+    try {
+      const filename = `promissory-note-${noteForm.borrowerName || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase();
+      const blob = new Blob([currentPdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
+      const filePath = `${user.id}/promissory-notes/${editingNoteRowId}/${filename}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from("generated-documents")
+        .upload(filePath, blob, { upsert: true, contentType: "application/pdf" });
+      if (uploadError) throw uploadError;
+
+      // Update DB record
+      const { error: updateError } = await supabase
+        .from("meeting_loans" as any)
+        .update({
+          promissory_note_file_url: filePath,
+          promissory_note_file_name: filename,
+          promissory_note_required: true,
+        } as any)
+        .eq("id", editingNoteRowId);
+      if (updateError) throw updateError;
+
+      // Invalidate cache so "On File" badge appears
+      queryClient.invalidateQueries({ queryKey: ["meeting_loans", meetingId] });
+
+      // Also trigger local download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      setNoteDialogOpen(false);
+      toast.success("Promissory note saved and uploaded!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save promissory note");
+    } finally {
+      setSavingPdf(false);
+    }
   };
 
   const handleUploadNote = async (rowId: string, file: File) => {
@@ -661,8 +697,9 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
                 <Button variant="outline" onClick={() => setNoteStep("edit")}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Back / Edit
                 </Button>
-                <Button onClick={handleSavePdf}>
-                  <Download className="mr-2 h-4 w-4" /> Save as PDF
+                <Button onClick={handleSavePdf} disabled={savingPdf}>
+                  {savingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                  {savingPdf ? "Saving…" : "Save as PDF"}
                 </Button>
               </div>
             </>
