@@ -330,7 +330,78 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     }
   };
 
-  // ---------- DRAFT SAVE LOGIC ----------
+  const buildConsentPdfData = useCallback((meetingId: string) => {
+    const shareholderRows = !isCorp
+      ? signers.map((signer) => {
+          const shareholder = shareholders.find((row) => row.id === signer.id);
+          const holdings = shareholder ? (shareholderHoldings[shareholder.id] ?? 0) : 0;
+          const ownershipPct = totalIssuedShares > 0 && shareholder
+            ? Number(((holdings / totalIssuedShares) * 100).toFixed(2))
+            : Number(shareholder?.ownership_percentage ?? 0);
+          return {
+            shareholder_name: signer.name,
+            address: shareholder?.address || null,
+            city: shareholder?.city || null,
+            state: shareholder?.state || null,
+            zip: shareholder?.zip || null,
+            common_shares: holdings,
+            preferred_shares: ownershipPct,
+          };
+        })
+      : [];
+    return {
+      meeting: {
+        id: meetingId,
+        company_id: company.id,
+        meeting_date: effectiveDate,
+        meeting_type: "Written Consent",
+        sub_type: selectedAction || null,
+        tax_year: taxYear ? parseInt(taxYear, 10) : null,
+        purpose: selectedAction ? `Written Consent — ${selectedAction}` : "Written Consent",
+        meeting_location: null,
+        meeting_time: null,
+        chairperson: null,
+        mtg_secretary: null,
+        others_present: null,
+        company_name_at_meeting: company.name,
+        company_address_at_meeting: company.address || null,
+        company_city_at_meeting: company.city || null,
+        company_state_at_meeting: company.state || null,
+        company_zip_at_meeting: company.zip || null,
+      },
+      company,
+      resolutions: resolutionText.trim()
+        ? [{ purpose: selectedAction || "Written Consent", resolution_text: resolutionText }]
+        : [],
+      directors: isCorp ? signers.map((signer) => ({ director_name: signer.name })) : [],
+      shareholders: shareholderRows,
+    };
+  }, [company, effectiveDate, isCorp, resolutionText, selectedAction, shareholders, shareholderHoldings, signers, taxYear, totalIssuedShares]);
+
+  const renderPdfPages = useCallback(async (bytes: ArrayBuffer) => {
+    const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+    const pages: string[] = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 2 });
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Preview rendering failed");
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      pages.push(canvas.toDataURL("image/png"));
+    }
+    return pages;
+  }, []);
+
+  const buildConsentPdf = useCallback((meetingId: string) => {
+    const doc = exportMeetingMinutesPDF(buildConsentPdfData(meetingId));
+    const bytes = doc.output("arraybuffer");
+    return { doc, bytes };
+  }, [buildConsentPdfData]);
+
+
   const buildMeetingPayload = useCallback(() => ({
     company_id: company.id,
     meeting_date: effectiveDate,
