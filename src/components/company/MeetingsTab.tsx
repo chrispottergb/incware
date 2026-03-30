@@ -636,7 +636,14 @@ export default function MeetingsTab({ companyId, company }: Props) {
             <Card
               key={m.id}
               className="group cursor-pointer transition-all hover:shadow-md hover:border-primary/20"
-              onClick={() => navigate(`/company/${companyId}/meetings/${m.id}`)}
+              onClick={() => {
+                if (m.meeting_type === "Written Consent") {
+                  setEditingConsentId(m.id);
+                  setConsentWizardOpen(true);
+                } else {
+                  navigate(`/company/${companyId}/meetings/${m.id}`);
+                }
+              }}
             >
               <CardContent className="flex items-center gap-4 py-4">
                 <div className="flex-1 min-w-0">
