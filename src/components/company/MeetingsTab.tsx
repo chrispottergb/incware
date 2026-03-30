@@ -391,19 +391,6 @@ export default function MeetingsTab({ companyId, company }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setConsentWizardOpen(true)}>
-            <FileText className="h-3.5 w-3.5 mr-1.5" /> Written Consent
-          </Button>
-          {isLLCType(company.entity_type) && (
-            <>
-              <Button variant="outline" size="sm" onClick={() => setAnnualWizardOpen(true)}>
-                <FileText className="h-3.5 w-3.5 mr-1.5" /> Annual Meeting Minutes
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setOrgWizardOpen(true)}>
-                <FileText className="h-3.5 w-3.5 mr-1.5" /> Org Meeting Minutes
-              </Button>
-            </>
-          )}
           <TaxReturnUpload
             companyId={companyId}
             mode="populate"
