@@ -1,28 +1,37 @@
 
 
-# Unmask EIN in PDF Exports, Keep Masked on Screen
+# Fix: Promissory Note "Save as PDF" — Upload to Storage
 
-## Overview
-The EIN masking was applied to both on-screen display and PDF export fields. The user wants full EINs visible in generated PDFs but masked on screen to prevent exposure in AI training data.
+## Problem
+The "Save as PDF" button in both `MeetingLoans.tsx` and `WrittenConsentWizard.tsx` only triggers a local browser download via a temporary blob URL. It does NOT upload the PDF to Supabase Storage or update the database record. So the "On File" indicator never appears, and there's nothing to download later.
 
-## What Changes
+## Root Cause
+`handleSavePdf` (MeetingLoans line 315) and `handleSaveNotePdf` (WrittenConsentWizard line 152) create a blob, trigger `a.click()` for download, then revoke the URL. No storage upload or DB update occurs.
 
-### 1. IncorporationTab (`src/components/company/IncorporationTab.tsx`)
-- **Line 675**: Change `maskEin((form as any).ein)` back to `(form as any).ein || ""` so the PDF export shows the full EIN
-- The edit input already shows the full EIN — no change needed there
-- Add masking to any **on-screen read-only display** of the EIN (the label text shown in the UI, not the PDF fields)
+## Fix
 
-### 2. OrganizationTab (`src/components/company/OrganizationTab.tsx`)
-- **Line 733**: Change `maskEin((filingForm as any).ein)` back to `(filingForm as any).ein || ""` so the PDF export shows the full EIN
-- Same approach: mask only the on-screen display label, not the PDF data
+### 1. MeetingLoans.tsx — `handleSavePdf` (line 315)
+Replace the local-only download with a flow that:
+1. Creates the PDF blob from `currentPdfBytes`
+2. Uploads to `generated-documents` bucket at path `{userId}/promissory-notes/{loanRowId}/{filename}.pdf`
+3. Updates the `meeting_loans` row with `promissory_note_file_url` and `promissory_note_file_name`
+4. Invalidates the query cache so the "On File" badge appears
+5. Also triggers a local download so the user gets the file immediately
+6. Shows error toast if upload fails
 
-### 3. TaxReturnUpload (`src/components/TaxReturnUpload.tsx`)
-- **Line 544**: Keep `maskEin` here — this is an on-screen preview card, not a PDF
+This requires tracking which loan row the note wizard was opened for (the `editingNoteRowId` or equivalent — need to check if this is already tracked).
 
-### Summary
-- **PDFs**: Full EIN (unmasked) — 2 lines reverted in IncorporationTab and OrganizationTab
-- **Screen displays**: Masked EIN — TaxReturnUpload stays as-is, and any other on-screen read-only labels continue using `maskEin`
+### 2. WrittenConsentWizard.tsx — `handleSaveNotePdf` (line 152)
+Same pattern: upload the PDF blob to storage, save the record, then also trigger a local download. The exact storage path and DB table will depend on how written consents store their documents.
+
+### 3. Error Handling
+- Wrap upload in try/catch
+- Show `toast.error` on failure with the error message
+- Only show success toast and close dialog after both upload and DB update succeed
 
 ## Technical Details
-Two single-line changes reverting `maskEin(...)` to the raw value in the `SectionPdfActions` config objects.
+- Uses existing `supabase.storage.from("generated-documents").upload()` pattern (already used in `handleUploadNote`)
+- Uses existing `supabase.from("meeting_loans").update()` pattern
+- No new tables or migrations needed
+- The `generated-documents` bucket is already private with appropriate RLS
 
