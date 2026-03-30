@@ -545,6 +545,7 @@ export default function MeetingDetail() {
       capitalAssets,
       vehicleLeases,
       leaseTerminations,
+      balanceEntries,
       priorYear: priorMeetingId ? {
         officers: priorOfficers,
         benefits: priorBenefits,
