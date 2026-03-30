@@ -151,13 +151,35 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
     }
   };
 
-  const handleSaveNotePdf = () => {
+  const [savingNotePdf, setSavingNotePdf] = useState(false);
+
+  const handleSaveNotePdf = async () => {
     if (!currentPdfBytes) return;
+    const filename = `promissory-note-${noteForm.borrowerName || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase();
     const blob = new Blob([currentPdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
+
+    // Upload to storage if user is authenticated
+    if (user?.id) {
+      setSavingNotePdf(true);
+      try {
+        const filePath = `${user.id}/promissory-notes/${company.id}/${filename}`;
+        const { error: uploadError } = await supabase.storage
+          .from("generated-documents")
+          .upload(filePath, blob, { upsert: true, contentType: "application/pdf" });
+        if (uploadError) throw uploadError;
+      } catch (err: any) {
+        toast.error(err.message || "Failed to upload promissory note");
+        setSavingNotePdf(false);
+        return;
+      }
+      setSavingNotePdf(false);
+    }
+
+    // Local download
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `promissory-note-${noteForm.borrowerName || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase();
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
     setNoteDialogOpen(false);
