@@ -1,37 +1,72 @@
 
 
-# Fix: Promissory Note "Save as PDF" — Upload to Storage
+# Fix: Written Consent Data Persistence + Re-open Wizard
 
-## Problem
-The "Save as PDF" button in both `MeetingLoans.tsx` and `WrittenConsentWizard.tsx` only triggers a local browser download via a temporary blob URL. It does NOT upload the PDF to Supabase Storage or update the database record. So the "On File" indicator never appears, and there's nothing to download later.
+## Problem Summary
 
-## Root Cause
-`handleSavePdf` (MeetingLoans line 315) and `handleSaveNotePdf` (WrittenConsentWizard line 152) create a blob, trigger `a.click()` for download, then revoke the URL. No storage upload or DB update occurs.
+**Bug 1 — Data lost on Promissory Note transition**: The WrittenConsentWizard only saves data when the user clicks "Create Consent" on the final step. If the user closes the wizard or navigates away at any point (e.g. after creating a promissory note), all form data is lost. There is no intermediate/draft save.
+
+**Bug 2 — Cannot re-open wizard from Meetings tab**: Clicking a Written Consent entry in the Meetings list navigates to `MeetingDetail.tsx` — the standard tabbed meeting view. There is no way to reopen the wizard with the existing record's data for editing.
 
 ## Fix
 
-### 1. MeetingLoans.tsx — `handleSavePdf` (line 315)
-Replace the local-only download with a flow that:
-1. Creates the PDF blob from `currentPdfBytes`
-2. Uploads to `generated-documents` bucket at path `{userId}/promissory-notes/{loanRowId}/{filename}.pdf`
-3. Updates the `meeting_loans` row with `promissory_note_file_url` and `promissory_note_file_name`
-4. Invalidates the query cache so the "On File" badge appears
-5. Also triggers a local download so the user gets the file immediately
-6. Shows error toast if upload fails
+### 1. Auto-save consent as draft on step transitions and before promissory note
+**File: `src/components/WrittenConsentWizard.tsx`**
 
-This requires tracking which loan row the note wizard was opened for (the `editingNoteRowId` or equivalent — need to check if this is already tracked).
+- Add a `meetingId` state to track whether a draft record exists
+- Accept an optional `existingMeetingId` prop for edit mode
+- On first "Next" click (step 0 → 1), create a draft meeting record with `meeting_type: "Written Consent"` and store the returned ID
+- On subsequent step transitions, update the existing meeting record and upsert resolution/signers
+- Before opening the promissory note dialog, trigger a save of the current state
+- On "Create Consent" (final step), do a final update rather than insert (if draft exists)
+- When `existingMeetingId` is provided, load all data from DB on mount (meeting fields, resolution, signers) and populate the form state
 
-### 2. WrittenConsentWizard.tsx — `handleSaveNotePdf` (line 152)
-Same pattern: upload the PDF blob to storage, save the record, then also trigger a local download. The exact storage path and DB table will depend on how written consents store their documents.
+Key changes:
+- New `draftMeetingId` state, initialized from `existingMeetingId` prop
+- New `saveDraft()` async function that upserts the meeting, resolution, and signers
+- Call `saveDraft()` in `setStep(step + 1)` transitions and before `setNoteDialogOpen(true)`
+- `createConsent` mutation becomes a final update + navigate (reuses `draftMeetingId`)
+- Add `useEffect` to load existing data when `existingMeetingId` is provided
 
-### 3. Error Handling
-- Wrap upload in try/catch
-- Show `toast.error` on failure with the error message
-- Only show success toast and close dialog after both upload and DB update succeed
+### 2. Update WrittenConsentWizard Props
+**File: `src/components/WrittenConsentWizard.tsx`**
+
+```typescript
+interface Props {
+  company: any;
+  existingMeetingId?: string; // NEW: for edit mode
+  onClose?: () => void;
+  onConsentCreated?: () => void;
+}
+```
+
+### 3. Open wizard from Meetings tab for Written Consent entries
+**File: `src/components/company/MeetingsTab.tsx`**
+
+- Add `editingConsentId` state
+- In the meetings list click handler (line 638), check if `m.meeting_type === "Written Consent"`: if so, set `editingConsentId = m.id` and open the consent wizard dialog instead of navigating to MeetingDetail
+- Pass `existingMeetingId={editingConsentId}` to `WrittenConsentWizard`
+- Reset `editingConsentId` when wizard closes
+
+### 4. MeetingDetail redirect for Written Consent
+**File: `src/pages/MeetingDetail.tsx`**
+
+- If `meeting.meeting_type === "Written Consent"`, redirect back to the company page (or show a minimal view with just header + resolutions, as the memory doc describes). The primary editing path will be through the wizard from the Meetings tab.
 
 ## Technical Details
-- Uses existing `supabase.storage.from("generated-documents").upload()` pattern (already used in `handleUploadNote`)
-- Uses existing `supabase.from("meeting_loans").update()` pattern
-- No new tables or migrations needed
-- The `generated-documents` bucket is already private with appropriate RLS
+
+**Draft save logic** (`saveDraft` function):
+1. If no `draftMeetingId`: INSERT into `meetings` → store returned ID
+2. If `draftMeetingId` exists: UPDATE the meeting row with current form state
+3. Delete + re-insert `meeting_resolutions` for this meeting ID (simpler than upsert)
+4. Delete + re-insert `meeting_directors` or `meeting_shareholders` for signers
+5. Return the meeting ID
+
+**Edit mode data loading**:
+- Query `meetings` by ID for entity fields (effective_date, tax_year, etc.)
+- Query `meeting_resolutions` for resolution text and action
+- Query `meeting_directors` / `meeting_shareholders` for signers (read-only display)
+- Populate all `useState` values from query results
+
+**Promissory note pre-save**: Call `await saveDraft()` before `setNoteDialogOpen(true)` on line 664, ensuring state is persisted before the user enters the note sub-flow.
 
