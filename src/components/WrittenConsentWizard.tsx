@@ -27,6 +27,7 @@ import {
   User,
   Loader2,
   Check,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -42,6 +43,8 @@ import {
 } from "@/lib/resolution-types";
 import { format } from "date-fns";
 import { generatePromissoryNotePDF } from "@/lib/promissory-note-pdf";
+import { exportMeetingMinutesPDF } from "@/lib/meeting-pdf-export";
+import { savePdfReliably } from "@/lib/pdf-save";
 import * as pdfjsLib from "pdfjs-dist";
 import { Download, ArrowLeft } from "lucide-react";
 import {
@@ -112,9 +115,93 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   const [previewPages, setPreviewPages] = useState<string[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [currentPdfBytes, setCurrentPdfBytes] = useState<Uint8Array | null>(null);
+  const [consentPreviewPages, setConsentPreviewPages] = useState<string[]>([]);
+  const [consentPreviewLoading, setConsentPreviewLoading] = useState(false);
+  const [savingConsentPdf, setSavingConsentPdf] = useState(false);
 
   const updateNoteField = (key: string, value: string) =>
     setNoteForm((prev) => ({ ...prev, [key]: value }));
+
+  const buildConsentFilename = useCallback(() => {
+    const base = `${company.name}-written-consent-${effectiveDate || format(new Date(), "yyyy-MM-dd")}`;
+    return `${base
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")}.pdf`;
+  }, [company.name, effectiveDate]);
+
+  const buildConsentPdfData = useCallback((meetingId: string) => {
+    const shareholderRows = !isCorp
+      ? signers.map((signer) => {
+          const shareholder = shareholders.find((row) => row.id === signer.id);
+          const holdings = shareholder ? (shareholderHoldings[shareholder.id] ?? 0) : 0;
+          const ownershipPct = totalIssuedShares > 0 && shareholder
+            ? Number(((holdings / totalIssuedShares) * 100).toFixed(2))
+            : Number(shareholder?.ownership_percentage ?? 0);
+
+          return {
+            shareholder_name: signer.name,
+            address: shareholder?.address || null,
+            city: shareholder?.city || null,
+            state: shareholder?.state || null,
+            zip: shareholder?.zip || null,
+            common_shares: holdings,
+            preferred_shares: ownershipPct,
+          };
+        })
+      : [];
+
+    return {
+      meeting: {
+        id: meetingId,
+        company_id: company.id,
+        meeting_date: effectiveDate,
+        meeting_type: "Written Consent",
+        sub_type: selectedAction || null,
+        tax_year: taxYear ? parseInt(taxYear, 10) : null,
+        purpose: selectedAction ? `Written Consent — ${selectedAction}` : "Written Consent",
+        meeting_location: null,
+        meeting_time: null,
+        chairperson: null,
+        mtg_secretary: null,
+        others_present: null,
+        company_name_at_meeting: company.name,
+        company_address_at_meeting: company.address || null,
+        company_city_at_meeting: company.city || null,
+        company_state_at_meeting: company.state || null,
+        company_zip_at_meeting: company.zip || null,
+      },
+      company,
+      resolutions: resolutionText.trim()
+        ? [{ purpose: selectedAction || "Written Consent", resolution_text: resolutionText }]
+        : [],
+      directors: isCorp ? signers.map((signer) => ({ director_name: signer.name })) : [],
+      shareholders: shareholderRows,
+    };
+  }, [company, effectiveDate, isCorp, resolutionText, selectedAction, shareholders, shareholderHoldings, signers, taxYear, totalIssuedShares]);
+
+  const renderPdfPages = useCallback(async (bytes: ArrayBuffer) => {
+    const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+    const pages: string[] = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 2 });
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Preview rendering failed");
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      pages.push(canvas.toDataURL("image/png"));
+    }
+    return pages;
+  }, []);
+
+  const buildConsentPdf = useCallback((meetingId: string) => {
+    const doc = exportMeetingMinutesPDF(buildConsentPdfData(meetingId));
+    const bytes = doc.output("arraybuffer");
+    return { doc, bytes };
+  }, [buildConsentPdfData]);
 
   const renderNotePreview = async () => {
     setPreviewLoading(true);
@@ -322,6 +409,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     sub_type: selectedAction || null,
     tax_year: taxYear ? parseInt(taxYear) : null,
     purpose: selectedAction ? `Written Consent — ${selectedAction}` : "Written Consent",
+    document_status: "draft",
     company_name_at_meeting: company.name,
     company_address_at_meeting: company.address || null,
     company_city_at_meeting: company.city || null,
@@ -354,27 +442,44 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     }
 
     // Save resolution (delete + re-insert)
+    const { error: deleteResolutionError } = await supabase
+      .from("meeting_resolutions")
+      .delete()
+      .eq("meeting_id", meetingId);
+    if (deleteResolutionError) throw deleteResolutionError;
+
     if (resolutionText.trim()) {
-      await supabase.from("meeting_resolutions").delete().eq("meeting_id", meetingId);
-      await supabase.from("meeting_resolutions").insert({
+      const { error: insertResolutionError } = await supabase.from("meeting_resolutions").insert({
         meeting_id: meetingId,
         purpose: selectedAction || "Written Consent",
         resolution_text: resolutionText,
       });
+      if (insertResolutionError) throw insertResolutionError;
     }
 
     // Save signers (delete + re-insert)
     if (isCorp) {
-      await supabase.from("meeting_directors").delete().eq("meeting_id", meetingId);
+      const { error: deleteDirectorError } = await supabase
+        .from("meeting_directors")
+        .delete()
+        .eq("meeting_id", meetingId);
+      if (deleteDirectorError) throw deleteDirectorError;
+
       const directorRows = signers.map((s) => ({
         meeting_id: meetingId!,
         director_name: s.name,
       }));
       if (directorRows.length > 0) {
-        await supabase.from("meeting_directors").insert(directorRows);
+        const { error: insertDirectorError } = await supabase.from("meeting_directors").insert(directorRows);
+        if (insertDirectorError) throw insertDirectorError;
       }
     } else {
-      await supabase.from("meeting_shareholders").delete().eq("meeting_id", meetingId);
+      const { error: deleteShareholderError } = await supabase
+        .from("meeting_shareholders")
+        .delete()
+        .eq("meeting_id", meetingId);
+      if (deleteShareholderError) throw deleteShareholderError;
+
       const memberRows = signers.map((s) => {
         const sh = shareholders.find((sh) => sh.id === s.id);
         const holdings = sh ? (shareholderHoldings[sh.id] ?? 0) : 0;
@@ -393,12 +498,46 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         };
       });
       if (memberRows.length > 0) {
-        await supabase.from("meeting_shareholders").insert(memberRows);
+        const { error: insertShareholderError } = await supabase.from("meeting_shareholders").insert(memberRows);
+        if (insertShareholderError) throw insertShareholderError;
       }
     }
 
+    const metadata = JSON.stringify({
+      managementType,
+      actionCategory,
+      consentType,
+      ownershipThreshold,
+    });
+
+    const { error: deleteMetadataError } = await supabase
+      .from("meeting_other")
+      .delete()
+      .eq("meeting_id", meetingId);
+    if (deleteMetadataError) throw deleteMetadataError;
+
+    const { error: insertMetadataError } = await supabase.from("meeting_other").insert({
+      meeting_id: meetingId,
+      notes: metadata,
+    });
+    if (insertMetadataError) throw insertMetadataError;
+
     return meetingId;
-  }, [draftMeetingId, buildMeetingPayload, resolutionText, selectedAction, isCorp, signers, shareholders, shareholderHoldings, totalIssuedShares]);
+  }, [
+    actionCategory,
+    buildMeetingPayload,
+    consentType,
+    draftMeetingId,
+    isCorp,
+    managementType,
+    ownershipThreshold,
+    resolutionText,
+    selectedAction,
+    shareholders,
+    shareholderHoldings,
+    signers,
+    totalIssuedShares,
+  ]);
 
   // ---------- LOAD EXISTING DATA ----------
   useEffect(() => {
@@ -440,6 +579,25 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
             setSelectedAction(resolutions[0].purpose);
           }
         }
+
+        const { data: metadataRows } = await supabase
+          .from("meeting_other")
+          .select("notes")
+          .eq("meeting_id", existingMeetingId)
+          .limit(1);
+
+        const rawMetadata = metadataRows?.[0]?.notes;
+        if (rawMetadata) {
+          try {
+            const parsed = JSON.parse(rawMetadata);
+            if (parsed.managementType) setManagementType(parsed.managementType);
+            if (parsed.actionCategory) setActionCategory(parsed.actionCategory);
+            if (parsed.consentType) setConsentType(parsed.consentType);
+            if (parsed.ownershipThreshold) setOwnershipThreshold(parsed.ownershipThreshold);
+          } catch {
+            // Ignore legacy non-JSON notes rows
+          }
+        }
       } catch (err: any) {
         toast.error("Failed to load consent data");
         console.error(err);
@@ -457,22 +615,118 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       await saveDraft();
     } catch (err: any) {
       console.error("Draft save failed:", err);
-      // Don't block navigation on save failure, but log it
+      toast.error(err.message || "Could not save your written consent draft.");
+      return;
     }
-    setStep(step + 1);
+    setStep((prev) => prev + 1);
+  };
+
+  const handlePreviewConsentPdf = async () => {
+    setConsentPreviewLoading(true);
+    try {
+      const meetingId = await saveDraft();
+      const { bytes } = buildConsentPdf(meetingId);
+      const pages = await renderPdfPages(bytes);
+      setConsentPreviewPages(pages);
+    } catch (err: any) {
+      console.error("Consent PDF preview failed:", err);
+      toast.error(err.message || "Failed to generate written consent preview.");
+    } finally {
+      setConsentPreviewLoading(false);
+    }
+  };
+
+  const handleSaveConsentPdf = async () => {
+    if (!user?.id) {
+      toast.error("You must be signed in to save this PDF.");
+      return;
+    }
+
+    setSavingConsentPdf(true);
+    try {
+      const meetingId = await saveDraft();
+      const { doc } = buildConsentPdf(meetingId);
+      const filename = buildConsentFilename();
+      const filePath = `${user.id}/written-consent/${meetingId}/${filename}`;
+      const blob = doc.output("blob");
+
+      const { error: uploadError } = await supabase.storage
+        .from("generated-documents")
+        .upload(filePath, blob, { upsert: true, contentType: "application/pdf" });
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from("generated-documents")
+        .getPublicUrl(filePath);
+      const publicUrl = publicUrlData.publicUrl;
+      if (!publicUrl) throw new Error("Unable to build a public file URL.");
+
+      const documentMarker = `written-consent:${meetingId}`;
+      const { data: existingDocument, error: lookupError } = await supabase
+        .from("company_documents")
+        .select("id")
+        .eq("company_id", company.id)
+        .eq("notes", documentMarker)
+        .maybeSingle();
+      if (lookupError) throw lookupError;
+
+      if (existingDocument?.id) {
+        const { error: updateDocumentError } = await supabase
+          .from("company_documents")
+          .update({
+            file_name: filename,
+            file_path: publicUrl,
+            file_size: blob.size,
+            file_type: "application/pdf",
+            category: "Meeting Minutes & Resolutions",
+          })
+          .eq("id", existingDocument.id);
+        if (updateDocumentError) throw updateDocumentError;
+      } else {
+        const { error: insertDocumentError } = await supabase.from("company_documents").insert({
+          company_id: company.id,
+          user_id: user.id,
+          file_name: filename,
+          file_path: publicUrl,
+          file_size: blob.size,
+          file_type: "application/pdf",
+          category: "Meeting Minutes & Resolutions",
+          notes: documentMarker,
+        });
+        if (insertDocumentError) throw insertDocumentError;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["company_documents", company.id] });
+      queryClient.invalidateQueries({ queryKey: ["meetings", company.id] });
+
+      await savePdfReliably(doc, filename);
+      toast.success("Written consent PDF saved.");
+    } catch (err: any) {
+      console.error("Consent PDF save failed:", err);
+      toast.error(err.message || "Failed to save written consent PDF.");
+    } finally {
+      setSavingConsentPdf(false);
+    }
   };
 
   // Create consent mutation (final save)
   const createConsent = useMutation({
     mutationFn: async () => {
       const meetingId = await saveDraft();
+      const { error } = await supabase
+        .from("meetings")
+        .update({ document_status: "final" })
+        .eq("id", meetingId);
+      if (error) throw error;
       return { id: meetingId };
     },
     onSuccess: (meeting) => {
       queryClient.invalidateQueries({ queryKey: ["meetings", company.id] });
-      toast.success("Written consent created!");
+      toast.success(existingMeetingId ? "Written consent updated!" : "Written consent created!");
       onConsentCreated?.();
-      navigate(`/company/${company.id}/meetings/${meeting.id}`);
+      if (!onConsentCreated) {
+        onClose?.();
+      }
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -922,6 +1176,53 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
                 </div>
               </CardContent>
             </Card>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handlePreviewConsentPdf}
+                disabled={consentPreviewLoading || savingConsentPdf || signers.length === 0}
+              >
+                {consentPreviewLoading ? (
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Eye className="mr-2 h-3.5 w-3.5" />
+                )}
+                Preview PDF
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSaveConsentPdf}
+                disabled={savingConsentPdf || consentPreviewLoading || signers.length === 0}
+              >
+                {savingConsentPdf ? (
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="mr-2 h-3.5 w-3.5" />
+                )}
+                Save as PDF
+              </Button>
+            </div>
+
+            {consentPreviewPages.length > 0 && (
+              <Card>
+                <CardContent className="py-4 space-y-3">
+                  <p className="text-xs text-muted-foreground">Written Consent PDF Preview</p>
+                  {consentPreviewPages.map((src, index) => (
+                    <img
+                      key={`${src}-${index}`}
+                      src={src}
+                      alt={`Written consent preview page ${index + 1}`}
+                      className="w-full rounded border border-border shadow-sm"
+                    />
+                  ))}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       )}
