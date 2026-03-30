@@ -322,7 +322,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
     try {
       const filename = `promissory-note-${noteForm.borrowerName || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase();
       const blob = new Blob([currentPdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
-      const filePath = `${user.id}/promissory-notes/${editingNoteRowId}/${filename}`;
+      const filePath = `${user.id}/promissory-notes/${editingNoteRowId}/${Date.now()}-${filename}`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
@@ -330,11 +330,18 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
         .upload(filePath, blob, { upsert: true, contentType: "application/pdf" });
       if (uploadError) throw uploadError;
 
-      // Update DB record
+      // Get persistent public URL
+      const { data: publicUrlData } = supabase.storage
+        .from("generated-documents")
+        .getPublicUrl(filePath);
+      const publicUrl = publicUrlData?.publicUrl;
+      if (!publicUrl) throw new Error("Failed to generate public URL.");
+
+      // Update DB record with the public URL
       const { error: updateError } = await supabase
         .from("meeting_loans" as any)
         .update({
-          promissory_note_file_url: filePath,
+          promissory_note_file_url: publicUrl,
           promissory_note_file_name: filename,
           promissory_note_required: true,
         } as any)
