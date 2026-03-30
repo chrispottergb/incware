@@ -1156,16 +1156,14 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
                 variant="outline"
                 size="sm"
                 onClick={async () => {
-                  // Auto-save draft before opening promissory note dialog
                   try {
-                    await saveDraft();
+                    const meetingId = await saveDraft();
+                    const savedDraft = await loadSavedNoteDraft(meetingId);
+                    setNoteForm(savedDraft ?? getDefaultNoteForm());
                   } catch (err: any) {
                     console.error("Draft save before promissory note failed:", err);
+                    setNoteForm(getDefaultNoteForm());
                   }
-                  setNoteForm({
-                    lenderName: "", borrowerName: "", loanAmount: "", interestRate: "",
-                    loanDuration: "", startDate: effectiveDate, endDate: "", repaymentTerms: "",
-                  });
                   setNoteStep("edit");
                   setPreviewPages([]);
                   setCurrentPdfBytes(null);
