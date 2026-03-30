@@ -258,6 +258,7 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
 
   // --- Promissory Note Wizard ---
   const openNoteWizard = (row: any) => {
+    setEditingNoteRowId(row.id);
     setNoteForm({
       lenderName: row.lender_name || "",
       borrowerName: row.borrower_name || "",
