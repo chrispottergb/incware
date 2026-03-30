@@ -925,8 +925,9 @@ export default function WrittenConsentWizard({ company, onClose, onConsentCreate
                 <Button variant="outline" onClick={() => setNoteStep("edit")}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Back / Edit
                 </Button>
-                <Button onClick={handleSaveNotePdf}>
-                  <Download className="mr-2 h-4 w-4" /> Save as PDF
+                <Button onClick={handleSaveNotePdf} disabled={savingNotePdf}>
+                  {savingNotePdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                  {savingNotePdf ? "Saving…" : "Save as PDF"}
                 </Button>
               </div>
             </>
