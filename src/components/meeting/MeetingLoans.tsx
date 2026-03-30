@@ -135,6 +135,31 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
   const [currentPdfBytes, setCurrentPdfBytes] = useState<Uint8Array | null>(null);
   const [editingNoteRowId, setEditingNoteRowId] = useState<string | null>(null);
 
+  // Auto-save promissory note form fields back to meeting_loans row
+  const { status: noteSaveStatus, lastSavedAt: noteLastSaved, handleBlur: noteHandleBlur, triggerSave: noteTriggerSave } = useAutoSave({
+    data: noteForm,
+    onSave: async (d) => {
+      if (!editingNoteRowId) return;
+      const { error } = await supabase
+        .from("meeting_loans" as any)
+        .update({
+          lender_name: d.lenderName || null,
+          borrower_name: d.borrowerName || null,
+          loan_amount: d.loanAmount ? parseFloat(d.loanAmount) : null,
+          loan_rate: d.interestRate ? parseFloat(d.interestRate) : null,
+          loan_duration: d.loanDuration || null,
+          start_date: d.startDate || null,
+          end_date: d.endDate || null,
+          repayment_terms: d.repaymentTerms || null,
+        } as any)
+        .eq("id", editingNoteRowId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["meeting_loans", meetingId] });
+    },
+    enabled: noteDialogOpen && !!editingNoteRowId,
+    debounceMs: 1500,
+  });
+
   const { data: rows = [] } = useQuery({
     queryKey: ["meeting_loans", meetingId],
     queryFn: async () => {
