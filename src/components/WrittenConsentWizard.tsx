@@ -124,6 +124,30 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   const updateNoteField = (key: string, value: string) =>
     setNoteForm((prev) => ({ ...prev, [key]: value }));
 
+  const { status: noteSaveStatus, lastSavedAt: noteLastSaved, handleBlur: noteHandleBlur, triggerSave: noteTriggerSave, saveNow: saveNoteNow } = useAutoSave({
+    data: noteForm,
+    onSave: async (draft) => {
+      const meetingId = draftMeetingId ?? await saveDraft();
+      const notePayload = JSON.stringify({ promissoryNoteDraft: draft });
+      const { error: deleteNoteDraftError } = await supabase
+        .from("meeting_other")
+        .delete()
+        .eq("meeting_id", meetingId)
+        .like("notes", '{"promissoryNoteDraft"%');
+      if (deleteNoteDraftError) throw deleteNoteDraftError;
+
+      const { error: insertNoteDraftError } = await supabase
+        .from("meeting_other")
+        .insert({
+          meeting_id: meetingId,
+          notes: notePayload,
+        });
+      if (insertNoteDraftError) throw insertNoteDraftError;
+    },
+    enabled: noteDialogOpen,
+    debounceMs: 1200,
+  });
+
   const buildConsentFilename = useCallback(() => {
     const base = `${company.name}-written-consent-${effectiveDate || format(new Date(), "yyyy-MM-dd")}`;
     return `${base
