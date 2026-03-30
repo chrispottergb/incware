@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import { savePdfReliably } from "./pdf-save";
 import { registerArialFont } from "@/lib/arial-font";
 
+
 // Wisconsin DFI-style document formatting
 const DFI_HEADER = "STATE OF WISCONSIN";
 const DFI_SUB = "DEPARTMENT OF FINANCIAL INSTITUTIONS";
@@ -36,6 +37,7 @@ interface MeetingData {
   capitalAssets?: any[];
   vehicleLeases?: any[];
   leaseTerminations?: any[];
+  balanceEntries?: any[];
   priorYear?: {
     officers?: any[];
     benefits?: any[];
@@ -2084,23 +2086,33 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 6;
   }
 
-  // Annual Balance Reporting — renders independently of loan entries
-  const meetingBalanceTo = meeting?.balance_to_shareholder;
-  const meetingBalanceFrom = meeting?.balance_from_shareholder;
-  if (!isShareholder && !isWrittenConsent && (meetingBalanceTo != null || meetingBalanceFrom != null)) {
-    y = checkPageBreak(doc, y, 30);
-    y = section("Annual Balance Reporting");
+  // Annual Balance Reporting — two stacked tables from meeting_balance_entries
+  if (!isShareholder && !isWrittenConsent) {
+    const toRows = (data.balanceEntries || []).filter((e: any) => e.direction === "to");
+    const fromRows = (data.balanceEntries || []).filter((e: any) => e.direction === "from");
+    
     const fmtBal = (v: any) => v != null ? `$${Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "$0.00";
-    autoTable(doc, {
-      startY: y,
-      head: [["To Shareholder / Member / Related Party", "From Shareholder / Member / Related Party"]],
-      body: [[fmtBal(meetingBalanceTo), fmtBal(meetingBalanceFrom)]],
-      theme: "grid",
-      headStyles: tableHeadStyles,
-      bodyStyles: { fontSize: 10 },
-      margin: { left: MARGIN, right: R_MARGIN },
-    });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    const balHead = [["Name / Party", "Relationship", "Beg. Balance", "Advances", "Repayments", "End. Balance"]];
+    const mapRow = (e: any) => [e.party_name || "—", e.relationship || "—", fmtBal(e.beginning_balance), fmtBal(e.advances), fmtBal(e.repayments), fmtBal(e.ending_balance)];
+
+    if (toRows.length > 0 || fromRows.length > 0) {
+      y = checkPageBreak(doc, y, 30);
+      y = section("Annual Balance Reporting");
+
+      if (toRows.length > 0) {
+        doc.setFontSize(11); doc.setFont("Arial", "bold"); doc.setTextColor(...BODY_COLOR);
+        doc.text("Loans TO Shareholders / Members / Related Parties", MARGIN, y); y += 5;
+        autoTable(doc, { startY: y, head: balHead, body: toRows.map(mapRow), theme: "grid", headStyles: tableHeadStyles, bodyStyles: { fontSize: 10 }, margin: { left: MARGIN, right: R_MARGIN } });
+        y = (doc as any).lastAutoTable.finalY + 6;
+      }
+      if (fromRows.length > 0) {
+        y = checkPageBreak(doc, y, 30);
+        doc.setFontSize(11); doc.setFont("Arial", "bold"); doc.setTextColor(...BODY_COLOR);
+        doc.text("Loans FROM Shareholders / Members / Related Parties", MARGIN, y); y += 5;
+        autoTable(doc, { startY: y, head: balHead, body: fromRows.map(mapRow), theme: "grid", headStyles: tableHeadStyles, bodyStyles: { fontSize: 10 }, margin: { left: MARGIN, right: R_MARGIN } });
+        y = (doc as any).lastAutoTable.finalY + 6;
+      }
+    }
   }
 
   const vehiclePolicyText = meeting?.vehicle_policy_text?.trim();

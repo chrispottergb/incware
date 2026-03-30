@@ -1759,6 +1759,53 @@ export type Database = {
           },
         ]
       }
+      meeting_balance_entries: {
+        Row: {
+          advances: number | null
+          beginning_balance: number | null
+          created_at: string | null
+          direction: string
+          ending_balance: number | null
+          id: string
+          meeting_id: string
+          party_name: string
+          relationship: string | null
+          repayments: number | null
+        }
+        Insert: {
+          advances?: number | null
+          beginning_balance?: number | null
+          created_at?: string | null
+          direction: string
+          ending_balance?: number | null
+          id?: string
+          meeting_id: string
+          party_name?: string
+          relationship?: string | null
+          repayments?: number | null
+        }
+        Update: {
+          advances?: number | null
+          beginning_balance?: number | null
+          created_at?: string | null
+          direction?: string
+          ending_balance?: number | null
+          id?: string
+          meeting_id?: string
+          party_name?: string
+          relationship?: string | null
+          repayments?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_balance_entries_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_benefits: {
         Row: {
           agent_administrator: string | null

@@ -413,6 +413,16 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
+  const { data: balanceEntries = [] } = useQuery({
+    queryKey: ["meeting-balance-entries-pdf", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meeting_balance_entries").select("*").eq("meeting_id", meetingId!).order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!meetingId,
+  });
+
   // Fetch prior year sub-data for change-based resolution generation
   const { data: priorOfficers = [] } = useQuery({
     queryKey: ["meeting_officers", priorMeetingId],
@@ -535,6 +545,7 @@ export default function MeetingDetail() {
       capitalAssets,
       vehicleLeases,
       leaseTerminations,
+      balanceEntries,
       priorYear: priorMeetingId ? {
         officers: priorOfficers,
         benefits: priorBenefits,
@@ -896,21 +907,6 @@ export default function MeetingDetail() {
             <MeetingLoans
               meetingId={meeting.id}
               companyName={company?.name}
-              meetingBalanceTo={(meeting as any).balance_to_shareholder}
-              meetingBalanceFrom={(meeting as any).balance_from_shareholder}
-              meetingBalanceComment={(meeting as any).loan_balance_comment}
-              onSaveBalance={async (to, from, comment) => {
-                const { error } = await supabase
-                  .from("meetings")
-                  .update({
-                    balance_to_shareholder: to,
-                    balance_from_shareholder: from,
-                    loan_balance_comment: comment,
-                  } as any)
-                  .eq("id", meeting.id);
-                if (error) throw error;
-                queryClient.invalidateQueries({ queryKey: ["meeting", meeting.id] });
-              }}
             />
           </div>
         </TabsContent>
