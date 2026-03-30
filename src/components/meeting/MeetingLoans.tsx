@@ -399,6 +399,12 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
 
   const handleDownloadNote = async (row: any) => {
     if (!row.promissory_note_file_url) return;
+    // If it's a full public URL, open directly
+    if (row.promissory_note_file_url.startsWith("http://") || row.promissory_note_file_url.startsWith("https://")) {
+      window.open(row.promissory_note_file_url, "_blank");
+      return;
+    }
+    // Otherwise download from storage using relative path
     const { data, error } = await supabase.storage
       .from("generated-documents")
       .download(row.promissory_note_file_url);
