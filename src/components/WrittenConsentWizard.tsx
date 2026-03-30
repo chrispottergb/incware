@@ -65,6 +65,7 @@ interface Props {
 export default function WrittenConsentWizard({ company, onClose, onConsentCreated }: Props) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const t = getTerminology(company.entity_type);
   const isSMLLC = company.entity_type === "Single Member LLC";
   const isLLC = isLLCType(company.entity_type);
