@@ -422,10 +422,9 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         if (meeting.sub_type) {
           setSelectedAction(meeting.sub_type);
           // Find the category for this action
-          const match = resolutionOptions.find((r) => r.label === meeting.sub_type);
-          if (match) {
-            const cat = getResolutionCategory(resolutionOptions, meeting.sub_type);
-            if (cat) setActionCategory(cat);
+          const cat = getResolutionCategory(meeting.sub_type);
+          if (cat) {
+            setActionCategory(cat);
           }
         }
 
