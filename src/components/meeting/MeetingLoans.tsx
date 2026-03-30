@@ -697,8 +697,9 @@ export default function MeetingLoans({ meetingId, companyName, meetingBalanceTo,
                 <Button variant="outline" onClick={() => setNoteStep("edit")}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Back / Edit
                 </Button>
-                <Button onClick={handleSavePdf}>
-                  <Download className="mr-2 h-4 w-4" /> Save as PDF
+                <Button onClick={handleSavePdf} disabled={savingPdf}>
+                  {savingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                  {savingPdf ? "Saving…" : "Save as PDF"}
                 </Button>
               </div>
             </>
