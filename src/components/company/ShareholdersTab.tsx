@@ -347,7 +347,44 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
+                  {/* Show units/shares + capital fields only for NEW members */}
+                  {!editId && (
+                    <>
+                      <div className="col-span-12 mt-1">
+                        <div className="border-t border-border pt-2">
+                          <p className="text-[10px] uppercase font-medium text-muted-foreground mb-1.5">
+                            Initial {t.isLLC ? "Membership Units" : "Shares"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="field-group col-span-4">
+                        <Label className="field-label">{t.isLLC ? "Units" : "Shares"}</Label>
+                        <Input className="h-7 text-sm" type="number" min="0" value={form.num_units} onChange={(e) => setForm(p => ({ ...p, num_units: e.target.value }))} placeholder="0" />
+                      </div>
+                      <div className="field-group col-span-4">
+                        <Label className="field-label">Price / {t.isLLC ? "Unit" : "Share"}</Label>
+                        <Input className="h-7 text-sm" type="number" step="0.01" min="0" value={form.price_per_unit} onChange={(e) => setForm(p => ({ ...p, price_per_unit: e.target.value }))} placeholder="0.00" />
+                      </div>
+                      {t.isLLC && (
+                        <div className="field-group col-span-4">
+                          <Label className="field-label">Capital Account</Label>
+                          <Input className="h-7 text-sm" type="number" step="0.01" min="0" value={form.capital_account} onChange={(e) => setForm(p => ({ ...p, capital_account: e.target.value }))} placeholder="0.00" />
+                        </div>
+                      )}
+                      {!t.isLLC && (
+                        <div className="field-group col-span-4">
+                          <Label className="field-label">Share Class</Label>
+                          <Select value={form.share_class || "Common"} onValueChange={(v) => setForm(p => ({ ...p, share_class: v }))}>
+                            <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Common">Common</SelectItem>
+                              <SelectItem value="Preferred">Preferred</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </>
+                  )}
                 <Button type="submit" className="w-full" size="sm" disabled={save.isPending}>
                   {save.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
                   {editId ? "Save Changes" : `Add ${t.shareholder}`}
