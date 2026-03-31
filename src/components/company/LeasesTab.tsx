@@ -229,7 +229,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                     <DatePickerField value={form.lease_end_date} onChange={(v) => setForm((p) => ({ ...p, lease_end_date: v }))} />
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Lease Term</Label>
                     <Input className="h-8 text-sm" value={form.lease_term} onChange={(e) => setForm((p) => ({ ...p, lease_term: e.target.value }))} placeholder="e.g. 12 months" />
@@ -237,10 +237,6 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                   <div className="field-group">
                     <Label className="field-label">Monthly Payment ($)</Label>
                     <Input type="number" step="0.01" className="h-8 text-sm" value={form.monthly_payment} onChange={(e) => setForm((p) => ({ ...p, monthly_payment: e.target.value }))} />
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">Value ($)</Label>
-                    <Input type="number" step="0.01" className="h-8 text-sm" value={form.value} onChange={(e) => setForm((p) => ({ ...p, value: e.target.value }))} />
                   </div>
                 </div>
                 <Button type="submit" className="w-full" size="sm" disabled={saveLease.isPending}>
