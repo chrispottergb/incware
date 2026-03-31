@@ -7,8 +7,8 @@ import { registerArialFont } from "@/lib/arial-font";
 // Wisconsin DFI-style document formatting
 const DFI_HEADER = "STATE OF WISCONSIN";
 const DFI_SUB = "DEPARTMENT OF FINANCIAL INSTITUTIONS";
-const MARGIN = 25.4; // 1 inch for binder compatibility
-const R_MARGIN = 25.4; // 1 inch right margin — matches left for readability
+const MARGIN = 31.75; // 1.25 inch left margin for 3-hole punch binder filing
+const R_MARGIN = 19.05; // 0.75 inch right margin
 
 // Blue theme colors for Annual Meeting
 const BLUE = { r: 31, g: 78, b: 121 }; // #1F4E79
@@ -1625,8 +1625,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       columnStyles: {
-        0: { cellWidth: (doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN) * 0.30 },
-        1: { cellWidth: (doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN) * 0.40 },
+        0: { cellWidth: (doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN) * 0.28 },
+        1: { cellWidth: (doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN) * 0.42 },
         2: { cellWidth: (doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN) * 0.15 },
         3: { cellWidth: (doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN) * 0.15 },
       },

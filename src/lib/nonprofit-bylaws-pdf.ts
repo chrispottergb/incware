@@ -2,7 +2,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { registerArialFont } from "@/lib/arial-font";
 
-const MARGIN = 25.4; // 1 inch for binder compatibility
+const MARGIN = 31.75; // 1.25 inch left margin for 3-hole punch binder filing
+const R_MARGIN = 19.05; // 0.75 inch right margin
 const BRAND = "EntityIQ";
 
 function pw(doc: jsPDF) { return doc.internal.pageSize.getWidth(); }
@@ -17,7 +18,7 @@ function addParagraph(doc: jsPDF, y: number, text: string, indent = MARGIN): num
   doc.setFontSize(11);
   doc.setFont("Arial", "normal");
   doc.setTextColor(30, 30, 30);
-  const lines = doc.splitTextToSize(text, pw(doc) - indent - MARGIN);
+  const lines = doc.splitTextToSize(text, pw(doc) - indent - R_MARGIN);
   for (const line of lines) {
     y = checkBreak(doc, y, 6);
     doc.text(line, indent, y);
@@ -58,7 +59,7 @@ function addFooters(doc: jsPDF, companyName: string) {
     doc.setFontSize(11);
     doc.setTextColor(160, 160, 160);
     doc.text(`Bylaws — ${companyName}`, MARGIN, ph(doc) - 8);
-    doc.text(`Page ${i - 1} of ${count - 1}`, pw(doc) - MARGIN, ph(doc) - 8, { align: "right" });
+    doc.text(`Page ${i - 1} of ${count - 1}`, pw(doc) - R_MARGIN, ph(doc) - 8, { align: "right" });
   }
 }
 
@@ -237,7 +238,7 @@ export function generateNonprofitBylawsPDF(data: NonprofitBylawsData): jsPDF {
       theme: "grid",
       headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 11, fontStyle: "bold" },
       bodyStyles: { fontSize: 11 },
-      margin: { left: MARGIN, right: MARGIN },
+      margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 6;
   }
@@ -327,14 +328,14 @@ export function generateNonprofitBylawsPDF(data: NonprofitBylawsData): jsPDF {
   doc.setFont("Arial", "normal");
   doc.setTextColor(50, 50, 50);
   const certText = `The undersigned, being the Secretary of ${companyName}, hereby certifies that the foregoing Bylaws were duly adopted by the Board of Directors of the Corporation.`;
-  const cLines = doc.splitTextToSize(certText, pw(doc) - MARGIN * 2);
+  const cLines = doc.splitTextToSize(certText, pw(doc) - MARGIN - R_MARGIN);
   cLines.forEach((l: string) => { doc.text(l, cx, y, { align: "center" }); y += 4.5; });
   y += 20;
 
   doc.setDrawColor(100, 100, 100);
   doc.setLineWidth(0.3);
   doc.line(MARGIN, y, MARGIN + 80, y);
-  doc.line(pw(doc) - MARGIN - 50, y, pw(doc) - MARGIN, y);
+  doc.line(pw(doc) - MARGIN - 50, y, pw(doc) - R_MARGIN, y);
   y += 4;
   doc.setFontSize(11);
   doc.setTextColor(80, 80, 80);

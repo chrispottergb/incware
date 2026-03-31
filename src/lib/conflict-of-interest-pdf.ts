@@ -1,7 +1,8 @@
 import jsPDF from "jspdf";
 import { registerArialFont } from "@/lib/arial-font";
 
-const MARGIN = 25.4; // 1 inch for binder compatibility
+const MARGIN = 31.75; // 1.25 inch left margin for 3-hole punch binder filing
+const R_MARGIN = 19.05; // 0.75 inch right margin
 const BRAND = "EntityIQ";
 
 function pw(doc: jsPDF) { return doc.internal.pageSize.getWidth(); }
@@ -16,7 +17,7 @@ function addParagraph(doc: jsPDF, y: number, text: string, indent = MARGIN): num
   doc.setFontSize(11);
   doc.setFont("Arial", "normal");
   doc.setTextColor(30, 30, 30);
-  const lines = doc.splitTextToSize(text, pw(doc) - indent - MARGIN);
+  const lines = doc.splitTextToSize(text, pw(doc) - indent - R_MARGIN);
   for (const line of lines) {
     y = checkBreak(doc, y, 6);
     doc.text(line, indent, y);
@@ -57,7 +58,7 @@ function addFooters(doc: jsPDF, companyName: string) {
     doc.setFontSize(8);
     doc.setTextColor(160, 160, 160);
     doc.text(`Conflict of Interest Policy — ${companyName}`, MARGIN, ph(doc) - 8);
-    doc.text(`Page ${i - 1} of ${count - 1}`, pw(doc) - MARGIN, ph(doc) - 8, { align: "right" });
+    doc.text(`Page ${i - 1} of ${count - 1}`, pw(doc) - R_MARGIN, ph(doc) - 8, { align: "right" });
   }
 }
 
@@ -208,7 +209,7 @@ export function generateConflictOfInterestPDF(data: ConflictOfInterestData): jsP
   for (let i = 0; i < 4; i++) {
     doc.setDrawColor(180, 180, 180);
     doc.setLineWidth(0.2);
-    doc.line(MARGIN, y, pw(doc) - MARGIN, y);
+    doc.line(MARGIN, y, pw(doc) - R_MARGIN, y);
     y += 8;
   }
   y += 6;
@@ -219,7 +220,7 @@ export function generateConflictOfInterestPDF(data: ConflictOfInterestData): jsP
   doc.setDrawColor(100, 100, 100);
   doc.setLineWidth(0.3);
   doc.line(MARGIN, y, MARGIN + 80, y);
-  doc.line(pw(doc) - MARGIN - 50, y, pw(doc) - MARGIN, y);
+  doc.line(pw(doc) - MARGIN - 50, y, pw(doc) - R_MARGIN, y);
   y += 4;
   doc.setFontSize(8);
   doc.setTextColor(80, 80, 80);

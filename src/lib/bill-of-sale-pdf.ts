@@ -3,8 +3,8 @@ import autoTable from "jspdf-autotable";
 import { savePdfReliably } from "./pdf-save";
 import { registerArialFont } from "@/lib/arial-font";
 
-const MARGIN = 25.4; // 1 inch for binder compatibility
-const R_MARGIN = 25.4; // 1 inch right margin — matches left for binder compatibility
+const MARGIN = 31.75; // 1.25 inch left margin for 3-hole punch binder filing
+const R_MARGIN = 19.05; // 0.75 inch right margin
 
 export interface BillOfSaleData {
   companyName: string;

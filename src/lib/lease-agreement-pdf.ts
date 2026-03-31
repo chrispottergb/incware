@@ -30,8 +30,9 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   const doc = new jsPDF();
   registerArialFont(doc);
   const pw = doc.internal.pageSize.getWidth();
-  const margin = 25.4; // 1 inch for binder compatibility
-  const maxW = pw - margin * 2;
+  const margin = 31.75; // 1.25 inch left margin for 3-hole punch binder filing
+  const rMargin = 19.05; // 0.75 inch right margin
+  const maxW = pw - margin - rMargin;
   let y = 20;
 
   const addText = (text: string, opts?: { bold?: boolean; size?: number; center?: boolean; indent?: number }) => {
@@ -185,7 +186,7 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
     doc.setFontSize(7);
     doc.setTextColor(160, 160, 160);
     doc.text("EntityIQ — Confidential", margin, ph - 8);
-    doc.text(`Page ${i} of ${pageCount}`, pw - margin, ph - 8, { align: "right" });
+    doc.text(`Page ${i} of ${pageCount}`, pw - rMargin, ph - 8, { align: "right" });
   }
 
   return doc;
