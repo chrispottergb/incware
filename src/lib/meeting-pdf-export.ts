@@ -1625,10 +1625,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       columnStyles: {
-        0: { cellWidth: usableWidth * 0.30 },
-        1: { cellWidth: usableWidth * 0.40 },
-        2: { cellWidth: usableWidth * 0.15 },
-        3: { cellWidth: usableWidth * 0.15 },
+        0: { cellWidth: (pw - MARGIN - R_MARGIN) * 0.30 },
+        1: { cellWidth: (pw - MARGIN - R_MARGIN) * 0.40 },
+        2: { cellWidth: (pw - MARGIN - R_MARGIN) * 0.15 },
+        3: { cellWidth: (pw - MARGIN - R_MARGIN) * 0.15 },
       },
     });
     y = (doc as any).lastAutoTable.finalY + 6;
