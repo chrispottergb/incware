@@ -172,8 +172,8 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
               <TableRow>
                 <TableHead>Company</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead className="hidden sm:table-cell">Ownership %</TableHead>
-                <TableHead className="hidden md:table-cell">Effective Date</TableHead>
+                <TableHead>Ownership %</TableHead>
+                <TableHead>Effective Date</TableHead>
                 <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
