@@ -308,8 +308,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       },
       theme: "grid",
       columnStyles: {
-        0: { cellWidth: usable * 0.30 },
-        1: { cellWidth: usable * 0.40 },
+        0: { cellWidth: usable * 0.28 },
+        1: { cellWidth: usable * 0.42 },
         2: { cellWidth: usable * 0.15 },
         3: { cellWidth: usable * 0.15 },
       },

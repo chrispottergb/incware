@@ -1625,8 +1625,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       columnStyles: {
-        0: { cellWidth: (doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN) * 0.30 },
-        1: { cellWidth: (doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN) * 0.40 },
+        0: { cellWidth: (doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN) * 0.28 },
+        1: { cellWidth: (doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN) * 0.42 },
         2: { cellWidth: (doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN) * 0.15 },
         3: { cellWidth: (doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN) * 0.15 },
       },
