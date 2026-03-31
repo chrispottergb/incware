@@ -2440,22 +2440,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + data.resolutions.length * 15);
     y = section("Special Resolutions");
     data.resolutions.forEach((r) => {
-      y = checkPageBreak(doc, y, 25);
-      doc.setFontSize(11);
-      doc.setFont("Arial", "bold");
-      doc.setTextColor(bt ? BLUE.r : 30, bt ? BLUE.g : 30, bt ? BLUE.b : 30);
-      doc.text(r.purpose, MARGIN, y);
-      y += 6;
-      doc.setFont("Arial", "normal");
-      doc.setFontSize(11);
-      doc.setTextColor(...(bt ? BODY_COLOR : [30, 30, 30] as [number, number, number]));
-      const lines = doc.splitTextToSize(r.resolution_text || "", doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-      for (const line of lines) {
-        y = checkPageBreak(doc, y, 6);
-        doc.text(line, MARGIN, y);
-        y += 5;
-      }
-      y += 5;
+      y = addResolutionBlock(doc, y, r.purpose, r.resolution_text || "");
     });
   }
 
