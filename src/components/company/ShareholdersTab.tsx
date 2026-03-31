@@ -71,26 +71,82 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
     resetZip();
   };
 
+  const getNextCertNumber = async () => {
+    const { data } = await supabase
+      .from("stock_certificates")
+      .select("certificate_number")
+      .eq("company_id", companyId)
+      .order("certificate_number", { ascending: false })
+      .limit(1);
+    return ((data?.[0] as any)?.certificate_number || 0) + 1;
+  };
+
   const save = useMutation({
     mutationFn: async () => {
       const ssnValue = form.ssn_ein?.trim() || null;
       let shareholderId = editId;
 
+      const numUnits = parseInt(form.num_units) || 0;
+      const pricePerUnit = parseFloat(form.price_per_unit) || 0;
+      const capitalAccount = parseFloat(form.capital_account) || 0;
+
       if (editId) {
-        // Update without SSN (SSN handled separately via edge function)
         const { error } = await supabase.from("shareholders").update({
           name: form.name, address: form.address || null, address_2: form.address_2 || null, city: form.city || null,
           state: form.state || null, zip: form.zip || null, status: form.status,
         }).eq("id", editId);
         if (error) throw error;
       } else {
-        // Insert without SSN
         const { data: inserted, error } = await supabase.from("shareholders").insert({
           company_id: companyId, name: form.name, address: form.address || null, address_2: form.address_2 || null,
           city: form.city || null, state: form.state || null, zip: form.zip || null, status: form.status,
+          capital_account_balance: capitalAccount || 0,
         }).select("id").single();
         if (error) throw error;
         shareholderId = inserted.id;
+
+        // Auto-generate certificate and ledger entry for new member with units
+        if (numUnits > 0 && shareholderId) {
+          const certNumber = await getNextCertNumber();
+          const shareClass = form.share_class || (t.isLLC ? "Membership" : "Common");
+          const today = new Date().toISOString().split("T")[0];
+          const totalConsideration = numUnits * pricePerUnit;
+
+          // Create certificate
+          const { data: certData, error: certErr } = await supabase.from("stock_certificates").insert({
+            company_id: companyId,
+            certificate_number: certNumber,
+            shareholder_id: shareholderId,
+            num_shares: numUnits,
+            share_class: shareClass,
+            issue_date: today,
+            status: "active",
+            par_value: t.isLLC ? null : pricePerUnit || null,
+          } as any).select("id").single();
+          if (certErr) throw certErr;
+
+          // Create ledger transaction
+          const txType = t.isLLC ? "initial_contribution" : "initial_issuance";
+          const { error: txErr } = await supabase.from("share_transactions").insert({
+            company_id: companyId,
+            shareholder_id: shareholderId,
+            certificate_id: certData.id,
+            transaction_type: txType,
+            share_class: shareClass,
+            num_shares: numUnits,
+            price_per_share: pricePerUnit || null,
+            total_consideration: totalConsideration || null,
+            consideration_type: "cash",
+            transaction_date: today,
+            to_shareholder: form.name,
+            issued_certificate_number: certNumber,
+            notes: `Initial ${t.isLLC ? "capital contribution" : "share issuance"} — auto-generated`,
+          } as any);
+          if (txErr) throw txErr;
+
+          // Recalculate ownership percentages
+          await supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId });
+        }
       }
 
       // Encrypt SSN/EIN via edge function if provided
@@ -108,6 +164,9 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
       queryClient.invalidateQueries({ queryKey: ["shareholders", companyId] });
       queryClient.invalidateQueries({ queryKey: ["stock-certificate-shareholders", companyId] });
       queryClient.invalidateQueries({ queryKey: ["shareholders-for-holdings", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["share-transactions", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
       setDialog(false); resetForm();
       setDecryptedSsns({});
       setShowSsns(false);
