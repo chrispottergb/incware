@@ -64,8 +64,9 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
     },
   });
 
+  const defaultForm = { name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active", num_units: "", price_per_unit: "", capital_account: "", share_class: "" };
   const resetForm = () => {
-    setForm({ name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active" });
+    setForm(defaultForm);
     setEditId(null);
     resetZip();
   };
