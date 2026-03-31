@@ -124,7 +124,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stock_certificates")
-        .select("*")
+        .select("*, shareholders(name)")
         .eq("company_id", companyId)
         .order("certificate_number");
       if (error) throw error;
