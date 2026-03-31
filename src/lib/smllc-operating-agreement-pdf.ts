@@ -17,7 +17,7 @@ function addParagraph(doc: jsPDF, y: number, text: string, indent = MARGIN): num
   doc.setFontSize(11);
   doc.setFont("Arial", "normal");
   doc.setTextColor(30, 30, 30);
-  const lines = doc.splitTextToSize(text, pw(doc) - indent - MARGIN);
+  const lines = doc.splitTextToSize(text, pw(doc) - indent - R_MARGIN);
   for (const line of lines) {
     y = checkBreak(doc, y, 6);
     doc.text(line, indent, y);
@@ -58,7 +58,7 @@ function addFooters(doc: jsPDF, companyName: string) {
     doc.setFontSize(11);
     doc.setTextColor(160, 160, 160);
     doc.text(`Sole Member Operating Agreement — ${companyName}`, MARGIN, ph(doc) - 8);
-    doc.text(`Page ${i - 1} of ${count - 1}`, pw(doc) - MARGIN, ph(doc) - 8, { align: "right" });
+    doc.text(`Page ${i - 1} of ${count - 1}`, pw(doc) - R_MARGIN, ph(doc) - 8, { align: "right" });
   }
 }
 
@@ -174,7 +174,7 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
   doc.setTextColor(85, 85, 85);
   const considLines = doc.splitTextToSize(
     "NOW, THEREFORE, for good and valuable consideration the receipt and sufficiency of which is hereby acknowledged, it is agreed as follows:",
-    pw(doc) - MARGIN * 2 - 10
+    pw(doc) - MARGIN - R_MARGIN - 10
   );
   y = checkBreak(doc, y, considLines.length * 4.2 + 6);
   doc.setDrawColor(200, 185, 154);
@@ -355,7 +355,7 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
   doc.setFont("Arial", "italic");
   doc.setTextColor(50, 50, 50);
   const witnessText = `IN WITNESS WHEREOF, the Member has hereunto set such Member's hand as of the day and year first above written.`;
-  const wLines = doc.splitTextToSize(witnessText, pw(doc) - MARGIN * 2);
+  const wLines = doc.splitTextToSize(witnessText, pw(doc) - MARGIN - R_MARGIN);
   wLines.forEach((l: string) => { doc.text(l, cx, y, { align: "center" }); y += 4.5; });
   y += 10;
 

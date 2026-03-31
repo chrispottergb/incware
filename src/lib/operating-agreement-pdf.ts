@@ -18,7 +18,7 @@ function addParagraph(doc: jsPDF, y: number, text: string, indent = MARGIN): num
   doc.setFontSize(11);
   doc.setFont("Arial", "normal");
   doc.setTextColor(30, 30, 30);
-  const lines = doc.splitTextToSize(text, pw(doc) - indent - MARGIN);
+  const lines = doc.splitTextToSize(text, pw(doc) - indent - R_MARGIN);
   for (const line of lines) {
     y = checkBreak(doc, y, 6);
     doc.text(line, indent, y);
@@ -78,7 +78,7 @@ function addFooters(doc: jsPDF, companyName: string) {
     doc.setFontSize(8);
     doc.setTextColor(160, 160, 160);
     doc.text(`Operating Agreement — ${companyName}`, MARGIN, ph(doc) - 8);
-    doc.text(`Page ${i - 1} of ${count - 1}`, pw(doc) - MARGIN, ph(doc) - 8, { align: "right" });
+    doc.text(`Page ${i - 1} of ${count - 1}`, pw(doc) - R_MARGIN, ph(doc) - 8, { align: "right" });
   }
 }
 
@@ -261,7 +261,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
       theme: "grid",
       headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 11, fontStyle: "bold" },
       bodyStyles: { fontSize: 11 },
-      margin: { left: MARGIN, right: MARGIN },
+      margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 6;
   }
@@ -380,7 +380,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   doc.setFont("Arial", "normal");
   doc.setTextColor(50, 50, 50);
   const witnessText = `the undersigned Members have executed this Operating Agreement as of the date first written above.`;
-  const wLines = doc.splitTextToSize(witnessText, pw(doc) - MARGIN * 2);
+  const wLines = doc.splitTextToSize(witnessText, pw(doc) - MARGIN - R_MARGIN);
   wLines.forEach((l: string) => { doc.text(l, cx, y, { align: "center" }); y += 4.5; });
   y += 15;
 
@@ -391,7 +391,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
     doc.setDrawColor(100, 100, 100);
     doc.setLineWidth(0.3);
     doc.line(MARGIN, y, MARGIN + 80, y);
-    doc.line(pw(doc) - MARGIN - 50, y, pw(doc) - MARGIN, y);
+    doc.line(pw(doc) - MARGIN - 50, y, pw(doc) - R_MARGIN, y);
     y += 4;
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
@@ -453,7 +453,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
       theme: "grid",
       headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 11, fontStyle: "bold" },
       bodyStyles: { fontSize: 11 },
-      margin: { left: MARGIN, right: MARGIN },
+      margin: { left: MARGIN, right: R_MARGIN },
       columnStyles: {
         3: { halign: "center" },
       },
@@ -472,7 +472,7 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
     doc.setFontSize(11);
     doc.setFont("Arial", "bold");
     doc.setTextColor(30, 30, 30);
-    doc.text(`Total Membership Interests: ${totalPct.toFixed(2)}%`, pw(doc) - MARGIN, y, { align: "right" });
+    doc.text(`Total Membership Interests: ${totalPct.toFixed(2)}%`, pw(doc) - R_MARGIN, y, { align: "right" });
     y += 10;
   }
 
