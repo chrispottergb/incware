@@ -84,8 +84,9 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   registerArialFont(doc);
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
-  const margin = 72;
-  const contentWidth = pw - margin * 2;
+  const margin = 90; // 1.25 inch left margin for 3-hole punch binder filing
+  const rMargin = 54; // 0.75 inch right margin
+  const contentWidth = pw - margin - rMargin;
   let y = margin;
 
   const fullName = `${data.companyName}, LLC`;

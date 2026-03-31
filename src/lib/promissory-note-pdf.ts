@@ -18,8 +18,9 @@ export function generatePromissoryNotePDF(data: PromissoryNoteData): jsPDF {
   registerArialFont(doc);
   const pw = doc.internal.pageSize.getWidth();
   const cx = pw / 2;
-  const margin = 25.4; // 1 inch for binder compatibility
-  const textWidth = pw - margin * 2;
+  const margin = 31.75; // 1.25 inch left margin for 3-hole punch binder filing
+  const rMargin = 19.05; // 0.75 inch right margin
+  const textWidth = pw - margin - rMargin;
 
   let y = 20;
 
