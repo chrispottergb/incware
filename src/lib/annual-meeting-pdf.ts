@@ -305,9 +305,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       headStyles: {
         fillColor: LIGHT_BLUE_BG as [number, number, number],
         textColor: [BLUE.r, BLUE.g, BLUE.b] as [number, number, number],
-        fontStyle: "bold",
-        fontSize: 10,
-        fontSize: 10,
+        fontStyle: "normal",
+        fontSize: 9,
       },
       theme: "grid",
       columnStyles: {
