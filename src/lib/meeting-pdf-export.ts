@@ -7,8 +7,8 @@ import { registerArialFont } from "@/lib/arial-font";
 // Wisconsin DFI-style document formatting
 const DFI_HEADER = "STATE OF WISCONSIN";
 const DFI_SUB = "DEPARTMENT OF FINANCIAL INSTITUTIONS";
-const MARGIN = 25.4; // 1 inch for binder compatibility
-const R_MARGIN = 25.4; // 1 inch right margin — matches left for readability
+const MARGIN = 31.75; // 1.25 inch left margin for 3-hole punch binder filing
+const R_MARGIN = 19.05; // 0.75 inch right margin
 
 // Blue theme colors for Annual Meeting
 const BLUE = { r: 31, g: 78, b: 121 }; // #1F4E79
