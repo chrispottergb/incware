@@ -207,7 +207,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                 </div>
                 <div className="field-group">
                   <Label className="field-label">Property Address</Label>
-                  <Input className="h-8 text-sm" value={form.address} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} />
+                  <Input className="h-8 text-sm" value={form.address} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} placeholder="Street address" />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
