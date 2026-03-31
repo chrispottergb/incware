@@ -233,8 +233,8 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                         <button className="flex-1 text-left flex items-center gap-3 min-w-0">
                           <span className="font-medium text-xs truncate">{b.bank_name}</span>
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">{formatType(b.account_type || "")}</Badge>
-                          {b.account_number && <span className="text-[10px] text-muted-foreground font-mono hidden sm:inline">••••{b.account_number.slice(-4)}</span>}
-                          <span className="text-[10px] text-muted-foreground hidden md:inline">{b.routing_number}</span>
+                          {b.account_number && <span className="text-[10px] text-muted-foreground font-mono">••••{b.account_number.slice(-4)}</span>}
+                          <span className="text-[10px] text-muted-foreground">{b.routing_number}</span>
                           <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0 ml-auto mr-2">
                             <PenTool className="h-2.5 w-2.5 mr-1" />{bankSigners.length}
                           </Badge>
