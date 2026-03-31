@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,9 +75,10 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   availableShares?: number | null;
+  initialSeller?: { id: string; name: string };
 }
 
-export default function BuySellWorkflow({ companyId, companyName, entityType, open, onOpenChange, availableShares }: Props) {
+export default function BuySellWorkflow({ companyId, companyName, entityType, open, onOpenChange, availableShares, initialSeller }: Props) {
   const queryClient = useQueryClient();
   const term = getTerminology(entityType);
   const isLLC = isLLCType(entityType);
@@ -145,6 +146,13 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
     });
   };
 
+  // Pre-populate seller when initialSeller is provided and dialog opens
+  useEffect(() => {
+    if (open && initialSeller) {
+      setForm(p => ({ ...p, seller_id: initialSeller.id, seller_name: initialSeller.name }));
+    }
+  }, [open, initialSeller]);
+
   const numShares = parseInt(form.num_shares) || 0;
   const pricePerShare = parseFloat(form.price_per_share) || 0;
   const autoTotal = numShares * pricePerShare;
@@ -154,8 +162,8 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
   const isTransfer = ["transfer", "share_exchange", "gift", "interest_transfer", "interest_assignment"].includes(form.transaction_type);
   const isRedemption = ["redemption", "dissociation_buyout"].includes(form.transaction_type);
 
-  // Check if buyer is a new (non-existing) shareholder
-  const buyerIsNew = !isRedemption && form.buyer_name.trim().length > 0 && !shareholders.some(
+  // For LLCs, buyer must be an existing member — buyerIsNew is always false
+  const buyerIsNew = !isLLC && !isRedemption && form.buyer_name.trim().length > 0 && !shareholders.some(
     s => s.name.toLowerCase().trim() === form.buyer_name.toLowerCase().trim()
   );
 
@@ -526,21 +534,35 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
               {!isRedemption && (
                 <div className="field-group">
                   <Label className="field-label">Buyer</Label>
-                  <Input className="h-8 text-sm" value={form.buyer_name} onChange={(e) => setForm(p => ({ ...p, buyer_name: e.target.value, buyer_id: "" }))} placeholder="Name" required />
-                  {shareholders.length > 0 && (
+                  {isLLC ? (
+                    /* LLC: select-only from existing members */
                     <Select value={form.buyer_id} onValueChange={(v) => {
                       const sh = shareholders.find(s => s.id === v);
-                      setForm(p => ({ ...p, buyer_id: v, buyer_name: sh?.name || p.buyer_name }));
+                      setForm(p => ({ ...p, buyer_id: v, buyer_name: sh?.name || "" }));
                     }}>
-                      <SelectTrigger className="h-7 text-[11px] mt-1"><SelectValue placeholder={`Link ${term.shareholder.toLowerCase()}`} /></SelectTrigger>
+                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={`Select existing ${term.shareholder.toLowerCase()}`} /></SelectTrigger>
                       <SelectContent>{shareholders.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
                     </Select>
-                  )}
-                  {buyerIsNew && (
-                    <div className="flex items-center gap-1 mt-1 text-[10px] text-primary">
-                      <UserPlus className="h-3 w-3" />
-                      <span>New {term.shareholder.toLowerCase()} will be created</span>
-                    </div>
+                  ) : (
+                    /* Corporation: free-text + optional select */
+                    <>
+                      <Input className="h-8 text-sm" value={form.buyer_name} onChange={(e) => setForm(p => ({ ...p, buyer_name: e.target.value, buyer_id: "" }))} placeholder="Name" required />
+                      {shareholders.length > 0 && (
+                        <Select value={form.buyer_id} onValueChange={(v) => {
+                          const sh = shareholders.find(s => s.id === v);
+                          setForm(p => ({ ...p, buyer_id: v, buyer_name: sh?.name || p.buyer_name }));
+                        }}>
+                          <SelectTrigger className="h-7 text-[11px] mt-1"><SelectValue placeholder={`Link ${term.shareholder.toLowerCase()}`} /></SelectTrigger>
+                          <SelectContent>{shareholders.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                        </Select>
+                      )}
+                      {buyerIsNew && (
+                        <div className="flex items-center gap-1 mt-1 text-[10px] text-primary">
+                          <UserPlus className="h-3 w-3" />
+                          <span>New {term.shareholder.toLowerCase()} will be created</span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}

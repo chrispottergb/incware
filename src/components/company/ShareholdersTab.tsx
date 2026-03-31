@@ -16,7 +16,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff } from "lucide-react";
+import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology } from "@/lib/entity-terminology";
@@ -33,9 +33,10 @@ interface Props {
   companyId: string;
   entityType?: string;
   shareholderHoldings?: ShareholderHoldings;
+  onBuySell?: (sellerId: string, sellerName: string) => void;
 }
 
-export default function ShareholdersTab({ companyId, entityType = "Corporation", shareholderHoldings }: Props) {
+export default function ShareholdersTab({ companyId, entityType = "Corporation", shareholderHoldings, onBuySell }: Props) {
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -477,6 +478,11 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
+                            {onBuySell && s.status === "active" && !s.is_treasury && (
+                              <Button variant="ghost" size="icon" className="h-6 w-6" title="Buy/Sell" onClick={() => onBuySell(s.id, s.name)}>
+                                <ArrowRightLeft className="h-3 w-3" />
+                              </Button>
+                            )}
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(s)}>
                               <Edit2 className="h-3 w-3" />
                             </Button>

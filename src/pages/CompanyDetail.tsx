@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Building2, Loader2, Trash2, ArrowRightLeft, Power } from "lucide-react";
+import { ArrowLeft, Building2, Loader2, Trash2, Power } from "lucide-react";
 import { toast } from "sonner";
 import IncorporationTab from "@/components/company/IncorporationTab";
 import OrganizationTab from "@/components/company/OrganizationTab";
@@ -54,6 +54,7 @@ export default function CompanyDetail() {
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
   const [deleting, setDeleting] = useState(false);
   const [buySellOpen, setBuySellOpen] = useState(false);
+  const [initialSeller, setInitialSeller] = useState<{ id: string; name: string } | undefined>();
 
   const handleTabChange = (value: string) => {
     navigate(`#${value}`, { replace: true });
@@ -336,13 +337,7 @@ export default function CompanyDetail() {
                 </div>
               </div>
             )}
-            <div className="flex justify-end">
-              <Button size="sm" onClick={() => setBuySellOpen(true)} className="h-8 text-xs">
-                <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" />
-                {isLLCType(company.entity_type) ? "Buy/Sell Interest/Units" : "Buy / Sell Shares"}
-              </Button>
-            </div>
-            <ShareholdersTab companyId={company.id} entityType={company.entity_type} shareholderHoldings={shareCalc.shareholderHoldings} />
+            <ShareholdersTab companyId={company.id} entityType={company.entity_type} shareholderHoldings={shareCalc.shareholderHoldings} onBuySell={(sellerId, sellerName) => { setInitialSeller({ id: sellerId, name: sellerName }); setBuySellOpen(true); }} />
             {isLLCType(company.entity_type) ? (
               <>
                 <UnifiedLedgerTab companyId={company.id} entityType={company.entity_type} authorizedShares={shareCalc.authorizedShares} />
@@ -367,8 +362,9 @@ export default function CompanyDetail() {
             companyName={company.name}
             entityType={company.entity_type}
             open={buySellOpen}
-            onOpenChange={setBuySellOpen}
+            onOpenChange={(o) => { setBuySellOpen(o); if (!o) setInitialSeller(undefined); }}
             availableShares={shareCalc.availableShares}
+            initialSeller={initialSeller}
           />
         </TabsContent>
         <TabsContent value="timeline" className="mt-5">
