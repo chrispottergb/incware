@@ -395,26 +395,37 @@ function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string
       }
       y += 3;
     } else if (
+      upperPara.startsWith("FURTHER RESOLVED,") ||
+      upperPara.startsWith("FURTHER RESOLVED ") ||
       upperPara.startsWith("RESOLVED,") ||
       upperPara.startsWith("RESOLVED ") ||
       upperPara.startsWith("NOW, THEREFORE, BE IT RESOLVED") ||
       upperPara.startsWith("NOW, THEREFORE, BE IT")
     ) {
-      // RESOLVED: indented 0.5 inch, bold prefix, normal body
+      // RESOLVED / FURTHER RESOLVED: indented 0.5 inch, bold prefix, normal body
+      const isFurtherResolved = upperPara.startsWith("FURTHER RESOLVED");
       let body = para;
       const nowPrefix = "NOW, THEREFORE, BE IT ";
       if (body.toUpperCase().startsWith(nowPrefix.toUpperCase())) {
         body = body.substring(nowPrefix.length);
       }
-      if (body.toUpperCase().startsWith("RESOLVED,")) {
-        body = body.substring(body.indexOf(",") + 1).trim();
-      } else if (body.toUpperCase().startsWith("RESOLVED ")) {
-        body = body.substring(9).trim();
+      if (isFurtherResolved) {
+        if (body.toUpperCase().startsWith("FURTHER RESOLVED,")) {
+          body = body.substring(body.indexOf(",") + 1).trim();
+        } else if (body.toUpperCase().startsWith("FURTHER RESOLVED ")) {
+          body = body.substring(18).trim();
+        }
+      } else {
+        if (body.toUpperCase().startsWith("RESOLVED,")) {
+          body = body.substring(body.indexOf(",") + 1).trim();
+        } else if (body.toUpperCase().startsWith("RESOLVED ")) {
+          body = body.substring(9).trim();
+        }
       }
       // Ensure "that" prefix
       const bodyLower = body.toLowerCase();
       const resolvedBody = bodyLower.startsWith("that ") ? body : "that " + body;
-      const prefix = "RESOLVED, ";
+      const prefix = isFurtherResolved ? "FURTHER RESOLVED, " : "RESOLVED, ";
       const fullText = prefix + resolvedBody;
       const lines = doc.splitTextToSize(fullText, contentWidth - RESOLVED_INDENT);
       y = checkPageBreak(doc, y, lines.length * 5.5 + 6);
