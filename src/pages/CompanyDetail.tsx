@@ -54,6 +54,7 @@ export default function CompanyDetail() {
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
   const [deleting, setDeleting] = useState(false);
   const [buySellOpen, setBuySellOpen] = useState(false);
+  const [initialSeller, setInitialSeller] = useState<{ id: string; name: string } | undefined>();
 
   const handleTabChange = (value: string) => {
     navigate(`#${value}`, { replace: true });
