@@ -109,7 +109,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       pageDoc.setFont("Arial", "normal");
       pageDoc.setTextColor(120, 120, 120);
       pageDoc.text(footerText, pw / 2, ph - 30, { align: "center" });
-      pageDoc.text(`Page ${i} of ${totalPages}`, pw - margin, ph - 30, { align: "right" });
+      pageDoc.text(`Page ${i} of ${totalPages}`, pw - rMargin, ph - 30, { align: "right" });
     }
   }
 
@@ -132,7 +132,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     y += 5;
     doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
     doc.setLineWidth(1);
-    doc.line(margin, y, pw - margin, y);
+    doc.line(margin, y, pw - rMargin, y);
     y += 14;
   }
 
@@ -147,7 +147,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     y += 4;
     doc.setDrawColor(180, 180, 180);
     doc.setLineWidth(0.5);
-    doc.line(margin, y, pw - margin, y);
+    doc.line(margin, y, pw - rMargin, y);
     y += 14;
   }
 
@@ -224,7 +224,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       startY: y,
       head: [headers],
       body: rows,
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: rMargin },
       styles: { fontSize: 10, cellPadding: 5, font: "Arial" },
       headStyles: {
         fillColor: LIGHT_BLUE_BG as [number, number, number],
@@ -294,12 +294,12 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   resolvedPara("that the following membership interests are hereby acknowledged and confirmed for the current year:");
 
   if (data.members.length > 0) {
-    const usable = pw - margin * 2;
+    const usable = pw - margin - rMargin;
     autoTable(doc, {
       startY: y,
       head: [["Name", "Address", "Membership Units", "Membership Interest %"]],
       body: data.members.map(m => [m.name || "[Enter]", m.address || "[Enter]", m.units || "[Enter]", m.interestPct ? `${m.interestPct}%` : "[Enter]"]),
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: rMargin },
       styles: { fontSize: 10, cellPadding: 5, font: "Arial" },
       headStyles: {
         fillColor: LIGHT_BLUE_BG as [number, number, number],
@@ -531,7 +531,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   y += 4;
   doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
   doc.setLineWidth(1);
-  doc.line(margin, y, pw - margin, y);
+  doc.line(margin, y, pw - rMargin, y);
   y += 18;
   para("There being no further business, the meeting was duly adjourned.");
 

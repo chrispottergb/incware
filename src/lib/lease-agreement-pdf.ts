@@ -186,7 +186,7 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
     doc.setFontSize(7);
     doc.setTextColor(160, 160, 160);
     doc.text("EntityIQ — Confidential", margin, ph - 8);
-    doc.text(`Page ${i} of ${pageCount}`, pw - margin, ph - 8, { align: "right" });
+    doc.text(`Page ${i} of ${pageCount}`, pw - rMargin, ph - 8, { align: "right" });
   }
 
   return doc;

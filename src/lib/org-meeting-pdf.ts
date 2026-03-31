@@ -79,7 +79,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
       pageDoc.setFont("Arial", "normal");
       pageDoc.setTextColor(120, 120, 120);
       pageDoc.text(footerText, pw / 2, ph - 30, { align: "center" });
-      pageDoc.text(`Page ${i} of ${totalPages}`, pw - margin, ph - 30, { align: "right" });
+      pageDoc.text(`Page ${i} of ${totalPages}`, pw - rMargin, ph - 30, { align: "right" });
     }
   }
 
@@ -101,7 +101,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
     y += 5;
     doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
     doc.setLineWidth(1);
-    doc.line(margin, y, pw - margin, y);
+    doc.line(margin, y, pw - rMargin, y);
     y += 18;
   }
 
@@ -229,7 +229,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
       startY: y,
       head: [["Name", "Title"]],
       body: data.managers.map(m => [m.name || "[Enter]", m.title || "[Enter]"]),
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: rMargin },
       styles: { fontSize: 11, cellPadding: 6, font: "Arial" },
       headStyles: {
         fillColor: LIGHT_BLUE_BG as [number, number, number],
@@ -246,12 +246,12 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   resolvedPara(`that the following persons are the initial members of ${fullName} and hold ownership interests as set forth below:`);
 
   if (data.members.length > 0) {
-    const usable = pw - margin * 2;
+    const usable = pw - margin - rMargin;
     autoTable(doc, {
       startY: y,
       head: [["Name", "Membership Units", "Membership Interest %"]],
       body: data.members.map(m => [m.name || "[Enter]", m.membershipUnits || "[Enter]", m.membershipInterestPct ? `${m.membershipInterestPct}%` : "[Enter]"]),
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: rMargin },
       styles: { fontSize: 11, cellPadding: 6, font: "Arial" },
       headStyles: {
         fillColor: LIGHT_BLUE_BG as [number, number, number],
@@ -317,7 +317,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
       startY: y,
       head: [["Name", "Title", "Scope of Authority"]],
       body: data.authorizedBinders.map(b => [b.name || "[Enter]", b.title || "[Enter]", b.scopeOfAuthority || "[Enter]"]),
-      margin: { left: margin, right: margin },
+      margin: { left: margin, right: rMargin },
       styles: { fontSize: 11, cellPadding: 6, font: "Arial" },
       headStyles: {
         fillColor: LIGHT_BLUE_BG as [number, number, number],
