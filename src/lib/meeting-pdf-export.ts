@@ -308,7 +308,7 @@ function addAnnualMeetingFooter(doc: jsPDF, companyName: string, documentLabel: 
 
 
 function addSectionTitle(doc: jsPDF, y: number, title: string, blueTheme: boolean = false, sectionNum?: number): number {
-  y += 6;
+  y += 3;
   doc.setFontSize(11);
   doc.setFont("Arial", "bold");
   if (blueTheme) {
@@ -325,7 +325,7 @@ function addSectionTitle(doc: jsPDF, y: number, title: string, blueTheme: boolea
     doc.setLineWidth(0.3);
     doc.line(MARGIN, y + 2, doc.internal.pageSize.getWidth() - R_MARGIN, y + 2);
   }
-  return y + 8;
+  return y + 10;
 }
 
 function addLabelValue(doc: jsPDF, y: number, label: string, value: string, x = MARGIN): number {
