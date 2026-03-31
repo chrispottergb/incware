@@ -2,7 +2,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { registerArialFont } from "@/lib/arial-font";
 
-const MARGIN = 25.4; // 1 inch for binder compatibility
+const MARGIN = 31.75; // 1.25 inch left margin for 3-hole punch binder filing
+const R_MARGIN = 19.05; // 0.75 inch right margin
 const BRAND = "EntityIQ";
 
 function pw(doc: jsPDF) { return doc.internal.pageSize.getWidth(); }
