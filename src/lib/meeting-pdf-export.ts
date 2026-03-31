@@ -609,7 +609,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       }
       y += 5.5;
     }
-    y += 5;
+    y += 3;
     }
   }
   return y;
