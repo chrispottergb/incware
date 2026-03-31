@@ -309,7 +309,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
 
         {/* Bank Dialog */}
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing ? "Edit" : "Add"} Bank Account</DialogTitle></DialogHeader>
             <div className="grid gap-3">
               {/* Row 1: Bank Name (~60%) | Account Type (~40%) */}
