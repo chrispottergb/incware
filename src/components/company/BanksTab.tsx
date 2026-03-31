@@ -264,9 +264,9 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                             <TableHeader>
                               <TableRow className="hover:bg-transparent">
                                 <TableHead className="pl-10 text-xs">Signatory Name</TableHead>
-                                <TableHead className="text-xs hidden sm:table-cell">Title</TableHead>
-                                <TableHead className="text-xs hidden md:table-cell">Effective</TableHead>
-                                <TableHead className="text-xs hidden md:table-cell">End</TableHead>
+                                <TableHead className="text-xs">Title</TableHead>
+                                <TableHead className="text-xs">Effective</TableHead>
+                                <TableHead className="text-xs">End</TableHead>
                                 <TableHead className="text-xs">Status</TableHead>
                                 <TableHead className="w-16" />
                               </TableRow>
