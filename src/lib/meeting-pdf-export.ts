@@ -542,7 +542,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       }
       y += 5.5;
     }
-    y += 5;
+    y += 3;
     }
   } else {
     // Non-blue theme: WHEREAS flush left (bold-italic prefix, italic body), RESOLVED indented (bold prefix, normal body)
