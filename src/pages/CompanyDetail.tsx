@@ -361,8 +361,9 @@ export default function CompanyDetail() {
             companyName={company.name}
             entityType={company.entity_type}
             open={buySellOpen}
-            onOpenChange={setBuySellOpen}
+            onOpenChange={(o) => { setBuySellOpen(o); if (!o) setInitialSeller(undefined); }}
             availableShares={shareCalc.availableShares}
+            initialSeller={initialSeller}
           />
         </TabsContent>
         <TabsContent value="timeline" className="mt-5">
