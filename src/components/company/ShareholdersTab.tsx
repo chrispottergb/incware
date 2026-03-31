@@ -385,6 +385,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                       )}
                     </>
                   )}
+                </div>
                 <Button type="submit" className="w-full" size="sm" disabled={save.isPending}>
                   {save.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
                   {editId ? "Save Changes" : `Add ${t.shareholder}`}
