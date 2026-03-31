@@ -88,7 +88,7 @@ export default function WIComplianceChecklist({ company }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stock_certificates")
-        .select("id, status")
+        .select("*, shareholders(name)")
         .eq("company_id", companyId);
       if (error) throw error;
       return data;
