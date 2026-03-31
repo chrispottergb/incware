@@ -233,8 +233,8 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                         <button className="flex-1 text-left flex items-center gap-3 min-w-0">
                           <span className="font-medium text-xs truncate">{b.bank_name}</span>
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">{formatType(b.account_type || "")}</Badge>
-                          {b.account_number && <span className="text-[10px] text-muted-foreground font-mono hidden sm:inline">••••{b.account_number.slice(-4)}</span>}
-                          <span className="text-[10px] text-muted-foreground hidden md:inline">{b.routing_number}</span>
+                          {b.account_number && <span className="text-[10px] text-muted-foreground font-mono">••••{b.account_number.slice(-4)}</span>}
+                          <span className="text-[10px] text-muted-foreground">{b.routing_number}</span>
                           <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0 ml-auto mr-2">
                             <PenTool className="h-2.5 w-2.5 mr-1" />{bankSigners.length}
                           </Badge>
@@ -264,9 +264,9 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                             <TableHeader>
                               <TableRow className="hover:bg-transparent">
                                 <TableHead className="pl-10 text-xs">Signatory Name</TableHead>
-                                <TableHead className="text-xs hidden sm:table-cell">Title</TableHead>
-                                <TableHead className="text-xs hidden md:table-cell">Effective</TableHead>
-                                <TableHead className="text-xs hidden md:table-cell">End</TableHead>
+                                <TableHead className="text-xs">Title</TableHead>
+                                <TableHead className="text-xs">Effective</TableHead>
+                                <TableHead className="text-xs">End</TableHead>
                                 <TableHead className="text-xs">Status</TableHead>
                                 <TableHead className="w-16" />
                               </TableRow>
@@ -275,9 +275,9 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                               {bankSigners.map((s: any) => (
                                 <TableRow key={s.id} className="hover:bg-muted/50">
                                   <TableCell className="pl-10 font-medium text-xs">{s.signer_name}</TableCell>
-                                  <TableCell className="hidden sm:table-cell text-xs">{s.title}</TableCell>
-                                  <TableCell className="hidden md:table-cell text-xs">{s.effective_date ? new Date(s.effective_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
-                                  <TableCell className="hidden md:table-cell text-xs">{s.end_date ? new Date(s.end_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
+                                  <TableCell className="text-xs">{s.title}</TableCell>
+                                  <TableCell className="text-xs">{s.effective_date ? new Date(s.effective_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
+                                  <TableCell className="text-xs">{s.end_date ? new Date(s.end_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
                                   <TableCell>
                                     <Badge variant={isActive(s) ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
                                       {isActive(s) ? "Active" : "Inactive"}
@@ -309,7 +309,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
 
         {/* Bank Dialog */}
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing ? "Edit" : "Add"} Bank Account</DialogTitle></DialogHeader>
             <div className="grid gap-3">
               {/* Row 1: Bank Name (~60%) | Account Type (~40%) */}

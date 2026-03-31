@@ -172,8 +172,8 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
               <TableRow>
                 <TableHead>Company</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead className="hidden sm:table-cell">Ownership %</TableHead>
-                <TableHead className="hidden md:table-cell">Effective Date</TableHead>
+                <TableHead>Ownership %</TableHead>
+                <TableHead>Effective Date</TableHead>
                 <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
@@ -195,10 +195,10 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
                       {formatType(rel.relationship_type)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell text-xs">
+                  <TableCell className="text-xs">
                     {rel.ownership_percentage != null ? `${rel.ownership_percentage}%` : "—"}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs">
+                  <TableCell className="text-xs">
                     {rel.effective_date ? new Date(rel.effective_date + "T00:00:00").toLocaleDateString() : "—"}
                   </TableCell>
                   <TableCell>
@@ -241,8 +241,8 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
               <TableRow>
                 <TableHead>Company</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead className="hidden sm:table-cell">Ownership %</TableHead>
-                <TableHead className="hidden md:table-cell">Effective Date</TableHead>
+                <TableHead>Ownership %</TableHead>
+                <TableHead>Effective Date</TableHead>
                 <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
@@ -264,10 +264,10 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
                       {formatType(rel.relationship_type)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell text-xs">
+                  <TableCell className="text-xs">
                     {rel.ownership_percentage != null ? `${rel.ownership_percentage}%` : "—"}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs">
+                  <TableCell className="text-xs">
                     {rel.effective_date ? new Date(rel.effective_date + "T00:00:00").toLocaleDateString() : "—"}
                   </TableCell>
                   <TableCell>
