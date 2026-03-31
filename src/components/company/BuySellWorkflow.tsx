@@ -162,8 +162,8 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
   const isTransfer = ["transfer", "share_exchange", "gift", "interest_transfer", "interest_assignment"].includes(form.transaction_type);
   const isRedemption = ["redemption", "dissociation_buyout"].includes(form.transaction_type);
 
-  // Check if buyer is a new (non-existing) shareholder
-  const buyerIsNew = !isRedemption && form.buyer_name.trim().length > 0 && !shareholders.some(
+  // For LLCs, buyer must be an existing member — buyerIsNew is always false
+  const buyerIsNew = !isLLC && !isRedemption && form.buyer_name.trim().length > 0 && !shareholders.some(
     s => s.name.toLowerCase().trim() === form.buyer_name.toLowerCase().trim()
   );
 
