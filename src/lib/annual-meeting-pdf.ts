@@ -293,10 +293,27 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   resolvedPara("that the following membership interests are hereby acknowledged and confirmed for the current year:");
 
   if (data.members.length > 0) {
-    addTable(
-      ["Name", "Membership Units", "Membership Interest %", "Address"],
-      data.members.map(m => [m.name || "[Enter]", m.units || "[Enter]", m.interestPct ? `${m.interestPct}%` : "[Enter]", m.address || "[Enter]"])
-    );
+    const usable = pw - margin * 2;
+    autoTable(doc, {
+      startY: y,
+      head: [["Name", "Address", "Membership Units", "Membership Interest %"]],
+      body: data.members.map(m => [m.name || "[Enter]", m.address || "[Enter]", m.units || "[Enter]", m.interestPct ? `${m.interestPct}%` : "[Enter]"]),
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 10, cellPadding: 5, font: "Arial" },
+      headStyles: {
+        fillColor: LIGHT_BLUE_BG as [number, number, number],
+        textColor: [BLUE.r, BLUE.g, BLUE.b] as [number, number, number],
+        fontStyle: "bold",
+      },
+      theme: "grid",
+      columnStyles: {
+        0: { cellWidth: usable * 0.30 },
+        1: { cellWidth: usable * 0.40 },
+        2: { cellWidth: usable * 0.15 },
+        3: { cellWidth: usable * 0.15 },
+      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 14;
   }
 
   subHeading("Re-Appointment or Election of Managers / Officers");

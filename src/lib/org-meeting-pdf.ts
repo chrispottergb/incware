@@ -245,6 +245,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   resolvedPara(`that the following persons are the initial members of ${fullName} and hold ownership interests as set forth below:`);
 
   if (data.members.length > 0) {
+    const usable = pw - margin * 2;
     autoTable(doc, {
       startY: y,
       head: [["Name", "Membership Units", "Membership Interest %"]],
@@ -257,6 +258,11 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
         fontStyle: "bold",
       },
       theme: "grid",
+      columnStyles: {
+        0: { cellWidth: usable * 0.50 },
+        1: { cellWidth: usable * 0.25 },
+        2: { cellWidth: usable * 0.25 },
+      },
     });
     y = (doc as any).lastAutoTable.finalY + 18;
   }
