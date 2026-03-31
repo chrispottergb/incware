@@ -330,7 +330,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
                       <Building className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <span className="text-sm font-medium truncate">{f.firm_name}</span>
                       <span className="text-xs text-muted-foreground ml-1">({firmAttorneys.length} attorney{firmAttorneys.length !== 1 ? "s" : ""})</span>
-                      {f.city && f.state && <span className="text-xs text-muted-foreground ml-2 hidden sm:inline">· {f.city}, {f.state}</span>}
+                      {f.city && f.state && <span className="text-xs text-muted-foreground ml-2">· {f.city}, {f.state}</span>}
                     </button>
                   </CollapsibleTrigger>
                   <div className="flex gap-1 shrink-0 ml-2">

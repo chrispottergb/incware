@@ -275,9 +275,9 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                               {bankSigners.map((s: any) => (
                                 <TableRow key={s.id} className="hover:bg-muted/50">
                                   <TableCell className="pl-10 font-medium text-xs">{s.signer_name}</TableCell>
-                                  <TableCell className="hidden sm:table-cell text-xs">{s.title}</TableCell>
-                                  <TableCell className="hidden md:table-cell text-xs">{s.effective_date ? new Date(s.effective_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
-                                  <TableCell className="hidden md:table-cell text-xs">{s.end_date ? new Date(s.end_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
+                                  <TableCell className="text-xs">{s.title}</TableCell>
+                                  <TableCell className="text-xs">{s.effective_date ? new Date(s.effective_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
+                                  <TableCell className="text-xs">{s.end_date ? new Date(s.end_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
                                   <TableCell>
                                     <Badge variant={isActive(s) ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
                                       {isActive(s) ? "Active" : "Inactive"}

@@ -264,10 +264,10 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
                       {formatType(rel.relationship_type)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell text-xs">
+                  <TableCell className="text-xs">
                     {rel.ownership_percentage != null ? `${rel.ownership_percentage}%` : "—"}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs">
+                  <TableCell className="text-xs">
                     {rel.effective_date ? new Date(rel.effective_date + "T00:00:00").toLocaleDateString() : "—"}
                   </TableCell>
                   <TableCell>

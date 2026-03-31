@@ -250,7 +250,7 @@ export default function AnnualReviewLinkGenerator({
   return (
     <>
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className={step === "preview" ? "sm:max-w-2xl" : "sm:max-w-md"}>
+        <DialogContent className={step === "preview" ? "max-w-2xl" : ""}>
           <DialogHeader>
             <DialogTitle className="font-display flex items-center gap-2">
               {step === "preview" ? (
