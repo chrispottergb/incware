@@ -624,16 +624,6 @@ export default function MeetingDetail() {
             </p>
             <div className="flex items-center gap-3 pt-2">
               <PrintPreviewButton
-                label="Preview"
-                generatePDF={generateFullMinutes}
-                fileName={meetingFileName}
-              />
-              <PrintPreviewButton
-                label="Download PDF"
-                generatePDF={generateFullMinutes}
-                fileName={meetingFileName}
-              />
-              <PrintPreviewButton
                 label="Print"
                 generatePDF={generateFullMinutes}
                 fileName={meetingFileName}
