@@ -336,13 +336,7 @@ export default function CompanyDetail() {
                 </div>
               </div>
             )}
-            <div className="flex justify-end">
-              <Button size="sm" onClick={() => setBuySellOpen(true)} className="h-8 text-xs">
-                <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" />
-                {isLLCType(company.entity_type) ? "Buy/Sell Interest/Units" : "Buy / Sell Shares"}
-              </Button>
-            </div>
-            <ShareholdersTab companyId={company.id} entityType={company.entity_type} shareholderHoldings={shareCalc.shareholderHoldings} />
+            <ShareholdersTab companyId={company.id} entityType={company.entity_type} shareholderHoldings={shareCalc.shareholderHoldings} onBuySell={(sellerId, sellerName) => { setInitialSeller({ id: sellerId, name: sellerName }); setBuySellOpen(true); }} />
             {isLLCType(company.entity_type) ? (
               <>
                 <UnifiedLedgerTab companyId={company.id} entityType={company.entity_type} authorizedShares={shareCalc.authorizedShares} />
