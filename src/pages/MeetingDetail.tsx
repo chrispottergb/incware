@@ -585,6 +585,86 @@ export default function MeetingDetail() {
 
   const meetingFileName = `${company?.name || "meeting"}-${meeting.meeting_type}-${meeting.meeting_date}.pdf`.replace(/\s+/g, "-").toLowerCase();
 
+  // Written Consent document view — Preview / Download / Print only
+  if (isWrittenConsent) {
+    return (
+      <div className="space-y-5 animate-fade-in">
+        <div className="flex items-start gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(`/company/${id}#meetings`)}
+            className="mt-0.5 shrink-0 h-8 w-8"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="font-display text-xl font-bold tracking-tight">
+                Written Consent
+              </h1>
+            </div>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {company?.name} · {new Date(meeting.meeting_date + "T00:00:00").toLocaleDateString()}
+              {meeting.tax_year && ` · Tax Year ${meeting.tax_year}`}
+            </p>
+          </div>
+        </div>
+
+        <Card className="border border-border">
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <FileText className="h-5 w-5 text-primary" />
+              <h2 className="font-display font-semibold text-base">Written Consent in Lieu of a Meeting</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              This document was created on {new Date(meeting.meeting_date + "T00:00:00").toLocaleDateString()}.
+              Use the actions below to preview, download, or print the formatted document.
+            </p>
+            <div className="flex items-center gap-3 pt-2">
+              <PrintPreviewButton
+                label="Preview"
+                generatePDF={generateFullMinutes}
+                fileName={meetingFileName}
+                previewOnly
+              />
+              <PrintPreviewButton
+                label="Download PDF"
+                generatePDF={generateFullMinutes}
+                fileName={meetingFileName}
+              />
+              <PrintPreviewButton
+                label="Print"
+                generatePDF={generateFullMinutes}
+                fileName={meetingFileName}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Meeting Info summary */}
+        <MeetingInfoCard meeting={meeting} />
+
+        {/* Resolutions */}
+        {resolutions.length > 0 && (
+          <Card className="border border-border">
+            <CardContent className="p-6">
+              <h3 className="font-display font-semibold text-sm mb-3">Resolutions</h3>
+              <div className="space-y-2">
+                {resolutions.map((r: any) => (
+                  <div key={r.id} className="text-sm text-muted-foreground border-l-2 border-primary/20 pl-3">
+                    <span className="font-medium text-foreground">{r.resolution_type || "Resolution"}</span>
+                    {r.resolution_text && <p className="mt-0.5">{r.resolution_text}</p>}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5 animate-fade-in">
       <div className="flex items-start gap-3">
