@@ -146,6 +146,13 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
     });
   };
 
+  // Pre-populate seller when initialSeller is provided and dialog opens
+  useEffect(() => {
+    if (open && initialSeller) {
+      setForm(p => ({ ...p, seller_id: initialSeller.id, seller_name: initialSeller.name }));
+    }
+  }, [open, initialSeller]);
+
   const numShares = parseInt(form.num_shares) || 0;
   const pricePerShare = parseFloat(form.price_per_share) || 0;
   const autoTotal = numShares * pricePerShare;
