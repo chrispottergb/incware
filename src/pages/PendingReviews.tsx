@@ -481,7 +481,7 @@ export default function PendingReviews() {
 
       {/* Link Detail Dialog */}
       <Dialog open={!!selectedLink} onOpenChange={(open) => { if (!open) setSelectedLink(null); }}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle className="font-display flex items-center gap-2">
               <ClipboardCheck className="h-5 w-5 text-primary" />
