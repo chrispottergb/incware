@@ -33,9 +33,10 @@ interface Props {
   companyId: string;
   entityType?: string;
   shareholderHoldings?: ShareholderHoldings;
+  onBuySell?: (sellerId: string, sellerName: string) => void;
 }
 
-export default function ShareholdersTab({ companyId, entityType = "Corporation", shareholderHoldings }: Props) {
+export default function ShareholdersTab({ companyId, entityType = "Corporation", shareholderHoldings, onBuySell }: Props) {
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
