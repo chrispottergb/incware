@@ -627,7 +627,6 @@ export default function MeetingDetail() {
                 label="Preview"
                 generatePDF={generateFullMinutes}
                 fileName={meetingFileName}
-                previewOnly
               />
               <PrintPreviewButton
                 label="Download PDF"
