@@ -666,9 +666,9 @@ function AccountantSection({ companyId }: { companyId: string }) {
                           {firmAccountants.map((a: any) => (
                             <TableRow key={a.id} className={selectedAccountants[f.id] === a.id ? "bg-primary/5" : ""}>
                              <TableCell className="font-medium text-xs pl-10">{a.accountant_name}</TableCell>
-                              <TableCell className="hidden sm:table-cell text-xs">{a.specialty}</TableCell>
-                              <TableCell className="hidden lg:table-cell text-xs">{a.phone}</TableCell>
-                              <TableCell className="hidden lg:table-cell text-xs">{a.email}</TableCell>
+                              <TableCell className="text-xs">{a.specialty}</TableCell>
+                              <TableCell className="text-xs">{a.phone}</TableCell>
+                              <TableCell className="text-xs">{a.email}</TableCell>
                               <TableCell>
                                 <div className="flex gap-1">
                                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditContact(a)}><Pencil className="h-3 w-3" /></Button>
