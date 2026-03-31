@@ -253,13 +253,12 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
       head: [["Name", "Membership Units", "Membership Interest %"]],
       body: data.members.map(m => [m.name || "[Enter]", m.membershipUnits || "[Enter]", m.membershipInterestPct ? `${m.membershipInterestPct}%` : "[Enter]"]),
       margin: { left: margin, right: rMargin },
-      styles: { fontSize: 11, cellPadding: 6, font: "Arial" },
+      styles: { fontSize: 10, cellPadding: 6, font: "Arial" },
       headStyles: {
         fillColor: LIGHT_BLUE_BG as [number, number, number],
         textColor: [BLUE.r, BLUE.g, BLUE.b] as [number, number, number],
-        fontStyle: "bold",
-        fontSize: 10,
-        fontSize: 10,
+        fontStyle: "normal",
+        fontSize: 9,
       },
       theme: "grid",
       columnStyles: {

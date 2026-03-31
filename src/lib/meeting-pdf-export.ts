@@ -1621,7 +1621,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         ];
       }),
       theme: "grid",
-      headStyles: tableHeadStyles,
+      headStyles: { ...tableHeadStyles, fontSize: 9, fontStyle: "normal" as const },
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       columnStyles: {
