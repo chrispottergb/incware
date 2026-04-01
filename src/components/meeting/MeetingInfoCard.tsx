@@ -96,9 +96,15 @@ export default function MeetingInfoCard({ meeting }: Props) {
     }
   };
 
+  const defaultProfitPlan = "The Chairperson reported on the activities of the company since the last annual meeting, including (optional: a brief summary of key initiatives or milestones). The strengths and weaknesses of the company were reviewed and discussed, with particular attention to (optional: notable challenges or achievements). The Chairperson expressed optimism regarding the company's prospects for the upcoming year and outlined anticipated changes intended to improve business operations, such as (optional: planned improvements or strategic adjustments). General business matters of the company were presented, discussed, and approved, including (optional: any specific items addressed).";
+
   const getValue = (field: string) => {
     if (field in values) return values[field];
-    return (meeting as any)[field] ?? "";
+    const dbVal = (meeting as any)[field] ?? "";
+    if (field === "profit_improvement_plan" && !dbVal && meeting.meeting_type === "Annual Meeting") {
+      return defaultProfitPlan;
+    }
+    return dbVal;
   };
 
   const getTaxYearValue = () => {
