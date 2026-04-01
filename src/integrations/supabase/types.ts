@@ -1093,6 +1093,8 @@ export type Database = {
           lease_end_date: string | null
           lease_start_date: string | null
           lease_term: string | null
+          leasehold_improvement_amount: number | null
+          leasehold_improvement_description: string | null
           make: string | null
           manufacturer: string | null
           model: string | null
@@ -1126,6 +1128,8 @@ export type Database = {
           lease_end_date?: string | null
           lease_start_date?: string | null
           lease_term?: string | null
+          leasehold_improvement_amount?: number | null
+          leasehold_improvement_description?: string | null
           make?: string | null
           manufacturer?: string | null
           model?: string | null
@@ -1159,6 +1163,8 @@ export type Database = {
           lease_end_date?: string | null
           lease_start_date?: string | null
           lease_term?: string | null
+          leasehold_improvement_amount?: number | null
+          leasehold_improvement_description?: string | null
           make?: string | null
           manufacturer?: string | null
           model?: string | null

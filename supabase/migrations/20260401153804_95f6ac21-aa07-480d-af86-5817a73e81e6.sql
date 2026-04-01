@@ -1,0 +1,1 @@
+ALTER TABLE public.company_assets ADD COLUMN leasehold_improvement_amount numeric NULL, ADD COLUMN leasehold_improvement_description text NULL;
