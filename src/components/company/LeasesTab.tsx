@@ -128,6 +128,8 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       monthly_payment: a.monthly_payment != null ? String(a.monthly_payment) : "",
       purpose: "",
       security_deposit: "",
+      leasehold_improvement_amount: a.leasehold_improvement_amount != null ? String(a.leasehold_improvement_amount) : "",
+      leasehold_improvement_description: a.leasehold_improvement_description || "",
     });
     setDialogOpen(true);
   };
