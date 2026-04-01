@@ -426,11 +426,17 @@ export default function MeetingInfoCard({ meeting }: Props) {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground">Profit Improvement Plan</Label>
+                <Alert className="border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
+                    This field contains template text. Review and update all <span className="font-semibold">(optional: ...)</span> placeholders before generating the document. Template language that is not replaced will appear in the final PDF.
+                  </AlertDescription>
+                </Alert>
                 <Textarea
                   value={getValue("profit_improvement_plan")}
                   onChange={(e) => handleChange("profit_improvement_plan", e.target.value)}
                   onBlur={(e) => handleBlur("profit_improvement_plan", e.target.value)}
-                  className="text-sm min-h-[60px]"
+                  className="text-sm min-h-[100px]"
                   placeholder="Profit improvement strategies and plans..."
                 />
               </div>
