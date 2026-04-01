@@ -700,6 +700,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     }
     setSaving(true);
     try {
+      const defaultProfitPlan = "The Chairperson reported on the activities of the company since the last annual meeting, including (optional: a brief summary of key initiatives or milestones). The strengths and weaknesses of the company were reviewed and discussed, with particular attention to (optional: notable challenges or achievements). The Chairperson expressed optimism regarding the company's prospects for the upcoming year and outlined anticipated changes intended to improve business operations, such as (optional: planned improvements or strategic adjustments). General business matters of the company were presented, discussed, and approved, including (optional: any specific items addressed).";
+
       const { data: newMeeting, error } = await supabase.from("meetings").insert({
         company_id: company.id,
         meeting_date: data.meetingDate,
@@ -716,6 +718,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         company_city_at_meeting: company?.city || null,
         company_state_at_meeting: company?.state || null,
         company_zip_at_meeting: company?.zip || null,
+        profit_improvement_plan: defaultProfitPlan,
       }).select("id").single();
 
       if (error) throw error;
