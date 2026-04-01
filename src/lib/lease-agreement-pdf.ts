@@ -14,6 +14,8 @@ interface LeaseData {
   leaseTerm: string;
   securityDeposit: string;
   purpose: string;
+  leaseholdImprovementAmount?: string;
+  leaseholdImprovementDescription?: string;
 }
 
 function fmtDate(d: string) {
