@@ -245,6 +245,20 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                     <Input type="number" step="0.01" className="h-8 text-sm" value={form.monthly_payment} onChange={(e) => setForm((p) => ({ ...p, monthly_payment: e.target.value }))} />
                   </div>
                 </div>
+                {/* Leasehold Improvements */}
+                <div className="pt-2 border-t border-border">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Leasehold Improvements</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Amount ($)</Label>
+                      <Input type="number" step="0.01" className="h-8 text-sm" value={form.leasehold_improvement_amount} onChange={(e) => setForm((p) => ({ ...p, leasehold_improvement_amount: e.target.value }))} placeholder="0.00" />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Description</Label>
+                      <Input className="h-8 text-sm" value={form.leasehold_improvement_description} onChange={(e) => setForm((p) => ({ ...p, leasehold_improvement_description: e.target.value }))} placeholder="e.g. Office buildout" />
+                    </div>
+                  </div>
+                </div>
                 <Button type="submit" className="w-full" size="sm" disabled={saveLease.isPending}>
                   {saveLease.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
                   {editId ? "Save Changes" : "Add Lease"}
