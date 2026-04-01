@@ -77,6 +77,8 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
         lease_end_date: form.lease_end_date || null,
         lease_term: form.lease_term || null,
         monthly_payment: form.monthly_payment ? parseFloat(form.monthly_payment) : null,
+        leasehold_improvement_amount: form.leasehold_improvement_amount ? parseFloat(form.leasehold_improvement_amount) : null,
+        leasehold_improvement_description: form.leasehold_improvement_description || null,
       };
       if (editId) {
         const { error } = await supabase.from("company_assets").update(payload).eq("id", editId);
