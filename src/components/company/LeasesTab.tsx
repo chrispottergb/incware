@@ -40,6 +40,8 @@ const emptyForm = {
   monthly_payment: "",
   purpose: "",
   security_deposit: "",
+  leasehold_improvement_amount: "",
+  leasehold_improvement_description: "",
 };
 
 export default function LeasesTab({ companyId, companyName = "", companyAddress = "" }: Props) {
