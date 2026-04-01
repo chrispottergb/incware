@@ -118,9 +118,15 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   addText("Tenant shall, at Tenant's own expense, maintain appropriate liability and property insurance covering the Premises during the term. Landlord shall maintain insurance on the structure and building. Each party shall provide proof of insurance to the other upon request.");
   gap();
 
-  // 9. Alterations
-  addText("9. ALTERATIONS", { bold: true, size: 11 });
-  addText("Tenant shall not make any alterations, additions, or improvements to the Premises without the prior written consent of Landlord. Any approved alterations shall become the property of Landlord upon termination of this lease, unless otherwise agreed in writing.");
+  // 9. Leasehold Improvements
+  addText("9. LEASEHOLD IMPROVEMENTS", { bold: true, size: 11 });
+  if (data.leaseholdImprovementAmount || data.leaseholdImprovementDescription) {
+    const amt = data.leaseholdImprovementAmount ? fmtCurrency(data.leaseholdImprovementAmount) : "an agreed-upon amount";
+    const desc = data.leaseholdImprovementDescription || "certain improvements";
+    addText(`Tenant has made or shall make leasehold improvements to the Premises in the amount of ${amt}, consisting of: ${desc}. All leasehold improvements shall become the property of Landlord upon termination of this lease, unless otherwise agreed in writing. Tenant shall not make any additional alterations, additions, or improvements to the Premises without the prior written consent of Landlord.`);
+  } else {
+    addText("Tenant shall not make any alterations, additions, or improvements to the Premises without the prior written consent of Landlord. Any approved alterations shall become the property of Landlord upon termination of this lease, unless otherwise agreed in writing.");
+  }
   gap();
 
   // 10. Assignment / Subletting
