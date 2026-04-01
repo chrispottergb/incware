@@ -40,6 +40,8 @@ const emptyForm = {
   monthly_payment: "",
   purpose: "",
   security_deposit: "",
+  leasehold_improvement_amount: "",
+  leasehold_improvement_description: "",
 };
 
 export default function LeasesTab({ companyId, companyName = "", companyAddress = "" }: Props) {
@@ -75,6 +77,8 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
         lease_end_date: form.lease_end_date || null,
         lease_term: form.lease_term || null,
         monthly_payment: form.monthly_payment ? parseFloat(form.monthly_payment) : null,
+        leasehold_improvement_amount: form.leasehold_improvement_amount ? parseFloat(form.leasehold_improvement_amount) : null,
+        leasehold_improvement_description: form.leasehold_improvement_description || null,
       };
       if (editId) {
         const { error } = await supabase.from("company_assets").update(payload).eq("id", editId);
@@ -124,6 +128,8 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       monthly_payment: a.monthly_payment != null ? String(a.monthly_payment) : "",
       purpose: "",
       security_deposit: "",
+      leasehold_improvement_amount: a.leasehold_improvement_amount != null ? String(a.leasehold_improvement_amount) : "",
+      leasehold_improvement_description: a.leasehold_improvement_description || "",
     });
     setDialogOpen(true);
   };
@@ -144,6 +150,8 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       leaseTerm: lease.lease_term || "",
       securityDeposit: "",
       purpose: "business operations",
+      leaseholdImprovementAmount: lease.leasehold_improvement_amount != null ? String(lease.leasehold_improvement_amount) : "",
+      leaseholdImprovementDescription: lease.leasehold_improvement_description || "",
     };
     if (mode === "preview") previewLeaseAgreement(data);
     else downloadLeaseAgreement(data);
@@ -237,6 +245,20 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                   <div className="field-group">
                     <Label className="field-label">Monthly Payment ($)</Label>
                     <Input type="number" step="0.01" className="h-8 text-sm" value={form.monthly_payment} onChange={(e) => setForm((p) => ({ ...p, monthly_payment: e.target.value }))} />
+                  </div>
+                </div>
+                {/* Leasehold Improvements */}
+                <div className="pt-2 border-t border-border">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Leasehold Improvements</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Amount ($)</Label>
+                      <Input type="number" step="0.01" className="h-8 text-sm" value={form.leasehold_improvement_amount} onChange={(e) => setForm((p) => ({ ...p, leasehold_improvement_amount: e.target.value }))} placeholder="0.00" />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Description</Label>
+                      <Input className="h-8 text-sm" value={form.leasehold_improvement_description} onChange={(e) => setForm((p) => ({ ...p, leasehold_improvement_description: e.target.value }))} placeholder="e.g. Office buildout" />
+                    </div>
                   </div>
                 </div>
                 <Button type="submit" className="w-full" size="sm" disabled={saveLease.isPending}>
@@ -337,6 +359,20 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                         <p className="text-base font-bold text-foreground font-mono">{fmt(a.monthly_payment)}</p>
                       </div>
                     </div>
+
+                    {/* Row 4: Leasehold Improvements */}
+                    {(a.leasehold_improvement_amount || a.leasehold_improvement_description) && (
+                      <div className="grid grid-cols-2 divide-x divide-border">
+                        <div className="px-4 py-3">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Leasehold Improvements</p>
+                          <p className="text-base font-bold text-foreground font-mono">{fmt(a.leasehold_improvement_amount)}</p>
+                        </div>
+                        <div className="px-4 py-3">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Improvement Description</p>
+                          <p className="text-sm text-foreground">{a.leasehold_improvement_description || "—"}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
