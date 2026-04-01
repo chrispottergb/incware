@@ -2417,6 +2417,114 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 6;
   }
 
+  // Company-Level Leases (from company_assets table)
+  if (!isShareholder && !isWrittenConsent && data.companyLeases && data.companyLeases.length > 0) {
+    const clEstHeight = 60 + data.companyLeases.length * 8;
+    y = checkPageBreak(doc, y, clEstHeight);
+    y = section("Real Property and Facility Leases");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the real property and facility lease obligations of ${companyName}; and`,
+      `RESOLVED, that the following lease arrangements are hereby acknowledged and ratified:`,
+      bt
+    );
+
+    const clHeaderBg: [number, number, number] = [220, 232, 243];
+    const clHeaderText: [number, number, number] = [26, 63, 92];
+    const clHeaderBorder: [number, number, number] = [176, 200, 222];
+    const clCellBorder: [number, number, number] = [205, 218, 234];
+    const clAltRowBg: [number, number, number] = [245, 248, 252];
+
+    autoTable(doc, {
+      startY: y,
+      head: [["Property Description", "Landlord", "Lease Date", "Start Date", "End Date", "Term", "Monthly\nPayment"]],
+      body: data.companyLeases.map((l: any) => [
+        l.description || "—",
+        l.landlord_name || "—",
+        l.lease_date ? new Date(l.lease_date + "T00:00:00").toLocaleDateString() : "—",
+        l.lease_start_date ? new Date(l.lease_start_date + "T00:00:00").toLocaleDateString() : "—",
+        l.lease_end_date ? new Date(l.lease_end_date + "T00:00:00").toLocaleDateString() : "—",
+        l.lease_term || "—",
+        l.monthly_payment != null ? fmt(l.monthly_payment) : "—",
+      ]),
+      theme: "grid",
+      headStyles: {
+        fillColor: clHeaderBg,
+        textColor: clHeaderText,
+        fontSize: 8.2,
+        fontStyle: "bold",
+        lineWidth: 0.18,
+        lineColor: clHeaderBorder,
+      },
+      bodyStyles: {
+        fontSize: 8.8,
+        lineWidth: 0.18,
+        lineColor: clCellBorder,
+        cellPadding: 2.5,
+      },
+      margin: { left: MARGIN, right: R_MARGIN },
+      styles: { overflow: "linebreak", cellWidth: "auto" },
+      willDrawCell: (hookData: any) => {
+        if (hookData.section === "body" && hookData.row.index % 2 === 1) {
+          hookData.cell.styles.fillColor = clAltRowBg;
+        }
+      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 4;
+
+    // Render leasehold improvements if any lease has them
+    const leasesWithImprovements = data.companyLeases.filter((l: any) => l.leasehold_improvement_amount || l.leasehold_improvement_description);
+    if (leasesWithImprovements.length > 0) {
+      y += 2;
+      y = checkPageBreak(doc, y, 20);
+      doc.setFontSize(10);
+      doc.setFont("Arial", "bold");
+      doc.setTextColor(bt ? BLUE.r : 30, bt ? BLUE.g : 30, bt ? BLUE.b : 30);
+      doc.text("Leasehold Improvements", MARGIN, y);
+      y += 5;
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Property", "Improvement Amount", "Description"]],
+        body: leasesWithImprovements.map((l: any) => [
+          l.description || "—",
+          l.leasehold_improvement_amount != null ? fmt(l.leasehold_improvement_amount) : "—",
+          l.leasehold_improvement_description || "—",
+        ]),
+        theme: "grid",
+        headStyles: {
+          fillColor: clHeaderBg,
+          textColor: clHeaderText,
+          fontSize: 8.2,
+          fontStyle: "bold",
+          lineWidth: 0.18,
+          lineColor: clHeaderBorder,
+        },
+        bodyStyles: {
+          fontSize: 8.8,
+          lineWidth: 0.18,
+          lineColor: clCellBorder,
+          cellPadding: 2.5,
+        },
+        margin: { left: MARGIN, right: R_MARGIN },
+        styles: { overflow: "linebreak", cellWidth: "auto" },
+      });
+      y = (doc as any).lastAutoTable.finalY + 4;
+    }
+
+    y += 2;
+    doc.setFontSize(10);
+    doc.setFont("Arial", "italic");
+    doc.setTextColor(...BODY_COLOR);
+    const clClosing = "All lease obligations are recorded in accordance with the company's accounting policies. Supporting documentation for all lease agreements is retained in the corporate records.";
+    const clLines = doc.splitTextToSize(clClosing, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+    for (const line of clLines) {
+      y = checkPageBreak(doc, y, 5);
+      doc.text(line, MARGIN, y);
+      y += 4.5;
+    }
+    y += 6;
+  }
+
   // Amendments — skip for shareholder meetings and written consents
   if (!isShareholder && !isWrittenConsent && data.amendments && data.amendments.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.amendments.length * 12);
