@@ -357,6 +357,20 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                         <p className="text-base font-bold text-foreground font-mono">{fmt(a.monthly_payment)}</p>
                       </div>
                     </div>
+
+                    {/* Row 4: Leasehold Improvements */}
+                    {(a.leasehold_improvement_amount || a.leasehold_improvement_description) && (
+                      <div className="grid grid-cols-2 divide-x divide-border">
+                        <div className="px-4 py-3">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Leasehold Improvements</p>
+                          <p className="text-base font-bold text-foreground font-mono">{fmt(a.leasehold_improvement_amount)}</p>
+                        </div>
+                        <div className="px-4 py-3">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Improvement Description</p>
+                          <p className="text-sm text-foreground">{a.leasehold_improvement_description || "—"}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
