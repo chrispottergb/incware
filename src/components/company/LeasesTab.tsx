@@ -150,6 +150,8 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       leaseTerm: lease.lease_term || "",
       securityDeposit: "",
       purpose: "business operations",
+      leaseholdImprovementAmount: lease.leasehold_improvement_amount != null ? String(lease.leasehold_improvement_amount) : "",
+      leaseholdImprovementDescription: lease.leasehold_improvement_description || "",
     };
     if (mode === "preview") previewLeaseAgreement(data);
     else downloadLeaseAgreement(data);
