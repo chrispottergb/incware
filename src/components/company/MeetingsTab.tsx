@@ -279,6 +279,8 @@ export default function MeetingsTab({ companyId, company }: Props) {
         priorAnnualId = lastAnnual?.id || null;
       }
 
+      const defaultProfitPlan = "The Chairperson reported on the activities of the company since the last annual meeting, including (optional: a brief summary of key initiatives or milestones). The strengths and weaknesses of the company were reviewed and discussed, with particular attention to (optional: notable challenges or achievements). The Chairperson expressed optimism regarding the company's prospects for the upcoming year and outlined anticipated changes intended to improve business operations, such as (optional: planned improvements or strategic adjustments). General business matters of the company were presented, discussed, and approved, including (optional: any specific items addressed).";
+
       const { data: newMeeting, error } = await supabase.from("meetings").insert({
         company_id: companyId,
         meeting_date: form.meeting_date,
@@ -297,6 +299,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
         company_city_at_meeting: form.company_city_at_meeting || null,
         company_state_at_meeting: form.company_state_at_meeting || null,
         company_zip_at_meeting: form.company_zip_at_meeting || null,
+        profit_improvement_plan: form.meeting_type === "Annual Meeting" ? defaultProfitPlan : null,
       }).select("id").single();
       if (error) throw error;
 
