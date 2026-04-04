@@ -653,6 +653,11 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
 
             {compStatus && (
               <div className="space-y-1.5">
+                {compStatus === "pending_approval" && (
+                  <p className="text-xs text-violet-600 italic">
+                    Compensation to be established by Board or Member Resolution at a future meeting.
+                  </p>
+                )}
                 <Label className="text-xs font-medium text-muted-foreground">Justification Text</Label>
                 <Textarea
                   value={compNote}
