@@ -447,8 +447,80 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
                 </div>
               )}
 
+              {/* Inline create form header */}
+              {creatingNew && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wide">New {title.replace(/s$/, "")}</p>
+                    <Button type="button" variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={() => { setCreatingNew(false); setForm({}); }}>
+                      ← Back to roster
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Show all fields when creating new (with autocomplete/zip on name/zip fields) */}
+              {creatingNew && columns.map((col) => {
+                const nameKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "name")?.[1] : undefined;
+                const zipKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "zip")?.[1] : undefined;
+
+                // Name field with address book autocomplete
+                if (nameKey && col.key === nameKey) {
+                  return (
+                    <div key={col.key} className="space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground">{col.label} <span className="text-destructive">*</span></Label>
+                      <AddressAutocomplete
+                        value={form[col.key] ?? ""}
+                        onChange={(v) => setForm((p) => ({ ...p, [col.key]: v }))}
+                        onSelect={(entry) => {
+                          const addrKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "address")?.[1] : "address";
+                          const cityK = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "city")?.[1] : "city";
+                          const stateK = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "state")?.[1] : "state";
+                          const zipK = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "zip")?.[1] : "zip";
+                          setForm((p) => ({
+                            ...p,
+                            [col.key]: entry.full_name,
+                            ...(addrKey ? { [addrKey]: entry.address || "" } : {}),
+                            ...(cityK ? { [cityK]: entry.city || "" } : {}),
+                            ...(stateK ? { [stateK]: entry.state || "" } : {}),
+                            ...(zipK ? { [zipK]: entry.zip || "" } : {}),
+                          }));
+                        }}
+                        search={searchAddressBook}
+                        getCompanySplitIndex={getCompanySplitIndex}
+                        placeholder="Start typing a name..."
+                      />
+                    </div>
+                  );
+                }
+
+                // ZIP field with auto-lookup
+                if (zipKey && col.key === zipKey) {
+                  return (
+                    <div key={col.key} className="space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground">{col.label}</Label>
+                      <Input
+                        value={form[col.key] ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setForm((p) => ({ ...p, [col.key]: val }));
+                          zipLookup(val);
+                        }}
+                      />
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={col.key} className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">{col.label}</Label>
+                    {renderField(col)}
+                  </div>
+                );
+              })}
+
               {/* Show remaining editable fields (non-roster-auto-filled when in roster mode, or all fields when editing) */}
-              {columns.map((col) => {
+              {!creatingNew && columns.map((col) => {
                 // In roster picker mode, hide auto-filled fields but show them as read-only summary
                 if (useRosterPicker && rosterAutoFilledKeys.has(col.key)) {
                   return null;
@@ -474,9 +546,9 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
                 </div>
               )}
 
-              <Button type="submit" className="w-full" disabled={isPending || (useRosterPicker && !selectedRosterId)}>
+              <Button type="submit" className="w-full" disabled={isPending || (useRosterPicker && !selectedRosterId && !creatingNew)}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editingId ? "Save Changes" : "Add"}
+                {editingId ? "Save Changes" : creatingNew ? `Create & Add` : "Add"}
               </Button>
             </form>
           </DialogContent>
