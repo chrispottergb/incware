@@ -147,6 +147,9 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
     setShareholders([]);
     setEditingSh(emptyShareholder());
     setEditingIdx(null);
+    setDirectors([]);
+    setEditingDir(emptyDirector());
+    setEditingDirIdx(null);
     setSaving(false);
   };
 
