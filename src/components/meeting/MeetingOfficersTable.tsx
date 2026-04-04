@@ -29,7 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Pencil, CheckCircle2, AlertTriangle, Flag, Minus, Link2, Users } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil, CheckCircle2, AlertTriangle, Flag, Minus, Link2, Users, Clock } from "lucide-react";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-type CompensationStatus = "reasonable" | "below_market" | "above_market" | "included_in_primary" | "non_compensable";
+type CompensationStatus = "pending_approval" | "reasonable" | "below_market" | "above_market" | "included_in_primary" | "non_compensable";
 type DualRoleType = "primary" | "secondary" | null;
 
 const TITLE_RANK: Record<string, number> = {
@@ -50,6 +50,7 @@ const TITLE_RANK: Record<string, number> = {
 };
 
 const STATUS_CONFIG: Record<CompensationStatus, { label: string; icon: React.ElementType; color: string; badgeVariant: string }> = {
+  pending_approval: { label: "Pending Approval", icon: Clock, color: "text-violet-500", badgeVariant: "bg-violet-100 text-violet-700 border-violet-200" },
   reasonable: { label: "Reasonable", icon: CheckCircle2, color: "text-emerald-600", badgeVariant: "bg-emerald-100 text-emerald-700 border-emerald-200" },
   below_market: { label: "Below Market", icon: AlertTriangle, color: "text-amber-500", badgeVariant: "bg-amber-100 text-amber-700 border-amber-200" },
   above_market: { label: "Above Market", icon: Flag, color: "text-orange-500", badgeVariant: "bg-orange-100 text-orange-700 border-orange-200" },
@@ -67,6 +68,8 @@ function getDefaultNoteText(
 ): string {
   const amt = salary != null ? `$${Number(salary).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "$[AMOUNT]";
   switch (status) {
+    case "pending_approval":
+      return `Compensation for ${name} as ${title} has not yet been established. Compensation to be determined and approved by Board or Member Resolution at a future meeting.`;
     case "reasonable":
       return `The Board has reviewed the compensation of ${name} as ${title} and determined that the salary of ${amt} is reasonable and commensurate with the services performed, consistent with IRC § 1366.`;
     case "below_market":
@@ -386,7 +389,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
   const isPending = addRow.isPending || updateRow.isPending;
 
   const getStatusOptions = (row: any): CompensationStatus[] => {
-    const options: CompensationStatus[] = ["reasonable", "below_market", "above_market"];
+    const options: CompensationStatus[] = ["pending_approval", "reasonable", "below_market", "above_market"];
     if (isDualRole(row)) options.push("included_in_primary");
     options.push("non_compensable");
     return options;
@@ -650,6 +653,11 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
 
             {compStatus && (
               <div className="space-y-1.5">
+                {compStatus === "pending_approval" && (
+                  <p className="text-xs text-violet-600 italic">
+                    Compensation to be established by Board or Member Resolution at a future meeting.
+                  </p>
+                )}
                 <Label className="text-xs font-medium text-muted-foreground">Justification Text</Label>
                 <Textarea
                   value={compNote}
