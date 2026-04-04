@@ -52,6 +52,16 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
 
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
+
+  const handleLandlordSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
+    setForm(prev => ({
+      ...prev,
+      landlord_name: entry.full_name,
+      landlord_address: [entry.address, entry.city, entry.state, entry.zip].filter(Boolean).join(", "),
+    }));
+  }, []);
+
   const { data: leases = [] } = useQuery({
     queryKey: ["company_assets", companyId, "lease"],
     queryFn: async () => {
