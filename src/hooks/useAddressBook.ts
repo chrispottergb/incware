@@ -53,7 +53,10 @@ export function useAddressBook(currentCompanyId?: string) {
   const getCompanySplitIndex = useCallback(
     (results: AddressBookEntry[]) => {
       if (!currentCompanyId) return -1;
-      const lastCompany = results.findLastIndex((e) => e.company_id === currentCompanyId);
+      let lastCompany = -1;
+      for (let i = results.length - 1; i >= 0; i--) {
+        if (results[i].company_id === currentCompanyId) { lastCompany = i; break; }
+      }
       if (lastCompany === -1 || lastCompany === results.length - 1) return -1;
       return lastCompany + 1;
     },
