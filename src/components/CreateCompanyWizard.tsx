@@ -81,6 +81,20 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
   }, []);
   const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(handleZipResult);
 
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBook();
+
+  const handleAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
+    setEditingSh(prev => ({
+      ...prev,
+      name: entry.full_name,
+      address: entry.address || "",
+      address_2: entry.address_2 || "",
+      city: entry.city || "",
+      state: entry.state || "",
+      zip: entry.zip || "",
+    }));
+  }, []);
+
   const isCorp = CORP_TYPES.includes(newType);
   const authSharesNum = parseInt(authorizedShares) || 0;
   const totalIssuedShares = shareholders.reduce((sum, s) => sum + s.num_shares, 0);
