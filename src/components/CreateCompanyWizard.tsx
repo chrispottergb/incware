@@ -558,32 +558,23 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               </div>
             </div>
 
-            {shareholders.length > 0 && (
+            {directors.length > 0 && (
               <div className="rounded-md bg-muted/50 p-3 text-xs space-y-1.5">
-                <p className="font-medium text-foreground">Initial Shareholders ({shareholders.length}):</p>
-                {shareholders.map((sh, i) => (
+                <p className="font-medium text-foreground">Initial Directors ({directors.length}):</p>
+                {directors.map((dir, i) => (
                   <p key={i} className="flex items-center gap-1.5">
                     <CheckCircle2 className="h-3 w-3 text-success shrink-0" />
-                    {sh.name} — {sh.num_shares.toLocaleString()} {sh.share_class} shares
+                    {dir.name}{dir.city || dir.state ? ` — ${[dir.city, dir.state].filter(Boolean).join(", ")}` : ""}
                   </p>
                 ))}
-                {isCorp && (
-                  <p className="text-muted-foreground mt-1">
-                    {shareholders.length} certificate(s) and ledger entries will be auto-generated.
-                  </p>
-                )}
               </div>
             )}
 
-            {shareholders.length === 0 && (
+            {isCorp && directors.length === 0 && (
               <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
-                No initial shareholders. You can add them later from the company detail page.
+                No initial directors. You can add them later from the company detail page.
               </div>
             )}
-
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Initial Directors are appointed at the time of incorporation and serve at the organizational meeting until the shareholders are established and the permanent Board of Directors is elected.
-            </p>
 
             <DialogFooter className="gap-2">
               <Button size="sm" variant="outline" onClick={() => setStep(isCorp ? 2 : 1)}>
