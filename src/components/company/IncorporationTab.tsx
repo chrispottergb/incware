@@ -1009,7 +1009,7 @@ export default function IncorporationTab({ company }: Props) {
                 <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                   <div className="field-group col-span-3">
                     <Label className="field-label">{isLLCType(form.entity_type) ? "Member Name" : "Director Name"}</Label>
-                    <Input className="h-7 text-sm" value={newDirector.name} onChange={(e) => setNewDirector(p => ({ ...p, name: e.target.value }))} placeholder="Full name" />
+                    <AddressAutocomplete value={newDirector.name} onChange={(v) => setNewDirector(p => ({ ...p, name: v }))} onSelect={handleDirectorAddressSelect} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="Full name" />
                   </div>
                   <div className="field-group col-span-3">
                     <Label className="field-label">Address</Label>
