@@ -770,6 +770,7 @@ export default function MeetingDetail() {
             </div>
             <MeetingSubTable meetingId={meeting.id} tableName="meeting_shareholders"
               title={term.shareholders}
+              companyId={id}
               columns={[
                 { key: "shareholder_name", label: `${term.shareholder} Name`, required: true, width: "160px" },
                 { key: "address", label: "Street Address" },
@@ -792,6 +793,22 @@ export default function MeetingDetail() {
                 zip: "zip",
                 common_shares: "common_shares",
                 preferred_shares: "preferred_shares",
+              }}
+              onCreateNewRosterEntry={async (formData) => {
+                const name = formData.shareholder_name?.trim();
+                if (!name) { toast.error("Name is required"); return null; }
+                const { data, error } = await supabase.from("shareholders").insert({
+                  company_id: id!,
+                  name,
+                  address: formData.address || null,
+                  city: formData.city || null,
+                  state: formData.state || null,
+                  zip: formData.zip || null,
+                  share_class: "Common",
+                }).select("id, name, address, city, state, zip").single();
+                if (error) { toast.error(error.message); return null; }
+                queryClient.invalidateQueries({ queryKey: ["shareholders", id] });
+                return { id: data.id, name: data.name, address: data.address, city: data.city, state: data.state, zip: data.zip };
               }}
             />
           </div>

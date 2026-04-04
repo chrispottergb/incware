@@ -41,9 +41,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Plus, Trash2, Loader2, Pencil, ChevronsUpDown, Check } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil, ChevronsUpDown, Check, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useZipLookup } from "@/hooks/useZipLookup";
+import { useAddressBook } from "@/hooks/useAddressBook";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 
 interface Column {
   key: string;
@@ -73,15 +76,37 @@ interface Props {
   roster?: RosterRecord[];
   /** Maps roster field keys to column keys, e.g. { name: "shareholder_name", address: "address" } */
   rosterFieldMap?: Record<string, string>;
+  /** Called when user creates a new roster entry inline; should insert into the master table and return the new RosterRecord */
+  onCreateNewRosterEntry?: (formData: Record<string, any>) => Promise<RosterRecord | null>;
 }
 
-export default function MeetingSubTable({ meetingId, tableName, title, columns, displayRows, companyId, roster, rosterFieldMap }: Props) {
+export default function MeetingSubTable({ meetingId, tableName, title, columns, displayRows, companyId, roster, rosterFieldMap, onCreateNewRosterEntry }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
+  const [creatingNew, setCreatingNew] = useState(false);
   const [rosterPickerOpen, setRosterPickerOpen] = useState(false);
   const [selectedRosterId, setSelectedRosterId] = useState<string | null>(null);
+  const [isCreatingEntry, setIsCreatingEntry] = useState(false);
+
+  // Zip lookup for inline create form
+  const { handleZipChange: zipLookup } = useZipLookup((result) => {
+    setForm((p) => ({ ...p, ...(rosterFieldMap ? {} : {}), city: result.city, state: result.state }));
+    // Also update via rosterFieldMap keys if present
+    if (rosterFieldMap) {
+      const cityKey = Object.entries(rosterFieldMap).find(([k]) => k === "city")?.[1];
+      const stateKey = Object.entries(rosterFieldMap).find(([k]) => k === "state")?.[1];
+      setForm((p) => ({
+        ...p,
+        ...(cityKey ? { [cityKey]: result.city } : { city: result.city }),
+        ...(stateKey ? { [stateKey]: result.state } : { state: result.state }),
+      }));
+    }
+  });
+
+  // Address book for inline create form
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBook(companyId);
 
   const { data: rows = [] } = useQuery({
     queryKey: [tableName, meetingId],
@@ -189,6 +214,8 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
     setEditingId(null);
     setForm({});
     setSelectedRosterId(null);
+    setCreatingNew(false);
+    setIsCreatingEntry(false);
   };
 
   const openEdit = (row: any) => {
@@ -224,19 +251,52 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
     setRosterPickerOpen(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) {
       updateRow.mutate();
+    } else if (creatingNew && onCreateNewRosterEntry) {
+      // Creating a new roster entry inline, then adding to meeting
+      setIsCreatingEntry(true);
+      try {
+        const newPerson = await onCreateNewRosterEntry(form);
+        if (newPerson) {
+          // Upsert to address book
+          const nameKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "name")?.[1] : undefined;
+          const addrKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "address")?.[1] : undefined;
+          const cityKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "city")?.[1] : undefined;
+          const stateKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "state")?.[1] : undefined;
+          const zipKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "zip")?.[1] : undefined;
+          const fullName = form[nameKey || ""] || "";
+          if (fullName.trim()) {
+            upsertAddressBook.mutate({
+              full_name: fullName.trim(),
+              address: form[addrKey || ""] || null,
+              address_2: null,
+              city: form[cityKey || ""] || null,
+              state: form[stateKey || ""] || null,
+              zip: form[zipKey || ""] || null,
+              company_id: companyId || null,
+            });
+          }
+          // Now add to the meeting table
+          addRow.mutate();
+        } else {
+          setIsCreatingEntry(false);
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to create entry");
+        setIsCreatingEntry(false);
+      }
     } else {
       addRow.mutate();
     }
   };
 
-  const isPending = addRow.isPending || updateRow.isPending;
+  const isPending = addRow.isPending || updateRow.isPending || isCreatingEntry;
 
-  // Check if we're in roster-picker mode (adding, not editing, with roster provided)
-  const useRosterPicker = !!roster && !editingId;
+  // Check if we're in roster-picker mode (adding, not editing, with roster provided, NOT creating new)
+  const useRosterPicker = !!roster && !editingId && !creatingNew;
 
   useEffect(() => {
     if (!useRosterPicker || !selectedRosterId || !roster) return;
@@ -294,7 +354,7 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
         <CardTitle className="font-display text-base">{title}</CardTitle>
         <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setForm({}); setSelectedRosterId(null); }}>
+            <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setForm({}); setSelectedRosterId(null); setCreatingNew(false); setIsCreatingEntry(false); }}>
               <Plus className="mr-2 h-4 w-4" /> Add
             </Button>
           </DialogTrigger>
@@ -325,7 +385,9 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
                       <Command>
                         <CommandInput placeholder="Search by name..." />
                         <CommandList>
-                          <CommandEmpty>No matching records.</CommandEmpty>
+                          <CommandEmpty>
+                            <span className="text-sm text-muted-foreground">No matching records.</span>
+                          </CommandEmpty>
                           <CommandGroup>
                             {availableRoster.map((person) => (
                               <CommandItem
@@ -345,18 +407,120 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
                               </CommandItem>
                             ))}
                           </CommandGroup>
+                          {/* Always show Create New option when callback is provided */}
+                          {onCreateNewRosterEntry && (
+                            <CommandGroup>
+                              <CommandItem
+                                value="__create_new__"
+                                onSelect={() => {
+                                  setCreatingNew(true);
+                                  setSelectedRosterId(null);
+                                  setRosterPickerOpen(false);
+                                  setForm({});
+                                }}
+                                className="text-primary font-medium"
+                              >
+                                <UserPlus className="mr-2 h-4 w-4" />
+                                + Create New {title.replace(/s$/, "")}
+                              </CommandItem>
+                            </CommandGroup>
+                          )}
                         </CommandList>
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  {availableRoster.length === 0 && (
+                  {availableRoster.length === 0 && !onCreateNewRosterEntry && (
                     <p className="text-xs text-muted-foreground">All roster members have been added.</p>
+                  )}
+                  {availableRoster.length === 0 && onCreateNewRosterEntry && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="mt-1 text-primary"
+                      onClick={() => { setCreatingNew(true); setSelectedRosterId(null); setForm({}); }}
+                    >
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      + Create New {title.replace(/s$/, "")}
+                    </Button>
                   )}
                 </div>
               )}
 
+              {/* Inline create form header */}
+              {creatingNew && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wide">New {title.replace(/s$/, "")}</p>
+                    <Button type="button" variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={() => { setCreatingNew(false); setForm({}); }}>
+                      ← Back to roster
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Show all fields when creating new (with autocomplete/zip on name/zip fields) */}
+              {creatingNew && columns.map((col) => {
+                const nameKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "name")?.[1] : undefined;
+                const zipKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "zip")?.[1] : undefined;
+
+                // Name field with address book autocomplete
+                if (nameKey && col.key === nameKey) {
+                  return (
+                    <div key={col.key} className="space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground">{col.label} <span className="text-destructive">*</span></Label>
+                      <AddressAutocomplete
+                        value={form[col.key] ?? ""}
+                        onChange={(v) => setForm((p) => ({ ...p, [col.key]: v }))}
+                        onSelect={(entry) => {
+                          const addrKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "address")?.[1] : "address";
+                          const cityK = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "city")?.[1] : "city";
+                          const stateK = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "state")?.[1] : "state";
+                          const zipK = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "zip")?.[1] : "zip";
+                          setForm((p) => ({
+                            ...p,
+                            [col.key]: entry.full_name,
+                            ...(addrKey ? { [addrKey]: entry.address || "" } : {}),
+                            ...(cityK ? { [cityK]: entry.city || "" } : {}),
+                            ...(stateK ? { [stateK]: entry.state || "" } : {}),
+                            ...(zipK ? { [zipK]: entry.zip || "" } : {}),
+                          }));
+                        }}
+                        search={searchAddressBook}
+                        getCompanySplitIndex={getCompanySplitIndex}
+                        placeholder="Start typing a name..."
+                      />
+                    </div>
+                  );
+                }
+
+                // ZIP field with auto-lookup
+                if (zipKey && col.key === zipKey) {
+                  return (
+                    <div key={col.key} className="space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground">{col.label}</Label>
+                      <Input
+                        value={form[col.key] ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setForm((p) => ({ ...p, [col.key]: val }));
+                          zipLookup(val);
+                        }}
+                      />
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={col.key} className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">{col.label}</Label>
+                    {renderField(col)}
+                  </div>
+                );
+              })}
+
               {/* Show remaining editable fields (non-roster-auto-filled when in roster mode, or all fields when editing) */}
-              {columns.map((col) => {
+              {!creatingNew && columns.map((col) => {
                 // In roster picker mode, hide auto-filled fields but show them as read-only summary
                 if (useRosterPicker && rosterAutoFilledKeys.has(col.key)) {
                   return null;
@@ -382,9 +546,9 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
                 </div>
               )}
 
-              <Button type="submit" className="w-full" disabled={isPending || (useRosterPicker && !selectedRosterId)}>
+              <Button type="submit" className="w-full" disabled={isPending || (useRosterPicker && !selectedRosterId && !creatingNew)}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editingId ? "Save Changes" : "Add"}
+                {editingId ? "Save Changes" : creatingNew ? `Create & Add` : "Add"}
               </Button>
             </form>
           </DialogContent>
