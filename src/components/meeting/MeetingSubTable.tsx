@@ -88,6 +88,25 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
   const [creatingNew, setCreatingNew] = useState(false);
   const [rosterPickerOpen, setRosterPickerOpen] = useState(false);
   const [selectedRosterId, setSelectedRosterId] = useState<string | null>(null);
+  const [isCreatingEntry, setIsCreatingEntry] = useState(false);
+
+  // Zip lookup for inline create form
+  const { handleZipChange: zipLookup } = useZipLookup((result) => {
+    setForm((p) => ({ ...p, ...(rosterFieldMap ? {} : {}), city: result.city, state: result.state }));
+    // Also update via rosterFieldMap keys if present
+    if (rosterFieldMap) {
+      const cityKey = Object.entries(rosterFieldMap).find(([k]) => k === "city")?.[1];
+      const stateKey = Object.entries(rosterFieldMap).find(([k]) => k === "state")?.[1];
+      setForm((p) => ({
+        ...p,
+        ...(cityKey ? { [cityKey]: result.city } : { city: result.city }),
+        ...(stateKey ? { [stateKey]: result.state } : { state: result.state }),
+      }));
+    }
+  });
+
+  // Address book for inline create form
+  const { searchAddressBook, getCompanySplitIndex, upsertEntry } = useAddressBook(companyId);
 
   const { data: rows = [] } = useQuery({
     queryKey: [tableName, meetingId],
