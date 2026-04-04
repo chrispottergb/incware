@@ -152,6 +152,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+    </AddressBookProvider>
     </AuthProvider>
   </QueryClientProvider>
   </>
