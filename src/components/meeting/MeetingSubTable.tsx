@@ -214,6 +214,8 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
     setEditingId(null);
     setForm({});
     setSelectedRosterId(null);
+    setCreatingNew(false);
+    setIsCreatingEntry(false);
   };
 
   const openEdit = (row: any) => {
