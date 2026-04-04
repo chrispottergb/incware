@@ -105,7 +105,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
   }, []);
   const { handleZipChange: handleDirZipChange, zipError: dirZipError } = useZipLookup(handleDirZipResult);
 
-  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBook();
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext();
 
   const handleAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
     setEditingSh(prev => ({

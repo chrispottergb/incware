@@ -55,7 +55,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   }, []);
   const { handleZipChange, isLoading: zipLoading, zipError, reset: resetZip } = useZipLookup(handleZipResult);
 
-  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBook(companyId);
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
 
   const handleAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
     setForm(prev => ({

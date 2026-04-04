@@ -361,7 +361,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
   }, []);
   const { handleZipChange: handleOrganizerZip, zipError: organizerZipError } = useZipLookup(handleOrganizerZipResult);
 
-  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBook(companyId);
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
 
   const handleOrganizerAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
     setNewOrganizer(prev => ({
