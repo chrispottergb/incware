@@ -251,19 +251,52 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
     setRosterPickerOpen(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) {
       updateRow.mutate();
+    } else if (creatingNew && onCreateNewRosterEntry) {
+      // Creating a new roster entry inline, then adding to meeting
+      setIsCreatingEntry(true);
+      try {
+        const newPerson = await onCreateNewRosterEntry(form);
+        if (newPerson) {
+          // Upsert to address book
+          const nameKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "name")?.[1] : undefined;
+          const addrKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "address")?.[1] : undefined;
+          const cityKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "city")?.[1] : undefined;
+          const stateKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "state")?.[1] : undefined;
+          const zipKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "zip")?.[1] : undefined;
+          const fullName = form[nameKey || ""] || "";
+          if (fullName.trim()) {
+            upsertAddressBook.mutate({
+              full_name: fullName.trim(),
+              address: form[addrKey || ""] || null,
+              address_2: null,
+              city: form[cityKey || ""] || null,
+              state: form[stateKey || ""] || null,
+              zip: form[zipKey || ""] || null,
+              company_id: companyId || null,
+            });
+          }
+          // Now add to the meeting table
+          addRow.mutate();
+        } else {
+          setIsCreatingEntry(false);
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to create entry");
+        setIsCreatingEntry(false);
+      }
     } else {
       addRow.mutate();
     }
   };
 
-  const isPending = addRow.isPending || updateRow.isPending;
+  const isPending = addRow.isPending || updateRow.isPending || isCreatingEntry;
 
-  // Check if we're in roster-picker mode (adding, not editing, with roster provided)
-  const useRosterPicker = !!roster && !editingId;
+  // Check if we're in roster-picker mode (adding, not editing, with roster provided, NOT creating new)
+  const useRosterPicker = !!roster && !editingId && !creatingNew;
 
   useEffect(() => {
     if (!useRosterPicker || !selectedRosterId || !roster) return;
