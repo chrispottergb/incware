@@ -2927,17 +2927,22 @@ export type Database = {
       }
       shareholders: {
         Row: {
+          additional_capital: number | null
           address: string | null
           address_2: string | null
+          basis: number | null
           capital_account_balance: number | null
           city: string | null
           company_id: string
           created_at: string
           date_added: string | null
+          distribution: string | null
           id: string
           is_treasury: boolean
           name: string
+          num_shares: number | null
           ownership_percentage: number | null
+          share_class: string | null
           ssn_ein: string | null
           ssn_ein_encrypted: string | null
           state: string | null
@@ -2946,17 +2951,22 @@ export type Database = {
           zip: string | null
         }
         Insert: {
+          additional_capital?: number | null
           address?: string | null
           address_2?: string | null
+          basis?: number | null
           capital_account_balance?: number | null
           city?: string | null
           company_id: string
           created_at?: string
           date_added?: string | null
+          distribution?: string | null
           id?: string
           is_treasury?: boolean
           name: string
+          num_shares?: number | null
           ownership_percentage?: number | null
+          share_class?: string | null
           ssn_ein?: string | null
           ssn_ein_encrypted?: string | null
           state?: string | null
@@ -2965,17 +2975,22 @@ export type Database = {
           zip?: string | null
         }
         Update: {
+          additional_capital?: number | null
           address?: string | null
           address_2?: string | null
+          basis?: number | null
           capital_account_balance?: number | null
           city?: string | null
           company_id?: string
           created_at?: string
           date_added?: string | null
+          distribution?: string | null
           id?: string
           is_treasury?: boolean
           name?: string
+          num_shares?: number | null
           ownership_percentage?: number | null
+          share_class?: string | null
           ssn_ein?: string | null
           ssn_ein_encrypted?: string | null
           state?: string | null
