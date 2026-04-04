@@ -387,6 +387,7 @@ export default function IncorporationTab({ company }: Props) {
       if (error) throw error;
     },
     onSuccess: () => {
+      upsertAddressBook.mutate({ full_name: newOrganizer.organizer_name.trim(), address: newOrganizer.address, address_2: newOrganizer.address_2, city: newOrganizer.city, state: newOrganizer.state, zip: newOrganizer.zip, company_id: company.id });
       refetchOrganizers();
       setNewOrganizer({ organizer_name: "", address: "", address_2: "", city: "", state: "", zip: "" });
       setShowOrganizerForm(false);
