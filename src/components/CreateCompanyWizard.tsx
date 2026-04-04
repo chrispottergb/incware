@@ -234,7 +234,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
           <span className={step >= 1 ? "text-primary font-semibold" : ""}>1. Company</span>
           <ArrowRight className="h-3 w-3" />
-          <span className={step >= 2 ? "text-primary font-semibold" : ""}>2. {isCorp ? "Shareholders" : "Skip"}</span>
+          <span className={step >= 2 ? "text-primary font-semibold" : ""}>2. {isCorp ? "Directors" : "Skip"}</span>
           <ArrowRight className="h-3 w-3" />
           <span className={step >= 3 ? "text-primary font-semibold" : ""}>3. Review</span>
         </div>
@@ -350,7 +350,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
             <div className="rounded-md border border-border p-3 space-y-2">
               <p className="text-xs font-semibold flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5 text-primary" />
-                {editingIdx !== null ? "Edit Shareholder" : "Add Initial Shareholder"}
+                {editingIdx !== null ? "Edit Director" : "Add Initial Director"}
               </p>
               <div className="field-group">
                 <Label className="field-label">Full Legal Name</Label>
@@ -505,6 +505,10 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
                 No initial shareholders. You can add them later from the company detail page.
               </div>
             )}
+
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Initial Directors are appointed at the time of incorporation and serve at the organizational meeting until the shareholders are established and the permanent Board of Directors is elected.
+            </p>
 
             <DialogFooter className="gap-2">
               <Button size="sm" variant="outline" onClick={() => setStep(isCorp ? 2 : 1)}>
