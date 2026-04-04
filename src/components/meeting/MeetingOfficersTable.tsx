@@ -68,6 +68,8 @@ function getDefaultNoteText(
 ): string {
   const amt = salary != null ? `$${Number(salary).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "$[AMOUNT]";
   switch (status) {
+    case "pending_approval":
+      return `Compensation for ${name} as ${title} has not yet been established. Compensation to be determined and approved by Board or Member Resolution at a future meeting.`;
     case "reasonable":
       return `The Board has reviewed the compensation of ${name} as ${title} and determined that the salary of ${amt} is reasonable and commensurate with the services performed, consistent with IRC § 1366.`;
     case "below_market":
