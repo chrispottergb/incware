@@ -382,28 +382,8 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
                   {zipError && <p className="text-[10px] text-destructive mt-0.5">{zipError}</p>}
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-1.5">
-                <div className="field-group">
-                  <Label className="field-label">SSN / EIN</Label>
-                  <Input className="h-7 text-xs" value={editingSh.ssn_ein} onChange={(e) => setEditingSh(p => ({ ...p, ssn_ein: e.target.value }))} placeholder="Optional" />
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Shares</Label>
-                  <Input className="h-7 text-xs" type="number" value={editingSh.num_shares || ""} onChange={(e) => setEditingSh(p => ({ ...p, num_shares: parseInt(e.target.value) || 0 }))} required />
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Class</Label>
-                  <Select value={editingSh.share_class} onValueChange={(v) => setEditingSh(p => ({ ...p, share_class: v }))}>
-                    <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Common">Common</SelectItem>
-                      <SelectItem value="Preferred">Preferred</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
               <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={addShareholder}>
-                <Plus className="mr-1 h-3 w-3" /> {editingIdx !== null ? "Update" : "Add"} Shareholder
+                <Plus className="mr-1 h-3 w-3" /> {editingIdx !== null ? "Update" : "+ Add"} Initial Director
               </Button>
             </div>
 
