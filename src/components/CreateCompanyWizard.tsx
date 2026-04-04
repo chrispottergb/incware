@@ -88,6 +88,11 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
   const [editingSh, setEditingSh] = useState<InitialShareholder>(emptyShareholder());
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
 
+  // Step 2 (corps): Directors — separate from shareholders
+  const [directors, setDirectors] = useState<InitialDirector[]>([]);
+  const [editingDir, setEditingDir] = useState<InitialDirector>(emptyDirector());
+  const [editingDirIdx, setEditingDirIdx] = useState<number | null>(null);
+
   // Zip lookup for shareholder form
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setEditingSh(prev => ({ ...prev, city: result.city, state: result.state }));
