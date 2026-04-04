@@ -364,7 +364,15 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               </p>
               <div className="field-group">
                 <Label className="field-label">Full Legal Name</Label>
-                <Input className="h-7 text-xs" value={editingSh.name} onChange={(e) => setEditingSh(p => ({ ...p, name: e.target.value }))} required />
+                <AddressAutocomplete
+                  value={editingSh.name}
+                  onChange={(v) => setEditingSh(p => ({ ...p, name: v }))}
+                  onSelect={handleAddressSelect}
+                  search={searchAddressBook}
+                  getCompanySplitIndex={getCompanySplitIndex}
+                  className="h-7 text-xs"
+                  placeholder="Start typing a name..."
+                />
               </div>
               <div className="field-group">
                 <Label className="field-label">Address</Label>
