@@ -106,7 +106,7 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
   });
 
   // Address book for inline create form
-  const { searchAddressBook, getCompanySplitIndex, upsertEntry } = useAddressBook(companyId);
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBook(companyId);
 
   const { data: rows = [] } = useQuery({
     queryKey: [tableName, meetingId],
