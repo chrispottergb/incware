@@ -235,7 +235,15 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Landlord Name</Label>
-                    <Input className="h-8 text-sm" value={form.landlord_name} onChange={(e) => setForm((p) => ({ ...p, landlord_name: e.target.value }))} />
+                    <AddressAutocomplete
+                      value={form.landlord_name}
+                      onChange={(v) => setForm((p) => ({ ...p, landlord_name: v }))}
+                      onSelect={handleLandlordSelect}
+                      search={searchAddressBook}
+                      getCompanySplitIndex={getCompanySplitIndex}
+                      className="h-8 text-sm"
+                      placeholder="Landlord name"
+                    />
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Landlord Address</Label>
