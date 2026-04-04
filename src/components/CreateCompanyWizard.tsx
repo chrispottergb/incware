@@ -320,7 +320,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
 
             <DialogFooter>
               <Button size="sm" onClick={() => setStep(isCorp ? 2 : 3)} disabled={!canProceedStep1}>
-                {isCorp ? "Next: Add Shareholders" : "Review"} <ArrowRight className="ml-1 h-3 w-3" />
+                {isCorp ? "Add Initial Directors" : "Review"} <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </DialogFooter>
           </div>
