@@ -30,6 +30,7 @@ const App = () => (
     <SplashScreen duration={8000} />
     <QueryClientProvider client={queryClient}>
     <AuthProvider>
+    <AddressBookProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
