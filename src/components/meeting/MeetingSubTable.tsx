@@ -354,7 +354,7 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
         <CardTitle className="font-display text-base">{title}</CardTitle>
         <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setForm({}); setSelectedRosterId(null); }}>
+            <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setForm({}); setSelectedRosterId(null); setCreatingNew(false); setIsCreatingEntry(false); }}>
               <Plus className="mr-2 h-4 w-4" /> Add
             </Button>
           </DialogTrigger>
