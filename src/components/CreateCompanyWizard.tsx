@@ -506,6 +506,10 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               </div>
             )}
 
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Initial Directors are appointed at the time of incorporation and serve at the organizational meeting until the shareholders are established and the permanent Board of Directors is elected.
+            </p>
+
             <DialogFooter className="gap-2">
               <Button size="sm" variant="outline" onClick={() => setStep(isCorp ? 2 : 1)}>
                 <ArrowLeft className="mr-1 h-3 w-3" /> Back
