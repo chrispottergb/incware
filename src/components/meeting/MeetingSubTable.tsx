@@ -385,7 +385,9 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
                       <Command>
                         <CommandInput placeholder="Search by name..." />
                         <CommandList>
-                          <CommandEmpty>No matching records.</CommandEmpty>
+                          <CommandEmpty>
+                            <span className="text-sm text-muted-foreground">No matching records.</span>
+                          </CommandEmpty>
                           <CommandGroup>
                             {availableRoster.map((person) => (
                               <CommandItem
@@ -405,12 +407,42 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
                               </CommandItem>
                             ))}
                           </CommandGroup>
+                          {/* Always show Create New option when callback is provided */}
+                          {onCreateNewRosterEntry && (
+                            <CommandGroup>
+                              <CommandItem
+                                value="__create_new__"
+                                onSelect={() => {
+                                  setCreatingNew(true);
+                                  setSelectedRosterId(null);
+                                  setRosterPickerOpen(false);
+                                  setForm({});
+                                }}
+                                className="text-primary font-medium"
+                              >
+                                <UserPlus className="mr-2 h-4 w-4" />
+                                + Create New {title.replace(/s$/, "")}
+                              </CommandItem>
+                            </CommandGroup>
+                          )}
                         </CommandList>
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  {availableRoster.length === 0 && (
+                  {availableRoster.length === 0 && !onCreateNewRosterEntry && (
                     <p className="text-xs text-muted-foreground">All roster members have been added.</p>
+                  )}
+                  {availableRoster.length === 0 && onCreateNewRosterEntry && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="mt-1 text-primary"
+                      onClick={() => { setCreatingNew(true); setSelectedRosterId(null); setForm({}); }}
+                    >
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      + Create New {title.replace(/s$/, "")}
+                    </Button>
                   )}
                 </div>
               )}
