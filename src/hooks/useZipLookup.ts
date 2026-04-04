@@ -18,6 +18,10 @@ export function useZipLookup(onResult: (result: ZipLookupResult) => void) {
   const lastLookedUp = useRef<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [zipError, setZipError] = useState<string | null>(null);
+  // Store latest onResult in a ref so the lookup callback is always stable
+  // but always calls the latest version of onResult
+  const onResultRef = useRef(onResult);
+  onResultRef.current = onResult;
 
   const lookup = useCallback(async (zip: string) => {
     if (!/^\d{5}$/.test(zip) || zip === lastLookedUp.current) return;
@@ -32,28 +36,28 @@ export function useZipLookup(onResult: (result: ZipLookupResult) => void) {
 
       if (error) throw error;
       if (data?.city && data?.state) {
-        onResult({ city: data.city, state: data.state });
+        onResultRef.current({ city: data.city, state: data.state });
         setZipError(null);
       } else {
-        setZipError("ZIP code not found — please enter city and state manually.");
+        setZipError("ZIP code not found.");
       }
     } catch {
-      setZipError("ZIP code not found — please enter city and state manually.");
+      setZipError("ZIP code not found.");
     } finally {
       setIsLoading(false);
     }
-  }, [onResult]);
+  }, []);
 
   const handleZipChange = useCallback(
     (zipValue: string) => {
-      // Clear error when user is still typing
-      if (!/^\d{5}$/.test(zipValue.replace(/-\d{0,4}$/, ""))) {
-        setZipError(null);
-      }
-      // Support both 5-digit and ZIP+4 formats (e.g. "54915" or "54915-1278")
+      // Extract the 5-digit core
       const match = zipValue.match(/^(\d{5})(?:-?\d{0,4})?$/);
       if (match) {
         lookup(match[1]);
+      } else {
+        // User is still typing or cleared — reset so re-entry of same zip works
+        lastLookedUp.current = "";
+        setZipError(null);
       }
     },
     [lookup]
