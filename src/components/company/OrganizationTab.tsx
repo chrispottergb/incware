@@ -998,7 +998,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                     <div className="field-group col-span-3">
                       <Label className="field-label">Organizer Name</Label>
-                      <Input className="h-7 text-sm" value={newOrganizer.organizer_name} onChange={(e) => setNewOrganizer(p => ({ ...p, organizer_name: e.target.value }))} placeholder="Full name" />
+                      <AddressAutocomplete value={newOrganizer.organizer_name} onChange={(v) => setNewOrganizer(p => ({ ...p, organizer_name: v }))} onSelect={handleOrganizerAddressSelect} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="Full name" />
                     </div>
                     <div className="field-group col-span-3">
                       <Label className="field-label">Address</Label>
