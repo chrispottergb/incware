@@ -178,6 +178,16 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
       }
     },
     onSuccess: () => {
+      // Save to address book
+      upsertAddressBook.mutate({
+        full_name: form.name.trim(),
+        address: form.address,
+        address_2: form.address_2,
+        city: form.city,
+        state: form.state,
+        zip: form.zip,
+        company_id: companyId,
+      });
       queryClient.invalidateQueries({ queryKey: ["shareholders", companyId] });
       queryClient.invalidateQueries({ queryKey: ["stock-certificate-shareholders", companyId] });
       queryClient.invalidateQueries({ queryKey: ["shareholders-for-holdings", companyId] });
