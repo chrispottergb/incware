@@ -435,23 +435,21 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
           </div>
         )}
 
-        {/* Step 2: Add Initial Shareholders (corps only) */}
+        {/* Step 2: Add Initial Directors (corps only) */}
         {step === 2 && (
           <div className="space-y-3">
-            {/* Share summary tiles hidden on Directors step — logic preserved for Shareholders step */}
-
-            {/* Shareholder entry form */}
+            {/* Director entry form */}
             <div className="rounded-md border border-border p-3 space-y-2">
               <p className="text-xs font-semibold flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5 text-primary" />
-                {editingIdx !== null ? "Edit Director" : "Add Initial Director"}
+                {editingDirIdx !== null ? "Edit Director" : "Add Initial Director"}
               </p>
               <div className="field-group">
                 <Label className="field-label">Full Legal Name</Label>
                 <AddressAutocomplete
-                  value={editingSh.name}
-                  onChange={(v) => setEditingSh(p => ({ ...p, name: v }))}
-                  onSelect={handleAddressSelect}
+                  value={editingDir.name}
+                  onChange={(v) => setEditingDir(p => ({ ...p, name: v }))}
+                  onSelect={handleDirAddressSelect}
                   search={searchAddressBook}
                   getCompanySplitIndex={getCompanySplitIndex}
                   className="h-7 text-xs"
@@ -460,32 +458,32 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               </div>
               <div className="field-group">
                 <Label className="field-label">Address</Label>
-                <Input className="h-7 text-xs" value={editingSh.address} onChange={(e) => setEditingSh(p => ({ ...p, address: e.target.value }))} />
+                <Input className="h-7 text-xs" value={editingDir.address} onChange={(e) => setEditingDir(p => ({ ...p, address: e.target.value }))} />
               </div>
               <div className="field-group">
                 <Label className="field-label">Address 2</Label>
-                <Input className="h-7 text-xs" value={editingSh.address_2} onChange={(e) => setEditingSh(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor" />
+                <Input className="h-7 text-xs" value={editingDir.address_2} onChange={(e) => setEditingDir(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor" />
               </div>
               <div className="grid grid-cols-3 gap-1.5">
                 <div className="field-group">
                   <Label className="field-label">City</Label>
-                  <Input className="h-7 text-xs" value={editingSh.city} onChange={(e) => setEditingSh(p => ({ ...p, city: e.target.value }))} />
+                  <Input className="h-7 text-xs" value={editingDir.city} onChange={(e) => setEditingDir(p => ({ ...p, city: e.target.value }))} />
                 </div>
                 <div className="field-group">
                   <Label className="field-label">State</Label>
-                  <Select value={editingSh.state} onValueChange={(v) => setEditingSh(p => ({ ...p, state: v }))}>
+                  <Select value={editingDir.state} onValueChange={(v) => setEditingDir(p => ({ ...p, state: v }))}>
                     <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="ST" /></SelectTrigger>
                     <SelectContent>{US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="field-group">
                   <Label className="field-label">Zip</Label>
-                  <Input className="h-7 text-xs" value={editingSh.zip} onChange={(e) => { setEditingSh(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} />
-                  {zipError && <p className="text-[10px] text-destructive mt-0.5">{zipError}</p>}
+                  <Input className="h-7 text-xs" value={editingDir.zip} onChange={(e) => { setEditingDir(p => ({ ...p, zip: e.target.value })); handleDirZipChange(e.target.value); }} />
+                  {dirZipError && <p className="text-[10px] text-destructive mt-0.5">{dirZipError}</p>}
                 </div>
               </div>
-              <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={addShareholder}>
-                <Plus className="mr-1 h-3 w-3" /> {editingIdx !== null ? "Update" : "+ Add"} Initial Director
+              <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={addDirector}>
+                <Plus className="mr-1 h-3 w-3" /> {editingDirIdx !== null ? "Update" : "+ Add"} Initial Director
               </Button>
             </div>
 
@@ -493,30 +491,30 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               Initial Directors are appointed at the time of incorporation and serve at the organizational meeting until the shareholders are established and the permanent Board of Directors is elected.
             </p>
 
-            {/* Added shareholders list */}
-            {shareholders.length > 0 && (
+            {/* Added directors list */}
+            {directors.length > 0 && (
               <div className="rounded-md border border-border overflow-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-[10px]">Name</TableHead>
-                      <TableHead className="text-[10px] text-right">Shares</TableHead>
-                      <TableHead className="text-[10px]">Class</TableHead>
+                      <TableHead className="text-[10px]">City</TableHead>
+                      <TableHead className="text-[10px]">State</TableHead>
                       <TableHead className="text-[10px] w-16"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {shareholders.map((sh, i) => (
+                    {directors.map((dir, i) => (
                       <TableRow key={i}>
-                        <TableCell className="text-xs font-medium">{sh.name}</TableCell>
-                        <TableCell className="text-xs text-right">{sh.num_shares.toLocaleString()}</TableCell>
-                        <TableCell className="text-xs">{sh.share_class}</TableCell>
+                        <TableCell className="text-xs font-medium">{dir.name}</TableCell>
+                        <TableCell className="text-xs">{dir.city || "—"}</TableCell>
+                        <TableCell className="text-xs">{dir.state || "—"}</TableCell>
                         <TableCell>
                           <div className="flex gap-0.5">
-                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => editShareholder(i)}>
+                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => editDirectorEntry(i)}>
                               <Users className="h-2.5 w-2.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => removeShareholder(i)}>
+                            <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => removeDirector(i)}>
                               <Trash2 className="h-2.5 w-2.5" />
                             </Button>
                           </div>
@@ -528,20 +526,11 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               </div>
             )}
 
-            {availableShares < 0 && (
-              <Alert variant="destructive" className="py-2">
-                <AlertTriangle className="h-3.5 w-3.5" />
-                <AlertDescription className="text-xs">
-                  You've allocated {totalIssuedShares.toLocaleString()} shares but only {authSharesNum.toLocaleString()} are authorized.
-                </AlertDescription>
-              </Alert>
-            )}
-
             <DialogFooter className="gap-2">
               <Button size="sm" variant="outline" onClick={() => setStep(1)}>
                 <ArrowLeft className="mr-1 h-3 w-3" /> Back
               </Button>
-              <Button size="sm" onClick={() => setStep(3)} disabled={availableShares < 0}>
+              <Button size="sm" onClick={() => setStep(3)}>
                 Review <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </DialogFooter>
