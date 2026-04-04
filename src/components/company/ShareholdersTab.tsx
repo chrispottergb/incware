@@ -328,7 +328,15 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
               <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-2">
                 <div className="field-group">
                   <Label className="field-label">{t.shareholder} Name</Label>
-                  <Input className="h-7 text-sm" value={form.name} onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))} required />
+                  <AddressAutocomplete
+                    value={form.name}
+                    onChange={(v) => setForm(p => ({ ...p, name: v }))}
+                    onSelect={handleAddressSelect}
+                    search={searchAddressBook}
+                    getCompanySplitIndex={getCompanySplitIndex}
+                    className="h-7 text-sm"
+                    placeholder="Start typing a name..."
+                  />
                 </div>
                 <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                   <div className="field-group col-span-7">
