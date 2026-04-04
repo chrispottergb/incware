@@ -50,6 +50,19 @@ const emptyShareholder = (): InitialShareholder => ({
   name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", num_shares: 0, share_class: "Common",
 });
 
+interface InitialDirector {
+  name: string;
+  address: string;
+  address_2: string;
+  city: string;
+  state: string;
+  zip: string;
+}
+
+const emptyDirector = (): InitialDirector => ({
+  name: "", address: "", address_2: "", city: "", state: "", zip: "",
+});
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -75,16 +88,39 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
   const [editingSh, setEditingSh] = useState<InitialShareholder>(emptyShareholder());
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
 
+  // Step 2 (corps): Directors — separate from shareholders
+  const [directors, setDirectors] = useState<InitialDirector[]>([]);
+  const [editingDir, setEditingDir] = useState<InitialDirector>(emptyDirector());
+  const [editingDirIdx, setEditingDirIdx] = useState<number | null>(null);
+
   // Zip lookup for shareholder form
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setEditingSh(prev => ({ ...prev, city: result.city, state: result.state }));
   }, []);
   const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(handleZipResult);
 
+  // Zip lookup for director form
+  const handleDirZipResult = useCallback((result: { city: string; state: string }) => {
+    setEditingDir(prev => ({ ...prev, city: result.city, state: result.state }));
+  }, []);
+  const { handleZipChange: handleDirZipChange, zipError: dirZipError } = useZipLookup(handleDirZipResult);
+
   const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBook();
 
   const handleAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
     setEditingSh(prev => ({
+      ...prev,
+      name: entry.full_name,
+      address: entry.address || "",
+      address_2: entry.address_2 || "",
+      city: entry.city || "",
+      state: entry.state || "",
+      zip: entry.zip || "",
+    }));
+  }, []);
+
+  const handleDirAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
+    setEditingDir(prev => ({
       ...prev,
       name: entry.full_name,
       address: entry.address || "",
@@ -111,6 +147,9 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
     setShareholders([]);
     setEditingSh(emptyShareholder());
     setEditingIdx(null);
+    setDirectors([]);
+    setEditingDir(emptyDirector());
+    setEditingDirIdx(null);
     setSaving(false);
   };
 
@@ -155,8 +194,39 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
     setEditingSh({ ...shareholders[idx] });
     setEditingIdx(idx);
   };
+  // Add/update director in list (name-only validation)
+  const addDirector = () => {
+    if (!editingDir.name.trim()) {
+      toast.error("Full Legal Name is required.");
+      return;
+    }
+    if (editingDirIdx !== null) {
+      setDirectors(prev => prev.map((d, i) => i === editingDirIdx ? { ...editingDir } : d));
+    } else {
+      setDirectors(prev => [...prev, { ...editingDir }]);
+    }
+    upsertAddressBook.mutate({
+      full_name: editingDir.name.trim(),
+      address: editingDir.address,
+      address_2: editingDir.address_2,
+      city: editingDir.city,
+      state: editingDir.state,
+      zip: editingDir.zip,
+    });
+    setEditingDir(emptyDirector());
+    setEditingDirIdx(null);
+  };
 
-  // Save everything
+  const removeDirector = (idx: number) => {
+    setDirectors(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const editDirectorEntry = (idx: number) => {
+    setEditingDir({ ...directors[idx] });
+    setEditingDirIdx(idx);
+  };
+
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -231,8 +301,22 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
         }
       }
 
+      // 3. For each director, create director record
+      for (const dir of directors) {
+        await supabase.from("directors").insert({
+          company_id: companyId,
+          name: dir.name,
+          address: dir.address || null,
+          address_2: dir.address_2 || null,
+          city: dir.city || null,
+          state: dir.state || null,
+          zip: dir.zip || null,
+          added_date: new Date().toISOString().split("T")[0],
+        });
+      }
+
       queryClient.invalidateQueries({ queryKey: ["companies"] });
-      toast.success("Company created with initial shareholders!");
+      toast.success("Company created successfully!");
       handleClose();
       navigate(`/company/${companyId}`);
     } catch (err: any) {
@@ -351,23 +435,21 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
           </div>
         )}
 
-        {/* Step 2: Add Initial Shareholders (corps only) */}
+        {/* Step 2: Add Initial Directors (corps only) */}
         {step === 2 && (
           <div className="space-y-3">
-            {/* Share summary tiles hidden on Directors step — logic preserved for Shareholders step */}
-
-            {/* Shareholder entry form */}
+            {/* Director entry form */}
             <div className="rounded-md border border-border p-3 space-y-2">
               <p className="text-xs font-semibold flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5 text-primary" />
-                {editingIdx !== null ? "Edit Director" : "Add Initial Director"}
+                {editingDirIdx !== null ? "Edit Director" : "Add Initial Director"}
               </p>
               <div className="field-group">
                 <Label className="field-label">Full Legal Name</Label>
                 <AddressAutocomplete
-                  value={editingSh.name}
-                  onChange={(v) => setEditingSh(p => ({ ...p, name: v }))}
-                  onSelect={handleAddressSelect}
+                  value={editingDir.name}
+                  onChange={(v) => setEditingDir(p => ({ ...p, name: v }))}
+                  onSelect={handleDirAddressSelect}
                   search={searchAddressBook}
                   getCompanySplitIndex={getCompanySplitIndex}
                   className="h-7 text-xs"
@@ -376,32 +458,32 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               </div>
               <div className="field-group">
                 <Label className="field-label">Address</Label>
-                <Input className="h-7 text-xs" value={editingSh.address} onChange={(e) => setEditingSh(p => ({ ...p, address: e.target.value }))} />
+                <Input className="h-7 text-xs" value={editingDir.address} onChange={(e) => setEditingDir(p => ({ ...p, address: e.target.value }))} />
               </div>
               <div className="field-group">
                 <Label className="field-label">Address 2</Label>
-                <Input className="h-7 text-xs" value={editingSh.address_2} onChange={(e) => setEditingSh(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor" />
+                <Input className="h-7 text-xs" value={editingDir.address_2} onChange={(e) => setEditingDir(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor" />
               </div>
               <div className="grid grid-cols-3 gap-1.5">
                 <div className="field-group">
                   <Label className="field-label">City</Label>
-                  <Input className="h-7 text-xs" value={editingSh.city} onChange={(e) => setEditingSh(p => ({ ...p, city: e.target.value }))} />
+                  <Input className="h-7 text-xs" value={editingDir.city} onChange={(e) => setEditingDir(p => ({ ...p, city: e.target.value }))} />
                 </div>
                 <div className="field-group">
                   <Label className="field-label">State</Label>
-                  <Select value={editingSh.state} onValueChange={(v) => setEditingSh(p => ({ ...p, state: v }))}>
+                  <Select value={editingDir.state} onValueChange={(v) => setEditingDir(p => ({ ...p, state: v }))}>
                     <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="ST" /></SelectTrigger>
                     <SelectContent>{US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="field-group">
                   <Label className="field-label">Zip</Label>
-                  <Input className="h-7 text-xs" value={editingSh.zip} onChange={(e) => { setEditingSh(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} />
-                  {zipError && <p className="text-[10px] text-destructive mt-0.5">{zipError}</p>}
+                  <Input className="h-7 text-xs" value={editingDir.zip} onChange={(e) => { setEditingDir(p => ({ ...p, zip: e.target.value })); handleDirZipChange(e.target.value); }} />
+                  {dirZipError && <p className="text-[10px] text-destructive mt-0.5">{dirZipError}</p>}
                 </div>
               </div>
-              <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={addShareholder}>
-                <Plus className="mr-1 h-3 w-3" /> {editingIdx !== null ? "Update" : "+ Add"} Initial Director
+              <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={addDirector}>
+                <Plus className="mr-1 h-3 w-3" /> {editingDirIdx !== null ? "Update" : "+ Add"} Initial Director
               </Button>
             </div>
 
@@ -409,30 +491,30 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               Initial Directors are appointed at the time of incorporation and serve at the organizational meeting until the shareholders are established and the permanent Board of Directors is elected.
             </p>
 
-            {/* Added shareholders list */}
-            {shareholders.length > 0 && (
+            {/* Added directors list */}
+            {directors.length > 0 && (
               <div className="rounded-md border border-border overflow-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-[10px]">Name</TableHead>
-                      <TableHead className="text-[10px] text-right">Shares</TableHead>
-                      <TableHead className="text-[10px]">Class</TableHead>
+                      <TableHead className="text-[10px]">City</TableHead>
+                      <TableHead className="text-[10px]">State</TableHead>
                       <TableHead className="text-[10px] w-16"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {shareholders.map((sh, i) => (
+                    {directors.map((dir, i) => (
                       <TableRow key={i}>
-                        <TableCell className="text-xs font-medium">{sh.name}</TableCell>
-                        <TableCell className="text-xs text-right">{sh.num_shares.toLocaleString()}</TableCell>
-                        <TableCell className="text-xs">{sh.share_class}</TableCell>
+                        <TableCell className="text-xs font-medium">{dir.name}</TableCell>
+                        <TableCell className="text-xs">{dir.city || "—"}</TableCell>
+                        <TableCell className="text-xs">{dir.state || "—"}</TableCell>
                         <TableCell>
                           <div className="flex gap-0.5">
-                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => editShareholder(i)}>
+                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => editDirectorEntry(i)}>
                               <Users className="h-2.5 w-2.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => removeShareholder(i)}>
+                            <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => removeDirector(i)}>
                               <Trash2 className="h-2.5 w-2.5" />
                             </Button>
                           </div>
@@ -444,20 +526,11 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               </div>
             )}
 
-            {availableShares < 0 && (
-              <Alert variant="destructive" className="py-2">
-                <AlertTriangle className="h-3.5 w-3.5" />
-                <AlertDescription className="text-xs">
-                  You've allocated {totalIssuedShares.toLocaleString()} shares but only {authSharesNum.toLocaleString()} are authorized.
-                </AlertDescription>
-              </Alert>
-            )}
-
             <DialogFooter className="gap-2">
               <Button size="sm" variant="outline" onClick={() => setStep(1)}>
                 <ArrowLeft className="mr-1 h-3 w-3" /> Back
               </Button>
-              <Button size="sm" onClick={() => setStep(3)} disabled={availableShares < 0}>
+              <Button size="sm" onClick={() => setStep(3)}>
                 Review <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </DialogFooter>
@@ -485,32 +558,23 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               </div>
             </div>
 
-            {shareholders.length > 0 && (
+            {directors.length > 0 && (
               <div className="rounded-md bg-muted/50 p-3 text-xs space-y-1.5">
-                <p className="font-medium text-foreground">Initial Shareholders ({shareholders.length}):</p>
-                {shareholders.map((sh, i) => (
+                <p className="font-medium text-foreground">Initial Directors ({directors.length}):</p>
+                {directors.map((dir, i) => (
                   <p key={i} className="flex items-center gap-1.5">
                     <CheckCircle2 className="h-3 w-3 text-success shrink-0" />
-                    {sh.name} — {sh.num_shares.toLocaleString()} {sh.share_class} shares
+                    {dir.name}{dir.city || dir.state ? ` — ${[dir.city, dir.state].filter(Boolean).join(", ")}` : ""}
                   </p>
                 ))}
-                {isCorp && (
-                  <p className="text-muted-foreground mt-1">
-                    {shareholders.length} certificate(s) and ledger entries will be auto-generated.
-                  </p>
-                )}
               </div>
             )}
 
-            {shareholders.length === 0 && (
+            {isCorp && directors.length === 0 && (
               <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
-                No initial shareholders. You can add them later from the company detail page.
+                No initial directors. You can add them later from the company detail page.
               </div>
             )}
-
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Initial Directors are appointed at the time of incorporation and serve at the organizational meeting until the shareholders are established and the permanent Board of Directors is elected.
-            </p>
 
             <DialogFooter className="gap-2">
               <Button size="sm" variant="outline" onClick={() => setStep(isCorp ? 2 : 1)}>
