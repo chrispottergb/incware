@@ -350,7 +350,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
             <div className="rounded-md border border-border p-3 space-y-2">
               <p className="text-xs font-semibold flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5 text-primary" />
-                {editingIdx !== null ? "Edit Shareholder" : "Add Initial Shareholder"}
+                {editingIdx !== null ? "Edit Director" : "Add Initial Director"}
               </p>
               <div className="field-group">
                 <Label className="field-label">Full Legal Name</Label>
