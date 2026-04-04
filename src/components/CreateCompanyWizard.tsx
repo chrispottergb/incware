@@ -134,6 +134,15 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
     } else {
       setShareholders(prev => [...prev, { ...editingSh }]);
     }
+    // Save to address book
+    upsertAddressBook.mutate({
+      full_name: editingSh.name.trim(),
+      address: editingSh.address,
+      address_2: editingSh.address_2,
+      city: editingSh.city,
+      state: editingSh.state,
+      zip: editingSh.zip,
+    });
     setEditingSh(emptyShareholder());
     setEditingIdx(null);
   };
