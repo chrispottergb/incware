@@ -361,6 +361,20 @@ export default function OrganizationTab({ companyId, company }: Props) {
   }, []);
   const { handleZipChange: handleOrganizerZip, zipError: organizerZipError } = useZipLookup(handleOrganizerZipResult);
 
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBook(companyId);
+
+  const handleOrganizerAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
+    setNewOrganizer(prev => ({
+      ...prev,
+      organizer_name: entry.full_name,
+      address: entry.address || "",
+      address_2: entry.address_2 || "",
+      city: entry.city || "",
+      state: entry.state || "",
+      zip: entry.zip || "",
+    }));
+  }, []);
+
   const addOrganizer = useMutation({
     mutationFn: async () => {
       if (!newOrganizer.organizer_name.trim()) throw new Error("Organizer name is required");
