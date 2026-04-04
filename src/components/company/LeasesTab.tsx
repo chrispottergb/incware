@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +52,16 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
 
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
+
+  const handleLandlordSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
+    setForm(prev => ({
+      ...prev,
+      landlord_name: entry.full_name,
+      landlord_address: [entry.address, entry.city, entry.state, entry.zip].filter(Boolean).join(", "),
+    }));
+  }, []);
+
   const { data: leases = [] } = useQuery({
     queryKey: ["company_assets", companyId, "lease"],
     queryFn: async () => {
@@ -89,6 +101,9 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       }
     },
     onSuccess: () => {
+      if (form.landlord_name.trim()) {
+        upsertAddressBook.mutate({ full_name: form.landlord_name.trim(), company_id: companyId });
+      }
       queryClient.invalidateQueries({ queryKey: ["company_assets", companyId, "lease"] });
       setDialogOpen(false);
       resetForm();
@@ -220,7 +235,15 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Landlord Name</Label>
-                    <Input className="h-8 text-sm" value={form.landlord_name} onChange={(e) => setForm((p) => ({ ...p, landlord_name: e.target.value }))} />
+                    <AddressAutocomplete
+                      value={form.landlord_name}
+                      onChange={(v) => setForm((p) => ({ ...p, landlord_name: v }))}
+                      onSelect={handleLandlordSelect}
+                      search={searchAddressBook}
+                      getCompanySplitIndex={getCompanySplitIndex}
+                      className="h-8 text-sm"
+                      placeholder="Landlord name"
+                    />
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Landlord Address</Label>

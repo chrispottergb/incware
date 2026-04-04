@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useCallback } from "react";
+import { useCallback, useState, useMemo } from "react";
 
 export interface AddressBookEntry {
   id: string;
@@ -14,9 +14,14 @@ export interface AddressBookEntry {
   company_id: string | null;
 }
 
-export function useAddressBook(currentCompanyId?: string) {
+export function useAddressBook(initialCompanyId?: string) {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const [currentCompanyId, setCurrentCompanyId] = useState(initialCompanyId);
+
+  const setCompanyId = useCallback((id: string | undefined) => {
+    setCurrentCompanyId(id);
+  }, []);
 
   const { data: entries = [] } = useQuery({
     queryKey: ["address_book", user?.id],
@@ -29,7 +34,8 @@ export function useAddressBook(currentCompanyId?: string) {
       if (error) throw error;
       return (data as any[]) as AddressBookEntry[];
     },
-    staleTime: 60_000,
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
   // Search entries: current company first, then rest
@@ -110,5 +116,5 @@ export function useAddressBook(currentCompanyId?: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["address_book"] }),
   });
 
-  return { entries, search, getCompanySplitIndex, upsert };
+  return { entries, search, getCompanySplitIndex, upsert, setCompanyId };
 }

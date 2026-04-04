@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { AddressBookProvider } from "@/contexts/AddressBookContext";
 import SplashScreen from "@/components/SplashScreen";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
@@ -29,6 +30,7 @@ const App = () => (
     <SplashScreen duration={8000} />
     <QueryClientProvider client={queryClient}>
     <AuthProvider>
+    <AddressBookProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -150,6 +152,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+    </AddressBookProvider>
     </AuthProvider>
   </QueryClientProvider>
   </>

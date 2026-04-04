@@ -45,7 +45,7 @@ import { Plus, Trash2, Loader2, Pencil, ChevronsUpDown, Check, UserPlus } from "
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useZipLookup } from "@/hooks/useZipLookup";
-import { useAddressBook } from "@/hooks/useAddressBook";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 
 interface Column {
@@ -106,7 +106,7 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
   });
 
   // Address book for inline create form
-  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBook(companyId);
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
 
   const { data: rows = [] } = useQuery({
     queryKey: [tableName, meetingId],

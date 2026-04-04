@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import SaveStatusIndicator from "@/components/SaveStatusIndicator";
 import { useZipLookup } from "@/hooks/useZipLookup";
-import { useAddressBook } from "@/hooks/useAddressBook";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -324,7 +324,7 @@ export default function IncorporationTab({ company }: Props) {
   const { handleZipChange: handleAgentZip, isLoading: agentZipLoading, zipError: agentZipError } = useZipLookup(handleAgentZipResult);
   const { handleZipChange: handleCompanyZip, isLoading: companyZipLoading, zipError: companyZipError } = useZipLookup(handleCompanyZipResult);
 
-  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBook(company.id);
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(company.id);
 
   const handleOrganizerAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
     setNewOrganizer(prev => ({

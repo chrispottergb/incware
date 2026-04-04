@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useZipLookup } from "@/hooks/useZipLookup";
-import { useAddressBook } from "@/hooks/useAddressBook";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,7 +55,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   }, []);
   const { handleZipChange, isLoading: zipLoading, zipError, reset: resetZip } = useZipLookup(handleZipResult);
 
-  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBook(companyId);
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
 
   const handleAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
     setForm(prev => ({
