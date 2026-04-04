@@ -194,8 +194,39 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
     setEditingSh({ ...shareholders[idx] });
     setEditingIdx(idx);
   };
+  // Add/update director in list (name-only validation)
+  const addDirector = () => {
+    if (!editingDir.name.trim()) {
+      toast.error("Full Legal Name is required.");
+      return;
+    }
+    if (editingDirIdx !== null) {
+      setDirectors(prev => prev.map((d, i) => i === editingDirIdx ? { ...editingDir } : d));
+    } else {
+      setDirectors(prev => [...prev, { ...editingDir }]);
+    }
+    upsertAddressBook.mutate({
+      full_name: editingDir.name.trim(),
+      address: editingDir.address,
+      address_2: editingDir.address_2,
+      city: editingDir.city,
+      state: editingDir.state,
+      zip: editingDir.zip,
+    });
+    setEditingDir(emptyDirector());
+    setEditingDirIdx(null);
+  };
 
-  // Save everything
+  const removeDirector = (idx: number) => {
+    setDirectors(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const editDirectorEntry = (idx: number) => {
+    setEditingDir({ ...directors[idx] });
+    setEditingDirIdx(idx);
+  };
+
+
   const handleSave = async () => {
     setSaving(true);
     try {
