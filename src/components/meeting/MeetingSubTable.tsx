@@ -76,13 +76,16 @@ interface Props {
   roster?: RosterRecord[];
   /** Maps roster field keys to column keys, e.g. { name: "shareholder_name", address: "address" } */
   rosterFieldMap?: Record<string, string>;
+  /** Called when user creates a new roster entry inline; should insert into the master table and return the new RosterRecord */
+  onCreateNewRosterEntry?: (formData: Record<string, any>) => Promise<RosterRecord | null>;
 }
 
-export default function MeetingSubTable({ meetingId, tableName, title, columns, displayRows, companyId, roster, rosterFieldMap }: Props) {
+export default function MeetingSubTable({ meetingId, tableName, title, columns, displayRows, companyId, roster, rosterFieldMap, onCreateNewRosterEntry }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
+  const [creatingNew, setCreatingNew] = useState(false);
   const [rosterPickerOpen, setRosterPickerOpen] = useState(false);
   const [selectedRosterId, setSelectedRosterId] = useState<string | null>(null);
 
