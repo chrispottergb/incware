@@ -3216,6 +3216,56 @@ export type Database = {
           },
         ]
       }
+      user_address_book: {
+        Row: {
+          address: string | null
+          address_2: string | null
+          city: string | null
+          company_id: string | null
+          created_at: string
+          full_name: string
+          id: string
+          state: string | null
+          updated_at: string
+          user_id: string
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          address_2?: string | null
+          city?: string | null
+          company_id?: string | null
+          created_at?: string
+          full_name: string
+          id?: string
+          state?: string | null
+          updated_at?: string
+          user_id: string
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          address_2?: string | null
+          city?: string | null
+          company_id?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          state?: string | null
+          updated_at?: string
+          user_id?: string
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_address_book_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_invitations: {
         Row: {
           accepted_at: string | null

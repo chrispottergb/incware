@@ -4,6 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useZipLookup } from "@/hooks/useZipLookup";
+import { useAddressBook } from "@/hooks/useAddressBook";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,6 +81,20 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
   }, []);
   const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(handleZipResult);
 
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBook();
+
+  const handleAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
+    setEditingSh(prev => ({
+      ...prev,
+      name: entry.full_name,
+      address: entry.address || "",
+      address_2: entry.address_2 || "",
+      city: entry.city || "",
+      state: entry.state || "",
+      zip: entry.zip || "",
+    }));
+  }, []);
+
   const isCorp = CORP_TYPES.includes(newType);
   const authSharesNum = parseInt(authorizedShares) || 0;
   const totalIssuedShares = shareholders.reduce((sum, s) => sum + s.num_shares, 0);
@@ -118,6 +134,15 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
     } else {
       setShareholders(prev => [...prev, { ...editingSh }]);
     }
+    // Save to address book
+    upsertAddressBook.mutate({
+      full_name: editingSh.name.trim(),
+      address: editingSh.address,
+      address_2: editingSh.address_2,
+      city: editingSh.city,
+      state: editingSh.state,
+      zip: editingSh.zip,
+    });
     setEditingSh(emptyShareholder());
     setEditingIdx(null);
   };
@@ -339,7 +364,15 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               </p>
               <div className="field-group">
                 <Label className="field-label">Full Legal Name</Label>
-                <Input className="h-7 text-xs" value={editingSh.name} onChange={(e) => setEditingSh(p => ({ ...p, name: e.target.value }))} required />
+                <AddressAutocomplete
+                  value={editingSh.name}
+                  onChange={(v) => setEditingSh(p => ({ ...p, name: v }))}
+                  onSelect={handleAddressSelect}
+                  search={searchAddressBook}
+                  getCompanySplitIndex={getCompanySplitIndex}
+                  className="h-7 text-xs"
+                  placeholder="Start typing a name..."
+                />
               </div>
               <div className="field-group">
                 <Label className="field-label">Address</Label>

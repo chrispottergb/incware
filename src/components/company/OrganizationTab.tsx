@@ -24,6 +24,8 @@ import SectionPdfActions from "./SectionPdfActions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useZipLookup } from "@/hooks/useZipLookup";
+import { useAddressBook } from "@/hooks/useAddressBook";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import SaveStatusIndicator from "@/components/SaveStatusIndicator";
 
@@ -359,6 +361,20 @@ export default function OrganizationTab({ companyId, company }: Props) {
   }, []);
   const { handleZipChange: handleOrganizerZip, zipError: organizerZipError } = useZipLookup(handleOrganizerZipResult);
 
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBook(companyId);
+
+  const handleOrganizerAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
+    setNewOrganizer(prev => ({
+      ...prev,
+      organizer_name: entry.full_name,
+      address: entry.address || "",
+      address_2: entry.address_2 || "",
+      city: entry.city || "",
+      state: entry.state || "",
+      zip: entry.zip || "",
+    }));
+  }, []);
+
   const addOrganizer = useMutation({
     mutationFn: async () => {
       if (!newOrganizer.organizer_name.trim()) throw new Error("Organizer name is required");
@@ -374,6 +390,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
       if (error) throw error;
     },
     onSuccess: () => {
+      upsertAddressBook.mutate({ full_name: newOrganizer.organizer_name.trim(), address: newOrganizer.address, address_2: newOrganizer.address_2, city: newOrganizer.city, state: newOrganizer.state, zip: newOrganizer.zip, company_id: companyId });
       refetchOrganizers();
       setNewOrganizer({ organizer_name: "", address: "", address_2: "", city: "", state: "", zip: "" });
       setShowOrganizerForm(false);
@@ -981,7 +998,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                     <div className="field-group col-span-3">
                       <Label className="field-label">Organizer Name</Label>
-                      <Input className="h-7 text-sm" value={newOrganizer.organizer_name} onChange={(e) => setNewOrganizer(p => ({ ...p, organizer_name: e.target.value }))} placeholder="Full name" />
+                      <AddressAutocomplete value={newOrganizer.organizer_name} onChange={(v) => setNewOrganizer(p => ({ ...p, organizer_name: v }))} onSelect={handleOrganizerAddressSelect} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="Full name" />
                     </div>
                     <div className="field-group col-span-3">
                       <Label className="field-label">Address</Label>

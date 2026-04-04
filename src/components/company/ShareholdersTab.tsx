@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react";
 import { useZipLookup } from "@/hooks/useZipLookup";
+import { useAddressBook } from "@/hooks/useAddressBook";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -52,6 +54,20 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
   }, []);
   const { handleZipChange, isLoading: zipLoading, zipError, reset: resetZip } = useZipLookup(handleZipResult);
+
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBook(companyId);
+
+  const handleAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
+    setForm(prev => ({
+      ...prev,
+      name: entry.full_name,
+      address: entry.address || "",
+      address_2: entry.address_2 || "",
+      city: entry.city || "",
+      state: entry.state || "",
+      zip: entry.zip || "",
+    }));
+  }, []);
 
   const t = getTerminology(entityType);
 
@@ -162,6 +178,16 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
       }
     },
     onSuccess: () => {
+      // Save to address book
+      upsertAddressBook.mutate({
+        full_name: form.name.trim(),
+        address: form.address,
+        address_2: form.address_2,
+        city: form.city,
+        state: form.state,
+        zip: form.zip,
+        company_id: companyId,
+      });
       queryClient.invalidateQueries({ queryKey: ["shareholders", companyId] });
       queryClient.invalidateQueries({ queryKey: ["stock-certificate-shareholders", companyId] });
       queryClient.invalidateQueries({ queryKey: ["shareholders-for-holdings", companyId] });
@@ -302,7 +328,15 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
               <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-2">
                 <div className="field-group">
                   <Label className="field-label">{t.shareholder} Name</Label>
-                  <Input className="h-7 text-sm" value={form.name} onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))} required />
+                  <AddressAutocomplete
+                    value={form.name}
+                    onChange={(v) => setForm(p => ({ ...p, name: v }))}
+                    onSelect={handleAddressSelect}
+                    search={searchAddressBook}
+                    getCompanySplitIndex={getCompanySplitIndex}
+                    className="h-7 text-sm"
+                    placeholder="Start typing a name..."
+                  />
                 </div>
                 <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                   <div className="field-group col-span-7">

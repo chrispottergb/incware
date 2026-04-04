@@ -3,6 +3,8 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import SaveStatusIndicator from "@/components/SaveStatusIndicator";
 import { useZipLookup } from "@/hooks/useZipLookup";
+import { useAddressBook } from "@/hooks/useAddressBook";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -322,6 +324,32 @@ export default function IncorporationTab({ company }: Props) {
   const { handleZipChange: handleAgentZip, isLoading: agentZipLoading, zipError: agentZipError } = useZipLookup(handleAgentZipResult);
   const { handleZipChange: handleCompanyZip, isLoading: companyZipLoading, zipError: companyZipError } = useZipLookup(handleCompanyZipResult);
 
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBook(company.id);
+
+  const handleOrganizerAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
+    setNewOrganizer(prev => ({
+      ...prev,
+      organizer_name: entry.full_name,
+      address: entry.address || "",
+      address_2: entry.address_2 || "",
+      city: entry.city || "",
+      state: entry.state || "",
+      zip: entry.zip || "",
+    }));
+  }, []);
+
+  const handleDirectorAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
+    setNewDirector(prev => ({
+      ...prev,
+      name: entry.full_name,
+      address: entry.address || "",
+      address_2: entry.address_2 || "",
+      city: entry.city || "",
+      state: entry.state || "",
+      zip: entry.zip || "",
+    }));
+  }, []);
+
   // ─── Organizers ────────────────────────────────────────────────────────────
   const { data: organizers = [], refetch: refetchOrganizers } = useQuery({
     queryKey: ["organizers", company.id],
@@ -359,6 +387,7 @@ export default function IncorporationTab({ company }: Props) {
       if (error) throw error;
     },
     onSuccess: () => {
+      upsertAddressBook.mutate({ full_name: newOrganizer.organizer_name.trim(), address: newOrganizer.address, address_2: newOrganizer.address_2, city: newOrganizer.city, state: newOrganizer.state, zip: newOrganizer.zip, company_id: company.id });
       refetchOrganizers();
       setNewOrganizer({ organizer_name: "", address: "", address_2: "", city: "", state: "", zip: "" });
       setShowOrganizerForm(false);
@@ -416,6 +445,7 @@ export default function IncorporationTab({ company }: Props) {
       if (error) throw error;
     },
     onSuccess: () => {
+      upsertAddressBook.mutate({ full_name: newDirector.name.trim(), address: newDirector.address, address_2: newDirector.address_2, city: newDirector.city, state: newDirector.state, zip: newDirector.zip, company_id: company.id });
       refetchDirectors();
       setNewDirector({ name: "", address: "", address_2: "", city: "", state: "", zip: "" });
       setShowDirectorForm(false);
@@ -897,7 +927,7 @@ export default function IncorporationTab({ company }: Props) {
                 <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                   <div className="field-group col-span-3">
                     <Label className="field-label">Organizer Name</Label>
-                    <Input className="h-7 text-sm" value={newOrganizer.organizer_name} onChange={(e) => setNewOrganizer(p => ({ ...p, organizer_name: e.target.value }))} placeholder="Full name" />
+                    <AddressAutocomplete value={newOrganizer.organizer_name} onChange={(v) => setNewOrganizer(p => ({ ...p, organizer_name: v }))} onSelect={handleOrganizerAddressSelect} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="Full name" />
                   </div>
                   <div className="field-group col-span-3">
                     <Label className="field-label">Address</Label>
@@ -979,7 +1009,7 @@ export default function IncorporationTab({ company }: Props) {
                 <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                   <div className="field-group col-span-3">
                     <Label className="field-label">{isLLCType(form.entity_type) ? "Member Name" : "Director Name"}</Label>
-                    <Input className="h-7 text-sm" value={newDirector.name} onChange={(e) => setNewDirector(p => ({ ...p, name: e.target.value }))} placeholder="Full name" />
+                    <AddressAutocomplete value={newDirector.name} onChange={(v) => setNewDirector(p => ({ ...p, name: v }))} onSelect={handleDirectorAddressSelect} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="Full name" />
                   </div>
                   <div className="field-group col-span-3">
                     <Label className="field-label">Address</Label>
