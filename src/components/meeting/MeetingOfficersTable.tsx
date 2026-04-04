@@ -389,7 +389,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
   const isPending = addRow.isPending || updateRow.isPending;
 
   const getStatusOptions = (row: any): CompensationStatus[] => {
-    const options: CompensationStatus[] = ["reasonable", "below_market", "above_market"];
+    const options: CompensationStatus[] = ["pending_approval", "reasonable", "below_market", "above_market"];
     if (isDualRole(row)) options.push("included_in_primary");
     options.push("non_compensable");
     return options;
