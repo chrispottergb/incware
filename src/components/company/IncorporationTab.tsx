@@ -445,6 +445,7 @@ export default function IncorporationTab({ company }: Props) {
       if (error) throw error;
     },
     onSuccess: () => {
+      upsertAddressBook.mutate({ full_name: newDirector.name.trim(), address: newDirector.address, address_2: newDirector.address_2, city: newDirector.city, state: newDirector.state, zip: newDirector.zip, company_id: company.id });
       refetchDirectors();
       setNewDirector({ name: "", address: "", address_2: "", city: "", state: "", zip: "" });
       setShowDirectorForm(false);
