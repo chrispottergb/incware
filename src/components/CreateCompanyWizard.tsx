@@ -301,8 +301,22 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
         }
       }
 
+      // 3. For each director, create director record
+      for (const dir of directors) {
+        await supabase.from("directors").insert({
+          company_id: companyId,
+          name: dir.name,
+          address: dir.address || null,
+          address_2: dir.address_2 || null,
+          city: dir.city || null,
+          state: dir.state || null,
+          zip: dir.zip || null,
+          added_date: new Date().toISOString().split("T")[0],
+        });
+      }
+
       queryClient.invalidateQueries({ queryKey: ["companies"] });
-      toast.success("Company created with initial shareholders!");
+      toast.success("Company created successfully!");
       handleClose();
       navigate(`/company/${companyId}`);
     } catch (err: any) {
