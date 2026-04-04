@@ -329,22 +329,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
         {/* Step 2: Add Initial Shareholders (corps only) */}
         {step === 2 && (
           <div className="space-y-3">
-            {authSharesNum > 0 && (
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-md bg-muted/50 p-2">
-                  <p className="text-lg font-bold">{authSharesNum.toLocaleString()}</p>
-                  <p className="text-[10px] text-muted-foreground">Authorized</p>
-                </div>
-                <div className="rounded-md bg-muted/50 p-2">
-                  <p className="text-lg font-bold">{totalIssuedShares.toLocaleString()}</p>
-                  <p className="text-[10px] text-muted-foreground">To Be Issued</p>
-                </div>
-                <div className="rounded-md bg-muted/50 p-2">
-                  <p className={`text-lg font-bold ${availableShares < 0 ? "text-destructive" : ""}`}>{availableShares.toLocaleString()}</p>
-                  <p className="text-[10px] text-muted-foreground">Remaining</p>
-                </div>
-              </div>
-            )}
+            {/* Share summary tiles hidden on Directors step — logic preserved for Shareholders step */}
 
             {/* Shareholder entry form */}
             <div className="rounded-md border border-border p-3 space-y-2">
