@@ -234,7 +234,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
           <span className={step >= 1 ? "text-primary font-semibold" : ""}>1. Company</span>
           <ArrowRight className="h-3 w-3" />
-          <span className={step >= 2 ? "text-primary font-semibold" : ""}>2. {isCorp ? "Directors" : "Skip"}</span>
+          <span className={step >= 2 ? "text-primary font-semibold" : ""}>2. {isCorp ? "Initial Directors" : "Skip"}</span>
           <ArrowRight className="h-3 w-3" />
           <span className={step >= 3 ? "text-primary font-semibold" : ""}>3. Review</span>
         </div>
@@ -329,22 +329,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
         {/* Step 2: Add Initial Shareholders (corps only) */}
         {step === 2 && (
           <div className="space-y-3">
-            {authSharesNum > 0 && (
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-md bg-muted/50 p-2">
-                  <p className="text-lg font-bold">{authSharesNum.toLocaleString()}</p>
-                  <p className="text-[10px] text-muted-foreground">Authorized</p>
-                </div>
-                <div className="rounded-md bg-muted/50 p-2">
-                  <p className="text-lg font-bold">{totalIssuedShares.toLocaleString()}</p>
-                  <p className="text-[10px] text-muted-foreground">To Be Issued</p>
-                </div>
-                <div className="rounded-md bg-muted/50 p-2">
-                  <p className={`text-lg font-bold ${availableShares < 0 ? "text-destructive" : ""}`}>{availableShares.toLocaleString()}</p>
-                  <p className="text-[10px] text-muted-foreground">Remaining</p>
-                </div>
-              </div>
-            )}
+            {/* Share summary tiles hidden on Directors step — logic preserved for Shareholders step */}
 
             {/* Shareholder entry form */}
             <div className="rounded-md border border-border p-3 space-y-2">
@@ -386,6 +371,10 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
                 <Plus className="mr-1 h-3 w-3" /> {editingIdx !== null ? "Update" : "+ Add"} Initial Director
               </Button>
             </div>
+
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Initial Directors are appointed at the time of incorporation and serve at the organizational meeting until the shareholders are established and the permanent Board of Directors is elected.
+            </p>
 
             {/* Added shareholders list */}
             {shareholders.length > 0 && (
