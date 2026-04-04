@@ -234,7 +234,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
           <span className={step >= 1 ? "text-primary font-semibold" : ""}>1. Company</span>
           <ArrowRight className="h-3 w-3" />
-          <span className={step >= 2 ? "text-primary font-semibold" : ""}>2. {isCorp ? "Shareholders" : "Skip"}</span>
+          <span className={step >= 2 ? "text-primary font-semibold" : ""}>2. {isCorp ? "Directors" : "Skip"}</span>
           <ArrowRight className="h-3 w-3" />
           <span className={step >= 3 ? "text-primary font-semibold" : ""}>3. Review</span>
         </div>
