@@ -99,10 +99,28 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
   }, []);
   const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(handleZipResult);
 
+  // Zip lookup for director form
+  const handleDirZipResult = useCallback((result: { city: string; state: string }) => {
+    setEditingDir(prev => ({ ...prev, city: result.city, state: result.state }));
+  }, []);
+  const { handleZipChange: handleDirZipChange, zipError: dirZipError } = useZipLookup(handleDirZipResult);
+
   const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBook();
 
   const handleAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
     setEditingSh(prev => ({
+      ...prev,
+      name: entry.full_name,
+      address: entry.address || "",
+      address_2: entry.address_2 || "",
+      city: entry.city || "",
+      state: entry.state || "",
+      zip: entry.zip || "",
+    }));
+  }, []);
+
+  const handleDirAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
+    setEditingDir(prev => ({
       ...prev,
       name: entry.full_name,
       address: entry.address || "",
