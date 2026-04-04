@@ -101,6 +101,9 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       }
     },
     onSuccess: () => {
+      if (form.landlord_name.trim()) {
+        upsertAddressBook.mutate({ full_name: form.landlord_name.trim(), company_id: companyId });
+      }
       queryClient.invalidateQueries({ queryKey: ["company_assets", companyId, "lease"] });
       setDialogOpen(false);
       resetForm();
