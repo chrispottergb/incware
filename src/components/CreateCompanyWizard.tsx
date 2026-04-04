@@ -50,6 +50,19 @@ const emptyShareholder = (): InitialShareholder => ({
   name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", num_shares: 0, share_class: "Common",
 });
 
+interface InitialDirector {
+  name: string;
+  address: string;
+  address_2: string;
+  city: string;
+  state: string;
+  zip: string;
+}
+
+const emptyDirector = (): InitialDirector => ({
+  name: "", address: "", address_2: "", city: "", state: "", zip: "",
+});
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
