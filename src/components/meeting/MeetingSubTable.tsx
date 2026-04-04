@@ -41,9 +41,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Plus, Trash2, Loader2, Pencil, ChevronsUpDown, Check } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil, ChevronsUpDown, Check, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useZipLookup } from "@/hooks/useZipLookup";
+import { useAddressBook } from "@/hooks/useAddressBook";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 
 interface Column {
   key: string;
