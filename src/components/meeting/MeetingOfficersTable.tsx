@@ -50,6 +50,7 @@ const TITLE_RANK: Record<string, number> = {
 };
 
 const STATUS_CONFIG: Record<CompensationStatus, { label: string; icon: React.ElementType; color: string; badgeVariant: string }> = {
+  pending_approval: { label: "Pending Approval", icon: Clock, color: "text-violet-500", badgeVariant: "bg-violet-100 text-violet-700 border-violet-200" },
   reasonable: { label: "Reasonable", icon: CheckCircle2, color: "text-emerald-600", badgeVariant: "bg-emerald-100 text-emerald-700 border-emerald-200" },
   below_market: { label: "Below Market", icon: AlertTriangle, color: "text-amber-500", badgeVariant: "bg-amber-100 text-amber-700 border-amber-200" },
   above_market: { label: "Above Market", icon: Flag, color: "text-orange-500", badgeVariant: "bg-orange-100 text-orange-700 border-orange-200" },
