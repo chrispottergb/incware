@@ -45,7 +45,7 @@ import { Plus, Trash2, Loader2, Pencil, ChevronsUpDown, Check, UserPlus } from "
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useZipLookup } from "@/hooks/useZipLookup";
-import { useAddressBook } from "@/hooks/useAddressBook";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 
 interface Column {
