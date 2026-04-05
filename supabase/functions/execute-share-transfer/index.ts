@@ -249,8 +249,8 @@ Deno.serve(async (req: Request) => {
               `;
 
               // Issue remainder cert to seller if they retain shares
-              const remainingShares = (sellerCert.num_shares || 0) - payload.num_shares;
-              if (remainingShares > 0) {
+              const remainingShares = Number(sellerCert.num_shares || 0) - payload.num_shares;
+              if (remainingShares > 0.0001) {
                 const newCertNum = getNextCertNum();
                 const [sellerNewCert] = await tx`
                   INSERT INTO stock_certificates (
