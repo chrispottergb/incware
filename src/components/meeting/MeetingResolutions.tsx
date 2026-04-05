@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { RESOLUTION_TYPES } from "@/lib/resolution-types";
 import { isLLCType } from "@/lib/entity-terminology";
 import BuySellWorkflow from "@/components/company/BuySellWorkflow";
+import BatchTransferDialog from "@/components/meeting/BatchTransferDialog";
 
 const TRANSFER_RESOLUTION_PURPOSES = [
   "Approve Transfer/Sale of Shares",
