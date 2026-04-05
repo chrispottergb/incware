@@ -72,7 +72,13 @@ Deno.serve(async (req: Request) => {
     const userId = userData.user.id;
 
     // Parse and validate payload
-    const payload: TransferPayload = await req.json();
+    const rawPayload = await req.json();
+    const payload: TransferPayload = {
+      ...rawPayload,
+      num_shares: Number(rawPayload.num_shares) || 0,
+      price_per_share: rawPayload.price_per_share != null ? Number(rawPayload.price_per_share) : null,
+      total_consideration: rawPayload.total_consideration != null ? Number(rawPayload.total_consideration) : null,
+    };
     if (!payload.company_id || !payload.transaction_type || !payload.seller_name || !payload.num_shares || payload.num_shares <= 0) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
@@ -236,15 +242,15 @@ Deno.serve(async (req: Request) => {
                   transferred_certificate_id, notes
                 ) VALUES (
                   ${payload.company_id}, 'cancellation', ${sellerSh.id}, ${payload.share_class},
-                  ${sellerCert.num_shares || 0}, ${payload.transaction_date}, ${payload.seller_name}, NULL,
+                  ${Number(sellerCert.num_shares || 0)}, ${payload.transaction_date}, ${payload.seller_name}, NULL,
                   ${sellerCert.id},
                   ${`Cancelled Cert #${sellerCert.certificate_number} — ${isRedemption ? 'treasury repurchase' : `partial transfer to ${payload.buyer_name}`}`}
                 )
               `;
 
               // Issue remainder cert to seller if they retain shares
-              const remainingShares = (sellerCert.num_shares || 0) - payload.num_shares;
-              if (remainingShares > 0) {
+              const remainingShares = Number(sellerCert.num_shares || 0) - payload.num_shares;
+              if (remainingShares > 0.0001) {
                 const newCertNum = getNextCertNum();
                 const [sellerNewCert] = await tx`
                   INSERT INTO stock_certificates (
@@ -292,7 +298,7 @@ Deno.serve(async (req: Request) => {
             );
             let buyerExistingShares = 0;
             if (buyerExistingCert) {
-              buyerExistingShares = buyerExistingCert.num_shares || 0;
+              buyerExistingShares = Number(buyerExistingCert.num_shares || 0);
               await tx`
                 UPDATE stock_certificates
                 SET status = 'cancelled', cancelled_date = ${payload.transaction_date},
@@ -330,7 +336,7 @@ Deno.serve(async (req: Request) => {
           );
           let existingShares = 0;
           if (buyerExistingCert) {
-            existingShares = buyerExistingCert.num_shares || 0;
+            existingShares = Number(buyerExistingCert.num_shares || 0);
             await tx`
               UPDATE stock_certificates
               SET status = 'cancelled', cancelled_date = ${payload.transaction_date},
