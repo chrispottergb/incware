@@ -76,6 +76,8 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   availableShares?: number | null;
   initialSeller?: { id: string; name: string };
+  meetingId?: string;
+  onTransactionComplete?: (txnId: string) => void;
 }
 
 export default function BuySellWorkflow({ companyId, companyName, entityType, open, onOpenChange, availableShares, initialSeller }: Props) {
