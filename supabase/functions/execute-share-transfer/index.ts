@@ -336,7 +336,7 @@ Deno.serve(async (req: Request) => {
           );
           let existingShares = 0;
           if (buyerExistingCert) {
-            existingShares = buyerExistingCert.num_shares || 0;
+            existingShares = Number(buyerExistingCert.num_shares || 0);
             await tx`
               UPDATE stock_certificates
               SET status = 'cancelled', cancelled_date = ${payload.transaction_date},
