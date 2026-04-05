@@ -432,7 +432,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
               </div>
               <div className="field-group">
                 <Label className="field-label">{term.numUnitsLabel}</Label>
-                <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
+                <Input className="h-8 text-sm" type="number" step="0.0001" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
               </div>
               <div className="field-group">
                 <Label className="field-label">{term.pricePerUnit}</Label>

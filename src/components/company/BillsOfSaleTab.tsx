@@ -80,7 +80,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
     mutationFn: async () => {
       const payload = {
         seller_name: form.seller_name, buyer_name: form.buyer_name,
-        num_shares: parseInt(form.num_shares) || 0, share_class: form.share_class,
+        num_shares: parseFloat(form.num_shares) || 0, share_class: form.share_class,
         price_per_share: form.price_per_share ? parseFloat(form.price_per_share) : null,
         total_price: form.total_price ? parseFloat(form.total_price) : null,
         sale_date: form.sale_date, description: form.description || null,

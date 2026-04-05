@@ -253,16 +253,16 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                         className="h-8 text-sm bg-muted"
                         readOnly
                         value={
-                          form.num_shares
-                            ? `${(
-                                (parseInt(form.num_shares) /
-                                  (totalActiveUnits -
-                                    (editId
-                                      ? certificates.find((c: any) => c.id === editId)?.num_shares || 0
-                                      : 0) +
-                                    (parseInt(form.num_shares) || 0))) *
-                                100
-                              ).toFixed(2)}%`
+                           form.num_shares
+                             ? `${(
+                                 (parseFloat(form.num_shares) /
+                                   (totalActiveUnits -
+                                     (editId
+                                       ? certificates.find((c: any) => c.id === editId)?.num_shares || 0
+                                       : 0) +
+                                     (parseFloat(form.num_shares) || 0))) *
+                                 100
+                               ).toFixed(2)}%`
                             : "—"
                         }
                       />
