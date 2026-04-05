@@ -268,7 +268,7 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
 
                         {/* Linked transaction indicator */}
                         {hasLinkedTransaction && (
-                          <div className="flex items-center gap-1.5 mt-2 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                          <div className="flex items-center gap-1.5 mt-2 text-[11px] text-primary font-medium">
                             <Link2 className="h-3.5 w-3.5" />
                             Transaction Linked
                           </div>
