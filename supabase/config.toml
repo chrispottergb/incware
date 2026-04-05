@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.poll-tax-return-job]
 verify_jwt = false
+
+[functions.execute-share-transfer]
+verify_jwt = false
