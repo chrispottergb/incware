@@ -62,6 +62,7 @@ const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string
 
 const CONSIDERATION_TYPES = [
   { value: "cash", label: "Cash" },
+  { value: "gift", label: "Gift" },
   { value: "property", label: "Property" },
   { value: "services", label: "Services" },
   { value: "promissory_note", label: "Promissory Note" },
