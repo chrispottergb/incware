@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Loader2, FileText, Pencil, Link2, ArrowRightLeft } from "lucide-react";
+import { Plus, Trash2, Loader2, FileText, Pencil, Link2, ArrowRightLeft, Layers } from "lucide-react";
 import { toast } from "sonner";
 
 import { RESOLUTION_TYPES } from "@/lib/resolution-types";
