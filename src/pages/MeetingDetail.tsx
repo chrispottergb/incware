@@ -942,7 +942,14 @@ export default function MeetingDetail() {
                 fileName={`resolutions-${meetingFileName}`}
               />
             </div>
-            <MeetingResolutions meetingId={meeting.id} entityType={company?.entity_type || "Corporation"} meetingType={meeting.meeting_type} />
+            <MeetingResolutions
+              meetingId={meeting.id}
+              entityType={company?.entity_type || "Corporation"}
+              meetingType={meeting.meeting_type}
+              companyId={id!}
+              companyName={company?.name}
+              availableShares={availableShares}
+            />
           </div>
         </TabsContent>
         <TabsContent value="benefits" className="mt-5">
