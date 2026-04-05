@@ -308,7 +308,7 @@ Deno.serve(async (req: Request) => {
               `;
 
               // Issue remainder cert to seller if they retain shares
-              const remainingShares = Number(sellerCert.num_shares || 0) - payload.num_shares;
+              const remainingShares = subtractNumeric(sellerCert.num_shares, payload.num_shares);
               if (remainingShares > 0.0001) {
                 const newCertNum = getNextCertNum();
                 const [sellerNewCert] = await tx`
