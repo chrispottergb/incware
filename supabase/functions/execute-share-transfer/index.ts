@@ -72,7 +72,13 @@ Deno.serve(async (req: Request) => {
     const userId = userData.user.id;
 
     // Parse and validate payload
-    const payload: TransferPayload = await req.json();
+    const rawPayload = await req.json();
+    const payload: TransferPayload = {
+      ...rawPayload,
+      num_shares: Number(rawPayload.num_shares) || 0,
+      price_per_share: rawPayload.price_per_share != null ? Number(rawPayload.price_per_share) : null,
+      total_consideration: rawPayload.total_consideration != null ? Number(rawPayload.total_consideration) : null,
+    };
     if (!payload.company_id || !payload.transaction_type || !payload.seller_name || !payload.num_shares || payload.num_shares <= 0) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
