@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { generateBillOfSalePdf } from "@/lib/bill-of-sale-pdf";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,9 +77,11 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   availableShares?: number | null;
   initialSeller?: { id: string; name: string };
+  meetingId?: string;
+  onTransactionComplete?: (txnId: string) => void;
 }
 
-export default function BuySellWorkflow({ companyId, companyName, entityType, open, onOpenChange, availableShares, initialSeller }: Props) {
+export default function BuySellWorkflow({ companyId, companyName, entityType, open, onOpenChange, availableShares, initialSeller, meetingId, onTransactionComplete }: Props) {
   const queryClient = useQueryClient();
   const term = getTerminology(entityType);
   const isLLC = isLLCType(entityType);
@@ -189,271 +192,48 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
 
   const canProceedStep1 = form.seller_name && (isRedemption || form.buyer_name) && numShares > 0 && form.transaction_date && !validationError;
 
-  // Helper to get next cert number accounting for certs we'll create during this save
-  const getNextCertNum = (offset = 0) => {
-    const maxExisting = certificates.length > 0
-      ? Math.max(...certificates.map((c: any) => c.certificate_number))
-      : 0;
-    return maxExisting + 1 + offset;
-  };
+
+
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      // For redemption, buyer is "Treasury"
       const effectiveBuyerName = isRedemption ? (companyName || "Treasury") : form.buyer_name;
 
-      // 1. Insert share_transaction
-      const { data: txn, error: txnErr } = await supabase.from("share_transactions").insert({
-        company_id: companyId,
-        transaction_type: form.transaction_type,
-        shareholder_id: form.seller_id || null, // For redemption, link to the seller
-        share_class: form.share_class,
-        num_shares: numShares,
-        price_per_share: pricePerShare || null,
-        total_consideration: totalConsideration,
-        consideration_type: form.consideration_type,
-        transaction_date: form.transaction_date,
-        from_shareholder: form.seller_name,
-        to_shareholder: isRedemption ? "Treasury" : form.buyer_name,
-        par_value: null as any, // will be updated below after certs are created
-      }).select("id").single();
-      if (txnErr) throw txnErr;
-
-      // 2. Insert bill_of_sale with transaction link
-      const { data: bill, error: billErr } = await supabase.from("bills_of_sale").insert({
-        company_id: companyId,
-        seller_name: form.seller_name,
-        buyer_name: effectiveBuyerName,
-        share_class: form.share_class,
-        num_shares: numShares,
-        price_per_share: pricePerShare || null,
-        total_price: totalConsideration,
-        sale_date: form.transaction_date,
-        shareholder_id: form.seller_id || null,
-        transaction_id: txn.id,
-      }).select("id").single();
-      if (billErr) throw billErr;
-
-      // 3. Update transaction with bill_of_sale_id reverse link
-      await supabase.from("share_transactions")
-        .update({ bill_of_sale_id: bill.id })
-        .eq("id", txn.id);
-
-      // 4. Auto-create buyer as shareholder if they don't exist (not for redemption)
-      let buyerShId = form.buyer_id || null;
-      let buyerSh = !isRedemption ? shareholders.find(s => s.name.toLowerCase().trim() === form.buyer_name.toLowerCase().trim()) : null;
-      if (!isRedemption && !buyerSh && form.buyer_name.trim()) {
-        const { data: newSh, error: newShErr } = await supabase.from("shareholders").insert({
+      // Call atomic edge function
+      const { data: result, error: fnErr } = await supabase.functions.invoke("execute-share-transfer", {
+        body: {
           company_id: companyId,
-          name: form.buyer_name.trim(),
-          status: "active",
-        }).select("id, name").single();
-        if (newShErr) {
-          console.error("Failed to auto-create buyer shareholder:", newShErr);
-        } else {
-          buyerSh = newSh;
-          buyerShId = newSh.id;
-        }
-      } else if (buyerSh) {
-        buyerShId = buyerSh.id;
-      }
+          company_name: companyName,
+          entity_type: entityType,
+          transaction_type: form.transaction_type,
+          seller_name: form.seller_name,
+          seller_id: form.seller_id || null,
+          buyer_name: form.buyer_name,
+          buyer_id: form.buyer_id || null,
+          share_class: form.share_class,
+          num_shares: numShares,
+          price_per_share: pricePerShare || null,
+          total_consideration: totalConsideration,
+          consideration_type: form.consideration_type,
+          transaction_date: form.transaction_date,
+          meeting_id: meetingId || null,
+        },
+      });
 
-      // 5. For transfers/issuances, update transaction to link shareholder_id to buyer
-      if (!isRedemption && buyerShId) {
-        await supabase.from("share_transactions")
-          .update({ shareholder_id: buyerShId })
-          .eq("id", txn.id);
-      }
+      if (fnErr) throw new Error(fnErr.message || "Transaction failed");
+      if (result?.error) throw new Error(result.error);
 
-      // 6. For LLCs, recalculate ownership percentages
-      if (isLLC) {
-        await supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId });
-      }
+      const { transactionId, billId, certActions } = result;
 
-      // 7. Certificate lifecycle (applies to both corps AND LLCs — cancel-and-reissue pattern)
-      const certActions: string[] = [];
-      let certOffset = 0;
-
-      {
-        // Find seller's active cert for this share class
-        const sellerSh = shareholders.find(s => s.name.toLowerCase().trim() === form.seller_name.toLowerCase().trim());
-
-        if (isTransfer || isRedemption) {
-          if (sellerSh) {
-            const sellerCert = certificates.find(
-              (c: any) => c.shareholder_id === sellerSh.id && c.share_class === form.share_class && c.status === "active"
-            );
-            if (sellerCert) {
-              // Cancel seller's active certificate
-              await supabase.from("stock_certificates").update({
-                status: "cancelled",
-                cancelled_date: form.transaction_date,
-                cancelled_reason: isRedemption
-                  ? `Treasury repurchase of ${numShares} shares`
-                  : `Transfer of ${numShares} shares to ${form.buyer_name}`,
-              }).eq("id", (sellerCert as any).id);
-              certActions.push(`Cancelled Cert #${(sellerCert as any).certificate_number} (${form.seller_name})`);
-
-              // Create a Cancellation ledger entry for the seller's old cert
-              await supabase.from("share_transactions").insert({
-                company_id: companyId,
-                transaction_type: "cancellation",
-                shareholder_id: sellerSh.id,
-                share_class: form.share_class,
-                num_shares: (sellerCert as any).num_shares || 0,
-                transaction_date: form.transaction_date,
-                from_shareholder: form.seller_name,
-                to_shareholder: null,
-                certificate_id: null,
-                transferred_certificate_id: (sellerCert as any).id,
-                notes: `Cancelled Cert #${(sellerCert as any).certificate_number} — ${isRedemption ? 'treasury repurchase' : `partial transfer to ${form.buyer_name}`}`,
-              });
-
-              // Issue new cert with reduced shares if seller retains any
-              const sellerHoldings = (sellerCert as any).num_shares || 0;
-              const remainingShares = sellerHoldings - numShares;
-              if (remainingShares > 0) {
-                const newCertNum = getNextCertNum(certOffset);
-                certOffset++;
-                const { data: sellerNewCert } = await supabase.from("stock_certificates").insert({
-                  company_id: companyId,
-                  certificate_number: newCertNum,
-                  shareholder_id: sellerSh.id,
-                  share_class: form.share_class,
-                  num_shares: remainingShares,
-                  issue_date: form.transaction_date,
-                  par_value: (sellerCert as any).par_value,
-                }).select("id").single();
-
-                // Create a reissuance ledger entry for the seller's new cert
-                await supabase.from("share_transactions").insert({
-                  company_id: companyId,
-                  transaction_type: "reissuance",
-                  shareholder_id: sellerSh.id,
-                  share_class: form.share_class,
-                  num_shares: remainingShares,
-                  transaction_date: form.transaction_date,
-                  from_shareholder: null,
-                  to_shareholder: form.seller_name,
-                  certificate_id: sellerNewCert?.id || null,
-                  notes: `Reissued Cert #${newCertNum} to ${form.seller_name} for remaining ${remainingShares} shares after transfer`,
-                });
-
-                certActions.push(`Issued Cert #${newCertNum} to ${form.seller_name} for ${remainingShares} shares`);
-              } else {
-                // Mark shareholder as inactive if they transferred all shares
-                await supabase.from("shareholders").update({ status: "inactive" }).eq("id", sellerSh.id);
-                certActions.push(`${form.seller_name} marked as former shareholder (0 shares)`);
-              }
-            }
-          }
-
-          // Issue new cert to buyer (only for transfers, not redemptions)
-          if (isTransfer && buyerSh) {
-            // Cancel any existing active cert for buyer in this share class (one active cert rule)
-            const buyerExistingCert = certificates.find(
-              (c: any) => c.shareholder_id === buyerSh!.id && c.share_class === form.share_class && c.status === "active"
-            );
-            let buyerExistingShares = 0;
-            if (buyerExistingCert) {
-              buyerExistingShares = (buyerExistingCert as any).num_shares || 0;
-              await supabase.from("stock_certificates").update({
-                status: "cancelled",
-                cancelled_date: form.transaction_date,
-                cancelled_reason: `Consolidated — received ${numShares} shares from ${form.seller_name}`,
-              }).eq("id", (buyerExistingCert as any).id);
-              certActions.push(`Cancelled Cert #${(buyerExistingCert as any).certificate_number} (${form.buyer_name}) for consolidation`);
-            }
-
-            const buyerCertNum = getNextCertNum(certOffset);
-            certOffset++;
-            await supabase.from("stock_certificates").insert({
-              company_id: companyId,
-              certificate_number: buyerCertNum,
-              shareholder_id: buyerSh.id,
-              share_class: form.share_class,
-              num_shares: numShares + buyerExistingShares,
-              issue_date: form.transaction_date,
-            });
-            certActions.push(`Issued Cert #${buyerCertNum} to ${form.buyer_name} for ${(numShares + buyerExistingShares).toLocaleString()} shares`);
-          }
-
-          // Redemption: shares return to treasury, no cert issued to treasury
-          if (isRedemption) {
-            certActions.push(`${numShares.toLocaleString()} ${term.shareUnit.toLowerCase()} returned to treasury`);
-          }
-        }
-
-        // For initial issuance / contribution, auto-create certificate
-        if (isIssuance && buyerSh) {
-          // Cancel any existing active cert for buyer in this share class (one active cert rule)
-          const buyerExistingCert = certificates.find(
-            (c: any) => c.shareholder_id === buyerSh!.id && c.share_class === form.share_class && c.status === "active"
-          );
-          let existingShares = 0;
-          if (buyerExistingCert) {
-            existingShares = (buyerExistingCert as any).num_shares || 0;
-            await supabase.from("stock_certificates").update({
-              status: "cancelled",
-              cancelled_date: form.transaction_date,
-              cancelled_reason: `Consolidated — additional issuance of ${numShares} shares`,
-            }).eq("id", (buyerExistingCert as any).id);
-            certActions.push(`Cancelled Cert #${(buyerExistingCert as any).certificate_number} for consolidation`);
-          }
-
-          const issueCertNum = getNextCertNum(certOffset);
-          certOffset++;
-          await supabase.from("stock_certificates").insert({
-            company_id: companyId,
-            certificate_number: issueCertNum,
-            shareholder_id: buyerSh.id,
-            share_class: form.share_class,
-            num_shares: numShares + existingShares,
-            issue_date: form.transaction_date,
-          });
-          certActions.push(`Issued Cert #${issueCertNum} to ${form.buyer_name} for ${(numShares + existingShares).toLocaleString()} ${term.shareUnit.toLowerCase()}`);
-        }
-      }
-
-      // 8. Update capital account balance for LLC members
-      if (isLLC) {
-        const capitalDelta = totalConsideration || 0;
-        if (isIssuance && buyerShId && capitalDelta > 0) {
-          // Contribution increases capital account
-          const { data: sh } = await supabase.from("shareholders").select("capital_account_balance").eq("id", buyerShId).single();
-          const currentBalance = Number((sh as any)?.capital_account_balance || 0);
-          await supabase.from("shareholders").update({ capital_account_balance: currentBalance + capitalDelta } as any).eq("id", buyerShId);
-        }
-        if (isRedemption && form.seller_id && capitalDelta > 0) {
-          // Redemption decreases capital account
-          const { data: sh } = await supabase.from("shareholders").select("capital_account_balance").eq("id", form.seller_id).single();
-          const currentBalance = Number((sh as any)?.capital_account_balance || 0);
-          await supabase.from("shareholders").update({ capital_account_balance: currentBalance - capitalDelta } as any).eq("id", form.seller_id);
-        }
-      }
-
-      // Update transaction with denormalized cert numbers for display
-      const issuedCertNum = certActions.find(a => a.includes("Issued Cert #"))?.match(/#(\d+)/)?.[1];
-      const surrenderedCertNum = certActions.find(a => a.includes("Cancelled Cert #"))?.match(/#(\d+)/)?.[1];
-      if (issuedCertNum || surrenderedCertNum) {
-        await supabase.from("share_transactions").update({
-          issued_certificate_number: issuedCertNum ? parseInt(issuedCertNum) : null,
-          surrendered_certificate_number: surrenderedCertNum ? parseInt(surrenderedCertNum) : null,
-        } as any).eq("id", txn.id);
-      }
-
-      // Treasury logic: flag buyer shareholder as treasury for redemptions
-      if (isRedemption) {
-        const treasurySh = shareholders.find(s => s.name.toLowerCase().trim() === (companyName || "treasury").toLowerCase().trim());
-        if (treasurySh) {
-          await supabase.from("shareholders").update({ is_treasury: true } as any).eq("id", treasurySh.id);
-        }
-      }
-
-      setCertsSummary(certActions);
-      setSavedIds({ transactionId: txn.id, billId: bill.id });
+      setCertsSummary(certActions || []);
+      setSavedIds({ transactionId, billId });
       setStep(3);
+
+      // Notify parent if this was triggered from a meeting resolution
+      if (onTransactionComplete && transactionId) {
+        onTransactionComplete(transactionId);
+      }
 
       // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
@@ -464,9 +244,60 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
       queryClient.invalidateQueries({ queryKey: ["company", companyId] });
 
       toast.success("Transaction recorded successfully!");
+
+      // Auto-generate and archive Bill of Sale PDF (non-blocking)
+      try {
+        const sellerLast = form.seller_name.trim().split(/\s+/).pop() || "Seller";
+        const buyerLast = effectiveBuyerName.trim().split(/\s+/).pop() || "Buyer";
+        const pdfFilename = `Bill_of_Sale_${sellerLast}_to_${buyerLast}_${form.transaction_date}.pdf`;
+
+        const doc = generateBillOfSalePdf({
+          companyName: companyName || "",
+          sellerName: form.seller_name,
+          buyerName: effectiveBuyerName,
+          numShares,
+          shareClass: form.share_class,
+          pricePerShare: pricePerShare || null,
+          totalPrice: totalConsideration,
+          saleDate: form.transaction_date,
+          considerationType: form.consideration_type,
+        });
+
+        const pdfBlob = doc.output("blob");
+        const filePath = `${companyId}/${pdfFilename}`;
+
+        const { error: uploadErr } = await supabase.storage
+          .from("generated-documents")
+          .upload(filePath, pdfBlob, { contentType: "application/pdf", upsert: true });
+
+        if (uploadErr) {
+          console.warn("Bill of Sale PDF upload failed:", uploadErr);
+          toast.warning("Transaction saved. Bill of Sale PDF could not be archived — you can regenerate it from the Bills of Sale tab.");
+        } else {
+          // Get the public URL and insert into company_documents
+          const { data: urlData } = supabase.storage
+            .from("generated-documents")
+            .getPublicUrl(filePath);
+
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase.from("company_documents").insert({
+              company_id: companyId,
+              user_id: user.id,
+              file_name: pdfFilename,
+              file_path: urlData.publicUrl,
+              file_type: "application/pdf",
+              category: "Agreements",
+              notes: `Auto-generated Bill of Sale: ${form.seller_name} → ${effectiveBuyerName}, ${numShares} ${form.share_class}`,
+            });
+          }
+        }
+      } catch (pdfErr) {
+        console.warn("Bill of Sale PDF generation failed:", pdfErr);
+      }
     } catch (err: any) {
       console.error("BuySellWorkflow save error:", err);
-      toast.error(err.message || "Failed to save transaction");
+      toast.error(err.message || "Failed to save transaction — all changes rolled back. Please retry.");
     } finally {
       setSaving(false);
     }
