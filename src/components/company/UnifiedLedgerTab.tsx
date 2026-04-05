@@ -527,7 +527,7 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label"># Units</Label>
-                    <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
+                    <Input className="h-8 text-sm" type="number" step="0.0001" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Price/Unit</Label>
