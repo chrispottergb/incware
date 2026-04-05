@@ -242,7 +242,7 @@ Deno.serve(async (req: Request) => {
                   transferred_certificate_id, notes
                 ) VALUES (
                   ${payload.company_id}, 'cancellation', ${sellerSh.id}, ${payload.share_class},
-                  ${sellerCert.num_shares || 0}, ${payload.transaction_date}, ${payload.seller_name}, NULL,
+                  ${Number(sellerCert.num_shares || 0)}, ${payload.transaction_date}, ${payload.seller_name}, NULL,
                   ${sellerCert.id},
                   ${`Cancelled Cert #${sellerCert.certificate_number} — ${isRedemption ? 'treasury repurchase' : `partial transfer to ${payload.buyer_name}`}`}
                 )
