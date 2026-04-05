@@ -80,7 +80,7 @@ interface Props {
   onTransactionComplete?: (txnId: string) => void;
 }
 
-export default function BuySellWorkflow({ companyId, companyName, entityType, open, onOpenChange, availableShares, initialSeller }: Props) {
+export default function BuySellWorkflow({ companyId, companyName, entityType, open, onOpenChange, availableShares, initialSeller, meetingId, onTransactionComplete }: Props) {
   const queryClient = useQueryClient();
   const term = getTerminology(entityType);
   const isLLC = isLLCType(entityType);
