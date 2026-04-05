@@ -192,13 +192,8 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
 
   const canProceedStep1 = form.seller_name && (isRedemption || form.buyer_name) && numShares > 0 && form.transaction_date && !validationError;
 
-  // Helper to get next cert number accounting for certs we'll create during this save
-  const getNextCertNum = (offset = 0) => {
-    const maxExisting = certificates.length > 0
-      ? Math.max(...certificates.map((c: any) => c.certificate_number))
-      : 0;
-    return maxExisting + 1 + offset;
-  };
+
+
 
   const handleSave = async () => {
     setSaving(true);
