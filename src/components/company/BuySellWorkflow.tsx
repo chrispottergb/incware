@@ -169,7 +169,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
     }
   }, [form.transaction_type]);
 
-  const numShares = parseInt(form.num_shares) || 0;
+  const numShares = parseFloat(form.num_shares) || 0;
   const pricePerShare = parseFloat(form.price_per_share) || 0;
   const autoTotal = numShares * pricePerShare;
   const totalConsideration = form.total_consideration ? parseFloat(form.total_consideration) : (autoTotal || null);
