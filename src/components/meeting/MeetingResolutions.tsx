@@ -268,7 +268,8 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
               {resolutions.map((r) => {
                 const match = resolutionOptions.find((o) => o.label === r.purpose);
                 const hasLinkedTransaction = !!(r as any).transaction_id;
-                const showTransferButton = isTransferPurpose(r.purpose || "") && !hasLinkedTransaction && companyId;
+                // Only show individual "Complete Transaction" if there's exactly 1 unlinked transfer resolution
+                const showTransferButton = isTransferPurpose(r.purpose || "") && !hasLinkedTransaction && companyId && unlinkedTransferResolutions.length === 1;
                 return (
                   <div key={r.id} className="rounded-lg border border-border p-4">
                     <div className="flex items-start justify-between gap-4">
