@@ -345,6 +345,72 @@ export default function MeetingsTab({ companyId, company }: Props) {
         }
       }
 
+      // Auto-populate directors for Board of Directors meetings (Special or Annual for corps)
+      const isDirectorMeeting =
+        form.meeting_type === "Special Meeting of Board of Directors" ||
+        (form.meeting_type === "Annual Meeting" && !isLLCType(company.entity_type));
+      if (newMeeting && isDirectorMeeting) {
+        const { data: directors } = await supabase
+          .from("directors")
+          .select("name, added_date")
+          .eq("company_id", companyId);
+
+        if (directors && directors.length > 0) {
+          const meetingDate = form.meeting_date;
+          const eligible = directors.filter((d) => {
+            if (d.added_date && d.added_date > meetingDate) return false;
+            return true;
+          });
+          const dirRows = eligible.map((d) => ({
+            meeting_id: newMeeting.id,
+            director_name: d.name,
+          }));
+          if (dirRows.length > 0) {
+            await supabase.from("meeting_directors").insert(dirRows);
+          }
+        }
+      }
+
+      // Auto-populate members for LLC Annual Meetings
+      if (newMeeting && form.meeting_type === "Annual Meeting" && isLLCType(company.entity_type)) {
+        const { data: members } = await supabase
+          .from("shareholders")
+          .select("id, name, is_treasury, status, ownership_percentage")
+          .eq("company_id", companyId);
+
+        const { data: certs } = await supabase
+          .from("stock_certificates")
+          .select("shareholder_id, num_shares, share_class, status")
+          .eq("company_id", companyId)
+          .eq("status", "active");
+
+        if (members && members.length > 0) {
+          const eligible = members.filter((m) => {
+            if (m.is_treasury) return false;
+            if (m.status && m.status !== "active") return false;
+            return true;
+          });
+          const memberRows = eligible.map((m) => {
+            const memberCerts = (certs || []).filter((c) => c.shareholder_id === m.id);
+            const units = memberCerts
+              .filter((c) => c.share_class === "Common" || c.share_class === "Membership Units")
+              .reduce((sum, c) => sum + (c.num_shares || 0), 0);
+            const interest = memberCerts
+              .filter((c) => c.share_class === "Preferred" || c.share_class === "Membership Interest")
+              .reduce((sum, c) => sum + (c.num_shares || 0), 0);
+            return {
+              meeting_id: newMeeting.id,
+              shareholder_name: m.name,
+              common_shares: units,
+              preferred_shares: interest || m.ownership_percentage || null,
+            };
+          });
+          if (memberRows.length > 0) {
+            await supabase.from("meeting_shareholders").insert(memberRows);
+          }
+        }
+      }
+
       return newMeeting;
     },
     onSuccess: (newMeeting) => {
