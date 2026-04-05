@@ -103,7 +103,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
       const ssnValue = form.ssn_ein?.trim() || null;
       let shareholderId = editId;
 
-      const numUnits = parseInt(form.num_units) || 0;
+      const numUnits = parseFloat(form.num_units) || 0;
       const pricePerUnit = parseFloat(form.price_per_unit) || 0;
       const capitalAccount = parseFloat(form.capital_account) || 0;
 
@@ -394,7 +394,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                       </div>
                       <div className="field-group col-span-4">
                         <Label className="field-label">{t.isLLC ? "Units" : "Shares"}</Label>
-                        <Input className="h-7 text-sm" type="number" min="0" value={form.num_units} onChange={(e) => setForm(p => ({ ...p, num_units: e.target.value }))} placeholder="0" />
+                        <Input className="h-7 text-sm" type="number" step="0.0001" min="0" value={form.num_units} onChange={(e) => setForm(p => ({ ...p, num_units: e.target.value }))} placeholder="0" />
                       </div>
                       <div className="field-group col-span-4">
                         <Label className="field-label">Price / {t.isLLC ? "Unit" : "Share"}</Label>

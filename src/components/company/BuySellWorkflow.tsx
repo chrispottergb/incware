@@ -169,7 +169,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
     }
   }, [form.transaction_type]);
 
-  const numShares = parseInt(form.num_shares) || 0;
+  const numShares = parseFloat(form.num_shares) || 0;
   const pricePerShare = parseFloat(form.price_per_share) || 0;
   const autoTotal = numShares * pricePerShare;
   const totalConsideration = form.total_consideration ? parseFloat(form.total_consideration) : (autoTotal || null);
@@ -432,7 +432,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
               </div>
               <div className="field-group">
                 <Label className="field-label">{term.numUnitsLabel}</Label>
-                <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
+                <Input className="h-8 text-sm" type="number" step="0.0001" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
               </div>
               <div className="field-group">
                 <Label className="field-label">{term.pricePerUnit}</Label>

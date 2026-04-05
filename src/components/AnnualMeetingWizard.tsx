@@ -745,7 +745,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
           return {
             meeting_id: mid,
             shareholder_name: m.name,
-            common_shares: m.units ? parseInt(m.units) : null,
+            common_shares: m.units ? parseFloat(m.units) : null,
             preferred_shares: m.interestPct ? parseFloat(m.interestPct) : null,
             distribution_amount: dist?.amount ? parseFloat(dist.amount.replace(/[,$]/g, "")) : null,
           };

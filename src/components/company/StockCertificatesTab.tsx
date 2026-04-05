@@ -108,7 +108,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
         certificate_number: parseInt(form.certificate_number) || nextCertNum,
         shareholder_id: form.shareholder_id,
         share_class: form.share_class,
-        num_shares: parseInt(form.num_shares) || 0,
+        num_shares: parseFloat(form.num_shares) || 0,
         par_value: t.isLLC ? null : (form.par_value_type === "no_par" ? null : (form.par_value ? parseInt(form.par_value) : null)),
         issue_date: form.issue_date || null,
       };
@@ -243,7 +243,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                     </div>
                     <div className="field-group">
                       <Label className="field-label">{t.numUnitsLabel}</Label>
-                      <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
+                      <Input className="h-8 text-sm" type="number" step="0.0001" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
                     </div>
                   </div>
                   {t.isLLC && (
@@ -253,16 +253,16 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                         className="h-8 text-sm bg-muted"
                         readOnly
                         value={
-                          form.num_shares
-                            ? `${(
-                                (parseInt(form.num_shares) /
-                                  (totalActiveUnits -
-                                    (editId
-                                      ? certificates.find((c: any) => c.id === editId)?.num_shares || 0
-                                      : 0) +
-                                    (parseInt(form.num_shares) || 0))) *
-                                100
-                              ).toFixed(2)}%`
+                           form.num_shares
+                             ? `${(
+                                 (parseFloat(form.num_shares) /
+                                   (totalActiveUnits -
+                                     (editId
+                                       ? certificates.find((c: any) => c.id === editId)?.num_shares || 0
+                                       : 0) +
+                                     (parseFloat(form.num_shares) || 0))) *
+                                 100
+                               ).toFixed(2)}%`
                             : "—"
                         }
                       />
