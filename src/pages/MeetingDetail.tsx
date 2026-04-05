@@ -99,7 +99,7 @@ export default function MeetingDetail() {
   });
 
   // Share/unit calculations for roster auto-population
-  const { shareholderHoldings, totalIssuedShares } = useShareCalculations(id!);
+  const { shareholderHoldings, totalIssuedShares, availableShares } = useShareCalculations(id!);
 
   // Build enriched roster with holdings + ownership %
   const enrichedShareholderRoster = useMemo(() => {
