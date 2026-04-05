@@ -329,6 +329,24 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
               })}
             </div>
           )}
+
+          {/* Batch transfer button */}
+          {showBatchButton && (
+            <div className="mt-4 pt-3 border-t border-border">
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={() => setBatchOpen(true)}
+              >
+                <Layers className="mr-2 h-4 w-4" />
+                Execute Batch Transfer ({unlinkedTransferResolutions.length} transfers)
+              </Button>
+              <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
+                Process all {unlinkedTransferResolutions.length} unlinked transfer resolutions in a single atomic operation
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
