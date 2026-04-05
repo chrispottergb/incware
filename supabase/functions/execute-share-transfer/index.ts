@@ -24,6 +24,7 @@ interface TransferPayload {
 }
 
 const LLC_TYPES = ["LLC", "Single Member LLC", "LLC-S"];
+const NUMERIC_SCALE = 10000;
 
 function isLLCType(entityType: string): boolean {
   return LLC_TYPES.includes(entityType);
@@ -37,6 +38,34 @@ const ISSUANCE_TYPES = [
   "initial_issuance", "initial_contribution", "additional_contribution",
 ];
 const REDEMPTION_TYPES = ["redemption", "dissociation_buyout"];
+
+function toNumeric(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const normalized = typeof value === "number"
+    ? value
+    : Number(String(value).replace(/,/g, "").trim());
+
+  if (!Number.isFinite(normalized)) {
+    return null;
+  }
+
+  return Math.round(normalized * NUMERIC_SCALE) / NUMERIC_SCALE;
+}
+
+function addNumeric(a: unknown, b: unknown): number {
+  const left = Math.round((toNumeric(a) ?? 0) * NUMERIC_SCALE);
+  const right = Math.round((toNumeric(b) ?? 0) * NUMERIC_SCALE);
+  return (left + right) / NUMERIC_SCALE;
+}
+
+function subtractNumeric(a: unknown, b: unknown): number {
+  const left = Math.round((toNumeric(a) ?? 0) * NUMERIC_SCALE);
+  const right = Math.round((toNumeric(b) ?? 0) * NUMERIC_SCALE);
+  return (left - right) / NUMERIC_SCALE;
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -73,13 +102,43 @@ Deno.serve(async (req: Request) => {
 
     // Parse and validate payload
     const rawPayload = await req.json();
+    const parsedNumShares = toNumeric(rawPayload.num_shares);
+    const parsedPricePerShare = rawPayload.price_per_share === null || rawPayload.price_per_share === undefined || rawPayload.price_per_share === ""
+      ? null
+      : toNumeric(rawPayload.price_per_share);
+    const parsedTotalConsideration = rawPayload.total_consideration === null || rawPayload.total_consideration === undefined || rawPayload.total_consideration === ""
+      ? null
+      : toNumeric(rawPayload.total_consideration);
+
+    if (parsedNumShares === null || parsedNumShares <= 0) {
+      return new Response(JSON.stringify({ error: "Invalid share amount" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (rawPayload.price_per_share !== null && rawPayload.price_per_share !== undefined && rawPayload.price_per_share !== "" && parsedPricePerShare === null) {
+      return new Response(JSON.stringify({ error: "Invalid price per share" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (rawPayload.total_consideration !== null && rawPayload.total_consideration !== undefined && rawPayload.total_consideration !== "" && parsedTotalConsideration === null) {
+      return new Response(JSON.stringify({ error: "Invalid total consideration" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const payload: TransferPayload = {
       ...rawPayload,
-      num_shares: Number(rawPayload.num_shares) || 0,
-      price_per_share: rawPayload.price_per_share != null ? Number(rawPayload.price_per_share) : null,
-      total_consideration: rawPayload.total_consideration != null ? Number(rawPayload.total_consideration) : null,
+      num_shares: parsedNumShares,
+      price_per_share: parsedPricePerShare,
+      total_consideration: parsedTotalConsideration,
     };
-    if (!payload.company_id || !payload.transaction_type || !payload.seller_name || !payload.num_shares || payload.num_shares <= 0) {
+
+    if (!payload.company_id || !payload.transaction_type || !payload.seller_name) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
