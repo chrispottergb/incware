@@ -157,6 +157,18 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
     }
   }, [open, initialSeller]);
 
+  // Auto-set gift defaults when gift transaction type is selected
+  useEffect(() => {
+    if (form.transaction_type === "gift") {
+      setForm(p => ({
+        ...p,
+        price_per_share: "0",
+        total_consideration: "0",
+        consideration_type: "gift",
+      }));
+    }
+  }, [form.transaction_type]);
+
   const numShares = parseInt(form.num_shares) || 0;
   const pricePerShare = parseFloat(form.price_per_share) || 0;
   const autoTotal = numShares * pricePerShare;
