@@ -363,6 +363,19 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
           onTransactionComplete={handleTransactionComplete}
         />
       )}
+
+      {/* Batch transfer dialog */}
+      {companyId && batchResolutionIds.length >= 2 && (
+        <BatchTransferDialog
+          companyId={companyId}
+          companyName={companyName}
+          entityType={entityType}
+          meetingId={meetingId}
+          resolutionIds={batchResolutionIds}
+          open={batchOpen}
+          onOpenChange={setBatchOpen}
+        />
+      )}
     </>
   );
 }
