@@ -2248,6 +2248,7 @@ export type Database = {
           meeting_id: string
           purpose: string
           resolution_text: string
+          transaction_id: string | null
         }
         Insert: {
           created_at?: string
@@ -2255,6 +2256,7 @@ export type Database = {
           meeting_id: string
           purpose: string
           resolution_text: string
+          transaction_id?: string | null
         }
         Update: {
           created_at?: string
@@ -2262,6 +2264,7 @@ export type Database = {
           meeting_id?: string
           purpose?: string
           resolution_text?: string
+          transaction_id?: string | null
         }
         Relationships: [
           {
@@ -2269,6 +2272,13 @@ export type Database = {
             columns: ["meeting_id"]
             isOneToOne: false
             referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_resolutions_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "share_transactions"
             referencedColumns: ["id"]
           },
         ]
@@ -2830,6 +2840,7 @@ export type Database = {
           from_shareholder: string | null
           id: string
           issued_certificate_number: number | null
+          meeting_id: string | null
           notes: string | null
           num_shares: number
           par_value: number | null
@@ -2852,6 +2863,7 @@ export type Database = {
           from_shareholder?: string | null
           id?: string
           issued_certificate_number?: number | null
+          meeting_id?: string | null
           notes?: string | null
           num_shares?: number
           par_value?: number | null
@@ -2874,6 +2886,7 @@ export type Database = {
           from_shareholder?: string | null
           id?: string
           issued_certificate_number?: number | null
+          meeting_id?: string | null
           notes?: string | null
           num_shares?: number
           par_value?: number | null
@@ -2907,6 +2920,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "share_transactions_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
             referencedColumns: ["id"]
           },
           {
