@@ -394,7 +394,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                       </div>
                       <div className="field-group col-span-4">
                         <Label className="field-label">{t.isLLC ? "Units" : "Shares"}</Label>
-                        <Input className="h-7 text-sm" type="number" min="0" value={form.num_units} onChange={(e) => setForm(p => ({ ...p, num_units: e.target.value }))} placeholder="0" />
+                        <Input className="h-7 text-sm" type="number" step="0.0001" min="0" value={form.num_units} onChange={(e) => setForm(p => ({ ...p, num_units: e.target.value }))} placeholder="0" />
                       </div>
                       <div className="field-group col-span-4">
                         <Label className="field-label">Price / {t.isLLC ? "Unit" : "Share"}</Label>
