@@ -487,7 +487,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 </div>
                 <div className="field-group">
                   <Label className="field-label">{term.numUnitsLabel}</Label>
-                  <Input className="h-8 text-sm" type="number" value={form.num_shares} onChange={(e) => {
+                  <Input className="h-8 text-sm" type="number" step="0.0001" value={form.num_shares} onChange={(e) => {
                     const val = e.target.value;
                     setForm(p => ({ ...p, num_shares: val, total_consideration: updateTotal(val, p.price_per_share) || p.total_consideration }));
                   }} required />
