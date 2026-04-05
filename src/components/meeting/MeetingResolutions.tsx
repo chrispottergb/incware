@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -20,12 +20,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Loader2, FileText, Pencil, Link2, ArrowRightLeft } from "lucide-react";
+import { Plus, Trash2, Loader2, FileText, Pencil, Link2, ArrowRightLeft, Layers } from "lucide-react";
 import { toast } from "sonner";
 
 import { RESOLUTION_TYPES } from "@/lib/resolution-types";
 import { isLLCType } from "@/lib/entity-terminology";
 import BuySellWorkflow from "@/components/company/BuySellWorkflow";
+import BatchTransferDialog from "@/components/meeting/BatchTransferDialog";
 
 const TRANSFER_RESOLUTION_PURPOSES = [
   "Approve Transfer/Sale of Shares",
@@ -52,6 +53,9 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
   // Transfer workflow state
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferResolutionId, setTransferResolutionId] = useState<string | null>(null);
+
+  // Batch transfer state
+  const [batchOpen, setBatchOpen] = useState(false);
 
   const resolutionOptions = RESOLUTION_TYPES[entityType] || RESOLUTION_TYPES["Corporation"];
 
@@ -169,6 +173,19 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
 
   const isTransferPurpose = (p: string) => TRANSFER_RESOLUTION_PURPOSES.includes(p);
 
+  // Batch detection: unlinked transfer resolutions
+  const unlinkedTransferResolutions = useMemo(() => {
+    return resolutions.filter(
+      (r) => isTransferPurpose(r.purpose || "") && !(r as any).transaction_id
+    );
+  }, [resolutions]);
+
+  const batchResolutionIds = useMemo(
+    () => unlinkedTransferResolutions.map((r) => r.id),
+    [unlinkedTransferResolutions]
+  );
+  const showBatchButton = unlinkedTransferResolutions.length >= 2 && companyId;
+
   const isPending = addResolution.isPending || updateResolution.isPending;
   const selectedOption = resolutionOptions.find((o) => o.label === purpose);
 
@@ -251,7 +268,8 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
               {resolutions.map((r) => {
                 const match = resolutionOptions.find((o) => o.label === r.purpose);
                 const hasLinkedTransaction = !!(r as any).transaction_id;
-                const showTransferButton = isTransferPurpose(r.purpose || "") && !hasLinkedTransaction && companyId;
+                // Only show individual "Complete Transaction" if there's exactly 1 unlinked transfer resolution
+                const showTransferButton = isTransferPurpose(r.purpose || "") && !hasLinkedTransaction && companyId && unlinkedTransferResolutions.length === 1;
                 return (
                   <div key={r.id} className="rounded-lg border border-border p-4">
                     <div className="flex items-start justify-between gap-4">
@@ -311,6 +329,24 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
               })}
             </div>
           )}
+
+          {/* Batch transfer button */}
+          {showBatchButton && (
+            <div className="mt-4 pt-3 border-t border-border">
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={() => setBatchOpen(true)}
+              >
+                <Layers className="mr-2 h-4 w-4" />
+                Execute Batch Transfer ({unlinkedTransferResolutions.length} transfers)
+              </Button>
+              <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
+                Process all {unlinkedTransferResolutions.length} unlinked transfer resolutions in a single atomic operation
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -325,6 +361,19 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
           availableShares={availableShares}
           meetingId={meetingId}
           onTransactionComplete={handleTransactionComplete}
+        />
+      )}
+
+      {/* Batch transfer dialog */}
+      {companyId && batchResolutionIds.length >= 2 && (
+        <BatchTransferDialog
+          companyId={companyId}
+          companyName={companyName}
+          entityType={entityType}
+          meetingId={meetingId}
+          resolutionIds={batchResolutionIds}
+          open={batchOpen}
+          onOpenChange={setBatchOpen}
         />
       )}
     </>
