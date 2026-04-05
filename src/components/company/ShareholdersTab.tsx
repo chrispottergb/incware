@@ -103,7 +103,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
       const ssnValue = form.ssn_ein?.trim() || null;
       let shareholderId = editId;
 
-      const numUnits = parseInt(form.num_units) || 0;
+      const numUnits = parseFloat(form.num_units) || 0;
       const pricePerUnit = parseFloat(form.price_per_unit) || 0;
       const capitalAccount = parseFloat(form.capital_account) || 0;
 
