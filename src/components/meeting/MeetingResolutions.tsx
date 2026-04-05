@@ -173,6 +173,19 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
 
   const isTransferPurpose = (p: string) => TRANSFER_RESOLUTION_PURPOSES.includes(p);
 
+  // Batch detection: unlinked transfer resolutions
+  const unlinkedTransferResolutions = useMemo(() => {
+    return resolutions.filter(
+      (r) => isTransferPurpose(r.purpose || "") && !(r as any).transaction_id
+    );
+  }, [resolutions]);
+
+  const batchResolutionIds = useMemo(
+    () => unlinkedTransferResolutions.map((r) => r.id),
+    [unlinkedTransferResolutions]
+  );
+  const showBatchButton = unlinkedTransferResolutions.length >= 2 && companyId;
+
   const isPending = addResolution.isPending || updateResolution.isPending;
   const selectedOption = resolutionOptions.find((o) => o.label === purpose);
 
