@@ -56,7 +56,6 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
 
   // Batch transfer state
   const [batchOpen, setBatchOpen] = useState(false);
-  const [transferResolutionId, setTransferResolutionId] = useState<string | null>(null);
 
   const resolutionOptions = RESOLUTION_TYPES[entityType] || RESOLUTION_TYPES["Corporation"];
 
