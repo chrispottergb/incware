@@ -444,9 +444,9 @@ Deno.serve(async (req: Request) => {
             const [sh] = await tx`
               SELECT capital_account_balance FROM shareholders WHERE id = ${buyerShId}
             `;
-            const currentBalance = Number(sh?.capital_account_balance || 0);
+            const currentBalance = toNumeric(sh?.capital_account_balance) ?? 0;
             await tx`
-              UPDATE shareholders SET capital_account_balance = ${currentBalance + capitalDelta}
+              UPDATE shareholders SET capital_account_balance = ${addNumeric(currentBalance, capitalDelta)}
               WHERE id = ${buyerShId}
             `;
           }
@@ -454,9 +454,9 @@ Deno.serve(async (req: Request) => {
             const [sh] = await tx`
               SELECT capital_account_balance FROM shareholders WHERE id = ${payload.seller_id}
             `;
-            const currentBalance = Number(sh?.capital_account_balance || 0);
+            const currentBalance = toNumeric(sh?.capital_account_balance) ?? 0;
             await tx`
-              UPDATE shareholders SET capital_account_balance = ${currentBalance - capitalDelta}
+              UPDATE shareholders SET capital_account_balance = ${subtractNumeric(currentBalance, capitalDelta)}
               WHERE id = ${payload.seller_id}
             `;
           }
