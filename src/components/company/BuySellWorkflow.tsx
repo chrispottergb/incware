@@ -62,6 +62,7 @@ const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string
 
 const CONSIDERATION_TYPES = [
   { value: "cash", label: "Cash" },
+  { value: "gift", label: "Gift" },
   { value: "property", label: "Property" },
   { value: "services", label: "Services" },
   { value: "promissory_note", label: "Promissory Note" },
@@ -155,6 +156,18 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
       setForm(p => ({ ...p, seller_id: initialSeller.id, seller_name: initialSeller.name }));
     }
   }, [open, initialSeller]);
+
+  // Auto-set gift defaults when gift transaction type is selected
+  useEffect(() => {
+    if (form.transaction_type === "gift") {
+      setForm(p => ({
+        ...p,
+        price_per_share: "0",
+        total_consideration: "0",
+        consideration_type: "gift",
+      }));
+    }
+  }, [form.transaction_type]);
 
   const numShares = parseInt(form.num_shares) || 0;
   const pricePerShare = parseFloat(form.price_per_share) || 0;
