@@ -1,115 +1,111 @@
 
 
-# Atomic Share Transfer — Implementation Plan
+## Batch Share Transfer — Implementation Plan
 
-## Step 1: Database Migration
+### Step 1: Edge Function — `execute-batch-transfer`
 
-Add two nullable FK columns to enable meeting-transaction linkage.
+**File:** `supabase/functions/execute-batch-transfer/index.ts`
 
-**Migration SQL:**
-```sql
-ALTER TABLE public.share_transactions
-  ADD COLUMN IF NOT EXISTS meeting_id uuid REFERENCES public.meetings(id) ON DELETE SET NULL;
+Closely modeled on the existing `execute-share-transfer` function. Reuses the same numeric helpers (`toNumeric`, `addNumeric`, `subtractNumeric`), auth pattern (`getUser()`), ownership verification, CORS, and `postgres.js` raw SQL transaction.
 
-ALTER TABLE public.meeting_resolutions
-  ADD COLUMN IF NOT EXISTS transaction_id uuid REFERENCES public.share_transactions(id) ON DELETE SET NULL;
-
-NOTIFY pgrst, 'reload schema';
+**Payload shape:**
+```typescript
+{
+  company_id: string;
+  company_name?: string;
+  entity_type: string;
+  seller_name: string;
+  seller_id: string | null;
+  share_class: string;
+  transaction_date: string;
+  meeting_id: string;
+  transfers: Array<{
+    buyer_name: string;
+    buyer_id: string | null;
+    num_shares: number;
+    price_per_share: number | null;
+    total_consideration: number | null;
+    consideration_type: string;
+    transaction_type: string;
+    resolution_id: string;
+  }>;
+}
 ```
 
-Both columns are nullable, no defaults, no existing data affected. Will confirm columns are live before proceeding.
+**Inside a single `sql.begin()`:**
+1. Fetch shareholders and certificates once
+2. Validate: sum of all `transfers[].num_shares` does not exceed seller's active certificate
+3. Cancel seller's active certificate exactly once; insert one cancellation ledger entry
+4. For each transfer in the array:
+   - Insert `share_transactions` record (with `meeting_id`)
+   - Insert `bills_of_sale` record
+   - Upsert buyer as shareholder if new (Corps only; LLCs select from existing)
+   - Cancel buyer's existing active cert if consolidating; issue new buyer cert with combined total
+   - Insert transfer ledger entry
+   - Update transaction with denormalized cert numbers
+5. If seller remainder > 0, issue one remainder certificate + reissuance ledger entry. If 0, mark seller inactive.
+6. For LLCs: call `recalculate_ownership_percentages` once; update capital accounts once
+7. Link each `transaction_id` to its `resolution_id` by updating `meeting_resolutions.transaction_id`
+
+**Returns:** `{ results: [{ transactionId, billId, buyerName, resolutionId }], certActions[], sellerRemainder }` or error with full rollback.
 
 ---
 
-## Step 2: Edge Function — `execute-share-transfer`
+### Step 2: Component — `BatchTransferDialog.tsx`
 
-Create `supabase/functions/execute-share-transfer/index.ts` that wraps all 5 record writes in a single Postgres transaction using `SUPABASE_DB_URL` for raw SQL.
+**File:** `src/components/meeting/BatchTransferDialog.tsx`
 
-**Atomic operations inside BEGIN/COMMIT:**
-1. Insert primary `share_transactions` record (with optional `meeting_id`)
-2. Insert `bills_of_sale` linked to transaction
-3. Update transaction with `bill_of_sale_id` reverse link
-4. Upsert buyer in `shareholders` (create if new, Corps only)
-5. Cancel seller's active cert → reissue remainder → issue buyer cert
-6. Insert cancellation/reissuance ledger entries
-7. Update transaction with denormalized cert numbers
-8. Mark seller inactive if 0 shares remain
-9. For LLCs: call `recalculate_ownership_percentages` RPC
-10. For LLCs: update capital account balances
-11. Handle treasury flagging for redemptions
+A dialog that receives: `companyId`, `companyName`, `entityType`, `meetingId`, and `resolutionIds` (the unlinked transfer resolution IDs).
 
-**Returns:** `{ transactionId, billId, certActions[], buyerShareholderId }` or error with full rollback.
-
-**Auth:** Validate JWT via `getClaims()`, verify user owns the company.
-
-**Config:** Add `[functions.execute-share-transfer] verify_jwt = false` to `supabase/config.toml`.
-
-**Testing:** Use `supabase--curl_edge_functions` to test with valid payload and a simulated failure payload before touching client code.
+**UI layout:**
+- Fetches resolutions by ID to display each as a read-only card (purpose + text)
+- **Shared seller dropdown** at the top — populated from the company's current shareholders query (same pattern as `BuySellWorkflow`). User selects seller once.
+- **Shared fields:** share class selector, transaction date picker
+- **Per-resolution row:** Buyer Name field (free text for Corps, dropdown for LLCs), # Shares, Price/Share, Total Consideration, Consideration Type (defaulting to "cash")
+- Validates total shares across all rows does not exceed seller's active certificate holdings
+- On submit: calls `supabase.functions.invoke("execute-batch-transfer", { body: batchPayload })`
+- On success:
+  - Invalidates all related query keys
+  - For each buyer in returned results, generates an individual Bill of Sale PDF using existing `generateBillOfSalePdf()`
+  - Filename: `Bill_of_Sale_[SellerLast]_to_[BuyerLast]_[Date].pdf`
+  - Before uploading, queries `company_documents` for existing files with same prefix; if found, appends `_2`, `_3` suffix
+  - Uploads each to `generated-documents` bucket, inserts `company_documents` record with category "Agreements"
+  - PDF failures are non-blocking (warning toast only)
+  - Shows success step with cert actions summary
 
 ---
 
-## Step 3: Refactor `BuySellWorkflow.tsx`
+### Step 3: Detection Logic in `MeetingResolutions.tsx`
 
-Replace the ~250 lines of sequential client-side writes in `handleSave` (lines 200–473) with a single `supabase.functions.invoke("execute-share-transfer", { body: payload })` call.
+**Changes:**
+- After fetching resolutions, count unlinked transfer resolutions (those matching `TRANSFER_RESOLUTION_PURPOSES` with no `transaction_id`)
+- If count >= 2: render an "Execute Batch Transfer" button below the resolution list. Clicking opens `BatchTransferDialog` with the IDs of all unlinked transfer resolutions.
+- If count == 1: show only the existing individual "Complete Transaction" button on the resolution card (no batch button)
+- If count == 0: no buttons (all linked)
 
-**New props added:**
-- `meetingId?: string` — passed through to edge function
-- `onTransactionComplete?: (txnId: string) => void` — callback for resolution linking
+**No text parsing.** The batch dialog handles seller selection via dropdown. Resolution IDs are passed directly.
 
-**Post-success (client-side):**
-- Generate Bill of Sale PDF using existing `generateBillOfSalePdf()`
-- Upload blob to `generated-documents` storage bucket with filename `Bill_of_Sale_[SellerLast]_to_[BuyerLast]_[Date].pdf`
-- Insert `company_documents` record with category `"Agreements"`
-- If PDF upload fails: log warning, show non-blocking toast — not a transaction failure
+**New state:** `batchOpen`, `batchResolutionIds`
 
-**Preserved:** Same UI, same 3-step wizard, same form fields, same validation logic. Only the transport layer changes.
+**New import:** `BatchTransferDialog`
 
----
-
-## Step 4: Resolution Trigger in `MeetingResolutions.tsx`
-
-**New props:** `companyId`, `companyName`, `availableShares`, `meetingId` (passed from `MeetingDetail.tsx`)
-
-**Trigger behavior:**
-- When a resolution with purpose `"Approve Transfer/Sale of Shares"` or `"Approve Transfer of Membership Interest"` is saved, show a "Complete Transaction" button on the resolution card
-- Clicking opens `BuySellWorkflow` as an inline dialog with `meetingId` set
-- `onTransactionComplete` callback updates the resolution's `transaction_id`
-- Resolution cards with a linked transaction show a green `Link2` icon badge with "Transaction Linked"
-
-**MeetingDetail.tsx changes (line 945):**
-```tsx
-<MeetingResolutions
-  meetingId={meeting.id}
-  entityType={company?.entity_type || "Corporation"}
-  meetingType={meeting.meeting_type}
-  companyId={id!}
-  companyName={company?.name}
-  availableShares={availableShares}
-/>
-```
-
-Where `availableShares` comes from the existing `useShareCalculations` hook already imported on line 39.
+No changes needed to `MeetingDetail.tsx` — all required props (`companyId`, `companyName`, `entityType`, `meetingId`, `availableShares`) are already passed to `MeetingResolutions`.
 
 ---
 
-## Files Modified
+### Files Created/Modified
 
 | File | Action |
 |------|--------|
-| `supabase/migrations/[new].sql` | Add `meeting_id` + `transaction_id` columns |
-| `supabase/config.toml` | Add `execute-share-transfer` function config |
-| `supabase/functions/execute-share-transfer/index.ts` | New — atomic 5-record write |
-| `src/components/company/BuySellWorkflow.tsx` | Replace sequential writes with edge function call |
-| `src/components/meeting/MeetingResolutions.tsx` | Add transaction trigger + linked indicator |
-| `src/pages/MeetingDetail.tsx` | Pass additional props to MeetingResolutions |
+| `supabase/functions/execute-batch-transfer/index.ts` | New |
+| `src/components/meeting/BatchTransferDialog.tsx` | New |
+| `src/components/meeting/MeetingResolutions.tsx` | Modified — add batch detection + button |
 
-## Gap Resolution
+### What Stays Unchanged
 
-| Gap | Fix |
-|-----|-----|
-| A — No atomicity | Edge function `BEGIN/COMMIT` block |
-| B — No PDF auto-save | Client-side PDF generated + uploaded to storage + `company_documents` |
-| C — No meeting reference | `meeting_id` column on `share_transactions` |
-| D — No resolution trigger | "Complete Transaction" button on transfer resolution cards |
-| E — No transaction link | `transaction_id` column on `meeting_resolutions` |
+- `execute-share-transfer` — untouched
+- `BuySellWorkflow.tsx` — untouched
+- Database schema — no new columns
+- Standalone transaction path — untouched
+- `supabase/config.toml` — no changes needed
 
