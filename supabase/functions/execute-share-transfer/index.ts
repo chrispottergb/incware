@@ -396,7 +396,7 @@ Deno.serve(async (req: Request) => {
           );
           let existingShares = 0;
           if (buyerExistingCert) {
-            existingShares = Number(buyerExistingCert.num_shares || 0);
+            existingShares = toNumeric(buyerExistingCert.num_shares) ?? 0;
             await tx`
               UPDATE stock_certificates
               SET status = 'cancelled', cancelled_date = ${payload.transaction_date},
@@ -406,6 +406,7 @@ Deno.serve(async (req: Request) => {
             certActions.push(`Cancelled Cert #${buyerExistingCert.certificate_number} for consolidation`);
           }
 
+          const issuedTotalShares = addNumeric(payload.num_shares, existingShares);
           const issueCertNum = getNextCertNum();
           await tx`
             INSERT INTO stock_certificates (
@@ -413,10 +414,10 @@ Deno.serve(async (req: Request) => {
               num_shares, issue_date
             ) VALUES (
               ${payload.company_id}, ${issueCertNum}, ${buyerSh.id}, ${payload.share_class},
-              ${payload.num_shares + existingShares}, ${payload.transaction_date}
+              ${issuedTotalShares}, ${payload.transaction_date}
             )
           `;
-          certActions.push(`Issued Cert #${issueCertNum} to ${payload.buyer_name} for ${payload.num_shares + existingShares} shares`);
+          certActions.push(`Issued Cert #${issueCertNum} to ${payload.buyer_name} for ${issuedTotalShares} shares`);
         }
 
         // ── 7. Update transaction with denormalized cert numbers ──
