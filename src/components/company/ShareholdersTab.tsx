@@ -87,7 +87,26 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
     resetZip();
   };
 
-    }
+  const save = useMutation({
+    mutationFn: async () => {
+      const ssnValue = form.ssn_ein?.trim() || null;
+      let shareholderId = editId;
+
+      if (editId) {
+        const { error } = await supabase.from("shareholders").update({
+          name: form.name, address: form.address || null, address_2: form.address_2 || null, city: form.city || null,
+          state: form.state || null, zip: form.zip || null, status: form.status,
+        }).eq("id", editId);
+        if (error) throw error;
+      } else {
+        const { data: inserted, error } = await supabase.from("shareholders").insert({
+          company_id: companyId, name: form.name, address: form.address || null, address_2: form.address_2 || null,
+          city: form.city || null, state: form.state || null, zip: form.zip || null, status: form.status,
+          capital_account_balance: 0,
+        }).select("id").single();
+        if (error) throw error;
+        shareholderId = inserted.id;
+      }
 
       // Encrypt SSN/EIN via edge function if provided
       if (ssnValue && shareholderId) {
