@@ -73,42 +73,60 @@ export function useShareCalculations(companyId: string) {
     enabled: !!companyId,
   });
 
-  // Fetch active certificates to derive current holdings
-  const { data: activeCertificates = [] } = useQuery({
-    queryKey: ["active_certificates", companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("stock_certificates")
-        .select("shareholder_id, num_shares")
-        .eq("company_id", companyId)
-        .eq("status", "active");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
-
-  // Calculate total issued shares from active certificates
-  // This equals the sum of all shares on non-cancelled certificates
-  const totalIssuedShares = activeCertificates.reduce(
-    (sum: number, cert: any) => sum + (cert.num_shares || 0), 0
-  );
-
-  const authorizedShares = company?.authorized_shares ?? null;
-  const availableShares = authorizedShares != null ? authorizedShares - totalIssuedShares : null;
-
-  // Calculate per-shareholder holdings from active certificates (single source of truth)
-  // A shareholder's balance = sum of shares on their active (non-cancelled) certificates
+  // Calculate total issued shares and per-shareholder holdings from transactions
+  // Transactions are the single source of truth for ownership
   const shareholderHoldings: ShareholderHoldings = {};
   shareholders.forEach((s) => {
     shareholderHoldings[s.id] = 0;
   });
 
-  activeCertificates.forEach((cert: any) => {
-    if (cert.shareholder_id && shareholderHoldings[cert.shareholder_id] !== undefined) {
-      shareholderHoldings[cert.shareholder_id] += (cert.num_shares || 0);
+  let totalIssuedShares = 0;
+
+  transactions.forEach((t: any) => {
+    const shares = t.num_shares || 0;
+
+    if (ISSUANCE_TYPES.includes(t.transaction_type)) {
+      // Issuance: add to total and to the shareholder
+      totalIssuedShares += shares;
+      if (t.shareholder_id && shareholderHoldings[t.shareholder_id] !== undefined) {
+        shareholderHoldings[t.shareholder_id] += shares;
+      }
+    } else if (REDUCTION_TYPES.includes(t.transaction_type)) {
+      // Reduction: subtract from total and from the shareholder
+      totalIssuedShares -= shares;
+      if (t.shareholder_id && shareholderHoldings[t.shareholder_id] !== undefined) {
+        shareholderHoldings[t.shareholder_id] -= shares;
+      }
+    } else if (TRANSFER_TYPES.includes(t.transaction_type)) {
+      // Transfers are neutral for total issued, but move shares between holders
+      // Deduct from sender (by name match)
+      if (t.from_shareholder) {
+        const fromNorm = t.from_shareholder.toLowerCase().trim();
+        const sender = shareholders.find(s => s.name.toLowerCase().trim() === fromNorm);
+        if (sender) {
+          shareholderHoldings[sender.id] -= shares;
+        }
+      }
+      // Add to receiver: check shareholder_id first, then name match
+      if (t.to_shareholder) {
+        const toNorm = t.to_shareholder.toLowerCase().trim();
+        const receiver = shareholders.find(s => s.name.toLowerCase().trim() === toNorm);
+        if (receiver) {
+          shareholderHoldings[receiver.id] += shares;
+        }
+      } else if (t.shareholder_id && shareholderHoldings[t.shareholder_id] !== undefined) {
+        shareholderHoldings[t.shareholder_id] += shares;
+      }
     }
   });
+
+  // Ensure no negative holdings display
+  Object.keys(shareholderHoldings).forEach(id => {
+    if (shareholderHoldings[id] < 0) shareholderHoldings[id] = 0;
+  });
+
+  const authorizedShares = company?.authorized_shares ?? null;
+  const availableShares = authorizedShares != null ? authorizedShares - totalIssuedShares : null;
 
   return {
     authorizedShares,
