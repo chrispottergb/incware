@@ -213,31 +213,6 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
 
   const [assets, setAssets] = useState<{ description: string; value: string }[]>([]);
 
-  const getNextCertNumber = async (): Promise<number> => {
-    const { data } = await supabase
-      .from("stock_certificates")
-      .select("certificate_number")
-      .eq("company_id", companyId)
-      .order("certificate_number", { ascending: false })
-      .limit(1);
-    return ((data?.[0] as any)?.certificate_number || 0) + 1;
-  };
-
-  const createCertificate = async (certNumber: number, shareholderId: string | null, numShares: number, shareClass: string, issueDate: string, parValue: number | null) => {
-    const { data, error } = await supabase.from("stock_certificates").insert({
-      company_id: companyId,
-      certificate_number: certNumber,
-      shareholder_id: shareholderId,
-      num_shares: numShares,
-      share_class: shareClass,
-      issue_date: issueDate,
-      par_value: parValue,
-      status: "active",
-    }).select("id").single();
-    if (error) throw error;
-    return data;
-  };
-
   const ISSUANCE_SET = new Set([
     "initial_issuance", "authorized_issuance", "subscription_issuance",
     "consideration_issuance", "share_dividend", "fractional_shares",
@@ -254,20 +229,8 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       const parValText = form.par_value?.trim().toLowerCase();
       const isNoParValue = parValText && isNaN(parseFloat(parValText));
       const parVal = isNoParValue ? null : (form.par_value ? parseFloat(form.par_value) : null);
-      let issuedCertNum: number | null = form.issued_certificate_number ? parseInt(form.issued_certificate_number) : null;
-      let surrenderedCertNum: number | null = form.surrendered_certificate_number ? parseInt(form.surrendered_certificate_number) : null;
-      let certId: string | null = null;
-
-      // Auto-issue certificate for issuance/transfer/reissuance types
-      if (!issuedCertNum && (ISSUANCE_SET.has(txType) || TRANSFER_SET_LOCAL.has(txType))) {
-        const nextNum = await getNextCertNumber();
-        const shareholderId = TRANSFER_SET_LOCAL.has(txType)
-          ? (shareholders.find(s => s.name === form.to_shareholder)?.id || form.shareholder_id || null)
-          : (form.shareholder_id || null);
-        const cert = await createCertificate(nextNum, shareholderId, numShares, form.share_class, form.transaction_date, parVal);
-        issuedCertNum = nextNum;
-        certId = cert.id;
-      }
+      const issuedCertNum: number | null = form.issued_certificate_number ? parseInt(form.issued_certificate_number) : null;
+      const surrenderedCertNum: number | null = form.surrendered_certificate_number ? parseInt(form.surrendered_certificate_number) : null;
 
       const { data: txn, error } = await supabase.from("share_transactions").insert({
         company_id: companyId,
@@ -287,7 +250,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         par_value: parVal,
         issued_certificate_number: issuedCertNum,
         surrendered_certificate_number: surrenderedCertNum,
-        certificate_id: certId,
+        certificate_id: null,
       } as any).select("id").single();
       if (error) throw error;
 

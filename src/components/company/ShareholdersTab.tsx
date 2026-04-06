@@ -44,7 +44,6 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active",
-    num_units: "", price_per_unit: "", capital_account: "", share_class: "",
   });
   const [decryptedSsns, setDecryptedSsns] = useState<Record<string, string | null>>({});
   const [showSsns, setShowSsns] = useState(false);
@@ -81,31 +80,17 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
     },
   });
 
-  const defaultForm = { name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active", num_units: "", price_per_unit: "", capital_account: "", share_class: "" };
+  const defaultForm = { name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active" };
   const resetForm = () => {
     setForm(defaultForm);
     setEditId(null);
     resetZip();
   };
 
-  const getNextCertNumber = async () => {
-    const { data } = await supabase
-      .from("stock_certificates")
-      .select("certificate_number")
-      .eq("company_id", companyId)
-      .order("certificate_number", { ascending: false })
-      .limit(1);
-    return ((data?.[0] as any)?.certificate_number || 0) + 1;
-  };
-
   const save = useMutation({
     mutationFn: async () => {
       const ssnValue = form.ssn_ein?.trim() || null;
       let shareholderId = editId;
-
-      const numUnits = parseFloat(form.num_units) || 0;
-      const pricePerUnit = parseFloat(form.price_per_unit) || 0;
-      const capitalAccount = parseFloat(form.capital_account) || 0;
 
       if (editId) {
         const { error } = await supabase.from("shareholders").update({
@@ -117,53 +102,10 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
         const { data: inserted, error } = await supabase.from("shareholders").insert({
           company_id: companyId, name: form.name, address: form.address || null, address_2: form.address_2 || null,
           city: form.city || null, state: form.state || null, zip: form.zip || null, status: form.status,
-          capital_account_balance: capitalAccount || 0,
+          capital_account_balance: 0,
         }).select("id").single();
         if (error) throw error;
         shareholderId = inserted.id;
-
-        // Auto-generate certificate and ledger entry for new member with units
-        if (numUnits > 0 && shareholderId) {
-          const certNumber = await getNextCertNumber();
-          const shareClass = form.share_class || (t.isLLC ? "Membership" : "Common");
-          const today = new Date().toISOString().split("T")[0];
-          const totalConsideration = numUnits * pricePerUnit;
-
-          // Create certificate
-          const { data: certData, error: certErr } = await supabase.from("stock_certificates").insert({
-            company_id: companyId,
-            certificate_number: certNumber,
-            shareholder_id: shareholderId,
-            num_shares: numUnits,
-            share_class: shareClass,
-            issue_date: today,
-            status: "active",
-            par_value: t.isLLC ? null : pricePerUnit || null,
-          } as any).select("id").single();
-          if (certErr) throw certErr;
-
-          // Create ledger transaction
-          const txType = t.isLLC ? "initial_contribution" : "initial_issuance";
-          const { error: txErr } = await supabase.from("share_transactions").insert({
-            company_id: companyId,
-            shareholder_id: shareholderId,
-            certificate_id: certData.id,
-            transaction_type: txType,
-            share_class: shareClass,
-            num_shares: numUnits,
-            price_per_share: pricePerUnit || null,
-            total_consideration: totalConsideration || null,
-            consideration_type: "cash",
-            transaction_date: today,
-            to_shareholder: form.name,
-            issued_certificate_number: certNumber,
-            notes: `Initial ${t.isLLC ? "capital contribution" : "share issuance"} — auto-generated`,
-          } as any);
-          if (txErr) throw txErr;
-
-          // Recalculate ownership percentages
-          await supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId });
-        }
       }
 
       // Encrypt SSN/EIN via edge function if provided
@@ -221,7 +163,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
     resetZip();
     // When editing, the SSN field starts empty since it's encrypted in DB
     // User can enter a new value or leave blank to keep existing
-    setForm({ name: s.name, address: s.address ?? "", address_2: (s as any).address_2 ?? "", city: s.city ?? "", state: s.state ?? "", zip: s.zip ?? "", ssn_ein: decryptedSsns[s.id] ?? "", status: s.status ?? "active", num_units: "", price_per_unit: "", capital_account: "", share_class: "" });
+    setForm({ name: s.name, address: s.address ?? "", address_2: (s as any).address_2 ?? "", city: s.city ?? "", state: s.state ?? "", zip: s.zip ?? "", ssn_ein: decryptedSsns[s.id] ?? "", status: s.status ?? "active" });
     setDialog(true);
   };
 
@@ -382,44 +324,6 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                       </SelectContent>
                     </Select>
                   </div>
-                  {/* Show units/shares + capital fields only for NEW members */}
-                  {!editId && (
-                    <>
-                      <div className="col-span-12 mt-1">
-                        <div className="border-t border-border pt-2">
-                          <p className="text-[10px] uppercase font-medium text-muted-foreground mb-1.5">
-                            Initial {t.isLLC ? "Membership Units" : "Shares"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="field-group col-span-4">
-                        <Label className="field-label">{t.isLLC ? "Units" : "Shares"}</Label>
-                        <Input className="h-7 text-sm" type="number" step="0.0001" min="0" value={form.num_units} onChange={(e) => setForm(p => ({ ...p, num_units: e.target.value }))} placeholder="0" />
-                      </div>
-                      <div className="field-group col-span-4">
-                        <Label className="field-label">Price / {t.isLLC ? "Unit" : "Share"}</Label>
-                        <Input className="h-7 text-sm" type="number" step="0.01" min="0" value={form.price_per_unit} onChange={(e) => setForm(p => ({ ...p, price_per_unit: e.target.value }))} placeholder="0.00" />
-                      </div>
-                      {t.isLLC && (
-                        <div className="field-group col-span-4">
-                          <Label className="field-label">Capital Account</Label>
-                          <Input className="h-7 text-sm" type="number" step="0.01" min="0" value={form.capital_account} onChange={(e) => setForm(p => ({ ...p, capital_account: e.target.value }))} placeholder="0.00" />
-                        </div>
-                      )}
-                      {!t.isLLC && (
-                        <div className="field-group col-span-4">
-                          <Label className="field-label">Share Class</Label>
-                          <Select value={form.share_class || "Common"} onValueChange={(v) => setForm(p => ({ ...p, share_class: v }))}>
-                            <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Common">Common</SelectItem>
-                              <SelectItem value="Preferred">Preferred</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                    </>
-                  )}
                 </div>
                 <Button type="submit" className="w-full" size="sm" disabled={save.isPending}>
                   {save.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
