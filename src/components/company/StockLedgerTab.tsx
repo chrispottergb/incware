@@ -211,10 +211,24 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     return "";
   };
 
-  const [assets, setAssets] = useState<{ description: string; value: string }[]>([]);
+  const ISSUANCE_SET = new Set([
+    "initial_issuance", "authorized_issuance", "subscription_issuance",
+    "consideration_issuance", "share_dividend", "fractional_shares",
+    "preemptive_rights", "treasury_reissue", "reissuance",
+    "Capital Contribution", "Initial Contribution", "initial_contribution",
+    "additional_contribution", "membership_issuance", "Issuance",
+  ]);
+  const TRANSFER_SET_LOCAL = new Set(["transfer", "interest_transfer", "interest_assignment", "gift", "share_exchange"]);
 
-
-
+  const add = useMutation({
+    mutationFn: async () => {
+      const txType = form.transaction_type;
+      const numShares = parseFloat(form.num_shares) || 0;
+      const parValText = form.par_value?.trim().toLowerCase();
+      const isNoParValue = parValText && isNaN(parseFloat(parValText));
+      const parVal = isNoParValue ? null : (form.par_value ? parseFloat(form.par_value) : null);
+      const issuedCertNum: number | null = form.issued_certificate_number ? parseInt(form.issued_certificate_number) : null;
+      const surrenderedCertNum: number | null = form.surrendered_certificate_number ? parseInt(form.surrendered_certificate_number) : null;
 
       const { data: txn, error } = await supabase.from("share_transactions").insert({
         company_id: companyId,
@@ -234,7 +248,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         par_value: parVal,
         issued_certificate_number: issuedCertNum,
         surrendered_certificate_number: surrenderedCertNum,
-        certificate_id: certId,
+        certificate_id: null,
       } as any).select("id").single();
       if (error) throw error;
 
