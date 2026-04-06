@@ -211,6 +211,8 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     return "";
   };
 
+  const [assets, setAssets] = useState<{ description: string; value: string }[]>([]);
+
   const ISSUANCE_SET = new Set([
     "initial_issuance", "authorized_issuance", "subscription_issuance",
     "consideration_issuance", "share_dividend", "fractional_shares",
