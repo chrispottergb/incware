@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Loader2, Landmark } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,14 +30,12 @@ export default function MeetingBanking({ meetingId }: Props) {
   const row = counselRows[0] || null;
 
   const [bankName, setBankName] = useState("");
-  const [locEnabled, setLocEnabled] = useState(false);
   const [locAmount, setLocAmount] = useState("");
   const [locRate, setLocRate] = useState("");
 
   useEffect(() => {
     if (row) {
       setBankName(row.bank_name || "");
-      setLocEnabled(row.loc_enabled || false);
       setLocAmount(row.loc_amount != null ? String(row.loc_amount) : "");
       setLocRate(row.loc_interest_rate || "");
     }
@@ -81,12 +78,12 @@ export default function MeetingBanking({ meetingId }: Props) {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
-          <Landmark className="h-4 w-4" /> Banking
+          <Landmark className="h-4 w-4" /> Bank Line of Credit
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent>
         <div className="grid grid-cols-12 gap-3">
-          <div className="col-span-6">
+          <div className="col-span-5">
             <Label className="text-xs font-medium text-muted-foreground">Bank Name</Label>
             <Input
               className="h-7 text-sm"
@@ -96,55 +93,31 @@ export default function MeetingBanking({ meetingId }: Props) {
               placeholder="Enter bank name"
             />
           </div>
-          <div className="col-span-6 flex items-end gap-3">
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={locEnabled}
-                onCheckedChange={(checked) => {
-                  setLocEnabled(checked);
-                  const updates: any = { loc_enabled: checked };
-                  if (!checked) {
-                    updates.loc_amount = null;
-                    updates.loc_interest_rate = null;
-                    setLocAmount("");
-                    setLocRate("");
-                  }
-                  upsert.mutate(updates);
-                }}
-              />
-              <Label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Line of Credit (LOC)</Label>
-            </div>
+          <div className="col-span-4">
+            <Label className="text-xs font-medium text-muted-foreground">LOC Amount</Label>
+            <Input
+              className="h-7 text-sm"
+              type="number"
+              step="0.01"
+              min="0"
+              value={locAmount}
+              onChange={(e) => setLocAmount(e.target.value)}
+              onBlur={() => handleBlur("loc_amount", locAmount ? parseFloat(locAmount) : null)}
+              placeholder="$0.00"
+            />
+          </div>
+          <div className="col-span-3">
+            <Label className="text-xs font-medium text-muted-foreground">Interest Rate (%)</Label>
+            <Input
+              className="h-7 text-sm"
+              type="text"
+              value={locRate}
+              onChange={(e) => setLocRate(e.target.value)}
+              onBlur={() => handleBlur("loc_interest_rate", locRate || null)}
+              placeholder="e.g. 3%, Prime + 1%"
+            />
           </div>
         </div>
-
-        {locEnabled && (
-          <div className="grid grid-cols-12 gap-3">
-            <div className="col-span-4">
-              <Label className="text-xs font-medium text-muted-foreground">LOC Amount</Label>
-              <Input
-                className="h-7 text-sm"
-                type="number"
-                step="0.01"
-                min="0"
-                value={locAmount}
-                onChange={(e) => setLocAmount(e.target.value)}
-                onBlur={() => handleBlur("loc_amount", locAmount ? parseFloat(locAmount) : null)}
-                placeholder="$0.00"
-              />
-            </div>
-            <div className="col-span-3">
-              <Label className="text-xs font-medium text-muted-foreground">Interest Rate (%)</Label>
-              <Input
-                className="h-7 text-sm"
-                type="text"
-                value={locRate}
-                onChange={(e) => setLocRate(e.target.value)}
-                onBlur={() => handleBlur("loc_interest_rate", locRate || null)}
-                placeholder="e.g. 3%, Prime + 1%"
-              />
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
