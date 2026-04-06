@@ -1,27 +1,50 @@
 
 
-## Plan: Update MeetingBanking Component
+## Refactor: Transaction-Driven Share Ownership
 
-**Single file change:** `src/components/meeting/MeetingBanking.tsx`
+### Summary
+
+Switch the source of truth for "Shares Held" from active certificates to the transactions ledger. Remove share/unit entry fields from the shareholder form. Stop auto-issuing certificates when recording transactions.
 
 ### Changes
 
-1. **Rename header** from "Banking" to "Bank Line of Credit"
-2. **Remove the Switch toggle** and `locEnabled` state entirely
-3. **Show Bank Name, LOC Amount, and Interest Rate fields always** — laid out in one row (Bank Name, LOC Amount, Interest Rate)
-4. **Remove the `loc_enabled` field** from all upsert calls — stop writing it to the database
-5. **Remove the conditional render** (`{locEnabled && ...}`) — fields are always visible
+**1. `src/hooks/useShareCalculations.ts` — Transaction-based holdings**
 
-### Layout
+- Remove the `activeCertificates` query entirely (lines 77-89)
+- Replace certificate-based `totalIssuedShares` (lines 93-95) with transaction-based calculation: sum issuances, subtract reductions. Transfers are neutral for totals.
+- Replace certificate-based `shareholderHoldings` (lines 102-111) with per-shareholder net from transactions:
+  - Issuances to `shareholder_id` → add
+  - Reductions from `shareholder_id` → subtract
+  - Transfers: `to_shareholder` name match → add, `from_shareholder` name match → subtract (same logic as existing `getHoldingsByName` but keyed by ID with name fallback for transfers)
 
-```text
-┌─ Bank Line of Credit ─────────────────────────────┐
-│ Bank Name          │ LOC Amount    │ Interest Rate  │
-│ [____________]     │ [________]    │ [__________]   │
-└────────────────────────────────────────────────────┘
-```
+**2. `src/components/company/ShareholdersTab.tsx` — Identity-only form**
 
-All three fields in a single `grid-cols-12` row: Bank Name (col-span-5), LOC Amount (col-span-4), Interest Rate (col-span-3).
+- Remove from `form` state and `defaultForm`: `num_units`, `price_per_unit`, `capital_account`, `share_class` (lines 47, 84)
+- Remove the "Initial Shares/Units" UI section (lines 385-422 — the `{!editId && (...)}` block)
+- Remove from `save` mutation: `getNextCertNumber` call (line 91-99), auto-certificate + auto-transaction block (lines 106-108, 125-166). New shareholder insert becomes identity fields only.
+- Keep the "Shares Held" display column — it reads from `shareholderHoldings` prop which will now be transaction-driven
 
-No database changes, no other files touched.
+**3. `src/components/company/StockLedgerTab.tsx` — No auto-certificate on Record Transaction**
+
+- Remove the auto-certificate creation block in `add` mutation (lines 261-270): the `getNextCertNumber` + `createCertificate` calls for issuance/transfer types
+- Set `certId` to null; keep `issued_certificate_number` and `surrendered_certificate_number` as optional manual-entry fields
+- The `createCertificate` helper function (lines 222-239) and `getNextCertNumber` (lines 215-221) can be removed since they're no longer called
+- Transaction insert remains unchanged — it just won't auto-create certificates
+
+### What Stays Unchanged
+
+- `StockCertificatesTab.tsx` — certificate issuance remains standalone
+- `BuySellWorkflow.tsx` and edge functions — untouched
+- `TransferLedgerTab` / `UnifiedLedgerTab` — untouched
+- Database schema — no changes
+- `getHoldingsByName` export — kept for BuySellWorkflow validation
+- `recalculate_ownership_percentages` DB function — still called where needed
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/hooks/useShareCalculations.ts` | Switch from certificate-based to transaction-based holdings |
+| `src/components/company/ShareholdersTab.tsx` | Remove share fields from form and auto-cert logic |
+| `src/components/company/StockLedgerTab.tsx` | Remove auto-certificate creation from Record Transaction |
 
