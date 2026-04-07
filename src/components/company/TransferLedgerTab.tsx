@@ -299,7 +299,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
             rows: entries.map(e => [
               String(e.entryNum),
               e.date ? new Date(e.date + "T00:00:00").toLocaleDateString() : "—",
-              e.type,
+              e.isPending ? `${e.type} [PENDING]` : e.type,
               e.transferee,
               e.transferor,
               e.certIssued,
