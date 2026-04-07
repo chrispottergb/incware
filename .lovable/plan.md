@@ -1,50 +1,51 @@
 
 
-## Refactor: Transaction-Driven Share Ownership
+## Fix: One Row Per Transfer in Stock Transfer Ledger
 
-### Summary
+### Problem
+The `execute-share-transfer` edge function inserts 2-3 `share_transactions` rows per transfer: the primary transfer, a `cancellation` entry, and optionally a `reissuance` entry. The Transfer Ledger renders each as a separate row, creating duplicates.
 
-Switch the source of truth for "Shares Held" from active certificates to the transactions ledger. Remove share/unit entry fields from the shareholder form. Stop auto-issuing certificates when recording transactions.
+### Solution
 
-### Changes
+**1. Filter cert lifecycle entries in `TransferLedgerTab.tsx`**
 
-**1. `src/hooks/useShareCalculations.ts` — Transaction-based holdings**
+Skip `cancellation` and `reissuance` transaction types entirely — they are certificate lifecycle events, not ownership events. The transfer row already shows cert issued/cancelled columns. Remove the two early-return blocks (lines 151-178 for cancellation, lines 181-216 for reissuance) and instead filter them out before processing:
 
-- Remove the `activeCertificates` query entirely (lines 77-89)
-- Replace certificate-based `totalIssuedShares` (lines 93-95) with transaction-based calculation: sum issuances, subtract reductions. Transfers are neutral for totals.
-- Replace certificate-based `shareholderHoldings` (lines 102-111) with per-shareholder net from transactions:
-  - Issuances to `shareholder_id` → add
-  - Reductions from `shareholder_id` → subtract
-  - Transfers: `to_shareholder` name match → add, `from_shareholder` name match → subtract (same logic as existing `getHoldingsByName` but keyed by ID with name fallback for transfers)
+```
+const sorted = [...transactions]
+  .filter(t => t.transaction_type !== "cancellation" && t.transaction_type !== "reissuance")
+  .sort(...)
+```
 
-**2. `src/components/company/ShareholdersTab.tsx` — Identity-only form**
+Also remove `"Cancellation"` and `"cancellation"` from `REDUCTION_TYPES` since standalone cancellations should not appear as ledger rows. Keep `"Redemption"` and `"redemption"`.
 
-- Remove from `form` state and `defaultForm`: `num_units`, `price_per_unit`, `capital_account`, `share_class` (lines 47, 84)
-- Remove the "Initial Shares/Units" UI section (lines 385-422 — the `{!editId && (...)}` block)
-- Remove from `save` mutation: `getNextCertNumber` call (line 91-99), auto-certificate + auto-transaction block (lines 106-108, 125-166). New shareholder insert becomes identity fields only.
-- Keep the "Shares Held" display column — it reads from `shareholderHoldings` prop which will now be transaction-driven
+Enrich the transfer row's cert columns by looking up the cancelled cert via `transferred_certificate_id` on sibling cancellation transactions (same date, same seller) and the issued cert via sibling reissuance transactions.
 
-**3. `src/components/company/StockLedgerTab.tsx` — No auto-certificate on Record Transaction**
+**2. Fix cert lookup for transfer rows**
 
-- Remove the auto-certificate creation block in `add` mutation (lines 261-270): the `getNextCertNumber` + `createCertificate` calls for issuance/transfer types
-- Set `certId` to null; keep `issued_certificate_number` and `surrendered_certificate_number` as optional manual-entry fields
-- The `createCertificate` helper function (lines 222-239) and `getNextCertNumber` (lines 215-221) can be removed since they're no longer called
-- Transaction insert remains unchanged — it just won't auto-create certificates
+Update `findCertIssued` and `findCertCancelled` to also match by looking at the full transaction set for companion cancellation/reissuance entries that share the same date and seller name, pulling cert numbers from those sibling transactions.
 
-### What Stays Unchanged
+**3. Balance Held correction**
 
-- `StockCertificatesTab.tsx` — certificate issuance remains standalone
-- `BuySellWorkflow.tsx` and edge functions — untouched
-- `TransferLedgerTab` / `UnifiedLedgerTab` — untouched
-- Database schema — no changes
-- `getHoldingsByName` export — kept for BuySellWorkflow validation
-- `recalculate_ownership_percentages` DB function — still called where needed
+With cancellation/reissuance rows removed, the existing balance tracking logic for transfers already works correctly — transfers subtract from seller and add to buyer without double-counting.
+
+**4. Buyer field in `BuySellWorkflow.tsx`**
+
+For corporations (non-LLC), replace the free-text `Input` + optional `Select` with the same pattern used for the Seller field: a text input that clears `buyer_id` on manual edit, plus a shareholder dropdown that auto-populates `buyer_name`. The existing logic at line 182 (`buyerIsNew`) already handles creating new shareholders — no change needed there.
+
+**5. PDF report**
+
+The PDF uses the same `entries` array, so filtering cancellation/reissuance from the data automatically fixes the PDF output too.
 
 ### Files Modified
 
 | File | Change |
 |------|--------|
-| `src/hooks/useShareCalculations.ts` | Switch from certificate-based to transaction-based holdings |
-| `src/components/company/ShareholdersTab.tsx` | Remove share fields from form and auto-cert logic |
-| `src/components/company/StockLedgerTab.tsx` | Remove auto-certificate creation from Record Transaction |
+| `src/components/company/TransferLedgerTab.tsx` | Filter out cancellation/reissuance rows; improve cert column lookups |
+| `src/components/company/BuySellWorkflow.tsx` | Make Buyer field a text input + shareholder dropdown (matching Seller pattern) |
+
+### What Stays Unchanged
+- Edge function (`execute-share-transfer`) — cert lifecycle entries remain in the database for audit purposes
+- All other tabs and workflows
+- Database schema
 
