@@ -1,3 +1,4 @@
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -338,7 +339,8 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
                   const isCorrected = e.status === "corrected";
                   const isCorrection = e.type === "correction";
                   return (
-                  <>
+                  <React.Fragment key={e.id}>
+                  <TableRow className={isCorrected ? "opacity-50" : ""}>
                     <TableCell className="text-xs font-mono text-muted-foreground">{e.entryNum}</TableCell>
                     <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>
                       {e.date ? new Date(e.date + "T00:00:00").toLocaleDateString() : "—"}
@@ -391,15 +393,15 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
                     </TableCell>
                   </TableRow>
                   {isCorrection && e.correctionMemo && (
-                    <TableRow key={`${e.id}-memo`} className="border-t-0">
-                      <TableCell colSpan={term.isLLC ? 15 : 14} className="py-1 px-4 pl-12">
+                    <TableRow className="border-t-0 hover:bg-transparent">
+                      <TableCell colSpan={term.isLLC ? 15 : 14} className="py-1 px-4 pl-12 border-t-0">
                         <p className="text-[10px] italic text-muted-foreground">
                           Correction Note: {e.correctionMemo}
                         </p>
                       </TableCell>
                     </TableRow>
                   )}
-                  </>
+                  </React.Fragment>
                   );
                 })}
               </TableBody>
