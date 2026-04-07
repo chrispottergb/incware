@@ -40,6 +40,7 @@ interface Props {
 interface LedgerEntry {
   entryNum: number;
   date: string;
+  effectiveDate: string;
   type: string;
   certIssued: string;
   certCancelled: string;
@@ -58,6 +59,7 @@ interface LedgerEntry {
   linked: boolean;
   id: string;
   status: string;
+  isPending: boolean;
   correctedByEntryNum: string | null;
   correctsEntryNum: string | null;
   correctionMemo: string | null;
@@ -109,6 +111,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
   // Build unified entries sorted chronologically
   // Use transactions as the primary source, enrich with cert data
   const entries: LedgerEntry[] = [];
+  const todayStr = new Date().toISOString().split("T")[0];
 
   // Track running balances
   const holderBalances: Record<string, number> = {};
@@ -175,6 +178,8 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     const txStatus = (t as any).status || "active";
     const isCorrected = txStatus === "corrected";
     const isCorrection = txType === "correction";
+    const effectiveDate = (t as any).effective_date || t.transaction_date || "";
+    const isPending = effectiveDate > todayStr && !isCorrected;
     const isIss = ISSUANCE_TYPES.includes(txType);
     const isRed = REDUCTION_TYPES.includes(txType);
     const isTx = TRANSFER_TYPES.includes(txType);
