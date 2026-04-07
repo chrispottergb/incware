@@ -43,6 +43,7 @@ import FilingComplianceTab from "@/components/company/FilingComplianceTab";
 import UnifiedLedgerTab from "@/components/company/UnifiedLedgerTab";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { useShareCalculations } from "@/hooks/useShareCalculations";
+import EntityDeleteGuard from "@/components/company/EntityDeleteGuard";
 
 export default function CompanyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -51,7 +52,7 @@ export default function CompanyDetail() {
   const queryClient = useQueryClient();
   const rawHashTab = location.hash.replace("#", "");
 
-  const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [buySellOpen, setBuySellOpen] = useState(false);
   const [initialSeller, setInitialSeller] = useState<{ id: string; name: string } | undefined>();
@@ -74,7 +75,7 @@ export default function CompanyDetail() {
       toast.error(err.message || "Failed to delete company");
     } finally {
       setDeleting(false);
-      setDeleteStep(0);
+      setDeleteOpen(false);
     }
   };
 
@@ -231,7 +232,7 @@ export default function CompanyDetail() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setDeleteStep(1)}
+          onClick={() => setDeleteOpen(true)}
           className="mt-0.5 shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
           title="Delete company"
         >
@@ -239,48 +240,14 @@ export default function CompanyDetail() {
         </Button>
       </div>
 
-      {/* Delete Confirmation Step 1 */}
-      <AlertDialog open={deleteStep === 1} onOpenChange={(open) => !open && setDeleteStep(0)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete "{company.name}"?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this company and all associated records including meetings, financials, shareholders, stock certificates, assets, and documents.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => { e.preventDefault(); setDeleteStep(2); }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Continue
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Delete Confirmation Step 2 */}
-      <AlertDialog open={deleteStep === 2} onOpenChange={(open) => !open && setDeleteStep(0)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure? This is permanent.</AlertDialogTitle>
-            <AlertDialogDescription>
-              All data for <span className="font-semibold text-foreground">{company.name}</span> will be permanently lost and cannot be recovered. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Go Back</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => { e.preventDefault(); handleDelete(); }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={deleting}
-            >
-              {deleting ? <><Loader2 className="h-4 w-4 animate-spin mr-1.5" /> Deleting…</> : "Yes, Delete Permanently"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <EntityDeleteGuard
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        companyId={company.id}
+        companyName={company.name}
+        onDelete={handleDelete}
+        deleting={deleting}
+      />
 
       {/* Tabs */}
       <Tabs value={hashTab} onValueChange={handleTabChange} className="w-full">
