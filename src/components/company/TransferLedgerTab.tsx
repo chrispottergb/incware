@@ -310,7 +310,6 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
               return acc;
             }, {}),
           },
-          },
         }} />
       </CardHeader>
       <CardContent className="px-4 pb-4">
