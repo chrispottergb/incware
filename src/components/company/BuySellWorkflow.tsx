@@ -151,6 +151,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
       share_class: term.defaultClass, num_shares: "", price_per_share: "",
       total_consideration: "", consideration_type: "cash",
       transaction_date: new Date().toISOString().split("T")[0],
+      effective_date: new Date().toISOString().split("T")[0],
     });
   };
 
