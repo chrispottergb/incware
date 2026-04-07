@@ -321,7 +321,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
         ) : entries.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-6">No ownership activity recorded yet.</p>
         ) : (
-          <div className="rounded-md border border-border overflow-auto [&_td]:border-l [&_td]:border-border [&_td:first-child]:border-l-0 [&_th]:border-l [&_th]:border-border [&_th:first-child]:border-l-0">
+          <div className="rounded-md border border-border overflow-auto [&_td]:border-l [&_td]:border-border [&_td:first-child]:border-l-0 [&_th]:border-l [&_th]:border-border [&_th:first-child]:border-l-0 [&_th]:text-center">
             <Table>
               <TableHeader>
                 <TableRow>
