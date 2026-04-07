@@ -70,6 +70,8 @@ export interface SectionPdfField {
 export interface SectionPdfTable {
   headers: string[];
   rows: string[][];
+  /** Map of row index → inline note text to render beneath that row */
+  noteRows?: Record<number, string>;
 }
 
 export interface SectionPdfConfig {
@@ -110,25 +112,62 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
 
   // Render table data
   if (config.table && config.table.rows.length > 0) {
+    // Build expanded body rows with note rows inserted inline
+    const expandedRows: string[][] = [];
+    const colCount = config.table.headers.length;
+    config.table.rows.forEach((row, idx) => {
+      expandedRows.push(row);
+      if (config.table?.noteRows && config.table.noteRows[idx]) {
+        // Create a full-span note row: first cell has the note, rest empty
+        const noteRow = new Array(colCount).fill("");
+        noteRow[0] = `  Correction Note: ${config.table.noteRows[idx]}`;
+        expandedRows.push(noteRow);
+      }
+    });
+
+    // Track which expanded rows are note rows
+    const noteExpandedIndices = new Set<number>();
+    let expandedIdx = 0;
+    config.table.rows.forEach((_, idx) => {
+      expandedIdx++; // data row
+      if (config.table?.noteRows && config.table.noteRows[idx]) {
+        noteExpandedIndices.add(expandedIdx);
+        expandedIdx++; // note row
+      }
+    });
+
     autoTable(doc, {
       startY: y,
       head: [config.table.headers],
-      body: config.table.rows,
+      body: expandedRows,
       theme: "grid",
       headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 10, fontStyle: "bold", halign: "center" },
       bodyStyles: { fontSize: 10 },
       styles: { lineColor: [180, 180, 180], lineWidth: 0.5 },
       margin: { left: MARGIN, right: R_MARGIN },
       didParseCell(data) {
-        // Color status-like cells
         if (data.section === "body") {
-          const text = (data.cell.raw as string || "").toLowerCase();
-          if (text === "active") {
-            data.cell.styles.textColor = [22, 163, 74];
-            data.cell.styles.fontStyle = "bold";
-          } else if (text === "cancelled" || text === "inactive" || text === "dissolved") {
-            data.cell.styles.textColor = [220, 38, 38];
-            data.cell.styles.fontStyle = "bold";
+          // Style note rows
+          if (noteExpandedIndices.has(data.row.index)) {
+            data.cell.styles.fontSize = 8;
+            data.cell.styles.fontStyle = "italic";
+            data.cell.styles.textColor = [130, 130, 130];
+            data.cell.styles.lineWidth = 0;
+            if (data.column.index === 0) {
+              data.cell.colSpan = colCount;
+            } else {
+              data.cell.text = [];
+            }
+          } else {
+            // Color status-like cells
+            const text = (data.cell.raw as string || "").toLowerCase();
+            if (text === "active") {
+              data.cell.styles.textColor = [22, 163, 74];
+              data.cell.styles.fontStyle = "bold";
+            } else if (text === "cancelled" || text === "inactive" || text === "dissolved") {
+              data.cell.styles.textColor = [220, 38, 38];
+              data.cell.styles.fontStyle = "bold";
+            }
           }
         }
       },

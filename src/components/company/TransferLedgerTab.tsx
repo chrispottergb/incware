@@ -1,3 +1,4 @@
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -59,6 +60,7 @@ interface LedgerEntry {
   status: string;
   correctedByEntryNum: string | null;
   correctsEntryNum: string | null;
+  correctionMemo: string | null;
 }
 
 export default function TransferLedgerTab({ companyId, entityType = "Corporation", authorizedShares }: Props) {
@@ -255,6 +257,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
       status: txStatus,
       correctedByEntryNum,
       correctsEntryNum,
+      correctionMemo: (t as any).correction_memo || null,
     });
   });
   const sourceColor = (source: string) => {
@@ -302,6 +305,10 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
               ...(term.isLLC ? [e.ownershipPct != null ? `${e.ownershipPct.toFixed(2)}%` : "—"] : []),
               e.treasuryBalance.toLocaleString(),
             ]),
+            noteRows: entries.reduce<Record<number, string>>((acc, e, idx) => {
+              if (e.type === "correction" && e.correctionMemo) acc[idx] = e.correctionMemo;
+              return acc;
+            }, {}),
           },
         }} />
       </CardHeader>
@@ -336,7 +343,8 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
                   const isCorrected = e.status === "corrected";
                   const isCorrection = e.type === "correction";
                   return (
-                  <TableRow key={e.id} className={isCorrected ? "opacity-50" : ""}>
+                  <React.Fragment key={e.id}>
+                  <TableRow className={isCorrected ? "opacity-50" : ""}>
                     <TableCell className="text-xs font-mono text-muted-foreground">{e.entryNum}</TableCell>
                     <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>
                       {e.date ? new Date(e.date + "T00:00:00").toLocaleDateString() : "—"}
@@ -388,6 +396,16 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
                       {e.treasuryBalance.toLocaleString()}
                     </TableCell>
                   </TableRow>
+                  {isCorrection && e.correctionMemo && (
+                    <TableRow className="border-t-0 hover:bg-transparent">
+                      <TableCell colSpan={term.isLLC ? 15 : 14} className="py-1 px-4 pl-12 border-t-0">
+                        <p className="text-[10px] italic text-muted-foreground">
+                          Correction Note: {e.correctionMemo}
+                        </p>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  </React.Fragment>
                   );
                 })}
               </TableBody>
