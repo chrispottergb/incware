@@ -388,7 +388,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
                       <SelectContent>{shareholders.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
                     </Select>
                   ) : (
-                    /* Corporation: free-text + optional select */
+                    /* Corporation: free-text + shareholder dropdown (matching Seller pattern) */
                     <>
                       <Input className="h-8 text-sm" value={form.buyer_name} onChange={(e) => setForm(p => ({ ...p, buyer_name: e.target.value, buyer_id: "" }))} placeholder="Name" required />
                       {shareholders.length > 0 && (
@@ -396,7 +396,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
                           const sh = shareholders.find(s => s.id === v);
                           setForm(p => ({ ...p, buyer_id: v, buyer_name: sh?.name || p.buyer_name }));
                         }}>
-                          <SelectTrigger className="h-7 text-[11px] mt-1"><SelectValue placeholder={`Link ${term.shareholder.toLowerCase()}`} /></SelectTrigger>
+                          <SelectTrigger className="h-7 text-[11px] mt-1"><SelectValue placeholder={`Select ${term.shareholder.toLowerCase()}`} /></SelectTrigger>
                           <SelectContent>{shareholders.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
                         </Select>
                       )}
