@@ -667,10 +667,13 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   });
 
                   // Display in reverse chronological order (original order)
+                  const txTodayStr = new Date().toISOString().split("T")[0];
                   return transactions.map((t: any) => {
                     const txStatus = (t as any).status || "active";
                     const isCorrected = txStatus === "corrected";
                     const isCorrection = t.transaction_type === "correction";
+                    const effectiveDate = (t as any).effective_date || t.transaction_date || "";
+                    const isPending = effectiveDate > txTodayStr && !isCorrected;
                     const correctsEntryNum = isCorrection && (t as any).corrects_id ? entryNumMap.get((t as any).corrects_id) : null;
                     const correctedByEntryNum = isCorrected ? correctedByMap.get(t.id) : null;
                     const correctionMemo = (t as any).correction_memo || null;
