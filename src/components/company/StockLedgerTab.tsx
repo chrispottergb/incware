@@ -378,10 +378,14 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 const sorted = [...transactions].sort((a, b) =>
                   (a.transaction_date || "").localeCompare(b.transaction_date || "") || (a.created_at || "").localeCompare(b.created_at || "")
                 );
-                return sorted.map((t: any, i: number) => [
+                return sorted.map((t: any, i: number) => {
+                  const pdfTodayStr = new Date().toISOString().split("T")[0];
+                  const pdfEffDate = (t as any).effective_date || t.transaction_date || "";
+                  const pdfPending = pdfEffDate > pdfTodayStr;
+                  return [
                   String(i + 1),
                   t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—",
-                  t.transaction_type?.replace("_", " ") ?? "—",
+                  pdfPending ? `${t.transaction_type?.replace("_", " ") ?? "—"} [PENDING]` : (t.transaction_type?.replace("_", " ") ?? "—"),
                   t.shareholders?.name ?? "—",
                   t.share_class,
                   t.num_shares?.toLocaleString(),
