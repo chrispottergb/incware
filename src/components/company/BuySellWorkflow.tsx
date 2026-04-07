@@ -236,6 +236,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
           total_consideration: totalConsideration,
           consideration_type: form.consideration_type,
           transaction_date: form.transaction_date,
+          effective_date: form.effective_date || form.transaction_date,
           meeting_id: meetingId || null,
         },
       });
