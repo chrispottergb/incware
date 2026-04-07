@@ -73,6 +73,8 @@ export function useShareCalculations(companyId: string) {
     enabled: !!companyId,
   });
 
+  const today = new Date().toISOString().split("T")[0];
+
   // Calculate total issued shares and per-shareholder holdings from transactions
   // Transactions are the single source of truth for ownership
   const shareholderHoldings: ShareholderHoldings = {};
@@ -83,23 +85,25 @@ export function useShareCalculations(companyId: string) {
   let totalIssuedShares = 0;
 
   transactions.forEach((t: any) => {
+    // Skip corrected transactions
+    if ((t as any).status === "corrected") return;
+    // Skip future effective_date transactions
+    const effectiveDate = (t as any).effective_date || t.transaction_date || "";
+    if (effectiveDate > today) return;
+
     const shares = t.num_shares || 0;
 
     if (ISSUANCE_TYPES.includes(t.transaction_type)) {
-      // Issuance: add to total and to the shareholder
       totalIssuedShares += shares;
       if (t.shareholder_id && shareholderHoldings[t.shareholder_id] !== undefined) {
         shareholderHoldings[t.shareholder_id] += shares;
       }
     } else if (REDUCTION_TYPES.includes(t.transaction_type)) {
-      // Reduction: subtract from total and from the shareholder
       totalIssuedShares -= shares;
       if (t.shareholder_id && shareholderHoldings[t.shareholder_id] !== undefined) {
         shareholderHoldings[t.shareholder_id] -= shares;
       }
     } else if (TRANSFER_TYPES.includes(t.transaction_type)) {
-      // Transfers are neutral for total issued, but move shares between holders
-      // Deduct from sender (by name match)
       if (t.from_shareholder) {
         const fromNorm = t.from_shareholder.toLowerCase().trim();
         const sender = shareholders.find(s => s.name.toLowerCase().trim() === fromNorm);
@@ -107,7 +111,6 @@ export function useShareCalculations(companyId: string) {
           shareholderHoldings[sender.id] -= shares;
         }
       }
-      // Add to receiver: check shareholder_id first, then name match
       if (t.to_shareholder) {
         const toNorm = t.to_shareholder.toLowerCase().trim();
         const receiver = shareholders.find(s => s.name.toLowerCase().trim() === toNorm);
@@ -145,8 +148,15 @@ export function getHoldingsByName(
 ): number {
   let holdings = 0;
   const nameNorm = shareholderName.toLowerCase().trim();
+  const today = new Date().toISOString().split("T")[0];
 
   transactions.forEach((t: any) => {
+    // Skip corrected transactions
+    if ((t as any).status === "corrected") return;
+    // Skip future effective_date transactions
+    const effectiveDate = (t as any).effective_date || t.transaction_date || "";
+    if (effectiveDate > today) return;
+
     // Issuances to this shareholder
     if (ISSUANCE_TYPES.includes(t.transaction_type)) {
       const linked = shareholders.find((s) => s.id === t.shareholder_id);
@@ -168,7 +178,6 @@ export function getHoldingsByName(
       if (t.to_shareholder && t.to_shareholder.toLowerCase().trim() === nameNorm) {
         holdings += t.num_shares || 0;
       }
-      // Also check shareholder_id
       else if (t.shareholder_id) {
         const linked = shareholders.find((s) => s.id === t.shareholder_id);
         if (linked && linked.name.toLowerCase().trim() === nameNorm) {

@@ -198,6 +198,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     total_consideration: "",
     consideration_type: "cash",
     transaction_date: new Date().toISOString().split("T")[0],
+    effective_date: new Date().toISOString().split("T")[0],
     from_shareholder: "",
     to_shareholder: "",
     notes: "",
@@ -247,6 +248,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         total_consideration: form.total_consideration ? parseFloat(form.total_consideration) : null,
         consideration_type: form.consideration_type,
         transaction_date: form.transaction_date,
+        effective_date: form.effective_date || form.transaction_date,
         from_shareholder: form.from_shareholder || null,
         to_shareholder: form.to_shareholder || null,
         notes: isNoParValue 
@@ -296,11 +298,15 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       transaction_type: defaultTxType, shareholder_id: "", share_class: "Common",
       num_shares: "", price_per_share: "", total_consideration: "",
       consideration_type: "cash", transaction_date: new Date().toISOString().split("T")[0],
+      effective_date: new Date().toISOString().split("T")[0],
       from_shareholder: "", to_shareholder: "", notes: "",
       par_value: "", issued_certificate_number: "", surrendered_certificate_number: "",
     });
     setAssets([]);
   };
+
+  const todayStr = new Date().toISOString().split("T")[0];
+  const effectiveDateIsFuture = form.effective_date > todayStr;
 
   const isTransfer = ["transfer", "interest_transfer", "interest_assignment", "share_exchange"].includes(form.transaction_type);
   const showAssetGrid = ["property", "other", "services"].includes(form.consideration_type);
