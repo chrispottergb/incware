@@ -294,7 +294,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
                   <TableHead className="text-[10px] uppercase !text-center">Canc.</TableHead>
                   <TableHead className="text-[10px] uppercase !text-center">To Treas.</TableHead>
                   <TableHead className="text-[10px] uppercase !text-center">Consideration</TableHead>
-                  <TableHead className="text-[10px] uppercase !text-center bg-primary/5"><TableHead className="text-[10px] uppercase !text-center bg-primary/5">Balance Held</TableHead></TableHead>
+                  <TableHead className="text-[10px] uppercase !text-center bg-primary/5">Balance Held</TableHead>
                   {term.isLLC && <TableHead className="text-[10px] uppercase !text-center bg-primary/5">Own. %</TableHead>}
                   <TableHead className="text-[10px] uppercase !text-center bg-primary/5">Treasury</TableHead>
                 </TableRow>
