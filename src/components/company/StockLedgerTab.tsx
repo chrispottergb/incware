@@ -198,6 +198,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     total_consideration: "",
     consideration_type: "cash",
     transaction_date: new Date().toISOString().split("T")[0],
+    effective_date: new Date().toISOString().split("T")[0],
     from_shareholder: "",
     to_shareholder: "",
     notes: "",
@@ -247,6 +248,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         total_consideration: form.total_consideration ? parseFloat(form.total_consideration) : null,
         consideration_type: form.consideration_type,
         transaction_date: form.transaction_date,
+        effective_date: form.effective_date || form.transaction_date,
         from_shareholder: form.from_shareholder || null,
         to_shareholder: form.to_shareholder || null,
         notes: isNoParValue 
@@ -296,11 +298,15 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       transaction_type: defaultTxType, shareholder_id: "", share_class: "Common",
       num_shares: "", price_per_share: "", total_consideration: "",
       consideration_type: "cash", transaction_date: new Date().toISOString().split("T")[0],
+      effective_date: new Date().toISOString().split("T")[0],
       from_shareholder: "", to_shareholder: "", notes: "",
       par_value: "", issued_certificate_number: "", surrendered_certificate_number: "",
     });
     setAssets([]);
   };
+
+  const todayStr = new Date().toISOString().split("T")[0];
+  const effectiveDateIsFuture = form.effective_date > todayStr;
 
   const isTransfer = ["transfer", "interest_transfer", "interest_assignment", "share_exchange"].includes(form.transaction_type);
   const showAssetGrid = ["property", "other", "services"].includes(form.consideration_type);
@@ -372,10 +378,14 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 const sorted = [...transactions].sort((a, b) =>
                   (a.transaction_date || "").localeCompare(b.transaction_date || "") || (a.created_at || "").localeCompare(b.created_at || "")
                 );
-                return sorted.map((t: any, i: number) => [
+                return sorted.map((t: any, i: number) => {
+                  const pdfTodayStr = new Date().toISOString().split("T")[0];
+                  const pdfEffDate = (t as any).effective_date || t.transaction_date || "";
+                  const pdfPending = pdfEffDate > pdfTodayStr;
+                  return [
                   String(i + 1),
                   t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—",
-                  t.transaction_type?.replace("_", " ") ?? "—",
+                  pdfPending ? `${t.transaction_type?.replace("_", " ") ?? "—"} [PENDING]` : (t.transaction_type?.replace("_", " ") ?? "—"),
                   t.shareholders?.name ?? "—",
                   t.share_class,
                   t.num_shares?.toLocaleString(),
@@ -385,7 +395,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   t.consideration_type ?? "—",
                   [t.issued_certificate_number ? `Issued #${t.issued_certificate_number}` : "", t.surrendered_certificate_number ? `Surr #${t.surrendered_certificate_number}` : ""].filter(Boolean).join(", ") || "—",
                   t.notes ?? "",
-                ]);
+                ]});
               })(),
               noteRows: (() => {
                 const sorted = [...transactions].sort((a, b) =>
@@ -430,6 +440,19 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 <div className="field-group">
                   <Label className="field-label">Date</Label>
                   <DatePickerField value={form.transaction_date} onChange={(v) => setForm(p => ({ ...p, transaction_date: v }))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="field-group">
+                  <Label className="field-label">Effective Date</Label>
+                  <DatePickerField value={form.effective_date} onChange={(v) => setForm(p => ({ ...p, effective_date: v }))} />
+                </div>
+                <div className="field-group flex items-end pb-1">
+                  {effectiveDateIsFuture ? (
+                    <Badge variant="outline" className="text-[10px] bg-yellow-50 text-yellow-700 border-yellow-300">Pending</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-300">Effective</Badge>
+                  )}
                 </div>
               </div>
               <div className="field-group">
@@ -614,11 +637,14 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                     }
                   });
 
+                  const balTodayStr = new Date().toISOString().split("T")[0];
                   sorted.forEach((t: any) => {
                     const shName = (t.shareholders?.name || "").toLowerCase().trim();
+                    const effDate = (t as any).effective_date || t.transaction_date || "";
+                    const isPendingBal = effDate > balTodayStr;
 
-                    // Skip corrected entries from balance accumulation
-                    if ((t as any).status === "corrected") {
+                    // Skip corrected or pending entries from balance accumulation
+                    if ((t as any).status === "corrected" || isPendingBal) {
                       balanceMap.set(t.id, balances[shName || (t.to_shareholder || "unknown").toLowerCase().trim()] || 0);
                       return;
                     }
@@ -648,10 +674,13 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   });
 
                   // Display in reverse chronological order (original order)
+                  const txTodayStr = new Date().toISOString().split("T")[0];
                   return transactions.map((t: any) => {
                     const txStatus = (t as any).status || "active";
                     const isCorrected = txStatus === "corrected";
                     const isCorrection = t.transaction_type === "correction";
+                    const effectiveDate = (t as any).effective_date || t.transaction_date || "";
+                    const isPending = effectiveDate > txTodayStr && !isCorrected;
                     const correctsEntryNum = isCorrection && (t as any).corrects_id ? entryNumMap.get((t as any).corrects_id) : null;
                     const correctedByEntryNum = isCorrected ? correctedByMap.get(t.id) : null;
                     const correctionMemo = (t as any).correction_memo || null;
@@ -683,6 +712,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                                 <TooltipContent><p className="text-xs">Corrects entry #{correctsEntryNum || "?"}</p></TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
+                          )}
+                          {isPending && (
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 border-yellow-300 text-yellow-700 bg-yellow-50">Pending</Badge>
                           )}
                         </div>
                       </TableCell>

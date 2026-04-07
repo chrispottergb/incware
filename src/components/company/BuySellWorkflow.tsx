@@ -13,6 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Loader2, ArrowRight, ArrowLeft, CheckCircle2, Link2, ArrowRightLeft, AlertTriangle, UserPlus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
@@ -109,7 +110,11 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
     total_consideration: "",
     consideration_type: "cash",
     transaction_date: new Date().toISOString().split("T")[0],
+    effective_date: new Date().toISOString().split("T")[0],
   });
+
+  const bswTodayStr = new Date().toISOString().split("T")[0];
+  const bswEffectiveDateIsFuture = form.effective_date > bswTodayStr;
 
   const { data: shareholders = [] } = useQuery({
     queryKey: ["shareholders", companyId],
@@ -147,6 +152,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
       share_class: term.defaultClass, num_shares: "", price_per_share: "",
       total_consideration: "", consideration_type: "cash",
       transaction_date: new Date().toISOString().split("T")[0],
+      effective_date: new Date().toISOString().split("T")[0],
     });
   };
 
@@ -230,6 +236,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
           total_consideration: totalConsideration,
           consideration_type: form.consideration_type,
           transaction_date: form.transaction_date,
+          effective_date: form.effective_date || form.transaction_date,
           meeting_id: meetingId || null,
         },
       });
@@ -358,6 +365,19 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
               <div className="field-group">
                 <Label className="field-label">Date</Label>
                 <DatePickerField value={form.transaction_date} onChange={(v) => setForm(p => ({ ...p, transaction_date: v }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="field-group">
+                <Label className="field-label">Effective Date</Label>
+                <DatePickerField value={form.effective_date} onChange={(v) => setForm(p => ({ ...p, effective_date: v }))} />
+              </div>
+              <div className="field-group flex items-end pb-1">
+                {bswEffectiveDateIsFuture ? (
+                  <Badge variant="outline" className="text-[10px] bg-yellow-50 text-yellow-700 border-yellow-300">Pending</Badge>
+                ) : (
+                  <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-300">Effective</Badge>
+                )}
               </div>
             </div>
 

@@ -40,6 +40,7 @@ interface Props {
 interface LedgerEntry {
   entryNum: number;
   date: string;
+  effectiveDate: string;
   type: string;
   certIssued: string;
   certCancelled: string;
@@ -58,6 +59,7 @@ interface LedgerEntry {
   linked: boolean;
   id: string;
   status: string;
+  isPending: boolean;
   correctedByEntryNum: string | null;
   correctsEntryNum: string | null;
   correctionMemo: string | null;
@@ -109,6 +111,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
   // Build unified entries sorted chronologically
   // Use transactions as the primary source, enrich with cert data
   const entries: LedgerEntry[] = [];
+  const todayStr = new Date().toISOString().split("T")[0];
 
   // Track running balances
   const holderBalances: Record<string, number> = {};
@@ -175,6 +178,8 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     const txStatus = (t as any).status || "active";
     const isCorrected = txStatus === "corrected";
     const isCorrection = txType === "correction";
+    const effectiveDate = (t as any).effective_date || t.transaction_date || "";
+    const isPending = effectiveDate > todayStr && !isCorrected;
     const isIss = ISSUANCE_TYPES.includes(txType);
     const isRed = REDUCTION_TYPES.includes(txType);
     const isTx = TRANSFER_TYPES.includes(txType);
@@ -189,9 +194,9 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     let sharesToTreasury = 0;
 
     // Skip corrected entries from balance accumulation
-    if (!isCorrected) {
+    // Also skip pending (future effective_date) entries from balance accumulation
+    if (!isCorrected && !isPending) {
       if (isCorrection) {
-        // Correction reverses: subtract from the "from" party (original holder)
         const key = fromKey || holderKey;
         if (key) {
           holderBalances[key] = (holderBalances[key] || 0) - (t.num_shares || 0);
@@ -237,6 +242,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     entries.push({
       entryNum: entries.length + 1,
       date: t.transaction_date || "",
+      effectiveDate: effectiveDate,
       type: txType.replace(/_/g, " "),
       certIssued: certIssued ? `#${(certIssued as any).certificate_number}` : "—",
       certCancelled: certCancelled ? `#${(certCancelled as any).certificate_number}` : "—",
@@ -255,6 +261,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
       linked: !!t.bill_of_sale_id,
       id: t.id,
       status: txStatus,
+      isPending,
       correctedByEntryNum,
       correctsEntryNum,
       correctionMemo: (t as any).correction_memo || null,
@@ -292,7 +299,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
             rows: entries.map(e => [
               String(e.entryNum),
               e.date ? new Date(e.date + "T00:00:00").toLocaleDateString() : "—",
-              e.type,
+              e.isPending ? `${e.type} [PENDING]` : e.type,
               e.transferee,
               e.transferor,
               e.certIssued,
@@ -371,6 +378,9 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
                               <TooltipContent><p className="text-xs">Corrects entry #{e.correctsEntryNum || "?"}</p></TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
+                        )}
+                        {e.isPending && (
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 border-yellow-300 text-yellow-700 bg-yellow-50">Pending</Badge>
                         )}
                       </div>
                     </TableCell>

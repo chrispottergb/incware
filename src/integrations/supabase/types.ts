@@ -2840,6 +2840,7 @@ export type Database = {
           correction_memo: string | null
           corrects_id: string | null
           created_at: string
+          effective_date: string
           from_shareholder: string | null
           id: string
           issued_certificate_number: number | null
@@ -2867,6 +2868,7 @@ export type Database = {
           correction_memo?: string | null
           corrects_id?: string | null
           created_at?: string
+          effective_date?: string
           from_shareholder?: string | null
           id?: string
           issued_certificate_number?: number | null
@@ -2894,6 +2896,7 @@ export type Database = {
           correction_memo?: string | null
           corrects_id?: string | null
           created_at?: string
+          effective_date?: string
           from_shareholder?: string | null
           id?: string
           issued_certificate_number?: number | null
