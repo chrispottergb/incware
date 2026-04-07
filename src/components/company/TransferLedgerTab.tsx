@@ -305,6 +305,11 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
               ...(term.isLLC ? [e.ownershipPct != null ? `${e.ownershipPct.toFixed(2)}%` : "—"] : []),
               e.treasuryBalance.toLocaleString(),
             ]),
+            noteRows: entries.reduce<Record<number, string>>((acc, e, idx) => {
+              if (e.type === "correction" && e.correctionMemo) acc[idx] = e.correctionMemo;
+              return acc;
+            }, {}),
+          },
           },
         }} />
       </CardHeader>

@@ -387,6 +387,18 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   t.notes ?? "",
                 ]);
               })(),
+              noteRows: (() => {
+                const sorted = [...transactions].sort((a, b) =>
+                  (a.transaction_date || "").localeCompare(b.transaction_date || "") || (a.created_at || "").localeCompare(b.created_at || "")
+                );
+                const notes: Record<number, string> = {};
+                sorted.forEach((t: any, i: number) => {
+                  if (t.transaction_type === "correction" && (t as any).correction_memo) {
+                    notes[i] = (t as any).correction_memo;
+                  }
+                });
+                return notes;
+              })(),
             },
           }} />
           <Dialog open={dialog} onOpenChange={(open) => { setDialog(open); if (!open) resetForm(); }}>
