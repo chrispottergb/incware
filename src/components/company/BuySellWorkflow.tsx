@@ -13,6 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Loader2, ArrowRight, ArrowLeft, CheckCircle2, Link2, ArrowRightLeft, AlertTriangle, UserPlus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
