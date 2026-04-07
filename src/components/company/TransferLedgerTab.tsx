@@ -251,7 +251,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
       certIssued: certIssued ? `#${(certIssued as any).certificate_number}` : "—",
       certCancelled: certCancelled ? `#${(certCancelled as any).certificate_number}` : "—",
       transferee: transfereeName || "—",
-      transferor: isTx ? (transferorName || "—") : isRed ? (transferorName || transfereeName || "—") : "—",
+      transferor: isIss ? "" : isTx ? (transferorName || "—") : isRed ? (transferorName || transfereeName || "—") : "—",
       classLabel: t.share_class || "—",
       sharesIssued: isIss || isTx ? sharesIssued : 0,
       sharesCancelled: isRed || isTx ? sharesCancelled : 0,
@@ -295,15 +295,15 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
           statuteRef: `Permanent record — entries cannot be edited or deleted`,
           landscape: true,
           table: {
-            headers: ["#", "Date", "Type", "Cert Issued", "Cert Cancelled", "Transferee", "Transferor", "Issued", "Cancelled", "To Treasury", "Consideration", "SH Balance", ...(term.isLLC ? ["Ownership %"] : []), "Treasury Balance"],
+            headers: ["#", "Date", "Type", "Transferred To", "Transferred From", "Cert Issued", "Cert Cancelled", "Issued", "Cancelled", "To Treasury", "Consideration", "SH Balance", ...(term.isLLC ? ["Ownership %"] : []), "Treasury Balance"],
             rows: entries.map(e => [
               String(e.entryNum),
               e.date ? new Date(e.date + "T00:00:00").toLocaleDateString() : "—",
               e.type,
-              e.certIssued,
-              e.certCancelled,
               e.transferee,
               e.transferor,
+              e.certIssued,
+              e.certCancelled,
               e.sharesIssued > 0 ? e.sharesIssued.toLocaleString() : "—",
               e.sharesCancelled > 0 ? e.sharesCancelled.toLocaleString() : "—",
               e.sharesToTreasury > 0 ? e.sharesToTreasury.toLocaleString() : "—",
@@ -325,20 +325,20 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-[10px] uppercase w-8">#</TableHead>
-                  <TableHead className="text-[10px] uppercase">Date</TableHead>
-                  <TableHead className="text-[10px] uppercase">Type</TableHead>
-                  <TableHead className="text-[10px] uppercase">Cert Issued</TableHead>
-                  <TableHead className="text-[10px] uppercase">Cert Canc.</TableHead>
-                  <TableHead className="text-[10px] uppercase">Transferee</TableHead>
-                  <TableHead className="text-[10px] uppercase">Transferor</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">Issued</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">Canc.</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">To Treas.</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right">Consideration</TableHead>
-                  <TableHead className="text-[10px] uppercase text-right bg-primary/5">SH Bal.</TableHead>
-                  {term.isLLC && <TableHead className="text-[10px] uppercase text-right bg-primary/5">Own. %</TableHead>}
-                  <TableHead className="text-[10px] uppercase text-right bg-primary/5">Treasury</TableHead>
+                  <TableHead className="text-[10px] uppercase text-center w-8">#</TableHead>
+                  <TableHead className="text-[10px] uppercase text-center">Date</TableHead>
+                  <TableHead className="text-[10px] uppercase text-center">Type</TableHead>
+                  <TableHead className="text-[10px] uppercase text-center">Transferred To</TableHead>
+                  <TableHead className="text-[10px] uppercase text-center">Transferred From</TableHead>
+                  <TableHead className="text-[10px] uppercase text-center">Cert Issued</TableHead>
+                  <TableHead className="text-[10px] uppercase text-center">Cert Canc.</TableHead>
+                  <TableHead className="text-[10px] uppercase text-center">Issued</TableHead>
+                  <TableHead className="text-[10px] uppercase text-center">Canc.</TableHead>
+                  <TableHead className="text-[10px] uppercase text-center">To Treas.</TableHead>
+                  <TableHead className="text-[10px] uppercase text-center">Consideration</TableHead>
+                  <TableHead className="text-[10px] uppercase text-center bg-primary/5">SH Bal.</TableHead>
+                  {term.isLLC && <TableHead className="text-[10px] uppercase text-center bg-primary/5">Own. %</TableHead>}
+                  <TableHead className="text-[10px] uppercase text-center bg-primary/5">Treasury</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -351,10 +351,10 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
                     <TableCell>
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">{e.type}</Badge>
                     </TableCell>
-                    <TableCell className="text-xs font-mono">{e.certIssued}</TableCell>
-                    <TableCell className="text-xs font-mono">{e.certCancelled}</TableCell>
                     <TableCell className="text-xs font-medium">{e.transferee}</TableCell>
                     <TableCell className="text-xs">{e.transferor}</TableCell>
+                    <TableCell className="text-xs font-mono">{e.certIssued}</TableCell>
+                    <TableCell className="text-xs font-mono">{e.certCancelled}</TableCell>
                     <TableCell className="text-xs text-right">{e.sharesIssued > 0 ? e.sharesIssued.toLocaleString() : "—"}</TableCell>
                     <TableCell className="text-xs text-right">{e.sharesCancelled > 0 ? e.sharesCancelled.toLocaleString() : "—"}</TableCell>
                     <TableCell className="text-xs text-right">{e.sharesToTreasury > 0 ? e.sharesToTreasury.toLocaleString() : "—"}</TableCell>
