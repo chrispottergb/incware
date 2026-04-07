@@ -706,6 +706,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                               </Tooltip>
                             </TooltipProvider>
                           )}
+                          {isPending && (
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 border-yellow-300 text-yellow-700 bg-yellow-50">Pending</Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>{t.shareholders?.name ?? t.to_shareholder ?? "—"}</TableCell>
