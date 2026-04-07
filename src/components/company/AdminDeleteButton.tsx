@@ -34,18 +34,14 @@ export default function AdminDeleteButton({ transaction, companyId }: AdminDelet
   const { data: hasDependents = true } = useQuery({
     queryKey: ["tx-dependents", transaction.id],
     queryFn: async () => {
-      // Check if any other transaction references this one
-      const { count: correctsCount } = await supabase
+      const { data: deps } = await supabase
         .from("share_transactions")
-        .select("id", { count: "exact", head: true })
-        .eq("corrects_id" as any, transaction.id);
+        .select("id")
+        .eq("company_id", companyId)
+        .or(`corrects_id.eq.${transaction.id},transferred_certificate_id.eq.${transaction.id}`)
+        .limit(1);
 
-      const { count: certRefCount } = await supabase
-        .from("share_transactions")
-        .select("id", { count: "exact", head: true })
-        .eq("transferred_certificate_id" as any, transaction.id);
-
-      return (correctsCount || 0) > 0 || (certRefCount || 0) > 0;
+      return (deps?.length || 0) > 0;
     },
     enabled: !!transaction.id,
   });
