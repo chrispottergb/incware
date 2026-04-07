@@ -70,6 +70,8 @@ export interface SectionPdfField {
 export interface SectionPdfTable {
   headers: string[];
   rows: string[][];
+  /** Map of row index → inline note text to render beneath that row */
+  noteRows?: Record<number, string>;
 }
 
 export interface SectionPdfConfig {
@@ -110,6 +112,11 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
 
   // Render table data
   if (config.table && config.table.rows.length > 0) {
+    const noteRowSet = new Set<number>();
+    if (config.table.noteRows) {
+      Object.keys(config.table.noteRows).forEach(k => noteRowSet.add(Number(k)));
+    }
+
     autoTable(doc, {
       startY: y,
       head: [config.table.headers],
@@ -129,6 +136,20 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
           } else if (text === "cancelled" || text === "inactive" || text === "dissolved") {
             data.cell.styles.textColor = [220, 38, 38];
             data.cell.styles.fontStyle = "bold";
+          }
+        }
+      },
+      didDrawRow(data) {
+        if (data.section === "body" && config.table?.noteRows) {
+          const note = config.table.noteRows[data.row.index];
+          if (note) {
+            const rowBottom = data.row.y + data.row.height;
+            doc.setFontSize(8);
+            doc.setFont("Arial", "italic");
+            doc.setTextColor(130, 130, 130);
+            doc.text(`Correction Note: ${note}`, MARGIN + 8, rowBottom + 4);
+            // Add spacing so the next row doesn't overlap
+            data.row.height += 7;
           }
         }
       },
