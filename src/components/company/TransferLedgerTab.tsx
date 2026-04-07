@@ -295,7 +295,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
           statuteRef: `Permanent record — entries cannot be edited or deleted`,
           landscape: true,
           table: {
-            headers: ["#", "Date", "Type", "Transferred To", "Transferred From", "Cert Issued", "Cert Cancelled", "Issued", "Cancelled", "To Treasury", "Consideration", "SH Balance", ...(term.isLLC ? ["Ownership %"] : []), "Treasury Balance"],
+            headers: ["#", "Date", "Type", "Transferred To", "Transferred From", "Cert Issued", "Cert Cancelled", "Issued", "Cancelled", "To Treasury", "Consideration", "headers: ["#", "Date", "Type", "Transferred To", "Transferred From", "Cert Issued", "Cert Cancelled", "Issued", "Cancelled", "To Treasury", "Consideration", "Balance Held", ...(term.isLLC ? ["Ownership %"] : []), "Treasury Balance"],", ...(term.isLLC ? ["Ownership %"] : []), "Treasury Balance"],
             rows: entries.map(e => [
               String(e.entryNum),
               e.date ? new Date(e.date + "T00:00:00").toLocaleDateString() : "—",
@@ -336,7 +336,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
                   <TableHead className="text-[10px] uppercase !text-center">Canc.</TableHead>
                   <TableHead className="text-[10px] uppercase !text-center">To Treas.</TableHead>
                   <TableHead className="text-[10px] uppercase !text-center">Consideration</TableHead>
-                  <TableHead className="text-[10px] uppercase !text-center bg-primary/5">SH Bal.</TableHead>
+                  <TableHead className="text-[10px] uppercase !text-center bg-primary/5"><TableHead className="text-[10px] uppercase !text-center bg-primary/5">Balance Held</TableHead></TableHead>
                   {term.isLLC && <TableHead className="text-[10px] uppercase !text-center bg-primary/5">Own. %</TableHead>}
                   <TableHead className="text-[10px] uppercase !text-center bg-primary/5">Treasury</TableHead>
                 </TableRow>
