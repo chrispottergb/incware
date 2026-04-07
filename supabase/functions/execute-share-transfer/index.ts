@@ -20,6 +20,7 @@ interface TransferPayload {
   total_consideration: number | null;
   consideration_type: string;
   transaction_date: string;
+  effective_date?: string;
   meeting_id?: string | null;
 }
 
@@ -201,17 +202,18 @@ Deno.serve(async (req: Request) => {
         const certActions: string[] = [];
 
         // ── 1. Insert primary share_transaction ──
+        const effectiveDate = payload.effective_date || payload.transaction_date;
         const [txn] = await tx`
           INSERT INTO share_transactions (
             company_id, transaction_type, shareholder_id, share_class,
             num_shares, price_per_share, total_consideration, consideration_type,
-            transaction_date, from_shareholder, to_shareholder, meeting_id
+            transaction_date, effective_date, from_shareholder, to_shareholder, meeting_id
           ) VALUES (
             ${payload.company_id}, ${payload.transaction_type},
             ${payload.seller_id || null}, ${payload.share_class},
             ${payload.num_shares}, ${payload.price_per_share || null},
             ${payload.total_consideration || null}, ${payload.consideration_type},
-            ${payload.transaction_date}, ${payload.seller_name},
+            ${payload.transaction_date}, ${effectiveDate}, ${payload.seller_name},
             ${isRedemption ? "Treasury" : payload.buyer_name},
             ${payload.meeting_id || null}
           )
