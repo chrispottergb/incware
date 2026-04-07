@@ -633,11 +633,14 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                     }
                   });
 
+                  const balTodayStr = new Date().toISOString().split("T")[0];
                   sorted.forEach((t: any) => {
                     const shName = (t.shareholders?.name || "").toLowerCase().trim();
+                    const effDate = (t as any).effective_date || t.transaction_date || "";
+                    const isPendingBal = effDate > balTodayStr;
 
-                    // Skip corrected entries from balance accumulation
-                    if ((t as any).status === "corrected") {
+                    // Skip corrected or pending entries from balance accumulation
+                    if ((t as any).status === "corrected" || isPendingBal) {
                       balanceMap.set(t.id, balances[shName || (t.to_shareholder || "unknown").toLowerCase().trim()] || 0);
                       return;
                     }

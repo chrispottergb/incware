@@ -109,7 +109,11 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
     total_consideration: "",
     consideration_type: "cash",
     transaction_date: new Date().toISOString().split("T")[0],
+    effective_date: new Date().toISOString().split("T")[0],
   });
+
+  const bswTodayStr = new Date().toISOString().split("T")[0];
+  const bswEffectiveDateIsFuture = form.effective_date > bswTodayStr;
 
   const { data: shareholders = [] } = useQuery({
     queryKey: ["shareholders", companyId],
