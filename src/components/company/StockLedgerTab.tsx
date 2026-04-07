@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -642,9 +642,11 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                     const isCorrection = t.transaction_type === "correction";
                     const correctsEntryNum = isCorrection && (t as any).corrects_id ? entryNumMap.get((t as any).corrects_id) : null;
                     const correctedByEntryNum = isCorrected ? correctedByMap.get(t.id) : null;
+                    const correctionMemo = (t as any).correction_memo || null;
 
                     return (
-                    <TableRow key={t.id} className={isCorrected ? "opacity-50" : ""}>
+                    <React.Fragment key={t.id}>
+                    <TableRow className={isCorrected ? "opacity-50" : ""}>
                       <TableCell className="text-xs font-mono text-muted-foreground">{entryNumMap.get(t.id)}</TableCell>
                       <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>{t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
                       <TableCell>
@@ -712,6 +714,16 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                         </div>
                       </TableCell>
                     </TableRow>
+                    {isCorrection && correctionMemo && (
+                      <TableRow className="border-t-0 hover:bg-transparent">
+                        <TableCell colSpan={14} className="py-1 px-4 pl-12 border-t-0">
+                          <p className="text-[10px] italic text-muted-foreground">
+                            Correction Note: {correctionMemo}
+                          </p>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    </React.Fragment>
                     );
                   });
                 })()}
