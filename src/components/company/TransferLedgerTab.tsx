@@ -321,24 +321,24 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
         ) : entries.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-6">No ownership activity recorded yet.</p>
         ) : (
-          <div className="rounded-md border border-border overflow-auto">
+          <div className="rounded-md border border-border overflow-auto [&_td]:border-l [&_td]:border-border [&_td:first-child]:border-l-0 [&_th]:border-l [&_th]:border-border [&_th:first-child]:border-l-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-[10px] uppercase text-center w-8">#</TableHead>
-                  <TableHead className="text-[10px] uppercase text-center">Date</TableHead>
-                  <TableHead className="text-[10px] uppercase text-center">Type</TableHead>
-                  <TableHead className="text-[10px] uppercase text-center">Transferred To</TableHead>
-                  <TableHead className="text-[10px] uppercase text-center">Transferred From</TableHead>
-                  <TableHead className="text-[10px] uppercase text-center">Cert Issued</TableHead>
-                  <TableHead className="text-[10px] uppercase text-center">Cert Canc.</TableHead>
-                  <TableHead className="text-[10px] uppercase text-center">Issued</TableHead>
-                  <TableHead className="text-[10px] uppercase text-center">Canc.</TableHead>
-                  <TableHead className="text-[10px] uppercase text-center">To Treas.</TableHead>
-                  <TableHead className="text-[10px] uppercase text-center">Consideration</TableHead>
-                  <TableHead className="text-[10px] uppercase text-center bg-primary/5">SH Bal.</TableHead>
-                  {term.isLLC && <TableHead className="text-[10px] uppercase text-center bg-primary/5">Own. %</TableHead>}
-                  <TableHead className="text-[10px] uppercase text-center bg-primary/5">Treasury</TableHead>
+                  <TableHead className="text-[10px] uppercase !text-center w-8">#</TableHead>
+                  <TableHead className="text-[10px] uppercase !text-center">Date</TableHead>
+                  <TableHead className="text-[10px] uppercase !text-center">Type</TableHead>
+                  <TableHead className="text-[10px] uppercase !text-center">Transferred To</TableHead>
+                  <TableHead className="text-[10px] uppercase !text-center">Transferred From</TableHead>
+                  <TableHead className="text-[10px] uppercase !text-center">Cert Issued</TableHead>
+                  <TableHead className="text-[10px] uppercase !text-center">Cert Canc.</TableHead>
+                  <TableHead className="text-[10px] uppercase !text-center">Issued</TableHead>
+                  <TableHead className="text-[10px] uppercase !text-center">Canc.</TableHead>
+                  <TableHead className="text-[10px] uppercase !text-center">To Treas.</TableHead>
+                  <TableHead className="text-[10px] uppercase !text-center">Consideration</TableHead>
+                  <TableHead className="text-[10px] uppercase !text-center bg-primary/5">SH Bal.</TableHead>
+                  {term.isLLC && <TableHead className="text-[10px] uppercase !text-center bg-primary/5">Own. %</TableHead>}
+                  <TableHead className="text-[10px] uppercase !text-center bg-primary/5">Treasury</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
