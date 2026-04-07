@@ -2836,6 +2836,9 @@ export type Database = {
           certificate_id: string | null
           company_id: string
           consideration_type: string | null
+          corrected_by_id: string | null
+          correction_memo: string | null
+          corrects_id: string | null
           created_at: string
           from_shareholder: string | null
           id: string
@@ -2847,6 +2850,7 @@ export type Database = {
           price_per_share: number | null
           share_class: string
           shareholder_id: string | null
+          status: string
           surrendered_certificate_number: number | null
           to_shareholder: string | null
           total_consideration: number | null
@@ -2859,6 +2863,9 @@ export type Database = {
           certificate_id?: string | null
           company_id: string
           consideration_type?: string | null
+          corrected_by_id?: string | null
+          correction_memo?: string | null
+          corrects_id?: string | null
           created_at?: string
           from_shareholder?: string | null
           id?: string
@@ -2870,6 +2877,7 @@ export type Database = {
           price_per_share?: number | null
           share_class?: string
           shareholder_id?: string | null
+          status?: string
           surrendered_certificate_number?: number | null
           to_shareholder?: string | null
           total_consideration?: number | null
@@ -2882,6 +2890,9 @@ export type Database = {
           certificate_id?: string | null
           company_id?: string
           consideration_type?: string | null
+          corrected_by_id?: string | null
+          correction_memo?: string | null
+          corrects_id?: string | null
           created_at?: string
           from_shareholder?: string | null
           id?: string
@@ -2893,6 +2904,7 @@ export type Database = {
           price_per_share?: number | null
           share_class?: string
           shareholder_id?: string | null
+          status?: string
           surrendered_certificate_number?: number | null
           to_shareholder?: string | null
           total_consideration?: number | null
@@ -2920,6 +2932,20 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "share_transactions_corrected_by_id_fkey"
+            columns: ["corrected_by_id"]
+            isOneToOne: false
+            referencedRelation: "share_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "share_transactions_corrects_id_fkey"
+            columns: ["corrects_id"]
+            isOneToOne: false
+            referencedRelation: "share_transactions"
             referencedColumns: ["id"]
           },
           {

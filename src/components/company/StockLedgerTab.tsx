@@ -30,7 +30,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, BookOpen, Link2, Lock, Trash2, FileText, Award } from "lucide-react";
+import { Plus, Loader2, BookOpen, Link2, Lock, Trash2, FileText, Award, RotateCcw } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import CorrectionModal from "./CorrectionModal";
+import AdminDeleteButton from "./AdminDeleteButton";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
@@ -135,6 +138,8 @@ interface Props {
 export default function StockLedgerTab({ companyId, entityType = "Corporation" }: Props) {
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState(false);
+  const [correctionTarget, setCorrectionTarget] = useState<any>(null);
+  const [correctionEntryNum, setCorrectionEntryNum] = useState<number | undefined>();
   const transactionTypes = TRANSACTION_TYPES_BY_ENTITY[entityType] || DEFAULT_TRANSACTION_TYPES;
   const term = getTerminology(entityType);
 
@@ -583,12 +588,36 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   const TRANSFER_SET = new Set(["transfer", "interest_transfer", "interest_assignment", "share_exchange", "gift"]);
                   const REDUCTION_SET = new Set(["redemption", "reacquisition", "cancellation", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout"]);
 
+                  // Map corrected_by_id to correction entry number for cross-referencing
+                  const correctedByMap = new Map<string, string>();
+
                   sorted.forEach((t: any, idx: number) => {
                     entryNumMap.set(t.id, idx + 1);
+                  });
+
+                  // Build correction cross-reference maps
+                  sorted.forEach((t: any) => {
+                    if ((t as any).corrected_by_id) {
+                      correctedByMap.set(t.id, String(entryNumMap.get((t as any).corrected_by_id) || "?"));
+                    }
+                  });
+
+                  sorted.forEach((t: any) => {
                     const shName = (t.shareholders?.name || "").toLowerCase().trim();
+
+                    // Skip corrected entries from balance accumulation
+                    if ((t as any).status === "corrected") {
+                      balanceMap.set(t.id, balances[shName || (t.to_shareholder || "unknown").toLowerCase().trim()] || 0);
+                      return;
+                    }
 
                     if (REDUCTION_SET.has(t.transaction_type)) {
                       const key = shName || (t.from_shareholder || "unknown").toLowerCase().trim();
+                      balances[key] = (balances[key] || 0) - (t.num_shares || 0);
+                      balanceMap.set(t.id, Math.max(0, balances[key]));
+                    } else if (t.transaction_type === "correction") {
+                      // Correction entries reverse the original — treat as reduction from the original holder
+                      const key = (t.from_shareholder || shName || "unknown").toLowerCase().trim();
                       balances[key] = (balances[key] || 0) - (t.num_shares || 0);
                       balanceMap.set(t.id, Math.max(0, balances[key]));
                     } else if (t.transaction_type === "reissuance") {
@@ -607,16 +636,45 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   });
 
                   // Display in reverse chronological order (original order)
-                  return transactions.map((t: any) => (
-                    <TableRow key={t.id}>
+                  return transactions.map((t: any) => {
+                    const txStatus = (t as any).status || "active";
+                    const isCorrected = txStatus === "corrected";
+                    const isCorrection = t.transaction_type === "correction";
+                    const correctsEntryNum = isCorrection && (t as any).corrects_id ? entryNumMap.get((t as any).corrects_id) : null;
+                    const correctedByEntryNum = isCorrected ? correctedByMap.get(t.id) : null;
+
+                    return (
+                    <TableRow key={t.id} className={isCorrected ? "opacity-50" : ""}>
                       <TableCell className="text-xs font-mono text-muted-foreground">{entryNumMap.get(t.id)}</TableCell>
-                      <TableCell className="text-xs">{t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
+                      <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>{t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">{t.transaction_type?.replace("_", " ")}</Badge>
+                        <div className="flex items-center gap-1">
+                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 capitalize ${isCorrected ? "line-through" : ""}`}>{t.transaction_type?.replace(/_/g, " ")}</Badge>
+                          {isCorrected && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="destructive" className="text-[9px] px-1 py-0">Corrected</Badge>
+                                </TooltipTrigger>
+                                <TooltipContent><p className="text-xs">See entry #{correctedByEntryNum || "?"}</p></TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                          {isCorrection && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge className="text-[9px] px-1 py-0 bg-accent text-accent-foreground">Correction</Badge>
+                                </TooltipTrigger>
+                                <TooltipContent><p className="text-xs">Corrects entry #{correctsEntryNum || "?"}</p></TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
                       </TableCell>
-                      <TableCell className="text-xs">{t.shareholders?.name ?? t.to_shareholder ?? "—"}</TableCell>
-                      <TableCell className="text-xs">{t.share_class}</TableCell>
-                      <TableCell className="text-xs text-right">{t.num_shares?.toLocaleString()}</TableCell>
+                      <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>{t.shareholders?.name ?? t.to_shareholder ?? "—"}</TableCell>
+                      <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>{t.share_class}</TableCell>
+                      <TableCell className={`text-xs text-right ${isCorrected ? "line-through" : ""}`}>{t.num_shares?.toLocaleString()}</TableCell>
                       <TableCell className="text-xs text-right">{(t as any).par_value != null ? `$${Number((t as any).par_value).toFixed(2)}` : (company?.par_value_type === "no_par" ? "No Par Value" : "—")}</TableCell>
                       <TableCell className="text-xs text-right">{t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—"}</TableCell>
                       <TableCell className="text-xs text-right">{t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—"}</TableCell>
@@ -629,6 +687,13 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                       <TableCell className="text-xs text-right font-semibold bg-primary/5">{balanceMap.get(t.id)?.toLocaleString() ?? "—"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-0.5">
+                          {txStatus === "active" && !isCorrection && (
+                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" title="Correct this transaction"
+                              onClick={() => { setCorrectionTarget(t); setCorrectionEntryNum(entryNumMap.get(t.id)); }}>
+                              <RotateCcw className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                            </Button>
+                          )}
+                          <AdminDeleteButton transaction={t} companyId={companyId} />
                           {t.bill_of_sale_id && (
                             <Button size="sm" variant="ghost" className="h-6 w-6 p-0" title="Print Bill of Sale" onClick={() => handlePrintBillOfSale(t)}>
                               <FileText className="h-3 w-3 text-primary" />
@@ -639,7 +704,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                               <Award className="h-3 w-3 text-primary" />
                             </Button>
                           )}
-                          {!t.bill_of_sale_id && !(t as any).issued_certificate_number && !t.certificate_id && (
+                          {txStatus === "active" && !isCorrection && !t.bill_of_sale_id && !(t as any).issued_certificate_number && !t.certificate_id && (
                             <span aria-label="No linked documents">
                               <Link2 className="h-3 w-3 text-muted-foreground/40" />
                             </span>
@@ -647,7 +712,8 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                         </div>
                       </TableCell>
                     </TableRow>
-                  ));
+                    );
+                  });
                 })()}
               </TableBody>
             </Table>
@@ -658,6 +724,14 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
           This is a permanent record. Entries cannot be edited or deleted. Corrections are made by adding new entries.
         </p>
       </CardContent>
+
+      <CorrectionModal
+        open={!!correctionTarget}
+        onOpenChange={(o) => { if (!o) { setCorrectionTarget(null); setCorrectionEntryNum(undefined); } }}
+        transaction={correctionTarget}
+        companyId={companyId}
+        entryNum={correctionEntryNum}
+      />
     </Card>
   );
 }

@@ -56,6 +56,9 @@ interface LedgerEntry {
   source: "ledger" | "bill" | "certificate";
   linked: boolean;
   id: string;
+  status: string;
+  correctedByEntryNum: string | null;
+  correctsEntryNum: string | null;
 }
 
 export default function TransferLedgerTab({ companyId, entityType = "Corporation", authorizedShares }: Props) {
@@ -159,8 +162,17 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
   // Filter out cert lifecycle entries — they're part of transfers, not standalone rows
   const sorted = allSorted.filter((t: any) => !CERT_LIFECYCLE_TYPES.includes(t.transaction_type || ""));
 
+  // First pass: assign entry numbers
+  const entryNumMap = new Map<string, number>();
+  sorted.forEach((t: any, idx: number) => {
+    entryNumMap.set(t.id, idx + 1);
+  });
+
   sorted.forEach((t: any, idx: number) => {
     const txType = t.transaction_type || "";
+    const txStatus = (t as any).status || "active";
+    const isCorrected = txStatus === "corrected";
+    const isCorrection = txType === "correction";
     const isIss = ISSUANCE_TYPES.includes(txType);
     const isRed = REDUCTION_TYPES.includes(txType);
     const isTx = TRANSFER_TYPES.includes(txType);
@@ -174,24 +186,35 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     let sharesCancelled = 0;
     let sharesToTreasury = 0;
 
-    if (isIss) {
-      sharesIssued = t.num_shares || 0;
-      holderBalances[holderKey] = (holderBalances[holderKey] || 0) + sharesIssued;
-      totalIssued += sharesIssued;
-    } else if (isRed) {
-      sharesToTreasury = t.num_shares || 0;
-      sharesCancelled = t.num_shares || 0;
-      const redKey = holderKey || fromKey;
-      holderBalances[redKey] = (holderBalances[redKey] || 0) - sharesToTreasury;
-      totalIssued -= sharesToTreasury;
-    } else if (isTx) {
-      sharesIssued = t.num_shares || 0;
-      sharesCancelled = t.num_shares || 0;
-      if (fromKey) {
-        holderBalances[fromKey] = (holderBalances[fromKey] || 0) - (t.num_shares || 0);
-      }
-      if (holderKey) {
-        holderBalances[holderKey] = (holderBalances[holderKey] || 0) + (t.num_shares || 0);
+    // Skip corrected entries from balance accumulation
+    if (!isCorrected) {
+      if (isCorrection) {
+        // Correction reverses: subtract from the "from" party (original holder)
+        const key = fromKey || holderKey;
+        if (key) {
+          holderBalances[key] = (holderBalances[key] || 0) - (t.num_shares || 0);
+          totalIssued -= (t.num_shares || 0);
+        }
+        sharesCancelled = t.num_shares || 0;
+      } else if (isIss) {
+        sharesIssued = t.num_shares || 0;
+        holderBalances[holderKey] = (holderBalances[holderKey] || 0) + sharesIssued;
+        totalIssued += sharesIssued;
+      } else if (isRed) {
+        sharesToTreasury = t.num_shares || 0;
+        sharesCancelled = t.num_shares || 0;
+        const redKey = holderKey || fromKey;
+        holderBalances[redKey] = (holderBalances[redKey] || 0) - sharesToTreasury;
+        totalIssued -= sharesToTreasury;
+      } else if (isTx) {
+        sharesIssued = t.num_shares || 0;
+        sharesCancelled = t.num_shares || 0;
+        if (fromKey) {
+          holderBalances[fromKey] = (holderBalances[fromKey] || 0) - (t.num_shares || 0);
+        }
+        if (holderKey) {
+          holderBalances[holderKey] = (holderBalances[holderKey] || 0) + (t.num_shares || 0);
+        }
       }
     }
 
@@ -203,6 +226,12 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     const shBal = Math.max(0, holderBalances[holderKey] || 0);
     const ownershipPct = term.isLLC && totalIssued > 0 ? (shBal / totalIssued) * 100 : null;
 
+    // Cross-reference entry numbers
+    const correctedByEntryNum = isCorrected && (t as any).corrected_by_id
+      ? String(entryNumMap.get((t as any).corrected_by_id) || "?") : null;
+    const correctsEntryNum = isCorrection && (t as any).corrects_id
+      ? String(entryNumMap.get((t as any).corrects_id) || "?") : null;
+
     entries.push({
       entryNum: entries.length + 1,
       date: t.transaction_date || "",
@@ -210,10 +239,10 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
       certIssued: certIssued ? `#${(certIssued as any).certificate_number}` : "—",
       certCancelled: certCancelled ? `#${(certCancelled as any).certificate_number}` : "—",
       transferee: transfereeName || "—",
-      transferor: isIss ? "" : isTx ? (transferorName || "—") : isRed ? (transferorName || transfereeName || "—") : "—",
+      transferor: isIss ? "" : isTx ? (transferorName || "—") : isRed ? (transferorName || transfereeName || "—") : isCorrection ? (transferorName || "—") : "—",
       classLabel: t.share_class || "—",
       sharesIssued: isIss || isTx ? sharesIssued : 0,
-      sharesCancelled: isRed || isTx ? sharesCancelled : 0,
+      sharesCancelled: isRed || isTx || isCorrection ? sharesCancelled : 0,
       sharesToTreasury: isRed ? sharesToTreasury : 0,
       consideration: t.total_consideration,
       shareholderBalance: shBal,
@@ -223,6 +252,9 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
       source: "ledger",
       linked: !!t.bill_of_sale_id,
       id: t.id,
+      status: txStatus,
+      correctedByEntryNum,
+      correctsEntryNum,
     });
   });
   const sourceColor = (source: string) => {
@@ -300,21 +332,46 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {entries.map((e) => (
-                  <TableRow key={e.id}>
+                {entries.map((e) => {
+                  const isCorrected = e.status === "corrected";
+                  const isCorrection = e.type === "correction";
+                  return (
+                  <TableRow key={e.id} className={isCorrected ? "opacity-50" : ""}>
                     <TableCell className="text-xs font-mono text-muted-foreground">{e.entryNum}</TableCell>
-                    <TableCell className="text-xs">
+                    <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>
                       {e.date ? new Date(e.date + "T00:00:00").toLocaleDateString() : "—"}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">{e.type}</Badge>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 capitalize ${isCorrected ? "line-through" : ""}`}>{e.type}</Badge>
+                        {isCorrected && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="destructive" className="text-[9px] px-1 py-0">Corrected</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent><p className="text-xs">See entry #{e.correctedByEntryNum || "?"}</p></TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        {isCorrection && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge className="text-[9px] px-1 py-0 bg-accent text-accent-foreground">Correction</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent><p className="text-xs">Corrects entry #{e.correctsEntryNum || "?"}</p></TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     </TableCell>
-                    <TableCell className="text-xs font-medium">{e.transferee}</TableCell>
-                    <TableCell className="text-xs">{e.transferor}</TableCell>
+                    <TableCell className={`text-xs font-medium ${isCorrected ? "line-through" : ""}`}>{e.transferee}</TableCell>
+                    <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>{e.transferor}</TableCell>
                     <TableCell className="text-xs font-mono">{e.certIssued}</TableCell>
                     <TableCell className="text-xs font-mono">{e.certCancelled}</TableCell>
-                    <TableCell className="text-xs text-right">{e.sharesIssued > 0 ? e.sharesIssued.toLocaleString() : "—"}</TableCell>
-                    <TableCell className="text-xs text-right">{e.sharesCancelled > 0 ? e.sharesCancelled.toLocaleString() : "—"}</TableCell>
+                    <TableCell className={`text-xs text-right ${isCorrected ? "line-through" : ""}`}>{e.sharesIssued > 0 ? e.sharesIssued.toLocaleString() : "—"}</TableCell>
+                    <TableCell className={`text-xs text-right ${isCorrected ? "line-through" : ""}`}>{e.sharesCancelled > 0 ? e.sharesCancelled.toLocaleString() : "—"}</TableCell>
                     <TableCell className="text-xs text-right">{e.sharesToTreasury > 0 ? e.sharesToTreasury.toLocaleString() : "—"}</TableCell>
                     <TableCell className="text-xs text-right">
                       {e.consideration != null ? `$${Number(e.consideration).toFixed(2)}` : "—"}
@@ -331,7 +388,8 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
                       {e.treasuryBalance.toLocaleString()}
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
