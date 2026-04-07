@@ -365,6 +365,19 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
                 <DatePickerField value={form.transaction_date} onChange={(v) => setForm(p => ({ ...p, transaction_date: v }))} />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="field-group">
+                <Label className="field-label">Effective Date</Label>
+                <DatePickerField value={form.effective_date} onChange={(v) => setForm(p => ({ ...p, effective_date: v }))} />
+              </div>
+              <div className="field-group flex items-end pb-1">
+                {bswEffectiveDateIsFuture ? (
+                  <Badge variant="outline" className="text-[10px] bg-yellow-50 text-yellow-700 border-yellow-300">Pending</Badge>
+                ) : (
+                  <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-300">Effective</Badge>
+                )}
+              </div>
+            </div>
 
             <div className={`grid ${isRedemption ? "grid-cols-1" : "grid-cols-2"} gap-2`}>
               <div className="field-group">
