@@ -379,7 +379,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
       if (newMeeting && form.meeting_type === "Annual Meeting" && isLLCType(company.entity_type)) {
         const { data: members } = await supabase
           .from("shareholders")
-          .select("id, name, is_treasury, status, ownership_percentage")
+          .select("id, name, is_treasury, status, ownership_percentage, address, city, state, zip")
           .eq("company_id", companyId);
 
         const { data: certs } = await supabase
@@ -405,6 +405,10 @@ export default function MeetingsTab({ companyId, company }: Props) {
             return {
               meeting_id: newMeeting.id,
               shareholder_name: m.name,
+              address: m.address || null,
+              city: m.city || null,
+              state: m.state || null,
+              zip: m.zip || null,
               common_shares: units,
               preferred_shares: interest || m.ownership_percentage || null,
             };
