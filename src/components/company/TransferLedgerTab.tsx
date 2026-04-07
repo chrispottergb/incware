@@ -194,9 +194,9 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     let sharesToTreasury = 0;
 
     // Skip corrected entries from balance accumulation
-    if (!isCorrected) {
+    // Also skip pending (future effective_date) entries from balance accumulation
+    if (!isCorrected && !isPending) {
       if (isCorrection) {
-        // Correction reverses: subtract from the "from" party (original holder)
         const key = fromKey || holderKey;
         if (key) {
           holderBalances[key] = (holderBalances[key] || 0) - (t.num_shares || 0);
@@ -378,6 +378,9 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
                               <TooltipContent><p className="text-xs">Corrects entry #{e.correctsEntryNum || "?"}</p></TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
+                        )}
+                        {e.isPending && (
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 border-yellow-300 text-yellow-700 bg-yellow-50">Pending</Badge>
                         )}
                       </div>
                     </TableCell>
