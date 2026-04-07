@@ -242,6 +242,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     entries.push({
       entryNum: entries.length + 1,
       date: t.transaction_date || "",
+      effectiveDate: effectiveDate,
       type: txType.replace(/_/g, " "),
       certIssued: certIssued ? `#${(certIssued as any).certificate_number}` : "—",
       certCancelled: certCancelled ? `#${(certCancelled as any).certificate_number}` : "—",
@@ -260,6 +261,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
       linked: !!t.bill_of_sale_id,
       id: t.id,
       status: txStatus,
+      isPending,
       correctedByEntryNum,
       correctsEntryNum,
       correctionMemo: (t as any).correction_memo || null,
