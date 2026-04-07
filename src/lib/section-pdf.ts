@@ -115,8 +115,9 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
       head: [config.table.headers],
       body: config.table.rows,
       theme: "grid",
-      headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 10, fontStyle: "bold" },
+      headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 10, fontStyle: "bold", halign: "center" },
       bodyStyles: { fontSize: 10 },
+      styles: { lineColor: [180, 180, 180], lineWidth: 0.5 },
       margin: { left: MARGIN, right: R_MARGIN },
       didParseCell(data) {
         // Color status-like cells
