@@ -395,7 +395,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   t.consideration_type ?? "—",
                   [t.issued_certificate_number ? `Issued #${t.issued_certificate_number}` : "", t.surrendered_certificate_number ? `Surr #${t.surrendered_certificate_number}` : ""].filter(Boolean).join(", ") || "—",
                   t.notes ?? "",
-                ]);
+                ]});
               })(),
               noteRows: (() => {
                 const sorted = [...transactions].sort((a, b) =>
