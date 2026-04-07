@@ -525,6 +525,25 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
                 if (useRosterPicker && rosterAutoFilledKeys.has(col.key)) {
                   return null;
                 }
+
+                // ZIP field with auto-lookup in edit mode
+                const zipKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "zip")?.[1] : undefined;
+                if (editingId && zipKey && col.key === zipKey) {
+                  return (
+                    <div key={col.key} className="space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground">{col.label}</Label>
+                      <Input
+                        value={form[col.key] ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setForm((p) => ({ ...p, [col.key]: val }));
+                          zipLookup(val);
+                        }}
+                      />
+                    </div>
+                  );
+                }
+
                 return (
                   <div key={col.key} className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">{col.label}</Label>

@@ -312,7 +312,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
       if (newMeeting && form.meeting_type === "Shareholder Meeting") {
         const { data: shareholders } = await supabase
           .from("shareholders")
-          .select("id, name, is_treasury, ownership_percentage")
+          .select("id, name, is_treasury, ownership_percentage, address, city, state, zip")
           .eq("company_id", companyId);
 
         const { data: certificates } = await supabase
@@ -335,6 +335,10 @@ export default function MeetingsTab({ companyId, company }: Props) {
               return {
                 meeting_id: newMeeting.id,
                 shareholder_name: s.name,
+                address: s.address || null,
+                city: s.city || null,
+                state: s.state || null,
+                zip: s.zip || null,
                 common_shares: commonShares,
                 preferred_shares: preferredShares,
               };
