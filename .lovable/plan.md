@@ -1,51 +1,76 @@
 
 
-## Fix: One Row Per Transfer in Stock Transfer Ledger
+## Transaction Correction and Admin Override System
 
-### Problem
-The `execute-share-transfer` edge function inserts 2-3 `share_transactions` rows per transfer: the primary transfer, a `cancellation` entry, and optionally a `reissuance` entry. The Transfer Ledger renders each as a separate row, creating duplicates.
+### Database Migration
 
-### Solution
+Add 4 columns to `share_transactions`:
 
-**1. Filter cert lifecycle entries in `TransferLedgerTab.tsx`**
-
-Skip `cancellation` and `reissuance` transaction types entirely — they are certificate lifecycle events, not ownership events. The transfer row already shows cert issued/cancelled columns. Remove the two early-return blocks (lines 151-178 for cancellation, lines 181-216 for reissuance) and instead filter them out before processing:
-
-```
-const sorted = [...transactions]
-  .filter(t => t.transaction_type !== "cancellation" && t.transaction_type !== "reissuance")
-  .sort(...)
+```sql
+ALTER TABLE share_transactions
+  ADD COLUMN status text NOT NULL DEFAULT 'active',
+  ADD COLUMN corrected_by_id uuid REFERENCES share_transactions(id) ON DELETE SET NULL,
+  ADD COLUMN corrects_id uuid REFERENCES share_transactions(id) ON DELETE SET NULL,
+  ADD COLUMN correction_memo text;
 ```
 
-Also remove `"Cancellation"` and `"cancellation"` from `REDUCTION_TYPES` since standalone cancellations should not appear as ledger rows. Keep `"Redemption"` and `"redemption"`.
+### New Files
 
-Enrich the transfer row's cert columns by looking up the cancelled cert via `transferred_certificate_id` on sibling cancellation transactions (same date, same seller) and the issued cert via sibling reissuance transactions.
+| File | Purpose |
+|------|---------|
+| `src/components/company/CorrectionModal.tsx` | Dialog receiving original transaction prop. Shows read-only summary, mandatory memo textarea, submit creates reversing entry (swapped parties, `transaction_type: "correction"`, `corrects_id` → original), updates original's `status` → `corrected` and `corrected_by_id` → new row. Also inserts an "Amended Resolution" into `document_registry`. Invalidates `share_transactions`, `stock_certificates`, `shareholders` query keys. |
+| `src/components/company/AdminDeleteButton.tsx` | Renders only for `isAdmin`. Checks `created_at` < 24h and no references via `corrects_id`/`transferred_certificate_id`. Met → confirm dialog + hard delete. Not met → alert explaining why, directing to Correct flow. |
+| `src/components/company/EntityDeleteGuard.tsx` | Queries `share_transactions`, `stock_certificates`, `document_registry` counts for the company. If records exist, replaces the current 2-step delete with a name-confirmation input + red warning showing record counts. Delete button disabled until typed name matches exactly. If no records, falls through to simple confirm. |
 
-**2. Fix cert lookup for transfer rows**
+### Modified Files
 
-Update `findCertIssued` and `findCertCancelled` to also match by looking at the full transaction set for companion cancellation/reissuance entries that share the same date and seller name, pulling cert numbers from those sibling transactions.
+**`src/components/company/StockLedgerTab.tsx`**
+- Import `RotateCcw` icon, `CorrectionModal`, `AdminDeleteButton`, `useUserRole`
+- Add `CorrectionModal` state (`correctionTarget`)
+- In the table row render (lines 610-650):
+  - Corrected rows: strikethrough text + "Corrected" badge with tooltip "See entry #X"
+  - Correction rows: "Correction" badge with "Corrects #X"
+  - Actions column: add `RotateCcw` button on `status === 'active'` rows → opens CorrectionModal
+  - Admin users: add `AdminDeleteButton` on each row
+- Running balance calculation (lines 586-607): skip entries where `status === 'corrected'`
 
-**3. Balance Held correction**
+**`src/components/company/TransferLedgerTab.tsx`**
+- Import `Badge`, `Tooltip` components (already imported), `useUserRole`
+- In `sorted.forEach` loop (line 162): skip balance accumulation when `t.status === 'corrected'`
+- Entry rendering (lines 303-334):
+  - Corrected rows: `line-through opacity-50` styling + "Corrected" badge
+  - Correction rows: "Correction" badge referencing original entry #
+- Add `status` field to `LedgerEntry` interface for conditional rendering
 
-With cancellation/reissuance rows removed, the existing balance tracking logic for transfers already works correctly — transfers subtract from seller and add to buyer without double-counting.
+**`src/pages/CompanyDetail.tsx`**
+- Replace the two `AlertDialog` delete steps (lines 242-283) with `EntityDeleteGuard` component
+- Pass `companyId`, `companyName`, `onDelete` (existing `handleDelete`), `onCancel`
 
-**4. Buyer field in `BuySellWorkflow.tsx`**
+### Correction Flow Detail
 
-For corporations (non-LLC), replace the free-text `Input` + optional `Select` with the same pattern used for the Seller field: a text input that clears `buyer_id` on manual edit, plus a shareholder dropdown that auto-populates `buyer_name`. The existing logic at line 182 (`buyerIsNew`) already handles creating new shareholders — no change needed there.
+1. User clicks RotateCcw on an active transaction
+2. CorrectionModal opens showing: date, type, shareholder, shares, consideration (read-only)
+3. User enters mandatory correction memo
+4. On submit:
+   - INSERT new `share_transactions` with reversed parties, today's date, `transaction_type: 'correction'`, `corrects_id: original.id`, `correction_memo`
+   - UPDATE original: `status: 'corrected'`, `corrected_by_id: newRow.id`
+   - INSERT `document_registry` row: type "Amended Resolution", category "Resolution", title "Amended Resolution — Correction of Entry #X"
+   - Invalidate queries
 
-**5. PDF report**
+### Balance Recalculation Logic
 
-The PDF uses the same `entries` array, so filtering cancellation/reissuance from the data automatically fixes the PDF output too.
+Both ledgers skip `status === 'corrected'` rows from balance accumulation. Correction entries (which reverse the original's effect) are included, so the net impact is zero — balances remain accurate.
 
-### Files Modified
+### Admin Delete Window
 
-| File | Change |
-|------|--------|
-| `src/components/company/TransferLedgerTab.tsx` | Filter out cancellation/reissuance rows; improve cert column lookups |
-| `src/components/company/BuySellWorkflow.tsx` | Make Buyer field a text input + shareholder dropdown (matching Seller pattern) |
+- Only visible to admin role users
+- `created_at` must be within 24 hours of current time
+- No other `share_transactions` row may reference it via `corrects_id` or `transferred_certificate_id`
+- Outside window: tooltip/alert explains "This transaction is older than 24 hours. Use the Correct flow instead."
 
-### What Stays Unchanged
-- Edge function (`execute-share-transfer`) — cert lifecycle entries remain in the database for audit purposes
-- All other tabs and workflows
-- Database schema
+### Entity Delete Guard
+
+- Counts records across 3 tables for the company
+- If any exist: shows red warning with counts, requires typing exact company name
+- If none: simple 2-click confirm (current behavior preserved)
 
