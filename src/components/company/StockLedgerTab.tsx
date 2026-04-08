@@ -726,9 +726,16 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                       <TableCell className="text-xs text-right">{t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—"}</TableCell>
                       <TableCell className="text-xs capitalize">{t.consideration_type?.replace("_", " ") ?? "—"}</TableCell>
                       <TableCell className="text-xs text-center">
-                        {(t as any).issued_certificate_number && <span className="text-primary">#{(t as any).issued_certificate_number}</span>}
-                        {(t as any).surrendered_certificate_number && <span className="text-destructive ml-1">✕#{(t as any).surrendered_certificate_number}</span>}
-                        {!(t as any).issued_certificate_number && !(t as any).surrendered_certificate_number && "—"}
+                        {(() => {
+                          const issued = (t as any).issued_certificate_number;
+                          const surrendered = (t as any).surrendered_certificate_number;
+                          const issuedNum = issued != null && issued !== "" ? Number(issued) : null;
+                          const surrenderedNum = surrendered != null && surrendered !== "" ? Number(surrendered) : null;
+                          const parts: React.ReactNode[] = [];
+                          if (issuedNum != null && !isNaN(issuedNum)) parts.push(<span key="i">#{issuedNum}</span>);
+                          if (surrenderedNum != null && !isNaN(surrenderedNum)) parts.push(<span key="s" className="ml-1 text-muted-foreground">✕#{surrenderedNum}</span>);
+                          return parts.length > 0 ? parts : "—";
+                        })()}
                       </TableCell>
                       <TableCell className="text-xs text-right font-semibold bg-primary/5">{balanceMap.get(t.id)?.toLocaleString() ?? "—"}</TableCell>
                       <TableCell>
