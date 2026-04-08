@@ -73,7 +73,7 @@ export interface SectionPdfTable {
   /** Map of row index → inline note text to render beneath that row */
   noteRows?: Record<number, string>;
   /** Optional per-column width overrides keyed by column index */
-  columnStyles?: Record<number, { cellWidth?: number; halign?: string }>;
+  columnStyles?: Record<number, { cellWidth?: number; halign?: "left" | "center" | "right" | "justify" }>;
 }
 
 export interface SectionPdfConfig {
