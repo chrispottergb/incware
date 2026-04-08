@@ -1,62 +1,53 @@
 
 
-# Standardize LLC Transaction Entry
+# Fix Cert # Display and Capital Account for LLCs
 
-## Changes
+## Problem 1: Cert # Not Displaying in Transactions Table
 
-### 1. `src/pages/CompanyDetail.tsx` (line 308-310)
-Add `<StockLedgerTab>` before `<UnifiedLedgerTab>` in the LLC branch:
-```tsx
-{isLLCType(company.entity_type) ? (
-  <>
-    <StockLedgerTab companyId={company.id} entityType={company.entity_type} />
-    <UnifiedLedgerTab companyId={company.id} entityType={company.entity_type} authorizedShares={shareCalc.authorizedShares} />
-    <div data-section="certificates">
-      <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
-    </div>
-    <BillsOfSaleTab companyId={company.id} entityType={company.entity_type} />
-  </>
-)}
-```
+**Root cause**: When a certificate is issued separately via `StockCertificatesTab`, the insert does not link back to the matching transaction. The `certificate_id` on `share_transactions` stays null, and `issued_certificate_number` is also null. The Cert # renderer in `StockLedgerTab` only checks `issued_certificate_number` — no fallback.
 
-### 2. `src/components/company/UnifiedLedgerTab.tsx` — Make read-only
+### Changes
 
-**Remove** (lines/blocks):
-- `LLC_TRANSACTION_TYPES` constant (lines 44-56)
-- `CONSIDERATION_TYPES` constant (lines 58-64)
-- `dialog` state (line 99)
-- `shareholders` query (lines 101-109)
-- `form` state (lines 146-160)
-- `assets` state (line 162)
-- `getNextCertNumber` function (lines 164-172)
-- `createCertificate` function (lines 174-186)
-- `ISSUANCE_SET_LOCAL`, `TRANSFER_SET_LOCAL` constants (lines 188-194)
-- `add` mutation (lines 196-253)
-- `resetForm` function (lines 255-264)
-- `isTransfer`, `showAssetGrid`, `assetTotal` computed values (lines 266-268)
-- Entire `<Dialog>` block including Record Transaction button (lines 475-593)
+**File: `src/components/company/StockCertificatesTab.tsx`** (lines 101-130)
+- Change the insert path to return the new cert's ID via `.select("id").single()`
+- After insert, query `share_transactions` for the most recent unlinked transaction matching `shareholder_id`, `share_class`, and `certificate_id IS NULL`, then update that transaction's `certificate_id` to the new cert ID
+- Add `queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] })` to `onSuccess`
 
-**Remove unused imports** after above deletions:
-- `useState` (no longer needed — no state left)
-- `useMutation` from react-query
-- `Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger`
-- `Input`, `Label`, `Textarea`, `Select, SelectContent, SelectItem, SelectTrigger, SelectValue`
-- `DatePickerField`
-- `Plus, Loader2, Trash2`
+**File: `src/components/company/StockLedgerTab.tsx`** (lines 759-771)
+- Modify the Cert # cell renderer to add fallback lookups after checking `issued_certificate_number`:
+  1. If `certificate_id` exists on the transaction, find matching cert in `certificates` array by ID and display its `certificate_number`
+  2. If neither, look up `certificates` for a match on `shareholder_id` + `share_class` + `num_shares`
+  3. If still none, display "—"
 
-**Keep intact**:
-- All query hooks: `company`, `certificates`, `transactions`
-- Entry building logic (lines 270-398)
-- `handlePrintCertificate`, `handlePrintBillOfSale`
-- Table rendering, PDF actions, permanent record footer
-- `ISSUANCE_TYPES`, `REDUCTION_TYPES`, `TRANSFER_TYPES` constants (used by entry builder)
-- `ScrollText, Lock, FileText, Award, Link2` icons
-- `Badge`, `Button`, `Table` components, `SectionPdfActions`, `getTerminology`
-- `toast`, `downloadStockCertificatePdf`, `downloadBillOfSalePdf`
+## Problem 2: Capital Account Not Populating
 
-### 3. `StockLedgerTab.tsx` — No changes needed
-Already uses `getTerminology()` for LLC terminology and has LLC transaction types in `TRANSACTION_TYPES_BY_ENTITY`. No local cert numbering function to replace — cert numbers are entered manually by users or left blank.
+**Root cause**: The `StockLedgerTab.add` mutation inserts into `share_transactions` but never updates `capital_account_balance` on `shareholders`. The display in `ShareholdersTab` reads `capital_account_balance` from the DB column.
+
+### Changes (compute-from-transactions approach only)
+
+**File: `src/components/company/ShareholdersTab.tsx`**
+- Add `total_consideration, shareholder_id` to the transactions query select (line 105) — currently missing
+- Add a `useMemo` that computes capital account per member by summing `total_consideration` for contribution/issuance types and subtracting for redemption/withdrawal types (using the same `REDUCTION_BALANCE_TYPES` set already defined)
+- Replace the capital account cell renderer (lines 492-497) to use the computed value instead of `s.capital_account_balance`
+
+**File: `src/components/company/StockLedgerTab.tsx`**
+- No changes needed — the `add` mutation does not update `capital_account_balance` already (confirmed at lines 306-322). The `recalculate_ownership_percentages` RPC call stays as-is since it's for ownership %, not capital accounts.
+
+## Technical Details
+
+**Contribution types** (add to capital): `initial_issuance`, `authorized_issuance`, `subscription_issuance`, `consideration_issuance`, `initial_contribution`, `additional_contribution`, `membership_issuance`, `preemptive_rights`, `share_dividend`, `fractional_shares`, `reissuance`, `treasury_reissue`
+
+**Reduction types** (subtract from capital): `redemption`, `reacquisition`, `cancellation`, `treasury_acquisition`, `withdrawal_distribution`, `dissociation_buyout`
+
+**Transfer types**: No net capital change for transfers — they move interest between members, not add/remove capital.
+
+## Files Changed
+
+1. `src/components/company/StockCertificatesTab.tsx` — Link new certs to unlinked transactions
+2. `src/components/company/StockLedgerTab.tsx` — Cert # fallback display logic
+3. `src/components/company/ShareholdersTab.tsx` — Compute capital account from transactions
 
 ## Not Changed
-- Corporation flows, validation logic, database schema, PDF generators
+
+Corporation flows, edge functions, meeting logic, PDF generators, database schema
 
