@@ -213,7 +213,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
         }
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       // Save to address book
       upsertAddressBook.mutate({
         full_name: form.name.trim(),
@@ -224,11 +224,13 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
         zip: form.zip,
         company_id: companyId,
       });
-      queryClient.invalidateQueries({ queryKey: ["shareholders", companyId] });
-      queryClient.invalidateQueries({ queryKey: ["stock-certificate-shareholders", companyId] });
-      queryClient.invalidateQueries({ queryKey: ["shareholders-for-holdings", companyId] });
-      queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] });
-      queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ["shareholders", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["stock-certificate-shareholders", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["shareholders-for-holdings", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] }),
+      ]);
       setDialog(false); resetForm();
       setDecryptedSsns({});
       setShowSsns(false);
@@ -437,9 +439,6 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
           const totalUnits = activeShareholders.reduce((sum, s) => sum + (resolvedShareholderHoldings[s.id] ?? 0), 0);
 
           const getInterestPct = (s: typeof shareholders[0]) => {
-            if (s.ownership_percentage != null && Number(s.ownership_percentage) !== 0) {
-              return Number(s.ownership_percentage);
-            }
             if (totalUnits === 0) return null;
             const units = resolvedShareholderHoldings[s.id] ?? 0;
             if (units === 0) return 0;
