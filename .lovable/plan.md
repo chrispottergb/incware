@@ -1,76 +1,74 @@
 
 
-## Transaction Correction and Admin Override System
+# Implementation Plan: Unified Transaction Validation & Data Flow
 
-### Database Migration
+## Step 1: Create `src/lib/transaction-validation.ts`
 
-Add 4 columns to `share_transactions`:
+New file with four pure exported functions:
 
-```sql
-ALTER TABLE share_transactions
-  ADD COLUMN status text NOT NULL DEFAULT 'active',
-  ADD COLUMN corrected_by_id uuid REFERENCES share_transactions(id) ON DELETE SET NULL,
-  ADD COLUMN corrects_id uuid REFERENCES share_transactions(id) ON DELETE SET NULL,
-  ADD COLUMN correction_memo text;
+- **`validateIssuanceLimit(numShares, availableShares, term)`** — checks `numShares <= availableShares` when availableShares is not null. Returns `{ valid, message? }`.
+- **`validateSellerHoldings(sellerName, numShares, transactions, shareholders, term)`** — uses imported `getHoldingsByName` to compute seller's current holdings and checks `numShares <= holdings`. Returns `{ valid, message? }`.
+- **`validateLLCTotalInterest(numUnits, totalUnits)`** — checks `numUnits + totalUnits <= 100`. Returns `{ valid, message? }`.
+- **`getNextCertificateNumber(companyId)`** — queries `stock_certificates` for `MAX(certificate_number)` via Supabase, returns `max + 1` or `1`.
+
+Imports: `supabase` client, `getHoldingsByName` from `useShareCalculations`, `EntityTerminology` type.
+
+## Step 2: Modify `CreateCompanyWizard.tsx`
+
+### 2a. Imports
+Add imports for `getNextCertificateNumber`, `validateIssuanceLimit` from the new module, `getTerminology`, `isLLCType`.
+
+### 2b. LLC detection
+Add `const isLLC = isLLCType(newType)` alongside existing `isCorp`. Get `const term = getTerminology(newType)`.
+
+### 2c. Step navigation (line 431)
+Change from `isCorp ? 2 : 3` to `(isCorp || isLLC) ? 2 : 3`. Update step label (line 346) to show "Initial Directors" for corps, "Initial Members" for LLCs, "Skip" otherwise.
+
+### 2d. Step 2 rendering (line 438–537)
+Add a conditional: if `step === 2 && isLLC`, render the existing shareholder form (name, address, units, class) using `term` labels. Reuse `shareholders` state, `addShareholder`, `editShareholder`, `removeShareholder`. The existing corp director form stays for `step === 2 && isCorp`.
+
+### 2e. Validation in `addShareholder` (line 162–170)
+Import and call `validateIssuanceLimit` for corps. For LLCs, keep existing flow (no authorized pool cap).
+
+### 2f. `handleSave` changes (lines 230–328)
+- Replace `let certNumber = 0` (line 247) with `let certNumber = await getNextCertificateNumber(companyId) - 1` so the `certNumber++` pattern yields the correct next number.
+- Add `effective_date: new Date().toISOString().split("T")[0]` to `share_transactions` insert (line 287).
+- After the shareholder loop (line 302), add: `await supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId })`.
+- Add LLC member save block: when `isLLC && shareholders.length > 0`, iterate shareholders, insert into `shareholders` table, create membership certificates via `getNextCertificateNumber`, insert `share_transactions` with `membership_issuance` type and `effective_date`, then call `recalculate_ownership_percentages`.
+
+### 2g. Step 3 Review & Back button (line 580)
+Change `isCorp ? 2 : 1` to `(isCorp || isLLC) ? 2 : 1`. Add LLC member review display similar to directors review.
+
+## Step 3: Modify `StockLedgerTab.tsx`
+
+### 3a. Imports (top of file)
+Add `validateIssuanceLimit`, `validateSellerHoldings` from `transaction-validation.ts`. Add `isLLCType`.
+
+### 3b. Validation in `add` mutation (line 232)
+Before the insert call:
+- If `ISSUANCE_SET.has(txType)`: compute available shares from `company.authorized_shares` minus current issued total from transactions, call `validateIssuanceLimit`. If invalid, throw with message.
+- If `TRANSFER_SET_LOCAL.has(txType)` and `form.from_shareholder`: call `validateSellerHoldings` with form data, transactions, shareholders. If invalid, throw with message.
+
+### 3c. Ownership recalc in `onSuccess` (line 280)
+Add after existing invalidations:
+```typescript
+if (isLLCType(entityType)) {
+  supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId });
+}
 ```
 
-### New Files
+## Step 4: Modify `ShareholdersTab.tsx`
 
-| File | Purpose |
-|------|---------|
-| `src/components/company/CorrectionModal.tsx` | Dialog receiving original transaction prop. Shows read-only summary, mandatory memo textarea, submit creates reversing entry (swapped parties, `transaction_type: "correction"`, `corrects_id` → original), updates original's `status` → `corrected` and `corrected_by_id` → new row. Also inserts an "Amended Resolution" into `document_registry`. Invalidates `share_transactions`, `stock_certificates`, `shareholders` query keys. |
-| `src/components/company/AdminDeleteButton.tsx` | Renders only for `isAdmin`. Checks `created_at` < 24h and no references via `corrects_id`/`transferred_certificate_id`. Met → confirm dialog + hard delete. Not met → alert explaining why, directing to Correct flow. |
-| `src/components/company/EntityDeleteGuard.tsx` | Queries `share_transactions`, `stock_certificates`, `document_registry` counts for the company. If records exist, replaces the current 2-step delete with a name-confirmation input + red warning showing record counts. Delete button disabled until typed name matches exactly. If no records, falls through to simple confirm. |
+### Line 137
+Remove: `queryClient.invalidateQueries({ queryKey: ["share-transactions", companyId] });`
+Keep line 138: `queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });`
 
-### Modified Files
+## Step 5: MeetingResolutions verification
+`BuySellWorkflow.tsx` line 259 already invalidates `["share_transactions", companyId]` with underscore. No changes needed.
 
-**`src/components/company/StockLedgerTab.tsx`**
-- Import `RotateCcw` icon, `CorrectionModal`, `AdminDeleteButton`, `useUserRole`
-- Add `CorrectionModal` state (`correctionTarget`)
-- In the table row render (lines 610-650):
-  - Corrected rows: strikethrough text + "Corrected" badge with tooltip "See entry #X"
-  - Correction rows: "Correction" badge with "Corrects #X"
-  - Actions column: add `RotateCcw` button on `status === 'active'` rows → opens CorrectionModal
-  - Admin users: add `AdminDeleteButton` on each row
-- Running balance calculation (lines 586-607): skip entries where `status === 'corrected'`
-
-**`src/components/company/TransferLedgerTab.tsx`**
-- Import `Badge`, `Tooltip` components (already imported), `useUserRole`
-- In `sorted.forEach` loop (line 162): skip balance accumulation when `t.status === 'corrected'`
-- Entry rendering (lines 303-334):
-  - Corrected rows: `line-through opacity-50` styling + "Corrected" badge
-  - Correction rows: "Correction" badge referencing original entry #
-- Add `status` field to `LedgerEntry` interface for conditional rendering
-
-**`src/pages/CompanyDetail.tsx`**
-- Replace the two `AlertDialog` delete steps (lines 242-283) with `EntityDeleteGuard` component
-- Pass `companyId`, `companyName`, `onDelete` (existing `handleDelete`), `onCancel`
-
-### Correction Flow Detail
-
-1. User clicks RotateCcw on an active transaction
-2. CorrectionModal opens showing: date, type, shareholder, shares, consideration (read-only)
-3. User enters mandatory correction memo
-4. On submit:
-   - INSERT new `share_transactions` with reversed parties, today's date, `transaction_type: 'correction'`, `corrects_id: original.id`, `correction_memo`
-   - UPDATE original: `status: 'corrected'`, `corrected_by_id: newRow.id`
-   - INSERT `document_registry` row: type "Amended Resolution", category "Resolution", title "Amended Resolution — Correction of Entry #X"
-   - Invalidate queries
-
-### Balance Recalculation Logic
-
-Both ledgers skip `status === 'corrected'` rows from balance accumulation. Correction entries (which reverse the original's effect) are included, so the net impact is zero — balances remain accurate.
-
-### Admin Delete Window
-
-- Only visible to admin role users
-- `created_at` must be within 24 hours of current time
-- No other `share_transactions` row may reference it via `corrects_id` or `transferred_certificate_id`
-- Outside window: tooltip/alert explains "This transaction is older than 24 hours. Use the Correct flow instead."
-
-### Entity Delete Guard
-
-- Counts records across 3 tables for the company
-- If any exist: shows red warning with counts, requires typing exact company name
-- If none: simple 2-click confirm (current behavior preserved)
+## Files Changed
+1. `src/lib/transaction-validation.ts` — NEW
+2. `src/components/CreateCompanyWizard.tsx` — cert numbering, effective_date, LLC Step 2, RPC call
+3. `src/components/company/StockLedgerTab.tsx` — validation + LLC recalc
+4. `src/components/company/ShareholdersTab.tsx` — remove hyphen query key
 
