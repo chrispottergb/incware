@@ -1,23 +1,12 @@
-import { useState } from "react";
-import { DatePickerField } from "@/components/ui/date-picker-field";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, ScrollText, Lock, Trash2, FileText, Award, Link2 } from "lucide-react";
+import { ScrollText, Lock, FileText, Award, Link2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology } from "@/lib/entity-terminology";
@@ -39,28 +28,6 @@ const REDUCTION_TYPES = [
 const TRANSFER_TYPES = [
   "transfer", "interest_transfer", "interest_assignment", "gift",
   "share_exchange", "Transfer In", "Transfer Out",
-];
-
-const LLC_TRANSACTION_TYPES = [
-  { value: "initial_contribution", label: "Initial Capital Contribution", statute: "§ 183.0401" },
-  { value: "additional_contribution", label: "Additional Contribution", statute: "§ 183.0401" },
-  { value: "membership_issuance", label: "Membership Interest Issuance", statute: "§ 183.0501" },
-  { value: "interest_transfer", label: "Transfer of Membership Interest", statute: "§ 183.0706" },
-  { value: "interest_assignment", label: "Assignment of Interest", statute: "§ 183.0706" },
-  { value: "distribution", label: "Distribution to Members", statute: "§ 183.0404" },
-  { value: "interim_distribution", label: "Interim Distribution", statute: "§ 183.0404" },
-  { value: "withdrawal_distribution", label: "Withdrawal Distribution", statute: "§ 183.0602" },
-  { value: "redemption", label: "Interest Redemption", statute: "§ 183.0602" },
-  { value: "dissociation_buyout", label: "Dissociation Buyout", statute: "§ 183.0701" },
-  { value: "gift", label: "Gift of Membership Interest", statute: "§ 183.0706" },
-];
-
-const CONSIDERATION_TYPES = [
-  { value: "cash", label: "Cash" },
-  { value: "property", label: "Property" },
-  { value: "services", label: "Services" },
-  { value: "promissory_note", label: "Promissory Note" },
-  { value: "other", label: "Other" },
 ];
 
 interface Props {
@@ -96,17 +63,6 @@ interface UnifiedEntry {
 export default function UnifiedLedgerTab({ companyId, entityType = "LLC", authorizedShares }: Props) {
   const queryClient = useQueryClient();
   const term = getTerminology(entityType);
-  const [dialog, setDialog] = useState(false);
-
-  const { data: shareholders = [] } = useQuery({
-    queryKey: ["shareholders", companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("shareholders").select("id, name").eq("company_id", companyId).order("name");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
 
   const { data: company } = useQuery({
     queryKey: ["company-ledger", companyId],
@@ -141,131 +97,6 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
     },
     enabled: !!companyId,
   });
-
-  // Form state
-  const [form, setForm] = useState({
-    transaction_type: "initial_contribution",
-    shareholder_id: "",
-    share_class: "Membership",
-    num_shares: "",
-    price_per_share: "",
-    total_consideration: "",
-    consideration_type: "cash",
-    transaction_date: new Date().toISOString().split("T")[0],
-    from_shareholder: "",
-    to_shareholder: "",
-    notes: "",
-    issued_certificate_number: "",
-    surrendered_certificate_number: "",
-  });
-
-  const [assets, setAssets] = useState<{ description: string; value: string }[]>([]);
-
-  const getNextCertNumber = async (): Promise<number> => {
-    const { data } = await supabase
-      .from("stock_certificates")
-      .select("certificate_number")
-      .eq("company_id", companyId)
-      .order("certificate_number", { ascending: false })
-      .limit(1);
-    return ((data?.[0] as any)?.certificate_number || 0) + 1;
-  };
-
-  const createCertificate = async (certNumber: number, shareholderId: string | null, numShares: number, shareClass: string, issueDate: string) => {
-    const { data, error } = await supabase.from("stock_certificates").insert({
-      company_id: companyId,
-      certificate_number: certNumber,
-      shareholder_id: shareholderId,
-      num_shares: numShares,
-      share_class: shareClass,
-      issue_date: issueDate,
-      status: "active",
-    }).select("id").single();
-    if (error) throw error;
-    return data;
-  };
-
-  const ISSUANCE_SET_LOCAL = new Set([
-    "initial_contribution", "additional_contribution", "membership_issuance",
-    "Issuance", "initial_issuance", "authorized_issuance", "subscription_issuance",
-    "consideration_issuance", "share_dividend", "fractional_shares", "preemptive_rights",
-    "treasury_reissue", "reissuance", "Capital Contribution", "Initial Contribution",
-  ]);
-  const TRANSFER_SET_LOCAL = new Set(["transfer", "interest_transfer", "interest_assignment", "gift", "share_exchange"]);
-
-  const add = useMutation({
-    mutationFn: async () => {
-      const txType = form.transaction_type;
-      const numShares = parseFloat(form.num_shares) || 0;
-      let issuedCertNum: number | null = form.issued_certificate_number ? parseInt(form.issued_certificate_number) : null;
-      let surrenderedCertNum: number | null = form.surrendered_certificate_number ? parseInt(form.surrendered_certificate_number) : null;
-      let certId: string | null = null;
-
-      // Auto-issue certificate for issuance/transfer/reissuance types
-      if (!issuedCertNum && (ISSUANCE_SET_LOCAL.has(txType) || TRANSFER_SET_LOCAL.has(txType))) {
-        const nextNum = await getNextCertNumber();
-        const shareholderId = TRANSFER_SET_LOCAL.has(txType)
-          ? (shareholders.find(s => s.name === form.to_shareholder)?.id || form.shareholder_id || null)
-          : (form.shareholder_id || null);
-        const cert = await createCertificate(nextNum, shareholderId, numShares, form.share_class, form.transaction_date);
-        issuedCertNum = nextNum;
-        certId = cert.id;
-      }
-
-      const { data: txn, error } = await supabase.from("share_transactions").insert({
-        company_id: companyId,
-        transaction_type: txType,
-        shareholder_id: form.shareholder_id || null,
-        share_class: form.share_class,
-        num_shares: numShares,
-        price_per_share: form.price_per_share ? parseFloat(form.price_per_share) : null,
-        total_consideration: form.total_consideration ? parseFloat(form.total_consideration) : null,
-        consideration_type: form.consideration_type,
-        transaction_date: form.transaction_date,
-        from_shareholder: form.from_shareholder || null,
-        to_shareholder: form.to_shareholder || null,
-        notes: form.notes || null,
-        par_value: null,
-        issued_certificate_number: issuedCertNum,
-        surrendered_certificate_number: surrenderedCertNum,
-        certificate_id: certId,
-      } as any).select("id").single();
-      if (error) throw error;
-
-      if (assets.length > 0 && txn) {
-        const assetRows = assets.filter(a => a.description.trim()).map(a => ({
-          transaction_id: txn.id, company_id: companyId, description: a.description, value: parseFloat(a.value) || 0,
-        }));
-        if (assetRows.length > 0) {
-          await supabase.from("transaction_assets" as any).insert(assetRows as any);
-        }
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
-      queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] });
-      queryClient.invalidateQueries({ queryKey: ["active_certificates", companyId] });
-      setDialog(false);
-      resetForm();
-      toast.success("Transaction recorded!");
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  const resetForm = () => {
-    setForm({
-      transaction_type: "initial_contribution", shareholder_id: "", share_class: "Membership",
-      num_shares: "", price_per_share: "", total_consideration: "",
-      consideration_type: "cash", transaction_date: new Date().toISOString().split("T")[0],
-      from_shareholder: "", to_shareholder: "", notes: "",
-      issued_certificate_number: "", surrendered_certificate_number: "",
-    });
-    setAssets([]);
-  };
-
-  const isTransfer = ["transfer", "interest_transfer", "interest_assignment", "share_exchange"].includes(form.transaction_type);
-  const showAssetGrid = ["property", "other", "services"].includes(form.consideration_type);
-  const assetTotal = assets.reduce((sum, a) => sum + (parseFloat(a.value) || 0), 0);
 
   // Build unified entries
   const entries: UnifiedEntry[] = [];
@@ -364,7 +195,6 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
     const shBal = Math.max(0, holderBalances[holderKey] || 0);
     const ownershipPct = totalIssued > 0 ? (shBal / totalIssued) * 100 : null;
 
-    // Merge cert # from transaction record itself
     const certIssuedStr = (t as any).issued_certificate_number
       ? `Cert #${(t as any).issued_certificate_number}`
       : certIssued ? `Cert #${(certIssued as any).certificate_number}` : "—";
@@ -472,125 +302,6 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
               ]),
             },
           }} />
-          <Dialog open={dialog} onOpenChange={(open) => { setDialog(open); if (!open) resetForm(); }}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => resetForm()}>
-                <Plus className="mr-1 h-3 w-3" /> Record Transaction
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="font-display text-base">Record Interest Transaction</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); add.mutate(); }} className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label">Transaction Type</Label>
-                    <Select value={form.transaction_type} onValueChange={(v) => setForm(p => ({ ...p, transaction_type: v }))}>
-                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {LLC_TRANSACTION_TYPES.map(t => (
-                          <SelectItem key={t.value} value={t.value}>
-                            <span>{t.label}</span>
-                            <span className="ml-1.5 text-muted-foreground text-[10px]">({t.statute})</span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">Date</Label>
-                    <DatePickerField value={form.transaction_date} onChange={(v) => setForm(p => ({ ...p, transaction_date: v }))} />
-                  </div>
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Member</Label>
-                  <Select value={form.shareholder_id} onValueChange={(v) => setForm(p => ({ ...p, shareholder_id: v }))}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select member" /></SelectTrigger>
-                    <SelectContent>
-                      {shareholders.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {isTransfer && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="field-group">
-                      <Label className="field-label">From</Label>
-                      <Input className="h-8 text-sm" value={form.from_shareholder} onChange={(e) => setForm(p => ({ ...p, from_shareholder: e.target.value }))} />
-                    </div>
-                    <div className="field-group">
-                      <Label className="field-label">To</Label>
-                      <Input className="h-8 text-sm" value={form.to_shareholder} onChange={(e) => setForm(p => ({ ...p, to_shareholder: e.target.value }))} />
-                    </div>
-                  </div>
-                )}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label"># Units</Label>
-                    <Input className="h-8 text-sm" type="number" step="0.0001" value={form.num_shares} onChange={(e) => setForm(p => ({ ...p, num_shares: e.target.value }))} required />
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">Price/Unit</Label>
-                    <Input className="h-8 text-sm" type="number" step="0.01" value={form.price_per_share} onChange={(e) => setForm(p => ({ ...p, price_per_share: e.target.value }))} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label">Total Consideration</Label>
-                    <Input className="h-8 text-sm" type="number" step="0.01" value={form.total_consideration} onChange={(e) => setForm(p => ({ ...p, total_consideration: e.target.value }))} />
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">Consideration Type</Label>
-                    <Select value={form.consideration_type} onValueChange={(v) => setForm(p => ({ ...p, consideration_type: v }))}>
-                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {CONSIDERATION_TYPES.map(ct => <SelectItem key={ct.value} value={ct.value}>{ct.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label">Issued Cert #</Label>
-                    <Input className="h-8 text-sm" type="number" value={form.issued_certificate_number} onChange={(e) => setForm(p => ({ ...p, issued_certificate_number: e.target.value }))} placeholder="Auto or manual" />
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">Surrendered Cert #</Label>
-                    <Input className="h-8 text-sm" type="number" value={form.surrendered_certificate_number} onChange={(e) => setForm(p => ({ ...p, surrendered_certificate_number: e.target.value }))} placeholder="If applicable" />
-                  </div>
-                </div>
-                {showAssetGrid && (
-                  <div className="space-y-2 rounded-md border border-border p-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="field-label font-semibold">Non-Cash Assets</Label>
-                      <Button type="button" size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => setAssets(prev => [...prev, { description: "", value: "" }])}>
-                        <Plus className="h-2.5 w-2.5 mr-1" /> Add Asset
-                      </Button>
-                    </div>
-                    {assets.length === 0 && <p className="text-[10px] text-muted-foreground">Click "Add Asset" to list non-cash consideration items.</p>}
-                    {assets.map((asset, i) => (
-                      <div key={i} className="grid grid-cols-[1fr_100px_28px] gap-1.5 items-end">
-                        <Input className="h-7 text-xs" placeholder="Description" value={asset.description} onChange={(e) => { const u = [...assets]; u[i] = { ...u[i], description: e.target.value }; setAssets(u); }} />
-                        <Input className="h-7 text-xs" type="number" step="0.01" placeholder="Value" value={asset.value} onChange={(e) => { const u = [...assets]; u[i] = { ...u[i], value: e.target.value }; setAssets(u); }} />
-                        <Button type="button" size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setAssets(prev => prev.filter((_, idx) => idx !== i))}>
-                          <Trash2 className="h-3 w-3 text-destructive" />
-                        </Button>
-                      </div>
-                    ))}
-                    {assets.length > 0 && <div className="text-right text-xs font-semibold text-foreground">Asset Total: ${assetTotal.toFixed(2)}</div>}
-                  </div>
-                )}
-                <div className="field-group">
-                  <Label className="field-label">Notes</Label>
-                  <Textarea className="text-sm min-h-[50px]" rows={2} value={form.notes} onChange={(e) => setForm(p => ({ ...p, notes: e.target.value }))} />
-                </div>
-                <Button type="submit" className="w-full" size="sm" disabled={add.isPending}>
-                  {add.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                  Record Transaction
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
         </div>
       </CardHeader>
       <CardContent className="px-4 pb-4">
