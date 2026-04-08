@@ -41,6 +41,19 @@ import { validateIssuanceLimit, validateSellerHoldings } from "@/lib/transaction
 import { downloadStockCertificatePdf } from "@/lib/stock-certificate-pdf";
 import { downloadBillOfSalePdf } from "@/lib/bill-of-sale-pdf";
 
+function mapTxTypeToEquityType(txType: string, isLLC: boolean, consideration: number): string | null {
+  if (txType === "initial_issuance") return "Original Issue";
+  if (["authorized_issuance", "consideration_issuance"].includes(txType)) return "Consideration for Shares";
+  if (["initial_contribution", "additional_contribution", "membership_issuance"].includes(txType)) return "Capital Contribution";
+  if (txType === "subscription_issuance") return "Subscription Purchase";
+  if (["transfer", "interest_transfer", "interest_assignment", "share_exchange"].includes(txType)) {
+    return consideration > 0 ? "Transfer (Sale)" : "Transfer (Gift)";
+  }
+  if (["redemption", "reacquisition"].includes(txType)) return "Redemption";
+  if (txType === "cancellation") return "Reclassification";
+  return null;
+}
+
 // Wisconsin statutory stock transaction types by entity type
 const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string; statute: string }[]> = {
   Corporation: [
@@ -322,6 +335,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
             ? (form.from_shareholder || "Transfer")
             : "Original Issue";
 
+          const consideration = form.total_consideration ? parseFloat(form.total_consideration) : 0;
           await supabase.from("bills_of_sale").insert({
             company_id: companyId,
             shareholder_id: form.shareholder_id || null,
@@ -331,8 +345,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
             num_shares: numShares,
             share_class: form.share_class,
             price_per_share: form.price_per_share ? parseFloat(form.price_per_share) : null,
-            total_price: form.total_consideration ? parseFloat(form.total_consideration) : null,
+            total_price: consideration || null,
             sale_date: form.transaction_date,
+            equity_type: mapTxTypeToEquityType(txType, isLLCType(entityType), consideration),
           });
         }
       }

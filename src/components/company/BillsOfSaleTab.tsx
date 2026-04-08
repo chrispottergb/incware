@@ -69,10 +69,16 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
     enabled: !!companyId,
   });
 
+  const EQUITY_TYPE_OPTIONS = [
+    "Original Issue", "Consideration for Shares", "Capital Contribution",
+    "Subscription Purchase", "Transfer (Sale)", "Transfer (Gift)",
+    "Redemption", "Conversion", "Reclassification",
+  ];
+
   const emptyForm = {
     seller_name: "", buyer_name: "", num_shares: "", share_class: t.defaultClass,
     price_per_share: "", total_price: "", sale_date: new Date().toISOString().split("T")[0],
-    description: "", shareholder_id: "",
+    description: "", shareholder_id: "", equity_type: "",
   };
   const [form, setForm] = useState(emptyForm);
 
@@ -87,6 +93,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
       total_price: b.total_price != null ? String(b.total_price) : "",
       sale_date: b.sale_date || "", description: b.description || "",
       shareholder_id: b.shareholder_id || "",
+      equity_type: b.equity_type || getEquityTransactionLabel(b.seller_name, t.isLLC),
     });
     setDialog(true);
   };
@@ -100,6 +107,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
         total_price: form.total_price ? parseFloat(form.total_price) : null,
         sale_date: form.sale_date, description: form.description || null,
         shareholder_id: form.shareholder_id || null,
+        equity_type: form.equity_type || null,
       };
       if (editId) {
         const { error } = await supabase.from("bills_of_sale").update(payload).eq("id", editId);
@@ -146,7 +154,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
               headers: ["Date", "Type", "Seller", "Buyer", t.classLabel, t.shareUnit, t.dollarPerUnit, "Total"],
               rows: bills.map((b) => [
                 b.sale_date ? new Date(b.sale_date + "T00:00:00").toLocaleDateString() : "—",
-                getEquityTransactionLabel(b.seller_name, t.isLLC),
+                (b as any).equity_type || getEquityTransactionLabel(b.seller_name, t.isLLC),
                 b.seller_name, b.buyer_name, b.share_class, b.num_shares?.toLocaleString(),
                 b.price_per_share != null ? `$${Number(b.price_per_share).toFixed(2)}` : "—",
                 b.total_price != null ? `$${Number(b.total_price).toFixed(2)}` : "—",
@@ -166,6 +174,15 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-3">
+                <div className="field-group">
+                  <Label className="field-label">Type</Label>
+                  <Select value={form.equity_type} onValueChange={(v) => setForm(p => ({ ...p, equity_type: v }))}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectContent>
+                      {EQUITY_TYPE_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Seller</Label>
@@ -250,7 +267,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
                 {bills.map((b) => (
                   <TableRow key={b.id}>
                     <TableCell className="text-xs">{b.sale_date ? new Date(b.sale_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
-                    <TableCell className="text-xs">{getEquityTransactionLabel(b.seller_name, t.isLLC)}</TableCell>
+                    <TableCell className="text-xs">{(b as any).equity_type || getEquityTransactionLabel(b.seller_name, t.isLLC)}</TableCell>
                     <TableCell className="text-xs font-medium">{b.seller_name}</TableCell>
                     <TableCell className="text-xs font-medium">{b.buyer_name}</TableCell>
                     <TableCell className="text-xs">{b.share_class}</TableCell>
