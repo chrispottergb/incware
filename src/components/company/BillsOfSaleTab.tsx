@@ -97,7 +97,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bills_of_sale", companyId] });
       setDialog(false); resetForm();
-      toast.success(editId ? "Bill of sale updated!" : "Bill of sale recorded!");
+      toast.success(editId ? "Equity transaction updated!" : "Equity transaction recorded!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -109,7 +109,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bills_of_sale", companyId] });
-      toast.success("Bill of sale removed.");
+      toast.success("Equity transaction removed.");
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -122,15 +122,16 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
             <FileText className="h-3.5 w-3.5 text-primary" />
             <CardTitle className="card-section-title">{t.billsTitle}</CardTitle>
           </div>
-          <CardDescription className="text-[11px] mt-0.5">{t.billsStatute}</CardDescription>
+          <CardDescription className="text-[11px] mt-0.5">{t.billsSubtitle}</CardDescription>
         </div>
         <div className="flex items-center gap-1">
           <SectionPdfActions config={{
-            title: t.billsTitle, companyName: "", statuteRef: t.billsStatute,
+            title: t.billsTitle, companyName: "", statuteRef: t.billsSubtitle,
             table: {
-              headers: ["Date", "Seller", "Buyer", t.classLabel, t.shareUnit, t.dollarPerUnit, "Total"],
+              headers: ["Date", "Type", "Seller", "Buyer", t.classLabel, t.shareUnit, t.dollarPerUnit, "Total"],
               rows: bills.map((b) => [
                 b.sale_date ? new Date(b.sale_date + "T00:00:00").toLocaleDateString() : "—",
+                getEquityTransactionLabel(b.seller_name, t.isLLC),
                 b.seller_name, b.buyer_name, b.share_class, b.num_shares?.toLocaleString(),
                 b.price_per_share != null ? `$${Number(b.price_per_share).toFixed(2)}` : "—",
                 b.total_price != null ? `$${Number(b.total_price).toFixed(2)}` : "—",
@@ -140,13 +141,13 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
           <Dialog open={dialog} onOpenChange={(o) => { setDialog(o); if (!o) resetForm(); }}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline" className="h-7 text-xs">
-                <Plus className="mr-1 h-3 w-3" /> Record Sale
+                <Plus className="mr-1 h-3 w-3" /> Record Transaction
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle className="font-display text-base">
-                  {editId ? "Edit Bill of Sale" : (t.isLLC ? "Record Interest Transfer / Bill of Sale" : "Record Bill of Sale")}
+                  {editId ? "Edit Equity Transaction" : "Record Equity Transaction"}
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-3">
@@ -202,7 +203,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
                 </div>
                 <Button type="submit" className="w-full" size="sm" disabled={save.isPending}>
                   {save.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                  {editId ? "Save Changes" : "Record Bill of Sale"}
+                  {editId ? "Save Changes" : "Record Equity Transaction"}
                 </Button>
               </form>
             </DialogContent>
@@ -213,13 +214,14 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
         {isLoading ? (
           <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : bills.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-6">No bills of sale recorded yet.</p>
+          <p className="text-xs text-muted-foreground text-center py-6">No equity transactions recorded yet.</p>
         ) : (
           <div className="rounded-md border border-border overflow-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-[10px] uppercase">Date</TableHead>
+                  <TableHead className="text-[10px] uppercase">Type</TableHead>
                   <TableHead className="text-[10px] uppercase">Seller</TableHead>
                   <TableHead className="text-[10px] uppercase">Buyer</TableHead>
                   <TableHead className="text-[10px] uppercase">{t.classLabel}</TableHead>
@@ -233,6 +235,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
                 {bills.map((b) => (
                   <TableRow key={b.id}>
                     <TableCell className="text-xs">{b.sale_date ? new Date(b.sale_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
+                    <TableCell className="text-xs">{getEquityTransactionLabel(b.seller_name, t.isLLC)}</TableCell>
                     <TableCell className="text-xs font-medium">{b.seller_name}</TableCell>
                     <TableCell className="text-xs font-medium">{b.buyer_name}</TableCell>
                     <TableCell className="text-xs">{b.share_class}</TableCell>
