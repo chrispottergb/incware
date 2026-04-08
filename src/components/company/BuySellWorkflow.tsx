@@ -291,8 +291,8 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
           .upload(filePath, pdfBlob, { contentType: "application/pdf", upsert: true });
 
         if (uploadErr) {
-          console.warn("Bill of Sale PDF upload failed:", uploadErr);
-          toast.warning("Transaction saved. Bill of Sale PDF could not be archived — you can regenerate it from the Bills of Sale tab.");
+          console.warn("Equity Transaction PDF upload failed:", uploadErr);
+          toast.warning("Transaction saved. Equity Transaction PDF could not be archived — you can regenerate it from the Equity Transactions tab.");
         } else {
           // Get the public URL and insert into company_documents
           const { data: urlData } = supabase.storage

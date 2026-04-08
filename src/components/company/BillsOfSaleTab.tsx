@@ -21,6 +21,21 @@ import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology } from "@/lib/entity-terminology";
 
+function getEquityTransactionLabel(sellerName: string, isLLC: boolean): string {
+  const s = (sellerName || "").toLowerCase().trim();
+  if (s === "original issue" || s === "") {
+    return isLLC ? "Capital Contribution" : "Consideration for Shares";
+  }
+  if (s.includes("gift")) return "Transfer (Gift)";
+  if (s.includes("redemption")) return "Redemption";
+  if (s.includes("conversion")) return "Conversion";
+  if (s.includes("reclassification")) return "Reclassification";
+  if (s.includes("subscription")) return "Subscription Purchase";
+  if (s === "transfer") return "Transfer (Sale)";
+  // If seller is a person/entity name, it's a transfer by sale
+  return "Transfer (Sale)";
+}
+
 interface Props {
   companyId: string;
   entityType?: string;

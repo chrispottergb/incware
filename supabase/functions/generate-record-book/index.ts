@@ -152,7 +152,7 @@ INSTRUCTIONS:
 
 2. Write a "Compliance Narrative" (1-2 paragraphs) evaluating the company's record-keeping completeness. Note any gaps (missing meetings, unsigned documents, incomplete registrations). Reference specific Wisconsin statutes.
 
-3. Write brief "Section Introductions" (1 sentence each) for these sections: Articles of ${isLLC ? "Organization" : "Incorporation"}, ${isLLC ? "Authorized Binders & Members" : "Officers & Directors"}, ${isLLC ? "Members Registry" : "Shareholders Registry"}, ${isLLC ? "Membership Interest Certificates" : "Stock Certificates"}, ${isLLC ? "Interest Ledger" : "Stock Ledger"}, Meeting Minutes, ${isLLC ? "Interest Transfers" : "Bills of Sale"}, Business Sales, Compliance Checklist, AI Compliance, Corporate Timeline, Document Registry.
+3. Write brief "Section Introductions" (1 sentence each) for these sections: Articles of ${isLLC ? "Organization" : "Incorporation"}, ${isLLC ? "Authorized Binders & Members" : "Officers & Directors"}, ${isLLC ? "Members Registry" : "Shareholders Registry"}, ${isLLC ? "Membership Interest Certificates" : "Stock Certificates"}, ${isLLC ? "Interest Ledger" : "Stock Ledger"}, Meeting Minutes, Equity Transactions, Business Sales, Compliance Checklist, AI Compliance, Corporate Timeline, Document Registry.
 
 Return ONLY a JSON object with keys: executiveSummary, complianceNarrative, sectionIntros (object with keys matching section names above).`;
 

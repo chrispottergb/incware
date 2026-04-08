@@ -326,7 +326,7 @@ const TARGET_FIELDS: Record<string, { label: string; fields: { key: string; labe
     ],
   },
   bills_of_sale: {
-    label: "Bills of Sale",
+    label: "Equity Transactions",
     fields: [
       { key: "bill.seller", label: "Seller" },
       { key: "bill.buyer", label: "Buyer" },

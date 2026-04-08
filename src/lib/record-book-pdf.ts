@@ -189,7 +189,7 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
     isLLC ? "Membership Interest Certificates" : "Stock Certificates",
     isLLC ? "Interest Ledger" : "Stock Ledger",
     "Meeting Minutes",
-    isLLC ? "Interest Transfers" : "Bills of Sale",
+    "Equity Transactions",
     "Business Sales",
     "Company Assets",
     "Compliance Narrative",
@@ -378,12 +378,12 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
     y += 4;
   });
 
-  // ── SECTION 8: BILLS OF SALE ──
+  // ── SECTION 8: EQUITY TRANSACTIONS ──
   doc.addPage();
   y = 20;
-  const sec8Title = isLLC ? "Interest Transfers" : "Bills of Sale";
+  const sec8Title = "Equity Transactions";
   y = addSectionTitle(doc, y, 8, sec8Title);
-  if (intros[sec8Title]) y = addNarrative(doc, y, intros[sec8Title]);
+  if (intros[sec8Title] || intros[isLLC ? "Interest Transfers" : "Bills of Sale"]) y = addNarrative(doc, y, intros[sec8Title] || intros[isLLC ? "Interest Transfers" : "Bills of Sale"]);
 
   const bills = companyData.bills;
   y = addTableSafe(doc, y,
