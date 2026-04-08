@@ -760,10 +760,12 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                           const surrendered = (t as any).surrendered_certificate_number;
                           const issuedNum = issued != null && issued !== "" ? Number(issued) : null;
                           const surrenderedNum = surrendered != null && surrendered !== "" ? Number(surrendered) : null;
-                          const parts: React.ReactNode[] = [];
-                          if (issuedNum != null && !isNaN(issuedNum)) parts.push(<span key="i">#{issuedNum}</span>);
-                          if (surrenderedNum != null && !isNaN(surrenderedNum)) parts.push(<span key="s" className="ml-1 text-muted-foreground">✕#{surrenderedNum}</span>);
-                          return parts.length > 0 ? parts : "—";
+                          if (issuedNum != null && !isNaN(issuedNum) && surrenderedNum != null && !isNaN(surrenderedNum)) {
+                            return <span>Cert #{issuedNum} <span className="text-muted-foreground">/ Cancels #{surrenderedNum}</span></span>;
+                          }
+                          if (issuedNum != null && !isNaN(issuedNum)) return <span>Cert #{issuedNum}</span>;
+                          if (surrenderedNum != null && !isNaN(surrenderedNum)) return <span className="text-muted-foreground">Cancels #{surrenderedNum}</span>;
+                          return "—";
                         })()}
                       </TableCell>
                       <TableCell className="text-xs text-right font-semibold bg-primary/5">{balanceMap.get(t.id)?.toLocaleString() ?? "—"}</TableCell>
