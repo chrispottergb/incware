@@ -172,6 +172,38 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
     }, {});
   }, [isTransactionsLoading, shareholderHoldings, shareholders, transactions]);
 
+  // Compute capital account per shareholder from transactions (not DB column)
+  const CAPITAL_CONTRIBUTION_TYPES = new Set([
+    "initial_issuance", "authorized_issuance", "subscription_issuance", "consideration_issuance",
+    "initial_contribution", "additional_contribution", "membership_issuance",
+    "preemptive_rights", "share_dividend", "fractional_shares", "reissuance", "treasury_reissue",
+  ]);
+  const CAPITAL_REDUCTION_TYPES = new Set([
+    "redemption", "reacquisition", "cancellation", "treasury_acquisition",
+    "withdrawal_distribution", "dissociation_buyout",
+  ]);
+
+  const computedCapitalAccounts = useMemo<Record<string, number>>(() => {
+    const accounts: Record<string, number> = {};
+    const todayStr = new Date().toISOString().split("T")[0];
+    (transactions as any[]).forEach((tx) => {
+      if (tx.status === "corrected") return;
+      const effectiveDate = tx.effective_date || tx.transaction_date || "";
+      if (effectiveDate > todayStr) return;
+      const txType = String(tx.transaction_type || "").toLowerCase();
+      const amount = Number(tx.total_consideration || 0);
+      if (amount === 0) return;
+      const shId = tx.shareholder_id;
+      if (!shId) return;
+      if (CAPITAL_CONTRIBUTION_TYPES.has(txType)) {
+        accounts[shId] = (accounts[shId] || 0) + amount;
+      } else if (CAPITAL_REDUCTION_TYPES.has(txType)) {
+        accounts[shId] = (accounts[shId] || 0) - amount;
+      }
+    });
+    return accounts;
+  }, [transactions]);
+
   const showHoldingsColumn = Boolean(shareholderHoldings) || transactions.length > 0 || t.isLLC;
 
   const defaultForm = { name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active" };
@@ -491,9 +523,12 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                         </TableCell>
                         {t.isLLC && (
                           <TableCell className="text-xs text-right font-medium font-mono">
-                            {(s as any).capital_account_balance != null && Number((s as any).capital_account_balance) !== 0
-                              ? `$${Number((s as any).capital_account_balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                              : "—"}
+                            {(() => {
+                              const cap = computedCapitalAccounts[s.id] || 0;
+                              return cap !== 0
+                                ? `$${cap.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                : "—";
+                            })()}
                           </TableCell>
                         )}
                         <TableCell>
