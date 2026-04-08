@@ -150,6 +150,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
         <div className="flex items-center gap-1">
           <SectionPdfActions config={{
             title: t.billsTitle, companyName: "", statuteRef: t.billsSubtitle,
+            landscape: true,
             table: {
               headers: ["Date", "Type", "Seller", "Buyer", t.classLabel, t.shareUnit, t.dollarPerUnit, "Total"],
               rows: bills.map((b) => [
@@ -159,6 +160,16 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
                 b.price_per_share != null ? `$${Number(b.price_per_share).toFixed(2)}` : "—",
                 b.total_price != null ? `$${Number(b.total_price).toFixed(2)}` : "—",
               ]),
+              columnStyles: {
+                0: { cellWidth: 28 },  // Date
+                1: { cellWidth: 38 },  // Type
+                2: { cellWidth: 52 },  // Seller
+                3: { cellWidth: 52 },  // Buyer
+                4: { cellWidth: 28 },  // Class
+                5: { cellWidth: 24 },  // Shares
+                6: { cellWidth: 24 },  // $/Share
+                7: { cellWidth: 24 },  // Total
+              },
             },
           }} />
           <Dialog open={dialog} onOpenChange={(o) => { setDialog(o); if (!o) resetForm(); }}>

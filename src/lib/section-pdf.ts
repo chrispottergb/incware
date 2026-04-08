@@ -72,6 +72,8 @@ export interface SectionPdfTable {
   rows: string[][];
   /** Map of row index → inline note text to render beneath that row */
   noteRows?: Record<number, string>;
+  /** Optional per-column width overrides keyed by column index */
+  columnStyles?: Record<number, { cellWidth?: number; halign?: string }>;
 }
 
 export interface SectionPdfConfig {
@@ -145,6 +147,7 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
       bodyStyles: { fontSize: 10 },
       styles: { lineColor: [180, 180, 180], lineWidth: 0.5 },
       margin: { left: MARGIN, right: R_MARGIN },
+      ...(config.table.columnStyles ? { columnStyles: config.table.columnStyles } : {}),
       didParseCell(data) {
         if (data.section === "body") {
           // Style note rows
