@@ -316,8 +316,8 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         }
       }
 
-      // Auto-create Bill of Sale for LLC issuance/contribution/transfer transactions
-      if (isLLCType(entityType) && txn) {
+      // Auto-create Equity Transaction (Bill of Sale) for all entity types
+      if (txn) {
         const BILL_ISSUANCE_TYPES = new Set([
           "initial_contribution", "additional_contribution", "membership_issuance",
           "initial_issuance", "authorized_issuance", "subscription_issuance",
@@ -327,13 +327,21 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
           "interest_transfer", "interest_assignment", "transfer", "gift",
           "share_exchange", "dissociation_buyout",
         ]);
+        const BILL_REDEMPTION_TYPES = new Set([
+          "redemption", "reacquisition", "cancellation",
+        ]);
 
-        if (BILL_ISSUANCE_TYPES.has(txType) || BILL_TRANSFER_TYPES.has(txType)) {
+        if (BILL_ISSUANCE_TYPES.has(txType) || BILL_TRANSFER_TYPES.has(txType) || BILL_REDEMPTION_TYPES.has(txType)) {
           const memberName = shareholders.find(s => s.id === form.shareholder_id)?.name
             || form.to_shareholder || "";
           const sellerName = BILL_TRANSFER_TYPES.has(txType)
             ? (form.from_shareholder || "Transfer")
-            : "Original Issue";
+            : BILL_REDEMPTION_TYPES.has(txType)
+              ? (shareholders.find(s => s.id === form.shareholder_id)?.name || form.from_shareholder || "")
+              : "Original Issue";
+          const buyerName = BILL_REDEMPTION_TYPES.has(txType)
+            ? (form.to_shareholder || company?.name || "Company")
+            : memberName;
 
           const consideration = form.total_consideration ? parseFloat(form.total_consideration) : 0;
           await supabase.from("bills_of_sale").insert({
@@ -341,7 +349,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
             shareholder_id: form.shareholder_id || null,
             transaction_id: txn.id,
             seller_name: sellerName,
-            buyer_name: memberName,
+            buyer_name: buyerName,
             num_shares: numShares,
             share_class: form.share_class,
             price_per_share: form.price_per_share ? parseFloat(form.price_per_share) : null,
