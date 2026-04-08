@@ -81,6 +81,14 @@ const SUB_TYPES: Record<string, string[]> = {
     "Approve Distributions",
     "Other",
   ],
+  "Special Meeting of Members": [
+    "Approve Officer Compensation",
+    "Approve Amendments to Operating Agreement",
+    "Approve Issuance, Transfer of Membership Interests",
+    "Authorize a Line of Credit",
+    "Approve Distributions",
+    "Other",
+  ],
 };
 
 interface Props {
