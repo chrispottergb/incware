@@ -106,7 +106,7 @@ export function getTerminology(entityType?: string): EntityTerminology {
       election: "Appointment",
       shareholdersTab: "Membership Interest/Units",
       shareholdersSubTab: "Members",
-      ledgerTitle: "Capital & Interest Ledger",
+      ledgerTitle: "Transactions",
       billsTitle: "Bills of Sale / Interest Transfers",
       shareholderStatute: "Wis. Stat. § 183.0405 — Record of members by name, address, and interest held",
       certificateStatute: "Wis. Stat. § 183.0501 — Membership interest certificates",

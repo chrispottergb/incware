@@ -50,11 +50,18 @@ import OrgMeetingWizard from "@/components/OrgMeetingWizard";
 import AnnualMeetingWizard from "@/components/AnnualMeetingWizard";
 import WrittenConsentWizard from "@/components/WrittenConsentWizard";
 
-const MEETING_TYPES = [
+const CORP_MEETING_TYPES = [
   "Annual Meeting",
   "Shareholder Meeting",
   "Organizational Meeting",
   "Special Meeting of Board of Directors",
+  "Written Consent",
+];
+
+const LLC_MEETING_TYPES = [
+  "Annual Meeting",
+  "Organizational Meeting",
+  "Special Meeting of Members",
   "Written Consent",
 ];
 
@@ -71,6 +78,14 @@ const SUB_TYPES: Record<string, string[]> = {
     "Approve Issuance, Transfer, Sale of Shares",
     "Authorize a Line of Credit",
     "Adopt Regular Meeting Resolution",
+    "Approve Distributions",
+    "Other",
+  ],
+  "Special Meeting of Members": [
+    "Approve Officer Compensation",
+    "Approve Amendments to Operating Agreement",
+    "Approve Issuance, Transfer of Membership Interests",
+    "Authorize a Line of Credit",
     "Approve Distributions",
     "Other",
   ],
@@ -375,8 +390,10 @@ export default function MeetingsTab({ companyId, company }: Props) {
         }
       }
 
-      // Auto-populate members for LLC Annual Meetings
-      if (newMeeting && form.meeting_type === "Annual Meeting" && isLLCType(company.entity_type)) {
+      // Auto-populate members for LLC Annual Meetings and Special Meeting of Members
+      const isLLCMemberMeeting = isLLCType(company.entity_type) && 
+        (form.meeting_type === "Annual Meeting" || form.meeting_type === "Special Meeting of Members");
+      if (newMeeting && isLLCMemberMeeting) {
         const { data: members } = await supabase
           .from("shareholders")
           .select("id, name, is_treasury, status, ownership_percentage, address, city, state, zip")
@@ -545,7 +562,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {MEETING_TYPES.map((t) => (
+                      {(isLLCType(company.entity_type) ? LLC_MEETING_TYPES : CORP_MEETING_TYPES).map((t) => (
                         <SelectItem key={t} value={t}>{t}</SelectItem>
                       ))}
                     </SelectContent>
