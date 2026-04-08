@@ -29,7 +29,7 @@ export function generateBillOfSalePdf(data: BillOfSaleData): jsPDF {
   doc.setFontSize(18);
   doc.setFont("Arial", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text("BILL OF SALE", pw / 2, 25, { align: "center" });
+  doc.text("EQUITY TRANSACTION", pw / 2, 25, { align: "center" });
 
   doc.setFontSize(10);
   doc.setFont("Arial", "normal");
