@@ -759,6 +759,7 @@ export type Database = {
           company_id: string
           created_at: string
           description: string | null
+          equity_type: string | null
           id: string
           num_shares: number
           price_per_share: number | null
@@ -775,6 +776,7 @@ export type Database = {
           company_id: string
           created_at?: string
           description?: string | null
+          equity_type?: string | null
           id?: string
           num_shares?: number
           price_per_share?: number | null
@@ -791,6 +793,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           description?: string | null
+          equity_type?: string | null
           id?: string
           num_shares?: number
           price_per_share?: number | null

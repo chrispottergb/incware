@@ -1,0 +1,1 @@
+ALTER TABLE public.bills_of_sale ADD COLUMN equity_type text DEFAULT NULL;
