@@ -505,7 +505,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   </div>
                 </div>
               )}
-              <div className="grid grid-cols-4 gap-2">
+              <div className={`grid gap-2 ${isLLCType(entityType) ? "grid-cols-3" : "grid-cols-4"}`}>
                 <div className="field-group">
                   <Label className="field-label">{term.classLabel}</Label>
                   <Select value={form.share_class} onValueChange={(v) => setForm(p => ({ ...p, share_class: v }))}>
@@ -524,10 +524,12 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                     setForm(p => ({ ...p, num_shares: val, total_consideration: updateTotal(val, p.price_per_share) || p.total_consideration }));
                   }} required />
                 </div>
-                <div className="field-group">
-                  <Label className="field-label">Par Value</Label>
-                  <Input className="h-8 text-sm" type="text" value={form.par_value} onChange={(e) => setForm(p => ({ ...p, par_value: e.target.value }))} placeholder={company?.par_value ? `$${company.par_value}` : "e.g. 1.00 or No Par Value"} />
-                </div>
+                {!isLLCType(entityType) && (
+                  <div className="field-group">
+                    <Label className="field-label">Par Value</Label>
+                    <Input className="h-8 text-sm" type="text" value={form.par_value} onChange={(e) => setForm(p => ({ ...p, par_value: e.target.value }))} placeholder={company?.par_value ? `$${company.par_value}` : "e.g. 1.00 or No Par Value"} />
+                  </div>
+                )}
                 <div className="field-group">
                   <Label className="field-label">{term.pricePerUnit}</Label>
                   <Input className="h-8 text-sm" type="number" step="0.01" value={form.price_per_share} onChange={(e) => {
