@@ -37,6 +37,7 @@ import AdminDeleteButton from "./AdminDeleteButton";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
+import { validateIssuanceLimit, validateSellerHoldings } from "@/lib/transaction-validation";
 import { downloadStockCertificatePdf } from "@/lib/stock-certificate-pdf";
 import { downloadBillOfSalePdf } from "@/lib/bill-of-sale-pdf";
 
@@ -237,6 +238,31 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       const parVal = isNoParValue ? null : (form.par_value ? parseFloat(form.par_value) : null);
       const issuedCertNum: number | null = form.issued_certificate_number ? parseInt(form.issued_certificate_number) : null;
       const surrenderedCertNum: number | null = form.surrendered_certificate_number ? parseInt(form.surrendered_certificate_number) : null;
+
+      // Validate issuance limit
+      if (ISSUANCE_SET.has(txType) && company?.authorized_shares != null) {
+        const currentIssued = transactions
+          .filter((t: any) => t.status !== "corrected")
+          .reduce((sum: number, t: any) => {
+            if (ISSUANCE_SET.has(t.transaction_type)) return sum + (t.num_shares || 0);
+            return sum;
+          }, 0);
+        const available = company.authorized_shares - currentIssued;
+        const issuanceCheck = validateIssuanceLimit(numShares, available, term);
+        if (!issuanceCheck.valid) throw new Error(issuanceCheck.message);
+      }
+
+      // Validate seller holdings for transfers
+      if (TRANSFER_SET_LOCAL.has(txType) && form.from_shareholder) {
+        const sellerCheck = validateSellerHoldings(
+          form.from_shareholder,
+          numShares,
+          transactions,
+          shareholders,
+          term
+        );
+        if (!sellerCheck.valid) throw new Error(sellerCheck.message);
+      }
 
       const { data: txn, error } = await supabase.from("share_transactions").insert({
         company_id: companyId,
