@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 const ISSUANCE_TYPES = [
   "Issuance", "initial_issuance", "authorized_issuance", "subscription_issuance",
   "consideration_issuance", "share_dividend", "fractional_shares", "preemptive_rights",
-  "treasury_reissue", "Capital Contribution", "Initial Contribution", "initial_contribution",
+  "treasury_reissue", "Reissuance", "reissuance",
+  "Capital Contribution", "Initial Contribution", "initial_contribution",
   "additional_contribution", "membership_issuance",
 ];
 
