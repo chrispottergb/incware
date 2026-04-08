@@ -49,7 +49,8 @@ export interface EntityTerminology {
   shareholdersTab: string;     // "Shareholders & Stock" | "Members & Interest"
   shareholdersSubTab: string;  // "Shareholders/Members" | "Members"
   ledgerTitle: string;         // "Stock Ledger / Transactions" | "Capital & Interest Ledger"
-  billsTitle: string;          // "Bills of Sale" | "Bills of Sale / Interest Transfers"
+  billsTitle: string;          // "Equity Transactions"
+  billsSubtitle: string;       // "Issuances, Transfers, and Other Ownership Changes"
   
   // Statute references
   shareholderStatute: string;
@@ -107,7 +108,8 @@ export function getTerminology(entityType?: string): EntityTerminology {
       shareholdersTab: "Membership Interest/Units",
       shareholdersSubTab: "Members",
       ledgerTitle: "Transactions",
-      billsTitle: "Bills of Sale / Interest Transfers",
+      billsTitle: "Equity Transactions",
+      billsSubtitle: "Issuances, Transfers, and Other Ownership Changes",
       shareholderStatute: "Wis. Stat. § 183.0405 — Record of members by name, address, and interest held",
       certificateStatute: "Wis. Stat. § 183.0501 — Membership interest certificates",
       billsStatute: "Record membership interest transfers between parties — supports Wis. Stat. § 183.0706",
@@ -146,7 +148,8 @@ export function getTerminology(entityType?: string): EntityTerminology {
     shareholdersTab: "Shareholders & Stock",
     shareholdersSubTab: "Shareholders/Members",
     ledgerTitle: "Transactions",
-    billsTitle: "Bills of Sale",
+    billsTitle: "Equity Transactions",
+    billsSubtitle: "Issuances, Transfers, and Other Ownership Changes",
     shareholderStatute: "Wis. Stat. § 180.1601(3) — Record of shareholders by name, address, and shares held",
     certificateStatute: "Wis. Stat. § 180.0625 — Share certificates must state corporate name, shares represented, class & par value",
     billsStatute: "Record share sales between parties — supports Wis. Stat. § 180.0627 share transfer restrictions",

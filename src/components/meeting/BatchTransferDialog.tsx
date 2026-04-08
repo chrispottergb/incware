@@ -592,7 +592,7 @@ export default function BatchTransferDialog({
             <div className="rounded-md bg-muted/50 p-3 text-xs space-y-1">
               <p className="font-medium text-foreground">This batch will create:</p>
               <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> {rows.length} {term.ledgerTitle} entries</p>
-              <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> {rows.length} Bills of Sale (individually named PDFs)</p>
+              <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> {rows.length} Equity Transaction records (individually named PDFs)</p>
               <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> 1 certificate cancellation (seller) + {rows.length} buyer certificate(s)</p>
               {sellerHoldings - totalBatchShares > 0.0001 && (
                 <p className="flex items-center gap-1.5"><Link2 className="h-3 w-3 text-primary" /> 1 remainder certificate to {sellerName}</p>
@@ -619,7 +619,7 @@ export default function BatchTransferDialog({
             <div>
               <p className="text-sm font-medium">Batch Transfer Complete</p>
               <p className="text-xs text-muted-foreground mt-1">
-                {rows.length} transactions recorded, certificates updated, and Bills of Sale archived.
+                {rows.length} transactions recorded, certificates updated, and Equity Transactions archived.
               </p>
             </div>
 
