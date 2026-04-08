@@ -1,74 +1,62 @@
 
 
-# Implementation Plan: Unified Transaction Validation & Data Flow
+# Standardize LLC Transaction Entry
 
-## Step 1: Create `src/lib/transaction-validation.ts`
+## Changes
 
-New file with four pure exported functions:
-
-- **`validateIssuanceLimit(numShares, availableShares, term)`** — checks `numShares <= availableShares` when availableShares is not null. Returns `{ valid, message? }`.
-- **`validateSellerHoldings(sellerName, numShares, transactions, shareholders, term)`** — uses imported `getHoldingsByName` to compute seller's current holdings and checks `numShares <= holdings`. Returns `{ valid, message? }`.
-- **`validateLLCTotalInterest(numUnits, totalUnits)`** — checks `numUnits + totalUnits <= 100`. Returns `{ valid, message? }`.
-- **`getNextCertificateNumber(companyId)`** — queries `stock_certificates` for `MAX(certificate_number)` via Supabase, returns `max + 1` or `1`.
-
-Imports: `supabase` client, `getHoldingsByName` from `useShareCalculations`, `EntityTerminology` type.
-
-## Step 2: Modify `CreateCompanyWizard.tsx`
-
-### 2a. Imports
-Add imports for `getNextCertificateNumber`, `validateIssuanceLimit` from the new module, `getTerminology`, `isLLCType`.
-
-### 2b. LLC detection
-Add `const isLLC = isLLCType(newType)` alongside existing `isCorp`. Get `const term = getTerminology(newType)`.
-
-### 2c. Step navigation (line 431)
-Change from `isCorp ? 2 : 3` to `(isCorp || isLLC) ? 2 : 3`. Update step label (line 346) to show "Initial Directors" for corps, "Initial Members" for LLCs, "Skip" otherwise.
-
-### 2d. Step 2 rendering (line 438–537)
-Add a conditional: if `step === 2 && isLLC`, render the existing shareholder form (name, address, units, class) using `term` labels. Reuse `shareholders` state, `addShareholder`, `editShareholder`, `removeShareholder`. The existing corp director form stays for `step === 2 && isCorp`.
-
-### 2e. Validation in `addShareholder` (line 162–170)
-Import and call `validateIssuanceLimit` for corps. For LLCs, keep existing flow (no authorized pool cap).
-
-### 2f. `handleSave` changes (lines 230–328)
-- Replace `let certNumber = 0` (line 247) with `let certNumber = await getNextCertificateNumber(companyId) - 1` so the `certNumber++` pattern yields the correct next number.
-- Add `effective_date: new Date().toISOString().split("T")[0]` to `share_transactions` insert (line 287).
-- After the shareholder loop (line 302), add: `await supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId })`.
-- Add LLC member save block: when `isLLC && shareholders.length > 0`, iterate shareholders, insert into `shareholders` table, create membership certificates via `getNextCertificateNumber`, insert `share_transactions` with `membership_issuance` type and `effective_date`, then call `recalculate_ownership_percentages`.
-
-### 2g. Step 3 Review & Back button (line 580)
-Change `isCorp ? 2 : 1` to `(isCorp || isLLC) ? 2 : 1`. Add LLC member review display similar to directors review.
-
-## Step 3: Modify `StockLedgerTab.tsx`
-
-### 3a. Imports (top of file)
-Add `validateIssuanceLimit`, `validateSellerHoldings` from `transaction-validation.ts`. Add `isLLCType`.
-
-### 3b. Validation in `add` mutation (line 232)
-Before the insert call:
-- If `ISSUANCE_SET.has(txType)`: compute available shares from `company.authorized_shares` minus current issued total from transactions, call `validateIssuanceLimit`. If invalid, throw with message.
-- If `TRANSFER_SET_LOCAL.has(txType)` and `form.from_shareholder`: call `validateSellerHoldings` with form data, transactions, shareholders. If invalid, throw with message.
-
-### 3c. Ownership recalc in `onSuccess` (line 280)
-Add after existing invalidations:
-```typescript
-if (isLLCType(entityType)) {
-  supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId });
-}
+### 1. `src/pages/CompanyDetail.tsx` (line 308-310)
+Add `<StockLedgerTab>` before `<UnifiedLedgerTab>` in the LLC branch:
+```tsx
+{isLLCType(company.entity_type) ? (
+  <>
+    <StockLedgerTab companyId={company.id} entityType={company.entity_type} />
+    <UnifiedLedgerTab companyId={company.id} entityType={company.entity_type} authorizedShares={shareCalc.authorizedShares} />
+    <div data-section="certificates">
+      <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
+    </div>
+    <BillsOfSaleTab companyId={company.id} entityType={company.entity_type} />
+  </>
+)}
 ```
 
-## Step 4: Modify `ShareholdersTab.tsx`
+### 2. `src/components/company/UnifiedLedgerTab.tsx` — Make read-only
 
-### Line 137
-Remove: `queryClient.invalidateQueries({ queryKey: ["share-transactions", companyId] });`
-Keep line 138: `queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });`
+**Remove** (lines/blocks):
+- `LLC_TRANSACTION_TYPES` constant (lines 44-56)
+- `CONSIDERATION_TYPES` constant (lines 58-64)
+- `dialog` state (line 99)
+- `shareholders` query (lines 101-109)
+- `form` state (lines 146-160)
+- `assets` state (line 162)
+- `getNextCertNumber` function (lines 164-172)
+- `createCertificate` function (lines 174-186)
+- `ISSUANCE_SET_LOCAL`, `TRANSFER_SET_LOCAL` constants (lines 188-194)
+- `add` mutation (lines 196-253)
+- `resetForm` function (lines 255-264)
+- `isTransfer`, `showAssetGrid`, `assetTotal` computed values (lines 266-268)
+- Entire `<Dialog>` block including Record Transaction button (lines 475-593)
 
-## Step 5: MeetingResolutions verification
-`BuySellWorkflow.tsx` line 259 already invalidates `["share_transactions", companyId]` with underscore. No changes needed.
+**Remove unused imports** after above deletions:
+- `useState` (no longer needed — no state left)
+- `useMutation` from react-query
+- `Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger`
+- `Input`, `Label`, `Textarea`, `Select, SelectContent, SelectItem, SelectTrigger, SelectValue`
+- `DatePickerField`
+- `Plus, Loader2, Trash2`
 
-## Files Changed
-1. `src/lib/transaction-validation.ts` — NEW
-2. `src/components/CreateCompanyWizard.tsx` — cert numbering, effective_date, LLC Step 2, RPC call
-3. `src/components/company/StockLedgerTab.tsx` — validation + LLC recalc
-4. `src/components/company/ShareholdersTab.tsx` — remove hyphen query key
+**Keep intact**:
+- All query hooks: `company`, `certificates`, `transactions`
+- Entry building logic (lines 270-398)
+- `handlePrintCertificate`, `handlePrintBillOfSale`
+- Table rendering, PDF actions, permanent record footer
+- `ISSUANCE_TYPES`, `REDUCTION_TYPES`, `TRANSFER_TYPES` constants (used by entry builder)
+- `ScrollText, Lock, FileText, Award, Link2` icons
+- `Badge`, `Button`, `Table` components, `SectionPdfActions`, `getTerminology`
+- `toast`, `downloadStockCertificatePdf`, `downloadBillOfSalePdf`
+
+### 3. `StockLedgerTab.tsx` — No changes needed
+Already uses `getTerminology()` for LLC terminology and has LLC transaction types in `TRANSACTION_TYPES_BY_ENTITY`. No local cert numbering function to replace — cert numbers are entered manually by users or left blank.
+
+## Not Changed
+- Corporation flows, validation logic, database schema, PDF generators
 
