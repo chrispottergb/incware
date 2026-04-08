@@ -252,6 +252,16 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       const issuedCertNum: number | null = form.issued_certificate_number ? parseInt(form.issued_certificate_number) : null;
       const surrenderedCertNum: number | null = form.surrendered_certificate_number ? parseInt(form.surrendered_certificate_number) : null;
 
+      // Date guard: block transactions before opening_balance_date
+      const { data: companyCheck } = await supabase
+        .from("companies")
+        .select("opening_balance_date")
+        .eq("id", companyId)
+        .maybeSingle();
+      if (companyCheck?.opening_balance_date && form.transaction_date < companyCheck.opening_balance_date) {
+        throw new Error(`This entity has an opening balance established as of ${new Date(companyCheck.opening_balance_date + "T00:00:00").toLocaleDateString()}. Transactions cannot be dated before the opening balance date.`);
+      }
+
       // Validate issuance limit
       if (ISSUANCE_SET.has(txType) && company?.authorized_shares != null) {
         const currentIssued = transactions
@@ -321,7 +331,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         const BILL_ISSUANCE_TYPES = new Set([
           "initial_contribution", "additional_contribution", "membership_issuance",
           "initial_issuance", "authorized_issuance", "subscription_issuance",
-          "consideration_issuance", "reissuance",
+          "consideration_issuance", "reissuance", "opening_balance",
         ]);
         const BILL_TRANSFER_TYPES = new Set([
           "interest_transfer", "interest_assignment", "transfer", "gift",
@@ -776,12 +786,16 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
 
                     return (
                     <React.Fragment key={t.id}>
-                    <TableRow className={isCorrected ? "opacity-50" : ""}>
+                    <TableRow className={`${isCorrected ? "opacity-50" : ""} ${(t as any).entry_type === "opening_balance" ? "italic bg-muted/30" : ""}`}>
                       <TableCell className="text-xs font-mono text-muted-foreground">{entryNumMap.get(t.id)}</TableCell>
                       <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>{t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 capitalize ${isCorrected ? "line-through" : ""}`}>{t.transaction_type?.replace(/_/g, " ")}</Badge>
+                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 capitalize ${isCorrected ? "line-through" : ""}`}>
+                            {(t as any).entry_type === "opening_balance"
+                              ? `Opening Balance (as of ${t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—"})`
+                              : t.transaction_type?.replace(/_/g, " ")}
+                          </Badge>
                           {isCorrected && (
                             <TooltipProvider>
                               <Tooltip>

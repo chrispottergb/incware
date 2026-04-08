@@ -17,7 +17,7 @@ const ISSUANCE_TYPES = [
   "Issuance", "initial_issuance", "authorized_issuance", "subscription_issuance",
   "consideration_issuance", "share_dividend", "fractional_shares", "preemptive_rights",
   "treasury_reissue", "reissuance", "Capital Contribution", "Initial Contribution", "initial_contribution",
-  "additional_contribution", "membership_issuance",
+  "additional_contribution", "membership_issuance", "opening_balance",
 ];
 
 const REDUCTION_TYPES = [
@@ -109,7 +109,9 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
     certificates.find((c: any) => c.cancelled_date === date && (c.shareholders?.name || "").toLowerCase().trim() === name.toLowerCase().trim() && c.status === "cancelled");
 
   const sorted = [...transactions].sort((a: any, b: any) =>
-    (a.transaction_date || "").localeCompare(b.transaction_date || "") || (a.created_at || "").localeCompare(b.created_at || "")
+    (a.transaction_date || "").localeCompare(b.transaction_date || "") ||
+    ((b as any).entry_type === "opening_balance" ? 1 : 0) - ((a as any).entry_type === "opening_balance" ? 1 : 0) ||
+    (a.created_at || "").localeCompare(b.created_at || "")
   );
 
   sorted.forEach((t: any) => {
@@ -333,11 +335,15 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {entries.map((e) => (
-                  <TableRow key={e.id}>
+                {entries.map((e) => {
+                  const isOpeningBalance = e.raw && (e.raw as any).entry_type === "opening_balance";
+                  return (
+                  <TableRow key={e.id} className={isOpeningBalance ? "italic bg-muted/30" : ""}>
                     <TableCell className="text-xs font-mono text-muted-foreground">{e.entryNum}</TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{e.date ? new Date(e.date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
-                    <TableCell><Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize whitespace-nowrap">{e.type}</Badge></TableCell>
+                    <TableCell><Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize whitespace-nowrap">
+                      {isOpeningBalance ? `Opening Balance (as of ${e.date ? new Date(e.date + "T00:00:00").toLocaleDateString() : "—"})` : e.type}
+                    </Badge></TableCell>
                     <TableCell className="text-xs font-medium whitespace-nowrap">{e.transferee}</TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{e.transferor}</TableCell>
                     <TableCell className="text-xs font-mono">{e.certIssued}</TableCell>
@@ -368,7 +374,7 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                })}
               </TableBody>
             </Table>
           </div>

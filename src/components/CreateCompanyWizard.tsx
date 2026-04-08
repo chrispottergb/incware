@@ -9,6 +9,7 @@ import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -19,12 +20,13 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Plus, Trash2, ArrowRight, ArrowLeft, CheckCircle2, Building2, Users, AlertTriangle } from "lucide-react";
+import { Loader2, Plus, Trash2, ArrowRight, ArrowLeft, CheckCircle2, Building2, Users, AlertTriangle, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import TaxReturnUpload from "@/components/TaxReturnUpload";
 import { Upload } from "lucide-react";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { getNextCertificateNumber, validateIssuanceLimit } from "@/lib/transaction-validation";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "LLC-S", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"];
 const CORP_TYPES = ["Corporation", "S-Corp"];
@@ -36,6 +38,8 @@ const US_STATES = [
   "VA","WA","WV","WI","WY","DC",
 ];
 
+const CONSIDERATION_TYPES = ["Cash", "Property", "Services", "Gift"];
+
 interface InitialShareholder {
   name: string;
   address: string;
@@ -46,10 +50,14 @@ interface InitialShareholder {
   ssn_ein: string;
   num_shares: number;
   share_class: string;
+  cert_number: string;
+  consideration: string;
+  consideration_type: string;
 }
 
 const emptyShareholder = (): InitialShareholder => ({
   name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", num_shares: 0, share_class: "Common",
+  cert_number: "", consideration: "", consideration_type: "Cash",
 });
 
 interface InitialDirector {
@@ -75,8 +83,11 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  // Flow type: null = step 0 (choose), "new" = existing flow, "existing" = opening balance flow
+  const [flowType, setFlowType] = useState<"new" | "existing" | null>(null);
+
   // Step 1: Company info
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4>(0);
   const [saving, setSaving] = useState(false);
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("Corporation");
@@ -84,6 +95,9 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
   const [authorizedShares, setAuthorizedShares] = useState("");
   const [parValue, setParValue] = useState("");
   const [parValueType, setParValueType] = useState("par");
+
+  // Existing entity: opening balance date
+  const [openingBalanceDate, setOpeningBalanceDate] = useState("");
 
   // Step 2: Shareholders
   const [shareholders, setShareholders] = useState<InitialShareholder[]>([]);
@@ -94,6 +108,9 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
   const [directors, setDirectors] = useState<InitialDirector[]>([]);
   const [editingDir, setEditingDir] = useState<InitialDirector>(emptyDirector());
   const [editingDirIdx, setEditingDirIdx] = useState<number | null>(null);
+
+  // Existing entity: confirmation
+  const [confirmOwnership, setConfirmOwnership] = useState(false);
 
   // Zip lookup for shareholder form
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
@@ -141,7 +158,8 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
   const availableShares = authSharesNum - totalIssuedShares;
 
   const resetAll = () => {
-    setStep(1);
+    setStep(0);
+    setFlowType(null);
     setNewName("");
     setNewType("Corporation");
     setNewState("");
@@ -155,6 +173,8 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
     setEditingDir(emptyDirector());
     setEditingDirIdx(null);
     setSaving(false);
+    setOpeningBalanceDate("");
+    setConfirmOwnership(false);
   };
 
   const handleClose = () => {
@@ -168,11 +188,27 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
       toast.error(`Name and number of ${term.shareUnit.toLowerCase()} are required.`);
       return;
     }
+    if (flowType === "existing" && !editingSh.cert_number.trim()) {
+      toast.error("Certificate number is required for existing entity setup.");
+      return;
+    }
+    if (flowType === "existing" && isLLC && !editingSh.consideration.trim()) {
+      toast.error("Consideration amount is required for LLC members.");
+      return;
+    }
     if (isCorp) {
       const currentAvailable = availableShares + (editingIdx !== null ? shareholders[editingIdx].num_shares : 0);
       const validation = validateIssuanceLimit(editingSh.num_shares, authSharesNum > 0 ? currentAvailable : null, term);
       if (!validation.valid) {
         toast.error(validation.message!);
+        return;
+      }
+    }
+    // Check cert number uniqueness within the form
+    if (flowType === "existing" && editingSh.cert_number.trim()) {
+      const dupIdx = shareholders.findIndex((s, i) => i !== editingIdx && s.cert_number.trim() === editingSh.cert_number.trim());
+      if (dupIdx !== -1) {
+        toast.error(`Certificate number ${editingSh.cert_number} is already assigned to ${shareholders[dupIdx].name}.`);
         return;
       }
     }
@@ -395,8 +431,259 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
     }
   };
 
+  // --- EXISTING ENTITY SAVE ---
+  const handleSaveExisting = async () => {
+    setSaving(true);
+    try {
+      // 1. Create company with opening_balance_date
+      const { data: company, error: compErr } = await supabase.from("companies").insert({
+        user_id: user!.id,
+        name: newName,
+        entity_type: newType,
+        state_of_incorporation: newState || null,
+        authorized_shares: isCorp ? authSharesNum || null : null,
+        par_value: parValueType === "par" ? (parseFloat(parValue) || null) : null,
+        par_value_type: parValueType,
+        fiscal_year_end: "December 31",
+        opening_balance_date: openingBalanceDate,
+      } as any).select("id").single();
+      if (compErr) throw compErr;
+
+      const companyId = company.id;
+
+      // 2. For each shareholder/member
+      for (const sh of shareholders) {
+        // Insert shareholder
+        const { data: shRecord, error: shErr } = await supabase.from("shareholders").insert({
+          company_id: companyId,
+          name: sh.name,
+          address: sh.address || null,
+          address_2: sh.address_2 || null,
+          city: sh.city || null,
+          state: sh.state || null,
+          zip: sh.zip || null,
+          status: "active",
+          date_added: openingBalanceDate,
+        }).select("id").single();
+        if (shErr) throw shErr;
+
+        // Encrypt SSN/EIN if provided
+        if (sh.ssn_ein?.trim()) {
+          await supabase.functions.invoke("encrypt-ssn", {
+            body: { shareholder_id: shRecord.id, ssn_ein: sh.ssn_ein.trim() },
+          });
+        }
+
+        const certNum = parseInt(sh.cert_number) || 0;
+
+        if (sh.num_shares > 0 && certNum > 0) {
+          // Check cert collision
+          const { data: existingCert } = await supabase
+            .from("stock_certificates")
+            .select("id")
+            .eq("company_id", companyId)
+            .eq("certificate_number", certNum)
+            .maybeSingle();
+
+          if (existingCert) {
+            throw new Error(`Cert #${certNum} already exists for this company. Please verify the correct certificate number.`);
+          }
+
+          // Insert stock certificate with user-entered cert number
+          const { data: cert, error: certErr } = await supabase.from("stock_certificates").insert({
+            company_id: companyId,
+            certificate_number: certNum,
+            shareholder_id: shRecord.id,
+            share_class: sh.share_class || (isLLC ? "Membership" : "Common"),
+            num_shares: sh.num_shares,
+            issue_date: openingBalanceDate,
+            par_value: isCorp && parValueType === "par" ? (parseFloat(parValue) || null) : null,
+          }).select("id").single();
+          if (certErr) throw certErr;
+
+          // Insert opening balance transaction
+          const consideration = parseFloat(sh.consideration) || 0;
+          await supabase.from("share_transactions").insert({
+            company_id: companyId,
+            transaction_type: "opening_balance",
+            entry_type: "opening_balance",
+            shareholder_id: shRecord.id,
+            share_class: sh.share_class || (isLLC ? "Membership" : "Common"),
+            num_shares: sh.num_shares,
+            transaction_date: openingBalanceDate,
+            effective_date: openingBalanceDate,
+            to_shareholder: sh.name,
+            from_shareholder: "Pre-existing Ownership",
+            certificate_id: cert.id,
+            consideration_type: sh.consideration_type?.toLowerCase() || "cash",
+            total_consideration: consideration || null,
+            issued_certificate_number: certNum,
+            par_value: isCorp && parValueType === "par" ? (parseFloat(parValue) || null) : null,
+            notes: `Opening balance established as of ${openingBalanceDate}`,
+          } as any);
+
+          // Insert bills_of_sale (equity transaction)
+          await supabase.from("bills_of_sale").insert({
+            company_id: companyId,
+            shareholder_id: shRecord.id,
+            seller_name: "Pre-existing Ownership",
+            buyer_name: sh.name,
+            num_shares: sh.num_shares,
+            share_class: sh.share_class || (isLLC ? "Membership" : "Common"),
+            price_per_share: null,
+            total_price: consideration || null,
+            sale_date: openingBalanceDate,
+            equity_type: "Opening Balance",
+          });
+        }
+
+        // Save to address book
+        upsertAddressBook.mutate({
+          full_name: sh.name.trim(),
+          address: sh.address,
+          address_2: sh.address_2,
+          city: sh.city,
+          state: sh.state,
+          zip: sh.zip,
+        });
+      }
+
+      // Recalculate ownership percentages
+      await supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId });
+
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      toast.success("Existing entity created with opening balances!");
+      handleClose();
+      navigate(`/company/${companyId}`);
+    } catch (err: any) {
+      console.error("Create existing entity error:", err);
+      toast.error(err.message || "Failed to create entity");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const canProceedStep1 = newName.trim().length > 0;
   const showStep2 = isCorp || isLLC;
+
+  // --- Step indicators ---
+  const renderStepIndicators = () => {
+    if (flowType === "existing") {
+      return (
+        <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground mb-1 flex-wrap">
+          <span className={step >= 1 ? "text-primary font-semibold" : ""}>1. Company</span>
+          <ArrowRight className="h-3 w-3" />
+          <span className={step >= 2 ? "text-primary font-semibold" : ""}>2. As-Of Date</span>
+          <ArrowRight className="h-3 w-3" />
+          <span className={step >= 3 ? "text-primary font-semibold" : ""}>3. {term.shareholders}</span>
+          <ArrowRight className="h-3 w-3" />
+          <span className={step >= 4 ? "text-primary font-semibold" : ""}>4. Review</span>
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+        <span className={step >= 1 ? "text-primary font-semibold" : ""}>1. Company</span>
+        <ArrowRight className="h-3 w-3" />
+        <span className={step >= 2 ? "text-primary font-semibold" : ""}>
+          2. {isCorp ? "Initial Directors" : isLLC ? "Initial Members" : "Skip"}
+        </span>
+        <ArrowRight className="h-3 w-3" />
+        <span className={step >= 3 ? "text-primary font-semibold" : ""}>3. Review</span>
+      </div>
+    );
+  };
+
+  // Shareholder form for existing entity flow
+  const renderExistingShareholderForm = () => (
+    <div className="rounded-md border border-border p-3 space-y-2">
+      <p className="text-xs font-semibold flex items-center gap-1.5">
+        <Users className="h-3.5 w-3.5 text-primary" />
+        {editingIdx !== null ? `Edit ${term.shareholder}` : `Add Current ${term.shareholder}`}
+      </p>
+      <div className="field-group">
+        <Label className="field-label">Full Legal Name</Label>
+        <AddressAutocomplete
+          value={editingSh.name}
+          onChange={(v) => setEditingSh(p => ({ ...p, name: v }))}
+          onSelect={handleAddressSelect}
+          search={searchAddressBook}
+          getCompanySplitIndex={getCompanySplitIndex}
+          className="h-7 text-xs"
+          placeholder="Start typing a name..."
+        />
+      </div>
+      <div className="field-group">
+        <Label className="field-label">Address</Label>
+        <Input className="h-7 text-xs" value={editingSh.address} onChange={(e) => setEditingSh(p => ({ ...p, address: e.target.value }))} />
+      </div>
+      <div className="field-group">
+        <Label className="field-label">Address 2</Label>
+        <Input className="h-7 text-xs" value={editingSh.address_2} onChange={(e) => setEditingSh(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor" />
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        <div className="field-group">
+          <Label className="field-label">City</Label>
+          <Input className="h-7 text-xs" value={editingSh.city} onChange={(e) => setEditingSh(p => ({ ...p, city: e.target.value }))} />
+        </div>
+        <div className="field-group">
+          <Label className="field-label">State</Label>
+          <Select value={editingSh.state} onValueChange={(v) => setEditingSh(p => ({ ...p, state: v }))}>
+            <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="ST" /></SelectTrigger>
+            <SelectContent>{US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        <div className="field-group">
+          <Label className="field-label">Zip</Label>
+          <Input className="h-7 text-xs" value={editingSh.zip} onChange={(e) => { setEditingSh(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} />
+          {zipError && <p className="text-[10px] text-destructive mt-0.5">{zipError}</p>}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-1.5">
+        <div className="field-group">
+          <Label className="field-label">SSN / EIN (optional)</Label>
+          <Input className="h-7 text-xs" value={editingSh.ssn_ein} onChange={(e) => setEditingSh(p => ({ ...p, ssn_ein: e.target.value }))} />
+        </div>
+        <div className="field-group">
+          <Label className="field-label">{term.classLabel}</Label>
+          <Select value={editingSh.share_class || term.defaultClass} onValueChange={(v) => setEditingSh(p => ({ ...p, share_class: v }))}>
+            <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {term.classOptions.map(o => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        <div className="field-group">
+          <Label className="field-label">{term.numUnitsLabel}</Label>
+          <Input className="h-7 text-xs" type="number" step="0.0001" value={editingSh.num_shares || ""} onChange={(e) => setEditingSh(p => ({ ...p, num_shares: parseFloat(e.target.value) || 0 }))} />
+        </div>
+        <div className="field-group">
+          <Label className="field-label">Current Cert #</Label>
+          <Input className="h-7 text-xs" type="number" value={editingSh.cert_number} onChange={(e) => setEditingSh(p => ({ ...p, cert_number: e.target.value }))} placeholder="e.g. 1" />
+        </div>
+        <div className="field-group">
+          <Label className="field-label">Consideration Type</Label>
+          <Select value={editingSh.consideration_type || "Cash"} onValueChange={(v) => setEditingSh(p => ({ ...p, consideration_type: v }))}>
+            <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {CONSIDERATION_TYPES.map(ct => <SelectItem key={ct} value={ct}>{ct}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="field-group">
+        <Label className="field-label">Consideration Amount ($){isLLC ? " — required" : " — optional"}</Label>
+        <Input className="h-7 text-xs" type="number" step="0.01" value={editingSh.consideration} onChange={(e) => setEditingSh(p => ({ ...p, consideration: e.target.value }))} placeholder="0.00" />
+      </div>
+      <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={addShareholder}>
+        <Plus className="mr-1 h-3 w-3" /> {editingIdx !== null ? "Update" : "+ Add"} {term.shareholder}
+      </Button>
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); else onOpenChange(true); }}>
@@ -408,18 +695,41 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
           </DialogTitle>
         </DialogHeader>
 
-        {/* Step indicators */}
-        <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-          <span className={step >= 1 ? "text-primary font-semibold" : ""}>1. Company</span>
-          <ArrowRight className="h-3 w-3" />
-          <span className={step >= 2 ? "text-primary font-semibold" : ""}>
-            2. {isCorp ? "Initial Directors" : isLLC ? "Initial Members" : "Skip"}
-          </span>
-          <ArrowRight className="h-3 w-3" />
-          <span className={step >= 3 ? "text-primary font-semibold" : ""}>3. Review</span>
-        </div>
+        {/* Step 0: Choose flow type */}
+        {step === 0 && (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">How would you like to set up this entity?</p>
+            <div
+              className="rounded-md border-2 border-border hover:border-primary/50 p-4 cursor-pointer transition-colors space-y-1"
+              onClick={() => { setFlowType("new"); setStep(1); }}
+            >
+              <p className="text-sm font-semibold flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-primary" />
+                New Entity — Set up from formation
+              </p>
+              <p className="text-xs text-muted-foreground">
+                This entity is being formed now. You will enter initial directors, shareholders, or members as part of the incorporation/organization process.
+              </p>
+            </div>
+            <div
+              className="rounded-md border-2 border-border hover:border-primary/50 p-4 cursor-pointer transition-colors space-y-1"
+              onClick={() => { setFlowType("existing"); setStep(1); }}
+            >
+              <p className="text-sm font-semibold flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
+                Existing Entity — Establish current ownership as of a date
+              </p>
+              <p className="text-xs text-muted-foreground">
+                This entity was already formed before today. You will enter the current ownership state (who holds what) as of a specific date, and all future transactions will be recorded from that point forward.
+              </p>
+            </div>
+          </div>
+        )}
 
-        {/* Step 1: Company Details */}
+        {/* Step indicators */}
+        {step > 0 && renderStepIndicators()}
+
+        {/* Step 1: Company Details — same for both flows */}
         {step === 1 && (
           <div className="space-y-3">
             <div className="field-group">
@@ -478,36 +788,77 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               </>
             )}
 
-            <div className="relative flex items-center py-1">
-              <div className="flex-1 border-t border-border" />
-              <span className="mx-3 text-xs text-muted-foreground">or</span>
-              <div className="flex-1 border-t border-border" />
-            </div>
+            {flowType === "new" && (
+              <>
+                <div className="relative flex items-center py-1">
+                  <div className="flex-1 border-t border-border" />
+                  <span className="mx-3 text-xs text-muted-foreground">or</span>
+                  <div className="flex-1 border-t border-border" />
+                </div>
 
-            <TaxReturnUpload
-              mode="populate"
-              onCompanyCreated={(id) => {
-                queryClient.invalidateQueries({ queryKey: ["companies"] });
-                handleClose();
-                navigate(`/company/${id}`);
-              }}
-              trigger={
-                <Button variant="outline" className="w-full" size="sm">
-                  <Upload className="mr-2 h-3.5 w-3.5" /> Import from Tax Return
-                </Button>
-              }
-            />
+                <TaxReturnUpload
+                  mode="populate"
+                  onCompanyCreated={(id) => {
+                    queryClient.invalidateQueries({ queryKey: ["companies"] });
+                    handleClose();
+                    navigate(`/company/${id}`);
+                  }}
+                  trigger={
+                    <Button variant="outline" className="w-full" size="sm">
+                      <Upload className="mr-2 h-3.5 w-3.5" /> Import from Tax Return
+                    </Button>
+                  }
+                />
+              </>
+            )}
 
             <DialogFooter>
-              <Button size="sm" onClick={() => setStep(showStep2 ? 2 : 3)} disabled={!canProceedStep1}>
-                {showStep2 ? (isCorp ? "Add Initial Directors" : "Add Initial Members") : "Review"} <ArrowRight className="ml-1 h-3 w-3" />
+              <Button size="sm" variant="outline" onClick={() => { setStep(0); setFlowType(null); }}>
+                <ArrowLeft className="mr-1 h-3 w-3" /> Back
+              </Button>
+              {flowType === "new" ? (
+                <Button size="sm" onClick={() => setStep(showStep2 ? 2 : 3)} disabled={!canProceedStep1}>
+                  {showStep2 ? (isCorp ? "Add Initial Directors" : "Add Initial Members") : "Review"} <ArrowRight className="ml-1 h-3 w-3" />
+                </Button>
+              ) : (
+                <Button size="sm" onClick={() => setStep(2)} disabled={!canProceedStep1}>
+                  Set As-Of Date <ArrowRight className="ml-1 h-3 w-3" />
+                </Button>
+              )}
+            </DialogFooter>
+          </div>
+        )}
+
+        {/* Step 2 for EXISTING flow: As-Of Date */}
+        {step === 2 && flowType === "existing" && (
+          <div className="space-y-3">
+            <div className="field-group">
+              <Label className="field-label">What is the current ownership as of what date?</Label>
+              <DatePickerField
+                value={openingBalanceDate}
+                onChange={setOpeningBalanceDate}
+                placeholder="MM/DD/YYYY"
+              />
+            </div>
+            <Alert className="border-yellow-300 bg-yellow-50">
+              <AlertTriangle className="h-4 w-4 text-yellow-700" />
+              <AlertDescription className="text-xs text-yellow-800">
+                All future transactions must be dated on or after this date. This date becomes the permanent starting point for this entity's ownership records.
+              </AlertDescription>
+            </Alert>
+            <DialogFooter className="gap-2">
+              <Button size="sm" variant="outline" onClick={() => setStep(1)}>
+                <ArrowLeft className="mr-1 h-3 w-3" /> Back
+              </Button>
+              <Button size="sm" onClick={() => setStep(3)} disabled={!openingBalanceDate}>
+                Add {term.shareholders} <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </DialogFooter>
           </div>
         )}
 
-        {/* Step 2: Add Initial Directors (corps) or Initial Members (LLCs) */}
-        {step === 2 && isCorp && (
+        {/* Step 2 for NEW flow (Corps): Initial Directors */}
+        {step === 2 && flowType === "new" && isCorp && (
           <div className="space-y-3">
             {/* Director entry form */}
             <div className="rounded-md border border-border p-3 space-y-2">
@@ -608,8 +959,8 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
           </div>
         )}
 
-        {/* Step 2: Add Initial Members (LLCs) */}
-        {step === 2 && isLLC && (
+        {/* Step 2 for NEW flow (LLCs): Initial Members */}
+        {step === 2 && flowType === "new" && isLLC && (
           <div className="space-y-3">
             <div className="rounded-md border border-border p-3 space-y-2">
               <p className="text-xs font-semibold flex items-center gap-1.5">
@@ -729,8 +1080,64 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
           </div>
         )}
 
-        {/* Step 3: Review & Create */}
-        {step === 3 && (
+        {/* Step 3 for EXISTING flow: Enter Shareholders/Members */}
+        {step === 3 && flowType === "existing" && (
+          <div className="space-y-3">
+            {renderExistingShareholderForm()}
+
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Enter all current {term.shareholders.toLowerCase()} and their holdings as of {openingBalanceDate ? new Date(openingBalanceDate + "T00:00:00").toLocaleDateString() : "the selected date"}.
+            </p>
+
+            {shareholders.length > 0 && (
+              <div className="rounded-md border border-border overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-[10px]">Name</TableHead>
+                      <TableHead className="text-[10px]">{term.numUnitsLabel}</TableHead>
+                      <TableHead className="text-[10px]">Cert #</TableHead>
+                      <TableHead className="text-[10px]">Consideration</TableHead>
+                      <TableHead className="text-[10px] w-16"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {shareholders.map((sh, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="text-xs font-medium">{sh.name}</TableCell>
+                        <TableCell className="text-xs">{sh.num_shares.toLocaleString()}</TableCell>
+                        <TableCell className="text-xs">#{sh.cert_number}</TableCell>
+                        <TableCell className="text-xs">{sh.consideration ? `$${parseFloat(sh.consideration).toLocaleString()}` : "—"}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-0.5">
+                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => editShareholder(i)}>
+                              <Users className="h-2.5 w-2.5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => removeShareholder(i)}>
+                              <Trash2 className="h-2.5 w-2.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            <DialogFooter className="gap-2">
+              <Button size="sm" variant="outline" onClick={() => setStep(2)}>
+                <ArrowLeft className="mr-1 h-3 w-3" /> Back
+              </Button>
+              <Button size="sm" onClick={() => setStep(4)} disabled={shareholders.length === 0}>
+                Review <ArrowRight className="ml-1 h-3 w-3" />
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+
+        {/* Step 3 for NEW flow: Review & Create */}
+        {step === 3 && flowType === "new" && (
           <div className="space-y-3">
             <div className="rounded-md border border-border p-3 space-y-2 text-xs">
               <p className="font-semibold text-sm">{newName}</p>
@@ -793,6 +1200,94 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               <Button size="sm" onClick={handleSave} disabled={saving}>
                 {saving && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
                 Create Company
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+
+        {/* Step 4 for EXISTING flow: Review & Confirm */}
+        {step === 4 && flowType === "existing" && (
+          <div className="space-y-3">
+            <div className="rounded-md border border-border p-3 space-y-2 text-xs">
+              <p className="font-semibold text-sm">{newName}</p>
+              <div className="grid grid-cols-2 gap-1">
+                <span className="text-muted-foreground">Entity Type:</span>
+                <span>{newType}</span>
+                <span className="text-muted-foreground">State:</span>
+                <span>{newState || "—"}</span>
+                <span className="text-muted-foreground">Opening Balance Date:</span>
+                <span className="font-medium">{openingBalanceDate ? new Date(openingBalanceDate + "T00:00:00").toLocaleDateString() : "—"}</span>
+                {isCorp && authSharesNum > 0 && (
+                  <>
+                    <span className="text-muted-foreground">Authorized Shares:</span>
+                    <span>{authSharesNum.toLocaleString()}</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {shareholders.length > 0 && (
+              <div className="rounded-md border border-border overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-[10px]">Name</TableHead>
+                      <TableHead className="text-[10px]">{term.numUnitsLabel}</TableHead>
+                      <TableHead className="text-[10px]">{term.classLabel}</TableHead>
+                      <TableHead className="text-[10px]">Cert #</TableHead>
+                      <TableHead className="text-[10px] text-right">Consideration</TableHead>
+                      <TableHead className="text-[10px] text-right">Ownership %</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {shareholders.map((sh, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="text-xs font-medium">{sh.name}</TableCell>
+                        <TableCell className="text-xs">{sh.num_shares.toLocaleString()}</TableCell>
+                        <TableCell className="text-xs">{sh.share_class || term.defaultClass}</TableCell>
+                        <TableCell className="text-xs">#{sh.cert_number}</TableCell>
+                        <TableCell className="text-xs text-right">{sh.consideration ? `$${parseFloat(sh.consideration).toLocaleString()}` : "—"}</TableCell>
+                        <TableCell className="text-xs text-right">
+                          {totalIssuedShares > 0 ? `${((sh.num_shares / totalIssuedShares) * 100).toFixed(2)}%` : "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="bg-muted/30">
+                      <TableCell className="text-xs font-semibold">Total</TableCell>
+                      <TableCell className="text-xs font-semibold">{totalIssuedShares.toLocaleString()}</TableCell>
+                      <TableCell />
+                      <TableCell />
+                      <TableCell className="text-xs text-right font-semibold">
+                        {(() => {
+                          const total = shareholders.reduce((sum, s) => sum + (parseFloat(s.consideration) || 0), 0);
+                          return total > 0 ? `$${total.toLocaleString()}` : "—";
+                        })()}
+                      </TableCell>
+                      <TableCell className="text-xs text-right font-semibold">100.00%</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            <div className="flex items-start gap-2 p-3 rounded-md border border-border bg-muted/20">
+              <Checkbox
+                id="confirm-ownership"
+                checked={confirmOwnership}
+                onCheckedChange={(v) => setConfirmOwnership(v === true)}
+              />
+              <label htmlFor="confirm-ownership" className="text-xs leading-relaxed cursor-pointer">
+                I confirm this represents the current ownership state as of {openingBalanceDate ? new Date(openingBalanceDate + "T00:00:00").toLocaleDateString() : "the selected date"}.
+              </label>
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button size="sm" variant="outline" onClick={() => setStep(3)}>
+                <ArrowLeft className="mr-1 h-3 w-3" /> Back
+              </Button>
+              <Button size="sm" onClick={handleSaveExisting} disabled={saving || !confirmOwnership}>
+                {saving && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                Establish Opening Balances
               </Button>
             </DialogFooter>
           </div>

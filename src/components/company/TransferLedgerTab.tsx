@@ -15,7 +15,7 @@ const ISSUANCE_TYPES = [
   "Issuance", "initial_issuance", "authorized_issuance", "subscription_issuance",
   "consideration_issuance", "share_dividend", "fractional_shares", "preemptive_rights",
   "treasury_reissue", "Capital Contribution", "Initial Contribution", "initial_contribution",
-  "additional_contribution", "membership_issuance",
+  "additional_contribution", "membership_issuance", "opening_balance",
 ];
 
 const REDUCTION_TYPES = [
@@ -161,6 +161,8 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
   // Keep full list for sibling lookups, filter for display
   const allSorted = [...transactions].sort((a: any, b: any) =>
     (a.transaction_date || "").localeCompare(b.transaction_date || "") ||
+    // Opening balance entries come first on same date
+    ((b as any).entry_type === "opening_balance" ? 1 : 0) - ((a as any).entry_type === "opening_balance" ? 1 : 0) ||
     (a.created_at || "").localeCompare(b.created_at || "")
   );
 
@@ -353,16 +355,20 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
                 {entries.map((e) => {
                   const isCorrected = e.status === "corrected";
                   const isCorrection = e.type === "correction";
+                  const rawTx = sorted.find((t: any) => t.id === e.id);
+                  const isOpeningBalance = rawTx && (rawTx as any).entry_type === "opening_balance";
                   return (
                   <React.Fragment key={e.id}>
-                  <TableRow className={isCorrected ? "opacity-50" : ""}>
+                  <TableRow className={`${isCorrected ? "opacity-50" : ""} ${isOpeningBalance ? "italic bg-muted/30" : ""}`}>
                     <TableCell className="text-xs font-mono text-muted-foreground">{e.entryNum}</TableCell>
                     <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>
                       {e.date ? new Date(e.date + "T00:00:00").toLocaleDateString() : "—"}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 capitalize ${isCorrected ? "line-through" : ""}`}>{e.type}</Badge>
+                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 capitalize ${isCorrected ? "line-through" : ""}`}>
+                          {isOpeningBalance ? `Opening Balance (as of ${e.date ? new Date(e.date + "T00:00:00").toLocaleDateString() : "—"})` : e.type}
+                        </Badge>
                         {isCorrected && (
                           <TooltipProvider>
                             <Tooltip>
