@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
@@ -30,6 +30,23 @@ const US_STATES = [
   "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
   "VA","WA","WV","WI","WY","DC",
 ];
+
+const TRANSFER_BALANCE_TYPES = new Set([
+  "transfer",
+  "interest_transfer",
+  "interest_assignment",
+  "share_exchange",
+  "gift",
+]);
+
+const REDUCTION_BALANCE_TYPES = new Set([
+  "redemption",
+  "reacquisition",
+  "cancellation",
+  "treasury_acquisition",
+  "withdrawal_distribution",
+  "dissociation_buyout",
+]);
 
 interface Props {
   companyId: string;
@@ -79,6 +96,83 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
       return data;
     },
   });
+
+  const { data: transactions = [], isLoading: isTransactionsLoading } = useQuery({
+    queryKey: ["share_transactions", companyId, "shareholders-table-balance"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("share_transactions")
+        .select("id, transaction_type, num_shares, transaction_date, created_at, effective_date, status, from_shareholder, to_shareholder, shareholders(name)")
+        .eq("company_id", companyId)
+        .order("transaction_date", { ascending: true })
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!companyId,
+  });
+
+  const resolvedShareholderHoldings = useMemo<ShareholderHoldings>(() => {
+    if (isTransactionsLoading || transactions.length === 0) {
+      return shareholderHoldings ?? {};
+    }
+
+    const balances: Record<string, number> = {};
+    const todayStr = new Date().toISOString().split("T")[0];
+    const sorted = [...(transactions as any[])].sort((a, b) =>
+      (a.transaction_date || "").localeCompare(b.transaction_date || "") ||
+      (a.created_at || "").localeCompare(b.created_at || "")
+    );
+
+    sorted.forEach((transaction: any) => {
+      const relatedShareholderName = Array.isArray(transaction.shareholders)
+        ? transaction.shareholders[0]?.name
+        : transaction.shareholders?.name;
+      const shareholderName = String(relatedShareholderName || "").toLowerCase().trim();
+      const txType = String(transaction.transaction_type || "").toLowerCase();
+      const effectiveDate = transaction.effective_date || transaction.transaction_date || "";
+      const isPending = effectiveDate > todayStr;
+      const amount = Number(transaction.num_shares || 0);
+
+      if (transaction.status === "corrected" || isPending) {
+        return;
+      }
+
+      if (REDUCTION_BALANCE_TYPES.has(txType)) {
+        const key = shareholderName || String(transaction.from_shareholder || "unknown").toLowerCase().trim();
+        balances[key] = (balances[key] || 0) - amount;
+        return;
+      }
+
+      if (txType === "correction") {
+        const key = String(transaction.from_shareholder || shareholderName || "unknown").toLowerCase().trim();
+        balances[key] = (balances[key] || 0) - amount;
+        return;
+      }
+
+      if (txType === "reissuance") {
+        const key = shareholderName || String(transaction.to_shareholder || "unknown").toLowerCase().trim();
+        balances[key] = (balances[key] || 0) + amount;
+        return;
+      }
+
+      if (TRANSFER_BALANCE_TYPES.has(txType)) {
+        const buyerKey = String(transaction.to_shareholder || relatedShareholderName || "unknown").toLowerCase().trim();
+        balances[buyerKey] = (balances[buyerKey] || 0) + amount;
+        return;
+      }
+
+      const key = shareholderName || String(transaction.to_shareholder || "unknown").toLowerCase().trim();
+      balances[key] = (balances[key] || 0) + amount;
+    });
+
+    return shareholders.reduce<ShareholderHoldings>((acc, shareholder) => {
+      acc[shareholder.id] = Math.max(0, balances[shareholder.name.toLowerCase().trim()] || 0);
+      return acc;
+    }, {});
+  }, [isTransactionsLoading, shareholderHoldings, shareholders, transactions]);
+
+  const showHoldingsColumn = Boolean(shareholderHoldings) || transactions.length > 0 || t.isLLC;
 
   const defaultForm = { name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active" };
   const resetForm = () => {
@@ -339,24 +433,19 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
         ) : shareholders.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-6">No {t.shareholders.toLowerCase()} recorded yet.</p>
         ) : (() => {
-          // Calculate total units/shares for ownership %
           const activeShareholders = shareholders.filter(s => s.status === "active" && !s.is_treasury);
-          const totalUnits = shareholderHoldings
-            ? activeShareholders.reduce((sum, s) => sum + (shareholderHoldings[s.id] ?? 0), 0)
-            : 0;
-          // Use ownership_percentage from DB (set by recalculate function) as primary source
-          // Fall back to certificate-based calculation only if DB value is null
+          const totalUnits = activeShareholders.reduce((sum, s) => sum + (resolvedShareholderHoldings[s.id] ?? 0), 0);
+
           const getInterestPct = (s: typeof shareholders[0]) => {
-            // If the shareholder has a stored ownership_percentage, use it
             if (s.ownership_percentage != null && Number(s.ownership_percentage) !== 0) {
               return Number(s.ownership_percentage);
             }
-            // Fall back to certificate-based calculation
-            if (!shareholderHoldings || totalUnits === 0) return null;
-            const units = shareholderHoldings[s.id] ?? 0;
+            if (totalUnits === 0) return null;
+            const units = resolvedShareholderHoldings[s.id] ?? 0;
             if (units === 0) return 0;
             return (units / totalUnits) * 100;
           };
+
           const totalPct = activeShareholders.reduce((sum, s) => sum + (getInterestPct(s) ?? 0), 0);
 
           return (
@@ -368,7 +457,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                     <TableHead className="text-[10px] uppercase">Address</TableHead>
                     <TableHead className="text-[10px] uppercase">City/State/Zip</TableHead>
                     <TableHead className="text-[10px] uppercase">SSN/EIN</TableHead>
-                    {(shareholderHoldings || t.isLLC) && <TableHead className="text-[10px] uppercase text-right">{t.isLLC ? "Units Held" : "Shares Held"}</TableHead>}
+                    {showHoldingsColumn && <TableHead className="text-[10px] uppercase text-right">{t.isLLC ? "Units Held" : "Shares Held"}</TableHead>}
                     <TableHead className="text-[10px] uppercase text-right">{t.isLLC ? "Interest %" : "Ownership %"}</TableHead>
                     {t.isLLC && <TableHead className="text-[10px] uppercase text-right">Capital Account</TableHead>}
                     <TableHead className="text-[10px] uppercase">Status</TableHead>
@@ -391,9 +480,9 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                         </TableCell>
                         <TableCell className="text-xs">{[s.city, s.state, s.zip].filter(Boolean).join(", ") || "—"}</TableCell>
                         <TableCell className="text-xs font-mono">{getSsnDisplay(s)}</TableCell>
-                        {(shareholderHoldings || t.isLLC) && (
+                        {showHoldingsColumn && (
                           <TableCell className="text-xs text-right font-medium">
-                            {(shareholderHoldings?.[s.id] ?? 0).toLocaleString()}
+                            {(resolvedShareholderHoldings[s.id] ?? 0).toLocaleString()}
                           </TableCell>
                         )}
                         <TableCell className="text-xs text-right font-medium">
@@ -431,13 +520,12 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                       </TableRow>
                     );
                   })}
-                  {/* Total validation row for ownership % */}
                   {(totalUnits > 0 || (totalPct != null && totalPct > 0)) && (
                     <TableRow className="bg-muted/30 border-t-2">
                       <TableCell colSpan={4} className="text-xs font-semibold text-right">
                         Totals
                       </TableCell>
-                      {(shareholderHoldings || t.isLLC) && (
+                      {showHoldingsColumn && (
                         <TableCell className="text-xs text-right font-semibold">
                           {totalUnits.toLocaleString()}
                         </TableCell>
