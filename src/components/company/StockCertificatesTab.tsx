@@ -115,17 +115,38 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
       if (editId) {
         const { error } = await supabase.from("stock_certificates").update(payload).eq("id", editId);
         if (error) throw error;
+        return { isEdit: true, certId: editId };
       } else {
-        const { error } = await supabase.from("stock_certificates").insert({ ...payload, company_id: companyId });
+        const { data, error } = await supabase.from("stock_certificates").insert({ ...payload, company_id: companyId }).select("id").single();
         if (error) throw error;
+        // Link the new cert to the most recent unlinked transaction for this shareholder/share_class
+        if (data?.id) {
+          const { data: unlinkedTx } = await supabase
+            .from("share_transactions")
+            .select("id")
+            .eq("company_id", companyId)
+            .eq("shareholder_id", form.shareholder_id)
+            .eq("share_class", form.share_class)
+            .is("certificate_id", null)
+            .order("transaction_date", { ascending: false })
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
+          if (unlinkedTx?.id) {
+            await supabase.from("share_transactions").update({ certificate_id: data.id }).eq("id", unlinkedTx.id);
+          }
+        }
+        return { isEdit: false, certId: data?.id };
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] });
       queryClient.invalidateQueries({ queryKey: ["active_certificates", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["stock_certificates_ledger", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
       setDialog(false);
       resetForm();
-      toast.success(editId ? "Certificate updated!" : "Certificate issued!");
+      toast.success(result?.isEdit ? "Certificate updated!" : "Certificate issued!");
     },
     onError: (err: Error) => toast.error(err.message),
   });

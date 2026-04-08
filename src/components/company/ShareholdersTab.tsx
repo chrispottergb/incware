@@ -102,7 +102,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("share_transactions")
-        .select("id, transaction_type, num_shares, transaction_date, created_at, effective_date, status, from_shareholder, to_shareholder, shareholders(name)")
+        .select("id, transaction_type, num_shares, transaction_date, created_at, effective_date, status, from_shareholder, to_shareholder, total_consideration, shareholder_id, shareholders(name)")
         .eq("company_id", companyId)
         .order("transaction_date", { ascending: true })
         .order("created_at", { ascending: true });
