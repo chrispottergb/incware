@@ -23,6 +23,7 @@ import { getTerminology } from "@/lib/entity-terminology";
 
 function getEquityTransactionLabel(sellerName: string, isLLC: boolean): string {
   const s = (sellerName || "").toLowerCase().trim();
+  if (s === "pre-existing ownership") return "Opening Balance";
   if (s === "original issue" || s === "") {
     return isLLC ? "Capital Contribution" : "Consideration for Shares";
   }
@@ -72,7 +73,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
   const EQUITY_TYPE_OPTIONS = [
     "Original Issue", "Consideration for Shares", "Capital Contribution",
     "Subscription Purchase", "Transfer (Sale)", "Transfer (Gift)",
-    "Redemption", "Conversion", "Reclassification",
+    "Redemption", "Conversion", "Reclassification", "Opening Balance",
   ];
 
   const emptyForm = {
@@ -275,8 +276,10 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {bills.map((b) => (
-                  <TableRow key={b.id}>
+                {bills.map((b) => {
+                  const isOpeningBal = (b as any).equity_type === "Opening Balance" || b.seller_name === "Pre-existing Ownership";
+                  return (
+                  <TableRow key={b.id} className={isOpeningBal ? "italic bg-muted/30" : ""}>
                     <TableCell className="text-xs">{b.sale_date ? new Date(b.sale_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
                     <TableCell className="text-xs">{(b as any).equity_type || getEquityTransactionLabel(b.seller_name, t.isLLC)}</TableCell>
                     <TableCell className="text-xs font-medium">{b.seller_name}</TableCell>
@@ -301,8 +304,8 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
+                  );
+                })}
             </Table>
           </div>
         )}

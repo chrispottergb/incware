@@ -219,6 +219,18 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
     try {
       const effectiveBuyerName = isRedemption ? (companyName || "Treasury") : form.buyer_name;
 
+      // Date guard: block transactions before opening_balance_date
+      const { data: companyCheck } = await supabase
+        .from("companies")
+        .select("opening_balance_date")
+        .eq("id", companyId)
+        .maybeSingle();
+      if (companyCheck?.opening_balance_date && form.transaction_date < companyCheck.opening_balance_date) {
+        toast.error(`This entity has an opening balance established as of ${new Date(companyCheck.opening_balance_date + "T00:00:00").toLocaleDateString()}. Transactions cannot be dated before the opening balance date.`);
+        setSaving(false);
+        return;
+      }
+
       // Call atomic edge function
       const { data: result, error: fnErr } = await supabase.functions.invoke("execute-share-transfer", {
         body: {
