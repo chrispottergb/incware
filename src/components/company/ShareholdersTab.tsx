@@ -134,7 +134,6 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
       queryClient.invalidateQueries({ queryKey: ["stock-certificate-shareholders", companyId] });
       queryClient.invalidateQueries({ queryKey: ["shareholders-for-holdings", companyId] });
       queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] });
-      queryClient.invalidateQueries({ queryKey: ["share-transactions", companyId] });
       queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
       setDialog(false); resetForm();
       setDecryptedSsns({});
