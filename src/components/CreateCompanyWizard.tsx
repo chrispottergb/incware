@@ -23,6 +23,8 @@ import { Loader2, Plus, Trash2, ArrowRight, ArrowLeft, CheckCircle2, Building2, 
 import { toast } from "sonner";
 import TaxReturnUpload from "@/components/TaxReturnUpload";
 import { Upload } from "lucide-react";
+import { getTerminology, isLLCType } from "@/lib/entity-terminology";
+import { getNextCertificateNumber, validateIssuanceLimit } from "@/lib/transaction-validation";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "LLC-S", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"];
 const CORP_TYPES = ["Corporation", "S-Corp"];
@@ -132,6 +134,8 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
   }, []);
 
   const isCorp = CORP_TYPES.includes(newType);
+  const isLLC = isLLCType(newType);
+  const term = getTerminology(newType);
   const authSharesNum = parseInt(authorizedShares) || 0;
   const totalIssuedShares = shareholders.reduce((sum, s) => sum + s.num_shares, 0);
   const availableShares = authSharesNum - totalIssuedShares;
@@ -161,12 +165,16 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
   // Add/update shareholder in list
   const addShareholder = () => {
     if (!editingSh.name.trim() || editingSh.num_shares <= 0) {
-      toast.error("Name and number of shares are required.");
+      toast.error(`Name and number of ${term.shareUnit.toLowerCase()} are required.`);
       return;
     }
-    if (isCorp && editingSh.num_shares > availableShares + (editingIdx !== null ? shareholders[editingIdx].num_shares : 0)) {
-      toast.error(`Only ${(availableShares + (editingIdx !== null ? shareholders[editingIdx].num_shares : 0)).toLocaleString()} shares available to issue.`);
-      return;
+    if (isCorp) {
+      const currentAvailable = availableShares + (editingIdx !== null ? shareholders[editingIdx].num_shares : 0);
+      const validation = validateIssuanceLimit(editingSh.num_shares, authSharesNum > 0 ? currentAvailable : null, term);
+      if (!validation.valid) {
+        toast.error(validation.message!);
+        return;
+      }
     }
     if (editingIdx !== null) {
       setShareholders(prev => prev.map((s, i) => i === editingIdx ? { ...editingSh } : s));
@@ -230,6 +238,8 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const todayStr = new Date().toISOString().split("T")[0];
+
       // 1. Create company
       const { data: company, error: compErr } = await supabase.from("companies").insert({
         user_id: user!.id,
@@ -244,61 +254,119 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
       if (compErr) throw compErr;
 
       const companyId = company.id;
-      let certNumber = 0;
 
-      // 2. For each shareholder, create shareholder + cert + ledger entry
-      for (const sh of shareholders) {
-        // Insert shareholder
-        const { data: shRecord, error: shErr } = await supabase.from("shareholders").insert({
-          company_id: companyId,
-          name: sh.name,
-          address: sh.address || null,
-          address_2: sh.address_2 || null,
-          city: sh.city || null,
-          state: sh.state || null,
-          zip: sh.zip || null,
-          status: "active",
-          date_added: new Date().toISOString().split("T")[0],
-        }).select("id").single();
-        if (shErr) throw shErr;
+      // 2. For Corp shareholders: create shareholder + cert + ledger entry
+      if (isCorp && shareholders.length > 0) {
+        let certNumber = await getNextCertificateNumber(companyId) - 1;
 
-        // Encrypt SSN if provided
-        if (sh.ssn_ein?.trim()) {
-          await supabase.functions.invoke("encrypt-ssn", {
-            body: { shareholder_id: shRecord.id, ssn_ein: sh.ssn_ein.trim() },
-          });
-        }
-
-        // Create stock certificate (for corps)
-        if (isCorp && sh.num_shares > 0) {
-          certNumber++;
-          const { data: cert, error: certErr } = await supabase.from("stock_certificates").insert({
+        for (const sh of shareholders) {
+          const { data: shRecord, error: shErr } = await supabase.from("shareholders").insert({
             company_id: companyId,
-            certificate_number: certNumber,
-            shareholder_id: shRecord.id,
-            share_class: sh.share_class,
-            num_shares: sh.num_shares,
-            issue_date: new Date().toISOString().split("T")[0],
-            par_value: parValueType === "par" ? (parseFloat(parValue) || null) : null,
+            name: sh.name,
+            address: sh.address || null,
+            address_2: sh.address_2 || null,
+            city: sh.city || null,
+            state: sh.state || null,
+            zip: sh.zip || null,
+            status: "active",
+            date_added: todayStr,
           }).select("id").single();
-          if (certErr) throw certErr;
+          if (shErr) throw shErr;
 
-          // Create share transaction (ledger entry)
-          await supabase.from("share_transactions").insert({
-            company_id: companyId,
-            transaction_type: "initial_issuance",
-            shareholder_id: shRecord.id,
-            share_class: sh.share_class,
-            num_shares: sh.num_shares,
-            transaction_date: new Date().toISOString().split("T")[0],
-            to_shareholder: sh.name,
-            from_shareholder: "Treasury",
-            certificate_id: cert.id,
-            consideration_type: "cash",
-            issued_certificate_number: certNumber,
-            par_value: parValueType === "par" ? (parseFloat(parValue) || null) : null,
-          });
+          if (sh.ssn_ein?.trim()) {
+            await supabase.functions.invoke("encrypt-ssn", {
+              body: { shareholder_id: shRecord.id, ssn_ein: sh.ssn_ein.trim() },
+            });
+          }
+
+          if (sh.num_shares > 0) {
+            certNumber++;
+            const { data: cert, error: certErr } = await supabase.from("stock_certificates").insert({
+              company_id: companyId,
+              certificate_number: certNumber,
+              shareholder_id: shRecord.id,
+              share_class: sh.share_class,
+              num_shares: sh.num_shares,
+              issue_date: todayStr,
+              par_value: parValueType === "par" ? (parseFloat(parValue) || null) : null,
+            }).select("id").single();
+            if (certErr) throw certErr;
+
+            await supabase.from("share_transactions").insert({
+              company_id: companyId,
+              transaction_type: "initial_issuance",
+              shareholder_id: shRecord.id,
+              share_class: sh.share_class,
+              num_shares: sh.num_shares,
+              transaction_date: todayStr,
+              effective_date: todayStr,
+              to_shareholder: sh.name,
+              from_shareholder: "Treasury",
+              certificate_id: cert.id,
+              consideration_type: "cash",
+              issued_certificate_number: certNumber,
+              par_value: parValueType === "par" ? (parseFloat(parValue) || null) : null,
+            });
+          }
         }
+
+        await supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId });
+      }
+
+      // 2b. For LLC members: create member + cert + ledger entry
+      if (isLLC && shareholders.length > 0) {
+        let certNumber = await getNextCertificateNumber(companyId) - 1;
+
+        for (const sh of shareholders) {
+          const { data: shRecord, error: shErr } = await supabase.from("shareholders").insert({
+            company_id: companyId,
+            name: sh.name,
+            address: sh.address || null,
+            address_2: sh.address_2 || null,
+            city: sh.city || null,
+            state: sh.state || null,
+            zip: sh.zip || null,
+            status: "active",
+            date_added: todayStr,
+          }).select("id").single();
+          if (shErr) throw shErr;
+
+          if (sh.ssn_ein?.trim()) {
+            await supabase.functions.invoke("encrypt-ssn", {
+              body: { shareholder_id: shRecord.id, ssn_ein: sh.ssn_ein.trim() },
+            });
+          }
+
+          if (sh.num_shares > 0) {
+            certNumber++;
+            const { data: cert, error: certErr } = await supabase.from("stock_certificates").insert({
+              company_id: companyId,
+              certificate_number: certNumber,
+              shareholder_id: shRecord.id,
+              share_class: sh.share_class || "Membership",
+              num_shares: sh.num_shares,
+              issue_date: todayStr,
+            }).select("id").single();
+            if (certErr) throw certErr;
+
+            await supabase.from("share_transactions").insert({
+              company_id: companyId,
+              transaction_type: "membership_issuance",
+              shareholder_id: shRecord.id,
+              share_class: sh.share_class || "Membership",
+              num_shares: sh.num_shares,
+              transaction_date: todayStr,
+              effective_date: todayStr,
+              to_shareholder: sh.name,
+              from_shareholder: "Company",
+              certificate_id: cert.id,
+              consideration_type: "cash",
+              issued_certificate_number: certNumber,
+            });
+          }
+        }
+
+        await supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId });
       }
 
       // 3. For each director, create director record
@@ -311,7 +379,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
           city: dir.city || null,
           state: dir.state || null,
           zip: dir.zip || null,
-          added_date: new Date().toISOString().split("T")[0],
+          added_date: todayStr,
         });
       }
 
@@ -328,6 +396,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
   };
 
   const canProceedStep1 = newName.trim().length > 0;
+  const showStep2 = isCorp || isLLC;
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); else onOpenChange(true); }}>
@@ -343,7 +412,9 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
           <span className={step >= 1 ? "text-primary font-semibold" : ""}>1. Company</span>
           <ArrowRight className="h-3 w-3" />
-          <span className={step >= 2 ? "text-primary font-semibold" : ""}>2. {isCorp ? "Initial Directors" : "Skip"}</span>
+          <span className={step >= 2 ? "text-primary font-semibold" : ""}>
+            2. {isCorp ? "Initial Directors" : isLLC ? "Initial Members" : "Skip"}
+          </span>
           <ArrowRight className="h-3 w-3" />
           <span className={step >= 3 ? "text-primary font-semibold" : ""}>3. Review</span>
         </div>
@@ -428,15 +499,15 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
             />
 
             <DialogFooter>
-              <Button size="sm" onClick={() => setStep(isCorp ? 2 : 3)} disabled={!canProceedStep1}>
-                {isCorp ? "Add Initial Directors" : "Review"} <ArrowRight className="ml-1 h-3 w-3" />
+              <Button size="sm" onClick={() => setStep(showStep2 ? 2 : 3)} disabled={!canProceedStep1}>
+                {showStep2 ? (isCorp ? "Add Initial Directors" : "Add Initial Members") : "Review"} <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </DialogFooter>
           </div>
         )}
 
-        {/* Step 2: Add Initial Directors (corps only) */}
-        {step === 2 && (
+        {/* Step 2: Add Initial Directors (corps) or Initial Members (LLCs) */}
+        {step === 2 && isCorp && (
           <div className="space-y-3">
             {/* Director entry form */}
             <div className="rounded-md border border-border p-3 space-y-2">
@@ -537,6 +608,127 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
           </div>
         )}
 
+        {/* Step 2: Add Initial Members (LLCs) */}
+        {step === 2 && isLLC && (
+          <div className="space-y-3">
+            <div className="rounded-md border border-border p-3 space-y-2">
+              <p className="text-xs font-semibold flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 text-primary" />
+                {editingIdx !== null ? `Edit ${term.shareholder}` : `Add Initial ${term.shareholder}`}
+              </p>
+              <div className="field-group">
+                <Label className="field-label">Full Legal Name</Label>
+                <AddressAutocomplete
+                  value={editingSh.name}
+                  onChange={(v) => setEditingSh(p => ({ ...p, name: v }))}
+                  onSelect={handleAddressSelect}
+                  search={searchAddressBook}
+                  getCompanySplitIndex={getCompanySplitIndex}
+                  className="h-7 text-xs"
+                  placeholder="Start typing a name..."
+                />
+              </div>
+              <div className="field-group">
+                <Label className="field-label">Address</Label>
+                <Input className="h-7 text-xs" value={editingSh.address} onChange={(e) => setEditingSh(p => ({ ...p, address: e.target.value }))} />
+              </div>
+              <div className="field-group">
+                <Label className="field-label">Address 2</Label>
+                <Input className="h-7 text-xs" value={editingSh.address_2} onChange={(e) => setEditingSh(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor" />
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                <div className="field-group">
+                  <Label className="field-label">City</Label>
+                  <Input className="h-7 text-xs" value={editingSh.city} onChange={(e) => setEditingSh(p => ({ ...p, city: e.target.value }))} />
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">State</Label>
+                  <Select value={editingSh.state} onValueChange={(v) => setEditingSh(p => ({ ...p, state: v }))}>
+                    <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="ST" /></SelectTrigger>
+                    <SelectContent>{US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">Zip</Label>
+                  <Input className="h-7 text-xs" value={editingSh.zip} onChange={(e) => { setEditingSh(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} />
+                  {zipError && <p className="text-[10px] text-destructive mt-0.5">{zipError}</p>}
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                <div className="field-group">
+                  <Label className="field-label">SSN / EIN</Label>
+                  <Input className="h-7 text-xs" value={editingSh.ssn_ein} onChange={(e) => setEditingSh(p => ({ ...p, ssn_ein: e.target.value }))} />
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">{term.numUnitsLabel}</Label>
+                  <Input className="h-7 text-xs" type="number" step="0.0001" value={editingSh.num_shares || ""} onChange={(e) => setEditingSh(p => ({ ...p, num_shares: parseFloat(e.target.value) || 0 }))} />
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">{term.classLabel}</Label>
+                  <Select value={editingSh.share_class || term.defaultClass} onValueChange={(v) => setEditingSh(p => ({ ...p, share_class: v }))}>
+                    <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {term.classOptions.map(o => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={addShareholder}>
+                <Plus className="mr-1 h-3 w-3" /> {editingIdx !== null ? "Update" : "+ Add"} Initial {term.shareholder}
+              </Button>
+            </div>
+
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Initial {term.shareholders} are recorded at the time of formation. {term.shareUnit} and interest percentages can be adjusted later from the company detail page.
+            </p>
+
+            {shareholders.length > 0 && (
+              <div className="rounded-md border border-border overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-[10px]">Name</TableHead>
+                      <TableHead className="text-[10px]">{term.numUnitsLabel}</TableHead>
+                      <TableHead className="text-[10px]">{term.classLabel}</TableHead>
+                      <TableHead className="text-[10px] w-16"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {shareholders.map((sh, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="text-xs font-medium">{sh.name}</TableCell>
+                        <TableCell className="text-xs">{sh.num_shares.toLocaleString()}</TableCell>
+                        <TableCell className="text-xs">{sh.share_class || term.defaultClass}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-0.5">
+                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => editShareholder(i)}>
+                              <Users className="h-2.5 w-2.5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => removeShareholder(i)}>
+                              <Trash2 className="h-2.5 w-2.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            <DialogFooter className="gap-2">
+              <Button size="sm" variant="outline" onClick={() => setStep(1)}>
+                <ArrowLeft className="mr-1 h-3 w-3" /> Back
+              </Button>
+              <Button size="sm" onClick={() => setStep(3)}>
+                Review <ArrowRight className="ml-1 h-3 w-3" />
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+
         {/* Step 3: Review & Create */}
         {step === 3 && (
           <div className="space-y-3">
@@ -570,14 +762,32 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               </div>
             )}
 
+            {isLLC && shareholders.length > 0 && (
+              <div className="rounded-md bg-muted/50 p-3 text-xs space-y-1.5">
+                <p className="font-medium text-foreground">Initial {term.shareholders} ({shareholders.length}):</p>
+                {shareholders.map((sh, i) => (
+                  <p key={i} className="flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3 w-3 text-success shrink-0" />
+                    {sh.name} — {sh.num_shares.toLocaleString()} {term.shareUnit.toLowerCase()}
+                  </p>
+                ))}
+              </div>
+            )}
+
             {isCorp && directors.length === 0 && (
               <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
                 No initial directors. You can add them later from the company detail page.
               </div>
             )}
 
+            {isLLC && shareholders.length === 0 && (
+              <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
+                No initial {term.shareholders.toLowerCase()}. You can add them later from the company detail page.
+              </div>
+            )}
+
             <DialogFooter className="gap-2">
-              <Button size="sm" variant="outline" onClick={() => setStep(isCorp ? 2 : 1)}>
+              <Button size="sm" variant="outline" onClick={() => setStep(showStep2 ? 2 : 1)}>
                 <ArrowLeft className="mr-1 h-3 w-3" /> Back
               </Button>
               <Button size="sm" onClick={handleSave} disabled={saving}>
