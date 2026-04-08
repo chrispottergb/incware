@@ -930,6 +930,7 @@ export type Database = {
           max_vps_allowed: number | null
           naics_code: string | null
           name: string
+          opening_balance_date: string | null
           par_value: number | null
           par_value_type: string | null
           phone: string | null
@@ -989,6 +990,7 @@ export type Database = {
           max_vps_allowed?: number | null
           naics_code?: string | null
           name: string
+          opening_balance_date?: string | null
           par_value?: number | null
           par_value_type?: string | null
           phone?: string | null
@@ -1048,6 +1050,7 @@ export type Database = {
           max_vps_allowed?: number | null
           naics_code?: string | null
           name?: string
+          opening_balance_date?: string | null
           par_value?: number | null
           par_value_type?: string | null
           phone?: string | null
@@ -2844,6 +2847,7 @@ export type Database = {
           corrects_id: string | null
           created_at: string
           effective_date: string
+          entry_type: string | null
           from_shareholder: string | null
           id: string
           issued_certificate_number: number | null
@@ -2872,6 +2876,7 @@ export type Database = {
           corrects_id?: string | null
           created_at?: string
           effective_date?: string
+          entry_type?: string | null
           from_shareholder?: string | null
           id?: string
           issued_certificate_number?: number | null
@@ -2900,6 +2905,7 @@ export type Database = {
           corrects_id?: string | null
           created_at?: string
           effective_date?: string
+          entry_type?: string | null
           from_shareholder?: string | null
           id?: string
           issued_certificate_number?: number | null
