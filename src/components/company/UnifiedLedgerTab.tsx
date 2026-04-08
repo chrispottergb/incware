@@ -374,6 +374,7 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
                       </div>
                     </TableCell>
                   </TableRow>
+                  );
                 })}
               </TableBody>
             </Table>
