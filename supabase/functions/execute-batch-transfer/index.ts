@@ -35,6 +35,19 @@ function isLLCType(entityType: string): boolean {
   return LLC_TYPES.includes(entityType);
 }
 
+function mapTxTypeToEquityType(txType: string, _isLLC: boolean, consideration: number): string | null {
+  if (txType === "initial_issuance") return "Original Issue";
+  if (["authorized_issuance", "consideration_issuance"].includes(txType)) return "Consideration for Shares";
+  if (["initial_contribution", "additional_contribution", "membership_issuance"].includes(txType)) return "Capital Contribution";
+  if (txType === "subscription_issuance") return "Subscription Purchase";
+  if (["transfer", "interest_transfer", "interest_assignment", "share_exchange"].includes(txType)) {
+    return consideration > 0 ? "Transfer (Sale)" : "Transfer (Gift)";
+  }
+  if (["redemption", "reacquisition"].includes(txType)) return "Redemption";
+  if (txType === "cancellation") return "Reclassification";
+  return null;
+}
+
 function toNumeric(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
   const normalized = typeof value === "number" ? value : Number(String(value).replace(/,/g, "").trim());
@@ -243,16 +256,18 @@ Deno.serve(async (req: Request) => {
           `;
 
           // Insert bill_of_sale
+          const batchEquityType = mapTxTypeToEquityType(transfer.transaction_type, isLLCType(payload.entity_type), transfer.total_consideration || 0);
           const [bill] = await tx`
             INSERT INTO bills_of_sale (
               company_id, seller_name, buyer_name, share_class,
               num_shares, price_per_share, total_price, sale_date,
-              shareholder_id, transaction_id
+              shareholder_id, transaction_id, equity_type
             ) VALUES (
               ${payload.company_id}, ${payload.seller_name}, ${transfer.buyer_name},
               ${payload.share_class}, ${transfer.num_shares},
               ${transfer.price_per_share || null}, ${transfer.total_consideration || null},
-              ${payload.transaction_date}, ${payload.seller_id || sellerSh.id}, ${txn.id}
+              ${payload.transaction_date}, ${payload.seller_id || sellerSh.id}, ${txn.id},
+              ${batchEquityType}
             )
             RETURNING id
           `;
