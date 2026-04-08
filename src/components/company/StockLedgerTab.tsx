@@ -312,6 +312,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       queryClient.invalidateQueries({ queryKey: ["shareholders-for-holdings", companyId] });
       queryClient.invalidateQueries({ queryKey: ["stock-certificate-shareholders", companyId] });
       queryClient.invalidateQueries({ queryKey: ["company-authorized-shares", companyId] });
+      if (isLLCType(entityType)) {
+        supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId });
+      }
       setDialog(false);
       resetForm();
       toast.success("Transaction recorded!");
