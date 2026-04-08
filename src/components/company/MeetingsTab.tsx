@@ -390,8 +390,10 @@ export default function MeetingsTab({ companyId, company }: Props) {
         }
       }
 
-      // Auto-populate members for LLC Annual Meetings
-      if (newMeeting && form.meeting_type === "Annual Meeting" && isLLCType(company.entity_type)) {
+      // Auto-populate members for LLC Annual Meetings and Special Meeting of Members
+      const isLLCMemberMeeting = isLLCType(company.entity_type) && 
+        (form.meeting_type === "Annual Meeting" || form.meeting_type === "Special Meeting of Members");
+      if (newMeeting && isLLCMemberMeeting) {
         const { data: members } = await supabase
           .from("shareholders")
           .select("id, name, is_treasury, status, ownership_percentage, address, city, state, zip")
