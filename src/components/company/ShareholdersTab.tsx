@@ -244,8 +244,8 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
       const { error } = await supabase.from("shareholders").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["shareholders", companyId] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ["shareholders", companyId] });
       queryClient.invalidateQueries({ queryKey: ["stock-certificate-shareholders", companyId] });
       queryClient.invalidateQueries({ queryKey: ["shareholders-for-holdings", companyId] });
       toast.success(`${t.shareholder} removed.`);
