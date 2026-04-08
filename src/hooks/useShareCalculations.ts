@@ -6,7 +6,7 @@ const ISSUANCE_TYPES = [
   "consideration_issuance", "share_dividend", "fractional_shares", "preemptive_rights",
   "treasury_reissue", "Reissuance", "reissuance",
   "Capital Contribution", "Initial Contribution", "initial_contribution",
-  "additional_contribution", "membership_issuance",
+  "additional_contribution", "membership_issuance", "opening_balance",
 ];
 
 const REDUCTION_TYPES = [
