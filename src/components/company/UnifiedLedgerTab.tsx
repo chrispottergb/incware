@@ -366,11 +366,11 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
 
     // Merge cert # from transaction record itself
     const certIssuedStr = (t as any).issued_certificate_number
-      ? `#${(t as any).issued_certificate_number}`
-      : certIssued ? `#${(certIssued as any).certificate_number}` : "—";
+      ? `Cert #${(t as any).issued_certificate_number}`
+      : certIssued ? `Cert #${(certIssued as any).certificate_number}` : "—";
     const certCancelledStr = (t as any).surrendered_certificate_number
-      ? `#${(t as any).surrendered_certificate_number}`
-      : certCancelled ? `#${(certCancelled as any).certificate_number}` : "—";
+      ? `Cancels #${(t as any).surrendered_certificate_number}`
+      : certCancelled ? `Cancels #${(certCancelled as any).certificate_number}` : "—";
 
     entries.push({
       entryNum: entries.length + 1,
