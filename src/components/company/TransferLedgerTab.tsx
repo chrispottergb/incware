@@ -244,8 +244,12 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
       date: t.transaction_date || "",
       effectiveDate: effectiveDate,
       type: txType.replace(/_/g, " "),
-      certIssued: certIssued ? `#${(certIssued as any).certificate_number}` : "—",
-      certCancelled: certCancelled ? `#${(certCancelled as any).certificate_number}` : "—",
+      certIssued: (t as any).issued_certificate_number
+        ? `Cert #${(t as any).issued_certificate_number}`
+        : certIssued ? `Cert #${(certIssued as any).certificate_number}` : "—",
+      certCancelled: (t as any).surrendered_certificate_number
+        ? `Cancels #${(t as any).surrendered_certificate_number}`
+        : certCancelled ? `Cancels #${(certCancelled as any).certificate_number}` : "—",
       transferee: transfereeName || "—",
       transferor: isIss ? "" : isTx ? (transferorName || "—") : isRed ? (transferorName || transfereeName || "—") : isCorrection ? (transferorName || "—") : "—",
       classLabel: t.share_class || "—",
