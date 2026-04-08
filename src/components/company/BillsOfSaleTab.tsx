@@ -306,6 +306,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
                   </TableRow>
                   );
                 })}
+              </TableBody>
             </Table>
           </div>
         )}
