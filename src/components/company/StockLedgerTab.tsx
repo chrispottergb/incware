@@ -302,6 +302,40 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
           if (assetErr) console.error("Failed to save assets:", assetErr);
         }
       }
+
+      // Auto-create Bill of Sale for LLC issuance/contribution/transfer transactions
+      if (isLLCType(entityType) && txn) {
+        const BILL_ISSUANCE_TYPES = new Set([
+          "initial_contribution", "additional_contribution", "membership_issuance",
+          "initial_issuance", "authorized_issuance", "subscription_issuance",
+          "consideration_issuance", "reissuance",
+        ]);
+        const BILL_TRANSFER_TYPES = new Set([
+          "interest_transfer", "interest_assignment", "transfer", "gift",
+          "share_exchange", "dissociation_buyout",
+        ]);
+
+        if (BILL_ISSUANCE_TYPES.has(txType) || BILL_TRANSFER_TYPES.has(txType)) {
+          const memberName = shareholders.find(s => s.id === form.shareholder_id)?.name
+            || form.to_shareholder || "";
+          const sellerName = BILL_TRANSFER_TYPES.has(txType)
+            ? (form.from_shareholder || "Transfer")
+            : "Original Issue";
+
+          await supabase.from("bills_of_sale").insert({
+            company_id: companyId,
+            shareholder_id: form.shareholder_id || null,
+            transaction_id: txn.id,
+            seller_name: sellerName,
+            buyer_name: memberName,
+            num_shares: numShares,
+            share_class: form.share_class,
+            price_per_share: form.price_per_share ? parseFloat(form.price_per_share) : null,
+            total_price: form.total_consideration ? parseFloat(form.total_consideration) : null,
+            sale_date: form.transaction_date,
+          });
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
@@ -312,6 +346,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       queryClient.invalidateQueries({ queryKey: ["shareholders-for-holdings", companyId] });
       queryClient.invalidateQueries({ queryKey: ["stock-certificate-shareholders", companyId] });
       queryClient.invalidateQueries({ queryKey: ["company-authorized-shares", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["bills_of_sale", companyId] });
       if (isLLCType(entityType)) {
         supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId });
       }
