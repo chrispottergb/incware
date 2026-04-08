@@ -50,11 +50,18 @@ import OrgMeetingWizard from "@/components/OrgMeetingWizard";
 import AnnualMeetingWizard from "@/components/AnnualMeetingWizard";
 import WrittenConsentWizard from "@/components/WrittenConsentWizard";
 
-const MEETING_TYPES = [
+const CORP_MEETING_TYPES = [
   "Annual Meeting",
   "Shareholder Meeting",
   "Organizational Meeting",
   "Special Meeting of Board of Directors",
+  "Written Consent",
+];
+
+const LLC_MEETING_TYPES = [
+  "Annual Meeting",
+  "Organizational Meeting",
+  "Special Meeting of Members",
   "Written Consent",
 ];
 
@@ -545,7 +552,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {MEETING_TYPES.map((t) => (
+                      {(isLLCType(company.entity_type) ? LLC_MEETING_TYPES : CORP_MEETING_TYPES).map((t) => (
                         <SelectItem key={t} value={t}>{t}</SelectItem>
                       ))}
                     </SelectContent>
