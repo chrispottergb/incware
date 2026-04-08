@@ -762,10 +762,29 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                           const surrendered = (t as any).surrendered_certificate_number;
                           const issuedNum = issued != null && issued !== "" ? Number(issued) : null;
                           const surrenderedNum = surrendered != null && surrendered !== "" ? Number(surrendered) : null;
-                          if (issuedNum != null && !isNaN(issuedNum) && surrenderedNum != null && !isNaN(surrenderedNum)) {
-                            return <span>Cert #{issuedNum} <span className="text-muted-foreground">/ Cancels #{surrenderedNum}</span></span>;
+
+                          // Fallback: look up cert by certificate_id, then by shareholder+class+shares
+                          let resolvedCertNum = issuedNum;
+                          if (resolvedCertNum == null || isNaN(resolvedCertNum)) {
+                            if (t.certificate_id) {
+                              const linkedCert = certificates.find((c: any) => c.id === t.certificate_id);
+                              if (linkedCert) resolvedCertNum = linkedCert.certificate_number;
+                            }
                           }
-                          if (issuedNum != null && !isNaN(issuedNum)) return <span>Cert #{issuedNum}</span>;
+                          if (resolvedCertNum == null || isNaN(resolvedCertNum)) {
+                            const matchedCert = certificates.find((c: any) =>
+                              c.shareholder_id === (t.shareholder_id || (t as any).shareholders?.id) &&
+                              c.share_class === t.share_class &&
+                              c.num_shares === t.num_shares &&
+                              c.status === "active"
+                            );
+                            if (matchedCert) resolvedCertNum = matchedCert.certificate_number;
+                          }
+
+                          if (resolvedCertNum != null && !isNaN(resolvedCertNum) && surrenderedNum != null && !isNaN(surrenderedNum)) {
+                            return <span>Cert #{resolvedCertNum} <span className="text-muted-foreground">/ Cancels #{surrenderedNum}</span></span>;
+                          }
+                          if (resolvedCertNum != null && !isNaN(resolvedCertNum)) return <span>Cert #{resolvedCertNum}</span>;
                           if (surrenderedNum != null && !isNaN(surrenderedNum)) return <span className="text-muted-foreground">Cancels #{surrenderedNum}</span>;
                           return "—";
                         })()}
