@@ -816,7 +816,7 @@ export default function MeetingDetail() {
         <TabsContent value="directors" className="mt-5">
           <div className="space-y-4">
             {isShareholderMeeting && companyDirectors.length > 0 && (
-              <DirectorReElection directors={companyDirectors} shareholders={companyShareholders} directorLabel={term.director} directorsLabel={term.directors} shareholdersLabel={term.shareholders} />
+              <DirectorReElection directors={companyDirectors} meetingDirectorNames={directors.map((d: any) => d.director_name)} shareholders={companyShareholders} directorLabel={term.director} directorsLabel={term.directors} shareholdersLabel={term.shareholders} />
             )}
             <MeetingAttendanceSelector
               meetingId={meeting.id}
