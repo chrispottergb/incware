@@ -303,7 +303,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   // ===== BANKING RESOLUTIONS (optional) =====
   if (data.includeBanking) {
     heading("Banking Resolutions");
-    resolvedPara(`that the limited liability company is hereby authorized to open and maintain a checking account at ${data.bankName || "[Bank Name]"}, ${data.bankCity || "[City, State]"}, and that the following persons are hereby authorized as signatories on said account:`);
+    resolvedPara(`that the limited liability company is hereby authorized to open and maintain a checking account at ${data.bankName || "[Bank Name]"}, ${data.bankCity || "[City, State]"}, and that the following persons are hereby authorized as signers on said account:`);
     data.bankSignatories.forEach(s => {
       para(`• ${s.name || "[Name]"}, ${s.title || "[Title]"}`, 10);
     });

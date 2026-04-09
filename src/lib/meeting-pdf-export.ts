@@ -916,7 +916,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
       }
       const signerNames = bankSigners.map((s: any) => `${s.signer_name}${s.title ? `, ${s.title}` : ""}`).join("; ");
       y = addResolutionBlock(doc, y, `Authorize Account — ${bank.bank_name}`,
-        `RESOLVED, that the ${entityLabel} is hereby authorized to open and maintain a ${bank.account_type || "checking"} account at ${bank.bank_name}${bank.city ? `, ${bank.city}` : ""}${bank.state ? `, ${bank.state}` : ""}${signerNames ? `, and that the following persons are hereby authorized as signatories on said account: ${signerNames}` : ""}.`);
+        `RESOLVED, that the ${entityLabel} is hereby authorized to open and maintain a ${bank.account_type || "checking"} account at ${bank.bank_name}${bank.city ? `, ${bank.city}` : ""}${bank.state ? `, ${bank.state}` : ""}${signerNames ? `, and that the following persons are hereby authorized as signers on said account: ${signerNames}` : ""}.`);
     });
   }
 
@@ -2037,7 +2037,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
           const signerStr = bankSignerList.map((s: any) => `${s.signer_name}${s.title ? `, ${s.title}` : ""}`).join("; ");
           y = addWhereasResolved(doc, y,
             `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the banking relationship with ${bank.bank_name}; and`,
-            `NOW, THEREFORE, BE IT RESOLVED, that ${bank.bank_name} is hereby approved and confirmed as a depository for the funds of ${companyName}${signerStr ? `, and that the following persons are hereby authorized as signatories on said account: ${signerStr}` : ""}.`,
+            `NOW, THEREFORE, BE IT RESOLVED, that ${bank.bank_name} is hereby approved and confirmed as a depository for the funds of ${companyName}${signerStr ? `, and that the following persons are hereby authorized as signers on said account: ${signerStr}` : ""}.`,
             bt
           );
         });
@@ -2053,7 +2053,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
           y = checkPageBreak(doc, y, 20 + remainingSigners.length * 7);
           autoTable(doc, {
             startY: y,
-            head: [["Bank", "Authorized Signatory", "Title"]],
+            head: [["Bank", "Authorized Signer", "Authority Type"]],
             body: remainingSigners.map((s: any) => [
               s.bank_name || "—",
               s.signer_name || "—",
@@ -2652,8 +2652,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       data.authorizedSigners.forEach((s: any) => {
         if (!priorNames.has(s.signer_name?.toLowerCase())) {
           autoResolutions.push({
-            purpose: `Authorize Bank Signatory`,
-            text: `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have determined it is necessary to update the authorized signatories, and after discussion, it was\n\nRESOLVED, that ${s.signer_name}${s.title ? `, ${s.title},` : ""} is hereby authorized as a signatory${s.bank_name ? ` on the accounts at ${s.bank_name}` : ""}.`,
+            purpose: `Authorize Bank Signer`,
+            text: `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have determined it is necessary to update the authorized signers, and after discussion, it was\n\nRESOLVED, that ${s.signer_name}${s.title ? `, ${s.title},` : ""} is hereby authorized as a signer${s.bank_name ? ` on the accounts at ${s.bank_name}` : ""}.`,
           });
         }
       });
@@ -2843,18 +2843,18 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 6;
   }
 
-  // Authorized Signatories — skip for written consents
+  // Authorized Signers — skip for written consents
   if (!isWrittenConsent && data.authorizedSigners && data.authorizedSigners.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.authorizedSigners.length * 7);
-    y = section("Authorized Signatories");
+    y = section("Authorized Signers");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the authorized signatories on the banking accounts of ${companyName}; and`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby authorized as signatories on the designated accounts:`,
+      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the authorized signers on the banking accounts of ${companyName}; and`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby authorized as signers on the designated accounts:`,
       bt
     );
     autoTable(doc, {
       startY: y,
-      head: [["Name", "Title", "Bank"]],
+      head: [["Name", "Authority Type", "Bank"]],
       body: data.authorizedSigners.map(s => [s.signer_name, s.title || "—", s.bank_name || "—"]),
       theme: "grid",
       headStyles: tableHeadStyles,

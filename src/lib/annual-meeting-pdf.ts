@@ -390,9 +390,9 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   if (data.includeBanking && data.bankAccounts.length > 0) {
     subHeading("Current Banking Relationships");
-    resolvedPara("that the company shall continue to maintain the following account(s), and the following persons are authorized as signatories:");
+    resolvedPara("that the company shall continue to maintain the following account(s), and the following persons are authorized as signers:");
     addTable(
-      ["Institution", "Account Type", "Authorized Signatory", "Title"],
+      ["Institution", "Account Type", "Authorized Signer", "Authority Type"],
       data.bankAccounts.map(b => [b.institution || "[Enter]", b.accountType || "[Enter]", b.signatory || "[Enter]", b.title || "[Enter]"])
     );
   } else {
@@ -428,7 +428,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   if (data.institutionalLoans.length > 0) {
     subHeading("Loans From Financial Institutions");
     addTable(
-      ["Lender", "Loan Type", "Balance / Amount", "Interest Rate", "Maturity Date", "Auth. Signatory"],
+      ["Lender", "Loan Type", "Balance / Amount", "Interest Rate", "Maturity Date", "Auth. Signer"],
       data.institutionalLoans.map(l => [l.lender || "[Enter]", l.loanType || "[Enter]", l.balance || "[Enter]", l.rate || "[Enter]", l.maturity || "[Enter]", l.signatory || "[Enter]"])
     );
   }
