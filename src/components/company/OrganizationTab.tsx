@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -932,7 +933,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
               <div className="grid grid-cols-12 gap-x-3 gap-y-2">
                 <div className="field-group col-span-12 sm:col-span-4">
                   <Label className="field-label">Address 1</Label>
-                  <Input className="h-7 text-sm" value={filingForm.address} onChange={(e) => setFilingForm((p) => ({ ...p, address: e.target.value }))} placeholder="Street address" />
+                  <DbAddressAutocomplete className="h-7 text-sm" value={filingForm.address} onChange={(v) => setFilingForm((p) => ({ ...p, address: v }))} onSelect={(addr) => { setFilingForm((p) => ({ ...p, address: addr.line1, address_2: addr.line2, city: addr.city, state: addr.state, zip: addr.zip })); }} placeholder="Street address" companyId={company?.id} source="companies" />
                 </div>
                 <div className="field-group col-span-12 sm:col-span-2">
                   <Label className="field-label">Address 2</Label>

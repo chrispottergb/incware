@@ -5,6 +5,7 @@ import SaveStatusIndicator from "@/components/SaveStatusIndicator";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
+import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -861,7 +862,7 @@ export default function IncorporationTab({ company }: Props) {
             <div className="grid grid-cols-12 gap-x-3 gap-y-2">
               <div className="field-group col-span-12 sm:col-span-4">
                 <Label className="field-label">Address Line 1</Label>
-                <Input className="h-7 text-sm" value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="Street address" />
+                <DbAddressAutocomplete className="h-7 text-sm" value={form.address} onChange={(v) => update("address", v)} onSelect={(addr) => { update("address", addr.line1); update("address_2", addr.line2); update("city", addr.city); update("state", addr.state); update("zip", addr.zip); }} placeholder="Street address" companyId={company?.id} source="companies" />
               </div>
               <div className="field-group col-span-12 sm:col-span-2">
                 <Label className="field-label">Address Line 2</Label>
@@ -1320,7 +1321,7 @@ export default function IncorporationTab({ company }: Props) {
           <div className="grid grid-cols-12 gap-x-2 gap-y-2 mt-2">
             <div className="field-group col-span-3">
               <Label className="field-label">Address</Label>
-              <Input className="h-7 text-sm" value={form.registered_agent_address} onChange={(e) => update("registered_agent_address", e.target.value)} />
+              <DbAddressAutocomplete className="h-7 text-sm" value={form.registered_agent_address} onChange={(v) => update("registered_agent_address", v)} onSelect={(addr) => { update("registered_agent_address", addr.line1); update("registered_agent_address_2", addr.line2); update("registered_agent_city", addr.city); update("registered_agent_state", addr.state); update("registered_agent_zip", addr.zip); }} companyId={company?.id} source="companies" />
             </div>
             <div className="field-group col-span-3">
               <Label className="field-label">Address 2</Label>

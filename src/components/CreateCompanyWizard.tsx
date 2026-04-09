@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
+import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -615,7 +616,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
       </div>
       <div className="field-group">
         <Label className="field-label">Address</Label>
-        <Input className="h-7 text-xs" value={editingSh.address} onChange={(e) => setEditingSh(p => ({ ...p, address: e.target.value }))} />
+        <DbAddressAutocomplete className="h-7 text-xs" value={editingSh.address} onChange={(v) => setEditingSh(p => ({ ...p, address: v }))} onSelect={(addr) => { setEditingSh(p => ({ ...p, address: addr.line1, address_2: addr.line2, city: addr.city, state: addr.state, zip: addr.zip })); }} source="shareholders" />
       </div>
       <div className="field-group">
         <Label className="field-label">Address 2</Label>
@@ -880,7 +881,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               </div>
               <div className="field-group">
                 <Label className="field-label">Address</Label>
-                <Input className="h-7 text-xs" value={editingDir.address} onChange={(e) => setEditingDir(p => ({ ...p, address: e.target.value }))} />
+                <DbAddressAutocomplete className="h-7 text-xs" value={editingDir.address} onChange={(v) => setEditingDir(p => ({ ...p, address: v }))} onSelect={(addr) => { setEditingDir(p => ({ ...p, address: addr.line1, address_2: addr.line2, city: addr.city, state: addr.state, zip: addr.zip })); }} source="companies" />
               </div>
               <div className="field-group">
                 <Label className="field-label">Address 2</Label>
@@ -981,7 +982,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               </div>
               <div className="field-group">
                 <Label className="field-label">Address</Label>
-                <Input className="h-7 text-xs" value={editingSh.address} onChange={(e) => setEditingSh(p => ({ ...p, address: e.target.value }))} />
+                <DbAddressAutocomplete className="h-7 text-xs" value={editingSh.address} onChange={(v) => setEditingSh(p => ({ ...p, address: v }))} onSelect={(addr) => { setEditingSh(p => ({ ...p, address: addr.line1, address_2: addr.line2, city: addr.city, state: addr.state, zip: addr.zip })); }} source="shareholders" />
               </div>
               <div className="field-group">
                 <Label className="field-label">Address 2</Label>

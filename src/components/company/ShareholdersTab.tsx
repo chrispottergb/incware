@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
+import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -410,7 +411,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                 <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                   <div className="field-group col-span-7">
                     <Label className="field-label">Address</Label>
-                    <Input className="h-7 text-sm" value={form.address} onChange={(e) => setForm(p => ({ ...p, address: e.target.value }))} />
+                    <DbAddressAutocomplete className="h-7 text-sm" value={form.address} onChange={(v) => setForm(p => ({ ...p, address: v }))} onSelect={(addr) => { setForm(p => ({ ...p, address: addr.line1, address_2: addr.line2, city: addr.city, state: addr.state, zip: addr.zip })); }} source="shareholders" />
                   </div>
                   <div className="field-group col-span-5">
                     <Label className="field-label">Address 2</Label>
