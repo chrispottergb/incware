@@ -751,7 +751,7 @@ export default function MeetingDetail() {
                 generatePDF={() => exportSectionPDF(
                   term.shareholders,
                   company, meeting,
-                  ["Name", "Address", "City", "St", "ZIP", term.isLLC ? "Units" : "Common", term.isLLC ? "Interest %" : "Preferred", "Dist. Amount", "Basis", "Add'l Capital"],
+                  ["Name", "Address", "City", "St", "ZIP", term.isLLC ? "Units" : "Common", term.isLLC ? "Interest %" : "Ownership %", "Dist. Amount", "Basis", "Add'l Capital"],
                   hydratedMeetingShareholders.map(s => [
                     s.shareholder_name,
                     (s as any).address ?? "—",
@@ -778,7 +778,7 @@ export default function MeetingDetail() {
                 { key: "state", label: "State", width: "60px" },
                 { key: "zip", label: "ZIP", width: "80px" },
                 { key: "common_shares", label: term.isLLC ? "Units" : "Common", type: "number", width: "80px" },
-                { key: "preferred_shares", label: term.isLLC ? "Interest %" : "Preferred", type: "number", width: "80px" },
+                { key: "preferred_shares", label: term.isLLC ? "Interest %" : "Ownership %", type: "number", width: "80px" },
                 { key: "distribution_amount", label: "Distribution", type: "number", width: "100px" },
                 { key: "basis", label: "Basis", type: "number", width: "90px" },
                 { key: "additional_capital_contribution", label: "Add'l Capital", type: "number", width: "100px" },
