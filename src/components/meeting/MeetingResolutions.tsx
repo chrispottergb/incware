@@ -20,18 +20,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Loader2, FileText, Pencil, Link2, ArrowRightLeft, Layers } from "lucide-react";
+import { Plus, Trash2, Loader2, FileText, Pencil, Link2, ArrowRightLeft, Layers, Building2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { RESOLUTION_TYPES } from "@/lib/resolution-types";
 import { isLLCType } from "@/lib/entity-terminology";
 import BuySellWorkflow from "@/components/company/BuySellWorkflow";
 import BatchTransferDialog from "@/components/meeting/BatchTransferDialog";
+import LeaseTransactionDialog from "@/components/meeting/LeaseTransactionDialog";
 
 const TRANSFER_RESOLUTION_PURPOSES = [
   "Approve Transfer/Sale of Shares",
   "Approve Transfer of Membership Interest",
 ];
+
+const LEASE_RESOLUTION_PURPOSE = "Approve Lease Agreement";
 
 interface Props {
   meetingId: string;
