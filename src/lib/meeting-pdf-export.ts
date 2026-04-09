@@ -1600,6 +1600,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bt
     );
     const hasDistribution = data.shareholders.some(s => s.distribution_amount != null && Number(s.distribution_amount) > 0);
+    const usableW = doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN;
     autoTable(doc, {
       startY: y,
       head: [[
@@ -1607,7 +1608,6 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         "Address",
         isLLC ? "Membership Units" : "Common Shares",
         isLLC ? "Membership Interest %" : "Ownership %",
-        ...(hasDistribution ? ["Distribution Amount"] : []),
       ]],
       body: data.shareholders.map(s => {
         const matchingShareholder = (data.companyShareholders || []).find(
@@ -1629,18 +1629,17 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
           address || "---",
           s.common_shares?.toLocaleString() ?? "---",
           isLLC && s.preferred_shares != null ? `${s.preferred_shares}%` : (s.preferred_shares?.toLocaleString() ?? "---"),
-          ...(hasDistribution ? [s.distribution_amount != null ? fmt(s.distribution_amount) : "---"] : []),
         ];
       }),
       theme: "grid",
-      headStyles: { ...tableHeadStyles, fontSize: 9, fontStyle: "normal" as const },
-      bodyStyles: { fontSize: 10 },
+      headStyles: { ...tableHeadStyles, fontSize: 9, fontStyle: "bold" as const },
+      bodyStyles: { fontSize: 9, cellPadding: { top: 1.4, bottom: 1.4, left: 2, right: 2 } },
       margin: { left: MARGIN, right: R_MARGIN },
       columnStyles: {
-        0: { cellWidth: (doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN) * 0.28 },
-        1: { cellWidth: (doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN) * 0.42 },
-        2: { cellWidth: (doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN) * 0.15 },
-        3: { cellWidth: (doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN) * 0.15 },
+        0: { cellWidth: usableW * 0.25 },
+        1: { cellWidth: usableW * 0.40 },
+        2: { cellWidth: usableW * 0.15 },
+        3: { cellWidth: usableW * 0.20 },
       },
     });
     y = (doc as any).lastAutoTable.finalY + 6;
