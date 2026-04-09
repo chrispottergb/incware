@@ -90,6 +90,7 @@ interface ComplianceItem {
 export async function exportCompliancePDF(data: ComplianceItem[], overallScore: number) {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
 
   addHeader(doc, "Compliance Overview Report", `Overall Compliance Score: ${overallScore}%`);
 

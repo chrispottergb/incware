@@ -95,6 +95,7 @@ export interface OperatingAgreementData {
 export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsPDF {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const { company, members, officers, managementType, aiDraftSections, shareholderHoldings, totalIssuedUnits } = data;
   const cx = pw(doc) / 2;
   const ai = aiDraftSections || {};

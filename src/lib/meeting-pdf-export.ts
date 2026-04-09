@@ -966,6 +966,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
 export function exportMeetingMinutesPDF(data: MeetingData) {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const { meeting, company } = data;
   const companyName = company?.name || "Unknown Company";
   const entityType = company?.entity_type || "Corporation";

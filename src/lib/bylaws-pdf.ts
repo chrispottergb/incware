@@ -74,6 +74,7 @@ export interface BylawsData {
 export function generateBylawsPDF(data: BylawsData): jsPDF {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const { company, directors, officers, shareholders, aiDraftSections } = data;
   const cx = pw(doc) / 2;
   const ai = aiDraftSections || {};

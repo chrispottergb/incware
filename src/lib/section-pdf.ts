@@ -106,6 +106,7 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
   const isLandscape = !!config.landscape;
   const doc = new jsPDF({ orientation: isLandscape ? "l" : "p", unit: "mm", format: "a4" });
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const m = getMargins(isLandscape);
   const subtitle = [config.companyName, config.statuteRef].filter(Boolean).join(" — ");
 

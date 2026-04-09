@@ -71,6 +71,7 @@ export interface ConflictOfInterestData {
 export function generateConflictOfInterestPDF(data: ConflictOfInterestData): jsPDF {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const { company, directors, officers } = data;
   const cx = pw(doc) / 2;
 

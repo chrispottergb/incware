@@ -73,6 +73,7 @@ export interface NonprofitBylawsData {
 export function generateNonprofitBylawsPDF(data: NonprofitBylawsData): jsPDF {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const { company, directors, officers, aiDraftSections } = data;
   const cx = pw(doc) / 2;
   const ai = aiDraftSections || {};
