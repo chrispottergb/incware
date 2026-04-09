@@ -522,7 +522,7 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
                   </div>
 
                   <div className="flex items-center justify-between mb-1">
-                    <Label className={labelClass}>Authorized Signatories</Label>
+                    <Label className={labelClass}>Authorized Signers</Label>
                     <Button size="sm" variant="outline" className="h-6 text-xs" onClick={() => update("bankSignatories", [...data.bankSignatories, { name: "", title: "" }])}>
                       <Plus className="h-3 w-3 mr-1" /> Add
                     </Button>
