@@ -179,6 +179,41 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
     setTransferResolutionId(null);
   };
 
+  // Lease workflow handlers
+  const handleOpenLease = (resolutionId: string) => {
+    setLeaseResolutionId(resolutionId);
+    setLeaseOpen(true);
+  };
+
+  const handleLeaseCreated = async (leaseId: string, propertyAddress: string) => {
+    if (!leaseResolutionId) return;
+    // Link lease to the resolution
+    const { error } = await supabase
+      .from("meeting_resolutions")
+      .update({ lease_id: leaseId } as any)
+      .eq("id", leaseResolutionId);
+    if (error) {
+      console.error("Failed to link lease to resolution:", error);
+    } else {
+      // Update resolution text to fill in address
+      if (propertyAddress) {
+        const res = resolutions.find((r) => r.id === leaseResolutionId);
+        if (res?.resolution_text?.includes("______")) {
+          const updatedText = res.resolution_text.replace("______", propertyAddress);
+          await supabase
+            .from("meeting_resolutions")
+            .update({ resolution_text: updatedText })
+            .eq("id", leaseResolutionId);
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ["meeting_resolutions", meetingId] });
+      toast.success("Lease linked to resolution.");
+    }
+    setLeaseResolutionId(null);
+  };
+
+  const isLeasePurpose = (p: string) => p === LEASE_RESOLUTION_PURPOSE;
+
   const isTransferPurpose = (p: string) => TRANSFER_RESOLUTION_PURPOSES.includes(p);
 
   // Batch detection: unlinked transfer resolutions
