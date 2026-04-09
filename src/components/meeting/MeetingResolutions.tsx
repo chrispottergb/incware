@@ -43,6 +43,7 @@ interface Props {
   companyId?: string;
   companyName?: string;
   availableShares?: number | null;
+  meetingDate?: string;
 }
 
 export default function MeetingResolutions({ meetingId, entityType, meetingType, companyId, companyName, availableShares }: Props) {
