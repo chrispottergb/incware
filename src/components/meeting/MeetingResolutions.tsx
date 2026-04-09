@@ -311,8 +311,12 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
               {resolutions.map((r) => {
                 const match = resolutionOptions.find((o) => o.label === r.purpose);
                 const hasLinkedTransaction = !!(r as any).transaction_id;
+                const hasLinkedLease = !!(r as any).lease_id;
+                const hasAnyLink = hasLinkedTransaction || hasLinkedLease;
                 // Only show individual "Complete Transaction" if there's exactly 1 unlinked transfer resolution
                 const showTransferButton = isTransferPurpose(r.purpose || "") && !hasLinkedTransaction && companyId && unlinkedTransferResolutions.length === 1;
+                // Show lease button for unlinked lease resolutions
+                const showLeaseButton = isLeasePurpose(r.purpose || "") && !hasLinkedLease && companyId;
                 return (
                   <div key={r.id} className="rounded-lg border border-border p-4">
                     <div className="flex items-start justify-between gap-4">
@@ -335,6 +339,14 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                           </div>
                         )}
 
+                        {/* Linked lease indicator */}
+                        {hasLinkedLease && (
+                          <div className="flex items-center gap-1.5 mt-2 text-[11px] text-primary font-medium">
+                            <Building2 className="h-3.5 w-3.5" />
+                            Lease Recorded
+                          </div>
+                        )}
+
                         {/* Complete Transaction button for transfer resolutions */}
                         {showTransferButton && (
                           <Button
@@ -344,6 +356,19 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                             onClick={() => handleOpenTransfer(r.id)}
                           >
                             <ArrowRightLeft className="mr-1.5 h-3 w-3" />
+                            Complete Transaction
+                          </Button>
+                        )}
+
+                        {/* Complete Transaction button for lease resolutions */}
+                        {showLeaseButton && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="mt-2 h-7 text-xs"
+                            onClick={() => handleOpenLease(r.id)}
+                          >
+                            <Building2 className="mr-1.5 h-3 w-3" />
                             Complete Transaction
                           </Button>
                         )}
