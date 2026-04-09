@@ -9,47 +9,64 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString();
 
-const MARGIN = 31.75; // 1.25 inch left margin for 3-hole punch binder filing
-const R_MARGIN = 19.05; // 0.75 inch right margin
+const BINDER_MARGIN = 31.75; // 1.25 inch binder margin for 3-hole punch filing
+const NORMAL_MARGIN = 19.05; // 0.75 inch normal margin
 const BRAND = "EntityIQ";
 const BRAND_SUB = "Corporate Records Management";
 
-function addHeader(doc: jsPDF, title: string, subtitle?: string) {
+// Portrait: binder on left. Landscape: binder on top.
+function getMargins(landscape: boolean) {
+  return {
+    left: landscape ? NORMAL_MARGIN : BINDER_MARGIN,
+    right: NORMAL_MARGIN,
+    top: landscape ? BINDER_MARGIN : NORMAL_MARGIN,
+  };
+}
+
+function addHeader(doc: jsPDF, title: string, subtitle?: string, landscape = false) {
   const pageWidth = doc.internal.pageSize.getWidth();
+  const m = getMargins(landscape);
+  const topOffset = m.top;
+  // Y positions are offset by top margin
+  const brandY = topOffset + 4;
+  const subY = brandY + 6;
+  const titleY = subY + 12;
+  const subtitleY = titleY + 7;
 
   doc.setFontSize(18);
   doc.setFont("Arial", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text(BRAND, MARGIN, 18);
+  doc.text(BRAND, m.left, brandY);
 
   doc.setFontSize(8);
   doc.setFont("Arial", "normal");
   doc.setTextColor(120, 120, 120);
-  doc.text(BRAND_SUB, MARGIN, 24);
+  doc.text(BRAND_SUB, m.left, subY);
 
   doc.setFontSize(14);
   doc.setFont("Arial", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text(title, MARGIN, 36);
+  doc.text(title, m.left, titleY);
 
   if (subtitle) {
     doc.setFontSize(9);
     doc.setFont("Arial", "normal");
     doc.setTextColor(100, 100, 100);
-    doc.text(subtitle, MARGIN, 43);
+    doc.text(subtitle, m.left, subtitleY);
   }
 
   doc.setFontSize(8);
   doc.setTextColor(150, 150, 150);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - R_MARGIN, 18, { align: "right" });
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - m.right, brandY, { align: "right" });
 
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
-  const lineY = subtitle ? 47 : 40;
-  doc.line(MARGIN, lineY, pageWidth - R_MARGIN, lineY);
+  const lineY = subtitle ? subtitleY + 4 : titleY + 4;
+  doc.line(m.left, lineY, pageWidth - m.right, lineY);
 }
 
-function addFooter(doc: jsPDF) {
+function addFooter(doc: jsPDF, landscape = false) {
+  const m = getMargins(landscape);
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
@@ -57,8 +74,8 @@ function addFooter(doc: jsPDF) {
     const pageWidth = doc.internal.pageSize.getWidth();
     doc.setFontSize(7);
     doc.setTextColor(160, 160, 160);
-    doc.text(`${BRAND} — Confidential`, MARGIN, pageHeight - 8);
-    doc.text(`Page ${i} of ${pageCount}`, pageWidth - R_MARGIN, pageHeight - 8, { align: "right" });
+    doc.text(`${BRAND} — Confidential`, m.left, pageHeight - 8);
+    doc.text(`Page ${i} of ${pageCount}`, pageWidth - m.right, pageHeight - 8, { align: "right" });
   }
 }
 
@@ -86,13 +103,19 @@ export interface SectionPdfConfig {
 }
 
 export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
-  const doc = new jsPDF({ orientation: config.landscape ? "l" : "p", unit: "mm", format: "a4" });
+  const isLandscape = !!config.landscape;
+  const doc = new jsPDF({ orientation: isLandscape ? "l" : "p", unit: "mm", format: "a4" });
   registerArialFont(doc);
+  const m = getMargins(isLandscape);
   const subtitle = [config.companyName, config.statuteRef].filter(Boolean).join(" — ");
 
-  addHeader(doc, config.title, subtitle);
+  addHeader(doc, config.title, subtitle, isLandscape);
 
-  let y = config.statuteRef ? 54 : 47;
+  // startY after header — matches the lineY + some padding
+  const headerLineY = config.statuteRef
+    ? m.top + 4 + 6 + 12 + 7 + 4
+    : m.top + 4 + 6 + 12 + 4;
+  let y = headerLineY + 7;
 
   // Render key-value fields
   if (config.fields && config.fields.length > 0) {
@@ -107,7 +130,7 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
       columnStyles: {
         0: { cellWidth: 60, fontStyle: "bold" },
       },
-      margin: { left: MARGIN, right: R_MARGIN },
+      margin: { left: m.left, right: m.right },
     });
     y = (doc as any).lastAutoTable.finalY + 10;
   }
@@ -120,7 +143,6 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
     config.table.rows.forEach((row, idx) => {
       expandedRows.push(row);
       if (config.table?.noteRows && config.table.noteRows[idx]) {
-        // Create a full-span note row: first cell has the note, rest empty
         const noteRow = new Array(colCount).fill("");
         noteRow[0] = `  Correction Note: ${config.table.noteRows[idx]}`;
         expandedRows.push(noteRow);
@@ -146,11 +168,10 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
       headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 10, fontStyle: "bold", halign: "center" },
       bodyStyles: { fontSize: 10 },
       styles: { lineColor: [180, 180, 180], lineWidth: 0.5 },
-      margin: { left: MARGIN, right: R_MARGIN },
+      margin: { left: m.left, right: m.right },
       ...(config.table.columnStyles ? { columnStyles: config.table.columnStyles } : {}),
       didParseCell(data) {
         if (data.section === "body") {
-          // Style note rows
           if (noteExpandedIndices.has(data.row.index)) {
             data.cell.styles.fontSize = 8;
             data.cell.styles.fontStyle = "italic";
@@ -162,7 +183,6 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
               data.cell.text = [];
             }
           } else {
-            // Color status-like cells
             const text = (data.cell.raw as string || "").toLowerCase();
             if (text === "active") {
               data.cell.styles.textColor = [22, 163, 74];
@@ -182,10 +202,10 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
     doc.setFontSize(9);
     doc.setFont("Arial", "italic");
     doc.setTextColor(130, 130, 130);
-    doc.text("No records to display.", MARGIN, y + 6);
+    doc.text("No records to display.", m.left, y + 6);
   }
 
-  addFooter(doc);
+  addFooter(doc, isLandscape);
   return doc;
 }
 
@@ -223,7 +243,6 @@ export async function previewSectionPdf(config: SectionPdfConfig) {
   overlay.onclick = (e) => { if (e.target === overlay) { document.body.removeChild(overlay); } };
   document.body.appendChild(overlay);
 
-  // Render pages as canvas images via pdf.js
   try {
     const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
     for (let i = 1; i <= pdf.numPages; i++) {
