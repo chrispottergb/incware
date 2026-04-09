@@ -164,7 +164,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
 
   const [step, setStep] = useState(() => {
     try {
-      const saved = localStorage.getItem(storageKey);
+      const saved = sessionStorage.getItem(storageKey);
       if (saved) return JSON.parse(saved).step || 0;
     } catch {}
     return 0;
@@ -177,7 +177,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   const [previewPages, setPreviewPages] = useState(0);
   const [npGovernance, setNpGovernance] = useState<NonProfitGovernanceData>(() => {
     try {
-      const saved = localStorage.getItem(storageKey);
+      const saved = sessionStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.npGovernance) return parsed.npGovernance;
@@ -565,7 +565,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
 
   const [data, setData] = useState<AnnualMeetingData>(() => {
     try {
-      const saved = localStorage.getItem(storageKey);
+      const saved = sessionStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.data) return parsed.data;
@@ -575,7 +575,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   });
   const [initialized, setInitialized] = useState(() => {
     try {
-      const saved = localStorage.getItem(storageKey);
+      const saved = sessionStorage.getItem(storageKey);
       return saved ? true : false;
     } catch {}
     return false;
@@ -584,7 +584,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   // Check if draft exists on mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(storageKey);
+      const saved = sessionStorage.getItem(storageKey);
       if (saved) setHasDraft(true);
     } catch {}
   }, []);
@@ -593,7 +593,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   useEffect(() => {
     if (!initialized && company?.id) {
       try {
-        const saved = localStorage.getItem(storageKey);
+        const saved = sessionStorage.getItem(storageKey);
         if (saved) {
           setInitialized(true);
           return; // Don't overwrite draft data
@@ -629,17 +629,17 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     }
   }, [initialized, companyShareholders, activeCertificates]);
 
-  // Auto-save to localStorage whenever data or step changes
+  // Auto-save to sessionStorage whenever data or step changes
   useEffect(() => {
     if (initialized) {
       try {
-        localStorage.setItem(storageKey, JSON.stringify({ data, step, npGovernance }));
+        sessionStorage.setItem(storageKey, JSON.stringify({ data, step, npGovernance }));
       } catch {}
     }
   }, [data, step, initialized, storageKey, npGovernance]);
 
   const clearDraft = () => {
-    try { localStorage.removeItem(storageKey); } catch {}
+    try { sessionStorage.removeItem(storageKey); } catch {}
     setHasDraft(false);
   };
 

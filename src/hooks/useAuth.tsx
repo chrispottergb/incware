@@ -52,6 +52,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Clear wizard draft sessionStorage keys on sign out
+    try {
+      Object.keys(sessionStorage).forEach(key => {
+        if (key.startsWith("annual_meeting_draft_")) {
+          sessionStorage.removeItem(key);
+        }
+      });
+    } catch {}
     await supabase.auth.signOut();
   };
 

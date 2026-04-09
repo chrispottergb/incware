@@ -3408,6 +3408,7 @@ export type Database = {
         Args: { encryption_key: string; plain_text: string }
         Returns: string
       }
+      extract_company_id_from_path: { Args: { path: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
