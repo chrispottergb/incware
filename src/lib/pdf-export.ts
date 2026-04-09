@@ -8,6 +8,10 @@ const NORMAL_MARGIN = 19.05; // 0.75 inch normal margin
 const BRAND = "EntityIQ";
 const BRAND_SUB = "Corporate Records Management";
 
+// Portrait defaults (binder on left)
+const MARGIN = BINDER_MARGIN;
+const R_MARGIN = NORMAL_MARGIN;
+
 // Portrait: binder on left. Landscape: binder on top.
 function getMargins(landscape: boolean) {
   return {
@@ -17,44 +21,52 @@ function getMargins(landscape: boolean) {
   };
 }
 
-function addHeader(doc: jsPDF, title: string, subtitle?: string) {
+function addHeader(doc: jsPDF, title: string, subtitle?: string, landscape = false) {
   const pageWidth = doc.internal.pageSize.getWidth();
+  const m = getMargins(landscape);
+  const topOffset = m.top;
+  const brandY = topOffset + 4;
+  const subY = brandY + 6;
+  const titleY = subY + 12;
+  const subtitleY = titleY + 7;
 
   // Brand header
   doc.setFontSize(18);
   doc.setFont("Arial", "bold");
-  doc.text(BRAND, MARGIN, 18);
+  doc.text(BRAND, m.left, brandY);
 
   doc.setFontSize(8);
   doc.setFont("Arial", "normal");
   doc.setTextColor(120, 120, 120);
-  doc.text(BRAND_SUB, MARGIN, 24);
+  doc.text(BRAND_SUB, m.left, subY);
 
   // Title
   doc.setFontSize(14);
   doc.setFont("Arial", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text(title, MARGIN, 36);
+  doc.text(title, m.left, titleY);
 
   if (subtitle) {
     doc.setFontSize(9);
     doc.setFont("Arial", "normal");
     doc.setTextColor(100, 100, 100);
-    doc.text(subtitle, MARGIN, 43);
+    doc.text(subtitle, m.left, subtitleY);
   }
 
   // Date
   doc.setFontSize(8);
   doc.setTextColor(150, 150, 150);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - R_MARGIN, 18, { align: "right" });
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - m.right, brandY, { align: "right" });
 
   // Divider line
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
-  doc.line(MARGIN, subtitle ? 47 : 40, pageWidth - R_MARGIN, subtitle ? 47 : 40);
+  const lineY = subtitle ? subtitleY + 4 : titleY + 4;
+  doc.line(m.left, lineY, pageWidth - m.right, lineY);
 }
 
-function addFooter(doc: jsPDF) {
+function addFooter(doc: jsPDF, landscape = false) {
+  const m = getMargins(landscape);
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
@@ -62,8 +74,8 @@ function addFooter(doc: jsPDF) {
     const pageWidth = doc.internal.pageSize.getWidth();
     doc.setFontSize(7);
     doc.setTextColor(160, 160, 160);
-    doc.text(`${BRAND} — Confidential`, MARGIN, pageHeight - 8);
-    doc.text(`Page ${i} of ${pageCount}`, pageWidth - R_MARGIN, pageHeight - 8, { align: "right" });
+    doc.text(`${BRAND} — Confidential`, m.left, pageHeight - 8);
+    doc.text(`Page ${i} of ${pageCount}`, pageWidth - m.right, pageHeight - 8, { align: "right" });
   }
 }
 
@@ -84,14 +96,12 @@ export async function exportCompliancePDF(data: ComplianceItem[], overallScore: 
   let y = 54;
 
   data.forEach((item, idx) => {
-    // Check if we need a new page
     const estimatedHeight = 20 + item.checks.length * 7;
     if (y + estimatedHeight > doc.internal.pageSize.getHeight() - 20) {
       doc.addPage();
       y = 20;
     }
 
-    // Company header
     doc.setFontSize(11);
     doc.setFont("Arial", "bold");
     doc.setTextColor(30, 30, 30);
@@ -103,7 +113,6 @@ export async function exportCompliancePDF(data: ComplianceItem[], overallScore: 
     doc.text(`Score: ${item.passed}/${item.total} — ${item.score}%`, doc.internal.pageSize.getWidth() - 14, y, { align: "right" });
     y += 4;
 
-    // Checks table
     autoTable(doc, {
       startY: y,
       head: [["Requirement", "Status"]],
@@ -155,15 +164,19 @@ interface CertificateRow {
 export async function exportStockLedgerPDF(certificates: CertificateRow[], companyFilter?: string) {
   const doc = new jsPDF({ orientation: "landscape" });
   registerArialFont(doc);
+  const lm = getMargins(true);
 
   const subtitle = companyFilter && companyFilter !== "all"
     ? `Filtered by company`
     : "All Companies";
 
-  addHeader(doc, "Stock Ledger Report", subtitle);
+  addHeader(doc, "Stock Ledger Report", subtitle, true);
+
+  // startY after landscape header
+  const startY = lm.top + 4 + 6 + 12 + 7 + 4 + 7;
 
   autoTable(doc, {
-    startY: 54,
+    startY,
     head: [["Cert #", "Company", "Shareholder", "Class", "Shares", "Par Value", "Issue Date", "Status"]],
     body: certificates.map((c) => [
       `#${c.certNumber}`,
@@ -199,7 +212,7 @@ export async function exportStockLedgerPDF(certificates: CertificateRow[], compa
         }
       }
     },
-    margin: { left: MARGIN, right: R_MARGIN },
+    margin: { left: lm.left, right: lm.right },
   });
 
   // Summary
@@ -210,11 +223,11 @@ export async function exportStockLedgerPDF(certificates: CertificateRow[], compa
   doc.setFontSize(9);
   doc.setFont("Arial", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text(`Total Certificates: ${certificates.length}`, MARGIN, finalY);
-  doc.text(`Active: ${activeCount}`, MARGIN, finalY + 5);
-  doc.text(`Total Shares: ${totalShares.toLocaleString()}`, MARGIN, finalY + 10);
+  doc.text(`Total Certificates: ${certificates.length}`, lm.left, finalY);
+  doc.text(`Active: ${activeCount}`, lm.left, finalY + 5);
+  doc.text(`Total Shares: ${totalShares.toLocaleString()}`, lm.left, finalY + 10);
 
-  addFooter(doc);
+  addFooter(doc, true);
   await savePdfReliably(doc, "stock-ledger.pdf");
 }
 
