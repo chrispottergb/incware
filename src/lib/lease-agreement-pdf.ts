@@ -8,6 +8,7 @@ interface LeaseData {
   tenantName: string;
   tenantAddress: string;
   propertyAddress: string;
+  leaseDate: string;
   leaseStartDate: string;
   leaseEndDate: string;
   monthlyRent: string;
@@ -66,7 +67,7 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   gap(6);
 
   // Parties
-  addText(`This Lease Agreement ("Agreement") is made and entered into as of ${fmtDate(data.leaseStartDate)}, by and between:`, { size: 10 });
+  addText(`This Lease Agreement ("Agreement") is made and entered into as of ${fmtDate(data.leaseDate || data.leaseStartDate)}, by and between:`, { size: 10 });
   gap(2);
   addText(`LANDLORD: ${data.landlordName || "_______________"}`, { bold: true, indent: 10 });
   addText(`Address: ${data.landlordAddress || "_______________"}`, { indent: 10 });

@@ -188,6 +188,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       tenantName: companyName,
       tenantAddress: companyAddress,
       propertyAddress: lease.address || "",
+      leaseDate: lease.lease_date || "",
       leaseStartDate: lease.lease_start_date || "",
       leaseEndDate: lease.lease_end_date || "",
       monthlyRent: lease.monthly_payment != null ? String(lease.monthly_payment) : "",
@@ -214,17 +215,13 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
               title: "Leases",
               companyName,
               table: {
-                headers: ["Property Description", "Property Address", "Landlord", "Lease Date", "Start Date", "End Date", "Term", "Monthly Payment", "Improvements"],
+                headers: ["Property Description", "Property Address", "Landlord", "Landlord Address", "Monthly Payment"],
                 rows: leases.map((a: any) => [
                   a.description || "—",
                   a.address || "—",
                   a.landlord_name || "—",
-                  fmtDate(a.lease_date),
-                  fmtDate(a.lease_start_date),
-                  fmtDate(a.lease_end_date),
-                  a.lease_term || "—",
+                  a.landlord_address || "—",
                   fmt(a.monthly_payment),
-                  a.leasehold_improvement_amount != null && Number(a.leasehold_improvement_amount) > 0 ? fmt(a.leasehold_improvement_amount) : "—",
                 ]),
               },
             }}
