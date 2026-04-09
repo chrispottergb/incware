@@ -31,6 +31,7 @@ function fmtCurrency(v: string) {
 export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const pw = doc.internal.pageSize.getWidth();
   const margin = 31.75; // 1.25 inch left margin for 3-hole punch binder filing
   const rMargin = 19.05; // 0.75 inch right margin

@@ -966,6 +966,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
 export function exportMeetingMinutesPDF(data: MeetingData) {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const { meeting, company } = data;
   const companyName = company?.name || "Unknown Company";
   const entityType = company?.entity_type || "Corporation";
@@ -3104,6 +3105,7 @@ export function exportSectionPDF(
 ) {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const companyName = company?.name || "Unknown";
   const entityType = company?.entity_type || "Corporation";
   const meetingDate = new Date(meeting.meeting_date + "T00:00:00").toLocaleDateString();
@@ -3161,6 +3163,7 @@ export function exportResolutionsPDF(company: any, meeting: any, resolutions: an
 export function exportFinancialsPDF(company: any, meeting: any, financials: any, nonRecurringItems?: any[]) {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const companyName = company?.name || "Unknown";
   const entityType = company?.entity_type || "Corporation";
   const meetingDate = new Date(meeting.meeting_date + "T00:00:00").toLocaleDateString();

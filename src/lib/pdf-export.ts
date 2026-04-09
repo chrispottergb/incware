@@ -90,6 +90,7 @@ interface ComplianceItem {
 export async function exportCompliancePDF(data: ComplianceItem[], overallScore: number) {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
 
   addHeader(doc, "Compliance Overview Report", `Overall Compliance Score: ${overallScore}%`);
 
@@ -164,6 +165,7 @@ interface CertificateRow {
 export async function exportStockLedgerPDF(certificates: CertificateRow[], companyFilter?: string) {
   const doc = new jsPDF({ orientation: "landscape" });
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const lm = getMargins(true);
 
   const subtitle = companyFilter && companyFilter !== "all"
@@ -242,6 +244,7 @@ interface ShareholderRow {
 export async function exportShareholderPDF(shareholders: ShareholderRow[]) {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
 
   addHeader(doc, "Shareholder Summary Report", `${shareholders.length} shareholder(s)`);
 
@@ -342,6 +345,7 @@ export interface AIComplianceData {
 export async function exportAICompliancePDF(data: AIComplianceData) {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const pw = doc.internal.pageSize.getWidth();
 
   addHeader(doc, "EU AI Act Compliance Report", `${data.companyName} — Regulation (EU) 2024/1689`);

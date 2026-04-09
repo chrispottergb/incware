@@ -70,6 +70,7 @@ export interface SMOperatingAgreementData {
 export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData): jsPDF {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const { company, members } = data;
   const cx = pw(doc) / 2;
 

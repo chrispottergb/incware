@@ -109,6 +109,7 @@ export interface RecordBookData {
 export function generateRecordBookPDF(data: RecordBookData): jsPDF {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const { companyData, aiContent } = data;
   const company = companyData.company;
   const isLLC = isLLCType(company.entity_type);
