@@ -93,11 +93,18 @@ Deno.serve(async (req) => {
       continue;
     }
 
-    // Encrypt via SQL using service role
-    const { error: encErr } = await adminClient.rpc("encrypt_shareholder_ssn", {
-      p_shareholder_id: row.id,
-      p_ssn_ein: row.ssn_ein.trim(),
-      p_encryption_key: encryptionKey,
+    // Use encrypt_ssn_ein function directly, then update the row
+    const { error: encErr } = await adminClient.rpc("encrypt_ssn_ein", {
+      plain_text: row.ssn_ein.trim(),
+      encryption_key: encryptionKey,
+    }).then(async (res) => {
+      if (res.error) return { error: res.error };
+      // Update the row: set ssn_ein_encrypted and clear ssn_ein
+      const { error: updErr } = await adminClient
+        .from("shareholders")
+        .update({ ssn_ein_encrypted: res.data, ssn_ein: null })
+        .eq("id", row.id);
+      return { error: updErr };
     });
 
     if (encErr) {
