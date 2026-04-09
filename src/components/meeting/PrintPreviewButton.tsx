@@ -38,14 +38,27 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
   const handlePreview = () => {
     setLoading(true);
     try {
+      console.log("[PDF Preview] Step 1: Calling generatePDF...");
       const doc = generatePDF();
-      if (!doc) { setLoading(false); return; }
+      if (!doc) {
+        console.warn("[PDF Preview] generatePDF returned null/falsy — aborting.");
+        setLoading(false);
+        return;
+      }
+      console.log("[PDF Preview] Step 2: Generating arraybuffer from jsPDF doc...");
       const arrayBuf = doc.output("arraybuffer");
+      if (!arrayBuf || arrayBuf.byteLength === 0) {
+        console.error("[PDF Preview] arraybuffer is empty or null.");
+        toast.error("PDF generation produced an empty document.");
+        setLoading(false);
+        return;
+      }
+      console.log(`[PDF Preview] Step 3: arraybuffer OK (${arrayBuf.byteLength} bytes). Opening preview.`);
       setPdfData(new Uint8Array(arrayBuf));
       setCurrentPage(1);
       setPreviewOpen(true);
     } catch (err: any) {
-      console.error("PDF preview error:", err);
+      console.error("[PDF Preview] Error during PDF generation:", err);
       toast.error("Failed to generate PDF preview: " + (err?.message || "Unknown error"));
     } finally {
       setLoading(false);
@@ -173,21 +186,44 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
 
   const handleDownload = async () => {
     try {
+      console.log("[PDF Download] Step 1: Calling generatePDF...");
       const doc = generatePDF();
-      if (!doc) return;
+      if (!doc) {
+        console.warn("[PDF Download] generatePDF returned null/falsy — aborting.");
+        return;
+      }
+      console.log("[PDF Download] Step 2: PDF doc created. Verifying blob...");
+      const testBlob = doc.output("blob");
+      if (!testBlob || testBlob.size === 0) {
+        console.error("[PDF Download] Generated PDF blob is empty.");
+        toast.error("PDF generation produced an empty document.");
+        return;
+      }
+      console.log(`[PDF Download] Step 3: Blob OK (${testBlob.size} bytes). Saving via savePdfReliably...`);
       await savePdfReliably(doc, fileName);
+      console.log("[PDF Download] Step 4: savePdfReliably completed.");
     } catch (err: any) {
-      console.error("PDF download error:", err);
+      console.error("[PDF Download] Error during PDF generation or save:", err);
       toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
     }
   };
 
   const handlePrint = () => {
     try {
+      console.log("[PDF Print] Step 1: Calling generatePDF...");
       const doc = generatePDF();
-      if (!doc) return;
-
+      if (!doc) {
+        console.warn("[PDF Print] generatePDF returned null/falsy — aborting.");
+        return;
+      }
+      console.log("[PDF Print] Step 2: Generating blob...");
       const blob = doc.output("blob");
+      if (!blob || blob.size === 0) {
+        console.error("[PDF Print] Generated PDF blob is empty.");
+        toast.error("PDF generation produced an empty document.");
+        return;
+      }
+      console.log(`[PDF Print] Step 3: Blob OK (${blob.size} bytes). Opening for print...`);
 
       if (isEmbeddedPreview) {
         const opened = openPdfInNewTab(blob);
