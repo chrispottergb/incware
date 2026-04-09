@@ -23,6 +23,7 @@ export interface BillOfSaleData {
 export function generateBillOfSalePdf(data: BillOfSaleData): jsPDF {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const pw = doc.internal.pageSize.getWidth();
 
   // Header

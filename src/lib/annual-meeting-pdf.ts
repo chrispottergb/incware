@@ -82,6 +82,7 @@ const BODY_COLOR = [40, 40, 40];
 export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
   const margin = 90; // 1.25 inch left margin for 3-hole punch binder filing

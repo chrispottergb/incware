@@ -130,6 +130,7 @@ export interface AnnualUpdateData {
 export function generateAnnualUpdatePdf(data: AnnualUpdateData): jsPDF {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const c = data.company;
 
   addHeader(doc, c.name);

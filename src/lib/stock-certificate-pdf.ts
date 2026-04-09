@@ -74,6 +74,7 @@ function drawOrnateRedBorder(doc: jsPDF) {
 export async function generateStockCertificatePdf(data: StockCertificateData): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: "landscape" });
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
   const isLLC = data.isLLC || false;
