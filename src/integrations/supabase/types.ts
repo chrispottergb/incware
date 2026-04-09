@@ -2251,6 +2251,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          lease_id: string | null
           meeting_id: string
           purpose: string
           resolution_text: string
@@ -2259,6 +2260,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          lease_id?: string | null
           meeting_id: string
           purpose: string
           resolution_text: string
@@ -2267,12 +2269,20 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          lease_id?: string | null
           meeting_id?: string
           purpose?: string
           resolution_text?: string
           transaction_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "meeting_resolutions_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "company_assets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "meeting_resolutions_meeting_id_fkey"
             columns: ["meeting_id"]

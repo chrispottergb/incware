@@ -20,18 +20,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Loader2, FileText, Pencil, Link2, ArrowRightLeft, Layers } from "lucide-react";
+import { Plus, Trash2, Loader2, FileText, Pencil, Link2, ArrowRightLeft, Layers, Building2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { RESOLUTION_TYPES } from "@/lib/resolution-types";
 import { isLLCType } from "@/lib/entity-terminology";
 import BuySellWorkflow from "@/components/company/BuySellWorkflow";
 import BatchTransferDialog from "@/components/meeting/BatchTransferDialog";
+import LeaseTransactionDialog from "@/components/meeting/LeaseTransactionDialog";
 
 const TRANSFER_RESOLUTION_PURPOSES = [
   "Approve Transfer/Sale of Shares",
   "Approve Transfer of Membership Interest",
 ];
+
+const LEASE_RESOLUTION_PURPOSE = "Approve Lease Agreement";
 
 interface Props {
   meetingId: string;
@@ -40,9 +43,10 @@ interface Props {
   companyId?: string;
   companyName?: string;
   availableShares?: number | null;
+  meetingDate?: string;
 }
 
-export default function MeetingResolutions({ meetingId, entityType, meetingType, companyId, companyName, availableShares }: Props) {
+export default function MeetingResolutions({ meetingId, entityType, meetingType, companyId, companyName, availableShares, meetingDate }: Props) {
   const isSpecialMeeting = meetingType === "Special Meeting of Board of Directors";
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -56,6 +60,10 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
 
   // Batch transfer state
   const [batchOpen, setBatchOpen] = useState(false);
+
+  // Lease workflow state
+  const [leaseOpen, setLeaseOpen] = useState(false);
+  const [leaseResolutionId, setLeaseResolutionId] = useState<string | null>(null);
 
   const resolutionOptions = RESOLUTION_TYPES[entityType] || RESOLUTION_TYPES["Corporation"];
 
@@ -171,6 +179,41 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
     setTransferResolutionId(null);
   };
 
+  // Lease workflow handlers
+  const handleOpenLease = (resolutionId: string) => {
+    setLeaseResolutionId(resolutionId);
+    setLeaseOpen(true);
+  };
+
+  const handleLeaseCreated = async (leaseId: string, propertyAddress: string) => {
+    if (!leaseResolutionId) return;
+    // Link lease to the resolution
+    const { error } = await supabase
+      .from("meeting_resolutions")
+      .update({ lease_id: leaseId } as any)
+      .eq("id", leaseResolutionId);
+    if (error) {
+      console.error("Failed to link lease to resolution:", error);
+    } else {
+      // Update resolution text to fill in address
+      if (propertyAddress) {
+        const res = resolutions.find((r) => r.id === leaseResolutionId);
+        if (res?.resolution_text?.includes("______")) {
+          const updatedText = res.resolution_text.replace("______", propertyAddress);
+          await supabase
+            .from("meeting_resolutions")
+            .update({ resolution_text: updatedText })
+            .eq("id", leaseResolutionId);
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ["meeting_resolutions", meetingId] });
+      toast.success("Lease linked to resolution.");
+    }
+    setLeaseResolutionId(null);
+  };
+
+  const isLeasePurpose = (p: string) => p === LEASE_RESOLUTION_PURPOSE;
+
   const isTransferPurpose = (p: string) => TRANSFER_RESOLUTION_PURPOSES.includes(p);
 
   // Batch detection: unlinked transfer resolutions
@@ -268,8 +311,12 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
               {resolutions.map((r) => {
                 const match = resolutionOptions.find((o) => o.label === r.purpose);
                 const hasLinkedTransaction = !!(r as any).transaction_id;
+                const hasLinkedLease = !!(r as any).lease_id;
+                const hasAnyLink = hasLinkedTransaction || hasLinkedLease;
                 // Only show individual "Complete Transaction" if there's exactly 1 unlinked transfer resolution
                 const showTransferButton = isTransferPurpose(r.purpose || "") && !hasLinkedTransaction && companyId && unlinkedTransferResolutions.length === 1;
+                // Show lease button for unlinked lease resolutions
+                const showLeaseButton = isLeasePurpose(r.purpose || "") && !hasLinkedLease && companyId;
                 return (
                   <div key={r.id} className="rounded-lg border border-border p-4">
                     <div className="flex items-start justify-between gap-4">
@@ -292,6 +339,14 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                           </div>
                         )}
 
+                        {/* Linked lease indicator */}
+                        {hasLinkedLease && (
+                          <div className="flex items-center gap-1.5 mt-2 text-[11px] text-primary font-medium">
+                            <Building2 className="h-3.5 w-3.5" />
+                            Lease Recorded
+                          </div>
+                        )}
+
                         {/* Complete Transaction button for transfer resolutions */}
                         {showTransferButton && (
                           <Button
@@ -301,6 +356,19 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                             onClick={() => handleOpenTransfer(r.id)}
                           >
                             <ArrowRightLeft className="mr-1.5 h-3 w-3" />
+                            Complete Transaction
+                          </Button>
+                        )}
+
+                        {/* Complete Transaction button for lease resolutions */}
+                        {showLeaseButton && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="mt-2 h-7 text-xs"
+                            onClick={() => handleOpenLease(r.id)}
+                          >
+                            <Building2 className="mr-1.5 h-3 w-3" />
                             Complete Transaction
                           </Button>
                         )}
@@ -374,6 +442,19 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
           resolutionIds={batchResolutionIds}
           open={batchOpen}
           onOpenChange={setBatchOpen}
+        />
+      )}
+
+      {/* Lease transaction dialog */}
+      {companyId && (
+        <LeaseTransactionDialog
+          companyId={companyId}
+          companyName={companyName}
+          entityType={entityType}
+          meetingDate={meetingDate}
+          open={leaseOpen}
+          onOpenChange={setLeaseOpen}
+          onLeaseCreated={handleLeaseCreated}
         />
       )}
     </>

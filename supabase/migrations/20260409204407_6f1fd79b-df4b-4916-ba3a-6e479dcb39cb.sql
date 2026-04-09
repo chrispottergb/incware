@@ -1,0 +1,1 @@
+ALTER TABLE public.meeting_resolutions ADD COLUMN lease_id uuid REFERENCES public.company_assets(id);
