@@ -2437,14 +2437,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     autoTable(doc, {
       startY: y,
-      head: [["Property Description", "Landlord", "Lease Date", "Start Date", "End Date", "Term", "Monthly\nPayment"]],
+      head: [["Property Description", "Property Address", "Landlord", "Landlord Address", "Monthly\nPayment"]],
       body: data.companyLeases.map((l: any) => [
         l.description || "—",
+        l.address || "—",
         l.landlord_name || "—",
-        l.lease_date ? new Date(l.lease_date + "T00:00:00").toLocaleDateString() : "—",
-        l.lease_start_date ? new Date(l.lease_start_date + "T00:00:00").toLocaleDateString() : "—",
-        l.lease_end_date ? new Date(l.lease_end_date + "T00:00:00").toLocaleDateString() : "—",
-        l.lease_term || "—",
+        l.landlord_address || "—",
         l.monthly_payment != null ? fmt(l.monthly_payment) : "—",
       ]),
       theme: "grid",
@@ -2480,14 +2478,15 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       doc.setFontSize(10);
       doc.setFont("Arial", "bold");
       doc.setTextColor(bt ? BLUE.r : 30, bt ? BLUE.g : 30, bt ? BLUE.b : 30);
-      doc.text("Leasehold Improvements", MARGIN, y);
+      doc.text("Leasehold Improvements by Property", MARGIN, y);
       y += 5;
 
       autoTable(doc, {
         startY: y,
-        head: [["Property", "Improvement Amount", "Description"]],
+        head: [["Property", "Property Address", "Improvement Amount", "Description"]],
         body: leasesWithImprovements.map((l: any) => [
           l.description || "—",
+          l.address || "—",
           l.leasehold_improvement_amount != null ? fmt(l.leasehold_improvement_amount) : "—",
           l.leasehold_improvement_description || "—",
         ]),
