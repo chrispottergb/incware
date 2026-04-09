@@ -46,7 +46,7 @@ interface Props {
   meetingDate?: string;
 }
 
-export default function MeetingResolutions({ meetingId, entityType, meetingType, companyId, companyName, availableShares }: Props) {
+export default function MeetingResolutions({ meetingId, entityType, meetingType, companyId, companyName, availableShares, meetingDate }: Props) {
   const isSpecialMeeting = meetingType === "Special Meeting of Board of Directors";
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -60,6 +60,10 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
 
   // Batch transfer state
   const [batchOpen, setBatchOpen] = useState(false);
+
+  // Lease workflow state
+  const [leaseOpen, setLeaseOpen] = useState(false);
+  const [leaseResolutionId, setLeaseResolutionId] = useState<string | null>(null);
 
   const resolutionOptions = RESOLUTION_TYPES[entityType] || RESOLUTION_TYPES["Corporation"];
 
