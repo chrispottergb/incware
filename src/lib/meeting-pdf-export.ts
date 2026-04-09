@@ -3119,15 +3119,37 @@ export function exportSectionPDF(
   y += 3;
 
   if (tableBody.length > 0) {
+    const usableWidth = doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN;
+    const colCount = tableHead.length;
+    // For shareholders table (10 columns), use specific proportional widths
+    const isShareholdersTable = colCount === 10 && (
+      tableHead.includes("Ownership %") || tableHead.includes("Interest %")
+    );
+    const columnStyles: Record<number, any> = {};
+    if (isShareholdersTable) {
+      // Name 15%, Address 18%, City 8%, St 5%, ZIP 7%, Common 8%, Own% 8%, Dist 11%, Basis 10%, Add'l 10%
+      const pcts = [0.15, 0.18, 0.08, 0.05, 0.07, 0.08, 0.08, 0.11, 0.10, 0.10];
+      pcts.forEach((p, i) => { columnStyles[i] = { cellWidth: usableWidth * p }; });
+    }
     autoTable(doc, {
       startY: y,
       head: [tableHead],
       body: tableBody,
       theme: "grid",
-      headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 10, fontStyle: "bold" },
-      bodyStyles: { fontSize: 10 },
+      headStyles: {
+        fillColor: [200, 215, 235],
+        textColor: [30, 30, 30],
+        fontSize: isShareholdersTable ? 8 : 10,
+        fontStyle: "bold",
+        cellPadding: isShareholdersTable ? 3 : 5,
+      },
+      bodyStyles: {
+        fontSize: isShareholdersTable ? 9 : 10,
+        cellPadding: isShareholdersTable ? 3 : 5,
+      },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
+      ...(isShareholdersTable ? { columnStyles } : {}),
     });
   } else {
     doc.setFontSize(9);

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
@@ -36,6 +36,7 @@ const emptyForm = {
   address: "",
   landlord_name: "",
   landlord_address: "",
+  lease_date: "",
   lease_start_date: "",
   lease_end_date: "",
   lease_term: "",
@@ -51,6 +52,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
+  const savingRef = useRef(false);
 
   const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
 
@@ -58,6 +60,20 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
     setForm(prev => ({
       ...prev,
       landlord_name: entry.full_name,
+      landlord_address: [entry.address, entry.city, entry.state, entry.zip].filter(Boolean).join(", "),
+    }));
+  }, []);
+
+  const handlePropertySelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
+    setForm(prev => ({
+      ...prev,
+      address: [entry.address, entry.city, entry.state, entry.zip].filter(Boolean).join(", "),
+    }));
+  }, []);
+
+  const handleLandlordAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
+    setForm(prev => ({
+      ...prev,
       landlord_address: [entry.address, entry.city, entry.state, entry.zip].filter(Boolean).join(", "),
     }));
   }, []);
@@ -78,26 +94,33 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
 
   const saveLease = useMutation({
     mutationFn: async () => {
-      const payload: any = {
-        asset_type: "lease",
-        description: form.description || "Lease",
-        value: form.value ? parseFloat(form.value) : null,
-        address: form.address || null,
-        landlord_name: form.landlord_name || null,
-        landlord_address: form.landlord_address || null,
-        lease_start_date: form.lease_start_date || null,
-        lease_end_date: form.lease_end_date || null,
-        lease_term: form.lease_term || null,
-        monthly_payment: form.monthly_payment ? parseFloat(form.monthly_payment) : null,
-        leasehold_improvement_amount: form.leasehold_improvement_amount ? parseFloat(form.leasehold_improvement_amount) : null,
-        leasehold_improvement_description: form.leasehold_improvement_description || null,
-      };
-      if (editId) {
-        const { error } = await supabase.from("company_assets").update(payload).eq("id", editId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("company_assets").insert({ ...payload, company_id: companyId });
-        if (error) throw error;
+      if (savingRef.current) return;
+      savingRef.current = true;
+      try {
+        const payload: any = {
+          asset_type: "lease",
+          description: form.description || "Lease",
+          value: form.value ? parseFloat(form.value) : null,
+          address: form.address || null,
+          landlord_name: form.landlord_name || null,
+          landlord_address: form.landlord_address || null,
+          lease_date: form.lease_date || null,
+          lease_start_date: form.lease_start_date || null,
+          lease_end_date: form.lease_end_date || null,
+          lease_term: form.lease_term || null,
+          monthly_payment: form.monthly_payment ? parseFloat(form.monthly_payment) : null,
+          leasehold_improvement_amount: form.leasehold_improvement_amount ? parseFloat(form.leasehold_improvement_amount) : null,
+          leasehold_improvement_description: form.leasehold_improvement_description || null,
+        };
+        if (editId) {
+          const { error } = await supabase.from("company_assets").update(payload).eq("id", editId);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from("company_assets").insert({ ...payload, company_id: companyId });
+          if (error) throw error;
+        }
+      } finally {
+        savingRef.current = false;
       }
     },
     onSuccess: () => {
@@ -137,6 +160,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       address: a.address || "",
       landlord_name: a.landlord_name || "",
       landlord_address: a.landlord_address || "",
+      lease_date: a.lease_date || "",
       lease_start_date: a.lease_start_date || "",
       lease_end_date: a.lease_end_date || "",
       lease_term: a.lease_term || "",
@@ -151,6 +175,11 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
 
   const fmt = (v: number | null | undefined) =>
     v != null ? `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "—";
+
+  const fmtDate = (d: string | null | undefined) => {
+    if (!d) return "—";
+    return new Date(d + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  };
 
   const generateAgreement = (lease: any, mode: "preview" | "download") => {
     const data = {
@@ -185,15 +214,17 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
               title: "Leases",
               companyName,
               table: {
-                headers: ["Property Description", "Property Address", "Landlord", "Landlord Address", "Lease Start", "Lease End", "Monthly Payment"],
+                headers: ["Property Description", "Property Address", "Landlord", "Lease Date", "Start Date", "End Date", "Term", "Monthly Payment", "Improvements"],
                 rows: leases.map((a: any) => [
-                  a.description || "--",
-                  a.address || "--",
-                  a.landlord_name || "--",
-                  a.landlord_address || "--",
-                  a.lease_start_date || "--",
-                  a.lease_end_date || "--",
+                  a.description || "—",
+                  a.address || "—",
+                  a.landlord_name || "—",
+                  fmtDate(a.lease_date),
+                  fmtDate(a.lease_start_date),
+                  fmtDate(a.lease_end_date),
+                  a.lease_term || "—",
                   fmt(a.monthly_payment),
+                  a.leasehold_improvement_amount != null && Number(a.leasehold_improvement_amount) > 0 ? fmt(a.leasehold_improvement_amount) : "—",
                 ]),
               },
             }}
@@ -210,9 +241,9 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                   {editId ? "Edit" : "Add"} Lease
                 </DialogTitle>
               </DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); saveLease.mutate(); }} className="space-y-3">
+              <form onSubmit={(e) => { e.preventDefault(); if (!savingRef.current) saveLease.mutate(); }} className="space-y-3">
                 <div className="field-group">
-                  <Label className="field-label">Lease Description</Label>
+                  <Label className="field-label">Property Description</Label>
                   <Select value={leaseOptions.includes(form.description) ? form.description : "__custom"} onValueChange={(v) => setForm((p) => ({ ...p, description: v === "__custom" ? "" : v }))}>
                     <SelectTrigger className="h-8 text-sm">
                       <SelectValue placeholder="Select lease type" />
@@ -230,7 +261,15 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                 </div>
                 <div className="field-group">
                   <Label className="field-label">Property Address</Label>
-                  <Input className="h-8 text-sm" value={form.address} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} placeholder="Street address" />
+                  <AddressAutocomplete
+                    value={form.address}
+                    onChange={(v) => setForm((p) => ({ ...p, address: v }))}
+                    onSelect={handlePropertySelect}
+                    search={searchAddressBook}
+                    getCompanySplitIndex={getCompanySplitIndex}
+                    className="h-8 text-sm"
+                    placeholder="Street address"
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
@@ -247,8 +286,20 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Landlord Address</Label>
-                    <Input className="h-8 text-sm" value={form.landlord_address} onChange={(e) => setForm((p) => ({ ...p, landlord_address: e.target.value }))} />
+                    <AddressAutocomplete
+                      value={form.landlord_address}
+                      onChange={(v) => setForm((p) => ({ ...p, landlord_address: v }))}
+                      onSelect={handleLandlordAddressSelect}
+                      search={searchAddressBook}
+                      getCompanySplitIndex={getCompanySplitIndex}
+                      className="h-8 text-sm"
+                      placeholder="Landlord address"
+                    />
                   </div>
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">Lease Date (Signed)</Label>
+                  <DatePickerField value={form.lease_date} onChange={(v) => setForm((p) => ({ ...p, lease_date: v }))} />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
@@ -309,12 +360,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                 ? "bg-destructive/15 text-destructive border-destructive/30"
                 : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
 
-              const termDisplay = [
-                a.lease_start_date || "",
-                hasEndDate ? a.lease_end_date : "Ongoing",
-              ]
-                .filter(Boolean)
-                .join(" — ");
+              const hasImprovements = a.leasehold_improvement_amount != null && Number(a.leasehold_improvement_amount) > 0;
 
               return (
                 <div key={a.id} className="rounded-lg border border-border overflow-hidden">
@@ -347,35 +393,53 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
 
                   {/* Card Body */}
                   <div className="bg-card divide-y divide-border">
-                    {/* Row 1: Description & Address */}
+                    {/* Row 1: Description & Lease Date */}
                     <div className="grid grid-cols-2 divide-x divide-border">
                       <div className="px-4 py-3">
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Property Description</p>
                         <p className="text-sm text-foreground">{a.description || "—"}</p>
                       </div>
                       <div className="px-4 py-3">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Property Address</p>
-                        <p className="text-sm text-foreground leading-relaxed">{a.address || "—"}</p>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Lease Date</p>
+                        <p className="text-sm text-foreground">{fmtDate(a.lease_date)}</p>
                       </div>
                     </div>
 
-                    {/* Row 2: Landlord & Landlord Address */}
+                    {/* Row 2: Property Address & Landlord */}
                     <div className="grid grid-cols-2 divide-x divide-border">
+                      <div className="px-4 py-3">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Property Address</p>
+                        <p className="text-sm text-foreground leading-relaxed">{a.address || "—"}</p>
+                      </div>
                       <div className="px-4 py-3">
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Landlord</p>
                         <p className="text-sm text-foreground">{a.landlord_name || "—"}</p>
                       </div>
+                    </div>
+
+                    {/* Row 3: Landlord Address (full width) */}
+                    <div className="px-4 py-3">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Landlord Address</p>
+                      <p className="text-sm text-foreground leading-relaxed">{a.landlord_address || "—"}</p>
+                    </div>
+
+                    {/* Row 4: Start Date & End Date */}
+                    <div className="grid grid-cols-2 divide-x divide-border">
                       <div className="px-4 py-3">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Landlord Address</p>
-                        <p className="text-sm text-foreground leading-relaxed">{a.landlord_address || "—"}</p>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Lease Start Date</p>
+                        <p className="text-sm text-foreground">{fmtDate(a.lease_start_date)}</p>
+                      </div>
+                      <div className="px-4 py-3">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Lease End Date</p>
+                        <p className="text-sm text-foreground">{fmtDate(a.lease_end_date)}</p>
                       </div>
                     </div>
 
-                    {/* Row 3: Term & Monthly Payment */}
+                    {/* Row 5: Term & Monthly Payment */}
                     <div className="grid grid-cols-2 divide-x divide-border">
                       <div className="px-4 py-3">
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Lease Term</p>
-                        <p className="text-sm text-foreground">{termDisplay || "—"}</p>
+                        <p className="text-sm text-foreground">{a.lease_term || "Ongoing"}</p>
                       </div>
                       <div className="px-4 py-3">
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Monthly Payment</p>
@@ -383,8 +447,8 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                       </div>
                     </div>
 
-                    {/* Row 4: Leasehold Improvements */}
-                    {(a.leasehold_improvement_amount || a.leasehold_improvement_description) && (
+                    {/* Row 6: Leasehold Improvements (only if amount > 0) */}
+                    {hasImprovements && (
                       <div className="grid grid-cols-2 divide-x divide-border">
                         <div className="px-4 py-3">
                           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Leasehold Improvements</p>
