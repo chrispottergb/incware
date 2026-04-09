@@ -958,6 +958,7 @@ export default function MeetingDetail() {
               companyId={id!}
               companyName={company?.name}
               availableShares={availableShares}
+              meetingDate={meeting.meeting_date}
             />
           </div>
         </TabsContent>
