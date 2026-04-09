@@ -3,10 +3,19 @@ import autoTable from "jspdf-autotable";
 import { savePdfReliably } from "./pdf-save";
 import { registerArialFont } from "@/lib/arial-font";
 
-const MARGIN = 31.75; // 1.25 inch left margin for 3-hole punch binder filing
-const R_MARGIN = 19.05; // 0.75 inch right margin
+const BINDER_MARGIN = 31.75; // 1.25 inch binder margin for 3-hole punch filing
+const NORMAL_MARGIN = 19.05; // 0.75 inch normal margin
 const BRAND = "EntityIQ";
 const BRAND_SUB = "Corporate Records Management";
+
+// Portrait: binder on left. Landscape: binder on top.
+function getMargins(landscape: boolean) {
+  return {
+    left: landscape ? NORMAL_MARGIN : BINDER_MARGIN,
+    right: NORMAL_MARGIN,
+    top: landscape ? BINDER_MARGIN : NORMAL_MARGIN,
+  };
+}
 
 function addHeader(doc: jsPDF, title: string, subtitle?: string) {
   const pageWidth = doc.internal.pageSize.getWidth();
