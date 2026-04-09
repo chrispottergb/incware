@@ -444,6 +444,19 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
           onOpenChange={setBatchOpen}
         />
       )}
+
+      {/* Lease transaction dialog */}
+      {companyId && (
+        <LeaseTransactionDialog
+          companyId={companyId}
+          companyName={companyName}
+          entityType={entityType}
+          meetingDate={meetingDate}
+          open={leaseOpen}
+          onOpenChange={setLeaseOpen}
+          onLeaseCreated={handleLeaseCreated}
+        />
+      )}
     </>
   );
 }
