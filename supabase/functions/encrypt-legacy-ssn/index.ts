@@ -62,62 +62,24 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Fetch all shareholders with plaintext ssn_ein
-  const { data: rows, error: fetchErr } = await adminClient
-    .from("shareholders")
-    .select("id, ssn_ein")
-    .not("ssn_ein", "is", null);
+  // Call the server-side migration function
+  const { data: result, error: rpcErr } = await adminClient.rpc(
+    "migrate_legacy_ssn",
+    { p_encryption_key: encryptionKey }
+  );
 
-  if (fetchErr) {
+  if (rpcErr) {
+    console.error("Migration RPC error:", rpcErr.message);
     return new Response(
-      JSON.stringify({ error: fetchErr.message }),
+      JSON.stringify({ error: rpcErr.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  let encrypted = 0;
-  let skipped = 0;
-  const errors: string[] = [];
-
-  for (const row of rows || []) {
-    if (!row.ssn_ein || row.ssn_ein.trim() === "") {
-      skipped++;
-      continue;
-    }
-
-    // pgp_sym_encrypt output stored as text would start with \\x (hex-encoded bytea)
-    // or the raw value looks like binary gibberish. Plaintext SSNs/EINs are digits/dashes only.
-    const isPlaintext = /^[\d\-\s]+$/.test(row.ssn_ein.trim());
-    if (!isPlaintext) {
-      skipped++;
-      continue;
-    }
-
-    // Use encrypt_ssn_ein function directly, then update the row
-    const { error: encErr } = await adminClient.rpc("encrypt_ssn_ein", {
-      plain_text: row.ssn_ein.trim(),
-      encryption_key: encryptionKey,
-    }).then(async (res) => {
-      if (res.error) return { error: res.error };
-      // Update the row: set ssn_ein_encrypted and clear ssn_ein
-      const { error: updErr } = await adminClient
-        .from("shareholders")
-        .update({ ssn_ein_encrypted: res.data, ssn_ein: null })
-        .eq("id", row.id);
-      return { error: updErr };
-    });
-
-    if (encErr) {
-      errors.push(`Row ${row.id}: ${encErr.message}`);
-    } else {
-      encrypted++;
-    }
-  }
-
-  console.log(`Legacy SSN encryption complete: encrypted=${encrypted}, skipped=${skipped}, errors=${errors.length}`);
+  console.log("Legacy SSN encryption complete:", JSON.stringify(result));
 
   return new Response(
-    JSON.stringify({ encrypted, skipped, errors }),
+    JSON.stringify(result),
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 });
