@@ -47,7 +47,7 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
       if (newRows.length === 0) { toast.info("All active signatories are already added"); return; }
       const { error } = await supabase.from("meeting_authorized_signers" as any).insert(newRows as any);
       if (error) throw error;
-      toast.success(`Added ${newRows.length} signator${newRows.length === 1 ? "y" : "ies"}`);
+      toast.success(`Added ${newRows.length} signer${newRows.length === 1 ? "" : "s"}`);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["meeting_authorized_signers", meetingId] }),
     onError: (e: any) => toast.error(e.message),
@@ -69,7 +69,7 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["meeting_authorized_signers", meetingId] });
       setAddOpen(false); resetForm();
-      toast.success(editingId ? "Signatory updated" : "Signatory added");
+      toast.success(editingId ? "Signer updated" : "Signer added");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -79,7 +79,7 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
       const { error } = await supabase.from("meeting_authorized_signers" as any).delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["meeting_authorized_signers", meetingId] }); toast.success("Signatory removed"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["meeting_authorized_signers", meetingId] }); toast.success("Signer removed"); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -93,7 +93,7 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
     <Card>
       <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          <PenTool className="h-4 w-4" /> Authorized Signatories
+          <PenTool className="h-4 w-4" /> Authorized Signers
         </CardTitle>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => autoPopulate.mutate()} disabled={autoPopulate.isPending} className="h-7 text-xs">
@@ -109,7 +109,7 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead className="hidden sm:table-cell">Title</TableHead>
+              <TableHead className="hidden sm:table-cell">Authority Type</TableHead>
               <TableHead>Bank</TableHead>
               <TableHead className="w-16" />
             </TableRow>
@@ -135,7 +135,7 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
             {signers.length === 0 && (
               <TableRow>
                 <TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">
-                  No authorized signatories recorded. Use "Auto-populate" to pull from bank records.
+                  No authorized signers recorded. Use "Auto-populate" to pull from bank records.
                 </TableCell>
               </TableRow>
             )}
@@ -145,9 +145,9 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
 
       <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) resetForm(); }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editingId ? "Edit" : "Add"} Signatory</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? "Edit" : "Add"} Authorized Signer</DialogTitle></DialogHeader>
           <div className="grid gap-3">
-            <div><Label className="text-xs">Signatory Name *</Label><Input value={form.signer_name} onChange={e => setForm(p => ({ ...p, signer_name: e.target.value }))} /></div>
+            <div><Label className="text-xs">Signer Name *</Label><Input value={form.signer_name} onChange={e => setForm(p => ({ ...p, signer_name: e.target.value }))} /></div>
             <div className="grid grid-cols-2 gap-2">
               <div><Label className="text-xs">Title</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} /></div>
               <div><Label className="text-xs">Bank Name</Label><Input value={form.bank_name} onChange={e => setForm(p => ({ ...p, bank_name: e.target.value }))} /></div>
@@ -156,7 +156,7 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => { setAddOpen(false); resetForm(); }}>Cancel</Button>
             <Button onClick={() => save.mutate()} disabled={!form.signer_name.trim() || save.isPending}>
-              {save.isPending ? "Saving…" : editingId ? "Save Changes" : "Add Signatory"}
+              {save.isPending ? "Saving…" : editingId ? "Save Changes" : "Add Signer"}
             </Button>
           </DialogFooter>
         </DialogContent>

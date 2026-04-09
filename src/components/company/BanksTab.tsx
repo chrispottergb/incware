@@ -35,7 +35,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
   // Signer dialog state
   const [signerOpen, setSignerOpen] = useState(false);
   const [signerEditingId, setSignerEditingId] = useState<string | null>(null);
-  const [signerForm, setSignerForm] = useState({ signer_name: "", title: "", bank_id: "", effective_date: new Date().toISOString().split("T")[0], end_date: "" });
+  const [signerForm, setSignerForm] = useState({ signer_name: "", title: "", bank_id: "", limited_detail: "" });
 
   // Track which bank rows are expanded
   const [expandedBanks, setExpandedBanks] = useState<Record<string, boolean>>({});
@@ -72,13 +72,15 @@ export default function BanksTab({ companyId }: BanksTabProps) {
 
   const getSignersForBank = (bankId: string) => signers.filter((s: any) => s.bank_id === bankId);
 
-  const isActive = (s: any) => {
-    const today = new Date().toISOString().split("T")[0];
-    if (!s.effective_date) return true;
-    if (s.effective_date > today) return false;
-    if (s.end_date && s.end_date < today) return false;
-    return true;
-  };
+  const AUTHORITY_OPTIONS = [
+    "Check Signing & Payments",
+    "Deposits Only",
+    "Deposits & Endorsements",
+    "View-Only Access",
+    "Full Banking Authority",
+    "Wire/ACH Approval",
+    "Limited Authority (Specify)",
+  ];
 
   // Bank CRUD
   const save = useMutation({
@@ -111,12 +113,13 @@ export default function BanksTab({ companyId }: BanksTabProps) {
   // Signer CRUD
   const saveSigner = useMutation({
     mutationFn: async () => {
+      const authorityValue = signerForm.title === "Limited Authority (Specify)" && signerForm.limited_detail
+        ? `Limited Authority — ${signerForm.limited_detail}`
+        : signerForm.title || null;
       const payload: any = {
         signer_name: signerForm.signer_name,
-        title: signerForm.title || null,
+        title: authorityValue,
         bank_id: signerForm.bank_id,
-        effective_date: signerForm.effective_date || null,
-        end_date: signerForm.end_date || null,
       };
       if (signerEditingId) {
         const { error } = await supabase.from("bank_authorized_signers" as any).update(payload as any).eq("id", signerEditingId);
@@ -129,7 +132,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bank_authorized_signers", companyId] });
       setSignerOpen(false);
-      toast.success(signerEditingId ? "Signatory updated" : "Authorized signatory added");
+      toast.success(signerEditingId ? "Signer updated" : "Authorized signer added");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -141,7 +144,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bank_authorized_signers", companyId] });
-      toast.success("Signatory removed");
+      toast.success("Signer removed");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -187,15 +190,19 @@ export default function BanksTab({ companyId }: BanksTabProps) {
 
   const openNewSigner = (bankId: string) => {
     setSignerEditingId(null);
-    setSignerForm({ signer_name: "", title: "", bank_id: bankId, effective_date: new Date().toISOString().split("T")[0], end_date: "" });
+    setSignerForm({ signer_name: "", title: "", bank_id: bankId, limited_detail: "" });
     setSignerOpen(true);
   };
 
   const openEditSigner = (s: any) => {
     setSignerEditingId(s.id);
+    const rawTitle = s.title || "";
+    const isLimited = rawTitle.startsWith("Limited Authority");
     setSignerForm({
-      signer_name: s.signer_name || "", title: s.title || "", bank_id: s.bank_id || "",
-      effective_date: s.effective_date || "", end_date: s.end_date || "",
+      signer_name: s.signer_name || "",
+      title: isLimited ? "Limited Authority (Specify)" : rawTitle,
+      bank_id: s.bank_id || "",
+      limited_detail: isLimited ? rawTitle.replace(/^Limited Authority\s*[—–-]\s*/, "") : "",
     });
     setSignerOpen(true);
   };
@@ -210,7 +217,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     <div className="space-y-5">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2"><Landmark className="h-4 w-4" /> Bank Accounts & Authorized Signatories</CardTitle>
+          <CardTitle className="text-sm font-semibold flex items-center gap-2"><Landmark className="h-4 w-4" /> Bank Accounts & Authorized Signers</CardTitle>
           <Button size="sm" variant="outline" onClick={openNew} className="h-7 text-xs"><Plus className="h-3 w-3 mr-1" />Add Bank</Button>
         </CardHeader>
         <CardContent className="p-0">
@@ -242,7 +249,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                       </CollapsibleTrigger>
                       <div className="flex gap-1 shrink-0">
                         <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={(e) => { e.stopPropagation(); openNewSigner(b.id); }}>
-                          <Plus className="h-3.5 w-3.5 mr-1" />Add Signatory
+                          <Plus className="h-3.5 w-3.5 mr-1" />Add Signer
                         </Button>
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openEdit(b); }}>
                           <Pencil className="h-3 w-3" />
@@ -256,33 +263,23 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                       <div className="bg-muted/30 border-t border-border">
                         {bankSigners.length === 0 ? (
                           <div className="px-8 py-4 text-center text-xs text-muted-foreground">
-                            No authorized signatories yet.{" "}
+                          No authorized signers yet.{" "}
                             <button className="text-primary hover:underline" onClick={() => openNewSigner(b.id)}>Add one</button>
                           </div>
                         ) : (
                           <Table>
                             <TableHeader>
-                              <TableRow className="hover:bg-transparent">
-                                <TableHead className="pl-10 text-xs">Signatory Name</TableHead>
-                                <TableHead className="text-xs">Title</TableHead>
-                                <TableHead className="text-xs">Effective</TableHead>
-                                <TableHead className="text-xs">End</TableHead>
-                                <TableHead className="text-xs">Status</TableHead>
-                                <TableHead className="w-16" />
-                              </TableRow>
+                               <TableRow className="hover:bg-transparent">
+                                 <TableHead className="pl-10 text-xs">Signer Name</TableHead>
+                                 <TableHead className="text-xs">Authority Type</TableHead>
+                                 <TableHead className="w-16" />
+                               </TableRow>
                             </TableHeader>
                             <TableBody>
                               {bankSigners.map((s: any) => (
                                 <TableRow key={s.id} className="hover:bg-muted/50">
-                                  <TableCell className="pl-10 font-medium text-xs">{s.signer_name}</TableCell>
-                                  <TableCell className="text-xs">{s.title}</TableCell>
-                                  <TableCell className="text-xs">{s.effective_date ? new Date(s.effective_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
-                                  <TableCell className="text-xs">{s.end_date ? new Date(s.end_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
-                                  <TableCell>
-                                    <Badge variant={isActive(s) ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
-                                      {isActive(s) ? "Active" : "Inactive"}
-                                    </Badge>
-                                  </TableCell>
+                                 <TableCell className="pl-10 font-medium text-xs">{s.signer_name}</TableCell>
+                                  <TableCell className="text-xs">{s.title || "—"}</TableCell>
                                   <TableCell>
                                     <div className="flex gap-1">
                                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditSigner(s)}>
@@ -376,7 +373,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
               {editing && (
                 <div className="border-t border-border pt-3 mt-1">
                   <div className="flex items-center justify-between mb-2">
-                    <Label className="text-xs font-semibold flex items-center gap-1.5"><PenTool className="h-3 w-3" /> Authorized Signatories</Label>
+                    <Label className="text-xs font-semibold flex items-center gap-1.5"><PenTool className="h-3 w-3" /> Authorized Signers</Label>
                     <Button size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => { openNewSigner(editing.id); }}>
                       <Plus className="h-2.5 w-2.5 mr-1" />Add
                     </Button>
@@ -384,7 +381,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                   {(() => {
                     const editSigners = getSignersForBank(editing.id);
                     if (editSigners.length === 0) return (
-                      <p className="text-[10px] text-muted-foreground text-center py-2">No signatories yet</p>
+                      <p className="text-[10px] text-muted-foreground text-center py-2">No signers yet</p>
                     );
                     return (
                       <div className="space-y-1">
@@ -393,9 +390,6 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                             <div className="flex items-center gap-2 min-w-0">
                               <span className="text-xs font-medium truncate">{s.signer_name}</span>
                               {s.title && <span className="text-[10px] text-muted-foreground">{s.title}</span>}
-                              <Badge variant={isActive(s) ? "default" : "secondary"} className="text-[9px] px-1 py-0">
-                                {isActive(s) ? "Active" : "Inactive"}
-                              </Badge>
                             </div>
                             <div className="flex gap-1 shrink-0">
                               <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openEditSigner(s)}>
@@ -420,7 +414,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
         {/* Signer Dialog */}
         <Dialog open={signerOpen} onOpenChange={setSignerOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>{signerEditingId ? "Edit" : "Add"} Authorized Signatory</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{signerEditingId ? "Edit" : "Add"} Authorized Signer</DialogTitle></DialogHeader>
             <div className="grid gap-3">
               <div>
                 <Label className="text-xs">Bank Account *</Label>
@@ -434,24 +428,37 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-xs">Signatory Name *</Label><Input value={signerForm.signer_name} onChange={e => setSignerForm(p => ({ ...p, signer_name: e.target.value }))} /></div>
-                <div><Label className="text-xs">Title</Label><Input value={signerForm.title} onChange={e => setSignerForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. President, Treasurer" /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
+                <div><Label className="text-xs">Signer Name *</Label><Input value={signerForm.signer_name} onChange={e => setSignerForm(p => ({ ...p, signer_name: e.target.value }))} /></div>
                 <div>
-                  <Label className="text-xs">Effective Date</Label>
-                  <DatePickerField value={signerForm.effective_date} onChange={v => setSignerForm(p => ({ ...p, effective_date: v }))} />
-                </div>
-                <div>
-                  <Label className="text-xs">End Date (optional)</Label>
-                  <DatePickerField value={signerForm.end_date} onChange={v => setSignerForm(p => ({ ...p, end_date: v }))} placeholder="Still active" />
+                  <Label className="text-xs">Authority Type *</Label>
+                  <div className="relative">
+                    <Input
+                      value={signerForm.title}
+                      onChange={e => setSignerForm(p => ({ ...p, title: e.target.value, limited_detail: e.target.value === "Limited Authority (Specify)" ? p.limited_detail : "" }))}
+                      placeholder="Select or type authority"
+                      list="authority-type-options"
+                    />
+                    <datalist id="authority-type-options">
+                      {AUTHORITY_OPTIONS.map(o => <option key={o} value={o} />)}
+                    </datalist>
+                  </div>
                 </div>
               </div>
+              {signerForm.title === "Limited Authority (Specify)" && (
+                <div>
+                  <Label className="text-xs">Specify Limitation *</Label>
+                  <Input
+                    value={signerForm.limited_detail}
+                    onChange={e => setSignerForm(p => ({ ...p, limited_detail: e.target.value }))}
+                    placeholder="e.g. Checks under $500"
+                  />
+                </div>
+              )}
             </div>
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setSignerOpen(false)}>Cancel</Button>
-              <Button onClick={() => saveSigner.mutate()} disabled={!signerForm.signer_name.trim() || !signerForm.bank_id || saveSigner.isPending}>
-                {saveSigner.isPending ? "Saving…" : signerEditingId ? "Save Changes" : "Add Signatory"}
+              <Button onClick={() => saveSigner.mutate()} disabled={!signerForm.signer_name.trim() || !signerForm.bank_id || !signerForm.title.trim() || (signerForm.title === "Limited Authority (Specify)" && !signerForm.limited_detail.trim()) || saveSigner.isPending}>
+                {saveSigner.isPending ? "Saving…" : signerEditingId ? "Save Changes" : "Add Signer"}
               </Button>
             </DialogFooter>
           </DialogContent>
