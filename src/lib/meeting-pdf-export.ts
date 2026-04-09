@@ -3105,6 +3105,7 @@ export function exportSectionPDF(
 ) {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const companyName = company?.name || "Unknown";
   const entityType = company?.entity_type || "Corporation";
   const meetingDate = new Date(meeting.meeting_date + "T00:00:00").toLocaleDateString();
@@ -3162,6 +3163,7 @@ export function exportResolutionsPDF(company: any, meeting: any, resolutions: an
 export function exportFinancialsPDF(company: any, meeting: any, financials: any, nonRecurringItems?: any[]) {
   const doc = new jsPDF();
   registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
   const companyName = company?.name || "Unknown";
   const entityType = company?.entity_type || "Corporation";
   const meetingDate = new Date(meeting.meeting_date + "T00:00:00").toLocaleDateString();
