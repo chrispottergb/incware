@@ -240,7 +240,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
           body: { shareholder_id: shareholderId, ssn_ein: ssnValue },
         });
         if (encError) {
-          console.error("SSN encryption error:", encError);
+          console.error("Encryption error:", encError);
           toast.error("Shareholder saved but SSN/EIN encryption failed. Please try editing again.");
         }
       }
