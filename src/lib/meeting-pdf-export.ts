@@ -1606,7 +1606,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         "Name",
         "Address",
         isLLC ? "Membership Units" : "Common Shares",
-        isLLC ? "Membership Interest %" : "Preferred Shares",
+        isLLC ? "Membership Interest %" : "Ownership %",
         ...(hasDistribution ? ["Distribution Amount"] : []),
       ]],
       body: data.shareholders.map(s => {
