@@ -3416,6 +3416,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      migrate_legacy_ssn: { Args: { p_encryption_key: string }; Returns: Json }
       recalculate_ownership_percentages: {
         Args: { p_company_id: string }
         Returns: undefined
