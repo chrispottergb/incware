@@ -147,12 +147,21 @@ export default function LeaseTransactionDialog({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <DatePickerField label="Lease Date" value={form.lease_date} onChange={(v) => handleChange("lease_date", v)} />
-            <DatePickerField label="Start Date" value={form.lease_start_date} onChange={(v) => handleChange("lease_start_date", v)} />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Lease Date</Label>
+              <DatePickerField value={form.lease_date} onChange={(v) => handleChange("lease_date", v)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Start Date</Label>
+              <DatePickerField value={form.lease_start_date} onChange={(v) => handleChange("lease_start_date", v)} />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <DatePickerField label="End Date" value={form.lease_end_date} onChange={(v) => handleChange("lease_end_date", v)} />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">End Date</Label>
+              <DatePickerField value={form.lease_end_date} onChange={(v) => handleChange("lease_end_date", v)} />
+            </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Lease Term</Label>
               <Input value={form.lease_term} onChange={(e) => handleChange("lease_term", e.target.value)} placeholder="e.g. 12 months" />
