@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, CheckCircle2 } from "lucide-react";
+import { Users, CheckCircle2, XCircle } from "lucide-react";
 
 interface Director {
   id: string;
@@ -15,14 +15,27 @@ interface Shareholder {
 
 interface Props {
   directors: Director[];
+  meetingDirectorNames: string[];
   shareholders: Shareholder[];
   directorLabel?: string;
   directorsLabel?: string;
   shareholdersLabel?: string;
 }
 
-export default function DirectorReElection({ directors, shareholders, directorLabel = "Director", directorsLabel = "Directors", shareholdersLabel = "Shareholders" }: Props) {
+export default function DirectorReElection({ directors, meetingDirectorNames, shareholders, directorLabel = "Director", directorsLabel = "Directors", shareholdersLabel = "Shareholders" }: Props) {
   if (directors.length === 0) return null;
+
+  const normalizedMeetingNames = meetingDirectorNames.map(n => n.trim().toLowerCase());
+
+  const approvedDirectors = directors.filter(d =>
+    normalizedMeetingNames.includes(d.name.trim().toLowerCase())
+  );
+  const notReElectedDirectors = directors.filter(d =>
+    !normalizedMeetingNames.includes(d.name.trim().toLowerCase())
+  );
+
+  const allApproved = notReElectedDirectors.length === 0 && approvedDirectors.length > 0;
+  const actionWord = directorLabel === "Director" ? "election" : "appointment";
 
   return (
     <Card>
@@ -32,7 +45,7 @@ export default function DirectorReElection({ directors, shareholders, directorLa
           <CardTitle className="font-display text-base">{directorLabel} Re-{directorLabel === "Director" ? "Election" : "Appointment"}</CardTitle>
         </div>
         <CardDescription className="text-xs">
-          Current {directorsLabel.toLowerCase()} nominated for re-{directorLabel === "Director" ? "election" : "appointment"} by {shareholdersLabel.toLowerCase()}
+          Current {directorsLabel.toLowerCase()} nominated for re-{actionWord} by {shareholdersLabel.toLowerCase()}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -52,10 +65,10 @@ export default function DirectorReElection({ directors, shareholders, directorLa
 
           <div className="rounded-md border border-border">
             <div className="px-3 py-2 bg-muted/40 border-b border-border">
-              <p className="text-xs font-semibold">{directorsLabel} Nominated for Re-{directorLabel === "Director" ? "Election" : "Appointment"}</p>
+              <p className="text-xs font-semibold">{directorsLabel} — Re-{directorLabel === "Director" ? "Election" : "Appointment"} Status</p>
             </div>
             <div className="divide-y divide-border">
-              {directors.map((d) => (
+              {approvedDirectors.map((d) => (
                 <div key={d.id} className="flex items-center justify-between px-3 py-2.5">
                   <span className="text-sm font-medium">{d.name}</span>
                   <div className="flex items-center gap-1.5 text-xs text-green-600">
@@ -64,11 +77,22 @@ export default function DirectorReElection({ directors, shareholders, directorLa
                   </div>
                 </div>
               ))}
+              {notReElectedDirectors.map((d) => (
+                <div key={d.id} className="flex items-center justify-between px-3 py-2.5 opacity-60">
+                  <span className="text-sm font-medium text-muted-foreground">{d.name}</span>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <XCircle className="h-3.5 w-3.5" />
+                    Not Re-elected
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
           <p className="text-[11px] text-muted-foreground italic">
-            All current {directorsLabel.toLowerCase()} have been nominated and approved for re-{directorLabel === "Director" ? "election" : "appointment"} to serve until the next annual meeting of {shareholdersLabel.toLowerCase()}.
+            {allApproved
+              ? `All current ${directorsLabel.toLowerCase()} have been nominated and approved for re-${actionWord} to serve until the next annual meeting of ${shareholdersLabel.toLowerCase()}.`
+              : `Selected ${directorsLabel.toLowerCase()} have been approved for re-${actionWord} at this meeting.`}
           </p>
         </div>
       </CardContent>
