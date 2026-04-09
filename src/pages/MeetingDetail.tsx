@@ -520,42 +520,51 @@ export default function MeetingDetail() {
       toast.error("All officers must have a Compensation Status set (with [REASON] resolved) before generating minutes.");
       return null as any;
     }
-    return exportMeetingMinutesPDF({
-      meeting,
-      company,
-      shareholders: hydratedMeetingShareholders,
-      directors,
-      officers,
-      counsel,
-      assets,
-      amendments,
-      resolutions,
-      benefits,
-      loans,
-      agreements,
-      other,
-      financials,
-      nonRecurringItems,
-      authorizedSigners,
-      capitalAssets,
-      vehicleLeases,
-      leaseTerminations,
-      balanceEntries,
-      priorYear: priorMeetingId ? {
-        officers: priorOfficers,
-        benefits: priorBenefits,
-        loans: priorLoans,
-        authorizedSigners: priorSigners,
-      } : undefined,
-      companyOfficers: companyOfficers || undefined,
-      companyShareholders,
-      companyDirectors,
-      companyBanks,
-      companyBankSigners,
-      companyAttorneys,
-      companyAccountants,
-      companyLeases,
-    });
+    try {
+      console.log("[generateFullMinutes] Starting PDF generation...");
+      const doc = exportMeetingMinutesPDF({
+        meeting,
+        company,
+        shareholders: hydratedMeetingShareholders,
+        directors,
+        officers,
+        counsel,
+        assets,
+        amendments,
+        resolutions,
+        benefits,
+        loans,
+        agreements,
+        other,
+        financials,
+        nonRecurringItems,
+        authorizedSigners,
+        capitalAssets,
+        vehicleLeases,
+        leaseTerminations,
+        balanceEntries,
+        priorYear: priorMeetingId ? {
+          officers: priorOfficers,
+          benefits: priorBenefits,
+          loans: priorLoans,
+          authorizedSigners: priorSigners,
+        } : undefined,
+        companyOfficers: companyOfficers || undefined,
+        companyShareholders,
+        companyDirectors,
+        companyBanks,
+        companyBankSigners,
+        companyAttorneys,
+        companyAccountants,
+        companyLeases,
+      });
+      console.log("[generateFullMinutes] PDF generation completed successfully.");
+      return doc;
+    } catch (err: any) {
+      console.error("[generateFullMinutes] PDF generation crashed:", err);
+      toast.error("Failed to generate meeting minutes PDF: " + (err?.message || "Unknown error"));
+      return null as any;
+    }
   };
 
   const term = getTerminology(company?.entity_type);
