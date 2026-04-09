@@ -1327,7 +1327,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               {data.includeBanking && renderTable("bankAccounts", [
                     { key: "institution", label: "Institution" },
                     { key: "accountType", label: "Account Type" },
-                    { key: "signatory", label: "Auth. Signatory" },
+                    { key: "signatory", label: "Auth. Signer" },
                     { key: "title", label: "Title" },
                   ], { institution: "", accountType: "", signatory: "", title: "" })}
 
