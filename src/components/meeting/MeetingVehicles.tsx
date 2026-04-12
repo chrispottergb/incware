@@ -186,7 +186,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
     },
   });
 
-
+  const { data: leaseTerminations = [] } = useQuery({
     queryKey: ["meeting_lease_terminations", meetingId],
     queryFn: async () => {
       const { data, error } = await supabase
