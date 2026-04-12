@@ -503,6 +503,21 @@ export default function MeetingVehicles({ meetingId }: Props) {
     setLeaseTermOpen(true);
   };
 
+  const openEditSale = (row: any) => {
+    setEditingSaleId(row.id);
+    setSaleForm({
+      year_make_model: row.year_make_model || "",
+      vin: row.vin || "",
+      sale_date: row.sale_date || "",
+      sale_price: row.sale_price?.toString() || "",
+      buyer_name: row.buyer_name || "",
+      business_use_description: row.business_use_description || "",
+      reason_for_sale: row.reason_for_sale || "",
+      notes: row.notes || "",
+    });
+    setSaleOpen(true);
+  };
+
   const fmt = (v: any) =>
     v != null ? `$${Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—";
 
@@ -512,6 +527,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
   const af = (key: keyof AssetForm, value: string | boolean) => setAssetForm(prev => ({ ...prev, [key]: value as any }));
   const lf = (key: keyof LeaseForm, value: string) => setLeaseForm(prev => ({ ...prev, [key]: value }));
   const ltf = (key: keyof LeaseTermForm, value: string | boolean) => setLeaseTermForm(prev => ({ ...prev, [key]: value }));
+  const sf = (key: keyof VehicleSaleForm, value: string) => setSaleForm(prev => ({ ...prev, [key]: value }));
 
   const sellerLabel = ["Sold", "Donated"].includes(assetForm.transaction_type) ? "Buyer / Recipient" : "Seller";
 
