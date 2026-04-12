@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import loginHero from "@/assets/login-hero.jpg";
+
+const RATE_LIMIT_MS = 3000; // 3 seconds between submissions
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -16,6 +18,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const lastSubmitRef = useRef(0);
 
   if (session) {
     return <Navigate to="/" replace />;
@@ -23,11 +26,35 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Rate limiting
+    const now = Date.now();
+    if (now - lastSubmitRef.current < RATE_LIMIT_MS) {
+      toast({ title: "Please wait", description: "Too many attempts. Try again in a few seconds.", variant: "destructive" });
+      return;
+    }
+    lastSubmitRef.current = now;
+
+    // Input validation
+    const trimmedEmail = email.trim();
+    if (trimmedEmail.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
+      return;
+    }
+    if (password.length < 6 || password.length > 128) {
+      toast({ title: "Invalid password", description: "Password must be between 6 and 128 characters.", variant: "destructive" });
+      return;
+    }
+    if (isSignUp && (fullName.trim().length === 0 || fullName.trim().length > 100)) {
+      toast({ title: "Invalid name", description: "Name must be between 1 and 100 characters.", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
 
     const { error } = isSignUp
-      ? await signUp(email, password, fullName)
-      : await signIn(email, password);
+      ? await signUp(trimmedEmail, password, fullName.trim())
+      : await signIn(trimmedEmail, password);
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
