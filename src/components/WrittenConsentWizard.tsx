@@ -891,7 +891,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         onClose?.();
       }
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => { console.error("Consent delete failed:", err); toast.error("Failed to delete consent."); },
   });
 
   const progressPct = ((step + 1) / STEPS.length) * 100;
