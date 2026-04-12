@@ -76,6 +76,7 @@ const CATEGORY_MAP: Record<string, ActionCategory> = {
   "Approve Distributions": "Financial/Capital Transactions",
   "Approve Member Distributions": "Financial/Capital Transactions",
   "Approve Partner Distributions": "Financial/Capital Transactions",
+  "Approve Charitable Contributions": "Operations",
   "Other": "Other",
 };
 

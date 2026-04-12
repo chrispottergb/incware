@@ -163,6 +163,9 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
           text = text.replace(/\[YEAR\]/g, year);
         }
         setResolutionText(text);
+      } else {
+        // "Other" or any type without a template — clear for custom input
+        setResolutionText("");
       }
     }
   };
