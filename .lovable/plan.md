@@ -1,27 +1,46 @@
 
 
-## Fix: Rename "Preferred" column to "Ownership %" in Annual Meeting shareholders table
+## Plan: Add Multiple Resolutions Support to WrittenConsentWizard
 
-### Problem
-In `src/pages/MeetingDetail.tsx`, the shareholders table inside the Annual Meeting view labels the column "Preferred" for corporations. However, the data mapped to this column (`preferred_shares`) is actually the ownership percentage (confirmed at line 120: `preferred_shares: ownershipPct.toFixed(2)`). The label is wrong; the data is correct.
+### Summary
+Mount `MeetingResolutions` inside the wizard's Step 3 and add an `excludeResolutionIds` filter prop to prevent duplicate display of the primary resolution.
 
-### Changes — single file: `src/pages/MeetingDetail.tsx`
+### Changes
 
-1. **Line 781** — Column definition: Change label from `"Preferred"` to `"Ownership %"`
+#### File 1: `src/components/meeting/MeetingResolutions.tsx`
+
+1. **Add `excludeResolutionIds` to Props interface** (line 39-47): Add optional `excludeResolutionIds?: string[]` prop.
+
+2. **Update component signature** (line 49): Destructure the new prop.
+
+3. **Filter displayed resolutions** (line 319): Replace `resolutions.map(...)` with a filtered list that excludes IDs in `excludeResolutionIds`. Also apply the same filter to `unlinkedTransferResolutions` computation (line 228-231).
+
+#### File 2: `src/components/WrittenConsentWizard.tsx`
+
+1. **Import MeetingResolutions** at the top of the file.
+
+2. **Add "Additional Resolutions" section in Step 3** (after line 1201, before `</div>` at line 1202): Conditionally render when both `draftMeetingId` and `wizardResolutionId` exist:
    ```
-   // Before
-   label: term.isLLC ? "Interest %" : "Preferred"
-   // After
-   label: term.isLLC ? "Interest %" : "Ownership %"
+   {draftMeetingId && wizardResolutionId && (
+     <div className="border-t pt-4 mt-4">
+       <h4 className="text-sm font-semibold mb-2">Additional Resolutions</h4>
+       <MeetingResolutions
+         meetingId={draftMeetingId}
+         entityType={company.entity_type}
+         companyId={company.id}
+         companyName={company.name}
+         meetingDate={effectiveDate}
+         excludeResolutionIds={[wizardResolutionId]}
+       />
+     </div>
+   )}
    ```
 
-2. **Line 754** — PDF export header array: Change `"Preferred"` to `"Ownership %"`
-   ```
-   // Before
-   term.isLLC ? "Interest %" : "Preferred"
-   // After
-   term.isLLC ? "Interest %" : "Ownership %"
-   ```
+3. **Ensure draft is saved before Additional Resolutions appear**: The wizard already saves the draft (and sets `draftMeetingId` + `wizardResolutionId`) when advancing steps or via auto-save. We'll also add a small "Save & Add More" button that calls `saveDraft()` if the user hasn't navigated away from Step 3 yet, so the section appears after the first resolution is persisted without requiring a step change.
 
-No other files need changes. The Shareholders & Stock tab, other meeting types, data mappings, and PDF generators remain untouched.
+### No database migration needed
+The `meeting_resolutions` table already supports multiple rows per `meeting_id`.
+
+### Verification
+After implementation: first resolution saved in wizard textarea → "Additional Resolutions" section appears below → Add button opens dialog → new resolution saves as separate row → list refreshes → primary resolution excluded from list → all persist on reopen.
 
