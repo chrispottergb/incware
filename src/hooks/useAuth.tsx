@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { useSessionIdleTimeout } from "@/hooks/useSessionIdleTimeout";
 
 interface AuthContextType {
   session: Session | null;
@@ -13,10 +14,29 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/** Clear all Supabase-related localStorage and sessionStorage keys */
+function clearResidualStorage() {
+  try {
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith("sb-") || key.startsWith("supabase.auth")) {
+        localStorage.removeItem(key);
+      }
+    });
+    Object.keys(sessionStorage).forEach((key) => {
+      if (key.startsWith("annual_meeting_draft_")) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  } catch {}
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Idle timeout: auto sign-out after 30 min inactivity
+  useSessionIdleTimeout(!!session);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -25,9 +45,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Validate existing session on app init
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error || !session) {
+        // Invalid or expired session — clear residual storage
+        clearResidualStorage();
+        setSession(null);
+        setUser(null);
+      } else {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
       setLoading(false);
     });
 
@@ -52,15 +80,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    // Clear wizard draft sessionStorage keys on sign out
-    try {
-      Object.keys(sessionStorage).forEach(key => {
-        if (key.startsWith("annual_meeting_draft_")) {
-          sessionStorage.removeItem(key);
-        }
-      });
-    } catch {}
     await supabase.auth.signOut();
+    clearResidualStorage();
   };
 
   return (
