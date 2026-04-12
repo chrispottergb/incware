@@ -28,6 +28,9 @@ import {
   AlertTriangle,
   User,
   Loader2,
+} from "lucide-react";
+import MeetingResolutions from "@/components/meeting/MeetingResolutions";
+// rest of imports continue below
   Check,
   Eye,
 } from "lucide-react";
