@@ -172,7 +172,21 @@ export default function MeetingVehicles({ meetingId }: Props) {
     },
   });
 
-  const { data: leaseTerminations = [] } = useQuery({
+  // ── Query vehicle sales ──
+  const { data: vehicleSales = [] } = useQuery({
+    queryKey: ["meeting_vehicle_sales", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meeting_vehicle_sales" as any)
+        .select("*")
+        .eq("meeting_id", meetingId)
+        .order("created_at");
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+
     queryKey: ["meeting_lease_terminations", meetingId],
     queryFn: async () => {
       const { data, error } = await supabase
