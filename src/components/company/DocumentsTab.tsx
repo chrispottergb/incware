@@ -129,8 +129,27 @@ export default function DocumentsTab({ companyId }: Props) {
     return acc;
   }, {} as Record<string, typeof documents>);
 
+  const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+  const ALLOWED_EXTENSIONS = [".pdf",".doc",".docx",".xls",".xlsx",".csv",".txt",".rtf",".jpg",".jpeg",".png"];
+
   const handleUpload = async (files: FileList | null) => {
     if (!files || !user) return;
+
+    // Validate files before uploading
+    for (const file of Array.from(files)) {
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`File "${file.name}" exceeds the 20 MB size limit.`);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+      const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
+      if (!ALLOWED_EXTENSIONS.includes(ext)) {
+        toast.error(`File type "${ext}" is not allowed. Accepted: ${ALLOWED_EXTENSIONS.join(", ")}`);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+    }
+
     setUploading(true);
     try {
       for (const file of Array.from(files)) {
@@ -155,8 +174,8 @@ export default function DocumentsTab({ companyId }: Props) {
       }
       queryClient.invalidateQueries({ queryKey: ["company_documents", companyId] });
       toast.success(`${files.length} file(s) uploaded`);
-    } catch (err: any) {
-      toast.error(err.message || "Upload failed");
+    } catch {
+      toast.error("Upload failed. Please try again.");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -181,8 +200,8 @@ export default function DocumentsTab({ companyId }: Props) {
       a.download = doc.file_name;
       a.click();
       URL.revokeObjectURL(url);
-    } catch (err: any) {
-      toast.error(err.message || "Download failed");
+    } catch {
+      toast.error("Download failed. Please try again.");
     }
   };
 

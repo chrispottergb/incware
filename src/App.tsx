@@ -26,6 +26,7 @@ const Profile = lazy(() => import("@/pages/Profile"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const AnnualReviewPublic = lazy(() => import("@/pages/AnnualReviewPublic"));
 const PendingReviews = lazy(() => import("@/pages/PendingReviews"));
+const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
           <Suspense fallback={<PageFallback />}>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route
               path="/"
               element={

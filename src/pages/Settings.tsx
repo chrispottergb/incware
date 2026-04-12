@@ -65,8 +65,8 @@ export default function Settings() {
       toast({ title: editing ? "Shortcode updated" : "Shortcode created" });
       closeDialog();
     },
-    onError: (e: any) => {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
+    onError: () => {
+      toast({ title: "Error", description: "Failed to save shortcode. Please try again.", variant: "destructive" });
     },
   });
 
