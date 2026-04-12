@@ -688,6 +688,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     shareholderHoldings,
     signers,
     totalIssuedShares,
+    wizardResolutionId,
   ]);
 
   // ---------- LOAD EXISTING DATA ----------
