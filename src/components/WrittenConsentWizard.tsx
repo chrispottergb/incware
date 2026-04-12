@@ -82,6 +82,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
 
   const [step, setStep] = useState(0);
   const [draftMeetingId, setDraftMeetingId] = useState<string | null>(existingMeetingId || null);
+  const [wizardResolutionId, setWizardResolutionId] = useState<string | null>(null);
   const [loadingExisting, setLoadingExisting] = useState(!!existingMeetingId);
 
   // Step 1: Entity
