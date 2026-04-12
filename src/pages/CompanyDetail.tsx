@@ -100,7 +100,7 @@ export default function CompanyDetail() {
   const defaultTab = isLLC ? "organization" : "incorporation";
 
   // Valid tab values for LLC vs non-LLC to prevent reversion
-  const LLC_TABS = ["organization", "meetings", "shareholders", "timeline", "leases", "counsel", "banks", "relationships", "ai-compliance", "operating-agreement", "filing-compliance", "record-book", "documents"];
+  const LLC_TABS = ["organization", "meetings", "shareholders", "timeline", "leases", "counsel", "banks", "relationships", "ai-compliance", "operating-agreement", "filing-compliance", "record-book", "documents", "business-sales"];
   const validLLCTab = isLLC && rawHashTab && !LLC_TABS.includes(rawHashTab);
   const hashTab = (!rawHashTab || (rawHashTab === "incorporation" && isLLC) || validLLCTab) ? defaultTab : rawHashTab;
 
@@ -125,6 +125,7 @@ export default function CompanyDetail() {
         { value: "relationships", label: "Relationships" },
         { value: "ai-compliance", label: "AI Compliance" },
         { value: "operating-agreement", label: "Operating Agreement" },
+        { value: "business-sales", label: "Business Sales" },
         { value: "filing-compliance", label: "Filing & Compliance" },
         { value: "record-book", label: "Record Book" },
         { value: "documents", label: "Documents" },
