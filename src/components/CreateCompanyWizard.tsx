@@ -424,9 +424,9 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
       toast.success("Company created successfully!");
       handleClose();
       navigate(`/company/${companyId}`);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Create company error:", err);
-      toast.error(err.message || "Failed to create company");
+      toast.error("Failed to create company. Please try again.");
     } finally {
       setSaving(false);
     }

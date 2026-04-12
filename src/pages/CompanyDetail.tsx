@@ -70,9 +70,9 @@ export default function CompanyDetail() {
       queryClient.invalidateQueries({ queryKey: ["companies"] });
       toast.success("Company and all associated data have been permanently deleted.");
       navigate("/");
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      toast.error(err.message || "Failed to delete company");
+      toast.error("Failed to delete company. Please try again.");
     } finally {
       setDeleting(false);
       setDeleteOpen(false);
