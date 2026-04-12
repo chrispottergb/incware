@@ -102,7 +102,8 @@ export default function LeaseTransactionDialog({
       resetForm();
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(err.message || "Failed to create lease");
+      console.error("Lease creation failed:", err);
+      toast.error("Failed to create lease. Please try again.");
     } finally {
       setSaving(false);
     }

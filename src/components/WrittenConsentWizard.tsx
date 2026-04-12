@@ -231,7 +231,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       setNoteStep("preview");
     } catch (err: any) {
       console.error("Promissory note preview failed:", err);
-      toast.error(err.message || "Failed to generate preview");
+      toast.error("Failed to generate preview. Please try again.");
     } finally {
       setPreviewLoading(false);
     }
@@ -243,7 +243,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       toast.success("Promissory note draft saved.");
     } catch (err: any) {
       console.error("Promissory note draft save failed:", err);
-      toast.error(err.message || "Failed to save promissory note draft.");
+      toast.error("Failed to save promissory note draft.");
     }
   };
 
@@ -315,7 +315,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       toast.success("Promissory note saved.");
     } catch (err: any) {
       console.error("Promissory note save failed:", err);
-      toast.error(err.message || "Failed to save promissory note");
+      toast.error("Failed to save promissory note. Please try again.");
     } finally {
       setSavingNotePdf(false);
     }
@@ -778,7 +778,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       await saveDraft();
     } catch (err: any) {
       console.error("Draft save failed:", err);
-      toast.error(err.message || "Could not save your written consent draft.");
+      toast.error("Could not save your written consent draft.");
       return;
     }
     setStep((prev) => prev + 1);
@@ -793,7 +793,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       setConsentPreviewPages(pages);
     } catch (err: any) {
       console.error("Consent PDF preview failed:", err);
-      toast.error(err.message || "Failed to generate written consent preview.");
+      toast.error("Failed to generate written consent preview.");
     } finally {
       setConsentPreviewLoading(false);
     }
@@ -866,7 +866,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       toast.success("Written consent PDF saved.");
     } catch (err: any) {
       console.error("Consent PDF save failed:", err);
-      toast.error(err.message || "Failed to save written consent PDF.");
+      toast.error("Failed to save written consent PDF.");
     } finally {
       setSavingConsentPdf(false);
     }
@@ -891,7 +891,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         onClose?.();
       }
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => { console.error("Consent delete failed:", err); toast.error("Failed to delete consent."); },
   });
 
   const progressPct = ((step + 1) / STEPS.length) * 100;

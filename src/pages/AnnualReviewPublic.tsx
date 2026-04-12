@@ -341,7 +341,7 @@ export default function AnnualReviewPublic() {
       toast.success("Annual review submitted successfully!");
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || "Failed to submit review");
+      toast.error("Failed to submit review. Please try again.");
     } finally {
       setSubmitting(false);
     }
