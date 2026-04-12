@@ -5,6 +5,7 @@ import { X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ReactMarkdown from "react-markdown";
+import DOMPurify from "dompurify";
 
 interface ResourcesPanelProps {
   category: string;
@@ -54,7 +55,7 @@ export default function ResourcesPanel({ category, onClose }: ResourcesPanelProp
                 {r.content_type === "html" && r.content && (
                   <div
                     className="prose prose-sm max-w-none dark:prose-invert"
-                    dangerouslySetInnerHTML={{ __html: r.content }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(r.content) }}
                   />
                 )}
 
