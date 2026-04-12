@@ -31,6 +31,7 @@ import {
   Check,
   Eye,
 } from "lucide-react";
+import MeetingResolutions from "@/components/meeting/MeetingResolutions";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { isLLCType, getTerminology } from "@/lib/entity-terminology";
@@ -1197,6 +1198,21 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
               <p className="text-[10px] text-muted-foreground mt-1.5">
                 Generate a pre-filled promissory note to accompany this resolution.
               </p>
+            </div>
+           )}
+
+          {/* Additional Resolutions via MeetingResolutions */}
+          {draftMeetingId && wizardResolutionId && (
+            <div className="border-t border-border pt-4 mt-4">
+              <h4 className="text-sm font-semibold mb-2">Additional Resolutions</h4>
+              <MeetingResolutions
+                meetingId={draftMeetingId}
+                entityType={company.entity_type}
+                companyId={company.id}
+                companyName={company.name}
+                meetingDate={effectiveDate}
+                excludeResolutionIds={[wizardResolutionId]}
+              />
             </div>
           )}
         </div>
