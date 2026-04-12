@@ -723,9 +723,11 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
           .from("meeting_resolutions")
           .select("*")
           .eq("meeting_id", existingMeetingId)
+          .order("created_at", { ascending: true })
           .limit(1);
         if (resolutions && resolutions.length > 0) {
           setResolutionText(resolutions[0].resolution_text || "");
+          setWizardResolutionId(resolutions[0].id);
           if (!meeting.sub_type && resolutions[0].purpose) {
             setSelectedAction(resolutions[0].purpose);
           }
