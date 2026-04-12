@@ -899,7 +899,8 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       onMeetingCreated?.();
       onClose?.();
     } catch (err: any) {
-      toast.error(err.message || "Failed to save meeting");
+      console.error("Meeting save failed:", err);
+      toast.error("Failed to save meeting. Please try again.");
     } finally {
       setSaving(false);
     }

@@ -231,7 +231,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       setNoteStep("preview");
     } catch (err: any) {
       console.error("Promissory note preview failed:", err);
-      toast.error(err.message || "Failed to generate preview");
+      toast.error("Failed to generate preview. Please try again.");
     } finally {
       setPreviewLoading(false);
     }
@@ -243,7 +243,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       toast.success("Promissory note draft saved.");
     } catch (err: any) {
       console.error("Promissory note draft save failed:", err);
-      toast.error(err.message || "Failed to save promissory note draft.");
+      toast.error("Failed to save promissory note draft.");
     }
   };
 
