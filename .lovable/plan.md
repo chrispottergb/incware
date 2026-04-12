@@ -1,77 +1,52 @@
 
 
-# QA Findings — Broken, Incomplete, or Inconsistent Functionality
+# Orphaned Backend — No UI Surface
 
-## Issues Found
+## Findings
 
-### 1. ResetPassword Race Condition (HIGH)
-**File:** `src/pages/ResetPassword.tsx`
+| Backend Asset | Type | UI Surface | Status |
+|---|---|---|---|
+| **`business_sales`** table | DB table (buyer, seller, sale_type, price, financing, status) | Zero references in any component | **ORPHANED** — fully provisioned table with no CRUD UI anywhere |
+| **`meeting_vehicle_sales`** table | DB table (year_make_model, buyer, sale_price, VIN, reason) | Zero references in any component | **ORPHANED** — vehicle purchases and leases have UI in `MeetingVehicles.tsx`, but vehicle *sales* do not |
+| **`encrypt-legacy-ssn`** edge function | Edge function (bulk migrates plaintext SSN→encrypted) | Zero frontend callers | **ORPHANED** — admin utility with no trigger button or admin page |
+| **`tax_return_jobs`** table | DB table (status, result, file_path) | Only referenced *indirectly* via edge functions `parse-tax-return` and `poll-tax-return-job` | **PARTIAL** — `TaxReturnUpload.tsx` calls the edge functions but never queries the table directly; no job history or status UI |
 
-The `PASSWORD_RECOVERY` event fires from `onAuthStateChange` when the recovery token is exchanged. But the `useEffect` also subscribes to `onAuthStateChange` inside the ResetPassword component. There's a race: if `getSession()` in `AuthProvider` processes the recovery token *before* the ResetPassword component mounts, the `PASSWORD_RECOVERY` event is already consumed and `isRecovery` stays `false`. The user sees "This link is invalid" even though it's valid.
-
-**Fix:** Check for an active session on mount — if a session exists and the URL contains recovery params, set `isRecovery = true`.
-
-### 2. Idle Timeout Throttle Bug (MEDIUM)
-**File:** `src/hooks/useSessionIdleTimeout.ts`
-
-The `handleActivity` callback only updates `lastActivityRef.current` when elapsed > 60s. But since it's created with `useCallback([], [])` (empty deps), the closure is stable. The real issue: the very first mouse event after initialization **does** update the ref (since `Date.now() - initial > 60s` will eventually be true). But if a user is continuously active, the ref updates at most once per minute, meaning the idle check can fire up to 60 seconds early. This is a minor inaccuracy but could cause unexpected sign-outs at 29 minutes of activity.
-
-**Fix:** Change the condition to `>=` and ensure the ref is updated on the *first* activity event unconditionally.
-
-### 3. 265 Raw Error Messages Still Exposed (HIGH)
-**Files:** 25 files across the codebase
-
-Only 4 key catch blocks were sanitized in the last pass. 265 instances of `catch (err: any)` remain, many displaying `err.message` directly to users via `toast.error()`. Key offenders:
-- `AnnualMeetingWizard.tsx` (3 instances) 
-- `WrittenConsentWizard.tsx` (9 instances)
-- `PrintPreviewButton.tsx` (3 instances)
-- `AnnualReviewPublic.tsx` (1 instance)
-- `PendingReviews.tsx` (1 instance)
-- `LeaseTransactionDialog.tsx` (1 instance)
-
-**Fix:** Replace `err.message` with generic messages; keep `console.error(err)` for debugging.
-
-### 4. `text-success` CSS Class Missing (LOW)
-**File:** `src/pages/ResetPassword.tsx` line 86
-
-`<CheckCircle2 className="... text-success" />` — Tailwind/shadcn doesn't define `text-success` by default. This will render with no color applied.
-
-**Fix:** Use `text-green-600` or define a `success` color in `tailwind.config.ts`.
-
-### 5. No "Load More" UI for Paginated Queries (MEDIUM)
-**Files:** `Dashboard.tsx`, `Reports.tsx`
-
-Queries now use `.range(0, 499)`, capping at 500 companies. But there's no UI indication when results are truncated, no "Load More" button, and no total count displayed. Users with 500+ companies will have silently missing data.
-
-**Fix:** Add a count query and show a "Load More" or pagination control when `companies.length === 500`.
-
-### 6. Auth Form Loading State Not Reset on Forgot Password (LOW)
-**File:** `src/pages/Auth.tsx` line 53
-
-After `handleForgotPassword` completes and sets `isForgot(false)`, the `loading` state is reset. However, if the Supabase call fails (network error), `loading` stays false correctly. No actual bug here — this is fine.
+### Not orphaned (confirmed wired)
+- `decrypt_ssn_ein`, `encrypt_ssn_ein`, `encrypt_shareholder_ssn`, `extract_company_id_from_path`, `recalculate_ownership_percentages`, `migrate_legacy_ssn`, `has_role` — these are DB functions/views, not tables needing UI
+- `master_contacts`, `master_firms` — used in `useMasterDirectory.ts`
+- `registered_agent_history` — used in `OrganizationTab.tsx`
+- `document_registry` — used in 7 generator components
+- `user_invitations` — used in `UserManagement.tsx`
 
 ---
 
-## Implementation Plan
+## Remediation Plan
 
-### Step 1: Fix ResetPassword recovery detection
-Add a session check on mount: if `supabase.auth.getSession()` returns a valid session after the URL contains recovery params, set `isRecovery = true`.
+### 1. Add Vehicle Sales sub-tab to MeetingVehicles (HIGH)
+**File:** `src/components/meeting/MeetingVehicles.tsx`
 
-### Step 2: Sanitize remaining error messages (top 6 files)
-Replace `err.message` with generic text in:
-- `AnnualMeetingWizard.tsx`
-- `WrittenConsentWizard.tsx`  
-- `PrintPreviewButton.tsx`
-- `AnnualReviewPublic.tsx`
-- `PendingReviews.tsx`
-- `LeaseTransactionDialog.tsx`
+The component already has "Owned Vehicles" and "Leased Vehicles" sections. Add a third section for "Vehicle Sales" with the same CRUD pattern, querying `meeting_vehicle_sales`. This mirrors the existing purchase/lease pattern exactly.
 
-### Step 3: Fix `text-success` class
-Replace with `text-green-600` in `ResetPassword.tsx`.
+### 2. Add Business Sales tab to Company Detail (MEDIUM)
+**File:** New `src/components/company/BusinessSalesTab.tsx`
 
-### Step 4: Add truncation warning for paginated queries
-Add a small banner/note on Dashboard when `companies.length >= 500` indicating not all companies are shown.
+Create a CRUD component for the `business_sales` table (buyer, seller, sale type, price, date, status, notes). Wire it as a new tab in `CompanyDetail.tsx`. This table tracks asset/business sales with financing terms and statute references — it's a complete schema with no UI.
 
-### Step 5: Fix idle timeout throttle precision
-Update `handleActivity` to always record the first event after a gap.
+### 3. Add "Migrate Legacy SSNs" button to admin UI (LOW)
+**File:** `src/pages/UserManagement.tsx` or a new admin utilities section
+
+Add a button that calls the `encrypt-legacy-ssn` edge function. This is an admin-only one-time migration utility. Could also be a standalone admin page.
+
+### 4. Add Tax Return Job History (LOW)
+**File:** `src/components/TaxReturnUpload.tsx`
+
+Add a small table below the upload area showing `tax_return_jobs` status (pending/complete/failed) so users can see processing history and retry failed jobs.
+
+---
+
+### Technical details
+- Vehicle sales follows the identical pattern in `MeetingVehicles.tsx` — same `useQuery`/`useMutation` with `meeting_vehicle_sales` table
+- Business sales table has: `buyer_name`, `seller_name`, `sale_type`, `consideration_type`, `total_price`, `financing_terms`, `sale_date`, `status`, `notes`, `property_description`, `statute_reference`
+- No database migrations needed — all tables exist
+- `encrypt-legacy-ssn` requires `SSN_ENCRYPTION_KEY` secret and admin auth
 
