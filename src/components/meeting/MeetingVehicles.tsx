@@ -897,6 +897,111 @@ export default function MeetingVehicles({ meetingId }: Props) {
           )}
         </CardContent>
       </Card>
+
+      {/* ════ Section 4: Vehicle Sales ════ */}
+      <Card>
+        <CardHeader className="pb-3 flex flex-row items-center justify-between">
+          <CardTitle className="font-display text-base">Vehicles Sold During the Year</CardTitle>
+          <Dialog open={saleOpen} onOpenChange={(open) => { if (!open) closeSaleDialog(); else setSaleOpen(true); }}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline" onClick={() => { setEditingSaleId(null); setSaleForm(emptyVehicleSale); }}>
+                <Plus className="mr-2 h-4 w-4" /> Add Sale
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="font-display">{editingSaleId ? "Edit Vehicle Sale" : "Add Vehicle Sale"}</DialogTitle>
+                <DialogDescription>Record a vehicle sold or disposed of during the year.</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={(e) => { e.preventDefault(); editingSaleId ? updateVehicleSale.mutate() : addVehicleSale.mutate(); }} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Year / Make / Model</Label>
+                    <Input value={saleForm.year_make_model} onChange={(e) => sf("year_make_model", e.target.value)} placeholder="e.g., 2020 Ford F-150" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">VIN / Serial No.</Label>
+                    <Input value={saleForm.vin} onChange={(e) => sf("vin", e.target.value)} placeholder="Identification number" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Sale Date</Label>
+                    <DatePickerField value={saleForm.sale_date} onChange={(v) => sf("sale_date", v)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Sale Price ($)</Label>
+                    <Input type="number" step="0.01" value={saleForm.sale_price} onChange={(e) => sf("sale_price", e.target.value)} placeholder="0.00" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Buyer Name</Label>
+                    <Input value={saleForm.buyer_name} onChange={(e) => sf("buyer_name", e.target.value)} placeholder="Name of buyer" />
+                  </div>
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Business Use Description</Label>
+                    <Textarea value={saleForm.business_use_description} onChange={(e) => sf("business_use_description", e.target.value)} rows={2} placeholder="Describe the business use…" />
+                  </div>
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Reason for Sale</Label>
+                    <Input value={saleForm.reason_for_sale} onChange={(e) => sf("reason_for_sale", e.target.value)} placeholder="e.g., Upgraded fleet, High mileage" />
+                  </div>
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Notes</Label>
+                    <Textarea value={saleForm.notes} onChange={(e) => sf("notes", e.target.value)} rows={2} placeholder="Additional notes…" />
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" disabled={addVehicleSale.isPending || updateVehicleSale.isPending || !saleForm.year_make_model}>
+                  {(addVehicleSale.isPending || updateVehicleSale.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {editingSaleId ? "Save Changes" : "Add Sale"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </CardHeader>
+        <CardContent>
+          {vehicleSales.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border py-8 text-center">
+              <p className="text-sm text-muted-foreground">No vehicle sales recorded</p>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-border overflow-hidden overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>Year / Make / Model</TableHead>
+                    <TableHead>VIN / Serial No.</TableHead>
+                    <TableHead>Sale Date</TableHead>
+                    <TableHead className="text-right">Sale Price</TableHead>
+                    <TableHead>Buyer</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead className="w-20" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {vehicleSales.map((row: any) => (
+                    <TableRow key={row.id}>
+                      <TableCell className="font-medium text-sm whitespace-nowrap">{row.year_make_model || "—"}</TableCell>
+                      <TableCell className="text-xs font-mono">{row.vin || "—"}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{fmtDate(row.sale_date)}</TableCell>
+                      <TableCell className="text-right font-mono text-xs">{fmt(row.sale_price)}</TableCell>
+                      <TableCell className="text-sm">{row.buyer_name || "—"}</TableCell>
+                      <TableCell className="text-sm">{row.reason_for_sale || "—"}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => openEditSale(row)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => deleteVehicleSale.mutate(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
