@@ -7,13 +7,17 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import loginHero from "@/assets/login-hero.jpg";
 
+import { supabase } from "@/integrations/supabase/client";
+
 const RATE_LIMIT_MS = 3000; // 3 seconds between submissions
+const PASSWORD_MIN = 12;
 
 const Auth = () => {
   const navigate = useNavigate();
   const { signIn, signUp, session } = useAuth();
   const { toast } = useToast();
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgot, setIsForgot] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
