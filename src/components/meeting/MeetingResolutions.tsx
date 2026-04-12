@@ -315,7 +315,7 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
           </Dialog>
         </CardHeader>
         <CardContent>
-          {resolutions.length === 0 ? (
+          {displayedResolutions.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border py-8 text-center">
               <FileText className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
               <p className="text-sm text-muted-foreground">No resolutions yet</p>
