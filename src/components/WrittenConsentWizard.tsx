@@ -1199,6 +1199,21 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
                 Generate a pre-filled promissory note to accompany this resolution.
               </p>
             </div>
+           )}
+
+          {/* Additional Resolutions via MeetingResolutions */}
+          {draftMeetingId && wizardResolutionId && (
+            <div className="border-t border-border pt-4 mt-4">
+              <h4 className="text-sm font-semibold mb-2">Additional Resolutions</h4>
+              <MeetingResolutions
+                meetingId={draftMeetingId}
+                entityType={company.entity_type}
+                companyId={company.id}
+                companyName={company.name}
+                meetingDate={effectiveDate}
+                excludeResolutionIds={[wizardResolutionId]}
+              />
+            </div>
           )}
         </div>
       )}
