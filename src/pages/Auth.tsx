@@ -28,6 +28,31 @@ const Auth = () => {
     return <Navigate to="/" replace />;
   }
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const now = Date.now();
+    if (now - lastSubmitRef.current < RATE_LIMIT_MS) {
+      toast({ title: "Please wait", description: "Too many attempts. Try again in a few seconds.", variant: "destructive" });
+      return;
+    }
+    lastSubmitRef.current = now;
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
+    await supabase.auth.resetPasswordForEmail(trimmedEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
+    // Always show success to prevent email enumeration
+    toast({ title: "Check your email", description: "If an account exists, we sent a password reset link." });
+    setIsForgot(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -45,9 +70,20 @@ const Auth = () => {
       toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
       return;
     }
-    if (password.length < 6 || password.length > 128) {
-      toast({ title: "Invalid password", description: "Password must be between 6 and 128 characters.", variant: "destructive" });
-      return;
+    if (isSignUp) {
+      if (password.length < PASSWORD_MIN || password.length > 128) {
+        toast({ title: "Invalid password", description: `Password must be at least ${PASSWORD_MIN} characters.`, variant: "destructive" });
+        return;
+      }
+      if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+        toast({ title: "Weak password", description: "Include uppercase, lowercase, and a number.", variant: "destructive" });
+        return;
+      }
+    } else {
+      if (password.length < 6 || password.length > 128) {
+        toast({ title: "Invalid password", description: "Password must be between 6 and 128 characters.", variant: "destructive" });
+        return;
+      }
     }
     if (isSignUp && (fullName.trim().length === 0 || fullName.trim().length > 100)) {
       toast({ title: "Invalid name", description: "Name must be between 1 and 100 characters.", variant: "destructive" });
@@ -61,7 +97,11 @@ const Auth = () => {
       : await signIn(trimmedEmail, password);
 
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      // Genericize error messages to avoid leaking account existence
+      const safeMessage = isSignUp
+        ? "Unable to create account. Please check your details and try again."
+        : "Invalid email or password. Please try again.";
+      toast({ title: "Error", description: safeMessage, variant: "destructive" });
     } else if (isSignUp) {
       toast({ title: "Check your email", description: "We sent you a confirmation link." });
     } else {
