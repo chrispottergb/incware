@@ -44,9 +44,10 @@ interface Props {
   companyName?: string;
   availableShares?: number | null;
   meetingDate?: string;
+  excludeResolutionIds?: string[];
 }
 
-export default function MeetingResolutions({ meetingId, entityType, meetingType, companyId, companyName, availableShares, meetingDate }: Props) {
+export default function MeetingResolutions({ meetingId, entityType, meetingType, companyId, companyName, availableShares, meetingDate, excludeResolutionIds }: Props) {
   const isSpecialMeeting = meetingType === "Special Meeting of Board of Directors";
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -225,11 +226,16 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
   const isTransferPurpose = (p: string) => TRANSFER_RESOLUTION_PURPOSES.includes(p);
 
   // Batch detection: unlinked transfer resolutions
+  const displayedResolutions = useMemo(() => {
+    if (!excludeResolutionIds || excludeResolutionIds.length === 0) return resolutions;
+    return resolutions.filter((r) => !excludeResolutionIds.includes(r.id));
+  }, [resolutions, excludeResolutionIds]);
+
   const unlinkedTransferResolutions = useMemo(() => {
-    return resolutions.filter(
+    return displayedResolutions.filter(
       (r) => isTransferPurpose(r.purpose || "") && !(r as any).transaction_id
     );
-  }, [resolutions]);
+  }, [displayedResolutions]);
 
   const batchResolutionIds = useMemo(
     () => unlinkedTransferResolutions.map((r) => r.id),
@@ -316,7 +322,7 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
             </div>
           ) : (
             <div className="space-y-4">
-              {resolutions.map((r) => {
+              {displayedResolutions.map((r) => {
                 const match = resolutionOptions.find((o) => o.label === r.purpose);
                 const hasLinkedTransaction = !!(r as any).transaction_id;
                 const hasLinkedLease = !!(r as any).lease_id;
