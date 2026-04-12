@@ -82,6 +82,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
 
   const [step, setStep] = useState(0);
   const [draftMeetingId, setDraftMeetingId] = useState<string | null>(existingMeetingId || null);
+  const [wizardResolutionId, setWizardResolutionId] = useState<string | null>(null);
   const [loadingExisting, setLoadingExisting] = useState(!!existingMeetingId);
 
   // Step 1: Entity
@@ -555,20 +556,36 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       if (error) throw error;
     }
 
-    // Save resolution (delete + re-insert)
-    const { error: deleteResolutionError } = await supabase
-      .from("meeting_resolutions")
-      .delete()
-      .eq("meeting_id", meetingId);
-    if (deleteResolutionError) throw deleteResolutionError;
-
+    // Save the wizard's own resolution (upsert only, preserve others)
     if (resolutionText.trim()) {
-      const { error: insertResolutionError } = await supabase.from("meeting_resolutions").insert({
-        meeting_id: meetingId,
-        purpose: selectedAction || "Written Consent",
-        resolution_text: resolutionText,
-      });
-      if (insertResolutionError) throw insertResolutionError;
+      if (wizardResolutionId) {
+        // Update existing wizard resolution
+        const { error: updateResolutionError } = await supabase
+          .from("meeting_resolutions")
+          .update({
+            purpose: selectedAction || "Written Consent",
+            resolution_text: resolutionText,
+          })
+          .eq("id", wizardResolutionId);
+        if (updateResolutionError) throw updateResolutionError;
+      } else {
+        // Insert new wizard resolution
+        const { data: newRes, error: insertResolutionError } = await supabase
+          .from("meeting_resolutions")
+          .insert({
+            meeting_id: meetingId,
+            purpose: selectedAction || "Written Consent",
+            resolution_text: resolutionText,
+          })
+          .select("id")
+          .single();
+        if (insertResolutionError) throw insertResolutionError;
+        if (newRes) setWizardResolutionId(newRes.id);
+      }
+    } else if (wizardResolutionId) {
+      // Resolution text cleared — remove the wizard's resolution
+      await supabase.from("meeting_resolutions").delete().eq("id", wizardResolutionId);
+      setWizardResolutionId(null);
     }
 
     // Save signers (delete + re-insert)
@@ -671,6 +688,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     shareholderHoldings,
     signers,
     totalIssuedShares,
+    wizardResolutionId,
   ]);
 
   // ---------- LOAD EXISTING DATA ----------
@@ -706,9 +724,11 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
           .from("meeting_resolutions")
           .select("*")
           .eq("meeting_id", existingMeetingId)
+          .order("created_at", { ascending: true })
           .limit(1);
         if (resolutions && resolutions.length > 0) {
           setResolutionText(resolutions[0].resolution_text || "");
+          setWizardResolutionId(resolutions[0].id);
           if (!meeting.sub_type && resolutions[0].purpose) {
             setSelectedAction(resolutions[0].purpose);
           }
