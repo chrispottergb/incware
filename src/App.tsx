@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -5,29 +6,39 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AddressBookProvider } from "@/contexts/AddressBookContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import SplashScreen from "@/components/SplashScreen";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
-import Auth from "@/pages/Auth";
-import Dashboard from "@/pages/Dashboard";
-import CompanyDetail from "@/pages/CompanyDetail";
-import MeetingDetail from "@/pages/MeetingDetail";
-import Reports from "@/pages/Reports";
-import ImportAccess from "@/pages/ImportAccess";
-import OrgChart from "@/pages/OrgChart";
-import Settings from "@/pages/Settings";
-import UserManagement from "@/pages/UserManagement";
-import ResourcesAdmin from "@/pages/ResourcesAdmin";
-import Profile from "@/pages/Profile";
-import NotFound from "@/pages/NotFound";
-import AnnualReviewPublic from "@/pages/AnnualReviewPublic";
-import PendingReviews from "@/pages/PendingReviews";
+
+// Lazy-loaded pages
+const Auth = lazy(() => import("@/pages/Auth"));
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const CompanyDetail = lazy(() => import("@/pages/CompanyDetail"));
+const MeetingDetail = lazy(() => import("@/pages/MeetingDetail"));
+const Reports = lazy(() => import("@/pages/Reports"));
+const ImportAccess = lazy(() => import("@/pages/ImportAccess"));
+const OrgChart = lazy(() => import("@/pages/OrgChart"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const UserManagement = lazy(() => import("@/pages/UserManagement"));
+const ResourcesAdmin = lazy(() => import("@/pages/ResourcesAdmin"));
+const Profile = lazy(() => import("@/pages/Profile"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+const AnnualReviewPublic = lazy(() => import("@/pages/AnnualReviewPublic"));
+const PendingReviews = lazy(() => import("@/pages/PendingReviews"));
 
 const queryClient = new QueryClient();
 
+const PageFallback = () => (
+  <div className="flex min-h-[50vh] items-center justify-center">
+    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+  </div>
+);
+
 const App = () => (
   <>
-    <SplashScreen duration={8000} />
+    <SplashScreen duration={3000} />
+    <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
     <AuthProvider>
     <AddressBookProvider>
@@ -35,6 +46,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <Suspense fallback={<PageFallback />}>
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route
@@ -150,11 +162,13 @@ const App = () => (
             <Route path="/annual-review/:token" element={<AnnualReviewPublic />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </AddressBookProvider>
     </AuthProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
   </>
 );
 
