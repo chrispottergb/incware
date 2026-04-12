@@ -1,4 +1,5 @@
 import { useState } from "react";
+import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
@@ -366,13 +367,13 @@ export default function AnnualReviewLinkGenerator({
               <ScrollArea className="h-[340px] rounded-md border border-border">
                 <div
                   dangerouslySetInnerHTML={{
-                    __html: buildEmailPreviewHtml(
+                    __html: DOMPurify.sanitize(buildEmailPreviewHtml(
                       salutation,
                       selectedCompany.name,
                       reviewYear,
                       generatedLink,
                       expirationDateStr,
-                    ),
+                    )),
                   }}
                 />
               </ScrollArea>

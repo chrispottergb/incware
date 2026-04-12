@@ -157,6 +157,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded-md">
+        Skip to content
+      </a>
       {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-col bg-sidebar text-sidebar-foreground transition-transform md:static md:translate-x-0 ${
@@ -441,6 +444,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             size="icon"
             className="md:hidden h-8 w-8"
             onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
           >
             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </Button>
@@ -450,7 +454,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </span>
           <UserAvatarMenu />
         </header>
-        <main className="flex-1 overflow-auto p-4 lg:p-6 min-w-0">{children}</main>
+        <main id="main-content" className="flex-1 overflow-auto p-4 lg:p-6 min-w-0">{children}</main>
       </div>
 
       {/* Resources slide-out panel */}
