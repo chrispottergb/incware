@@ -45,7 +45,7 @@ export function useSessionIdleTimeout(isAuthenticated: boolean) {
 
     // Attach activity listeners
     for (const event of ACTIVITY_EVENTS) {
-      window.addEventListener(event, handleActivity, { passive: true });
+      window.addEventListener(event, wrappedHandleActivity, { passive: true });
     }
 
     // Check every 60 seconds if idle timeout exceeded
@@ -73,12 +73,12 @@ export function useSessionIdleTimeout(isAuthenticated: boolean) {
 
     return () => {
       for (const event of ACTIVITY_EVENTS) {
-        window.removeEventListener(event, handleActivity);
+        window.removeEventListener(event, wrappedHandleActivity);
       }
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
     };
-  }, [isAuthenticated, handleActivity]);
+  }, [isAuthenticated, wrappedHandleActivity]);
 }
