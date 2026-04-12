@@ -645,21 +645,13 @@ export default function MeetingDetail() {
         <MeetingInfoCard meeting={meeting} />
 
         {/* Resolutions */}
-        {resolutions.length > 0 && (
-          <Card className="border border-border">
-            <CardContent className="p-6">
-              <h3 className="font-display font-semibold text-sm mb-3">Resolutions</h3>
-              <div className="space-y-2">
-                {resolutions.map((r: any) => (
-                  <div key={r.id} className="text-sm text-muted-foreground border-l-2 border-primary/20 pl-3">
-                    <span className="font-medium text-foreground">{r.resolution_type || "Resolution"}</span>
-                    {r.resolution_text && <p className="mt-0.5">{r.resolution_text}</p>}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <MeetingResolutions
+          meetingId={meeting.id}
+          entityType={company?.entity_type || "Corporation"}
+          companyId={id}
+          companyName={company?.name}
+          meetingDate={meeting.meeting_date}
+        />
       </div>
     );
   }

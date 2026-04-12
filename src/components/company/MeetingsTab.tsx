@@ -510,6 +510,12 @@ export default function MeetingsTab({ companyId, company }: Props) {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+                if (form.meeting_type === "Written Consent") {
+                  setDialogOpen(false);
+                  setEditingConsentId(null);
+                  setConsentWizardOpen(true);
+                  return;
+                }
                 createMeeting.mutate();
               }}
               className="space-y-4"
@@ -717,7 +723,14 @@ export default function MeetingsTab({ companyId, company }: Props) {
             <Card
               key={m.id}
               className="group cursor-pointer transition-all hover:shadow-md hover:border-primary/20"
-              onClick={() => navigate(`/company/${companyId}/meetings/${m.id}`)}
+              onClick={() => {
+                if (m.meeting_type === "Written Consent" || m.meeting_type === "Written Consent of Members" || m.meeting_type === "Written Consent of Board of Directors") {
+                  setEditingConsentId(m.id);
+                  setConsentWizardOpen(true);
+                  return;
+                }
+                navigate(`/company/${companyId}/meetings/${m.id}`);
+              }}
             >
               <CardContent className="flex items-center gap-4 py-4">
                 <div className="flex-1 min-w-0">
