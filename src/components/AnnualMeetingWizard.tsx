@@ -911,20 +911,20 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       return;
     }
     try {
-      console.log("[Annual Meeting Download] Step 1: Generating PDF...");
+      
       const doc = generateAnnualMeetingPDF(data);
       if (!doc) {
         console.error("[Annual Meeting Download] generateAnnualMeetingPDF returned null.");
         toast.error("PDF generation failed.");
         return;
       }
-      console.log("[Annual Meeting Download] Step 2: PDF doc created. Verifying blob...");
+      
       const testBlob = doc.output("blob");
-      console.log(`[Annual Meeting Download] Step 3: Blob OK (${testBlob.size} bytes). Saving...`);
+      
       const dateStr = data.meetingDate ? format(new Date(data.meetingDate + "T12:00:00"), "yyyy-MM-dd") : "draft";
       const { savePdfReliably } = await import("@/lib/pdf-save");
       await savePdfReliably(doc, `${data.companyName}_Annual_Meeting_Minutes_${dateStr}.pdf`);
-      console.log("[Annual Meeting Download] Step 4: Save completed.");
+      
       toast.success("PDF downloaded successfully!");
     } catch (err: any) {
       console.error("[Annual Meeting Download] Error:", err);
@@ -938,21 +938,21 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       return;
     }
     try {
-      console.log("[Annual Meeting Preview] Step 1: Generating PDF...");
+      
       const doc = generateAnnualMeetingPDF(data);
       if (!doc) {
         console.error("[Annual Meeting Preview] generateAnnualMeetingPDF returned null.");
         toast.error("PDF generation failed.");
         return;
       }
-      console.log("[Annual Meeting Preview] Step 2: Generating arraybuffer...");
+      
       const arrayBuffer = doc.output("arraybuffer");
       if (!arrayBuffer || arrayBuffer.byteLength === 0) {
         console.error("[Annual Meeting Preview] arraybuffer is empty.");
         toast.error("PDF generation produced an empty document.");
         return;
       }
-      console.log(`[Annual Meeting Preview] Step 3: arraybuffer OK (${arrayBuffer.byteLength} bytes). Loading preview.`);
+      
       const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       setPdfDocRef(pdfDoc);
       setPreviewPages(pdfDoc.numPages);
