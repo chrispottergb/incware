@@ -95,6 +95,22 @@ const emptyLeaseTerm: LeaseTermForm = {
   termination_reason: "", early_termination: false, penalty_amount: "", notes: "",
 };
 
+// ── Vehicle Sale form ──
+interface VehicleSaleForm {
+  year_make_model: string;
+  vin: string;
+  sale_date: string;
+  sale_price: string;
+  buyer_name: string;
+  business_use_description: string;
+  reason_for_sale: string;
+  notes: string;
+}
+const emptyVehicleSale: VehicleSaleForm = {
+  year_make_model: "", vin: "", sale_date: "", sale_price: "",
+  buyer_name: "", business_use_description: "", reason_for_sale: "", notes: "",
+};
+
 const transactionColors: Record<string, string> = {
   Purchased: "bg-emerald-100 text-emerald-800 border-emerald-200",
   Sold: "bg-amber-100 text-amber-800 border-amber-200",
