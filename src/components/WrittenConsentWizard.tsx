@@ -556,20 +556,36 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       if (error) throw error;
     }
 
-    // Save resolution (delete + re-insert)
-    const { error: deleteResolutionError } = await supabase
-      .from("meeting_resolutions")
-      .delete()
-      .eq("meeting_id", meetingId);
-    if (deleteResolutionError) throw deleteResolutionError;
-
+    // Save the wizard's own resolution (upsert only, preserve others)
     if (resolutionText.trim()) {
-      const { error: insertResolutionError } = await supabase.from("meeting_resolutions").insert({
-        meeting_id: meetingId,
-        purpose: selectedAction || "Written Consent",
-        resolution_text: resolutionText,
-      });
-      if (insertResolutionError) throw insertResolutionError;
+      if (wizardResolutionId) {
+        // Update existing wizard resolution
+        const { error: updateResolutionError } = await supabase
+          .from("meeting_resolutions")
+          .update({
+            purpose: selectedAction || "Written Consent",
+            resolution_text: resolutionText,
+          })
+          .eq("id", wizardResolutionId);
+        if (updateResolutionError) throw updateResolutionError;
+      } else {
+        // Insert new wizard resolution
+        const { data: newRes, error: insertResolutionError } = await supabase
+          .from("meeting_resolutions")
+          .insert({
+            meeting_id: meetingId,
+            purpose: selectedAction || "Written Consent",
+            resolution_text: resolutionText,
+          })
+          .select("id")
+          .single();
+        if (insertResolutionError) throw insertResolutionError;
+        if (newRes) setWizardResolutionId(newRes.id);
+      }
+    } else if (wizardResolutionId) {
+      // Resolution text cleared — remove the wizard's resolution
+      await supabase.from("meeting_resolutions").delete().eq("id", wizardResolutionId);
+      setWizardResolutionId(null);
     }
 
     // Save signers (delete + re-insert)
