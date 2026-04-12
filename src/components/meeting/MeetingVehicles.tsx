@@ -388,10 +388,72 @@ export default function MeetingVehicles({ meetingId }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // ── Vehicle Sale mutations ──
+  const addVehicleSale = useMutation({
+    mutationFn: async () => {
+      const payload: any = {
+        meeting_id: meetingId,
+        year_make_model: saleForm.year_make_model,
+        vin: saleForm.vin || null,
+        sale_date: saleForm.sale_date || null,
+        sale_price: saleForm.sale_price ? parseFloat(saleForm.sale_price) : null,
+        buyer_name: saleForm.buyer_name || null,
+        business_use_description: saleForm.business_use_description || null,
+        reason_for_sale: saleForm.reason_for_sale || null,
+        notes: saleForm.notes || null,
+      };
+      const { error } = await supabase.from("meeting_vehicle_sales" as any).insert(payload as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["meeting_vehicle_sales", meetingId] });
+      closeSaleDialog();
+      toast.success("Vehicle sale added!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const updateVehicleSale = useMutation({
+    mutationFn: async () => {
+      const payload: any = {
+        year_make_model: saleForm.year_make_model,
+        vin: saleForm.vin || null,
+        sale_date: saleForm.sale_date || null,
+        sale_price: saleForm.sale_price ? parseFloat(saleForm.sale_price) : null,
+        buyer_name: saleForm.buyer_name || null,
+        business_use_description: saleForm.business_use_description || null,
+        reason_for_sale: saleForm.reason_for_sale || null,
+        notes: saleForm.notes || null,
+      };
+      const { error } = await supabase.from("meeting_vehicle_sales" as any).update(payload as any).eq("id", editingSaleId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["meeting_vehicle_sales", meetingId] });
+      closeSaleDialog();
+      toast.success("Vehicle sale updated!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const deleteVehicleSale = useMutation({
+    mutationFn: async (rowId: string) => {
+      const { error } = await supabase.from("meeting_vehicle_sales" as any).delete().eq("id", rowId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["meeting_vehicle_sales", meetingId] });
+      toast.success("Vehicle sale removed.");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   // ── Helpers ──
   const closeAssetDialog = () => { setAssetOpen(false); setEditingAssetId(null); setAssetForm(emptyAsset); };
   const closeLeaseDialog = () => { setLeaseOpen(false); setEditingLeaseId(null); setLeaseForm(emptyLease); };
   const closeLeaseTermDialog = () => { setLeaseTermOpen(false); setEditingLeaseTermId(null); setLeaseTermForm(emptyLeaseTerm); };
+  const closeSaleDialog = () => { setSaleOpen(false); setEditingSaleId(null); setSaleForm(emptyVehicleSale); };
+
 
   const openEditAsset = (row: any) => {
     setEditingAssetId(row.id);
