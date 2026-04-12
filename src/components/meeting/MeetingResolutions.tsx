@@ -153,7 +153,15 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
     if (!editingId) {
       const selected = resolutionOptions.find((o) => o.label === value);
       if (selected?.template) {
-        setResolutionText(selected.template);
+        let text = selected.template;
+        // Substitute [YEAR] with meeting date year or current year
+        if (text.includes("[YEAR]")) {
+          const year = meetingDate
+            ? new Date(meetingDate).getFullYear().toString()
+            : new Date().getFullYear().toString();
+          text = text.replace(/\[YEAR\]/g, year);
+        }
+        setResolutionText(text);
       }
     }
   };
