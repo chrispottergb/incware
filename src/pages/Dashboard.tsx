@@ -250,7 +250,9 @@ export default function Dashboard() {
         <div>
           <h1 className="font-display text-xl font-bold tracking-tight">Client Companies</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {companies.length} client{companies.length !== 1 ? "s" : ""} on file
+            {companies.length >= 500
+              ? "Showing first 500 clients — use search to find others"
+              : `${companies.length} client${companies.length !== 1 ? "s" : ""} on file`}
           </p>
         </div>
 
