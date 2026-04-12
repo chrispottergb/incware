@@ -151,6 +151,7 @@ export default function CompanyDetail() {
       tabs.push({ value: "nonprofit-bylaws", label: "Bylaws" });
       tabs.push({ value: "conflict-of-interest", label: "Conflict of Interest" });
     }
+    tabs.push({ value: "business-sales", label: "Business Sales" });
     tabs.push({ value: "filing-compliance", label: "Filing & Compliance" });
     tabs.push({ value: "record-book", label: "Record Book" });
     tabs.push({ value: "documents", label: "Documents" });
