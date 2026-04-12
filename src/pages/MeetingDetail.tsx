@@ -521,7 +521,7 @@ export default function MeetingDetail() {
       return null as any;
     }
     try {
-      console.log("[generateFullMinutes] Starting PDF generation...");
+      
       const doc = exportMeetingMinutesPDF({
         meeting,
         company,
@@ -558,7 +558,7 @@ export default function MeetingDetail() {
         companyAccountants,
         companyLeases,
       });
-      console.log("[generateFullMinutes] PDF generation completed successfully.");
+      
       return doc;
     } catch (err: any) {
       console.error("[generateFullMinutes] PDF generation crashed:", err);
