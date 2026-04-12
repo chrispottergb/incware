@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Search, Users, Shield, Trash2, Mail } from "lucide-react";
+import { Plus, Search, Users, Shield, Trash2, Mail, Lock, Loader2 } from "lucide-react";
 
 type UserWithRole = {
   user_id: string;
