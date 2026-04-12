@@ -52,7 +52,7 @@ export default function Reports() {
   const { data: companies = [] } = useQuery({
     queryKey: ["companies"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("companies").select("*").order("name");
+      const { data, error } = await supabase.from("companies").select("*").order("name").range(0, 499);
       if (error) throw error;
       return data;
     },

@@ -327,9 +327,9 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
       } catch (pdfErr) {
         console.warn("Bill of Sale PDF generation failed:", pdfErr);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("BuySellWorkflow save error:", err);
-      toast.error(err.message || "Failed to save transaction — all changes rolled back. Please retry.");
+      toast.error("Failed to save transaction. Please try again.");
     } finally {
       setSaving(false);
     }

@@ -71,7 +71,8 @@ export default function Dashboard() {
       const { data, error } = await supabase
         .from("companies")
         .select("*")
-        .order("name");
+        .order("name")
+        .range(0, 499);
       if (error) throw error;
       return data;
     },
