@@ -40,6 +40,7 @@ export default function Settings() {
   const [filterCategory, setFilterCategory] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Shortcode | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState({ shortcode: "", expansion_text: "", category: "general" });
 
   const { data: shortcodes = [], isLoading } = useQuery({
