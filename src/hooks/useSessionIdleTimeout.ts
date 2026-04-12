@@ -15,10 +15,21 @@ export function useSessionIdleTimeout(isAuthenticated: boolean) {
 
   const handleActivity = useCallback(() => {
     const now = Date.now();
-    if (now - lastActivityRef.current > THROTTLE_MS) {
+    if (now - lastActivityRef.current >= THROTTLE_MS) {
       lastActivityRef.current = now;
     }
   }, []);
+
+  // Ensure the very first user interaction after mount is always recorded
+  const firstEventRef = useRef(true);
+  const wrappedHandleActivity = useCallback(() => {
+    if (firstEventRef.current) {
+      lastActivityRef.current = Date.now();
+      firstEventRef.current = false;
+    } else {
+      handleActivity();
+    }
+  }, [handleActivity]);
 
   useEffect(() => {
     if (!isAuthenticated) {

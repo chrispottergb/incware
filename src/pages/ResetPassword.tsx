@@ -32,6 +32,14 @@ export default function ResetPassword() {
       setIsRecovery(true);
     }
 
+    // Fix race condition: if session was already established before mount,
+    // the PASSWORD_RECOVERY event was consumed. Check for active session + recovery params.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session && (hash.includes("type=recovery") || window.location.search.includes("type=recovery"))) {
+        setIsRecovery(true);
+      }
+    });
+
     return () => subscription.unsubscribe();
   }, []);
 
@@ -83,7 +91,7 @@ export default function ResetPassword() {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
         <div className="w-full max-w-sm text-center space-y-4">
-          <CheckCircle2 className="mx-auto h-10 w-10 text-success" />
+          <CheckCircle2 className="mx-auto h-10 w-10 text-green-600" />
           <h1 className="text-xl font-semibold text-foreground">Password Updated</h1>
           <p className="text-sm text-muted-foreground">Redirecting you to the dashboard…</p>
         </div>
