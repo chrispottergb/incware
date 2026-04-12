@@ -1,3 +1,7 @@
+// INTENTIONALLY PUBLIC: This function is accessed by external clients via
+// a secure, time-limited token (not a JWT). Clients fill out annual review
+// forms without logging in. The token serves as the authentication mechanism.
+// All data access is scoped to the specific company linked to the token.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {

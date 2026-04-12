@@ -1,3 +1,6 @@
+// AUTHENTICATED: Requires valid JWT - protects FIRECRAWL_API_KEY from abuse.
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
@@ -20,7 +23,7 @@ function mapWDFIStatus(rawStatus: string): string {
   if (s.includes('admin') && s.includes('dissolved')) return 'admin_dissolved';
   if (s.includes('dissolved')) return 'admin_dissolved';
   if (s.includes('revoked') || s.includes('suspended')) return 'admin_dissolved';
-  return 'current'; // default
+  return 'current';
 }
 
 function parseResults(markdown: string): WDFIResult[] {
@@ -53,19 +56,11 @@ function parseResults(markdown: string): WDFIResult[] {
     const statusDateMatch = statusCell.match(/(\d{2})\/(\d{2})\/(\d{4})/);
     const statusDate = statusDateMatch ? `${statusDateMatch[3]}-${statusDateMatch[1]}-${statusDateMatch[2]}` : undefined;
 
-    // For entities in good standing / current status, determine annual report year
-    // The WDFI detail page shows the actual AR year but is too slow to scrape.
-    // The search results page shows status date which is when the status was last updated.
-    // For "current" status entities, the annual report year is typically the current year
-    // if we're past the filing deadline, otherwise the previous year.
     let annualReportYear: string | undefined;
     const mapped = mapWDFIStatus(rawStatus);
     if (mapped === 'current') {
       const now = new Date();
       const currentYear = now.getFullYear();
-      // The WDFI detail page shows the last filed annual report year.
-      // For entities in good standing, the most recent filed AR is for the previous year
-      // (e.g., in 2026, the most recent AR would be for 2025).
       annualReportYear = String(currentYear - 1);
     }
 
@@ -89,6 +84,28 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ── Auth check ──
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { company_name } = await req.json();
 
     if (!company_name) {
