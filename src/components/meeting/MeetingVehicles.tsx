@@ -140,6 +140,10 @@ export default function MeetingVehicles({ meetingId }: Props) {
   const [editingLeaseTermId, setEditingLeaseTermId] = useState<string | null>(null);
   const [leaseTermForm, setLeaseTermForm] = useState<LeaseTermForm>(emptyLeaseTerm);
 
+  const [saleOpen, setSaleOpen] = useState(false);
+  const [editingSaleId, setEditingSaleId] = useState<string | null>(null);
+  const [saleForm, setSaleForm] = useState<VehicleSaleForm>(emptyVehicleSale);
+
   // ── Query unified assets (purchases/sales/trade-ins) ──
   const { data: assets = [] } = useQuery({
     queryKey: ["meeting_vehicle_purchases", meetingId],
