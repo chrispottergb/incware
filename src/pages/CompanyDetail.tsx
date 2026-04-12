@@ -380,6 +380,9 @@ export default function CompanyDetail() {
             </TabsContent>
           </>
         )}
+        <TabsContent value="business-sales" className="mt-5">
+          <BusinessSalesTab companyId={company.id} />
+        </TabsContent>
         <TabsContent value="filing-compliance" className="mt-5">
           <FilingComplianceTab companyId={company.id} entityType={company.entity_type} />
         </TabsContent>
