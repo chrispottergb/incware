@@ -163,7 +163,7 @@ export default function UserManagement() {
     },
   });
 
-
+  const filtered = users.filter((u) => {
     if (!search.trim()) return true;
     const s = search.toLowerCase();
     return (
