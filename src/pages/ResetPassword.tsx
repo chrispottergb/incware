@@ -101,7 +101,7 @@ export default function ResetPassword() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-6 rounded-2xl border border-border/50 bg-background/80 p-6 shadow-2xl backdrop-blur-xl">
+      <div className="w-full max-w-sm space-y-6 rounded-2xl border border-border/50 bg-background/95 p-6 shadow-2xl">
         <div className="text-center">
           <KeyRound className="mx-auto h-8 w-8 text-primary mb-2" />
           <h1 className="text-xl font-semibold text-foreground">Set New Password</h1>
