@@ -78,7 +78,7 @@ export default function PendingReviews() {
   const [deleteTarget, setDeleteTarget] = useState<{ type: "link" | "submission"; id: string; name: string } | null>(null);
 
   // Fetch all submissions
-  const { data: submissions = [], isLoading: loadingSubs } = useQuery({
+  const { data: submissions = [], isLoading: loadingSubs, isError: isSubsError, refetch: refetchSubs } = useQuery({
     queryKey: ["annual_review_submissions"],
     enabled: !!user,
     queryFn: async () => {

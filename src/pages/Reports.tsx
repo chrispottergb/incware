@@ -49,7 +49,7 @@ import {
 export default function Reports() {
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
 
-  const { data: companies = [] } = useQuery({
+  const { data: companies = [], isLoading: companiesLoading, isError: companiesError, refetch: refetchCompanies } = useQuery({
     queryKey: ["companies"],
     queryFn: async () => {
       const { data, error } = await supabase.from("companies").select("*").order("name").range(0, 499);

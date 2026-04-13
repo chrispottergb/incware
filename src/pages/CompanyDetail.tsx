@@ -80,7 +80,7 @@ export default function CompanyDetail() {
     }
   };
 
-  const { data: company, isLoading } = useQuery({
+  const { data: company, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["company", id],
     queryFn: async () => {
       const { data, error } = await supabase

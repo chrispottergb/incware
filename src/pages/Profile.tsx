@@ -15,7 +15,7 @@ export default function Profile() {
   const [fullName, setFullName] = useState("");
   const [initialized, setInitialized] = useState(false);
 
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isLoading, isError, refetch } = useQuery({
     queryKey: ["profile", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {

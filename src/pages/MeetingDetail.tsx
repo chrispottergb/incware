@@ -43,7 +43,7 @@ export default function MeetingDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: meeting, isLoading } = useQuery({
+  const { data: meeting, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["meeting", meetingId],
     queryFn: async () => {
       const { data, error } = await supabase

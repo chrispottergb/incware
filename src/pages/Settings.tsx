@@ -43,7 +43,7 @@ export default function Settings() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState({ shortcode: "", expansion_text: "", category: "general" });
 
-  const { data: shortcodes = [], isLoading } = useQuery({
+  const { data: shortcodes = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["shortcode_expansions"],
     queryFn: async () => {
       const { data, error } = await supabase
