@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 type Company = Tables<"companies">;
 
@@ -184,6 +185,7 @@ export default function TimelineTab({ companyId, company }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
   const removeEvent = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("timeline_events").delete().eq("id", id);
@@ -521,7 +523,7 @@ export default function TimelineTab({ companyId, company }: Props) {
                                   variant="ghost"
                                   size="icon"
                                   className="h-6 w-6 text-destructive"
-                                  onClick={() => removeEvent.mutate(entry.id)}
+                                  onClick={() => setDeleteEventId(entry.id)}
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>

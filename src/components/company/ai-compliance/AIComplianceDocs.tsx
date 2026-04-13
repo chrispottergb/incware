@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Upload, Download, Trash2, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 interface Props {
   companyId: string;
@@ -63,6 +64,7 @@ export default function AIComplianceDocs({ companyId }: Props) {
     URL.revokeObjectURL(url);
   };
 
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const remove = useMutation({
     mutationFn: async (name: string) => {
       const path = `${basePath}/${folder}/${name}`;
@@ -77,7 +79,8 @@ export default function AIComplianceDocs({ companyId }: Props) {
   });
 
   return (
-    <div className="space-y-4">
+<>
+        <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="text-sm font-semibold flex items-center gap-1.5"><FileText className="h-4 w-4" />Compliance Documents</h3>
         <div className="flex items-center gap-2">
@@ -118,7 +121,7 @@ export default function AIComplianceDocs({ companyId }: Props) {
                   <TableCell>
                     <div className="flex gap-1">
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleDownload(f.name)}><Download className="h-3 w-3" /></Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => remove.mutate(f.name)}><Trash2 className="h-3 w-3" /></Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(f.name)}><Trash2 className="h-3 w-3" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -128,5 +131,7 @@ export default function AIComplianceDocs({ companyId }: Props) {
         </div>
       )}
     </div>
+    <ConfirmDeleteDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)} onConfirm={() => { if (deleteId) { remove.mutate(deleteId); setDeleteId(null); } }} title="Delete document?" description="This will permanently remove this compliance document." />
+    </>
   );
 }

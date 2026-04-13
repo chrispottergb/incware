@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { getTerminology } from "@/lib/entity-terminology";
 import type { ShareholderHoldings } from "@/hooks/useShareCalculations";
@@ -66,6 +67,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   });
   const [decryptedSsns, setDecryptedSsns] = useState<Record<string, string | null>>({});
   const [showSsns, setShowSsns] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [decrypting, setDecrypting] = useState(false);
 
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
@@ -341,6 +343,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   };
 
   return (
+    <>
     <Card>
       <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between">
         <div>
@@ -550,7 +553,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(s)}>
                               <Edit2 className="h-3 w-3" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => remove.mutate(s.id)}>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setDeleteId(s.id)}>
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
@@ -586,5 +589,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
         })()}
       </CardContent>
     </Card>
+    <ConfirmDeleteDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)} onConfirm={() => { if (deleteId) { remove.mutate(deleteId); setDeleteId(null); } }} title={`Delete ${t.shareholder}?`} description={`This will permanently remove this ${t.shareholder.toLowerCase()} record.`} />
+    </>
   );
 }

@@ -20,6 +20,7 @@ import {
 import { Plus, Trash2, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 interface Props {
   companyId: string;
@@ -148,6 +149,7 @@ export default function BusinessSalesTab({ companyId }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("business_sales").delete().eq("id", id);
@@ -184,7 +186,8 @@ export default function BusinessSalesTab({ companyId }: Props) {
     d ? new Date(d + "T00:00:00").toLocaleDateString() : "—";
 
   return (
-    <Card>
+<>
+        <Card>
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <CardTitle className="font-display text-base">Business Sales & Transfers</CardTitle>
         <Dialog open={open} onOpenChange={(o) => { if (!o) closeDialog(); else setOpen(true); }}>
@@ -309,7 +312,7 @@ export default function BusinessSalesTab({ companyId }: Props) {
                         <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -322,5 +325,7 @@ export default function BusinessSalesTab({ companyId }: Props) {
         )}
       </CardContent>
     </Card>
+    <ConfirmDeleteDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)} onConfirm={() => { if (deleteId) { deleteMutation.mutate(deleteId); setDeleteId(null); } }} title="Delete business sale?" description="This will permanently remove this business sale record." />
+    </>
   );
 }

@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 interface Props {
   companyId: string;
@@ -72,6 +73,7 @@ export default function AIUsageLog({ companyId }: Props) {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const remove = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("ai_usage_logs").delete().eq("id", id);
@@ -87,7 +89,8 @@ export default function AIUsageLog({ companyId }: Props) {
   const getSystemName = (id: string) => systems.find((s: any) => s.id === id)?.system_name || "Unknown";
 
   return (
-    <div className="space-y-4">
+<>
+        <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">AI Usage Log (Art. 26.6)</h3>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -174,7 +177,7 @@ export default function AIUsageLog({ companyId }: Props) {
                   <TableCell className="text-xs">{l.human_reviewer || "—"}</TableCell>
                   <TableCell>{l.review_decision ? <Badge variant="outline" className={`text-[10px] ${decisionColors[l.review_decision] || ""}`}>{l.review_decision}</Badge> : "—"}</TableCell>
                   <TableCell className="text-xs">{l.affected_persons_notified ? "✓" : "—"}</TableCell>
-                  <TableCell><Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => remove.mutate(l.id)}><Trash2 className="h-3 w-3" /></Button></TableCell>
+                  <TableCell><Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(l.id)}><Trash2 className="h-3 w-3" /></Button></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -182,5 +185,7 @@ export default function AIUsageLog({ companyId }: Props) {
         </div>
       )}
     </div>
+    <ConfirmDeleteDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)} onConfirm={() => { if (deleteId) { remove.mutate(deleteId); setDeleteId(null); } }} title="Delete usage log?" description="This will permanently remove this usage log entry." />
+    </>
   );
 }
