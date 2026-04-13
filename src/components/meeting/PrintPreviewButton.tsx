@@ -22,9 +22,10 @@ interface Props {
   label?: string;
   generatePDF: () => jsPDF;
   fileName: string;
+  autoPreview?: boolean;
 }
 
-export default function PrintPreviewButton({ label = "Print", generatePDF, fileName }: Props) {
+export default function PrintPreviewButton({ label = "Print", generatePDF, fileName, autoPreview = false }: Props) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [pdfData, setPdfData] = useState<Uint8Array | null>(null);
   const [loading, setLoading] = useState(false);
@@ -256,6 +257,15 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     pdfDocRef.current = null;
     setPageCount(0);
   };
+
+  // Auto-trigger preview if prop is set
+  const autoTriggered = useRef(false);
+  useEffect(() => {
+    if (autoPreview && !autoTriggered.current) {
+      autoTriggered.current = true;
+      handlePreview();
+    }
+  }, [autoPreview]);
 
   // Load PDF document when data changes
   useEffect(() => {

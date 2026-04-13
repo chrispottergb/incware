@@ -727,7 +727,8 @@ export default function MeetingsTab({ companyId, company }: Props) {
               key={m.id}
               className="group cursor-pointer transition-all hover:shadow-md hover:border-primary/20"
               onClick={() => {
-                navigate(`/company/${companyId}/meetings/${m.id}`);
+                const path = `/company/${companyId}/meetings/${m.id}`;
+                navigate(m.meeting_type === "Written Consent" ? `${path}?preview=true` : path);
               }}
             >
               <CardContent className="flex items-center gap-4 py-4">
