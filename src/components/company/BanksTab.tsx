@@ -213,6 +213,9 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     setExpandedBanks(prev => ({ ...prev, [bankId]: !prev[bankId] }));
   };
 
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
+  if (isError) return <QueryErrorBanner message="Failed to load banks." onRetry={refetch} />;
+
   return (
     <div className="space-y-5">
       <Card>

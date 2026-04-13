@@ -269,7 +269,9 @@ export default function BusinessSalesTab({ companyId }: Props) {
         </Dialog>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {isError ? (
+          <QueryErrorBanner message="Failed to load business sales." onRetry={refetch} />
+        ) : isLoading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : sales.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border py-8 text-center">

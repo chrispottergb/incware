@@ -464,7 +464,9 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
         </div>
       </CardHeader>
       <CardContent className="px-4 pb-4">
-        {isLoading ? (
+        {isError ? (
+          <QueryErrorBanner message="Failed to load shareholders." onRetry={refetch} />
+        ) : isLoading ? (
           <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : shareholders.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-6">No {t.shareholders.toLowerCase()} recorded yet.</p>

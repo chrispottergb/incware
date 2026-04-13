@@ -335,7 +335,9 @@ export default function DocumentsTab({ companyId }: Props) {
       </div>
 
       {/* Document list */}
-      {isLoading ? (
+      {isError ? (
+        <QueryErrorBanner message="Failed to load documents." onRetry={refetch} />
+      ) : isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
         </div>

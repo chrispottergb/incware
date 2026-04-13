@@ -203,6 +203,9 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
     else downloadLeaseAgreement(data);
   };
 
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
+  if (isError) return <QueryErrorBanner message="Failed to load leases." onRetry={refetch} />;
+
   return (
     <Card>
       <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between">
