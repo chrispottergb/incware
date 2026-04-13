@@ -636,6 +636,14 @@ export default function MeetingDetail() {
               {meeting.tax_year && ` · Tax Year ${meeting.tax_year}`}
             </p>
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setEditWizardOpen(true)}
+          >
+            <Pencil className="mr-1.5 h-3.5 w-3.5" />
+            Edit
+          </Button>
         </div>
 
         <Card className="border border-border">
@@ -670,6 +678,25 @@ export default function MeetingDetail() {
           companyName={company?.name}
           meetingDate={meeting.meeting_date}
         />
+
+        {/* Edit Written Consent Wizard */}
+        <Dialog open={editWizardOpen} onOpenChange={setEditWizardOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-display">Edit Written Consent</DialogTitle>
+            </DialogHeader>
+            <WrittenConsentWizard
+              company={company}
+              existingMeetingId={meeting.id}
+              onClose={() => setEditWizardOpen(false)}
+              onConsentCreated={() => {
+                setEditWizardOpen(false);
+                refetch();
+                queryClient.invalidateQueries({ queryKey: ["meeting", meetingId] });
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
