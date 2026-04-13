@@ -29,6 +29,7 @@ import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import SaveStatusIndicator from "@/components/SaveStatusIndicator";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
@@ -356,6 +357,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
 
   const [newOrganizer, setNewOrganizer] = useState({ organizer_name: "", address: "", address_2: "", city: "", state: "", zip: "" });
   const [showOrganizerForm, setShowOrganizerForm] = useState(false);
+  const [deleteOrganizerId, setDeleteOrganizerId] = useState<string | null>(null);
 
   const handleOrganizerZipResult = useCallback((result: { city: string; state: string }) => {
     setNewOrganizer(prev => ({ ...prev, city: result.city, state: result.state }));
@@ -988,7 +990,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                       </span>
                     )}
                   </div>
-                  <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive hover:text-destructive" onClick={() => deleteOrganizer.mutate(org.id)}>
+                  <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive hover:text-destructive" onClick={() => setDeleteOrganizerId(org.id)}>
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
@@ -1346,5 +1348,6 @@ export default function OrganizationTab({ companyId, company }: Props) {
         </CollapsibleContent>
       </Collapsible>
     </div>
+      <ConfirmDeleteDialog open={!!deleteOrganizerId} onOpenChange={(open) => !open && setDeleteOrganizerId(null)} onConfirm={() => { if (deleteOrganizerId) { deleteOrganizer.mutate(deleteOrganizerId); setDeleteOrganizerId(null); } }} title="Delete organizer?" description="This will permanently remove this organizer record." />
   );
 }
