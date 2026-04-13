@@ -373,7 +373,11 @@ export default function PendingReviews() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          {loadingSubs ? (
+          {isSubsError ? (
+            <div className="p-4">
+              <QueryErrorBanner message="Failed to load submissions." onRetry={refetchSubs} />
+            </div>
+          ) : loadingSubs ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
