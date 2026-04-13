@@ -52,6 +52,7 @@ export default function MeetingDetail() {
   const [searchParams] = useSearchParams();
   const autoPreview = searchParams.get("preview") === "true";
   const queryClient = useQueryClient();
+  const [editWizardOpen, setEditWizardOpen] = useState(false);
 
   const { data: meeting, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["meeting", meetingId],
