@@ -28,6 +28,7 @@ import TaxReturnUpload from "@/components/TaxReturnUpload";
 import CreateCompanyWizard from "@/components/CreateCompanyWizard";
 import AnnualUpdateWorkflow from "@/components/AnnualUpdateWorkflow";
 import AnnualReviewLinkGenerator from "@/components/AnnualReviewLinkGenerator";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 import cardNewClient from "@/assets/card-new-client.jpg";
 import cardImportTaxReturn from "@/assets/card-import-tax-return.jpg";

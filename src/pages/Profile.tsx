@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { User, Mail, Save } from "lucide-react";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 export default function Profile() {
   const { user } = useAuth();

@@ -28,6 +28,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 type Submission = {
   id: string;

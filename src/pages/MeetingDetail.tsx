@@ -37,6 +37,7 @@ import {
 } from "@/lib/meeting-pdf-export";
 import { getTerminology } from "@/lib/entity-terminology";
 import { useShareCalculations } from "@/hooks/useShareCalculations";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 export default function MeetingDetail() {
   const { id, meetingId } = useParams<{ id: string; meetingId: string }>();

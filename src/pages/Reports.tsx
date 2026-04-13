@@ -45,6 +45,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 export default function Reports() {
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
