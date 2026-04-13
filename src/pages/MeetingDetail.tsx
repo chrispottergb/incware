@@ -1,12 +1,12 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Calendar, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, FileText, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import MeetingAuthorizedSigners from "@/components/meeting/MeetingAuthorizedSigners";
 import MeetingInfoCard from "@/components/meeting/MeetingInfoCard";
@@ -27,6 +27,13 @@ import { OFFICER_TITLE_OPTIONS } from "@/components/company/OrganizationTab";
 import CounselTab from "@/components/company/CounselTab";
 import LeasesTab from "@/components/company/LeasesTab";
 import BanksTab from "@/components/company/BanksTab";
+import WrittenConsentWizard from "@/components/WrittenConsentWizard";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import {
   exportMeetingMinutesPDF,
@@ -45,6 +52,7 @@ export default function MeetingDetail() {
   const [searchParams] = useSearchParams();
   const autoPreview = searchParams.get("preview") === "true";
   const queryClient = useQueryClient();
+  const [editWizardOpen, setEditWizardOpen] = useState(false);
 
   const { data: meeting, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["meeting", meetingId],
@@ -399,8 +407,6 @@ export default function MeetingDetail() {
   });
 
 
-
-
   const { data: leaseTerminations = [] } = useQuery({
     queryKey: ["meeting_lease_terminations", meetingId],
     queryFn: async () => {
@@ -630,6 +636,14 @@ export default function MeetingDetail() {
               {meeting.tax_year && ` · Tax Year ${meeting.tax_year}`}
             </p>
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setEditWizardOpen(true)}
+          >
+            <Pencil className="mr-1.5 h-3.5 w-3.5" />
+            Edit
+          </Button>
         </div>
 
         <Card className="border border-border">
@@ -664,6 +678,25 @@ export default function MeetingDetail() {
           companyName={company?.name}
           meetingDate={meeting.meeting_date}
         />
+
+        {/* Edit Written Consent Wizard */}
+        <Dialog open={editWizardOpen} onOpenChange={setEditWizardOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-display">Edit Written Consent</DialogTitle>
+            </DialogHeader>
+            <WrittenConsentWizard
+              company={company}
+              existingMeetingId={meeting.id}
+              onClose={() => setEditWizardOpen(false)}
+              onConsentCreated={() => {
+                setEditWizardOpen(false);
+                refetch();
+                queryClient.invalidateQueries({ queryKey: ["meeting", meetingId] });
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
