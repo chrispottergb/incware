@@ -12,8 +12,9 @@ import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, GitBranch, ArrowUp, ArrowDown, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, GitBranch, ArrowUp, ArrowDown, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { useNavigate } from "react-router-dom";
 
 interface RelationshipsTabProps {
@@ -36,7 +37,7 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
   const [form, setForm] = useState(emptyForm);
 
   // All user companies (for the dropdown)
-  const { data: allCompanies = [] } = useQuery({
+  const { data: allCompanies = [], isLoading: loadingCompanies, isError: isCompaniesError, refetch: refetchCompanies } = useQuery({
     queryKey: ["companies"],
     queryFn: async () => {
       const { data, error } = await supabase.from("companies").select("id, name, entity_type").order("name");
@@ -46,7 +47,7 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
   });
 
   // Relationships where this company is the parent
-  const { data: childRelationships = [] } = useQuery({
+  const { data: childRelationships = [], isLoading: loadingChildren, isError: isChildError, refetch: refetchChildren } = useQuery({
     queryKey: ["company_relationships", "children", companyId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -60,7 +61,7 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
   });
 
   // Relationships where this company is the child
-  const { data: parentRelationships = [] } = useQuery({
+  const { data: parentRelationships = [], isLoading: loadingParents } = useQuery({
     queryKey: ["company_relationships", "parents", companyId],
     queryFn: async () => {
       const { data, error } = await supabase
