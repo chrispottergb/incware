@@ -1,90 +1,72 @@
 
 
-# Missing Loading, Empty, and Error States
+# Inconsistent Styling Audit — Findings & Fix Plan
 
-## Summary
+## Issues Found
 
-Audit of all components using `useQuery` reveals a consistent pattern: **no component in the entire codebase handles query errors**. Additionally, 13 components with data queries have **no loading state**. Empty states are handled well in most components.
+### 1. Page Heading Size Split (HIGH — 5 files)
+Two competing patterns exist:
+- **Design system standard** (per branding): `font-display text-xl font-bold tracking-tight` — used in Dashboard, Reports, PendingReviews, CompanyDetail, ImportAccess
+- **Non-standard**: `text-2xl font-bold text-foreground` — used in Settings, Profile, UserManagement, ResourcesAdmin, ErrorBoundary
 
-## Findings
+**Fix**: Normalize all 5 non-standard files to `font-display text-xl font-bold tracking-tight`.
 
-### A. Zero Error State Handling (CRITICAL — App-Wide)
-**Not a single component** destructures `isError` or `error` from `useQuery`. If a database query fails (network issue, RLS denial, timeout), the user sees either:
-- An empty list with no explanation (if `data` defaults to `[]`)
-- A blank screen (if `data` defaults to `undefined`)
+### 2. Page Subtitle Size Split (4 files)
+- Standard: `text-xs text-muted-foreground mt-0.5`
+- Non-standard: `text-sm text-muted-foreground` (Settings, Profile, UserManagement, ResourcesAdmin)
 
-Mutations have `onError` toast handlers ✓ — but **read queries silently fail**.
+**Fix**: Normalize to `text-xs`.
 
-**Fix:** Add a reusable `QueryErrorBanner` component, then wire `isError`/`error` into every data-fetching component.
+### 3. Hardcoded Light-Mode Badge Colors on Dark Theme (HIGH — 5 files)
+`bg-amber-50`, `bg-blue-50`, `bg-red-50`, `bg-green-50`, `bg-yellow-50` render as near-white backgrounds on the dark theme. These appear in:
+- `PendingReviews.tsx` (6 instances)
+- `BuySellWorkflow.tsx` (2 instances)
+- `StockLedgerTab.tsx` (2 instances)
+- `MeetingOfficersTable.tsx` (3 instances — alert + row highlight + info box)
+- `MeetingInfoCard.tsx` (1 instance)
 
-### B. Components Missing Loading States (13 files)
+**Fix**: Replace with dark-compatible opacity variants: `bg-amber-500/10 text-amber-500`, `bg-blue-500/10 text-blue-400`, `bg-red-500/10 text-red-400`, `bg-green-500/10 text-green-400`. This matches the pattern already used correctly in `FilingComplianceTab.tsx`.
 
-| Component | Queries without loading indicator |
-|---|---|
-| `CompanyAssetsSection.tsx` | `company_assets` |
-| `RelationshipsTab.tsx` | `company_relationships` (×2), `companies` |
-| `TimelineTab.tsx` | 7 queries (meetings, certificates, transactions, etc.) |
-| `CounselTab.tsx` — `AttorneySection` | `attorney_firms`, `attorneys` |
-| `CounselTab.tsx` — `AccountantSection` | `accountant_firms`, `accountants` |
-| `ConflictOfInterestGenerator.tsx` | `directors`, `officers` |
-| `NonprofitBylawsGenerator.tsx` | `directors`, `officers` |
-| `BylawsGenerator.tsx` | `directors`, `officers` |
-| `SMOperatingAgreementGenerator.tsx` | `shareholders`, `doc-versions` |
-| `OperatingAgreementGenerator.tsx` | `shareholders`, `doc-versions` |
-| `RecordBookGenerator.tsx` | multiple queries |
-| `IncorporationTab.tsx` — organizers/directors sections | `organizers`, `directors` |
-| `Reports.tsx` — company selector | `companies` (loads silently) |
+### 4. Hardcoded Colors Outside Design System Tokens (3 files)
+- `text-yellow-600` in Dashboard → should be `text-warning`
+- `text-green-500` / `text-green-600` in AnnualReviewPublic, ResetPassword → should be `text-success`
 
-### C. Components With Good States (no changes needed)
-Dashboard, OrgChart, MeetingsTab, DocumentsTab, ShareholdersTab, StockCertificatesTab, StockLedgerTab, BillsOfSaleTab, BusinessSalesTab, TransferLedgerTab, UnifiedLedgerTab, all AI compliance sub-tabs, FilingComplianceTab, Settings, Profile, PendingReviews — all have loading spinners and empty states.
+**Fix**: Replace with semantic tokens.
 
----
+### 5. Page Wrapper Padding Inconsistency (2 files)
+- Standard: `mx-auto max-w-5xl space-y-6 p-4 md:p-8`
+- `ResourcesAdmin.tsx`: `space-y-6` only (no padding, no max-width)
+- `NotFound.tsx`: oversized text (`text-4xl`, `text-xl`)
 
-## Implementation Plan
-
-### Step 1: Create `QueryErrorBanner` component
-**New file:** `src/components/ui/query-error-banner.tsx`
-
-A small inline alert showing "Failed to load [section]. Try refreshing." with a retry button that calls `refetch()`. Uses the existing `Alert` component with `variant="destructive"`.
-
-### Step 2: Add error states to high-traffic pages (8 files)
-Add `isError, error, refetch` destructuring and render `QueryErrorBanner` when `isError` is true:
-- `src/pages/Dashboard.tsx`
-- `src/pages/CompanyDetail.tsx`
-- `src/pages/OrgChart.tsx`
-- `src/pages/Reports.tsx`
-- `src/pages/PendingReviews.tsx`
-- `src/pages/Settings.tsx`
-- `src/pages/Profile.tsx`
-- `src/pages/MeetingDetail.tsx`
-
-### Step 3: Add error states to company tab components (10 files)
-- `CompanyAssetsSection.tsx`
-- `RelationshipsTab.tsx`
-- `TimelineTab.tsx`
-- `CounselTab.tsx` (both sections)
-- `BanksTab.tsx`
-- `LeasesTab.tsx`
-- `DocumentsTab.tsx`
-- `MeetingsTab.tsx`
-- `ShareholdersTab.tsx`
-- `BusinessSalesTab.tsx`
-
-### Step 4: Add loading states to the 13 components listed in Section B
-Add `isLoading` destructuring and a spinner/skeleton before the content renders. Pattern: a centered `Loader2` spinner matching the existing app convention.
-
-### Step 5: Add error states to generator components (5 files)
-- `BylawsGenerator.tsx`
-- `NonprofitBylawsGenerator.tsx`
-- `ConflictOfInterestGenerator.tsx`
-- `SMOperatingAgreementGenerator.tsx`
-- `OperatingAgreementGenerator.tsx`
+**Fix**: Add standard wrapper to ResourcesAdmin, downsize NotFound heading.
 
 ---
 
-### Scope
-- 1 new file (`query-error-banner.tsx`)
-- ~25 files updated with error/loading states
-- No database changes
-- No changes to mutations (already have toast error handling)
+## Implementation
+
+### Files to modify (12 total)
+
+**Heading + subtitle normalization (5 files):**
+- `Settings.tsx` — h1 `text-2xl` → `text-xl`, subtitle `text-sm` → `text-xs`
+- `Profile.tsx` — same
+- `UserManagement.tsx` — same
+- `ResourcesAdmin.tsx` — same + add wrapper padding
+- `ErrorBoundary.tsx` — `text-2xl` → `text-xl`
+
+**Badge dark-mode fix (5 files):**
+- `PendingReviews.tsx` — all `bg-*-50 text-*-600/700/800` → `bg-*-500/10 text-*-400/500`
+- `BuySellWorkflow.tsx` — yellow/green badges
+- `StockLedgerTab.tsx` — yellow/green badges
+- `MeetingOfficersTable.tsx` — amber alert, blue highlight, slate badges
+- `MeetingInfoCard.tsx` — amber alert
+
+**Semantic color tokens (3 files):**
+- `Dashboard.tsx` — `text-yellow-600` → `text-warning`
+- `AnnualReviewPublic.tsx` — `text-green-500` → `text-success`
+- `ResetPassword.tsx` — `text-green-600` → `text-success`
+
+**Misc:**
+- `NotFound.tsx` — `text-4xl` → `text-2xl`, `text-xl` → `text-base`
+
+No database changes. No new files.
 
