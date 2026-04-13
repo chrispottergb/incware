@@ -452,7 +452,9 @@ export default function TimelineTab({ companyId, company }: Props) {
           </div>
         </CardHeader>
         <CardContent className="px-4 pb-4">
-          {isLoading ? (
+          {isError ? (
+            <QueryErrorBanner message="Failed to load timeline." onRetry={refetchEvents} />
+          ) : isLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
           ) : timeline.length === 0 ? (
             <div className="text-center py-10">
