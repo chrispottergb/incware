@@ -258,6 +258,15 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     setPageCount(0);
   };
 
+  // Auto-trigger preview if prop is set
+  const autoTriggered = useRef(false);
+  useEffect(() => {
+    if (autoPreview && !autoTriggered.current) {
+      autoTriggered.current = true;
+      handlePreview();
+    }
+  }, [autoPreview]);
+
   // Load PDF document when data changes
   useEffect(() => {
     if (!pdfData) return;
