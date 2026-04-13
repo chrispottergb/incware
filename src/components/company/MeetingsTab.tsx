@@ -727,11 +727,6 @@ export default function MeetingsTab({ companyId, company }: Props) {
               key={m.id}
               className="group cursor-pointer transition-all hover:shadow-md hover:border-primary/20"
               onClick={() => {
-                if (m.meeting_type === "Written Consent" || m.meeting_type === "Written Consent of Members" || m.meeting_type === "Written Consent of Board of Directors") {
-                  setEditingConsentId(m.id);
-                  setConsentWizardOpen(true);
-                  return;
-                }
                 navigate(`/company/${companyId}/meetings/${m.id}`);
               }}
             >
