@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +42,8 @@ import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 export default function MeetingDetail() {
   const { id, meetingId } = useParams<{ id: string; meetingId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const autoPreview = searchParams.get("preview") === "true";
   const queryClient = useQueryClient();
 
   const { data: meeting, isLoading, isError, error, refetch } = useQuery({
@@ -645,6 +647,7 @@ export default function MeetingDetail() {
                 label="Print"
                 generatePDF={generateFullMinutes}
                 fileName={meetingFileName}
+                autoPreview={autoPreview}
               />
             </div>
           </CardContent>
