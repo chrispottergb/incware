@@ -22,9 +22,10 @@ interface Props {
   label?: string;
   generatePDF: () => jsPDF;
   fileName: string;
+  autoPreview?: boolean;
 }
 
-export default function PrintPreviewButton({ label = "Print", generatePDF, fileName }: Props) {
+export default function PrintPreviewButton({ label = "Print", generatePDF, fileName, autoPreview = false }: Props) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [pdfData, setPdfData] = useState<Uint8Array | null>(null);
   const [loading, setLoading] = useState(false);
