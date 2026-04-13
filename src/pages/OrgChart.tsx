@@ -168,6 +168,14 @@ export default function OrgChart() {
     );
   }
 
+  if (companiesError || relsError) {
+    return (
+      <div className="mx-auto max-w-2xl py-20 px-4">
+        <QueryErrorBanner message="Failed to load org chart data." onRetry={() => { refetchCompanies(); refetchRels(); }} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-2">
