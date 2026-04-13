@@ -385,10 +385,10 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
                 <DatePickerField value={form.effective_date} onChange={(v) => setForm(p => ({ ...p, effective_date: v }))} />
               </div>
               <div className="field-group flex items-end pb-1">
-                {bswEffectiveDateIsFuture ? (
-                  <Badge variant="outline" className="text-[10px] bg-yellow-50 text-yellow-700 border-yellow-300">Pending</Badge>
-                ) : (
-                  <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-300">Effective</Badge>
+                 {bswEffectiveDateIsFuture ? (
+                   <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/20">Pending</Badge>
+                 ) : (
+                   <Badge variant="outline" className="text-[10px] bg-green-500/10 text-green-500 border-green-500/20">Effective</Badge>
                 )}
               </div>
             </div>

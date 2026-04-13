@@ -189,8 +189,8 @@ export default function UserManagement() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">User Management</h1>
-        <p className="text-sm text-muted-foreground">Manage team members, roles, and invitations</p>
+        <h1 className="font-display text-xl font-bold tracking-tight">User Management</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">Manage team members, roles, and invitations</p>
       </div>
 
       {/* Current Users */}

@@ -363,7 +363,7 @@ export default function AnnualReviewPublic() {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full border-border bg-card">
           <CardContent className="pt-8 pb-8 text-center space-y-4">
-            <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto" />
+            <CheckCircle2 className="h-16 w-16 text-success mx-auto" />
             <h2 className="text-xl font-semibold text-foreground">
               Review Submitted
             </h2>
