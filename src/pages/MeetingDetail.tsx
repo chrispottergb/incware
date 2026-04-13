@@ -27,6 +27,13 @@ import { OFFICER_TITLE_OPTIONS } from "@/components/company/OrganizationTab";
 import CounselTab from "@/components/company/CounselTab";
 import LeasesTab from "@/components/company/LeasesTab";
 import BanksTab from "@/components/company/BanksTab";
+import WrittenConsentWizard from "@/components/WrittenConsentWizard";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import {
   exportMeetingMinutesPDF,
@@ -397,14 +404,6 @@ export default function MeetingDetail() {
     },
     enabled: !!meetingId,
   });
-import WrittenConsentWizard from "@/components/WrittenConsentWizard";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
 
 
   const { data: leaseTerminations = [] } = useQuery({
