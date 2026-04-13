@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, GitBranch, Building2 } from "lucide-react";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 interface Company {
   id: string;

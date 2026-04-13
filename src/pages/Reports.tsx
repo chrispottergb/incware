@@ -264,6 +264,8 @@ export default function Reports() {
         </div>
       </div>
 
+      {companiesError && <QueryErrorBanner message="Failed to load company data." onRetry={refetchCompanies} />}
+
       <Tabs defaultValue="compliance" className="w-full">
         <TabsList className="print:hidden w-full justify-center flex-wrap">
           <TabsTrigger value="compliance" className="gap-1.5 text-xs">
