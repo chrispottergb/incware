@@ -146,7 +146,24 @@ export default function UserManagement() {
     },
   });
 
-  const filtered = users.filter((u) => {
+  const migrateSsnMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("encrypt-legacy-ssn");
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Migration complete",
+        description: `Encrypted: ${data?.encrypted ?? 0}, Skipped: ${data?.skipped ?? 0}`,
+      });
+    },
+    onError: (e: any) => {
+      toast({ title: "Migration failed", description: e.message, variant: "destructive" });
+    },
+  });
+
+
     if (!search.trim()) return true;
     const s = search.toLowerCase();
     return (
