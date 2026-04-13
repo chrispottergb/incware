@@ -17,7 +17,6 @@ import { Plus, Pencil, Trash2, Landmark, PenTool, ChevronRight, Loader2 } from "
 import { toast } from "sonner";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { cn } from "@/lib/utils";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 interface BanksTabProps {
   companyId: string;
@@ -105,7 +104,6 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const [deleteBankId, setDeleteBankId] = useState<string | null>(null);
   const del = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from("company_banks").delete().eq("id", id); if (error) throw error; },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["company_banks", companyId] }); toast.success("Bank deleted"); },
@@ -139,7 +137,6 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const [deleteSignerId, setDeleteSignerId] = useState<string | null>(null);
   const delSigner = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("bank_authorized_signers").delete().eq("id", id);
@@ -291,7 +288,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditSigner(s)}>
                                         <Pencil className="h-3 w-3" />
                                       </Button>
-                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setDeleteSignerId(s.id)}>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => delSigner.mutate(s.id)}>
                                         <Trash2 className="h-3 w-3" />
                                       </Button>
                                     </div>
@@ -401,7 +398,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                               <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openEditSigner(s)}>
                                 <Pencil className="h-2.5 w-2.5" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => setDeleteSignerId(s.id)}>
+                              <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => delSigner.mutate(s.id)}>
                                 <Trash2 className="h-2.5 w-2.5" />
                               </Button>
                             </div>

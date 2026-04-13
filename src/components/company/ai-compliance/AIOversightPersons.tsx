@@ -12,7 +12,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2, UserCheck, Shield } from "lucide-react";
 import { toast } from "sonner";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 interface Props {
   companyId: string;
@@ -58,7 +57,6 @@ export default function AIOversightPersons({ companyId }: Props) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const [deleteId, setDeleteId] = useState<string | null>(null);
   const remove = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("ai_oversight_persons").delete().eq("id", id);
@@ -74,8 +72,7 @@ export default function AIOversightPersons({ companyId }: Props) {
   const getSystemName = (id: string) => systems.find((s: any) => s.id === id)?.system_name || "Unknown";
 
   return (
-<>
-        <div className="space-y-4">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold flex items-center gap-1.5"><Shield className="h-4 w-4" />Human Oversight Assignments (Art. 26.2)</h3>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -136,14 +133,12 @@ export default function AIOversightPersons({ companyId }: Props) {
                 <p className="text-[10px] text-muted-foreground">System: <span className="font-medium text-foreground">{getSystemName(p.ai_system_id)}</span></p>
                 {p.competence_description && <p className="text-[10px]"><span className="text-muted-foreground">Competence:</span> {p.competence_description}</p>}
                 {p.authority_scope && <p className="text-[10px]"><span className="text-muted-foreground">Authority:</span> {p.authority_scope}</p>}
-                <Button size="icon" variant="ghost" className="absolute top-2 right-2 h-6 w-6 text-destructive" onClick={() => setDeleteId(p.id)}><Trash2 className="h-3 w-3" /></Button>
+                <Button size="icon" variant="ghost" className="absolute top-2 right-2 h-6 w-6 text-destructive" onClick={() => remove.mutate(p.id)}><Trash2 className="h-3 w-3" /></Button>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
     </div>
-    <ConfirmDeleteDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)} onConfirm={() => { if (deleteId) { remove.mutate(deleteId); setDeleteId(null); } }} title="Delete oversight person?" description="This will permanently remove this oversight person assignment." />
-    </>
   );
 }

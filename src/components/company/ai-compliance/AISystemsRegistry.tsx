@@ -14,7 +14,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Pencil, Trash2, ChevronRight, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 interface Props {
   companyId: string;
@@ -162,7 +161,6 @@ export default function AISystemsRegistry({ companyId }: Props) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const [deleteId, setDeleteId] = useState<string | null>(null);
   const remove = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("ai_systems").delete().eq("id", id);
@@ -231,8 +229,7 @@ export default function AISystemsRegistry({ companyId }: Props) {
   const nextTab = () => tabIdx < TABS.length - 1 && setActiveTab(TABS[tabIdx + 1]);
 
   return (
-<>
-        <div className="space-y-4">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">AI Systems Registry</h3>
         <Dialog open={open} onOpenChange={(v) => { if (!v) closeDialog(); else setOpen(true); }}>
@@ -465,7 +462,7 @@ export default function AISystemsRegistry({ companyId }: Props) {
                   <TableCell>
                     <div className="flex gap-1">
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(s)}><Pencil className="h-3 w-3" /></Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(s.id)}><Trash2 className="h-3 w-3" /></Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => remove.mutate(s.id)}><Trash2 className="h-3 w-3" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -475,7 +472,5 @@ export default function AISystemsRegistry({ companyId }: Props) {
         </div>
       )}
     </div>
-    <ConfirmDeleteDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)} onConfirm={() => { if (deleteId) { remove.mutate(deleteId); setDeleteId(null); } }} title="Delete AI system?" description="This will permanently remove this AI system from the registry." />
-    </>
   );
 }

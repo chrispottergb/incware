@@ -37,8 +37,8 @@ import WIComplianceChecklist from "./WIComplianceChecklist";
 import SectionPdfActions from "./SectionPdfActions";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { cn, maskEin } from "@/lib/utils";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { isLLCType } from "@/lib/entity-terminology";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "LLC-S", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"];
 const US_STATES = [
@@ -368,6 +368,8 @@ export default function IncorporationTab({ company }: Props) {
 
   const [newOrganizer, setNewOrganizer] = useState({ organizer_name: "", address: "", address_2: "", city: "", state: "", zip: "" });
   const [showOrganizerForm, setShowOrganizerForm] = useState(false);
+  const [deleteOrganizerId, setDeleteOrganizerId] = useState<string | null>(null);
+  const [deleteDirectorId, setDeleteDirectorId] = useState<string | null>(null);
 
   const handleOrganizerZipResult = useCallback((result: { city: string; state: string }) => {
     setNewOrganizer(prev => ({ ...prev, city: result.city, state: result.state }));
@@ -426,8 +428,6 @@ export default function IncorporationTab({ company }: Props) {
 
   const [newDirector, setNewDirector] = useState({ name: "", address: "", address_2: "", city: "", state: "", zip: "" });
   const [showDirectorForm, setShowDirectorForm] = useState(false);
-  const [deleteOrganizerId, setDeleteOrganizerId] = useState<string | null>(null);
-  const [deleteDirectorId, setDeleteDirectorId] = useState<string | null>(null);
 
   const handleDirectorZipResult = useCallback((result: { city: string; state: string }) => {
     setNewDirector(prev => ({ ...prev, city: result.city, state: result.state }));
@@ -1411,8 +1411,8 @@ export default function IncorporationTab({ company }: Props) {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
       <ConfirmDeleteDialog open={!!deleteOrganizerId} onOpenChange={(open) => !open && setDeleteOrganizerId(null)} onConfirm={() => { if (deleteOrganizerId) { deleteOrganizer.mutate(deleteOrganizerId); setDeleteOrganizerId(null); } }} title="Delete organizer?" description="This will permanently remove this organizer record." />
       <ConfirmDeleteDialog open={!!deleteDirectorId} onOpenChange={(open) => !open && setDeleteDirectorId(null)} onConfirm={() => { if (deleteDirectorId) { deleteDirector.mutate(deleteDirectorId); setDeleteDirectorId(null); } }} title="Delete director?" description="This will permanently remove this director record." />
+    </div>
   );
 }

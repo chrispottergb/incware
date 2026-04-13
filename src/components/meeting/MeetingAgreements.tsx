@@ -39,7 +39,6 @@ import {
 } from "@/components/ui/tooltip";
 import { Plus, Trash2, Loader2, Pencil, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 const AGREEMENT_TYPE_OPTIONS = [
   "Operating Agreement",
@@ -181,7 +180,6 @@ export default function MeetingAgreements({ meetingId, meetingDate }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const [deleteId, setDeleteId] = useState<string | null>(null);
   const deleteRow = useMutation({
     mutationFn: async (rowId: string) => {
       const { error } = await supabase.from("agreements" as any).delete().eq("id", rowId);
@@ -376,7 +374,7 @@ export default function MeetingAgreements({ meetingId, meetingDate }: Props) {
                             <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => setDeleteId(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
+                            <Button variant="ghost" size="icon" onClick={() => deleteRow.mutate(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>

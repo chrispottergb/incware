@@ -162,7 +162,7 @@ export default function FilingComplianceTab({ companyId, entityType }: Props) {
     };
 
     if (missing.length > 0 || stale.length > 0) {
-      run();
+      run().catch((err) => console.error("Checklist seed error:", err));
     }
   }, [isLoading, items, allFilings, companyId, queryClient]);
 

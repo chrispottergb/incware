@@ -15,7 +15,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Plus, Pencil, Trash2, Building, Scale, Calculator, ChevronDown, ChevronRight, X, BookOpen, Loader2 } from "lucide-react";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { toast } from "sonner";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 interface CounselTabProps {
   companyId: string;
@@ -194,8 +193,6 @@ function AttorneySection({ companyId }: { companyId: string }) {
   const [contactFirmId, setContactFirmId] = useState<string | null>(null);
   const [expandedFirms, setExpandedFirms] = useState<Set<string>>(new Set());
   const [selectedAttorneys, setSelectedAttorneys] = useState<Record<string, string>>({});
-  const [deleteFirmId, setDeleteFirmId] = useState<string | null>(null);
-  const [deleteContactId, setDeleteContactId] = useState<string | null>(null);
 
   // Contact search state
   const [contactSearch, setContactSearch] = useState("");
@@ -340,7 +337,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
                   <div className="flex gap-1 shrink-0 ml-2">
                     <Button variant="outline" size="sm" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); openNewContact(f.id); }}><Plus className="h-3 w-3 mr-1" />Attorney</Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); openEditFirm(f); }}><Pencil className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteFirmId(f.id); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); delFirm.mutate(f.id); }}><Trash2 className="h-3.5 w-3.5" /></Button>
                   </div>
                 </div>
                 <CollapsibleContent>
@@ -374,7 +371,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
                               <TableCell>
                                 <div className="flex gap-1">
                                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditContact(a)}><Pencil className="h-3 w-3" /></Button>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setDeleteContactId(a.id)}><Trash2 className="h-3 w-3" /></Button>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => delContact.mutate(a.id)}><Trash2 className="h-3 w-3" /></Button>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -407,7 +404,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
                     <TableCell>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditContact(a)}><Pencil className="h-3 w-3" /></Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setDeleteContactId(a.id)}><Trash2 className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => delContact.mutate(a.id)}><Trash2 className="h-3 w-3" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -418,8 +415,6 @@ function AttorneySection({ companyId }: { companyId: string }) {
         )}
       </CardContent>
 
-      <ConfirmDeleteDialog open={!!deleteFirmId} onOpenChange={(open) => !open && setDeleteFirmId(null)} onConfirm={() => { if (deleteFirmId) { delFirm.mutate(deleteFirmId); setDeleteFirmId(null); } }} title="Delete attorney firm?" description="This will permanently remove this firm and all associated attorneys." />
-      <ConfirmDeleteDialog open={!!deleteContactId} onOpenChange={(open) => !open && setDeleteContactId(null)} onConfirm={() => { if (deleteContactId) { delContact.mutate(deleteContactId); setDeleteContactId(null); } }} title="Delete attorney?" description="This will permanently remove this attorney record." />
       <FirmDialog open={firmDialogOpen} onOpenChange={setFirmDialogOpen} editing={editingFirm} form={firmForm} setForm={setFirmForm} onSave={() => saveFirm.mutate()} isPending={saveFirm.isPending} type="Attorney" masterFirms={masterFirms} onSelectMaster={selectMasterFirm} />
 
       {/* Contact Dialog */}
@@ -502,8 +497,6 @@ function AccountantSection({ companyId }: { companyId: string }) {
   const [contactFirmId, setContactFirmId] = useState<string | null>(null);
   const [expandedFirms, setExpandedFirms] = useState<Set<string>>(new Set());
   const [selectedAccountants, setSelectedAccountants] = useState<Record<string, string>>({});
-  const [deleteFirmId, setDeleteFirmId] = useState<string | null>(null);
-  const [deleteContactId, setDeleteContactId] = useState<string | null>(null);
 
   // Contact search state
   const [contactSearch, setContactSearch] = useState("");
@@ -646,7 +639,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
                   <div className="flex gap-1 shrink-0 ml-2">
                     <Button variant="outline" size="sm" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); openNewContact(f.id); }}><Plus className="h-3 w-3 mr-1" />Accountant</Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); openEditFirm(f); }}><Pencil className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteFirmId(f.id); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); delFirm.mutate(f.id); }}><Trash2 className="h-3.5 w-3.5" /></Button>
                   </div>
                 </div>
                 <CollapsibleContent>
@@ -680,7 +673,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
                               <TableCell>
                                 <div className="flex gap-1">
                                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditContact(a)}><Pencil className="h-3 w-3" /></Button>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setDeleteContactId(a.id)}><Trash2 className="h-3 w-3" /></Button>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => delContact.mutate(a.id)}><Trash2 className="h-3 w-3" /></Button>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -713,7 +706,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
                     <TableCell>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditContact(a)}><Pencil className="h-3 w-3" /></Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setDeleteContactId(a.id)}><Trash2 className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => delContact.mutate(a.id)}><Trash2 className="h-3 w-3" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -724,8 +717,6 @@ function AccountantSection({ companyId }: { companyId: string }) {
         )}
       </CardContent>
 
-      <ConfirmDeleteDialog open={!!deleteFirmId} onOpenChange={(open) => !open && setDeleteFirmId(null)} onConfirm={() => { if (deleteFirmId) { delFirm.mutate(deleteFirmId); setDeleteFirmId(null); } }} title="Delete accountant firm?" description="This will permanently remove this firm and all associated accountants." />
-      <ConfirmDeleteDialog open={!!deleteContactId} onOpenChange={(open) => !open && setDeleteContactId(null)} onConfirm={() => { if (deleteContactId) { delContact.mutate(deleteContactId); setDeleteContactId(null); } }} title="Delete accountant?" description="This will permanently remove this accountant record." />
       <FirmDialog open={firmDialogOpen} onOpenChange={setFirmDialogOpen} editing={editingFirm} form={firmForm} setForm={setFirmForm} onSave={() => saveFirm.mutate()} isPending={saveFirm.isPending} type="Accountant" masterFirms={masterFirms} onSelectMaster={selectMasterFirm} />
 
       {/* Contact Dialog */}

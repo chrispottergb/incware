@@ -20,7 +20,6 @@ import { Plus, Trash2, Loader2, Award, XCircle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology } from "@/lib/entity-terminology";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 interface Props {
   companyId: string;
@@ -110,7 +109,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
         shareholder_id: form.shareholder_id,
         share_class: form.share_class,
         num_shares: parseFloat(form.num_shares) || 0,
-        par_value: t.isLLC ? null : (form.par_value_type === "no_par" ? null : (form.par_value ? parseInt(form.par_value) : null)),
+        par_value: t.isLLC ? null : (form.par_value_type === "no_par" ? null : (form.par_value ? parseFloat(form.par_value) : null)),
         issue_date: form.issue_date || null,
       };
       if (editId) {
@@ -171,7 +170,6 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const [deleteId, setDeleteId] = useState<string | null>(null);
   const remove = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("stock_certificates").delete().eq("id", id);
@@ -372,7 +370,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                               <XCircle className="h-3 w-3" />
                             </Button>
                           )}
-                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setDeleteId(c.id)}>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => remove.mutate(c.id)}>
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
@@ -404,8 +402,6 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
           </div>
         </DialogContent>
       </Dialog>
-    
-      <ConfirmDeleteDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)} onConfirm={() => { if (deleteId) { remove.mutate(deleteId); setDeleteId(null); } }} title="Delete certificate?" description="This will permanently remove this certificate record." />
     </>
   );
 }

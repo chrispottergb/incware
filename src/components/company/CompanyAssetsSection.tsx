@@ -32,7 +32,6 @@ import { Plus, Trash2, Loader2, Briefcase, Car, Wrench, Home, Pencil } from "luc
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 const ASSET_TABS = [
   { key: "vehicle", label: "Vehicles", icon: Car },
@@ -126,7 +125,6 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const [deleteId, setDeleteId] = useState<string | null>(null);
   const deleteAsset = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("company_assets").delete().eq("id", id);
@@ -476,7 +474,7 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
                         <Button variant="ghost" size="icon" onClick={() => openEdit(a)} className="h-6 w-6">
                           <Pencil className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(a.id)} className="h-6 w-6 text-destructive/50 hover:text-destructive">
+                        <Button variant="ghost" size="icon" onClick={() => deleteAsset.mutate(a.id)} className="h-6 w-6 text-destructive/50 hover:text-destructive">
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>

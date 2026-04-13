@@ -38,7 +38,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 type CompensationStatus = "pending_approval" | "reasonable" | "below_market" | "above_market" | "included_in_primary" | "non_compensable";
 type DualRoleType = "primary" | "secondary" | null;
@@ -254,7 +253,6 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const [deleteId, setDeleteId] = useState<string | null>(null);
   const deleteRow = useMutation({
     mutationFn: async (rowId: string) => {
       const { error } = await supabase.from("meeting_officers").delete().eq("id", rowId);
@@ -591,7 +589,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => setDeleteId(row.id)}
+                              onClick={() => deleteRow.mutate(row.id)}
                               className="h-8 w-8 text-destructive/60 hover:text-destructive"
                             >
                               <Trash2 className="h-4 w-4" />

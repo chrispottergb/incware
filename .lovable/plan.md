@@ -1,87 +1,72 @@
 
 
-# Logic QA — Findings
+# Inconsistent Styling Audit — Findings & Fix Plan
 
-## Bugs Found
+## Issues Found
 
-### 1. `parseInt` Truncates Par Value Decimals (HIGH — Data Loss)
-**File:** `src/components/company/StockCertificatesTab.tsx` line 113
+### 1. Page Heading Size Split (HIGH — 5 files)
+Two competing patterns exist:
+- **Design system standard** (per branding): `font-display text-xl font-bold tracking-tight` — used in Dashboard, Reports, PendingReviews, CompanyDetail, ImportAccess
+- **Non-standard**: `text-2xl font-bold text-foreground` — used in Settings, Profile, UserManagement, ResourcesAdmin, ErrorBoundary
 
-```typescript
-par_value: form.par_value ? parseInt(form.par_value) : null
-```
+**Fix**: Normalize all 5 non-standard files to `font-display text-xl font-bold tracking-tight`.
 
-`parseInt("0.01")` returns `0`. Par values like $0.001, $0.01, $0.10 are all stored as `0` or `null`. The `StockLedgerTab` correctly uses `parseFloat` for the same field. This silently corrupts certificate par value data.
+### 2. Page Subtitle Size Split (4 files)
+- Standard: `text-xs text-muted-foreground mt-0.5`
+- Non-standard: `text-sm text-muted-foreground` (Settings, Profile, UserManagement, ResourcesAdmin)
 
-**Fix:** Change `parseInt(form.par_value)` → `parseFloat(form.par_value)`.
+**Fix**: Normalize to `text-xs`.
 
----
+### 3. Hardcoded Light-Mode Badge Colors on Dark Theme (HIGH — 5 files)
+`bg-amber-50`, `bg-blue-50`, `bg-red-50`, `bg-green-50`, `bg-yellow-50` render as near-white backgrounds on the dark theme. These appear in:
+- `PendingReviews.tsx` (6 instances)
+- `BuySellWorkflow.tsx` (2 instances)
+- `StockLedgerTab.tsx` (2 instances)
+- `MeetingOfficersTable.tsx` (3 instances — alert + row highlight + info box)
+- `MeetingInfoCard.tsx` (1 instance)
 
-### 2. Issuance Validation Ignores Redemptions (MEDIUM — Overly Strict)
-**File:** `src/components/company/StockLedgerTab.tsx` lines 267-273
+**Fix**: Replace with dark-compatible opacity variants: `bg-amber-500/10 text-amber-500`, `bg-blue-500/10 text-blue-400`, `bg-red-500/10 text-red-400`, `bg-green-500/10 text-green-400`. This matches the pattern already used correctly in `FilingComplianceTab.tsx`.
 
-The available-shares check before an issuance only sums issuances:
-```typescript
-const currentIssued = transactions
-  .filter(t => t.status !== "corrected")
-  .reduce((sum, t) => {
-    if (ISSUANCE_SET.has(t.transaction_type)) return sum + (t.num_shares || 0);
-    return sum;
-  }, 0);
-const available = company.authorized_shares - currentIssued;
-```
+### 4. Hardcoded Colors Outside Design System Tokens (3 files)
+- `text-yellow-600` in Dashboard → should be `text-warning`
+- `text-green-500` / `text-green-600` in AnnualReviewPublic, ResetPassword → should be `text-success`
 
-This never subtracts redeemed/cancelled shares, so if a company has 1000 authorized shares, issues 800, redeems 200, it shows 200 available but the validation thinks 0 are available. The correct calculation exists in `useShareCalculations.ts` (which subtracts `REDUCTION_TYPES`).
+**Fix**: Replace with semantic tokens.
 
-**Fix:** Subtract redemptions from `currentIssued`, matching the logic in `useShareCalculations`.
+### 5. Page Wrapper Padding Inconsistency (2 files)
+- Standard: `mx-auto max-w-5xl space-y-6 p-4 md:p-8`
+- `ResourcesAdmin.tsx`: `space-y-6` only (no padding, no max-width)
+- `NotFound.tsx`: oversized text (`text-4xl`, `text-xl`)
 
----
-
-### 3. Fire-and-Forget RPC Without `await` (LOW — Silent Failure)
-**File:** `src/components/company/StockLedgerTab.tsx` line 384
-
-```typescript
-supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId });
-```
-
-This call is not awaited and has no error handling. If it fails, LLC ownership percentages silently become stale. Compare to `CreateCompanyWizard.tsx` which correctly uses `await supabase.rpc(...)`.
-
-**Fix:** Add `await` and wrap in try/catch, or at minimum `.then(null, console.error)`.
-
----
-
-### 4. `FilingComplianceTab` useEffect Has No Error Handling (LOW)
-**File:** `src/components/company/FilingComplianceTab.tsx` lines 142-166
-
-The `run()` async function inside `useEffect` performs database inserts and deletes but never catches errors. A failed insert/delete silently breaks the checklist seeding.
-
-**Fix:** Add `.catch(err => toast.error(...))` to the `run()` call.
-
----
-
-## Items Reviewed and Found Sound
-
-- **`useAutoSave` race condition:** Retry timer is correctly cleared on success (lines 79-82). The `finally` block resetting `savingRef` after catch's timeout setup is technically harmless since the timeout callback re-checks independently.
-- **`useSessionIdleTimeout`:** Throttle + interval pattern is correct. Cleanup is thorough.
-- **`useShareCalculations`:** Transfer logic correctly matches by name normalization. Holdings floor at 0.
-- **Auth flow:** `onAuthStateChange` + `getSession` ordering is correct per Supabase docs.
-- **Query `enabled` guards:** All queries properly gate on `!!id` or `!!user?.id`.
-- **Date comparisons:** String ISO date comparisons (`YYYY-MM-DD`) work correctly for chronological ordering.
-- **`toISOString().split("T")[0]`:** Used extensively — correct for UTC dates, though timezone edge cases exist at midnight. This is an accepted pattern throughout the codebase.
+**Fix**: Add standard wrapper to ResourcesAdmin, downsize NotFound heading.
 
 ---
 
 ## Implementation
 
-### Scope: 3 files, 4 fixes
+### Files to modify (12 total)
 
-**`StockCertificatesTab.tsx`** — Change `parseInt(form.par_value)` to `parseFloat(form.par_value)` (1 line).
+**Heading + subtitle normalization (5 files):**
+- `Settings.tsx` — h1 `text-2xl` → `text-xl`, subtitle `text-sm` → `text-xs`
+- `Profile.tsx` — same
+- `UserManagement.tsx` — same
+- `ResourcesAdmin.tsx` — same + add wrapper padding
+- `ErrorBoundary.tsx` — `text-2xl` → `text-xl`
 
-**`StockLedgerTab.tsx`** — Two fixes:
-1. Subtract redemptions in the issuance validation (lines 267-273): add a reduction for `REDUCTION_SET` types in the same reduce.
-2. Add `await` to the `supabase.rpc` call on line 384.
+**Badge dark-mode fix (5 files):**
+- `PendingReviews.tsx` — all `bg-*-50 text-*-600/700/800` → `bg-*-500/10 text-*-400/500`
+- `BuySellWorkflow.tsx` — yellow/green badges
+- `StockLedgerTab.tsx` — yellow/green badges
+- `MeetingOfficersTable.tsx` — amber alert, blue highlight, slate badges
+- `MeetingInfoCard.tsx` — amber alert
 
-**`FilingComplianceTab.tsx`** — Add error handling to the seeding `run()` call (line 165): `run().catch(err => console.error("Checklist seed error:", err))`.
+**Semantic color tokens (3 files):**
+- `Dashboard.tsx` — `text-yellow-600` → `text-warning`
+- `AnnualReviewPublic.tsx` — `text-green-500` → `text-success`
+- `ResetPassword.tsx` — `text-green-600` → `text-success`
 
-No database changes.
+**Misc:**
+- `NotFound.tsx` — `text-4xl` → `text-2xl`, `text-xl` → `text-base`
+
+No database changes. No new files.
 
