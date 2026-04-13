@@ -367,6 +367,8 @@ export default function IncorporationTab({ company }: Props) {
 
   const [newOrganizer, setNewOrganizer] = useState({ organizer_name: "", address: "", address_2: "", city: "", state: "", zip: "" });
   const [showOrganizerForm, setShowOrganizerForm] = useState(false);
+  const [deleteOrganizerId, setDeleteOrganizerId] = useState<string | null>(null);
+  const [deleteDirectorId, setDeleteDirectorId] = useState<string | null>(null);
 
   const handleOrganizerZipResult = useCallback((result: { city: string; state: string }) => {
     setNewOrganizer(prev => ({ ...prev, city: result.city, state: result.state }));
