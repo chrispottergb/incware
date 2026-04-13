@@ -1,12 +1,12 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Calendar, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, FileText, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import MeetingAuthorizedSigners from "@/components/meeting/MeetingAuthorizedSigners";
 import MeetingInfoCard from "@/components/meeting/MeetingInfoCard";
