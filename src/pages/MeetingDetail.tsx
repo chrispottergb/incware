@@ -397,7 +397,13 @@ export default function MeetingDetail() {
     },
     enabled: !!meetingId,
   });
-
+import WrittenConsentWizard from "@/components/WrittenConsentWizard";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 
 
