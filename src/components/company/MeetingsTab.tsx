@@ -41,7 +41,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Calendar, MapPin, ChevronRight, Upload, FileText } from "lucide-react";
+import { Plus, Trash2, Loader2, Calendar, MapPin, ChevronRight, Upload, FileText, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { useNavigate } from "react-router-dom";
@@ -754,6 +754,21 @@ export default function MeetingsTab({ companyId, company }: Props) {
                     )}
                   </div>
                 </div>
+                {m.meeting_type === "Written Consent" && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
+                    title="Edit Written Consent"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingConsentId(m.id);
+                      setConsentWizardOpen(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
