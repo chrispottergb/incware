@@ -86,7 +86,7 @@ function OrgNode({ node, relationship, navigate }: { node: TreeNode; relationshi
 export default function OrgChart() {
   const navigate = useNavigate();
 
-  const { data: companies = [], isLoading: loadingCompanies } = useQuery({
+  const { data: companies = [], isLoading: loadingCompanies, isError: companiesError, refetch: refetchCompanies } = useQuery({
     queryKey: ["companies"],
     queryFn: async () => {
       const { data, error } = await supabase.from("companies").select("id, name, entity_type").order("name");
@@ -95,7 +95,7 @@ export default function OrgChart() {
     },
   });
 
-  const { data: relationships = [], isLoading: loadingRels } = useQuery({
+  const { data: relationships = [], isLoading: loadingRels, isError: relsError, refetch: refetchRels } = useQuery({
     queryKey: ["company_relationships", "all"],
     queryFn: async () => {
       const { data, error } = await supabase.from("company_relationships").select("*").order("created_at");
