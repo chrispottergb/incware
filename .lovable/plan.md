@@ -1,72 +1,77 @@
 
 
-# Inconsistent Styling Audit — Findings & Fix Plan
+# Missing Confirmation Dialogs for Destructive Actions
 
-## Issues Found
+## Findings
 
-### 1. Page Heading Size Split (HIGH — 5 files)
-Two competing patterns exist:
-- **Design system standard** (per branding): `font-display text-xl font-bold tracking-tight` — used in Dashboard, Reports, PendingReviews, CompanyDetail, ImportAccess
-- **Non-standard**: `text-2xl font-bold text-foreground` — used in Settings, Profile, UserManagement, ResourcesAdmin, ErrorBoundary
+Components that **already have** confirmation dialogs (no changes needed):
+- `CompanyDetail.tsx` — entity deletion via `EntityDeleteGuard`
+- `MeetingsTab.tsx` — multi-step delete with transaction awareness
+- `DocumentsTab.tsx` — `AlertDialog` before file deletion
+- `Settings.tsx` — shortcode deletion confirmation
+- `PendingReviews.tsx` — review link deletion confirmation
+- `AdminDeleteButton.tsx` — transaction deletion confirmation
+- `StockCertificatesTab.tsx` — cancel certificate confirmation (but delete has none)
 
-**Fix**: Normalize all 5 non-standard files to `font-display text-xl font-bold tracking-tight`.
+Components with **direct-fire delete mutations** (no confirmation — 26 delete buttons across 22 files):
 
-### 2. Page Subtitle Size Split (4 files)
-- Standard: `text-xs text-muted-foreground mt-0.5`
-- Non-standard: `text-sm text-muted-foreground` (Settings, Profile, UserManagement, ResourcesAdmin)
+### HIGH priority (persistent business data — 12 components)
 
-**Fix**: Normalize to `text-xs`.
+| Component | What's deleted without confirmation |
+|---|---|
+| `ShareholdersTab.tsx` | Shareholder record |
+| `StockCertificatesTab.tsx` | Certificate record (the red trash button) |
+| `BillsOfSaleTab.tsx` | Bill of sale record |
+| `BusinessSalesTab.tsx` | Business sale record |
+| `LeasesTab.tsx` | Lease record |
+| `BanksTab.tsx` | Bank account record |
+| `CompanyAssetsSection.tsx` | Company asset |
+| `RelationshipsTab.tsx` | Entity relationship |
+| `TimelineTab.tsx` | Custom timeline event |
+| `CounselTab.tsx` | Attorney/accountant firms + contacts (4 buttons) |
+| `IncorporationTab.tsx` | Organizer and director records |
+| `OrganizationTab.tsx` | Organizer record |
 
-### 3. Hardcoded Light-Mode Badge Colors on Dark Theme (HIGH — 5 files)
-`bg-amber-50`, `bg-blue-50`, `bg-red-50`, `bg-green-50`, `bg-yellow-50` render as near-white backgrounds on the dark theme. These appear in:
-- `PendingReviews.tsx` (6 instances)
-- `BuySellWorkflow.tsx` (2 instances)
-- `StockLedgerTab.tsx` (2 instances)
-- `MeetingOfficersTable.tsx` (3 instances — alert + row highlight + info box)
-- `MeetingInfoCard.tsx` (1 instance)
+### MEDIUM priority (meeting sub-records — 8 components, 10 buttons)
 
-**Fix**: Replace with dark-compatible opacity variants: `bg-amber-500/10 text-amber-500`, `bg-blue-500/10 text-blue-400`, `bg-red-500/10 text-red-400`, `bg-green-500/10 text-green-400`. This matches the pattern already used correctly in `FilingComplianceTab.tsx`.
+| Component | What's deleted |
+|---|---|
+| `MeetingResolutions.tsx` | Resolution |
+| `MeetingOfficersTable.tsx` | Officer row |
+| `MeetingBenefits.tsx` | Benefit row |
+| `MeetingLoans.tsx` | Loan row |
+| `MeetingVehicles.tsx` | Vehicle purchase, lease, termination, sale (4 buttons) |
+| `MeetingAgreements.tsx` | Agreement row |
+| `MeetingAmendments.tsx` | Amendment row |
+| `MeetingAuthorizedSigners.tsx` | Authorized signer |
 
-### 4. Hardcoded Colors Outside Design System Tokens (3 files)
-- `text-yellow-600` in Dashboard → should be `text-warning`
-- `text-green-500` / `text-green-600` in AnnualReviewPublic, ResetPassword → should be `text-success`
+### LOW priority (AI compliance — 5 components)
 
-**Fix**: Replace with semantic tokens.
-
-### 5. Page Wrapper Padding Inconsistency (2 files)
-- Standard: `mx-auto max-w-5xl space-y-6 p-4 md:p-8`
-- `ResourcesAdmin.tsx`: `space-y-6` only (no padding, no max-width)
-- `NotFound.tsx`: oversized text (`text-4xl`, `text-xl`)
-
-**Fix**: Add standard wrapper to ResourcesAdmin, downsize NotFound heading.
+`AIOversightPersons`, `AISystemsRegistry`, `AIRiskIncidents`, `AIUsageLog`, `AIComplianceDocs` — all delete without confirmation.
 
 ---
 
-## Implementation
+## Implementation Plan
 
-### Files to modify (12 total)
+### Step 1: Create shared `ConfirmDeleteDialog` component
+**New file:** `src/components/ui/confirm-delete-dialog.tsx`
 
-**Heading + subtitle normalization (5 files):**
-- `Settings.tsx` — h1 `text-2xl` → `text-xl`, subtitle `text-sm` → `text-xs`
-- `Profile.tsx` — same
-- `UserManagement.tsx` — same
-- `ResourcesAdmin.tsx` — same + add wrapper padding
-- `ErrorBoundary.tsx` — `text-2xl` → `text-xl`
+A pre-styled `AlertDialog` accepting `open`, `onOpenChange`, `onConfirm`, `title?`, `description?` props. Destructive action styling matching existing patterns.
 
-**Badge dark-mode fix (5 files):**
-- `PendingReviews.tsx` — all `bg-*-50 text-*-600/700/800` → `bg-*-500/10 text-*-400/500`
-- `BuySellWorkflow.tsx` — yellow/green badges
-- `StockLedgerTab.tsx` — yellow/green badges
-- `MeetingOfficersTable.tsx` — amber alert, blue highlight, slate badges
-- `MeetingInfoCard.tsx` — amber alert
+### Step 2: Wire into all 22 files (26 delete buttons)
 
-**Semantic color tokens (3 files):**
-- `Dashboard.tsx` — `text-yellow-600` → `text-warning`
-- `AnnualReviewPublic.tsx` — `text-green-500` → `text-success`
-- `ResetPassword.tsx` — `text-green-600` → `text-success`
+Each file gets:
+1. `const [deleteId, setDeleteId] = useState<string | null>(null)`
+2. Change `onClick={() => del.mutate(id)}` → `onClick={() => setDeleteId(id)}`
+3. Add `<ConfirmDeleteDialog open={!!deleteId} onOpenChange={...} onConfirm={() => del.mutate(deleteId!)} />`
 
-**Misc:**
-- `NotFound.tsx` — `text-4xl` → `text-2xl`, `text-xl` → `text-base`
+### Scope
+- 1 new file
+- 22 files updated
+- No database changes
 
-No database changes. No new files.
+### Technical details
+- `MeetingSubTable.tsx` is a generic component used across multiple meeting sections — adding confirmation here covers its usage everywhere
+- `CounselTab.tsx` has 4 separate delete mutations (firm + contact × attorney + accountant) — each gets its own `deleteId` state
+- `MeetingVehicles.tsx` has 4 delete mutations — same pattern, 4 states or a single `{type, id}` state
 
