@@ -754,6 +754,21 @@ export default function MeetingsTab({ companyId, company }: Props) {
                     )}
                   </div>
                 </div>
+                {m.meeting_type === "Written Consent" && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
+                    title="Edit Written Consent"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingConsentId(m.id);
+                      setConsentWizardOpen(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
