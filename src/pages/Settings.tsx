@@ -122,6 +122,7 @@ export default function Settings() {
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
         <p className="text-sm text-muted-foreground">Manage shortcodes and text expansion library</p>
       </div>
+      {isError && <QueryErrorBanner message="Failed to load shortcodes." onRetry={refetch} />}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">

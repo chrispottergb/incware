@@ -468,6 +468,14 @@ export default function MeetingDetail() {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-2xl py-20 px-4">
+        <QueryErrorBanner message="Failed to load meeting details." onRetry={refetch} />
+      </div>
+    );
+  }
+
   if (!meeting) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
