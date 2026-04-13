@@ -108,6 +108,23 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
   const abortRef = useRef<AbortController | null>(null);
   const cancelledRef = useRef(false);
 
+  // ── Tax Return Job History ──
+  const { data: jobHistory = [] } = useQuery({
+    queryKey: ["tax_return_jobs", companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tax_return_jobs" as any)
+        .select("id, status, file_name, error, created_at, updated_at")
+        .eq("company_id", companyId!)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data as any[];
+    },
+    refetchInterval: processing ? 5000 : false,
+  });
+
   const extractedList = files
     .filter((f) => f.status === "done" && f.data)
     .map((f) => f.data!)
