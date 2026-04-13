@@ -39,6 +39,7 @@ import LeasesTab from "@/components/company/LeasesTab";
 import BuySellWorkflow from "@/components/company/BuySellWorkflow";
 import TransferLedgerTab from "@/components/company/TransferLedgerTab";
 import DocumentsTab from "@/components/company/DocumentsTab";
+import BusinessSalesTab from "@/components/company/BusinessSalesTab";
 import FilingComplianceTab from "@/components/company/FilingComplianceTab";
 import UnifiedLedgerTab from "@/components/company/UnifiedLedgerTab";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
@@ -99,7 +100,7 @@ export default function CompanyDetail() {
   const defaultTab = isLLC ? "organization" : "incorporation";
 
   // Valid tab values for LLC vs non-LLC to prevent reversion
-  const LLC_TABS = ["organization", "meetings", "shareholders", "timeline", "leases", "counsel", "banks", "relationships", "ai-compliance", "operating-agreement", "filing-compliance", "record-book", "documents"];
+  const LLC_TABS = ["organization", "meetings", "shareholders", "timeline", "leases", "counsel", "banks", "relationships", "ai-compliance", "operating-agreement", "filing-compliance", "record-book", "documents", "business-sales"];
   const validLLCTab = isLLC && rawHashTab && !LLC_TABS.includes(rawHashTab);
   const hashTab = (!rawHashTab || (rawHashTab === "incorporation" && isLLC) || validLLCTab) ? defaultTab : rawHashTab;
 
@@ -124,6 +125,7 @@ export default function CompanyDetail() {
         { value: "relationships", label: "Relationships" },
         { value: "ai-compliance", label: "AI Compliance" },
         { value: "operating-agreement", label: "Operating Agreement" },
+        { value: "business-sales", label: "Business Sales" },
         { value: "filing-compliance", label: "Filing & Compliance" },
         { value: "record-book", label: "Record Book" },
         { value: "documents", label: "Documents" },
@@ -149,6 +151,7 @@ export default function CompanyDetail() {
       tabs.push({ value: "nonprofit-bylaws", label: "Bylaws" });
       tabs.push({ value: "conflict-of-interest", label: "Conflict of Interest" });
     }
+    tabs.push({ value: "business-sales", label: "Business Sales" });
     tabs.push({ value: "filing-compliance", label: "Filing & Compliance" });
     tabs.push({ value: "record-book", label: "Record Book" });
     tabs.push({ value: "documents", label: "Documents" });
@@ -377,6 +380,9 @@ export default function CompanyDetail() {
             </TabsContent>
           </>
         )}
+        <TabsContent value="business-sales" className="mt-5">
+          <BusinessSalesTab companyId={company.id} />
+        </TabsContent>
         <TabsContent value="filing-compliance" className="mt-5">
           <FilingComplianceTab companyId={company.id} entityType={company.entity_type} />
         </TabsContent>

@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Search, Users, Shield, Trash2, Mail } from "lucide-react";
+import { Plus, Search, Users, Shield, Trash2, Mail, Lock, Loader2 } from "lucide-react";
 
 type UserWithRole = {
   user_id: string;
@@ -143,6 +143,23 @@ export default function UserManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user_invitations"] });
       toast({ title: "Invitation removed" });
+    },
+  });
+
+  const migrateSsnMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("encrypt-legacy-ssn");
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Migration complete",
+        description: `Encrypted: ${data?.encrypted ?? 0}, Skipped: ${data?.skipped ?? 0}`,
+      });
+    },
+    onError: (e: any) => {
+      toast({ title: "Migration failed", description: e.message, variant: "destructive" });
     },
   });
 
@@ -322,6 +339,34 @@ export default function UserManagement() {
           </CardContent>
         </Card>
       )}
+
+      {/* Admin Utilities */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Lock className="h-5 w-5 text-primary" />
+            Admin Utilities
+          </CardTitle>
+          <CardDescription>One-time administrative actions</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <div>
+              <p className="text-sm font-medium">Migrate Legacy SSNs</p>
+              <p className="text-xs text-muted-foreground">Encrypt any plaintext SSN/EIN values in the shareholders table</p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={migrateSsnMutation.isPending}
+              onClick={() => migrateSsnMutation.mutate()}
+            >
+              {migrateSsnMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {migrateSsnMutation.isPending ? "Encrypting…" : "Run Migration"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Invite Dialog */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>

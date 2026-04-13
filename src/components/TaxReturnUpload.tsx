@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -106,6 +107,23 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
   const fileRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const cancelledRef = useRef(false);
+
+  // ── Tax Return Job History ──
+  const { data: jobHistory = [] } = useQuery({
+    queryKey: ["tax_return_jobs", companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tax_return_jobs" as any)
+        .select("id, status, file_name, error, created_at, updated_at")
+        .eq("company_id", companyId!)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data as any[];
+    },
+    refetchInterval: processing ? 5000 : false,
+  });
 
   const extractedList = files
     .filter((f) => f.status === "done" && f.data)
@@ -925,6 +943,34 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
         )}
       </DialogContent>
     </Dialog>
+    {companyId && jobHistory.length > 0 && (
+      <Card className="mt-4">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            Recent Processing Jobs
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {jobHistory.map((job: any) => (
+              <div key={job.id} className="flex items-center justify-between text-xs border border-border rounded-md px-3 py-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  {job.status === "completed" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />}
+                  {job.status === "processing" && <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin shrink-0" />}
+                  {job.status === "failed" && <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" />}
+                  <span className="truncate">{job.file_name || "Tax return"}</span>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  {job.error && <span className="text-destructive truncate max-w-[200px]">{job.error}</span>}
+                  <span className="text-muted-foreground">{new Date(job.created_at).toLocaleDateString()}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    )}
     </>
   );
 }
