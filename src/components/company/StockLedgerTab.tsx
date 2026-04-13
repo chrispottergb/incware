@@ -264,10 +264,12 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
 
       // Validate issuance limit
       if (ISSUANCE_SET.has(txType) && company?.authorized_shares != null) {
+        const REDUCTION_SET_LOCAL = new Set(["redemption", "reacquisition", "cancellation", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout"]);
         const currentIssued = transactions
           .filter((t: any) => t.status !== "corrected")
           .reduce((sum: number, t: any) => {
             if (ISSUANCE_SET.has(t.transaction_type)) return sum + (t.num_shares || 0);
+            if (REDUCTION_SET_LOCAL.has(t.transaction_type)) return sum - (t.num_shares || 0);
             return sum;
           }, 0);
         const available = company.authorized_shares - currentIssued;
@@ -381,7 +383,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       queryClient.invalidateQueries({ queryKey: ["company-authorized-shares", companyId] });
       queryClient.invalidateQueries({ queryKey: ["bills_of_sale", companyId] });
       if (isLLCType(entityType)) {
-        supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId });
+        await supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId }).then(null, console.error);
       }
       setDialog(false);
       resetForm();

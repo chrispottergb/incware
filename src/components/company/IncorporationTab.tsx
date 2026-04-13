@@ -917,7 +917,7 @@ export default function IncorporationTab({ company }: Props) {
                     </span>
                   )}
                 </div>
-                <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive hover:text-destructive" onClick={() => deleteOrganizer.mutate(org.id)}>
+                <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive hover:text-destructive" onClick={() => setDeleteOrganizerId(org.id)}>
                   <Trash2 className="h-3 w-3" />
                 </Button>
               </div>

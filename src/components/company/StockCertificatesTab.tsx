@@ -109,7 +109,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
         shareholder_id: form.shareholder_id,
         share_class: form.share_class,
         num_shares: parseFloat(form.num_shares) || 0,
-        par_value: t.isLLC ? null : (form.par_value_type === "no_par" ? null : (form.par_value ? parseInt(form.par_value) : null)),
+        par_value: t.isLLC ? null : (form.par_value_type === "no_par" ? null : (form.par_value ? parseFloat(form.par_value) : null)),
         issue_date: form.issue_date || null,
       };
       if (editId) {
