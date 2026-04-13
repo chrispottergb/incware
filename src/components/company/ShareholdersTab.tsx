@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { getTerminology } from "@/lib/entity-terminology";
 import type { ShareholderHoldings } from "@/hooks/useShareCalculations";
 
@@ -88,7 +89,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
 
   const t = getTerminology(entityType);
 
-  const { data: shareholders = [], isLoading } = useQuery({
+  const { data: shareholders = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["shareholders", companyId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -463,7 +464,9 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
         </div>
       </CardHeader>
       <CardContent className="px-4 pb-4">
-        {isLoading ? (
+        {isError ? (
+          <QueryErrorBanner message="Failed to load shareholders." onRetry={refetch} />
+        ) : isLoading ? (
           <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : shareholders.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-6">No {t.shareholders.toLowerCase()} recorded yet.</p>

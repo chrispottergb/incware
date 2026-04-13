@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 type Company = Tables<"companies">;
 
@@ -147,7 +148,7 @@ export default function TimelineTab({ companyId, company }: Props) {
     },
   });
 
-  const { data: manualEvents = [], isLoading } = useQuery({
+  const { data: manualEvents = [], isLoading, isError, refetch: refetchEvents } = useQuery({
     queryKey: ["timeline_events", companyId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -451,7 +452,9 @@ export default function TimelineTab({ companyId, company }: Props) {
           </div>
         </CardHeader>
         <CardContent className="px-4 pb-4">
-          {isLoading ? (
+          {isError ? (
+            <QueryErrorBanner message="Failed to load timeline." onRetry={refetchEvents} />
+          ) : isLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
           ) : timeline.length === 0 ? (
             <div className="text-center py-10">

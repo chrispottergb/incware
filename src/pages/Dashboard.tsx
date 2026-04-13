@@ -28,6 +28,7 @@ import TaxReturnUpload from "@/components/TaxReturnUpload";
 import CreateCompanyWizard from "@/components/CreateCompanyWizard";
 import AnnualUpdateWorkflow from "@/components/AnnualUpdateWorkflow";
 import AnnualReviewLinkGenerator from "@/components/AnnualReviewLinkGenerator";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 import cardNewClient from "@/assets/card-new-client.jpg";
 import cardImportTaxReturn from "@/assets/card-import-tax-return.jpg";
@@ -65,7 +66,7 @@ export default function Dashboard() {
 
   // Legacy form state removed — now handled by CreateCompanyWizard
 
-  const { data: companies = [], isLoading } = useQuery({
+  const { data: companies = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ["companies"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -246,6 +247,7 @@ export default function Dashboard() {
       <AIComplianceSummary />
 
       <div id="companies-section" />
+      {isError && <QueryErrorBanner message="Failed to load companies." onRetry={refetch} />}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-xl font-bold tracking-tight">Client Companies</h1>

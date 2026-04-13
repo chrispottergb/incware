@@ -45,6 +45,7 @@ import UnifiedLedgerTab from "@/components/company/UnifiedLedgerTab";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { useShareCalculations } from "@/hooks/useShareCalculations";
 import EntityDeleteGuard from "@/components/company/EntityDeleteGuard";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 export default function CompanyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -80,7 +81,7 @@ export default function CompanyDetail() {
     }
   };
 
-  const { data: company, isLoading } = useQuery({
+  const { data: company, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["company", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -162,6 +163,14 @@ export default function CompanyDetail() {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-2xl py-20 px-4">
+        <QueryErrorBanner message="Failed to load company details." onRetry={refetch} />
       </div>
     );
   }

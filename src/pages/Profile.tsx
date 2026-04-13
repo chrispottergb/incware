@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { User, Mail, Save } from "lucide-react";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -15,7 +16,7 @@ export default function Profile() {
   const [fullName, setFullName] = useState("");
   const [initialized, setInitialized] = useState(false);
 
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isLoading, isError, refetch } = useQuery({
     queryKey: ["profile", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
@@ -58,7 +59,9 @@ export default function Profile() {
         <p className="text-sm text-muted-foreground">Manage your personal information</p>
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <QueryErrorBanner message="Failed to load profile." onRetry={refetch} />
+      ) : isLoading ? (
         <div className="flex justify-center py-12">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>

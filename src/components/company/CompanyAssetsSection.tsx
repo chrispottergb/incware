@@ -31,6 +31,7 @@ import {
 import { Plus, Trash2, Loader2, Briefcase, Car, Wrench, Home, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 const ASSET_TABS = [
   { key: "vehicle", label: "Vehicles", icon: Car },
@@ -57,7 +58,7 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
   
   const [propertyForm, setPropertyForm] = useState({ address: "", address_2: "", finance_company: "", escrow: "", mortgage: "", taxes: "", description: "" });
 
-  const { data: allAssets = [] } = useQuery({
+  const { data: allAssets = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["company_assets", companyId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -159,6 +160,9 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
 
   const fmt = (v: number | null | undefined) =>
     v != null ? `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "—";
+
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
+  if (isError) return <QueryErrorBanner message="Failed to load assets." onRetry={refetch} />;
 
   return (
     <Card>

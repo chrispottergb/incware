@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Plus, Pencil, Trash2, Building, Scale, Calculator, ChevronDown, ChevronRight, X, BookOpen } from "lucide-react";
+import { Plus, Pencil, Trash2, Building, Scale, Calculator, ChevronDown, ChevronRight, X, BookOpen, Loader2 } from "lucide-react";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { toast } from "sonner";
 
 interface CounselTabProps {
@@ -213,7 +214,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
     setContactSearch("");
   };
 
-  const { data: firms = [] } = useQuery({
+  const { data: firms = [], isLoading: loadingFirms, isError: isFirmsError, refetch: refetchFirms } = useQuery({
     queryKey: ["attorney_firms", companyId],
     queryFn: async () => {
       const { data, error } = await supabase.from("attorney_firms").select("*").eq("company_id", companyId).order("firm_name");
@@ -517,7 +518,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
     setContactSearch("");
   };
 
-  const { data: firms = [] } = useQuery({
+  const { data: firms = [], isLoading: loadingFirms, isError: isFirmsError, refetch: refetchFirms } = useQuery({
     queryKey: ["accountant_firms", companyId],
     queryFn: async () => {
       const { data, error } = await supabase.from("accountant_firms").select("*").eq("company_id", companyId).order("firm_name");

@@ -13,8 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Plus, Pencil, Trash2, Landmark, PenTool, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, Landmark, PenTool, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { cn } from "@/lib/utils";
 
 interface BanksTabProps {
@@ -44,7 +45,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
   }, []);
   const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(handleZipResult);
 
-  const { data: banks = [] } = useQuery({
+  const { data: banks = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["company_banks", companyId],
     queryFn: async () => {
       const { data, error } = await supabase.from("company_banks").select("*").eq("company_id", companyId).order("bank_name");
@@ -211,6 +212,9 @@ export default function BanksTab({ companyId }: BanksTabProps) {
   const toggleBank = (bankId: string) => {
     setExpandedBanks(prev => ({ ...prev, [bankId]: !prev[bankId] }));
   };
+
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
+  if (isError) return <QueryErrorBanner message="Failed to load banks." onRetry={refetch} />;
 
   return (
     <div className="space-y-5">

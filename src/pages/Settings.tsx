@@ -22,6 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Search, Code2 } from "lucide-react";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 type Shortcode = {
   id: string;
@@ -43,7 +44,7 @@ export default function Settings() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState({ shortcode: "", expansion_text: "", category: "general" });
 
-  const { data: shortcodes = [], isLoading } = useQuery({
+  const { data: shortcodes = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["shortcode_expansions"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -121,6 +122,7 @@ export default function Settings() {
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
         <p className="text-sm text-muted-foreground">Manage shortcodes and text expansion library</p>
       </div>
+      {isError && <QueryErrorBanner message="Failed to load shortcodes." onRetry={refetch} />}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">

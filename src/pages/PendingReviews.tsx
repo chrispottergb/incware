@@ -28,6 +28,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 type Submission = {
   id: string;
@@ -78,7 +79,7 @@ export default function PendingReviews() {
   const [deleteTarget, setDeleteTarget] = useState<{ type: "link" | "submission"; id: string; name: string } | null>(null);
 
   // Fetch all submissions
-  const { data: submissions = [], isLoading: loadingSubs } = useQuery({
+  const { data: submissions = [], isLoading: loadingSubs, isError: isSubsError, refetch: refetchSubs } = useQuery({
     queryKey: ["annual_review_submissions"],
     enabled: !!user,
     queryFn: async () => {
@@ -372,7 +373,11 @@ export default function PendingReviews() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          {loadingSubs ? (
+          {isSubsError ? (
+            <div className="p-4">
+              <QueryErrorBanner message="Failed to load submissions." onRetry={refetchSubs} />
+            </div>
+          ) : loadingSubs ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>

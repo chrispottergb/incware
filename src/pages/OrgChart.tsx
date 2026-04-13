@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, GitBranch, Building2 } from "lucide-react";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 interface Company {
   id: string;
@@ -85,7 +86,7 @@ function OrgNode({ node, relationship, navigate }: { node: TreeNode; relationshi
 export default function OrgChart() {
   const navigate = useNavigate();
 
-  const { data: companies = [], isLoading: loadingCompanies } = useQuery({
+  const { data: companies = [], isLoading: loadingCompanies, isError: companiesError, refetch: refetchCompanies } = useQuery({
     queryKey: ["companies"],
     queryFn: async () => {
       const { data, error } = await supabase.from("companies").select("id, name, entity_type").order("name");
@@ -94,7 +95,7 @@ export default function OrgChart() {
     },
   });
 
-  const { data: relationships = [], isLoading: loadingRels } = useQuery({
+  const { data: relationships = [], isLoading: loadingRels, isError: relsError, refetch: refetchRels } = useQuery({
     queryKey: ["company_relationships", "all"],
     queryFn: async () => {
       const { data, error } = await supabase.from("company_relationships").select("*").order("created_at");
@@ -163,6 +164,14 @@ export default function OrgChart() {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (companiesError || relsError) {
+    return (
+      <div className="mx-auto max-w-2xl py-20 px-4">
+        <QueryErrorBanner message="Failed to load org chart data." onRetry={() => { refetchCompanies(); refetchRels(); }} />
       </div>
     );
   }

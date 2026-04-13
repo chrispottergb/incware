@@ -37,13 +37,14 @@ import {
 } from "@/lib/meeting-pdf-export";
 import { getTerminology } from "@/lib/entity-terminology";
 import { useShareCalculations } from "@/hooks/useShareCalculations";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 export default function MeetingDetail() {
   const { id, meetingId } = useParams<{ id: string; meetingId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: meeting, isLoading } = useQuery({
+  const { data: meeting, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["meeting", meetingId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -463,6 +464,14 @@ export default function MeetingDetail() {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-2xl py-20 px-4">
+        <QueryErrorBanner message="Failed to load meeting details." onRetry={refetch} />
       </div>
     );
   }

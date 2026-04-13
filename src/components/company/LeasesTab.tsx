@@ -20,6 +20,7 @@ import { Plus, Trash2, Loader2, FileText, Pencil, Eye, Download } from "lucide-r
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { previewLeaseAgreement, downloadLeaseAgreement } from "@/lib/lease-agreement-pdf";
 
 interface Props {
@@ -78,7 +79,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
     }));
   }, []);
 
-  const { data: leases = [] } = useQuery({
+  const { data: leases = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["company_assets", companyId, "lease"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -201,6 +202,9 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
     if (mode === "preview") previewLeaseAgreement(data);
     else downloadLeaseAgreement(data);
   };
+
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
+  if (isError) return <QueryErrorBanner message="Failed to load leases." onRetry={refetch} />;
 
   return (
     <Card>
