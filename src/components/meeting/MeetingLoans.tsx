@@ -39,6 +39,7 @@ import { toast } from "sonner";
 import { generatePromissoryNotePDF } from "@/lib/promissory-note-pdf";
 import { useAuth } from "@/hooks/useAuth";
 import * as pdfjsLib from "pdfjs-dist";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
@@ -266,6 +267,7 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const deleteRow = useMutation({
     mutationFn: async (rowId: string) => {
       const { error } = await supabase.from("meeting_loans" as any).delete().eq("id", rowId);
@@ -683,7 +685,7 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                         <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-7 w-7 text-muted-foreground hover:text-foreground">
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteRow.mutate(row.id)} className="h-7 w-7 text-destructive/60 hover:text-destructive">
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(row.id)} className="h-7 w-7 text-destructive/60 hover:text-destructive">
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>

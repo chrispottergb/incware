@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash2, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 interface Props {
   meetingId: string;
@@ -254,6 +255,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const [deleteAssetId, setDeleteAssetId] = useState<string | null>(null);
   const deleteAsset = useMutation({
     mutationFn: async (rowId: string) => {
       const { error } = await supabase.from("meeting_vehicle_purchases" as any).delete().eq("id", rowId);
@@ -318,6 +320,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const [deleteLeaseId, setDeleteLeaseId] = useState<string | null>(null);
   const deleteLease = useMutation({
     mutationFn: async (rowId: string) => {
       const { error } = await supabase.from("meeting_vehicle_leases").delete().eq("id", rowId);
@@ -376,6 +379,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const [deleteLeaseTermId, setDeleteLeaseTermId] = useState<string | null>(null);
   const deleteLeaseTerm = useMutation({
     mutationFn: async (rowId: string) => {
       const { error } = await supabase.from("meeting_lease_terminations" as any).delete().eq("id", rowId);
@@ -436,6 +440,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const [deleteVehicleSaleId, setDeleteVehicleSaleId] = useState<string | null>(null);
   const deleteVehicleSale = useMutation({
     mutationFn: async (rowId: string) => {
       const { error } = await supabase.from("meeting_vehicle_sales" as any).delete().eq("id", rowId);
@@ -532,7 +537,8 @@ export default function MeetingVehicles({ meetingId }: Props) {
   const sellerLabel = ["Sold", "Donated"].includes(assetForm.transaction_type) ? "Buyer / Recipient" : "Seller";
 
   return (
-    <div className="space-y-6">
+<>
+        <div className="space-y-6">
       {/* ════ Section 1: Capital Asset Additions and Disposals ════ */}
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
@@ -654,7 +660,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
                           <Button variant="ghost" size="icon" onClick={() => openEditAsset(row)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => deleteAsset.mutate(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteAssetId(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -781,7 +787,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
                           <Button variant="ghost" size="icon" onClick={() => openEditLease(row)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => deleteLease.mutate(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteLeaseId(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -884,7 +890,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
                           <Button variant="ghost" size="icon" onClick={() => openEditLeaseTerm(row)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => deleteLeaseTerm.mutate(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteLeaseTermId(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -989,7 +995,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
                           <Button variant="ghost" size="icon" onClick={() => openEditSale(row)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => deleteVehicleSale.mutate(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteVehicleSaleId(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -1003,5 +1009,11 @@ export default function MeetingVehicles({ meetingId }: Props) {
         </CardContent>
       </Card>
     </div>
+    <ConfirmDeleteDialog open={!!deleteAssetId} onOpenChange={(open) => !open && setDeleteAssetId(null)} onConfirm={() => { if (deleteAssetId) { deleteAsset.mutate(deleteAssetId); setDeleteAssetId(null); } }} title="Delete capital asset?" description="This will permanently remove this capital asset record." />
+    
+      <ConfirmDeleteDialog open={!!deleteLeaseId} onOpenChange={(open) => !open && setDeleteLeaseId(null)} onConfirm={() => { if (deleteLeaseId) { deleteLease.mutate(deleteLeaseId); setDeleteLeaseId(null); } }} title="Delete lease?" description="This will permanently remove this lease record." />
+    
+      <ConfirmDeleteDialog open={!!deleteVehicleSaleId} onOpenChange={(open) => !open && setDeleteVehicleSaleId(null)} onConfirm={() => { if (deleteVehicleSaleId) { deleteVehicleSale.mutate(deleteVehicleSaleId); setDeleteVehicleSaleId(null); } }} title="Delete vehicle sale?" description="This will permanently remove this vehicle sale record." />
+    </>
   );
 }

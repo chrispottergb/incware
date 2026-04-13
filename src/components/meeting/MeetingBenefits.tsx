@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash2, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 const BENEFIT_TYPE_OPTIONS = [
   // Health & Wellness
@@ -263,6 +264,7 @@ export default function MeetingBenefits({ meetingId }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const deleteRow = useMutation({
     mutationFn: async (rowId: string) => {
       const { error } = await supabase.from("meeting_benefits" as any).delete().eq("id", rowId);
@@ -313,7 +315,8 @@ export default function MeetingBenefits({ meetingId }: Props) {
     setForm((prev) => ({ ...prev, [key]: value }));
 
   return (
-    <Card>
+<>
+        <Card>
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <CardTitle className="font-display text-base">Benefits</CardTitle>
         <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
@@ -412,7 +415,7 @@ export default function MeetingBenefits({ meetingId }: Props) {
                           <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => deleteRow.mutate(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteId(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -452,5 +455,7 @@ export default function MeetingBenefits({ meetingId }: Props) {
         )}
       </CardContent>
     </Card>
+    <ConfirmDeleteDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)} onConfirm={() => { if (deleteId) { deleteRow.mutate(deleteId); setDeleteId(null); } }} title="Delete benefit?" description="This will permanently remove this benefit record." />
+    </>
   );
 }

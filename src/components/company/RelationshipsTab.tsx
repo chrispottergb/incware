@@ -16,6 +16,7 @@ import { Plus, Pencil, Trash2, GitBranch, ArrowUp, ArrowDown, ExternalLink, Load
 import { toast } from "sonner";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { useNavigate } from "react-router-dom";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 interface RelationshipsTabProps {
   companyId: string;
@@ -111,6 +112,7 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
     onError: (e: any) => toast.error(e.message),
   });
 
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const del = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("company_relationships").delete().eq("id", id);
@@ -160,7 +162,8 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
   if (isCompaniesError || isChildError) return <QueryErrorBanner message="Failed to load relationships." onRetry={refetchChildren} />;
 
   return (
-    <div className="space-y-5">
+<>
+        <div className="space-y-5">
       {/* Parent Entities */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
@@ -211,7 +214,7 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(rel, "parent")}>
                         <Pencil className="h-3 w-3" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(rel.id)}>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setDeleteId(rel.id)}>
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
@@ -280,7 +283,7 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(rel, "child")}>
                         <Pencil className="h-3 w-3" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(rel.id)}>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setDeleteId(rel.id)}>
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
@@ -380,5 +383,7 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
         </DialogContent>
       </Dialog>
     </div>
+    <ConfirmDeleteDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)} onConfirm={() => { if (deleteId) { del.mutate(deleteId); setDeleteId(null); } }} title="Delete relationship?" description="This will permanently remove this entity relationship." />
+    </>
   );
 }

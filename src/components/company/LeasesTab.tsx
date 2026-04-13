@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { previewLeaseAgreement, downloadLeaseAgreement } from "@/lib/lease-agreement-pdf";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 interface Props {
   companyId: string;
@@ -136,6 +137,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const deleteLease = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("company_assets").delete().eq("id", id);
@@ -364,7 +366,8 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
               const hasImprovements = a.leasehold_improvement_amount != null && Number(a.leasehold_improvement_amount) > 0;
 
               return (
-                <div key={a.id} className="rounded-lg border border-border overflow-hidden">
+<>
+                                <div key={a.id} className="rounded-lg border border-border overflow-hidden">
                   {/* Card Header */}
                   <div className="flex items-center justify-between px-4 py-2.5 bg-[hsl(210,33%,89%)]">
                     <div className="flex items-center gap-2">
@@ -385,7 +388,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                         <Button variant="ghost" size="icon" className="h-6 w-6 text-[hsl(210,59%,30%)]/70 hover:text-[hsl(210,59%,30%)] hover:bg-[hsl(210,59%,30%)]/10" onClick={() => openEdit(a)}>
                           <Pencil className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-[hsl(210,59%,30%)]/70 hover:text-destructive hover:bg-[hsl(210,59%,30%)]/10" onClick={() => deleteLease.mutate(a.id)}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-[hsl(210,59%,30%)]/70 hover:text-destructive hover:bg-[hsl(210,59%,30%)]/10" onClick={() => setDeleteId(a.id)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
@@ -469,5 +472,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
         )}
       </CardContent>
     </Card>
+    <ConfirmDeleteDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)} onConfirm={() => { if (deleteId) { deleteLease.mutate(deleteId); setDeleteId(null); } }} title="Delete lease?" description="This will permanently remove this lease record." />
+    </>
   );
 }

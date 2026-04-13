@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash2, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 const AMENDMENT_TYPES: Record<string, { label: string; statute?: string }[]> = {
   Corporation: [
@@ -197,6 +198,7 @@ export default function MeetingAmendments({ meetingId, entityType }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const deleteRow = useMutation({
     mutationFn: async (rowId: string) => {
       const { error } = await supabase
@@ -334,7 +336,7 @@ export default function MeetingAmendments({ meetingId, entityType }: Props) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => deleteRow.mutate(row.id)}
+                            onClick={() => setDeleteId(row.id)}
                             className="h-8 w-8 text-destructive/60 hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />

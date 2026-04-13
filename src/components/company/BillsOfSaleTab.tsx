@@ -20,6 +20,7 @@ import { Plus, Trash2, Loader2, FileText, Pencil, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology } from "@/lib/entity-terminology";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 function getEquityTransactionLabel(sellerName: string, isLLC: boolean): string {
   const s = (sellerName || "").toLowerCase().trim();
@@ -126,6 +127,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const remove = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("bills_of_sale").delete().eq("id", id);
@@ -298,7 +300,7 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(b)}>
                           <Pencil className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => remove.mutate(b.id)}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setDeleteId(b.id)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>

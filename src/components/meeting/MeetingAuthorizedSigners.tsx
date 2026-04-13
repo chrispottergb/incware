@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2, RefreshCw, PenTool, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 interface Props {
   meetingId: string;
@@ -74,6 +75,7 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
     onError: (e: any) => toast.error(e.message),
   });
 
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const del = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("meeting_authorized_signers" as any).delete().eq("id", id);
@@ -90,7 +92,8 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
   };
 
   return (
-    <Card>
+<>
+        <Card>
       <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
           <PenTool className="h-4 w-4" /> Authorized Signers
@@ -125,7 +128,7 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(s)}>
                       <Pencil className="h-3 w-3" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => del.mutate(s.id)}>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setDeleteId(s.id)}>
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
@@ -162,5 +165,7 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
         </DialogContent>
       </Dialog>
     </Card>
+    <ConfirmDeleteDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)} onConfirm={() => { if (deleteId) { del.mutate(deleteId); setDeleteId(null); } }} title="Delete authorized signer?" description="This will permanently remove this authorized signer from the meeting record." />
+    </>
   );
 }

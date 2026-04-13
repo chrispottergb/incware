@@ -28,6 +28,7 @@ import { isLLCType } from "@/lib/entity-terminology";
 import BuySellWorkflow from "@/components/company/BuySellWorkflow";
 import BatchTransferDialog from "@/components/meeting/BatchTransferDialog";
 import LeaseTransactionDialog from "@/components/meeting/LeaseTransactionDialog";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 const TRANSFER_RESOLUTION_PURPOSES = [
   "Approve Transfer/Sale of Shares",
@@ -114,6 +115,7 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const deleteResolution = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("meeting_resolutions").delete().eq("id", id);
@@ -402,7 +404,7 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deleteResolution.mutate(r.id)}
+                          onClick={() => setDeleteId(r.id)}
                           className="h-8 w-8 text-destructive/60 hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
