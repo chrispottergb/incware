@@ -546,9 +546,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 </div>
                 <div className="field-group flex items-end pb-1">
                   {effectiveDateIsFuture ? (
-                    <Badge variant="outline" className="text-[10px] bg-yellow-50 text-yellow-700 border-yellow-300">Pending</Badge>
+                    <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/20">Pending</Badge>
                   ) : (
-                    <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-300">Effective</Badge>
+                    <Badge variant="outline" className="text-[10px] bg-green-500/10 text-green-500 border-green-500/20">Effective</Badge>
                   )}
                 </div>
               </div>
@@ -817,7 +817,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                             </TooltipProvider>
                           )}
                           {isPending && (
-                            <Badge variant="outline" className="text-[9px] px-1 py-0 border-yellow-300 text-yellow-700 bg-yellow-50">Pending</Badge>
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-500/20 text-amber-500 bg-amber-500/10">Pending</Badge>
                           )}
                         </div>
                       </TableCell>

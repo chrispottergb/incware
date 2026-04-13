@@ -419,7 +419,7 @@ function AIComplianceSummary() {
   const stats = [
     { label: "AI Systems", value: data.activeSystems, sub: `${data.totalSystems} total`, icon: Bot, color: "text-primary" },
     { label: "Open Incidents", value: data.openIncidents, sub: "need attention", icon: AlertTriangle, color: data.openIncidents > 0 ? "text-destructive" : "text-success" },
-    { label: "Pending Reviews", value: data.pendingReviews, sub: "awaiting decision", icon: ClipboardCheck, color: data.pendingReviews > 0 ? "text-yellow-600" : "text-success" },
+    { label: "Pending Reviews", value: data.pendingReviews, sub: "awaiting decision", icon: ClipboardCheck, color: data.pendingReviews > 0 ? "text-warning" : "text-success" },
   ];
 
   return (

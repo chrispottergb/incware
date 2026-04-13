@@ -55,8 +55,8 @@ export default function Profile() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">My Profile</h1>
-        <p className="text-sm text-muted-foreground">Manage your personal information</p>
+        <h1 className="font-display text-xl font-bold tracking-tight">My Profile</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">Manage your personal information</p>
       </div>
 
       {isError ? (

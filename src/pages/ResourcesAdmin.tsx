@@ -120,9 +120,9 @@ export default function ResourcesAdmin() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Manage Resources</h1>
+        <h1 className="font-display text-xl font-bold tracking-tight">Manage Resources</h1>
         <Button onClick={openNew} size="sm">
           <Plus className="h-4 w-4 mr-1" /> Add Resource
         </Button>

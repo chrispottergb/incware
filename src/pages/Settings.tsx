@@ -119,8 +119,8 @@ export default function Settings() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-        <p className="text-sm text-muted-foreground">Manage shortcodes and text expansion library</p>
+        <h1 className="font-display text-xl font-bold tracking-tight">Settings</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">Manage shortcodes and text expansion library</p>
       </div>
       {isError && <QueryErrorBanner message="Failed to load shortcodes." onRetry={refetch} />}
 

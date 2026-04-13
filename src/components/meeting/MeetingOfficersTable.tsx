@@ -405,7 +405,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
     <>
       {/* Validation warnings */}
       {rows.length > 0 && (missingStatus.length > 0 || hasReasonIssue || unresolvedDualRoles.length > 0) && (
-        <Alert variant="destructive" className="border-amber-300 bg-amber-50 text-amber-800 [&>svg]:text-amber-600">
+        <Alert variant="destructive" className="border-amber-500/20 bg-amber-500/10 text-amber-500 [&>svg]:text-amber-500">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="text-xs space-y-1">
             {unresolvedDualRoles.length > 0 && (
@@ -503,7 +503,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
                     const group = getDualRoleGroup(row);
 
                     return (
-                      <TableRow key={row.id} className={dual ? "bg-blue-50/30" : ""}>
+                      <TableRow key={row.id} className={dual ? "bg-blue-500/5" : ""}>
                         <TableCell>
                           <div className="flex items-center gap-1.5">
                             <span>{row.title ?? "—"}</span>
@@ -512,8 +512,8 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
                                 variant="outline"
                                 className={`text-[9px] px-1.5 py-0 ${
                                   primary
-                                    ? "bg-blue-100 text-blue-700 border-blue-200"
-                                    : "bg-slate-100 text-slate-600 border-slate-200"
+                                    ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                    : "bg-muted text-muted-foreground border-border"
                                 }`}
                               >
                                 <Users className="h-2.5 w-2.5 mr-0.5" />

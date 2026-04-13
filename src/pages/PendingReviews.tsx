@@ -219,11 +219,11 @@ export default function PendingReviews() {
 
   const statusBadge = (status: string) => {
     if (status === "approved")
-      return <Badge className="bg-green-100 text-green-700 border-green-200">Approved</Badge>;
+      return <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Approved</Badge>;
     if (status === "rejected")
-      return <Badge className="bg-red-100 text-red-700 border-red-200">Rejected</Badge>;
+      return <Badge className="bg-red-500/10 text-red-400 border-red-500/20">Rejected</Badge>;
     if (status === "pending_review")
-      return <Badge className="bg-amber-100 text-amber-700 border-amber-200">Pending Review</Badge>;
+      return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">Pending Review</Badge>;
     return <Badge variant="outline">{status}</Badge>;
   };
 
@@ -308,7 +308,7 @@ export default function PendingReviews() {
                         {isExpired && <span className="ml-1 text-[10px]">(expired)</span>}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={`text-xs ${isExpired ? "bg-red-50 text-red-600 border-red-200" : "bg-blue-50 text-blue-600 border-blue-200"}`}>
+                        <Badge variant="outline" className={`text-xs ${isExpired ? "bg-red-500/10 text-red-400 border-red-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`}>
                           {isExpired ? "Expired" : "Awaiting Client"}
                         </Badge>
                       </TableCell>
