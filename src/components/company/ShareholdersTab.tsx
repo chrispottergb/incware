@@ -588,5 +588,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
         })()}
       </CardContent>
     </Card>
+    <ConfirmDeleteDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)} onConfirm={() => { if (deleteId) { remove.mutate(deleteId); setDeleteId(null); } }} title={`Delete ${t.shareholder}?`} description={`This will permanently remove this ${t.shareholder.toLowerCase()} record.`} />
+    </>
   );
 }
