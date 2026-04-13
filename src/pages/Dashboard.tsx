@@ -247,6 +247,7 @@ export default function Dashboard() {
       <AIComplianceSummary />
 
       <div id="companies-section" />
+      {isError && <QueryErrorBanner message="Failed to load companies." onRetry={refetch} />}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-xl font-bold tracking-tight">Client Companies</h1>
