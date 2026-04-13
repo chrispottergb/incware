@@ -41,7 +41,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Calendar, MapPin, ChevronRight, Upload, FileText } from "lucide-react";
+import { Plus, Trash2, Loader2, Calendar, MapPin, ChevronRight, Upload, FileText, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { useNavigate } from "react-router-dom";
