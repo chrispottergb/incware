@@ -943,6 +943,34 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
         )}
       </DialogContent>
     </Dialog>
+    {companyId && jobHistory.length > 0 && (
+      <Card className="mt-4">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            Recent Processing Jobs
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {jobHistory.map((job: any) => (
+              <div key={job.id} className="flex items-center justify-between text-xs border border-border rounded-md px-3 py-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  {job.status === "completed" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />}
+                  {job.status === "processing" && <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin shrink-0" />}
+                  {job.status === "failed" && <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" />}
+                  <span className="truncate">{job.file_name || "Tax return"}</span>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  {job.error && <span className="text-destructive truncate max-w-[200px]">{job.error}</span>}
+                  <span className="text-muted-foreground">{new Date(job.created_at).toLocaleDateString()}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    )}
     </>
   );
 }
