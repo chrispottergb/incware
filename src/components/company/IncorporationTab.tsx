@@ -38,6 +38,7 @@ import SectionPdfActions from "./SectionPdfActions";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { cn, maskEin } from "@/lib/utils";
 import { isLLCType } from "@/lib/entity-terminology";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "LLC-S", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"];
 const US_STATES = [
@@ -1001,7 +1002,7 @@ export default function IncorporationTab({ company }: Props) {
                     </span>
                   )}
                 </div>
-                <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive hover:text-destructive" onClick={() => deleteDirector.mutate(dir.id)}>
+                <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive hover:text-destructive" onClick={() => setDeleteDirectorId(dir.id)}>
                   <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
@@ -1410,6 +1411,8 @@ export default function IncorporationTab({ company }: Props) {
           </div>
         </DialogContent>
       </Dialog>
+      <ConfirmDeleteDialog open={!!deleteOrganizerId} onOpenChange={(open) => !open && setDeleteOrganizerId(null)} onConfirm={() => { if (deleteOrganizerId) { deleteOrganizer.mutate(deleteOrganizerId); setDeleteOrganizerId(null); } }} title="Delete organizer?" description="This will permanently remove this organizer record." />
+      <ConfirmDeleteDialog open={!!deleteDirectorId} onOpenChange={(open) => !open && setDeleteDirectorId(null)} onConfirm={() => { if (deleteDirectorId) { deleteDirector.mutate(deleteDirectorId); setDeleteDirectorId(null); } }} title="Delete director?" description="This will permanently remove this director record." />
     </div>
   );
 }
