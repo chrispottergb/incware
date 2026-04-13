@@ -343,7 +343,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   };
 
   return (
-    <Card>
+    <>
       <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
