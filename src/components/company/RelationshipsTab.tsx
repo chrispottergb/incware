@@ -155,6 +155,10 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
     }
   };
 
+  const isLoading = loadingCompanies || loadingChildren || loadingParents;
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
+  if (isCompaniesError || isChildError) return <QueryErrorBanner message="Failed to load relationships." onRetry={refetchChildren} />;
+
   return (
     <div className="space-y-5">
       {/* Parent Entities */}

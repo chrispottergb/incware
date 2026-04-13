@@ -161,6 +161,9 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
   const fmt = (v: number | null | undefined) =>
     v != null ? `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "—";
 
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
+  if (isError) return <QueryErrorBanner message="Failed to load assets." onRetry={refetch} />;
+
   return (
     <Card>
       <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between">
