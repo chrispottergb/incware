@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { getTerminology } from "@/lib/entity-terminology";
 import type { ShareholderHoldings } from "@/hooks/useShareCalculations";
 
@@ -88,7 +89,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
 
   const t = getTerminology(entityType);
 
-  const { data: shareholders = [], isLoading } = useQuery({
+  const { data: shareholders = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["shareholders", companyId],
     queryFn: async () => {
       const { data, error } = await supabase

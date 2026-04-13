@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 type Company = Tables<"companies">;
 
@@ -147,7 +148,7 @@ export default function TimelineTab({ companyId, company }: Props) {
     },
   });
 
-  const { data: manualEvents = [], isLoading } = useQuery({
+  const { data: manualEvents = [], isLoading, isError, refetch: refetchEvents } = useQuery({
     queryKey: ["timeline_events", companyId],
     queryFn: async () => {
       const { data, error } = await supabase

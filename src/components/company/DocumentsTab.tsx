@@ -48,6 +48,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 const CATEGORIES = [
   "Formation Documents",
@@ -102,7 +103,7 @@ export default function DocumentsTab({ companyId }: Props) {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
 
-  const { data: documents = [], isLoading } = useQuery({
+  const { data: documents = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["company_documents", companyId],
     queryFn: async () => {
       const { data, error } = await supabase

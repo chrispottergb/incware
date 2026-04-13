@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash2, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 interface Props {
   companyId: string;
@@ -80,7 +81,7 @@ export default function BusinessSalesTab({ companyId }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<SaleForm>(empty);
 
-  const { data: sales = [], isLoading } = useQuery({
+  const { data: sales = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["business_sales", companyId],
     queryFn: async () => {
       const { data, error } = await supabase
