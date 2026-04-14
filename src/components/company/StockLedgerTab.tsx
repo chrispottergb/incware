@@ -442,6 +442,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       par_value: "", issued_certificate_number: "", surrendered_certificate_number: "",
     });
     setAssets([]);
+    setNewShareholderName("");
   };
 
   const todayStr = new Date().toISOString().split("T")[0];
