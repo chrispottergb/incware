@@ -370,12 +370,12 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         ]);
 
         if (BILL_ISSUANCE_TYPES.has(txType) || BILL_TRANSFER_TYPES.has(txType) || BILL_REDEMPTION_TYPES.has(txType)) {
-          const memberName = shareholders.find(s => s.id === form.shareholder_id)?.name
-            || form.to_shareholder || "";
+          const memberName = shareholders.find(s => s.id === resolvedShareholderId)?.name
+            || newShareholderName.trim() || form.to_shareholder || "";
           const sellerName = BILL_TRANSFER_TYPES.has(txType)
             ? (form.from_shareholder || "Transfer")
             : BILL_REDEMPTION_TYPES.has(txType)
-              ? (shareholders.find(s => s.id === form.shareholder_id)?.name || form.from_shareholder || "")
+              ? (shareholders.find(s => s.id === resolvedShareholderId)?.name || newShareholderName.trim() || form.from_shareholder || "")
               : "Original Issue";
           const buyerName = BILL_REDEMPTION_TYPES.has(txType)
             ? (form.to_shareholder || company?.name || "Company")
@@ -384,7 +384,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
           const consideration = form.total_consideration ? parseFloat(form.total_consideration) : 0;
           await supabase.from("bills_of_sale").insert({
             company_id: companyId,
-            shareholder_id: form.shareholder_id || null,
+            shareholder_id: resolvedShareholderId,
             transaction_id: txn.id,
             seller_name: sellerName,
             buyer_name: buyerName,
