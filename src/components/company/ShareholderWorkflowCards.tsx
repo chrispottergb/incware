@@ -24,14 +24,14 @@ export default function ShareholderWorkflowCards({ entityType = "Corporation", o
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-semibold text-foreground">
-                Record New Transaction
+                Record Transaction
               </h3>
               <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-                Record a current {isLLC ? "interest" : "share"} transaction — issuance, transfer, redemption, etc. Date defaults to today.
-                Requires an existing {term.shareholder.toLowerCase()} on file.
+                Record a new {isLLC ? "interest" : "share"} transaction as it happens — issuance, transfer, redemption, gift, etc.
+                Date defaults to today. Select from existing {term.shareholder.toLowerCase()}s.
               </p>
               <Button variant="link" size="sm" className="h-auto p-0 mt-1.5 text-xs text-primary gap-1 group-hover:gap-2 transition-all">
-                Open form <ArrowRight className="h-3 w-3" />
+                Record transaction <ArrowRight className="h-3 w-3" />
               </Button>
             </div>
           </div>
@@ -47,14 +47,14 @@ export default function ShareholderWorkflowCards({ entityType = "Corporation", o
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-semibold text-foreground">
-                Add Historical Transaction
+                Build Full Transfer Ledger History
               </h3>
               <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-                Back-date a past {isLLC ? "interest" : "share"} event to build ownership history.
-                Can create new {term.shareholder.toLowerCase()}s on the fly. You must enter the date.
+                Build a complete chronological {isLLC ? "interest" : "stock"} transfer ledger from the beginning — enter every past transaction
+                (original issuance, transfers, gifts, redemptions) one by one in date order. Can create new {term.shareholder.toLowerCase()}s on the fly.
               </p>
               <Button variant="link" size="sm" className="h-auto p-0 mt-1.5 text-xs text-indigo-500 gap-1 group-hover:gap-2 transition-all">
-                Open form <ArrowRight className="h-3 w-3" />
+                Add historical entry <ArrowRight className="h-3 w-3" />
               </Button>
             </div>
           </div>
