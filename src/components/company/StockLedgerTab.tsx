@@ -238,9 +238,10 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
   const ISSUANCE_SET = new Set([
     "initial_issuance", "authorized_issuance", "subscription_issuance",
     "consideration_issuance", "share_dividend", "fractional_shares",
-    "preemptive_rights", "treasury_reissue", "reissuance",
+    "preemptive_rights", "treasury_reissue", "reissuance", "Reissuance",
     "Capital Contribution", "Initial Contribution", "initial_contribution",
     "additional_contribution", "membership_issuance", "Issuance",
+    "opening_balance",
   ]);
   const TRANSFER_SET_LOCAL = new Set(["transfer", "interest_transfer", "interest_assignment", "gift", "share_exchange"]);
 
@@ -292,6 +293,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
 
       // Validate seller holdings for transfers
       if (TRANSFER_SET_LOCAL.has(txType) && form.from_shareholder) {
+        const REDUCTION_SET_LOCAL2 = new Set(["redemption", "reacquisition", "cancellation", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout"]);
         const sellerCheck = validateSellerHoldings(
           form.from_shareholder,
           numShares,
@@ -299,7 +301,34 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
           freshShareholders as { id: string; name: string }[],
           term
         );
-        if (!sellerCheck.valid) throw new Error(sellerCheck.message);
+
+        // Fallback: ID-based holdings calculation for name mismatch resilience
+        let idBasedHoldings = 0;
+        const sellerId = (freshShareholders as { id: string; name: string }[]).find(
+          s => s.name.toLowerCase().trim() === form.from_shareholder.toLowerCase().trim()
+        )?.id;
+        if (sellerId) {
+          idBasedHoldings = freshTransactions
+            .filter((t: any) => t.status !== "corrected")
+            .reduce((sum: number, t: any) => {
+              const tType = t.transaction_type || "";
+              if (ISSUANCE_SET.has(tType) && t.shareholder_id === sellerId) return sum + (t.num_shares || 0);
+              if (REDUCTION_SET_LOCAL2.has(tType) && t.shareholder_id === sellerId) return sum - (t.num_shares || 0);
+              if (TRANSFER_SET_LOCAL.has(tType)) {
+                const toName = (t.to_shareholder || "").toLowerCase().trim();
+                const fromName = (t.from_shareholder || "").toLowerCase().trim();
+                const sellerName = form.from_shareholder.toLowerCase().trim();
+                if (t.shareholder_id === sellerId || toName === sellerName) sum += (t.num_shares || 0);
+                if (fromName === sellerName) sum -= (t.num_shares || 0);
+              }
+              return sum;
+            }, 0);
+        }
+
+        const effectiveHoldings = Math.max(0, idBasedHoldings);
+        if (!sellerCheck.valid && effectiveHoldings < numShares) {
+          throw new Error(sellerCheck.message);
+        }
       }
 
       // Auto-create shareholder for historical entries if new name provided
