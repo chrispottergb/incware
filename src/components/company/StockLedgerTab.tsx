@@ -30,7 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, BookOpen, Link2, Lock, Trash2, FileText, Award, RotateCcw } from "lucide-react";
+import { Plus, Loader2, BookOpen, Link2, Lock, Trash2, FileText, Award, RotateCcw, History } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import CorrectionModal from "./CorrectionModal";
 import AdminDeleteButton from "./AdminDeleteButton";
