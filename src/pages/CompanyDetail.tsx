@@ -291,6 +291,13 @@ export default function CompanyDetail() {
         </TabsContent>
         <TabsContent value="shareholders" className="mt-5">
           <div className="space-y-5">
+            {/* Workflow Action Cards */}
+            <ShareholderWorkflowCards
+              entityType={company.entity_type}
+              onRecordTransaction={() => setRecordTxOpen(true)}
+              onAddHistorical={() => setHistoricalTxOpen(true)}
+            />
+
             {isCorp && shareCalc.authorizedShares != null && (
               <div className="rounded-lg border border-border bg-muted/30 p-3 flex items-center gap-6 text-xs">
                 <div>
@@ -322,7 +329,7 @@ export default function CompanyDetail() {
             <ShareholdersTab companyId={company.id} entityType={company.entity_type} shareholderHoldings={shareCalc.shareholderHoldings} onBuySell={(sellerId, sellerName) => { setInitialSeller({ id: sellerId, name: sellerName }); setBuySellOpen(true); }} />
             {isLLCType(company.entity_type) ? (
               <>
-                <StockLedgerTab companyId={company.id} entityType={company.entity_type} />
+                <StockLedgerTab companyId={company.id} entityType={company.entity_type} externalOpenRecord={recordTxOpen} onExternalOpenRecordChange={setRecordTxOpen} externalOpenHistorical={historicalTxOpen} onExternalOpenHistoricalChange={setHistoricalTxOpen} />
                 <UnifiedLedgerTab companyId={company.id} entityType={company.entity_type} authorizedShares={shareCalc.authorizedShares} />
                 <div data-section="certificates">
                   <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
@@ -331,7 +338,7 @@ export default function CompanyDetail() {
               </>
             ) : (
               <>
-                <StockLedgerTab companyId={company.id} entityType={company.entity_type} />
+                <StockLedgerTab companyId={company.id} entityType={company.entity_type} externalOpenRecord={recordTxOpen} onExternalOpenRecordChange={setRecordTxOpen} externalOpenHistorical={historicalTxOpen} onExternalOpenHistoricalChange={setHistoricalTxOpen} />
                 <div data-section="certificates">
                   <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
                 </div>
