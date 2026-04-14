@@ -61,6 +61,7 @@ export default function CompanyDetail() {
   const [initialSeller, setInitialSeller] = useState<{ id: string; name: string } | undefined>();
   const [recordTxOpen, setRecordTxOpen] = useState(false);
   const [historicalTxOpen, setHistoricalTxOpen] = useState(false);
+  const [establishOwnershipOpen, setEstablishOwnershipOpen] = useState(false);
 
   const handleTabChange = (value: string) => {
     navigate(`#${value}`, { replace: true });
@@ -296,6 +297,7 @@ export default function CompanyDetail() {
               entityType={company.entity_type}
               onRecordTransaction={() => setRecordTxOpen(true)}
               onAddHistorical={() => setHistoricalTxOpen(true)}
+              onEstablishOwnership={() => setEstablishOwnershipOpen(true)}
             />
 
             {isCorp && shareCalc.authorizedShares != null && (
