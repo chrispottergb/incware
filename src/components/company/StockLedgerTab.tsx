@@ -567,6 +567,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
           <CardDescription className="text-[11px] mt-0.5">
             {statuteDescription}
           </CardDescription>
+          <p className="text-[10px] text-muted-foreground mt-1 max-w-xl leading-relaxed">
+            To build a complete transfer ledger, use Record Transaction for each transaction in chronological order. To establish current ownership for a newly picked-up client without full history, use Establish Current Ownership.
+          </p>
         </div>
         <div className="flex items-center gap-1">
           <SectionPdfActions config={{
