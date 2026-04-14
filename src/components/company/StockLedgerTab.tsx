@@ -499,7 +499,12 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   return [
                   String(i + 1),
                   t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—",
-                  pdfPending ? `${t.transaction_type?.replace("_", " ") ?? "—"} [PENDING]` : (t.transaction_type?.replace("_", " ") ?? "—"),
+                  (() => {
+                    let typeLabel = t.transaction_type?.replace(/_/g, " ") ?? "—";
+                    if (pdfPending) typeLabel += " [PENDING]";
+                    if ((t as any).entry_type === "historical") typeLabel += " [HISTORICAL]";
+                    return typeLabel;
+                  })(),
                   t.shareholders?.name ?? "—",
                   t.share_class,
                   t.num_shares?.toLocaleString(),
