@@ -153,6 +153,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState(false);
   const [historicalDialog, setHistoricalDialog] = useState(false);
+  const [newShareholderName, setNewShareholderName] = useState("");
   const [correctionTarget, setCorrectionTarget] = useState<any>(null);
   const [correctionEntryNum, setCorrectionEntryNum] = useState<number | undefined>();
   const transactionTypes = TRANSACTION_TYPES_BY_ENTITY[entityType] || DEFAULT_TRANSACTION_TYPES;
@@ -290,10 +291,33 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         if (!sellerCheck.valid) throw new Error(sellerCheck.message);
       }
 
+      // Auto-create shareholder for historical entries if new name provided
+      let resolvedShareholderId = form.shareholder_id || null;
+      if (historicalDialog && newShareholderName.trim() && !form.shareholder_id) {
+        const trimmedName = newShareholderName.trim();
+        const { data: existing } = await supabase
+          .from("shareholders")
+          .select("id")
+          .eq("company_id", companyId)
+          .ilike("name", trimmedName)
+          .maybeSingle();
+        if (existing) {
+          resolvedShareholderId = existing.id;
+        } else {
+          const { data: created, error: createErr } = await supabase
+            .from("shareholders")
+            .insert({ name: trimmedName, company_id: companyId } as any)
+            .select("id")
+            .single();
+          if (createErr) throw new Error(`Failed to create ${term.shareholder.toLowerCase()}: ${createErr.message}`);
+          resolvedShareholderId = created.id;
+        }
+      }
+
       const { data: txn, error } = await supabase.from("share_transactions").insert({
         company_id: companyId,
         transaction_type: txType,
-        shareholder_id: form.shareholder_id || null,
+        shareholder_id: resolvedShareholderId,
         share_class: form.share_class,
         num_shares: numShares,
         price_per_share: form.price_per_share ? parseFloat(form.price_per_share) : null,
@@ -346,12 +370,12 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         ]);
 
         if (BILL_ISSUANCE_TYPES.has(txType) || BILL_TRANSFER_TYPES.has(txType) || BILL_REDEMPTION_TYPES.has(txType)) {
-          const memberName = shareholders.find(s => s.id === form.shareholder_id)?.name
-            || form.to_shareholder || "";
+          const memberName = shareholders.find(s => s.id === resolvedShareholderId)?.name
+            || newShareholderName.trim() || form.to_shareholder || "";
           const sellerName = BILL_TRANSFER_TYPES.has(txType)
             ? (form.from_shareholder || "Transfer")
             : BILL_REDEMPTION_TYPES.has(txType)
-              ? (shareholders.find(s => s.id === form.shareholder_id)?.name || form.from_shareholder || "")
+              ? (shareholders.find(s => s.id === resolvedShareholderId)?.name || newShareholderName.trim() || form.from_shareholder || "")
               : "Original Issue";
           const buyerName = BILL_REDEMPTION_TYPES.has(txType)
             ? (form.to_shareholder || company?.name || "Company")
@@ -360,7 +384,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
           const consideration = form.total_consideration ? parseFloat(form.total_consideration) : 0;
           await supabase.from("bills_of_sale").insert({
             company_id: companyId,
-            shareholder_id: form.shareholder_id || null,
+            shareholder_id: resolvedShareholderId,
             transaction_id: txn.id,
             seller_name: sellerName,
             buyer_name: buyerName,
@@ -405,6 +429,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       par_value: "", issued_certificate_number: "", surrendered_certificate_number: "",
     });
     setAssets([]);
+    setNewShareholderName("");
   };
 
   const resetHistoricalForm = () => {
@@ -417,6 +442,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       par_value: "", issued_certificate_number: "", surrendered_certificate_number: "",
     });
     setAssets([]);
+    setNewShareholderName("");
   };
 
   const todayStr = new Date().toISOString().split("T")[0];
@@ -748,12 +774,16 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                 </div>
                 <div className="field-group">
                   <Label className="field-label">{term.shareholder}</Label>
-                  <Select value={form.shareholder_id} onValueChange={(v) => setForm(p => ({ ...p, shareholder_id: v }))}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={`Select ${term.shareholder.toLowerCase()}`} /></SelectTrigger>
+                  <Select value={form.shareholder_id} onValueChange={(v) => { setForm(p => ({ ...p, shareholder_id: v })); setNewShareholderName(""); }}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={`Select existing ${term.shareholder.toLowerCase()}`} /></SelectTrigger>
                     <SelectContent>
                       {shareholders.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">Or add new {term.shareholder.toLowerCase()}</Label>
+                  <Input className="h-8 text-sm" placeholder={`Type new ${term.shareholder.toLowerCase()} name`} value={newShareholderName} onChange={(e) => { setNewShareholderName(e.target.value); if (e.target.value) setForm(p => ({ ...p, shareholder_id: "" })); }} />
                 </div>
                 {isTransfer && (
                   <div className="grid grid-cols-2 gap-2">
