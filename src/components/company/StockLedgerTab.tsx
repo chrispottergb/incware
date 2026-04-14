@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -147,12 +147,22 @@ const CONSIDERATION_TYPES = [
 interface Props {
   companyId: string;
   entityType?: string;
+  externalOpenRecord?: boolean;
+  onExternalOpenRecordChange?: (open: boolean) => void;
+  externalOpenHistorical?: boolean;
+  onExternalOpenHistoricalChange?: (open: boolean) => void;
 }
 
-export default function StockLedgerTab({ companyId, entityType = "Corporation" }: Props) {
+export default function StockLedgerTab({ companyId, entityType = "Corporation", externalOpenRecord, onExternalOpenRecordChange, externalOpenHistorical, onExternalOpenHistoricalChange }: Props) {
   const queryClient = useQueryClient();
-  const [dialog, setDialog] = useState(false);
-  const [historicalDialog, setHistoricalDialog] = useState(false);
+  const [dialogInternal, setDialogInternal] = useState(false);
+  const [historicalDialogInternal, setHistoricalDialogInternal] = useState(false);
+
+  // Support both internal and external dialog control
+  const dialog = externalOpenRecord ?? dialogInternal;
+  const setDialog = (open: boolean) => { onExternalOpenRecordChange ? onExternalOpenRecordChange(open) : setDialogInternal(open); };
+  const historicalDialog = externalOpenHistorical ?? historicalDialogInternal;
+  const setHistoricalDialog = (open: boolean) => { onExternalOpenHistoricalChange ? onExternalOpenHistoricalChange(open) : setHistoricalDialogInternal(open); };
   const [newShareholderName, setNewShareholderName] = useState("");
   const [correctionTarget, setCorrectionTarget] = useState<any>(null);
   const [correctionEntryNum, setCorrectionEntryNum] = useState<number | undefined>();
@@ -484,6 +494,18 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
     setAssets([]);
     setNewShareholderName("");
   };
+
+  // Reset forms when external dialogs are opened
+  const prevRecordRef = useRef(false);
+  const prevHistoricalRef = useRef(false);
+  useEffect(() => {
+    if (dialog && !prevRecordRef.current) resetForm();
+    prevRecordRef.current = dialog;
+  }, [dialog]);
+  useEffect(() => {
+    if (historicalDialog && !prevHistoricalRef.current) resetHistoricalForm();
+    prevHistoricalRef.current = historicalDialog;
+  }, [historicalDialog]);
 
   const todayStr = new Date().toISOString().split("T")[0];
   const effectiveDateIsFuture = form.effective_date > todayStr;
