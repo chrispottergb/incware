@@ -232,8 +232,11 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     const certCancelled = findCertCancelled(transferorName || transfereeName, t.transaction_date, allSorted);
 
     const treasuryBal = (authorizedShares ?? 0) - Math.max(0, totalIssued);
-    const shBal = Math.max(0, holderBalances[holderKey] || 0);
-    const ownershipPct = term.isLLC && totalIssued > 0 ? (shBal / totalIssued) * 100 : null;
+    // For transfers, show the transferor's resulting balance (the person losing shares)
+    // For everything else, show the transferee/holder's balance
+    const balanceKey = isTx && fromKey ? fromKey : holderKey;
+    const shBal = Math.max(0, holderBalances[balanceKey] || 0);
+    const ownershipPct = term.isLLC && totalIssued > 0 ? (Math.max(0, holderBalances[holderKey] || 0) / totalIssued) * 100 : null;
 
     // Cross-reference entry numbers
     const correctedByEntryNum = isCorrected && (t as any).corrected_by_id
