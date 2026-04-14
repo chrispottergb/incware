@@ -310,6 +310,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         issued_certificate_number: issuedCertNum,
         surrendered_certificate_number: surrenderedCertNum,
         certificate_id: null,
+        ...(historicalDialog ? { entry_type: "historical" } : {}),
       } as any).select("id").single();
       if (error) throw error;
 
