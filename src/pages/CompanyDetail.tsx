@@ -332,7 +332,7 @@ export default function CompanyDetail() {
             <ShareholdersTab companyId={company.id} entityType={company.entity_type} shareholderHoldings={shareCalc.shareholderHoldings} onBuySell={(sellerId, sellerName) => { setInitialSeller({ id: sellerId, name: sellerName }); setBuySellOpen(true); }} />
             {isLLCType(company.entity_type) ? (
               <>
-                <StockLedgerTab companyId={company.id} entityType={company.entity_type} externalOpenRecord={recordTxOpen} onExternalOpenRecordChange={setRecordTxOpen} externalOpenHistorical={historicalTxOpen} onExternalOpenHistoricalChange={setHistoricalTxOpen} externalOpenEstablish={establishOwnershipOpen} onExternalOpenEstablishChange={setEstablishOwnershipOpen} />
+                <StockLedgerTab companyId={company.id} entityType={company.entity_type} externalOpenRecord={recordTxOpen} onExternalOpenRecordChange={setRecordTxOpen} externalOpenHistorical={historicalTxOpen} onExternalOpenHistoricalChange={setHistoricalTxOpen} />
                 <UnifiedLedgerTab companyId={company.id} entityType={company.entity_type} authorizedShares={shareCalc.authorizedShares} />
                 <div data-section="certificates">
                   <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
@@ -341,7 +341,7 @@ export default function CompanyDetail() {
               </>
             ) : (
               <>
-                <StockLedgerTab companyId={company.id} entityType={company.entity_type} externalOpenRecord={recordTxOpen} onExternalOpenRecordChange={setRecordTxOpen} externalOpenHistorical={historicalTxOpen} onExternalOpenHistoricalChange={setHistoricalTxOpen} externalOpenEstablish={establishOwnershipOpen} onExternalOpenEstablishChange={setEstablishOwnershipOpen} />
+                <StockLedgerTab companyId={company.id} entityType={company.entity_type} externalOpenRecord={recordTxOpen} onExternalOpenRecordChange={setRecordTxOpen} externalOpenHistorical={historicalTxOpen} onExternalOpenHistoricalChange={setHistoricalTxOpen} />
                 <div data-section="certificates">
                   <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
                 </div>
