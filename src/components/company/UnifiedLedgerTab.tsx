@@ -139,6 +139,8 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
       const cancCertStr = (t as any).surrendered_certificate_number
         ? `#${(t as any).surrendered_certificate_number}`
         : certRef ? `#${(certRef as any).certificate_number}` : "—";
+      holderBalances[shKey] = (holderBalances[shKey] || 0) - unitsCancelled;
+      totalIssued -= unitsCancelled;
       entries.push({
         entryNum: entries.length + 1, date: t.transaction_date || "", type: "Cancellation",
         transferee: "—", transferor: t.from_shareholder || transfereeName || "—",
@@ -158,12 +160,8 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
     if (isReissuance) {
       unitsIssued = t.num_shares || 0;
       const certIssuedRef = certificates.find((c: any) => c.id === t.certificate_id);
-      const reissueCertCancelled = (t as any).surrendered_certificate_number
-        ? `#${(t as any).surrendered_certificate_number}`
-        : (() => {
-            const cancRef = t.transferred_certificate_id ? certificates.find((c: any) => c.id === t.transferred_certificate_id) : null;
-            return cancRef ? `#${(cancRef as any).certificate_number}` : "—";
-          })();
+      holderBalances[holderKey] = (holderBalances[holderKey] || 0) + unitsIssued;
+      totalIssued += unitsIssued;
       entries.push({
         entryNum: entries.length + 1, date: t.transaction_date || "", type: "Reissuance",
         transferee: transfereeName || "—", transferor: "—",
@@ -172,7 +170,7 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
           const c = certificates.find((c: any) => c.issue_date === t.transaction_date && (c.shareholders?.name || "").toLowerCase().trim() === holderKey && c.num_shares === unitsIssued);
           return c ? `#${(c as any).certificate_number}` : "—";
         })(),
-        certCancelled: reissueCertCancelled,
+        certCancelled: "—",
         unitsIssued, unitsCancelled: 0, toTreasury: 0,
         parValue: "—", pricePerUnit: "—", total: "—", consideration: "—",
         shBalance: Math.max(0, holderBalances[holderKey] || 0),
@@ -209,9 +207,10 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
     const certIssuedStr = (t as any).issued_certificate_number
       ? `Cert #${(t as any).issued_certificate_number}`
       : certIssued ? `Cert #${(certIssued as any).certificate_number}` : "—";
-    const certCancelledStr = (t as any).surrendered_certificate_number
-      ? `Cancels #${(t as any).surrendered_certificate_number}`
-      : certCancelled ? `Cancels #${(certCancelled as any).certificate_number}` : "—";
+    const certCancelledStr = isTx ? "—"
+      : (t as any).surrendered_certificate_number
+        ? `Cancels #${(t as any).surrendered_certificate_number}`
+        : certCancelled ? `Cancels #${(certCancelled as any).certificate_number}` : "—";
 
     entries.push({
       entryNum: entries.length + 1,
