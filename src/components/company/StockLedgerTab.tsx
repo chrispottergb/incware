@@ -495,6 +495,18 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
     setNewShareholderName("");
   };
 
+  // Reset forms when external dialogs are opened
+  const prevRecordRef = useRef(false);
+  const prevHistoricalRef = useRef(false);
+  useEffect(() => {
+    if (dialog && !prevRecordRef.current) resetForm();
+    prevRecordRef.current = dialog;
+  }, [dialog]);
+  useEffect(() => {
+    if (historicalDialog && !prevHistoricalRef.current) resetHistoricalForm();
+    prevHistoricalRef.current = historicalDialog;
+  }, [historicalDialog]);
+
   const todayStr = new Date().toISOString().split("T")[0];
   const effectiveDateIsFuture = form.effective_date > todayStr;
 
