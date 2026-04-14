@@ -136,12 +136,15 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
       const certRef = certificates.find((c: any) => c.id === t.transferred_certificate_id);
       const certIssuedRef = certificates.find((c: any) => c.id === t.certificate_id);
       const shKey = fromKey || holderKey;
+      const cancCertStr = (t as any).surrendered_certificate_number
+        ? `#${(t as any).surrendered_certificate_number}`
+        : certRef ? `#${(certRef as any).certificate_number}` : "—";
       entries.push({
         entryNum: entries.length + 1, date: t.transaction_date || "", type: "Cancellation",
         transferee: "—", transferor: t.from_shareholder || transfereeName || "—",
         interestType: t.share_class || "—",
         certIssued: certIssuedRef ? `#${(certIssuedRef as any).certificate_number}` : "—",
-        certCancelled: certRef ? `#${(certRef as any).certificate_number}` : "—",
+        certCancelled: cancCertStr,
         unitsIssued: 0, unitsCancelled, toTreasury: 0,
         parValue: "—", pricePerUnit: "—", total: "—", consideration: "—",
         shBalance: Math.max(0, holderBalances[shKey] || 0),
@@ -155,6 +158,12 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
     if (isReissuance) {
       unitsIssued = t.num_shares || 0;
       const certIssuedRef = certificates.find((c: any) => c.id === t.certificate_id);
+      const reissueCertCancelled = (t as any).surrendered_certificate_number
+        ? `#${(t as any).surrendered_certificate_number}`
+        : (() => {
+            const cancRef = t.transferred_certificate_id ? certificates.find((c: any) => c.id === t.transferred_certificate_id) : null;
+            return cancRef ? `#${(cancRef as any).certificate_number}` : "—";
+          })();
       entries.push({
         entryNum: entries.length + 1, date: t.transaction_date || "", type: "Reissuance",
         transferee: transfereeName || "—", transferor: "—",
@@ -163,7 +172,7 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
           const c = certificates.find((c: any) => c.issue_date === t.transaction_date && (c.shareholders?.name || "").toLowerCase().trim() === holderKey && c.num_shares === unitsIssued);
           return c ? `#${(c as any).certificate_number}` : "—";
         })(),
-        certCancelled: "—",
+        certCancelled: reissueCertCancelled,
         unitsIssued, unitsCancelled: 0, toTreasury: 0,
         parValue: "—", pricePerUnit: "—", total: "—", consideration: "—",
         shBalance: Math.max(0, holderBalances[holderKey] || 0),
