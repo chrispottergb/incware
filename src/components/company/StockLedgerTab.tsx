@@ -373,7 +373,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         }
       }
     },
-    onSuccess: async (_data: any, _vars: any, _ctx: any) => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
       queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] });
       queryClient.invalidateQueries({ queryKey: ["stock_certificates_ledger", companyId] });
