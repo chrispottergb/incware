@@ -40,8 +40,8 @@ export function DatePickerField({
     }
   };
 
-  const handleChangeRaw = (e: React.FocusEvent<HTMLInputElement> | React.ChangeEvent<HTMLInputElement>) => {
-    const typed = e.target.value;
+  const handleChangeRaw = (e: any) => {
+    const typed = e?.target?.value ?? "";
     setRawText(typed);
 
     // Try parsing typed text as MM/dd/yyyy
