@@ -30,7 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, BookOpen, Link2, Lock, Trash2, FileText, Award, RotateCcw } from "lucide-react";
+import { Plus, Loader2, BookOpen, Link2, Lock, Trash2, FileText, Award, RotateCcw, History } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import CorrectionModal from "./CorrectionModal";
 import AdminDeleteButton from "./AdminDeleteButton";
@@ -152,6 +152,7 @@ interface Props {
 export default function StockLedgerTab({ companyId, entityType = "Corporation" }: Props) {
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState(false);
+  const [historicalDialog, setHistoricalDialog] = useState(false);
   const [correctionTarget, setCorrectionTarget] = useState<any>(null);
   const [correctionEntryNum, setCorrectionEntryNum] = useState<number | undefined>();
   const transactionTypes = TRANSACTION_TYPES_BY_ENTITY[entityType] || DEFAULT_TRANSACTION_TYPES;
@@ -309,6 +310,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         issued_certificate_number: issuedCertNum,
         surrendered_certificate_number: surrenderedCertNum,
         certificate_id: null,
+        ...(historicalDialog ? { entry_type: "historical" } : {}),
       } as any).select("id").single();
       if (error) throw error;
 
@@ -386,6 +388,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         await supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId }).then(null, console.error);
       }
       setDialog(false);
+      setHistoricalDialog(false);
       resetForm();
       toast.success("Transaction recorded!");
     },
@@ -398,6 +401,18 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       num_shares: "", price_per_share: "", total_consideration: "",
       consideration_type: "cash", transaction_date: new Date().toISOString().split("T")[0],
       effective_date: new Date().toISOString().split("T")[0],
+      from_shareholder: "", to_shareholder: "", notes: "",
+      par_value: "", issued_certificate_number: "", surrendered_certificate_number: "",
+    });
+    setAssets([]);
+  };
+
+  const resetHistoricalForm = () => {
+    setForm({
+      transaction_type: defaultTxType, shareholder_id: "", share_class: "Common",
+      num_shares: "", price_per_share: "", total_consideration: "",
+      consideration_type: "cash", transaction_date: "",
+      effective_date: "",
       from_shareholder: "", to_shareholder: "", notes: "",
       par_value: "", issued_certificate_number: "", surrendered_certificate_number: "",
     });
@@ -484,7 +499,12 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                   return [
                   String(i + 1),
                   t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—",
-                  pdfPending ? `${t.transaction_type?.replace("_", " ") ?? "—"} [PENDING]` : (t.transaction_type?.replace("_", " ") ?? "—"),
+                  (() => {
+                    let typeLabel = t.transaction_type?.replace(/_/g, " ") ?? "—";
+                    if (pdfPending) typeLabel += " [PENDING]";
+                    if ((t as any).entry_type === "historical") typeLabel += " [HISTORICAL]";
+                    return typeLabel;
+                  })(),
                   t.shareholders?.name ?? "—",
                   t.share_class,
                   t.num_shares?.toLocaleString(),
@@ -684,6 +704,138 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
             </form>
           </DialogContent>
         </Dialog>
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { resetHistoricalForm(); setHistoricalDialog(true); }}>
+            <History className="mr-1 h-3 w-3" /> Add Historical Transaction
+          </Button>
+          <Dialog open={historicalDialog} onOpenChange={(open) => { setHistoricalDialog(open); if (!open) resetForm(); }}>
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="font-display text-base">Record Historical Transaction</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={(e) => { e.preventDefault(); add.mutate(); }} className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="field-group">
+                    <Label className="field-label">Transaction Type</Label>
+                    <Select value={form.transaction_type} onValueChange={(v) => setForm(p => ({ ...p, transaction_type: v }))}>
+                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {transactionTypes.map(t => (
+                          <SelectItem key={t.value} value={t.value}>
+                            <span>{t.label}</span>
+                            {t.statute && <span className="ml-1.5 text-muted-foreground text-[10px]">({t.statute})</span>}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">Transaction Date</Label>
+                    <DatePickerField value={form.transaction_date} onChange={(v) => setForm(p => ({ ...p, transaction_date: v }))} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="field-group">
+                    <Label className="field-label">Effective Date</Label>
+                    <DatePickerField value={form.effective_date} onChange={(v) => setForm(p => ({ ...p, effective_date: v }))} />
+                  </div>
+                  <div className="field-group flex items-end pb-1">
+                    {form.effective_date && form.effective_date > todayStr ? (
+                      <Badge variant="outline" className="text-[10px] border-amber-500/20 text-amber-500 bg-amber-500/10">Pending</Badge>
+                    ) : form.effective_date ? (
+                      <Badge variant="outline" className="text-[10px] border-green-500/20 text-green-500 bg-green-500/10">Effective</Badge>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">{term.shareholder}</Label>
+                  <Select value={form.shareholder_id} onValueChange={(v) => setForm(p => ({ ...p, shareholder_id: v }))}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={`Select ${term.shareholder.toLowerCase()}`} /></SelectTrigger>
+                    <SelectContent>
+                      {shareholders.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {isTransfer && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">From</Label>
+                      <Input className="h-8 text-sm" value={form.from_shareholder} onChange={(e) => setForm(p => ({ ...p, from_shareholder: e.target.value }))} />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">To</Label>
+                      <Input className="h-8 text-sm" value={form.to_shareholder} onChange={(e) => setForm(p => ({ ...p, to_shareholder: e.target.value }))} />
+                    </div>
+                  </div>
+                )}
+                <div className={`grid gap-2 ${isLLCType(entityType) ? "grid-cols-3" : "grid-cols-4"}`}>
+                  <div className="field-group">
+                    <Label className="field-label">{term.classLabel}</Label>
+                    <Select value={form.share_class} onValueChange={(v) => setForm(p => ({ ...p, share_class: v }))}>
+                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {term.classOptions.map(o => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">{term.numUnitsLabel}</Label>
+                    <Input className="h-8 text-sm" type="number" step="0.0001" value={form.num_shares} onChange={(e) => {
+                      const val = e.target.value;
+                      setForm(p => ({ ...p, num_shares: val, total_consideration: updateTotal(val, p.price_per_share) || p.total_consideration }));
+                    }} required />
+                  </div>
+                  {!isLLCType(entityType) && (
+                    <div className="field-group">
+                      <Label className="field-label">Par Value</Label>
+                      <Input className="h-8 text-sm" type="text" value={form.par_value} onChange={(e) => setForm(p => ({ ...p, par_value: e.target.value }))} placeholder={company?.par_value ? `$${company.par_value}` : "e.g. 1.00 or No Par Value"} />
+                    </div>
+                  )}
+                  <div className="field-group">
+                    <Label className="field-label">{term.pricePerUnit}</Label>
+                    <Input className="h-8 text-sm" type="number" step="0.01" value={form.price_per_share} onChange={(e) => {
+                      const val = e.target.value;
+                      setForm(p => ({ ...p, price_per_share: val, total_consideration: updateTotal(p.num_shares, val) || p.total_consideration }));
+                    }} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="field-group">
+                    <Label className="field-label">Total Consideration</Label>
+                    <Input className="h-8 text-sm" type="number" step="0.01" value={form.total_consideration} onChange={(e) => setForm(p => ({ ...p, total_consideration: e.target.value }))} />
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">Consideration Type</Label>
+                    <Select value={form.consideration_type} onValueChange={(v) => setForm(p => ({ ...p, consideration_type: v }))}>
+                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {CONSIDERATION_TYPES.map(ct => <SelectItem key={ct.value} value={ct.value}>{ct.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="field-group">
+                    <Label className="field-label">Issued Cert #</Label>
+                    <Input className="h-8 text-sm" type="number" value={form.issued_certificate_number} onChange={(e) => setForm(p => ({ ...p, issued_certificate_number: e.target.value }))} placeholder="Auto or manual" />
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">Surrendered Cert #</Label>
+                    <Input className="h-8 text-sm" type="number" value={form.surrendered_certificate_number} onChange={(e) => setForm(p => ({ ...p, surrendered_certificate_number: e.target.value }))} placeholder="If applicable" />
+                  </div>
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">Notes</Label>
+                  <Textarea className="text-sm min-h-[50px]" rows={2} value={form.notes} onChange={(e) => setForm(p => ({ ...p, notes: e.target.value }))} />
+                </div>
+                <Button type="submit" className="w-full" size="sm" disabled={add.isPending || !form.transaction_date}>
+                  {add.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                  Record Historical Transaction
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </CardHeader>
       <CardContent className="px-4 pb-4">
@@ -820,6 +972,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                           )}
                           {isPending && (
                             <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-500/20 text-amber-500 bg-amber-500/10">Pending</Badge>
+                          )}
+                          {(t as any).entry_type === "historical" && (
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 border-primary/30 text-primary bg-primary/10">Historical</Badge>
                           )}
                         </div>
                       </TableCell>
