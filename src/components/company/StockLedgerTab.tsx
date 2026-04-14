@@ -968,6 +968,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
                           {isPending && (
                             <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-500/20 text-amber-500 bg-amber-500/10">Pending</Badge>
                           )}
+                          {(t as any).entry_type === "historical" && (
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 border-primary/30 text-primary bg-primary/10">Historical</Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>{t.shareholders?.name ?? t.to_shareholder ?? "—"}</TableCell>
