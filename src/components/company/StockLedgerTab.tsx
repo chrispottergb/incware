@@ -147,12 +147,22 @@ const CONSIDERATION_TYPES = [
 interface Props {
   companyId: string;
   entityType?: string;
+  externalOpenRecord?: boolean;
+  onExternalOpenRecordChange?: (open: boolean) => void;
+  externalOpenHistorical?: boolean;
+  onExternalOpenHistoricalChange?: (open: boolean) => void;
 }
 
-export default function StockLedgerTab({ companyId, entityType = "Corporation" }: Props) {
+export default function StockLedgerTab({ companyId, entityType = "Corporation", externalOpenRecord, onExternalOpenRecordChange, externalOpenHistorical, onExternalOpenHistoricalChange }: Props) {
   const queryClient = useQueryClient();
-  const [dialog, setDialog] = useState(false);
-  const [historicalDialog, setHistoricalDialog] = useState(false);
+  const [dialogInternal, setDialogInternal] = useState(false);
+  const [historicalDialogInternal, setHistoricalDialogInternal] = useState(false);
+
+  // Support both internal and external dialog control
+  const dialog = externalOpenRecord ?? dialogInternal;
+  const setDialog = (open: boolean) => { onExternalOpenRecordChange ? onExternalOpenRecordChange(open) : setDialogInternal(open); };
+  const historicalDialog = externalOpenHistorical ?? historicalDialogInternal;
+  const setHistoricalDialog = (open: boolean) => { onExternalOpenHistoricalChange ? onExternalOpenHistoricalChange(open) : setHistoricalDialogInternal(open); };
   const [newShareholderName, setNewShareholderName] = useState("");
   const [correctionTarget, setCorrectionTarget] = useState<any>(null);
   const [correctionEntryNum, setCorrectionEntryNum] = useState<number | undefined>();
