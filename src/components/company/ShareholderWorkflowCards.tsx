@@ -1,21 +1,23 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, History, ArrowRight } from "lucide-react";
+import { Plus, History, ArrowRight, Clipboard } from "lucide-react";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 
 interface Props {
   entityType?: string;
   onRecordTransaction: () => void;
   onAddHistorical: () => void;
+  onEstablishOwnership: () => void;
 }
 
-export default function ShareholderWorkflowCards({ entityType = "Corporation", onRecordTransaction, onAddHistorical }: Props) {
+export default function ShareholderWorkflowCards({ entityType = "Corporation", onRecordTransaction, onAddHistorical, onEstablishOwnership }: Props) {
   const term = getTerminology(entityType);
   const isLLC = isLLCType(entityType);
   const holderLabel = term.shareholder.toLowerCase();
   const holderTableLabel = isLLC ? "Members table" : "Shareholders table";
   const historyTitle = isLLC ? "Build Full Interest Ledger History" : "Build Full Transfer Ledger History";
+  const unitLabel = isLLC ? "units" : "shares";
 
   return (
     <section className="space-y-3" aria-label="Ownership entry workflows">
@@ -28,7 +30,7 @@ export default function ShareholderWorkflowCards({ entityType = "Corporation", o
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
         <Card
           className="cursor-pointer border-primary/25 bg-primary/5 transition-colors hover:border-primary/45"
           onClick={onRecordTransaction}
@@ -102,7 +104,7 @@ export default function ShareholderWorkflowCards({ entityType = "Corporation", o
                     • Can create new {holderLabel}s on the fly and requires the actual historical date for each entry.
                   </li>
                   <li>
-                    • Balance Held shows the running balance for that specific {isLLC ? "holder" : "certificate holder"} after each transaction — when {isLLC ? "units" : "shares"} leave that holder, the balance goes to 0.
+                    • Balance Held shows the running balance for that specific {isLLC ? "holder" : "certificate holder"} after each transaction — when {unitLabel} leave that holder, the balance goes to 0.
                   </li>
                 </ul>
 
@@ -113,6 +115,53 @@ export default function ShareholderWorkflowCards({ entityType = "Corporation", o
                   className="h-auto p-0 text-xs text-foreground"
                 >
                   Add historical entry <ArrowRight className="ml-1 h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card
+          className="cursor-pointer border-muted-foreground/25 bg-muted/40 transition-colors hover:border-muted-foreground/45"
+          onClick={onEstablishOwnership}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 rounded-lg bg-muted-foreground p-2 text-background">
+                <Clipboard className="h-5 w-5" />
+              </div>
+
+              <div className="min-w-0 flex-1 space-y-2">
+                <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
+                  Snapshot / New client pickup
+                </Badge>
+
+                <div className="space-y-1">
+                  <h3 className="text-sm font-semibold text-foreground">Establish Current Ownership</h3>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    Set ownership as of a date — for when the attorney is picking up mid-stream and does not need a full historical ledger.
+                  </p>
+                </div>
+
+                <ul className="space-y-1 text-[11px] leading-relaxed text-muted-foreground">
+                  <li>
+                    • Record who currently owns what {unitLabel} as of a specific date (typically the first meeting date).
+                  </li>
+                  <li>
+                    • No transfer history is needed — just the current ownership snapshot.
+                  </li>
+                  <li>
+                    • Creates "Opening Balance" entries and locks the ledger from any earlier dates.
+                  </li>
+                </ul>
+
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 text-xs text-muted-foreground"
+                >
+                  Establish ownership <ArrowRight className="ml-1 h-3 w-3" />
                 </Button>
               </div>
             </div>

@@ -46,6 +46,7 @@ import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { useShareCalculations } from "@/hooks/useShareCalculations";
 import EntityDeleteGuard from "@/components/company/EntityDeleteGuard";
 import ShareholderWorkflowCards from "@/components/company/ShareholderWorkflowCards";
+import EstablishOwnershipDialog from "@/components/company/EstablishOwnershipDialog";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 export default function CompanyDetail() {
@@ -61,6 +62,7 @@ export default function CompanyDetail() {
   const [initialSeller, setInitialSeller] = useState<{ id: string; name: string } | undefined>();
   const [recordTxOpen, setRecordTxOpen] = useState(false);
   const [historicalTxOpen, setHistoricalTxOpen] = useState(false);
+  const [establishOwnershipOpen, setEstablishOwnershipOpen] = useState(false);
 
   const handleTabChange = (value: string) => {
     navigate(`#${value}`, { replace: true });
@@ -296,6 +298,7 @@ export default function CompanyDetail() {
               entityType={company.entity_type}
               onRecordTransaction={() => setRecordTxOpen(true)}
               onAddHistorical={() => setHistoricalTxOpen(true)}
+              onEstablishOwnership={() => setEstablishOwnershipOpen(true)}
             />
 
             {isCorp && shareCalc.authorizedShares != null && (
@@ -355,6 +358,12 @@ export default function CompanyDetail() {
             onOpenChange={(o) => { setBuySellOpen(o); if (!o) setInitialSeller(undefined); }}
             availableShares={shareCalc.availableShares}
             initialSeller={initialSeller}
+          />
+          <EstablishOwnershipDialog
+            companyId={company.id}
+            entityType={company.entity_type}
+            open={establishOwnershipOpen}
+            onOpenChange={setEstablishOwnershipOpen}
           />
         </TabsContent>
         <TabsContent value="timeline" className="mt-5">
