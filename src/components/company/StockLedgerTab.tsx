@@ -152,6 +152,7 @@ interface Props {
 export default function StockLedgerTab({ companyId, entityType = "Corporation" }: Props) {
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState(false);
+  const [historicalDialog, setHistoricalDialog] = useState(false);
   const [correctionTarget, setCorrectionTarget] = useState<any>(null);
   const [correctionEntryNum, setCorrectionEntryNum] = useState<number | undefined>();
   const transactionTypes = TRANSACTION_TYPES_BY_ENTITY[entityType] || DEFAULT_TRANSACTION_TYPES;
@@ -372,7 +373,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         }
       }
     },
-    onSuccess: async () => {
+    onSuccess: async (_data: any, _vars: any, _ctx: any) => {
       queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] });
       queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] });
       queryClient.invalidateQueries({ queryKey: ["stock_certificates_ledger", companyId] });
@@ -386,6 +387,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         await supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId }).then(null, console.error);
       }
       setDialog(false);
+      setHistoricalDialog(false);
       resetForm();
       toast.success("Transaction recorded!");
     },
@@ -398,6 +400,18 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       num_shares: "", price_per_share: "", total_consideration: "",
       consideration_type: "cash", transaction_date: new Date().toISOString().split("T")[0],
       effective_date: new Date().toISOString().split("T")[0],
+      from_shareholder: "", to_shareholder: "", notes: "",
+      par_value: "", issued_certificate_number: "", surrendered_certificate_number: "",
+    });
+    setAssets([]);
+  };
+
+  const resetHistoricalForm = () => {
+    setForm({
+      transaction_type: defaultTxType, shareholder_id: "", share_class: "Common",
+      num_shares: "", price_per_share: "", total_consideration: "",
+      consideration_type: "cash", transaction_date: "",
+      effective_date: "",
       from_shareholder: "", to_shareholder: "", notes: "",
       par_value: "", issued_certificate_number: "", surrendered_certificate_number: "",
     });
