@@ -264,10 +264,21 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         throw new Error(`This entity has an opening balance established as of ${new Date(companyCheck.opening_balance_date + "T00:00:00").toLocaleDateString()}. Transactions cannot be dated before the opening balance date.`);
       }
 
+      // Fetch fresh transactions and shareholders for validation (cache may be stale)
+      const { data: freshTransactions = [] } = await supabase
+        .from("share_transactions")
+        .select("*, shareholders(name)")
+        .eq("company_id", companyId)
+        .order("transaction_date", { ascending: true });
+      const { data: freshShareholders = [] } = await supabase
+        .from("shareholders")
+        .select("id, name")
+        .eq("company_id", companyId);
+
       // Validate issuance limit
       if (ISSUANCE_SET.has(txType) && company?.authorized_shares != null) {
         const REDUCTION_SET_LOCAL = new Set(["redemption", "reacquisition", "cancellation", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout"]);
-        const currentIssued = transactions
+        const currentIssued = freshTransactions
           .filter((t: any) => t.status !== "corrected")
           .reduce((sum: number, t: any) => {
             if (ISSUANCE_SET.has(t.transaction_type)) return sum + (t.num_shares || 0);
@@ -284,8 +295,8 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
         const sellerCheck = validateSellerHoldings(
           form.from_shareholder,
           numShares,
-          transactions,
-          shareholders,
+          freshTransactions,
+          freshShareholders as { id: string; name: string }[],
           term
         );
         if (!sellerCheck.valid) throw new Error(sellerCheck.message);
