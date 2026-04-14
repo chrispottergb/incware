@@ -317,7 +317,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation" }
       const { data: txn, error } = await supabase.from("share_transactions").insert({
         company_id: companyId,
         transaction_type: txType,
-        shareholder_id: form.shareholder_id || null,
+        shareholder_id: resolvedShareholderId,
         share_class: form.share_class,
         num_shares: numShares,
         price_per_share: form.price_per_share ? parseFloat(form.price_per_share) : null,
