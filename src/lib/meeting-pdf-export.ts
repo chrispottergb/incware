@@ -358,25 +358,29 @@ function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string
   y += 6;
 
   // Split text into paragraphs and apply WHEREAS/RESOLVED formatting globally
-  const paragraphs = text.split(/\n\n+/).map(p => p.replace(/\n/g, " ").trim()).filter(Boolean);
+  const paragraphs = text.split(/\n\n+/).filter(p => p.trim());
 
   for (const para of paragraphs) {
-    const upperPara = para.toUpperCase();
+    const upperPara = para.toUpperCase().trimStart();
 
     if (upperPara.startsWith("WHEREAS,") || upperPara.startsWith("WHEREAS ")) {
       // WHEREAS: flush left (WHEREAS_INDENT = 0), bold-italic prefix, italic body
-      let body = para;
+      let body = para.trim();
       if (body.toUpperCase().startsWith("WHEREAS,")) {
         body = body.substring(body.indexOf(",") + 1).trim();
       } else if (body.toUpperCase().startsWith("WHEREAS ")) {
         body = body.substring(8).trim();
       }
+      // Split body on single newlines to preserve list items
+      const bodySubLines = body.split("\n").map(l => l.trim()).filter(Boolean);
       const prefix = "WHEREAS, ";
-      const fullText = prefix + body;
-      const lines = doc.splitTextToSize(fullText, contentWidth - WHEREAS_INDENT);
-      y = checkPageBreak(doc, y, lines.length * 5.5 + 6);
 
-      for (let i = 0; i < lines.length; i++) {
+      // Render first sub-line with prefix
+      const firstFullText = prefix + bodySubLines[0];
+      const firstLines = doc.splitTextToSize(firstFullText, contentWidth - WHEREAS_INDENT);
+      y = checkPageBreak(doc, y, firstLines.length * 5.5 + 6);
+
+      for (let i = 0; i < firstLines.length; i++) {
         y = checkPageBreak(doc, y, 6);
         if (i === 0) {
           doc.setFont("Arial", "bolditalic");
@@ -384,14 +388,26 @@ function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string
           const prefixWidth = doc.getTextWidth(prefix);
           doc.text(prefix, MARGIN + WHEREAS_INDENT, y);
           doc.setFont("Arial", "italic");
-          const remainder = lines[0].substring(prefix.length);
+          const remainder = firstLines[0].substring(prefix.length);
           if (remainder) doc.text(remainder, MARGIN + WHEREAS_INDENT + prefixWidth, y);
         } else {
           doc.setFont("Arial", "italic");
           doc.setTextColor(...BODY_COLOR);
-          doc.text(lines[i], MARGIN + WHEREAS_INDENT, y);
+          doc.text(firstLines[i], MARGIN + WHEREAS_INDENT, y);
         }
         y += 5.5;
+      }
+
+      // Render remaining sub-lines as continuation
+      for (let s = 1; s < bodySubLines.length; s++) {
+        doc.setFont("Arial", "italic");
+        doc.setTextColor(...BODY_COLOR);
+        const wrapped = doc.splitTextToSize(bodySubLines[s], contentWidth - WHEREAS_INDENT);
+        for (const wl of wrapped) {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(wl, MARGIN + WHEREAS_INDENT, y);
+          y += 5.5;
+        }
       }
       y += 3;
     } else if (
@@ -404,7 +420,7 @@ function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string
     ) {
       // RESOLVED / FURTHER RESOLVED: indented 0.5 inch, bold prefix, normal body
       const isFurtherResolved = upperPara.startsWith("FURTHER RESOLVED");
-      let body = para;
+      let body = para.trim();
       const nowPrefix = "NOW, THEREFORE, BE IT ";
       if (body.toUpperCase().startsWith(nowPrefix.toUpperCase())) {
         body = body.substring(nowPrefix.length);
@@ -426,11 +442,16 @@ function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string
       const bodyLower = body.toLowerCase();
       const resolvedBody = bodyLower.startsWith("that ") ? body : "that " + body;
       const prefix = isFurtherResolved ? "FURTHER RESOLVED, " : "RESOLVED, ";
-      const fullText = prefix + resolvedBody;
-      const lines = doc.splitTextToSize(fullText, contentWidth - RESOLVED_INDENT);
-      y = checkPageBreak(doc, y, lines.length * 5.5 + 6);
 
-      for (let i = 0; i < lines.length; i++) {
+      // Split resolved body on single newlines to preserve list items
+      const bodySubLines = resolvedBody.split("\n").map(l => l.trim()).filter(Boolean);
+
+      // Render first sub-line with prefix
+      const firstFullText = prefix + bodySubLines[0];
+      const firstLines = doc.splitTextToSize(firstFullText, contentWidth - RESOLVED_INDENT);
+      y = checkPageBreak(doc, y, firstLines.length * 5.5 + 6);
+
+      for (let i = 0; i < firstLines.length; i++) {
         y = checkPageBreak(doc, y, 6);
         if (i === 0) {
           doc.setFont("Arial", "bold");
@@ -438,26 +459,41 @@ function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string
           const prefixWidth = doc.getTextWidth(prefix);
           doc.text(prefix, MARGIN + RESOLVED_INDENT, y);
           doc.setFont("Arial", "normal");
-          const remainder = lines[0].substring(prefix.length);
+          const remainder = firstLines[0].substring(prefix.length);
           if (remainder) doc.text(remainder, MARGIN + RESOLVED_INDENT + prefixWidth, y);
         } else {
           doc.setFont("Arial", "normal");
           doc.setTextColor(...BODY_COLOR);
-          doc.text(lines[i], MARGIN + RESOLVED_INDENT, y);
+          doc.text(firstLines[i], MARGIN + RESOLVED_INDENT, y);
         }
         y += 5.5;
       }
+
+      // Render remaining sub-lines as continuation
+      for (let s = 1; s < bodySubLines.length; s++) {
+        doc.setFont("Arial", "normal");
+        doc.setTextColor(...BODY_COLOR);
+        const wrapped = doc.splitTextToSize(bodySubLines[s], contentWidth - RESOLVED_INDENT);
+        for (const wl of wrapped) {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(wl, MARGIN + RESOLVED_INDENT, y);
+          y += 5.5;
+        }
+      }
       y += 5;
     } else {
-      // Plain paragraph — normal text flush left
+      // Plain paragraph — normal text flush left, preserve single newlines
       doc.setFont("Arial", "normal");
       doc.setFontSize(11);
       doc.setTextColor(30, 30, 30);
-      const lines = doc.splitTextToSize(para, contentWidth);
-      for (const line of lines) {
-        y = checkPageBreak(doc, y, 6);
-        doc.text(line, MARGIN, y);
-        y += 5;
+      const subLines = para.split("\n").map(l => l.trim()).filter(Boolean);
+      for (const sub of subLines) {
+        const wrapped = doc.splitTextToSize(sub, contentWidth);
+        for (const wl of wrapped) {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(wl, MARGIN, y);
+          y += 5;
+        }
       }
       y += 3;
     }
