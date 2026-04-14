@@ -86,25 +86,25 @@ export default function ShareholderWorkflowCards({ entityType = "Corporation", o
 
               <div className="min-w-0 flex-1 space-y-2">
                 <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
-                  Full history rebuild
+                  Past dates
                 </Badge>
 
                 <div className="space-y-1">
-                  <h3 className="text-sm font-semibold text-foreground">{historyTitle}</h3>
+                  <h3 className="text-sm font-semibold text-foreground">Record Past Transaction</h3>
                   <p className="text-[11px] leading-relaxed text-muted-foreground">
-                    Use this for a client managed from the beginning, or any client where a complete, accurate chronological ledger is needed.
+                    For entering past transactions in chronological order — same as Record Transaction but allows backdating.
                   </p>
                 </div>
 
                 <ul className="space-y-1 text-[11px] leading-relaxed text-muted-foreground">
                   <li>
-                    • Enter every original issuance, transfer, gift, and redemption one by one in true date order.
+                    • Creates full ledger entries, certificates, and cancellations just like Record Transaction.
                   </li>
                   <li>
-                    • Can create new {holderLabel}s on the fly and requires the actual historical date for each entry.
+                    • Requires the actual historical date for each entry — enter them in true date order.
                   </li>
                   <li>
-                    • Balance Held shows the running balance for that specific {isLLC ? "holder" : "certificate holder"} after each transaction — when {unitLabel} leave that holder, the balance goes to 0.
+                    • Can create new {holderLabel}s on the fly during entry.
                   </li>
                 </ul>
 
@@ -114,7 +114,7 @@ export default function ShareholderWorkflowCards({ entityType = "Corporation", o
                   size="sm"
                   className="h-auto p-0 text-xs text-foreground"
                 >
-                  Add historical entry <ArrowRight className="ml-1 h-3 w-3" />
+                  Record past transaction <ArrowRight className="ml-1 h-3 w-3" />
                 </Button>
               </div>
             </div>
