@@ -45,6 +45,7 @@ import UnifiedLedgerTab from "@/components/company/UnifiedLedgerTab";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { useShareCalculations } from "@/hooks/useShareCalculations";
 import EntityDeleteGuard from "@/components/company/EntityDeleteGuard";
+import ShareholderWorkflowCards from "@/components/company/ShareholderWorkflowCards";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 export default function CompanyDetail() {
@@ -58,6 +59,8 @@ export default function CompanyDetail() {
   const [deleting, setDeleting] = useState(false);
   const [buySellOpen, setBuySellOpen] = useState(false);
   const [initialSeller, setInitialSeller] = useState<{ id: string; name: string } | undefined>();
+  const [recordTxOpen, setRecordTxOpen] = useState(false);
+  const [historicalTxOpen, setHistoricalTxOpen] = useState(false);
 
   const handleTabChange = (value: string) => {
     navigate(`#${value}`, { replace: true });
