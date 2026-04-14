@@ -359,6 +359,12 @@ export default function CompanyDetail() {
             availableShares={shareCalc.availableShares}
             initialSeller={initialSeller}
           />
+          <EstablishOwnershipDialog
+            companyId={company.id}
+            entityType={company.entity_type}
+            open={establishOwnershipOpen}
+            onOpenChange={setEstablishOwnershipOpen}
+          />
         </TabsContent>
         <TabsContent value="timeline" className="mt-5">
           <TimelineTab companyId={company.id} company={company} />
