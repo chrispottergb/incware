@@ -46,6 +46,7 @@ import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { useShareCalculations } from "@/hooks/useShareCalculations";
 import EntityDeleteGuard from "@/components/company/EntityDeleteGuard";
 import ShareholderWorkflowCards from "@/components/company/ShareholderWorkflowCards";
+import EstablishOwnershipDialog from "@/components/company/EstablishOwnershipDialog";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
 export default function CompanyDetail() {
