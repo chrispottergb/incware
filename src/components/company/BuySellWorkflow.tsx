@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";

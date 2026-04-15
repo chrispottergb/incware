@@ -1,4 +1,6 @@
 import { useState } from "react";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
