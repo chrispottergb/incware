@@ -317,9 +317,9 @@ export default function CompanyAssetsSection({ companyId, companyName = "" }: Pr
 
               {activeTab === "property" && (
                 <>
-                  <div className="field-group">
+                   <div className="field-group">
                     <Label className="field-label">Address</Label>
-                    <Input className="h-8 text-sm" value={propertyForm.address} onChange={(e) => setPropertyForm((p) => ({ ...p, address: e.target.value }))} required />
+                    <DbAddressAutocomplete className="h-8 text-sm" value={propertyForm.address} onChange={(v) => setPropertyForm((p) => ({ ...p, address: v }))} onSelect={(addr) => { setPropertyForm((p) => ({ ...p, address: addr.line1, address_2: addr.line2, city: addr.city, state: addr.state, zip: addr.zip })); }} source="companies" />
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Address 2</Label>
