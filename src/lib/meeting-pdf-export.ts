@@ -964,7 +964,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
       head: [tableHeaders],
       body: tableBody,
       theme: "grid",
-      headStyles: tableHeadStyles,
+      headStyles: { fillColor: [200, 215, 235] as [number, number, number], textColor: [30, 30, 30] as [number, number, number], fontSize: 10, fontStyle: "bold" as const },
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       columnStyles: isLLC
