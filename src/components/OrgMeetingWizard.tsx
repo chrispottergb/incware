@@ -94,7 +94,7 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
     einAuthorizedName: "",
     einAuthorizedTitle: "",
     managers: [{ name: "", title: "Managing Member" }],
-    members: [{ name: "", membershipUnits: "", membershipInterestPct: "" }],
+    members: [{ name: "", address: "", membershipUnits: "", membershipInterestPct: "" }],
     businessPurpose: company?.business_purpose || "",
     operatingAgreementAdopted: true,
     fiscalYearEnd: company?.fiscal_year_end || "December 31",

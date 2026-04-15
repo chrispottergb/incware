@@ -25,7 +25,7 @@ export interface OrgMeetingData {
   einAuthorizedTitle: string;
 
   managers: { name: string; title: string }[];
-  members: { name: string; membershipUnits: string; membershipInterestPct: string }[];
+  members: { name: string; address: string; membershipUnits: string; membershipInterestPct: string }[];
 
   businessPurpose: string;
 
@@ -251,8 +251,8 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
     const usable = pw - margin - rMargin;
     autoTable(doc, {
       startY: y,
-      head: [["Name", "Membership Units", "Membership Interest %"]],
-      body: data.members.map(m => [m.name || "[Enter]", m.membershipUnits || "[Enter]", m.membershipInterestPct ? `${m.membershipInterestPct}%` : "[Enter]"]),
+      head: [["Name", "Address", "Membership Units", "Membership Interest %"]],
+      body: data.members.map(m => [m.name || "[Enter]", m.address || "[Enter]", m.membershipUnits || "[Enter]", m.membershipInterestPct ? `${m.membershipInterestPct}%` : "[Enter]"]),
       margin: { left: margin, right: rMargin },
       styles: { fontSize: 10, cellPadding: 6, font: "Arial" },
       headStyles: {
@@ -263,9 +263,10 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
       },
       theme: "grid",
       columnStyles: {
-        0: { cellWidth: usable * 0.50 },
-        1: { cellWidth: usable * 0.25 },
-        2: { cellWidth: usable * 0.25 },
+        0: { cellWidth: usable * 0.28 },
+        1: { cellWidth: usable * 0.42 },
+        2: { cellWidth: usable * 0.15 },
+        3: { cellWidth: usable * 0.15 },
       },
     });
     y = (doc as any).lastAutoTable.finalY + 18;
