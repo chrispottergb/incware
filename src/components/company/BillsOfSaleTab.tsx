@@ -1,4 +1,6 @@
 import { useState } from "react";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,6 +45,7 @@ interface Props {
 }
 
 export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }: Props) {
+  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext(companyId);
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -198,11 +201,11 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Seller</Label>
-                    <Input className="h-8 text-sm" value={form.seller_name} onChange={(e) => setForm(p => ({ ...p, seller_name: e.target.value }))} required />
+                    <AddressAutocomplete className="h-8 text-sm" value={form.seller_name} onChange={(v) => setForm(p => ({ ...p, seller_name: v }))} onSelect={(entry) => { setForm(p => ({ ...p, seller_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} />
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Buyer</Label>
-                    <Input className="h-8 text-sm" value={form.buyer_name} onChange={(e) => setForm(p => ({ ...p, buyer_name: e.target.value }))} required />
+                    <AddressAutocomplete className="h-8 text-sm" value={form.buyer_name} onChange={(v) => setForm(p => ({ ...p, buyer_name: v }))} onSelect={(entry) => { setForm(p => ({ ...p, buyer_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} />
                   </div>
                 </div>
                 <div className="field-group">
