@@ -1,4 +1,6 @@
 import { useState } from "react";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -76,6 +78,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function BusinessSalesTab({ companyId }: Props) {
+  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext(companyId);
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -202,11 +205,11 @@ export default function BusinessSalesTab({ companyId }: Props) {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Seller Name</Label>
-                  <Input value={form.seller_name} onChange={(e) => f("seller_name", e.target.value)} placeholder="Seller" />
+                  <AddressAutocomplete value={form.seller_name} onChange={(v) => f("seller_name", v)} onSelect={(entry) => { f("seller_name", entry.full_name); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Seller" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Buyer Name</Label>
-                  <Input value={form.buyer_name} onChange={(e) => f("buyer_name", e.target.value)} placeholder="Buyer" />
+                  <AddressAutocomplete value={form.buyer_name} onChange={(v) => f("buyer_name", v)} onSelect={(entry) => { f("buyer_name", entry.full_name); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Buyer" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Sale Type</Label>

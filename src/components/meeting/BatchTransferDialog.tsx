@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { generateBillOfSalePdf } from "@/lib/bill-of-sale-pdf";
@@ -67,6 +69,7 @@ export default function BatchTransferDialog({
   const [sellerId, setSellerId] = useState("");
   const [sellerName, setSellerName] = useState("");
   const [shareClass, setShareClass] = useState(term.defaultClass);
+  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext(companyId);
   const [transactionDate, setTransactionDate] = useState(
     new Date().toISOString().split("T")[0]
   );
@@ -448,13 +451,19 @@ export default function BatchTransferDialog({
                           </Select>
                         ) : (
                           <>
-                            <Input
+                            <AddressAutocomplete
                               className="h-8 text-sm"
                               value={row.buyer_name}
-                              onChange={(e) => {
-                                updateRow(idx, "buyer_name", e.target.value);
+                              onChange={(v) => {
+                                updateRow(idx, "buyer_name", v);
                                 updateRow(idx, "buyer_id", "");
                               }}
+                              onSelect={(entry) => {
+                                updateRow(idx, "buyer_name", entry.full_name);
+                                updateRow(idx, "buyer_id", "");
+                              }}
+                              search={searchAddressBook}
+                              getCompanySplitIndex={getCompanySplitIndex}
                               placeholder="Buyer name"
                             />
                             {shareholders.length > 0 && (
