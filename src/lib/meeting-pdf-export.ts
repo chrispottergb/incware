@@ -911,10 +911,33 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
     }
   }
 
-  // 6. Members / Shareholders
+  // 6. Members / Shareholders (with addresses)
   const shareholderSource = hasShareholderData
-    ? data.shareholders!.map((s: any) => ({ name: s.shareholder_name, shares: s.common_shares }))
-    : (data.companyShareholders || []).map((s: any) => ({ name: s.name, shares: null }));
+    ? data.shareholders!.map((s: any) => {
+        const cs = (data.companyShareholders || []).find(
+          (c: any) => c.name?.toLowerCase().trim() === s.shareholder_name?.toLowerCase().trim()
+        );
+        const addr = s.address || cs?.address || "";
+        const addr2 = s.address_2 || (cs as any)?.address_2 || "";
+        const city = s.city || cs?.city || "";
+        const state = s.state || cs?.state || "";
+        const zip = s.zip || cs?.zip || "";
+        const line1 = [addr, addr2].filter(Boolean).join(", ");
+        const line2 = [city, state].filter(Boolean).join(", ");
+        const address = [line1, line2, zip].filter(Boolean).join(" ");
+        return { name: s.shareholder_name, shares: s.common_shares, address };
+      })
+    : (data.companyShareholders || []).map((s: any) => {
+        const addr = s.address || "";
+        const addr2 = (s as any).address_2 || "";
+        const city = s.city || "";
+        const state = s.state || "";
+        const zip = s.zip || "";
+        const line1 = [addr, addr2].filter(Boolean).join(", ");
+        const line2 = [city, state].filter(Boolean).join(", ");
+        const address = [line1, line2, zip].filter(Boolean).join(" ");
+        return { name: s.name, shares: null, address };
+      });
 
   if (shareholderSource.length > 0) {
     y = checkPageBreak(doc, y, 30 + shareholderSource.length * 7);
@@ -922,11 +945,33 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
     y = addSectionTitle(doc, y, `Initial ${memberLabel}`);
     if (isLLC) {
       y = addResolutionBlock(doc, y, "Recognition of Initial Members",
-        `RESOLVED, that the following persons are hereby recognized as the initial members of the ${entityLabel}, having made their respective capital contributions as set forth in the Operating Agreement:\n\n${shareholderSource.map((s: any) => s.name).join("; ")}.`);
+        `RESOLVED, that the following persons are hereby recognized as the initial members of the ${entityLabel}, having made their respective capital contributions as set forth in the Operating Agreement:`);
     } else {
       y = addResolutionBlock(doc, y, "Authorization of Stock Issuance",
-        `RESOLVED, that the ${entityLabel} is authorized to issue shares of stock to the following initial shareholders:\n\n${shareholderSource.map((s: any) => s.name + (s.shares ? ` (${s.shares.toLocaleString()} shares)` : "")).join("; ")}.`);
+        `RESOLVED, that the ${entityLabel} is authorized to issue shares of stock to the following initial shareholders:`);
     }
+    const usableW = doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN;
+    const tableHeaders = isLLC
+      ? ["Name", "Address"]
+      : ["Name", "Address", "Shares"];
+    const tableBody = shareholderSource.map((s: any) =>
+      isLLC
+        ? [s.name || "—", s.address || "—"]
+        : [s.name || "—", s.address || "—", s.shares ? s.shares.toLocaleString() : "—"]
+    );
+    autoTable(doc, {
+      startY: y,
+      head: [tableHeaders],
+      body: tableBody,
+      theme: "grid",
+      headStyles: { fillColor: [200, 215, 235] as [number, number, number], textColor: [30, 30, 30] as [number, number, number], fontSize: 10, fontStyle: "bold" as const },
+      bodyStyles: { fontSize: 10 },
+      margin: { left: MARGIN, right: R_MARGIN },
+      columnStyles: isLLC
+        ? { 0: { cellWidth: usableW * 0.35 }, 1: { cellWidth: usableW * 0.65 } }
+        : { 0: { cellWidth: usableW * 0.30 }, 1: { cellWidth: usableW * 0.50 }, 2: { cellWidth: usableW * 0.20 } },
+    });
+    y = (doc as any).lastAutoTable.finalY + 6;
   }
 
   // 7. Operating Agreement / Bylaws
@@ -1184,31 +1229,60 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         y = (doc as any).lastAutoTable.finalY + 6;
       }
     } else {
-      // Annual meeting: attendee list (deduplicate by normalized name)
-      const attendeeMap = new Map<string, string>(); // normalized → first-seen display name
+      // Annual meeting: attendee list with addresses (deduplicate by normalized name)
+      const attendeeMap = new Map<string, { name: string; address: string }>(); // normalized → display entry
       const normKey = (n: string) => n.toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim();
+
+      const buildAddress = (name: string): string => {
+        const nk = normKey(name);
+        // Check meeting shareholders first
+        const ms = (data.shareholders || []).find(s => normKey(s.shareholder_name || "") === nk);
+        const cs = (data.companyShareholders || []).find(c => normKey(c.name || "") === nk);
+        const cd = (data.companyDirectors || []).find(d => normKey(d.name || "") === nk);
+        const source = ms || cs || cd;
+        if (!source) return "";
+        const addr = (ms?.address || cs?.address || cd?.address || "");
+        const addr2 = ((ms as any)?.address_2 || (cs as any)?.address_2 || (cd as any)?.address_2 || "");
+        const city = (ms?.city || cs?.city || cd?.city || "");
+        const state = (ms?.state || cs?.state || cd?.state || "");
+        const zip = (ms?.zip || cs?.zip || cd?.zip || "");
+        const line1 = [addr, addr2].filter(Boolean).join(", ");
+        const line2 = [city, state].filter(Boolean).join(", ");
+        return [line1, line2, zip].filter(Boolean).join(" ");
+      };
+
       const addAttendee = (name: string | null | undefined) => {
         if (!name) return;
         const key = normKey(name);
         if (!key || attendeeMap.has(key)) return;
-        attendeeMap.set(key, name.trim());
+        attendeeMap.set(key, { name: name.trim(), address: buildAddress(name) });
       };
       (data.shareholders || []).forEach(s => addAttendee(s.shareholder_name));
       (data.directors || []).forEach(d => addAttendee(d.director_name));
       (data.officers || []).forEach(o => addAttendee(o.name));
-      const attendees = new Set(attendeeMap.values());
-      if (attendees.size > 0) {
+      const attendeeEntries = Array.from(attendeeMap.values());
+      if (attendeeEntries.length > 0) {
         doc.setFontSize(11);
         doc.setFont("Arial", "normal");
         doc.setTextColor(...BODY_COLOR);
         doc.text("The following were present at the meeting:", MARGIN, y);
-        y += 5.5;
-        attendees.forEach(name => {
-          y = checkPageBreak(doc, y, 6);
-          doc.text(`•  ${name}`, MARGIN + 6, y);
-          y += 5.5;
+        y += 6;
+
+        const usableW = doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN;
+        autoTable(doc, {
+          startY: y,
+          head: [["Name", "Address"]],
+          body: attendeeEntries.map(e => [e.name, e.address || "—"]),
+          theme: "grid",
+          headStyles: tableHeadStyles,
+          bodyStyles: { fontSize: 10 },
+          margin: { left: MARGIN, right: R_MARGIN },
+          columnStyles: {
+            0: { cellWidth: usableW * 0.35 },
+            1: { cellWidth: usableW * 0.65 },
+          },
         });
-        y += 3;
+        y = (doc as any).lastAutoTable.finalY + 6;
       }
 
       const chairText = `${meeting.chairperson || "[Chairperson]"} served as Chairperson and ${meeting.mtg_secretary || "[Secretary]"} served as Secretary of the meeting.`;
