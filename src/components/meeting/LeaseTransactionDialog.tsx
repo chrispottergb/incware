@@ -33,6 +33,7 @@ interface Props {
 export default function LeaseTransactionDialog({
   companyId, companyName, entityType, meetingDate, open, onOpenChange, onLeaseCreated,
 }: Props) {
+  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const isLLC = isLLCType(entityType);
@@ -142,7 +143,7 @@ export default function LeaseTransactionDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Landlord Name</Label>
-              <Input value={form.landlord_name} onChange={(e) => handleChange("landlord_name", e.target.value)} />
+              <AddressAutocomplete value={form.landlord_name} onChange={(v) => handleChange("landlord_name", v)} onSelect={(entry) => { handleChange("landlord_name", entry.full_name); if (entry.address) handleChange("landlord_address", entry.address); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Landlord Address</Label>
