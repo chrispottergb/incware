@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react";
 import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +30,7 @@ const ACCOUNT_TYPES = ["checking", "savings", "money_market", "cd", "line_of_cre
 export default function BanksTab({ companyId }: BanksTabProps) {
   const qc = useQueryClient();
   const { masterFirms: masterBanks, upsertMasterFirm: upsertMasterBank } = useMasterFirms("bank");
+  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext(companyId);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const emptyForm = { bank_name: "", account_type: "checking", account_number: "", routing_number: "", contact_name: "", contact_title: "", phone: "", address: "", address_2: "", city: "", state: "", zip: "", notes: "" };
@@ -356,7 +359,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
               </div>
               {/* Row 2: Contact Name (50%) | Phone (50%) */}
               <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-xs">Contact Name</Label><Input className="h-7 text-sm" value={form.contact_name} onChange={e => setForm(p => ({ ...p, contact_name: e.target.value }))} /></div>
+                <div><Label className="text-xs">Contact Name</Label><AddressAutocomplete value={form.contact_name} onChange={(v) => setForm(p => ({ ...p, contact_name: v }))} onSelect={(entry) => { setForm(p => ({ ...p, contact_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" /></div>
                 <div><Label className="text-xs">Phone</Label><Input className="h-7 text-sm" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
               </div>
               {/* Row 3: Address (65%) | Row 4: Address 2 (35%) */}
@@ -432,7 +435,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-xs">Signer Name *</Label><Input value={signerForm.signer_name} onChange={e => setSignerForm(p => ({ ...p, signer_name: e.target.value }))} /></div>
+                <div><Label className="text-xs">Signer Name *</Label><AddressAutocomplete value={signerForm.signer_name} onChange={(v) => setSignerForm(p => ({ ...p, signer_name: v }))} onSelect={(entry) => { setSignerForm(p => ({ ...p, signer_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} /></div>
                 <div>
                   <Label className="text-xs">Authority Type *</Label>
                   <div className="relative">
