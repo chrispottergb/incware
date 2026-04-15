@@ -892,7 +892,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
               <div className="grid grid-cols-12 gap-x-3 gap-y-2">
                 <div className="field-group col-span-12 sm:col-span-5">
                   <Label className="field-label">Full Name</Label>
-                  <Input className="h-7 text-sm" value={filingForm.contact_full_name} onChange={(e) => setFilingForm((p) => ({ ...p, contact_full_name: e.target.value }))} placeholder="First and Last Name" />
+                  <AddressAutocomplete value={filingForm.contact_full_name} onChange={(v) => setFilingForm((p) => ({ ...p, contact_full_name: v }))} onSelect={(entry) => { setFilingForm((p) => ({ ...p, contact_full_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="First and Last Name" />
                 </div>
                 <div className="field-group col-span-6 sm:col-span-2">
                   <Label className="field-label">Salutation</Label>
@@ -1138,7 +1138,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   <div className="grid grid-cols-12 gap-x-3 gap-y-2">
                     <div className="field-group col-span-12 sm:col-span-5">
                       <Label className="field-label">Agent Name <span className="text-destructive">*</span></Label>
-                      <Input className="h-7 text-sm" value={raForm.registered_agent_name} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_name: e.target.value }))} placeholder="Individual or entity name" />
+                      <AddressAutocomplete value={raForm.registered_agent_name} onChange={(v) => setRaForm(p => ({ ...p, registered_agent_name: v }))} onSelect={(entry) => { setRaForm(p => ({ ...p, registered_agent_name: entry.full_name, registered_agent_address: entry.address || p.registered_agent_address, registered_agent_address_2: entry.address_2 || p.registered_agent_address_2, registered_agent_city: entry.city || p.registered_agent_city, registered_agent_state: entry.state || p.registered_agent_state, registered_agent_zip: entry.zip || p.registered_agent_zip })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="Individual or entity name" />
                     </div>
                     <div className="field-group col-span-12 sm:col-span-5">
                       <Label className="field-label">Email Address</Label>

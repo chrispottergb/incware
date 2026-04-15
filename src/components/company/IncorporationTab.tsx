@@ -824,7 +824,7 @@ export default function IncorporationTab({ company }: Props) {
             <div className="grid grid-cols-12 gap-x-3 gap-y-2">
               <div className="field-group col-span-12 sm:col-span-5">
                 <Label className="field-label">Full Name</Label>
-                <Input className="h-7 text-sm" value={form.contact_full_name} onChange={(e) => update("contact_full_name", e.target.value)} placeholder="First and Last Name" />
+                <AddressAutocomplete value={form.contact_full_name} onChange={(v) => update("contact_full_name", v)} onSelect={(entry) => { update("contact_full_name", entry.full_name); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="First and Last Name" />
               </div>
               <div className="field-group col-span-6 sm:col-span-2">
                 <Label className="field-label">Salutation</Label>
@@ -1313,7 +1313,7 @@ export default function IncorporationTab({ company }: Props) {
           <div className="grid grid-cols-12 gap-x-3 gap-y-2">
             <div className="field-group col-span-12 sm:col-span-5">
               <Label className="field-label">Agent Name</Label>
-              <Input className="h-7 text-sm" value={form.registered_agent_name} onChange={(e) => update("registered_agent_name", e.target.value)} />
+              <AddressAutocomplete value={form.registered_agent_name} onChange={(v) => update("registered_agent_name", v)} onSelect={(entry) => { update("registered_agent_name", entry.full_name); if (entry.address) update("registered_agent_address", entry.address); if (entry.address_2) update("registered_agent_address_2", entry.address_2); if (entry.city) update("registered_agent_city", entry.city); if (entry.state) update("registered_agent_state", entry.state); if (entry.zip) update("registered_agent_zip", entry.zip); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" />
             </div>
             <div className="field-group col-span-12 sm:col-span-5">
               <Label className="field-label">Email Address</Label>
