@@ -1,4 +1,5 @@
 import { useState } from "react";
+import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -287,7 +288,7 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
                 </div>
                 <div className="col-span-12">
                   <Label className={labelClass}>Registered Agent Address (Full)</Label>
-                  <Input className={inputClass} value={data.registeredAgentAddress} onChange={e => update("registeredAgentAddress", e.target.value)} />
+                  <DbAddressAutocomplete className={inputClass} value={data.registeredAgentAddress} onChange={(v) => update("registeredAgentAddress", v)} onSelect={(addr) => { update("registeredAgentAddress", addr.line1); }} source="companies" />
                 </div>
               </div>
             </div>
@@ -299,7 +300,7 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
               <h3 className="text-sm font-semibold">Principal Office</h3>
               <div className="col-span-12">
                 <Label className={labelClass}>Principal Office Address</Label>
-                <Input className={inputClass} value={data.principalOfficeAddress} onChange={e => update("principalOfficeAddress", e.target.value)} />
+                <DbAddressAutocomplete className={inputClass} value={data.principalOfficeAddress} onChange={(v) => update("principalOfficeAddress", v)} onSelect={(addr) => { update("principalOfficeAddress", addr.line1); }} source="companies" />
               </div>
             </div>
           )}

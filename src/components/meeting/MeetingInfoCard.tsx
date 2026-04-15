@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePickerField } from "@/components/ui/date-picker-field";
@@ -293,11 +294,17 @@ export default function MeetingInfoCard({ meeting }: Props) {
             </div>
             <div className="flex-1 min-w-[180px] space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Address</Label>
-              <Input
+              <DbAddressAutocomplete
                 value={getValue("company_address_at_meeting")}
-                onChange={(e) => handleChange("company_address_at_meeting", e.target.value)}
-                onBlur={(e) => handleBlur("company_address_at_meeting", e.target.value)}
+                onChange={(v) => handleChange("company_address_at_meeting", v)}
+                onSelect={(addr) => {
+                  handleBlur("company_address_at_meeting", addr.line1);
+                  handleBlur("company_city_at_meeting", addr.city);
+                  handleBlur("company_state_at_meeting", addr.state);
+                  handleBlur("company_zip_at_meeting", addr.zip);
+                }}
                 className="h-9 text-sm"
+                source="companies"
               />
             </div>
             <div className="w-[140px] space-y-1.5">
