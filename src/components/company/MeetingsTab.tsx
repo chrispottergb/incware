@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -659,9 +660,11 @@ export default function MeetingsTab({ companyId, company }: Props) {
                   </div>
                   <div className="space-y-1.5 sm:col-span-2">
                     <Label className="text-xs font-medium text-muted-foreground">Address</Label>
-                    <Input
+                    <DbAddressAutocomplete
                       value={form.company_address_at_meeting}
-                      onChange={(e) => setForm((p) => ({ ...p, company_address_at_meeting: e.target.value }))}
+                      onChange={(v) => setForm((p) => ({ ...p, company_address_at_meeting: v }))}
+                      onSelect={(addr) => { setForm((p) => ({ ...p, company_address_at_meeting: addr.line1, company_city_at_meeting: addr.city, company_state_at_meeting: addr.state, company_zip_at_meeting: addr.zip })); }}
+                      source="companies"
                     />
                   </div>
                   <div className="space-y-1.5">
