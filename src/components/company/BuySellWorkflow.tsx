@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -84,6 +86,7 @@ interface Props {
 }
 
 export default function BuySellWorkflow({ companyId, companyName, entityType, open, onOpenChange, availableShares, initialSeller, meetingId, onTransactionComplete }: Props) {
+  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext(companyId);
   const queryClient = useQueryClient();
   const term = getTerminology(entityType);
   const isLLC = isLLCType(entityType);
@@ -396,7 +399,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
             <div className={`grid ${isRedemption ? "grid-cols-1" : "grid-cols-2"} gap-2`}>
               <div className="field-group">
                 <Label className="field-label">{isIssuance ? "Issuing From (Company)" : isRedemption ? "Shareholder Selling Back" : "Seller"}</Label>
-                <Input className="h-8 text-sm" value={form.seller_name} onChange={(e) => setForm(p => ({ ...p, seller_name: e.target.value, seller_id: "" }))} placeholder="Name" required />
+                <AddressAutocomplete className="h-8 text-sm" value={form.seller_name} onChange={(v) => setForm(p => ({ ...p, seller_name: v, seller_id: "" }))} onSelect={(entry) => { setForm(p => ({ ...p, seller_name: entry.full_name, seller_id: "" })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Name" />
                 {shareholders.length > 0 && (
                   <Select value={form.seller_id} onValueChange={(v) => {
                     const sh = shareholders.find(s => s.id === v);
@@ -422,7 +425,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
                   ) : (
                     /* Corporation: free-text + shareholder dropdown (matching Seller pattern) */
                     <>
-                      <Input className="h-8 text-sm" value={form.buyer_name} onChange={(e) => setForm(p => ({ ...p, buyer_name: e.target.value, buyer_id: "" }))} placeholder="Name" required />
+                      <AddressAutocomplete className="h-8 text-sm" value={form.buyer_name} onChange={(v) => setForm(p => ({ ...p, buyer_name: v, buyer_id: "" }))} onSelect={(entry) => { setForm(p => ({ ...p, buyer_name: entry.full_name, buyer_id: "" })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Name" />
                       {shareholders.length > 0 && (
                         <Select value={form.buyer_id} onValueChange={(v) => {
                           const sh = shareholders.find(s => s.id === v);

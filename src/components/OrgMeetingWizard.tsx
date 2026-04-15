@@ -1,5 +1,7 @@
 import { useState } from "react";
 import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,6 +63,7 @@ function TemplateNote({ text }: { text: string }) {
 }
 
 export default function OrgMeetingWizard({ company, onClose }: Props) {
+  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext();
   const [step, setStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewCanvas, setPreviewCanvas] = useState<HTMLCanvasElement | null>(null);
@@ -284,7 +287,7 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
               <div className="grid grid-cols-12 gap-2">
                 <div className="col-span-12">
                   <Label className={labelClass}>Registered Agent Name</Label>
-                  <Input className={inputClass} value={data.registeredAgentName} onChange={e => update("registeredAgentName", e.target.value)} />
+                  <AddressAutocomplete className={inputClass} value={data.registeredAgentName} onChange={(v) => update("registeredAgentName", v)} onSelect={(entry) => { update("registeredAgentName", entry.full_name); if (entry.address) update("registeredAgentAddress", [entry.address, entry.address_2, entry.city, [entry.state, entry.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ")); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} />
                 </div>
                 <div className="col-span-12">
                   <Label className={labelClass}>Registered Agent Address (Full)</Label>

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -126,6 +128,7 @@ const typeColors: Record<string, string> = {
 };
 
 export default function MeetingVehicles({ meetingId }: Props) {
+  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext();
   const queryClient = useQueryClient();
 
   const [assetOpen, setAssetOpen] = useState(false);
@@ -705,7 +708,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">Lessor</Label>
-                    <Input value={leaseForm.lessor_name} onChange={(e) => lf("lessor_name", e.target.value)} placeholder="Name of lessor" />
+                    <AddressAutocomplete value={leaseForm.lessor_name} onChange={(v) => lf("lessor_name", v)} onSelect={(entry) => { lf("lessor_name", entry.full_name); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Name of lessor" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">Start Date</Label>
@@ -818,7 +821,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">Landlord / Lessor Name</Label>
-                    <Input value={leaseTermForm.landlord_name} onChange={(e) => ltf("landlord_name", e.target.value)} placeholder="Name of landlord or lessor" />
+                    <AddressAutocomplete value={leaseTermForm.landlord_name} onChange={(v) => ltf("landlord_name", v)} onSelect={(entry) => { ltf("landlord_name", entry.full_name); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Name of landlord or lessor" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">Lease End Date</Label>
@@ -933,7 +936,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">Buyer Name</Label>
-                    <Input value={saleForm.buyer_name} onChange={(e) => sf("buyer_name", e.target.value)} placeholder="Name of buyer" />
+                    <AddressAutocomplete value={saleForm.buyer_name} onChange={(v) => sf("buyer_name", v)} onSelect={(entry) => { sf("buyer_name", entry.full_name); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Name of buyer" />
                   </div>
                   <div className="col-span-2 space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">Business Use Description</Label>
