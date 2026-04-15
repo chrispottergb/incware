@@ -63,6 +63,7 @@ function TemplateNote({ text }: { text: string }) {
 }
 
 export default function OrgMeetingWizard({ company, onClose }: Props) {
+  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext();
   const [step, setStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewCanvas, setPreviewCanvas] = useState<HTMLCanvasElement | null>(null);
