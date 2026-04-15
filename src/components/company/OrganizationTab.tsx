@@ -1003,7 +1003,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                     </div>
                     <div className="field-group col-span-3">
                       <Label className="field-label">Address</Label>
-                      <Input className="h-7 text-sm" value={newOrganizer.address} onChange={(e) => setNewOrganizer(p => ({ ...p, address: e.target.value }))} />
+                      <DbAddressAutocomplete className="h-7 text-sm" value={newOrganizer.address} onChange={(v) => setNewOrganizer(p => ({ ...p, address: v }))} onSelect={(addr) => { setNewOrganizer(p => ({ ...p, address: addr.line1, address_2: addr.line2, city: addr.city, state: addr.state, zip: addr.zip })); }} source="companies" />
                     </div>
                     <div className="field-group col-span-2">
                       <Label className="field-label">Address 2</Label>
@@ -1149,7 +1149,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                     <div className="field-group col-span-3">
                       <Label className="field-label">Address <span className="text-destructive">*</span></Label>
-                      <Input className="h-7 text-sm" value={raForm.registered_agent_address} onChange={(e) => setRaForm(p => ({ ...p, registered_agent_address: e.target.value }))} placeholder="Physical address (no P.O. Boxes)" />
+                      <DbAddressAutocomplete className="h-7 text-sm" value={raForm.registered_agent_address} onChange={(v) => setRaForm(p => ({ ...p, registered_agent_address: v }))} onSelect={(addr) => { setRaForm(p => ({ ...p, registered_agent_address: addr.line1, registered_agent_address_2: addr.line2, registered_agent_city: addr.city, registered_agent_state: addr.state, registered_agent_zip: addr.zip })); }} placeholder="Physical address (no P.O. Boxes)" companyId={company?.id} source="companies" />
                     </div>
                     <div className="field-group col-span-3">
                       <Label className="field-label">Address 2</Label>
