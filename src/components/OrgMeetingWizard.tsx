@@ -94,7 +94,7 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
     einAuthorizedName: "",
     einAuthorizedTitle: "",
     managers: [{ name: "", title: "Managing Member" }],
-    members: [{ name: "", membershipUnits: "", membershipInterestPct: "" }],
+    members: [{ name: "", address: "", membershipUnits: "", membershipInterestPct: "" }],
     businessPurpose: company?.business_purpose || "",
     operatingAgreementAdopted: true,
     fiscalYearEnd: company?.fiscal_year_end || "December 31",
@@ -362,21 +362,35 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
             <div className="space-y-3">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-semibold">Initial Members</h3>
-                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => update("members", [...data.members, { name: "", membershipUnits: "", membershipInterestPct: "" }])}>
+                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => update("members", [...data.members, { name: "", address: "", membershipUnits: "", membershipInterestPct: "" }])}>
                   <Plus className="h-3 w-3 mr-1" /> Add
                 </Button>
               </div>
               {data.members.map((m: any, i: number) => (
                 <div key={i} className="grid grid-cols-12 gap-2 items-end">
-                  <div className="col-span-5">
+                  <div className="col-span-4">
                     {i === 0 && <Label className={labelClass}>Name</Label>}
-                    <Input className={inputClass} value={m.name} onChange={e => updateMember(i, "name", e.target.value)} placeholder="Member name" />
+                    <AddressAutocomplete
+                      className={inputClass}
+                      value={m.name}
+                      onChange={(v) => updateMember(i, "name", v)}
+                      onSelect={(entry) => {
+                        updateMember(i, "name", entry.full_name);
+                        updateMember(i, "address", [entry.address, entry.address_2, entry.city, [entry.state, entry.zip].filter(Boolean).join(" ")].filter(Boolean).join(", "));
+                      }}
+                      search={searchAddressBook}
+                      getCompanySplitIndex={getCompanySplitIndex}
+                    />
                   </div>
-                  <div className="col-span-3">
+                  <div className="col-span-4">
+                    {i === 0 && <Label className={labelClass}>Address</Label>}
+                    <DbAddressAutocomplete className={inputClass} value={m.address || ""} onChange={(v) => updateMember(i, "address", v)} onSelect={(addr) => { updateMember(i, "address", addr.line1); }} source="companies" />
+                  </div>
+                  <div className="col-span-2">
                     {i === 0 && <Label className={labelClass}>Membership Units</Label>}
                     <Input className={inputClass} value={m.membershipUnits} onChange={e => updateMember(i, "membershipUnits", e.target.value)} placeholder="0" />
                   </div>
-                  <div className="col-span-3">
+                  <div className="col-span-1">
                     {i === 0 && <Label className={labelClass}>Interest %</Label>}
                     <Input className={inputClass} value={m.membershipInterestPct} onChange={e => updateMember(i, "membershipInterestPct", e.target.value)} placeholder="0" />
                   </div>
