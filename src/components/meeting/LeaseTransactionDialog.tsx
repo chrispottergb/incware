@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -133,7 +134,7 @@ export default function LeaseTransactionDialog({
 
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground">Property Address</Label>
-            <Input value={form.address} onChange={(e) => handleChange("address", e.target.value)} placeholder="Full address" />
+            <DbAddressAutocomplete value={form.address} onChange={(v) => handleChange("address", v)} onSelect={(addr) => { handleChange("address", addr.line1); handleChange("landlord_address", addr.line1); }} placeholder="Full address" source="companies" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -143,7 +144,7 @@ export default function LeaseTransactionDialog({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Landlord Address</Label>
-              <Input value={form.landlord_address} onChange={(e) => handleChange("landlord_address", e.target.value)} />
+              <DbAddressAutocomplete value={form.landlord_address} onChange={(v) => handleChange("landlord_address", v)} onSelect={(addr) => { handleChange("landlord_address", addr.line1); }} placeholder="Landlord address" source="companies" />
             </div>
           </div>
 

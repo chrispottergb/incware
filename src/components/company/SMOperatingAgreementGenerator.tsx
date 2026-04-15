@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -397,7 +398,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="field-group sm:col-span-2">
                 <Label className="field-label">Address</Label>
-                <Input value={formAddress} onChange={(e) => setFormAddress(e.target.value)} placeholder="Street address" className="h-8 text-sm" />
+                <DbAddressAutocomplete value={formAddress} onChange={(v) => setFormAddress(v)} onSelect={(addr) => { setFormAddress(addr.line1); setFormCity(addr.city); setFormState(addr.state); setFormZip(addr.zip); }} placeholder="Street address" className="h-8 text-sm" source="companies" />
               </div>
               <div className="field-group">
                 <Label className="field-label">City</Label>
@@ -428,7 +429,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
               </div>
               <div className="field-group sm:col-span-2">
                 <Label className="field-label">Address</Label>
-                <Input value={formRAAddress} onChange={(e) => setFormRAAddress(e.target.value)} placeholder="Street address" className="h-8 text-sm" />
+                <DbAddressAutocomplete value={formRAAddress} onChange={(v) => setFormRAAddress(v)} onSelect={(addr) => { setFormRAAddress(addr.line1); setFormRACity(addr.city); setFormRAState(addr.state); setFormRAZip(addr.zip); }} placeholder="Street address" className="h-8 text-sm" source="companies" />
               </div>
               <div className="field-group">
                 <Label className="field-label">City</Label>

@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -360,7 +361,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
               </div>
               {/* Row 3: Address (65%) | Row 4: Address 2 (35%) */}
               <div className="grid grid-cols-20 gap-2">
-                <div className="col-span-13"><Label className="text-xs">Address</Label><Input className="h-7 text-sm" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
+                <div className="col-span-13"><Label className="text-xs">Address</Label><DbAddressAutocomplete className="h-7 text-sm" value={form.address} onChange={(v) => setForm(p => ({ ...p, address: v }))} onSelect={(addr) => { setForm(p => ({ ...p, address: addr.line1, address_2: addr.line2, city: addr.city, state: addr.state, zip: addr.zip })); }} source="companies" /></div>
                 <div className="col-span-7"><Label className="text-xs">Address 2</Label><Input className="h-7 text-sm" value={form.address_2} onChange={e => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit" /></div>
               </div>
               {/* Row 5: City (50%) | State (15%) | Zip (30%) — using ~20-col approximation */}
