@@ -1148,17 +1148,15 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
           const matchingShareholder = (data.companyShareholders || []).find(
             cs => cs.name?.toLowerCase().trim() === s.shareholder_name?.toLowerCase().trim()
           );
-          let address = "";
-          if (matchingShareholder) {
-            const addr = matchingShareholder.address || "";
-            const addr2 = (matchingShareholder as any).address_2 || "";
-            const city = matchingShareholder.city || "";
-            const state = matchingShareholder.state || "";
-            const zip = matchingShareholder.zip || "";
-            const line1 = [addr, addr2].filter(Boolean).join(", ");
-            const line2 = [city, state].filter(Boolean).join(", ");
-            address = [line1, line2, zip].filter(Boolean).join(" ");
-          }
+          // Prefer address from the meeting shareholder record, fall back to company shareholder
+          const addr = s.address || matchingShareholder?.address || "";
+          const addr2 = s.address_2 || (matchingShareholder as any)?.address_2 || "";
+          const city = s.city || matchingShareholder?.city || "";
+          const state = s.state || matchingShareholder?.state || "";
+          const zip = s.zip || matchingShareholder?.zip || "";
+          const line1 = [addr, addr2].filter(Boolean).join(", ");
+          const line2 = [city, state].filter(Boolean).join(", ");
+          const address = [line1, line2, zip].filter(Boolean).join(" ");
           const basisVal = s.basis != null ? `$${Number(s.basis).toLocaleString()}` : "—";
           return [
             s.shareholder_name,
@@ -1649,17 +1647,15 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         const matchingShareholder = (data.companyShareholders || []).find(
           cs => cs.name?.toLowerCase().trim() === s.shareholder_name?.toLowerCase().trim()
         );
-        let address = "";
-        if (matchingShareholder) {
-          const addr = matchingShareholder.address || "";
-          const addr2 = (matchingShareholder as any).address_2 || "";
-          const city = matchingShareholder.city || "";
-          const state = matchingShareholder.state || "";
-          const zip = matchingShareholder.zip || "";
-          const line1 = [addr, addr2].filter(Boolean).join(", ");
-          const line2 = [city, state].filter(Boolean).join(", ");
-          address = [line1, line2, zip].filter(Boolean).join(" ");
-        }
+        // Prefer address from the meeting shareholder record, fall back to company shareholder
+        const addr = s.address || matchingShareholder?.address || "";
+        const addr2 = s.address_2 || (matchingShareholder as any)?.address_2 || "";
+        const city = s.city || matchingShareholder?.city || "";
+        const state = s.state || matchingShareholder?.state || "";
+        const zip = s.zip || matchingShareholder?.zip || "";
+        const line1 = [addr, addr2].filter(Boolean).join(", ");
+        const line2 = [city, state].filter(Boolean).join(", ");
+        const address = [line1, line2, zip].filter(Boolean).join(" ");
         return [
           s.shareholder_name,
           address || "---",
