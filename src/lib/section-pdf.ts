@@ -198,7 +198,19 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
         }
       },
     });
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;
+
+    // Render any summary lines below the table (e.g. Treasury Balance: 8,000)
+    if (config.table.summaryLines && config.table.summaryLines.length > 0) {
+      doc.setFontSize(10);
+      doc.setFont("Arial", "bold");
+      doc.setTextColor(30, 30, 30);
+      config.table.summaryLines.forEach((line) => {
+        doc.text(line, m.left, y);
+        y += 5;
+      });
+      y += 4;
+    }
   }
 
   if (config.table && config.table.rows.length === 0) {
