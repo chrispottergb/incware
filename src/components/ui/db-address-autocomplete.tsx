@@ -25,7 +25,7 @@ interface Props {
   source?: "companies" | "shareholders";
 }
 
-export default function AddressAutocomplete({
+export default function DbAddressAutocomplete({
   value,
   onChange,
   onSelect,

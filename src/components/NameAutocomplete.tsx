@@ -14,7 +14,7 @@ interface Props {
   disabled?: boolean;
 }
 
-export default function AddressAutocomplete({
+export default function NameAutocomplete({
   value,
   onChange,
   onSelect,

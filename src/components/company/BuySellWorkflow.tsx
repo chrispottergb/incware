@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
+import NameAutocomplete from "@/components/NameAutocomplete";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -399,7 +399,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
             <div className={`grid ${isRedemption ? "grid-cols-1" : "grid-cols-2"} gap-2`}>
               <div className="field-group">
                 <Label className="field-label">{isIssuance ? "Issuing From (Company)" : isRedemption ? "Shareholder Selling Back" : "Seller"}</Label>
-                <AddressAutocomplete className="h-8 text-sm" value={form.seller_name} onChange={(v) => setForm(p => ({ ...p, seller_name: v, seller_id: "" }))} onSelect={(entry) => { setForm(p => ({ ...p, seller_name: entry.full_name, seller_id: "" })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Name" />
+                <NameAutocomplete className="h-8 text-sm" value={form.seller_name} onChange={(v) => setForm(p => ({ ...p, seller_name: v, seller_id: "" }))} onSelect={(entry) => { setForm(p => ({ ...p, seller_name: entry.full_name, seller_id: "" })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Name" />
                 {shareholders.length > 0 && (
                   <Select value={form.seller_id} onValueChange={(v) => {
                     const sh = shareholders.find(s => s.id === v);
@@ -425,7 +425,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
                   ) : (
                     /* Corporation: free-text + shareholder dropdown (matching Seller pattern) */
                     <>
-                      <AddressAutocomplete className="h-8 text-sm" value={form.buyer_name} onChange={(v) => setForm(p => ({ ...p, buyer_name: v, buyer_id: "" }))} onSelect={(entry) => { setForm(p => ({ ...p, buyer_name: entry.full_name, buyer_id: "" })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Name" />
+                      <NameAutocomplete className="h-8 text-sm" value={form.buyer_name} onChange={(v) => setForm(p => ({ ...p, buyer_name: v, buyer_id: "" }))} onSelect={(entry) => { setForm(p => ({ ...p, buyer_name: entry.full_name, buyer_id: "" })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Name" />
                       {shareholders.length > 0 && (
                         <Select value={form.buyer_id} onValueChange={(v) => {
                           const sh = shareholders.find(s => s.id === v);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
+import NameAutocomplete from "@/components/NameAutocomplete";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -24,7 +24,7 @@ export default function AIOversightPersons({ companyId }: Props) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ ai_system_id: "", person_name: "", title: "", competence_description: "", authority_scope: "", assigned_date: "", status: "active" });
 
-  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext(companyId);
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
   const { data: systems = [] } = useQuery({
     queryKey: ["ai_systems", companyId],
     queryFn: async () => {
@@ -50,6 +50,9 @@ export default function AIOversightPersons({ companyId }: Props) {
     mutationFn: async () => {
       const { error } = await supabase.from("ai_oversight_persons").insert({ ...form, assigned_date: form.assigned_date || null });
       if (error) throw error;
+      if (form.person_name?.trim()) {
+        upsertAddressBook.mutate({ full_name: form.person_name.trim(), company_id: companyId });
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["ai_oversight_persons", companyId] });
@@ -93,7 +96,7 @@ export default function AIOversightPersons({ companyId }: Props) {
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Full Name *</Label><AddressAutocomplete value={form.person_name} onChange={(v) => setForm(f => ({ ...f, person_name: v }))} onSelect={(entry) => { setForm(f => ({ ...f, person_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} /></div>
+                <div><Label className="text-xs">Full Name *</Label><NameAutocomplete value={form.person_name} onChange={(v) => setForm(f => ({ ...f, person_name: v }))} onSelect={(entry) => { setForm(f => ({ ...f, person_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} /></div>
                 <div><Label className="text-xs">Job Title</Label><Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
               </div>
               <div><Label className="text-xs">Competence & Training</Label><Textarea rows={2} value={form.competence_description} onChange={e => setForm(f => ({ ...f, competence_description: e.target.value }))} /></div>

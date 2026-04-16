@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
+import DbAddressAutocomplete from "@/components/ui/db-address-autocomplete";
+import NameAutocomplete from "@/components/NameAutocomplete";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -30,7 +30,7 @@ const ACCOUNT_TYPES = ["checking", "savings", "money_market", "cd", "line_of_cre
 export default function BanksTab({ companyId }: BanksTabProps) {
   const qc = useQueryClient();
   const { masterFirms: masterBanks, upsertMasterFirm: upsertMasterBank } = useMasterFirms("bank");
-  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext(companyId);
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const emptyForm = { bank_name: "", account_type: "checking", account_number: "", routing_number: "", contact_name: "", contact_title: "", phone: "", address: "", address_2: "", city: "", state: "", zip: "", notes: "" };
@@ -103,6 +103,15 @@ export default function BanksTab({ companyId }: BanksTabProps) {
         account_number: form.account_number, routing_number: form.routing_number,
         account_type: form.account_type, contact_name: form.contact_name, contact_title: form.contact_title,
       });
+      // Save bank contact person to address book
+      if (form.contact_name?.trim()) {
+        upsertAddressBook.mutate({
+          full_name: form.contact_name.trim(),
+          address: form.address, address_2: form.address_2,
+          city: form.city, state: form.state, zip: form.zip,
+          company_id: companyId,
+        });
+      }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["company_banks", companyId] }); setOpen(false); toast.success("Bank saved"); },
     onError: (e: any) => toast.error(e.message),
@@ -131,6 +140,13 @@ export default function BanksTab({ companyId }: BanksTabProps) {
       } else {
         const { error } = await supabase.from("bank_authorized_signers" as any).insert({ ...payload, company_id: companyId } as any);
         if (error) throw error;
+      }
+      // Save signer to address book
+      if (signerForm.signer_name?.trim()) {
+        upsertAddressBook.mutate({
+          full_name: signerForm.signer_name.trim(),
+          company_id: companyId,
+        });
       }
     },
     onSuccess: () => {
@@ -359,7 +375,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
               </div>
               {/* Row 2: Contact Name (50%) | Phone (50%) */}
               <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-xs">Contact Name</Label><AddressAutocomplete value={form.contact_name} onChange={(v) => setForm(p => ({ ...p, contact_name: v }))} onSelect={(entry) => { setForm(p => ({ ...p, contact_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" /></div>
+                <div><Label className="text-xs">Contact Name</Label><NameAutocomplete value={form.contact_name} onChange={(v) => setForm(p => ({ ...p, contact_name: v }))} onSelect={(entry) => { setForm(p => ({ ...p, contact_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" /></div>
                 <div><Label className="text-xs">Phone</Label><Input className="h-7 text-sm" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
               </div>
               {/* Row 3: Address (65%) | Row 4: Address 2 (35%) */}
@@ -435,7 +451,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-xs">Signer Name *</Label><AddressAutocomplete value={signerForm.signer_name} onChange={(v) => setSignerForm(p => ({ ...p, signer_name: v }))} onSelect={(entry) => { setSignerForm(p => ({ ...p, signer_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} /></div>
+                <div><Label className="text-xs">Signer Name *</Label><NameAutocomplete value={signerForm.signer_name} onChange={(v) => setSignerForm(p => ({ ...p, signer_name: v }))} onSelect={(entry) => { setSignerForm(p => ({ ...p, signer_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} /></div>
                 <div>
                   <Label className="text-xs">Authority Type *</Label>
                   <div className="relative">

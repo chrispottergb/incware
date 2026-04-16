@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -102,6 +103,7 @@ interface Props {
 
 export default function MeetingOfficersTable({ meetingId, titleOptions }: Props) {
   const queryClient = useQueryClient();
+  const { upsert: upsertAddressBook } = useAddressBookContext();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
@@ -229,6 +231,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
     mutationFn: async () => {
       const { error } = await supabase.from("meeting_officers").insert(buildPayload() as any);
       if (error) throw error;
+      if (form.name?.trim()) upsertAddressBook.mutate({ full_name: form.name.trim() });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meeting_officers", meetingId] });
@@ -244,6 +247,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
       delete (payload as any).meeting_id;
       const { error } = await supabase.from("meeting_officers").update(payload as any).eq("id", editingId!);
       if (error) throw error;
+      if (form.name?.trim()) upsertAddressBook.mutate({ full_name: form.name.trim() });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meeting_officers", meetingId] });

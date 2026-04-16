@@ -5,8 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
-import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
+import NameAutocomplete from "@/components/NameAutocomplete";
+import DbAddressAutocomplete from "@/components/ui/db-address-autocomplete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -604,7 +604,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
       </p>
       <div className="field-group">
         <Label className="field-label">Full Legal Name</Label>
-        <AddressAutocomplete
+        <NameAutocomplete
           value={editingSh.name}
           onChange={(v) => setEditingSh(p => ({ ...p, name: v }))}
           onSelect={handleAddressSelect}
@@ -869,7 +869,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               </p>
               <div className="field-group">
                 <Label className="field-label">Full Legal Name</Label>
-                <AddressAutocomplete
+                <NameAutocomplete
                   value={editingDir.name}
                   onChange={(v) => setEditingDir(p => ({ ...p, name: v }))}
                   onSelect={handleDirAddressSelect}
@@ -970,7 +970,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
               </p>
               <div className="field-group">
                 <Label className="field-label">Full Legal Name</Label>
-                <AddressAutocomplete
+                <NameAutocomplete
                   value={editingSh.name}
                   onChange={(v) => setEditingSh(p => ({ ...p, name: v }))}
                   onSelect={handleAddressSelect}

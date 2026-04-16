@@ -4,8 +4,8 @@ import { useAutoSave } from "@/hooks/useAutoSave";
 import SaveStatusIndicator from "@/components/SaveStatusIndicator";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
-import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
+import NameAutocomplete from "@/components/NameAutocomplete";
+import DbAddressAutocomplete from "@/components/ui/db-address-autocomplete";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -824,7 +824,7 @@ export default function IncorporationTab({ company }: Props) {
             <div className="grid grid-cols-12 gap-x-3 gap-y-2">
               <div className="field-group col-span-12 sm:col-span-5">
                 <Label className="field-label">Full Name</Label>
-                <AddressAutocomplete value={form.contact_full_name} onChange={(v) => update("contact_full_name", v)} onSelect={(entry) => { update("contact_full_name", entry.full_name); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="First and Last Name" />
+                <NameAutocomplete value={form.contact_full_name} onChange={(v) => update("contact_full_name", v)} onSelect={(entry) => { update("contact_full_name", entry.full_name); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="First and Last Name" />
               </div>
               <div className="field-group col-span-6 sm:col-span-2">
                 <Label className="field-label">Salutation</Label>
@@ -931,7 +931,7 @@ export default function IncorporationTab({ company }: Props) {
                 <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                   <div className="field-group col-span-3">
                     <Label className="field-label">Organizer Name</Label>
-                    <AddressAutocomplete value={newOrganizer.organizer_name} onChange={(v) => setNewOrganizer(p => ({ ...p, organizer_name: v }))} onSelect={handleOrganizerAddressSelect} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="Full name" />
+                    <NameAutocomplete value={newOrganizer.organizer_name} onChange={(v) => setNewOrganizer(p => ({ ...p, organizer_name: v }))} onSelect={handleOrganizerAddressSelect} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="Full name" />
                   </div>
                   <div className="field-group col-span-3">
                     <Label className="field-label">Address</Label>
@@ -1013,7 +1013,7 @@ export default function IncorporationTab({ company }: Props) {
                 <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                   <div className="field-group col-span-3">
                     <Label className="field-label">{isLLCType(form.entity_type) ? "Member Name" : "Director Name"}</Label>
-                    <AddressAutocomplete value={newDirector.name} onChange={(v) => setNewDirector(p => ({ ...p, name: v }))} onSelect={handleDirectorAddressSelect} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="Full name" />
+                    <NameAutocomplete value={newDirector.name} onChange={(v) => setNewDirector(p => ({ ...p, name: v }))} onSelect={handleDirectorAddressSelect} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="Full name" />
                   </div>
                   <div className="field-group col-span-3">
                     <Label className="field-label">Address</Label>
@@ -1313,7 +1313,7 @@ export default function IncorporationTab({ company }: Props) {
           <div className="grid grid-cols-12 gap-x-3 gap-y-2">
             <div className="field-group col-span-12 sm:col-span-5">
               <Label className="field-label">Agent Name</Label>
-              <AddressAutocomplete value={form.registered_agent_name} onChange={(v) => update("registered_agent_name", v)} onSelect={(entry) => { update("registered_agent_name", entry.full_name); if (entry.address) update("registered_agent_address", entry.address); if (entry.address_2) update("registered_agent_address_2", entry.address_2); if (entry.city) update("registered_agent_city", entry.city); if (entry.state) update("registered_agent_state", entry.state); if (entry.zip) update("registered_agent_zip", entry.zip); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" />
+              <NameAutocomplete value={form.registered_agent_name} onChange={(v) => update("registered_agent_name", v)} onSelect={(entry) => { update("registered_agent_name", entry.full_name); if (entry.address) update("registered_agent_address", entry.address); if (entry.address_2) update("registered_agent_address_2", entry.address_2); if (entry.city) update("registered_agent_city", entry.city); if (entry.state) update("registered_agent_state", entry.state); if (entry.zip) update("registered_agent_zip", entry.zip); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" />
             </div>
             <div className="field-group col-span-12 sm:col-span-5">
               <Label className="field-label">Email Address</Label>

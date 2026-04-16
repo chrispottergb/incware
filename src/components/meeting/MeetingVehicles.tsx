@@ -1,5 +1,5 @@
 import { useState } from "react";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
+import NameAutocomplete from "@/components/NameAutocomplete";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -128,7 +128,7 @@ const typeColors: Record<string, string> = {
 };
 
 export default function MeetingVehicles({ meetingId }: Props) {
-  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext();
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext();
   const queryClient = useQueryClient();
 
   const [assetOpen, setAssetOpen] = useState(false);
@@ -708,7 +708,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">Lessor</Label>
-                    <AddressAutocomplete value={leaseForm.lessor_name} onChange={(v) => lf("lessor_name", v)} onSelect={(entry) => { lf("lessor_name", entry.full_name); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Name of lessor" />
+                    <NameAutocomplete value={leaseForm.lessor_name} onChange={(v) => lf("lessor_name", v)} onSelect={(entry) => { lf("lessor_name", entry.full_name); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Name of lessor" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">Start Date</Label>
@@ -821,7 +821,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">Landlord / Lessor Name</Label>
-                    <AddressAutocomplete value={leaseTermForm.landlord_name} onChange={(v) => ltf("landlord_name", v)} onSelect={(entry) => { ltf("landlord_name", entry.full_name); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Name of landlord or lessor" />
+                    <NameAutocomplete value={leaseTermForm.landlord_name} onChange={(v) => ltf("landlord_name", v)} onSelect={(entry) => { ltf("landlord_name", entry.full_name); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Name of landlord or lessor" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">Lease End Date</Label>
@@ -936,7 +936,7 @@ export default function MeetingVehicles({ meetingId }: Props) {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">Buyer Name</Label>
-                    <AddressAutocomplete value={saleForm.buyer_name} onChange={(v) => sf("buyer_name", v)} onSelect={(entry) => { sf("buyer_name", entry.full_name); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Name of buyer" />
+                    <NameAutocomplete value={saleForm.buyer_name} onChange={(v) => sf("buyer_name", v)} onSelect={(entry) => { sf("buyer_name", entry.full_name); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} placeholder="Name of buyer" />
                   </div>
                   <div className="col-span-2 space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">Business Use Description</Label>

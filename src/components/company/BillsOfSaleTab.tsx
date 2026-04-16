@@ -1,5 +1,5 @@
 import { useState } from "react";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
+import NameAutocomplete from "@/components/NameAutocomplete";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -45,7 +45,7 @@ interface Props {
 }
 
 export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }: Props) {
-  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext(companyId);
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
   const queryClient = useQueryClient();
   const [dialog, setDialog] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -119,6 +119,13 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
       } else {
         const { error } = await supabase.from("bills_of_sale").insert({ ...payload, company_id: companyId });
         if (error) throw error;
+      }
+      // Save buyer & seller to address book
+      if (form.seller_name?.trim()) {
+        upsertAddressBook.mutate({ full_name: form.seller_name.trim(), company_id: companyId });
+      }
+      if (form.buyer_name?.trim()) {
+        upsertAddressBook.mutate({ full_name: form.buyer_name.trim(), company_id: companyId });
       }
     },
     onSuccess: () => {
@@ -201,11 +208,11 @@ export default function BillsOfSaleTab({ companyId, entityType = "Corporation" }
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Seller</Label>
-                    <AddressAutocomplete className="h-8 text-sm" value={form.seller_name} onChange={(v) => setForm(p => ({ ...p, seller_name: v }))} onSelect={(entry) => { setForm(p => ({ ...p, seller_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} />
+                    <NameAutocomplete className="h-8 text-sm" value={form.seller_name} onChange={(v) => setForm(p => ({ ...p, seller_name: v }))} onSelect={(entry) => { setForm(p => ({ ...p, seller_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} />
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Buyer</Label>
-                    <AddressAutocomplete className="h-8 text-sm" value={form.buyer_name} onChange={(v) => setForm(p => ({ ...p, buyer_name: v }))} onSelect={(entry) => { setForm(p => ({ ...p, buyer_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} />
+                    <NameAutocomplete className="h-8 text-sm" value={form.buyer_name} onChange={(v) => setForm(p => ({ ...p, buyer_name: v }))} onSelect={(entry) => { setForm(p => ({ ...p, buyer_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} />
                   </div>
                 </div>
                 <div className="field-group">

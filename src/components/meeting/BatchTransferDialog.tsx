@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
+import NameAutocomplete from "@/components/NameAutocomplete";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,7 +69,7 @@ export default function BatchTransferDialog({
   const [sellerId, setSellerId] = useState("");
   const [sellerName, setSellerName] = useState("");
   const [shareClass, setShareClass] = useState(term.defaultClass);
-  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext(companyId);
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
   const [transactionDate, setTransactionDate] = useState(
     new Date().toISOString().split("T")[0]
   );
@@ -451,7 +451,7 @@ export default function BatchTransferDialog({
                           </Select>
                         ) : (
                           <>
-                            <AddressAutocomplete
+                            <NameAutocomplete
                               className="h-8 text-sm"
                               value={row.buyer_name}
                               onChange={(v) => {

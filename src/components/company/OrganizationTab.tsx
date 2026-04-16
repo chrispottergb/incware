@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
+import DbAddressAutocomplete from "@/components/ui/db-address-autocomplete";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,7 +26,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
+import NameAutocomplete from "@/components/NameAutocomplete";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import SaveStatusIndicator from "@/components/SaveStatusIndicator";
 
@@ -280,6 +280,18 @@ export default function OrganizationTab({ companyId, company }: Props) {
         } as any)
         .eq("id", companyId);
       if (error) throw error;
+      // Save Registered Agent to address book
+      if (raForm.registered_agent_name?.trim()) {
+        upsertAddressBook.mutate({
+          full_name: raForm.registered_agent_name.trim(),
+          address: raForm.registered_agent_address,
+          address_2: raForm.registered_agent_address_2,
+          city: raForm.registered_agent_city,
+          state: raForm.registered_agent_state,
+          zip: raForm.registered_agent_zip,
+          company_id: companyId,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company", companyId] });
@@ -559,6 +571,10 @@ export default function OrganizationTab({ companyId, company }: Props) {
         });
         if (error) throw error;
       }
+      // Save officers to address book (names only, no address)
+      [officerForm.president, officerForm.vice_president, officerForm.secretary, officerForm.treasurer]
+        .filter((n) => n && n.trim())
+        .forEach((n) => upsertAddressBook.mutate({ full_name: n.trim(), company_id: companyId }));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["officers", companyId] });
@@ -627,6 +643,8 @@ export default function OrganizationTab({ companyId, company }: Props) {
           }))
         );
         if (insError) throw insError;
+        // Save directors to address book
+        uniqueNames.forEach((name) => upsertAddressBook.mutate({ full_name: name, company_id: companyId }));
       }
     },
     onSuccess: () => {
@@ -892,7 +910,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
               <div className="grid grid-cols-12 gap-x-3 gap-y-2">
                 <div className="field-group col-span-12 sm:col-span-5">
                   <Label className="field-label">Full Name</Label>
-                  <AddressAutocomplete value={filingForm.contact_full_name} onChange={(v) => setFilingForm((p) => ({ ...p, contact_full_name: v }))} onSelect={(entry) => { setFilingForm((p) => ({ ...p, contact_full_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="First and Last Name" />
+                  <NameAutocomplete value={filingForm.contact_full_name} onChange={(v) => setFilingForm((p) => ({ ...p, contact_full_name: v }))} onSelect={(entry) => { setFilingForm((p) => ({ ...p, contact_full_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="First and Last Name" />
                 </div>
                 <div className="field-group col-span-6 sm:col-span-2">
                   <Label className="field-label">Salutation</Label>
@@ -999,7 +1017,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                     <div className="field-group col-span-3">
                       <Label className="field-label">Organizer Name</Label>
-                      <AddressAutocomplete value={newOrganizer.organizer_name} onChange={(v) => setNewOrganizer(p => ({ ...p, organizer_name: v }))} onSelect={handleOrganizerAddressSelect} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="Full name" />
+                      <NameAutocomplete value={newOrganizer.organizer_name} onChange={(v) => setNewOrganizer(p => ({ ...p, organizer_name: v }))} onSelect={handleOrganizerAddressSelect} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="Full name" />
                     </div>
                     <div className="field-group col-span-3">
                       <Label className="field-label">Address</Label>
@@ -1138,7 +1156,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   <div className="grid grid-cols-12 gap-x-3 gap-y-2">
                     <div className="field-group col-span-12 sm:col-span-5">
                       <Label className="field-label">Agent Name <span className="text-destructive">*</span></Label>
-                      <AddressAutocomplete value={raForm.registered_agent_name} onChange={(v) => setRaForm(p => ({ ...p, registered_agent_name: v }))} onSelect={(entry) => { setRaForm(p => ({ ...p, registered_agent_name: entry.full_name, registered_agent_address: entry.address || p.registered_agent_address, registered_agent_address_2: entry.address_2 || p.registered_agent_address_2, registered_agent_city: entry.city || p.registered_agent_city, registered_agent_state: entry.state || p.registered_agent_state, registered_agent_zip: entry.zip || p.registered_agent_zip })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="Individual or entity name" />
+                      <NameAutocomplete value={raForm.registered_agent_name} onChange={(v) => setRaForm(p => ({ ...p, registered_agent_name: v }))} onSelect={(entry) => { setRaForm(p => ({ ...p, registered_agent_name: entry.full_name, registered_agent_address: entry.address || p.registered_agent_address, registered_agent_address_2: entry.address_2 || p.registered_agent_address_2, registered_agent_city: entry.city || p.registered_agent_city, registered_agent_state: entry.state || p.registered_agent_state, registered_agent_zip: entry.zip || p.registered_agent_zip })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="Individual or entity name" />
                     </div>
                     <div className="field-group col-span-12 sm:col-span-5">
                       <Label className="field-label">Email Address</Label>

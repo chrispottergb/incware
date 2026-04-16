@@ -25,7 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
-import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
+import DbAddressAutocomplete from "@/components/ui/db-address-autocomplete";
 import { Label } from "@/components/ui/label";
 import {
   Select,

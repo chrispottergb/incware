@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
+import NameAutocomplete from "@/components/NameAutocomplete";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -262,7 +262,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                 </div>
                 <div className="field-group">
                   <Label className="field-label">Property Address</Label>
-                  <AddressAutocomplete
+                  <NameAutocomplete
                     value={form.address}
                     onChange={(v) => setForm((p) => ({ ...p, address: v }))}
                     onSelect={handlePropertySelect}
@@ -275,7 +275,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Landlord Name</Label>
-                    <AddressAutocomplete
+                    <NameAutocomplete
                       value={form.landlord_name}
                       onChange={(v) => setForm((p) => ({ ...p, landlord_name: v }))}
                       onSelect={handleLandlordSelect}
@@ -287,7 +287,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Landlord Address</Label>
-                    <AddressAutocomplete
+                    <NameAutocomplete
                       value={form.landlord_address}
                       onChange={(v) => setForm((p) => ({ ...p, landlord_address: v }))}
                       onSelect={handleLandlordAddressSelect}
