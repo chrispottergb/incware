@@ -20,7 +20,7 @@ interface Props {
 
 export default function MeetingAuthorizedSigners({ meetingId, companyId, meetingDate }: Props) {
   const qc = useQueryClient();
-  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext();
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
   const [addOpen, setAddOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ signer_name: "", title: "", bank_name: "" });
@@ -67,6 +67,9 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
       } else {
         const { error } = await supabase.from("meeting_authorized_signers" as any).insert({ ...payload, meeting_id: meetingId } as any);
         if (error) throw error;
+      }
+      if (form.signer_name?.trim()) {
+        upsertAddressBook.mutate({ full_name: form.signer_name.trim(), company_id: companyId });
       }
     },
     onSuccess: () => {
