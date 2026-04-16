@@ -78,7 +78,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function BusinessSalesTab({ companyId }: Props) {
-  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext(companyId);
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -117,6 +117,9 @@ export default function BusinessSalesTab({ companyId }: Props) {
         notes: form.notes || null,
       });
       if (error) throw error;
+      // Save buyer & seller to address book
+      if (form.seller_name?.trim()) upsertAddressBook.mutate({ full_name: form.seller_name.trim(), company_id: companyId });
+      if (form.buyer_name?.trim()) upsertAddressBook.mutate({ full_name: form.buyer_name.trim(), company_id: companyId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["business_sales", companyId] });
@@ -142,6 +145,9 @@ export default function BusinessSalesTab({ companyId }: Props) {
         notes: form.notes || null,
       }).eq("id", editingId!);
       if (error) throw error;
+      // Save buyer & seller to address book
+      if (form.seller_name?.trim()) upsertAddressBook.mutate({ full_name: form.seller_name.trim(), company_id: companyId });
+      if (form.buyer_name?.trim()) upsertAddressBook.mutate({ full_name: form.buyer_name.trim(), company_id: companyId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["business_sales", companyId] });
