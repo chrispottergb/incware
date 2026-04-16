@@ -101,6 +101,16 @@ export default function LeaseTransactionDialog({
       if (error) throw error;
 
       queryClient.invalidateQueries({ queryKey: ["company_assets", companyId, "lease"] });
+
+      // Save landlord to address book
+      if (form.landlord_name?.trim()) {
+        upsertAddressBook.mutate({
+          full_name: form.landlord_name.trim(),
+          address: form.landlord_address || undefined,
+          company_id: companyId,
+        });
+      }
+
       toast.success("Lease record created!");
       onLeaseCreated(data.id, form.address);
       resetForm();

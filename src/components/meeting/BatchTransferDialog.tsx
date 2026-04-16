@@ -221,6 +221,16 @@ export default function BatchTransferDialog({
       if (fnErr) throw new Error(fnErr.message || "Batch transfer failed");
       if (result?.error) throw new Error(result.error);
 
+      // Save buyer + seller names to address book
+      if (sellerName.trim()) {
+        upsertAddressBook.mutate({ full_name: sellerName.trim(), company_id: companyId });
+      }
+      transfers.forEach((t) => {
+        if (t.buyer_name) {
+          upsertAddressBook.mutate({ full_name: t.buyer_name, company_id: companyId });
+        }
+      });
+
       setCertsSummary(result.certActions || []);
       setStep(3);
 
