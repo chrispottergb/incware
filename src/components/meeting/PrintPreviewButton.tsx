@@ -12,8 +12,8 @@ import { toast } from "sonner";
 import * as pdfjsLib from "pdfjs-dist";
 import { savePdfReliably } from "@/lib/pdf-save";
 
-// Disable worker to avoid cross-origin fetch issues in preview/embedded contexts
-pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+// Use CDN worker to avoid bundler/cross-origin issues
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@4.9.155/build/pdf.worker.min.mjs`;
 
 
 interface Props {
