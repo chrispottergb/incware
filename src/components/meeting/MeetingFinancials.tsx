@@ -311,6 +311,15 @@ export default function MeetingFinancials({ meetingId }: Props) {
 
   const noPriorData = !priorMeetingFinancials?.financials && !hasSavedPreviousData;
 
+  const fmtDollar = (v: number) => {
+    if (!v) return "";
+    const abs = Math.abs(v);
+    const sign = v < 0 ? "-" : "";
+    if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
+    if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`;
+    return `${sign}$${abs.toLocaleString()}`;
+  };
+
   // Chart data
   const chartData = [
     { name: "Total Sales", "Current Year": toNum(form.current_total_sales) ?? 0, "Previous Year": toNum(form.previous_total_sales) ?? 0 },
@@ -508,10 +517,10 @@ export default function MeetingFinancials({ meetingId }: Props) {
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="Current Year" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="Current Year" position="top" fontSize={10} formatter={(v: number) => v ? v.toLocaleString() : ""} />
+                    <LabelList dataKey="Current Year" position="top" fontSize={9} formatter={fmtDollar} />
                   </Bar>
                   <Bar dataKey="Previous Year" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="Previous Year" position="top" fontSize={10} formatter={(v: number) => v ? v.toLocaleString() : ""} />
+                    <LabelList dataKey="Previous Year" position="top" fontSize={9} formatter={fmtDollar} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
