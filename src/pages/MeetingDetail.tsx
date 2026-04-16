@@ -143,6 +143,37 @@ export default function MeetingDetail() {
     enabled: !!id,
   });
 
+  // Fallback: directors from prior meetings of this company (used when the
+  // company-level directors roster is empty or yields no eligible records).
+  const { data: priorMeetingDirectors = [] } = useQuery({
+    queryKey: ["prior_meeting_directors", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meeting_directors" as any)
+        .select("director_name, meeting_id, meetings!inner(company_id, meeting_date)")
+        .eq("meetings.company_id", id!)
+        .order("meetings(meeting_date)", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!id,
+  });
+
+  // Fallback: shareholders (with addresses) from prior meetings of this company.
+  const { data: priorMeetingShareholders = [] } = useQuery({
+    queryKey: ["prior_meeting_shareholders", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meeting_shareholders")
+        .select("shareholder_name, address, city, state, zip, meeting_id, meetings!inner(company_id, meeting_date)")
+        .eq("meetings.company_id", id!)
+        .order("meetings(meeting_date)", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!id,
+  });
+
   const { data: companyAttorneys = [] } = useQuery({
     queryKey: ["attorneys", id],
     queryFn: async () => {
