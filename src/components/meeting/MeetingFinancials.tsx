@@ -501,7 +501,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
               <CardTitle className="font-display text-sm">Annual Financial Comparison</CardTitle>
             </CardHeader>
             <CardContent>
-              <div style={{ width: "75%", height: 210 }}>
+              <div style={{ width: "75%", height: 280 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -528,7 +528,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
               <CardTitle className="font-display text-sm">Annual Cost of Goods Comparison</CardTitle>
             </CardHeader>
             <CardContent>
-              <div style={{ width: "75%", height: 210 }}>
+              <div style={{ width: "75%", height: 280 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={cogChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
