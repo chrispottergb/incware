@@ -173,10 +173,12 @@ export default function DocumentsTab({ companyId }: Props) {
     setUploading(true);
     try {
       for (const file of Array.from(files)) {
-        const filePath = `${companyId}/${uploadCategory}/${Date.now()}-${file.name}`;
+        const safeCategory = sanitizeForStorage(uploadCategory);
+        const safeName = sanitizeFileName(file.name);
+        const filePath = `${companyId}/${safeCategory}/${Date.now()}-${safeName}`;
         const { error: uploadError } = await supabase.storage
           .from("company-documents")
-          .upload(filePath, file);
+          .upload(filePath, file, { contentType: file.type || undefined });
         if (uploadError) throw uploadError;
 
         const { error: insertError } = await supabase
@@ -194,8 +196,9 @@ export default function DocumentsTab({ companyId }: Props) {
       }
       queryClient.invalidateQueries({ queryKey: ["company_documents", companyId] });
       toast.success(`${files.length} file(s) uploaded`);
-    } catch {
-      toast.error("Upload failed. Please try again.");
+    } catch (err: any) {
+      console.error("Document upload failed:", err);
+      toast.error(`Upload failed: ${err?.message ?? "unknown error"}`);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
