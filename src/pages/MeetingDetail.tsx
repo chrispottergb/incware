@@ -359,6 +359,41 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
+  // Effective director roster for "Add from Company Roster" selector and the
+  // Re-Election panel. Priority: company `directors` table → prior meetings'
+  // unique director names → directors already on THIS meeting (so Re-Election
+  // always has a usable source for legacy/historical entries).
+  const effectiveDirectorRoster = useMemo(() => {
+    const norm = (v: string) => (v || "").toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim();
+    const seen = new Set<string>();
+    const out: Array<{ id: string; name: string; added_date?: string | null }> = [];
+
+    for (const d of companyDirectors as any[]) {
+      const k = norm(d.name);
+      if (!k || seen.has(k)) continue;
+      seen.add(k);
+      out.push({ id: d.id, name: d.name, added_date: d.added_date });
+    }
+
+    if (out.length === 0) {
+      for (const d of priorMeetingDirectors as any[]) {
+        const k = norm(d.director_name);
+        if (!k || seen.has(k)) continue;
+        seen.add(k);
+        out.push({ id: `prior-${k}`, name: d.director_name, added_date: null });
+      }
+    }
+
+    for (const d of directors as any[]) {
+      const k = norm(d.director_name);
+      if (!k || seen.has(k)) continue;
+      seen.add(k);
+      out.push({ id: `meeting-${d.id}`, name: d.director_name, added_date: null });
+    }
+
+    return out;
+  }, [companyDirectors, priorMeetingDirectors, directors]);
+
   const { data: officers = [] } = useQuery({
     queryKey: ["meeting_officers", meetingId],
     queryFn: async () => {
