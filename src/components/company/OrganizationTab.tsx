@@ -280,6 +280,18 @@ export default function OrganizationTab({ companyId, company }: Props) {
         } as any)
         .eq("id", companyId);
       if (error) throw error;
+      // Save Registered Agent to address book
+      if (raForm.registered_agent_name?.trim()) {
+        upsertAddressBook.mutate({
+          full_name: raForm.registered_agent_name.trim(),
+          address: raForm.registered_agent_address,
+          address_2: raForm.registered_agent_address_2,
+          city: raForm.registered_agent_city,
+          state: raForm.registered_agent_state,
+          zip: raForm.registered_agent_zip,
+          company_id: companyId,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company", companyId] });
@@ -559,6 +571,10 @@ export default function OrganizationTab({ companyId, company }: Props) {
         });
         if (error) throw error;
       }
+      // Save officers to address book (names only, no address)
+      [officerForm.president, officerForm.vice_president, officerForm.secretary, officerForm.treasurer]
+        .filter((n) => n && n.trim())
+        .forEach((n) => upsertAddressBook.mutate({ full_name: n.trim(), company_id: companyId }));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["officers", companyId] });
@@ -627,6 +643,8 @@ export default function OrganizationTab({ companyId, company }: Props) {
           }))
         );
         if (insError) throw insError;
+        // Save directors to address book
+        uniqueNames.forEach((name) => upsertAddressBook.mutate({ full_name: name, company_id: companyId }));
       }
     },
     onSuccess: () => {
