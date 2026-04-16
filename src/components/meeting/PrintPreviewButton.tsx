@@ -12,9 +12,9 @@ import { toast } from "sonner";
 import * as pdfjsLib from "pdfjs-dist";
 import { savePdfReliably } from "@/lib/pdf-save";
 
-// Disable worker to avoid cross-origin/CDN fetch issues in embedded previews
-pdfjsLib.GlobalWorkerOptions.workerSrc = "";
-(pdfjsLib as any).disableWorker = true;
+// Use bundled worker via Vite's ?url import for reliable loading
+import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
 
 interface Props {
