@@ -143,6 +143,37 @@ export default function MeetingDetail() {
     enabled: !!id,
   });
 
+  // Fallback: directors from prior meetings of this company (used when the
+  // company-level directors roster is empty or yields no eligible records).
+  const { data: priorMeetingDirectors = [] } = useQuery({
+    queryKey: ["prior_meeting_directors", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meeting_directors" as any)
+        .select("director_name, meeting_id, meetings!inner(company_id, meeting_date)")
+        .eq("meetings.company_id", id!)
+        .order("meetings(meeting_date)", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!id,
+  });
+
+  // Fallback: shareholders (with addresses) from prior meetings of this company.
+  const { data: priorMeetingShareholders = [] } = useQuery({
+    queryKey: ["prior_meeting_shareholders", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meeting_shareholders")
+        .select("shareholder_name, address, city, state, zip, meeting_id, meetings!inner(company_id, meeting_date)")
+        .eq("meetings.company_id", id!)
+        .order("meetings(meeting_date)", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!id,
+  });
+
   const { data: companyAttorneys = [] } = useQuery({
     queryKey: ["attorneys", id],
     queryFn: async () => {
@@ -256,25 +287,36 @@ export default function MeetingDetail() {
     });
   }, [shareholders, companyShareholders, shareholderHoldings, totalIssuedShares]);
 
-  // Backfill missing addresses on existing meeting_shareholders rows from the
-  // company shareholders table. Runs once per meeting load when gaps are detected.
+  // Backfill missing addresses on existing meeting_shareholders rows.
+  // Source priority: company shareholders table → prior meetings' shareholder rows.
   const backfilledRef = useRef<string | null>(null);
   useEffect(() => {
     if (!meetingId || backfilledRef.current === meetingId) return;
-    if (!shareholders.length || !companyShareholders.length) return;
+    if (!shareholders.length) return;
 
     const normalizeName = (v: string | null | undefined) =>
       (v || "").toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim();
 
+    const hasAnyAddr = (r: any) => !!(r?.address || r?.city || r?.state || r?.zip);
+
+    // Index prior-meeting shareholder addresses by normalized name (most recent wins;
+    // query is ordered desc, so first occurrence is newest).
+    const priorIndex = new Map<string, any>();
+    for (const r of priorMeetingShareholders as any[]) {
+      const key = normalizeName(r.shareholder_name);
+      if (!key || priorIndex.has(key)) continue;
+      if (hasAnyAddr(r)) priorIndex.set(key, r);
+    }
+
     const updates: Array<{ id: string; address: string | null; city: string | null; state: string | null; zip: string | null }> = [];
     shareholders.forEach((sh: any) => {
-      const hasAddr = sh.address || sh.city || sh.state || sh.zip;
-      if (hasAddr) return;
-      const match = companyShareholders.find(
-        (c: any) => normalizeName(c.name) === normalizeName(sh.shareholder_name)
+      if (hasAnyAddr(sh)) return;
+      const key = normalizeName(sh.shareholder_name);
+      let match: any = companyShareholders.find(
+        (c: any) => normalizeName(c.name) === key && hasAnyAddr(c)
       );
+      if (!match) match = priorIndex.get(key);
       if (!match) return;
-      if (!match.address && !match.city && !match.state && !match.zip) return;
       updates.push({
         id: sh.id,
         address: match.address || null,
@@ -305,7 +347,7 @@ export default function MeetingDetail() {
         console.error("Address backfill failed:", err);
       }
     })();
-  }, [meetingId, shareholders, companyShareholders, queryClient]);
+  }, [meetingId, shareholders, companyShareholders, priorMeetingShareholders, queryClient]);
 
   const { data: directors = [] } = useQuery({
     queryKey: ["meeting_directors", meetingId],
@@ -316,6 +358,41 @@ export default function MeetingDetail() {
     },
     enabled: !!meetingId,
   });
+
+  // Effective director roster for "Add from Company Roster" selector and the
+  // Re-Election panel. Priority: company `directors` table → prior meetings'
+  // unique director names → directors already on THIS meeting (so Re-Election
+  // always has a usable source for legacy/historical entries).
+  const effectiveDirectorRoster = useMemo(() => {
+    const norm = (v: string) => (v || "").toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim();
+    const seen = new Set<string>();
+    const out: Array<{ id: string; name: string; added_date?: string | null }> = [];
+
+    for (const d of companyDirectors as any[]) {
+      const k = norm(d.name);
+      if (!k || seen.has(k)) continue;
+      seen.add(k);
+      out.push({ id: d.id, name: d.name, added_date: d.added_date });
+    }
+
+    if (out.length === 0) {
+      for (const d of priorMeetingDirectors as any[]) {
+        const k = norm(d.director_name);
+        if (!k || seen.has(k)) continue;
+        seen.add(k);
+        out.push({ id: `prior-${k}`, name: d.director_name, added_date: null });
+      }
+    }
+
+    for (const d of directors as any[]) {
+      const k = norm(d.director_name);
+      if (!k || seen.has(k)) continue;
+      seen.add(k);
+      out.push({ id: `meeting-${d.id}`, name: d.director_name, added_date: null });
+    }
+
+    return out;
+  }, [companyDirectors, priorMeetingDirectors, directors]);
 
   const { data: officers = [] } = useQuery({
     queryKey: ["meeting_officers", meetingId],
@@ -912,13 +989,13 @@ export default function MeetingDetail() {
         </TabsContent>
         <TabsContent value="directors" className="mt-5">
           <div className="space-y-4">
-            {isShareholderMeeting && companyDirectors.length > 0 && (
-              <DirectorReElection directors={companyDirectors} meetingDirectorNames={directors.map((d: any) => d.director_name)} shareholders={companyShareholders} directorLabel={term.director} directorsLabel={term.directors} shareholdersLabel={term.shareholders} />
+            {(isShareholderMeeting || isAnnualMeeting) && effectiveDirectorRoster.length > 0 && (
+              <DirectorReElection directors={effectiveDirectorRoster as any} meetingDirectorNames={directors.map((d: any) => d.director_name)} shareholders={companyShareholders} directorLabel={term.director} directorsLabel={term.directors} shareholdersLabel={term.shareholders} />
             )}
             <MeetingAttendanceSelector
               meetingId={meeting.id}
               meetingDate={meeting.meeting_date}
-              roster={companyDirectors.map((d) => ({
+              roster={effectiveDirectorRoster.map((d) => ({
                 id: d.id,
                 name: d.name,
                 startDate: d.added_date,
