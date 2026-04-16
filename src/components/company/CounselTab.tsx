@@ -4,6 +4,7 @@ import { useZipLookup } from "@/hooks/useZipLookup";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMasterFirms, useMasterContacts } from "@/hooks/useMasterDirectory";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -185,6 +186,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
   const qc = useQueryClient();
   const { masterFirms, upsertMasterFirm } = useMasterFirms("law");
   const { masterContacts, upsertMasterContact } = useMasterContacts("attorney");
+  const { upsert: upsertAddressBook } = useAddressBookContext(companyId);
   const [firmDialogOpen, setFirmDialogOpen] = useState(false);
   const [editingFirm, setEditingFirm] = useState<any>(null);
   const [firmForm, setFirmForm] = useState(emptyFirmForm());
@@ -267,6 +269,16 @@ function AttorneySection({ companyId }: { companyId: string }) {
       }
       // Sync to master directory
       upsertMasterContact.mutate({ contact_name: contactForm.attorney_name, specialty: contactForm.specialty, phone: contactForm.phone, email: contactForm.email, notes: contactForm.notes });
+      // Save attorney to address book (use firm address if available)
+      const firm = firms.find((fm: any) => fm.id === contactFirmId);
+      if (contactForm.attorney_name?.trim()) {
+        upsertAddressBook.mutate({
+          full_name: contactForm.attorney_name.trim(),
+          address: firm?.address, address_2: firm?.address_2,
+          city: firm?.city, state: firm?.state, zip: firm?.zip,
+          company_id: companyId,
+        });
+      }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["attorneys", companyId] }); setContactDialogOpen(false); toast.success("Attorney saved"); },
     onError: (e: any) => toast.error(e.message),
