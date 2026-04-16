@@ -232,9 +232,9 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     const certCancelled = findCertCancelled(transferorName || transfereeName, t.transaction_date, allSorted);
 
     const treasuryBal = (authorizedShares ?? 0) - Math.max(0, totalIssued);
-    // For transfers, show the transferor's resulting balance (the person losing shares)
-    // For everything else, show the transferee/holder's balance
-    const balanceKey = isTx && fromKey ? fromKey : holderKey;
+    // Always show the recipient's (transferee/holder's) resulting balance.
+    // For transfers this is the person receiving shares; for issuances/redemptions it's the holder.
+    const balanceKey = holderKey || fromKey;
     const shBal = Math.max(0, holderBalances[balanceKey] || 0);
     const ownershipPct = term.isLLC && totalIssued > 0 ? (Math.max(0, holderBalances[holderKey] || 0) / totalIssued) * 100 : null;
 
@@ -304,7 +304,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
           statuteRef: `Permanent record — entries cannot be edited or deleted`,
           landscape: true,
           table: {
-            headers: ["#", "Date", "Type", "Transferred To", "Transferred From", "Cert Issued", "Cert Cancelled", "Issued", "Cancelled", "To Treasury", "Consideration", "Balance Held", ...(term.isLLC ? ["Ownership %"] : []), "Treasury Balance"],
+            headers: ["#", "Date", "Type", "Transferred To", "Transferred From", "Cert Issued", "Cert Cancelled", "Issued", "Cancelled", "To Treasury", "Consideration", "Balance Held", ...(term.isLLC ? ["Ownership %"] : [])],
             rows: entries.map(e => [
               String(e.entryNum),
               e.date ? new Date(e.date + "T00:00:00").toLocaleDateString() : "—",
@@ -319,12 +319,14 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
               e.consideration != null ? `$${Number(e.consideration).toFixed(2)}` : "—",
               e.shareholderBalance.toLocaleString(),
               ...(term.isLLC ? [e.ownershipPct != null ? `${e.ownershipPct.toFixed(2)}%` : "—"] : []),
-              e.treasuryBalance.toLocaleString(),
             ]),
             noteRows: entries.reduce<Record<number, string>>((acc, e, idx) => {
               if (e.type === "correction" && e.correctionMemo) acc[idx] = e.correctionMemo;
               return acc;
             }, {}),
+            summaryLines: [
+              `Treasury Balance: ${(entries.length > 0 ? entries[entries.length - 1].treasuryBalance : (authorizedShares ?? 0)).toLocaleString()}`,
+            ],
           },
         }} />
       </CardHeader>
