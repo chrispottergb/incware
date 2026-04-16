@@ -21,6 +21,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  LabelList,
 } from "recharts";
 
 interface Props {
@@ -506,8 +507,12 @@ export default function MeetingFinancials({ meetingId }: Props) {
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="Current Year" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Previous Year" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Current Year" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="Current Year" position="top" fontSize={10} formatter={(v: number) => v ? v.toLocaleString() : ""} />
+                  </Bar>
+                  <Bar dataKey="Previous Year" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="Previous Year" position="top" fontSize={10} formatter={(v: number) => v ? v.toLocaleString() : ""} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
               </div>
@@ -534,8 +539,12 @@ export default function MeetingFinancials({ meetingId }: Props) {
                     formatter={(value: number) => `${value.toFixed(2)}%`}
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="Current Year" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Previous Year" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Current Year" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="Current Year" position="top" fontSize={10} formatter={(v: number) => `${v.toFixed(2)}%`} />
+                  </Bar>
+                  <Bar dataKey="Previous Year" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="Previous Year" position="top" fontSize={10} formatter={(v: number) => `${v.toFixed(2)}%`} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
               </div>
