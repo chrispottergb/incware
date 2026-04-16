@@ -133,6 +133,25 @@ export default function DocumentsTab({ companyId }: Props) {
   const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
   const ALLOWED_EXTENSIONS = [".pdf",".doc",".docx",".xls",".xlsx",".csv",".txt",".rtf",".jpg",".jpeg",".png"];
 
+  // Sanitize a string for safe use in a Supabase Storage object key.
+  // Keeps alphanumerics, dot, dash, underscore. Replaces everything else with `_`,
+  // collapses repeats, and trims leading/trailing separators.
+  const sanitizeForStorage = (s: string) =>
+    s
+      .normalize("NFKD")
+      .replace(/[^\w.\-]+/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^[._-]+|[._-]+$/g, "")
+      .toLowerCase() || "file";
+
+  const sanitizeFileName = (name: string) => {
+    const dot = name.lastIndexOf(".");
+    if (dot <= 0) return sanitizeForStorage(name);
+    const base = sanitizeForStorage(name.slice(0, dot));
+    const ext = name.slice(dot + 1).replace(/[^\w]+/g, "").toLowerCase();
+    return ext ? `${base}.${ext}` : base;
+  };
+
   const handleUpload = async (files: FileList | null) => {
     if (!files || !user) return;
 
