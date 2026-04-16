@@ -501,6 +501,7 @@ function AccountantSection({ companyId }: { companyId: string }) {
   const qc = useQueryClient();
   const { masterFirms, upsertMasterFirm } = useMasterFirms("accounting");
   const { masterContacts, upsertMasterContact } = useMasterContacts("accountant");
+  const { upsert: upsertAddressBook } = useAddressBookContext(companyId);
   const [firmDialogOpen, setFirmDialogOpen] = useState(false);
   const [editingFirm, setEditingFirm] = useState<any>(null);
   const [firmForm, setFirmForm] = useState(emptyFirmForm());
