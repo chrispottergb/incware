@@ -582,6 +582,16 @@ function AccountantSection({ companyId }: { companyId: string }) {
         if (error) throw error;
       }
       upsertMasterContact.mutate({ contact_name: contactForm.accountant_name, specialty: contactForm.specialty, phone: contactForm.phone, email: contactForm.email, notes: contactForm.notes });
+      // Save accountant to address book
+      const firm = firms.find((fm: any) => fm.id === contactFirmId);
+      if (contactForm.accountant_name?.trim()) {
+        upsertAddressBook.mutate({
+          full_name: contactForm.accountant_name.trim(),
+          address: firm?.address, address_2: firm?.address_2,
+          city: firm?.city, state: firm?.state, zip: firm?.zip,
+          company_id: companyId,
+        });
+      }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["accountants", companyId] }); setContactDialogOpen(false); toast.success("Accountant saved"); },
     onError: (e: any) => toast.error(e.message),
