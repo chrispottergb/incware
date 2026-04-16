@@ -159,6 +159,7 @@ const STORAGE_KEY_PREFIX = "annual_meeting_draft_";
 
 export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated }: Props) {
   const queryClient = useQueryClient();
+  const { upsert: upsertAddressBook } = useAddressBookContext(company?.id);
   const storageKey = `${STORAGE_KEY_PREFIX}${company?.id || "unknown"}`;
   const isNonProfit = company?.entity_type === "Non-Profit";
   const STEPS = getSteps(isNonProfit);
