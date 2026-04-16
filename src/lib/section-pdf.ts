@@ -91,6 +91,8 @@ export interface SectionPdfTable {
   noteRows?: Record<number, string>;
   /** Optional per-column width overrides keyed by column index */
   columnStyles?: Record<number, { cellWidth?: number; halign?: "left" | "center" | "right" | "justify" }>;
+  /** Optional summary lines rendered as bold text just below the table */
+  summaryLines?: string[];
 }
 
 export interface SectionPdfConfig {
