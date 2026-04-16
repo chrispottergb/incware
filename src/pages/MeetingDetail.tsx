@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -255,6 +255,57 @@ export default function MeetingDetail() {
       };
     });
   }, [shareholders, companyShareholders, shareholderHoldings, totalIssuedShares]);
+
+  // Backfill missing addresses on existing meeting_shareholders rows from the
+  // company shareholders table. Runs once per meeting load when gaps are detected.
+  const backfilledRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!meetingId || backfilledRef.current === meetingId) return;
+    if (!shareholders.length || !companyShareholders.length) return;
+
+    const normalizeName = (v: string | null | undefined) =>
+      (v || "").toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim();
+
+    const updates: Array<{ id: string; address: string | null; city: string | null; state: string | null; zip: string | null }> = [];
+    shareholders.forEach((sh: any) => {
+      const hasAddr = sh.address || sh.city || sh.state || sh.zip;
+      if (hasAddr) return;
+      const match = companyShareholders.find(
+        (c: any) => normalizeName(c.name) === normalizeName(sh.shareholder_name)
+      );
+      if (!match) return;
+      if (!match.address && !match.city && !match.state && !match.zip) return;
+      updates.push({
+        id: sh.id,
+        address: match.address || null,
+        city: match.city || null,
+        state: match.state || null,
+        zip: match.zip || null,
+      });
+    });
+
+    if (updates.length === 0) {
+      backfilledRef.current = meetingId;
+      return;
+    }
+
+    backfilledRef.current = meetingId;
+    (async () => {
+      try {
+        await Promise.all(
+          updates.map((u) =>
+            supabase
+              .from("meeting_shareholders")
+              .update({ address: u.address, city: u.city, state: u.state, zip: u.zip })
+              .eq("id", u.id)
+          )
+        );
+        queryClient.invalidateQueries({ queryKey: ["meeting_shareholders", meetingId] });
+      } catch (err) {
+        console.error("Address backfill failed:", err);
+      }
+    })();
+  }, [meetingId, shareholders, companyShareholders, queryClient]);
 
   const { data: directors = [] } = useQuery({
     queryKey: ["meeting_directors", meetingId],

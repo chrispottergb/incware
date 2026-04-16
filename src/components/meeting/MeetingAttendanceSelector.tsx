@@ -52,15 +52,28 @@ export default function MeetingAttendanceSelector({
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   // Filter roster by meeting date
+  // CRITICAL: Compare dates as YYYY-MM-DD strings only (no Date/UTC conversion)
+  // to prevent timezone-shift bugs that exclude valid records.
   const eligible = useMemo(() => {
+    const meetingDateStr = (meetingDate || "").slice(0, 10);
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const normalizeDate = (d: string | null | undefined) =>
+      d ? String(d).slice(0, 10) : null;
+
     return roster.filter((p) => {
       if (p.isTreasury) return false;
-      // Status filter: must be active (or no status field)
       if (p.status && p.status !== "active") return false;
-      // Start date filter: must be on or before meeting date
-      if (p.startDate && p.startDate > meetingDate) return false;
-      // End date filter: must be null or on/after meeting date
-      if (p.endDate && p.endDate < meetingDate) return false;
+      const start = normalizeDate(p.startDate);
+      const end = normalizeDate(p.endDate);
+      // Only enforce the start-date filter when the start date is a confirmed
+      // historical date (on or before today). If the start date equals or is
+      // after today, it likely reflects "record created today" rather than the
+      // person's actual tenure start, so don't exclude them from prior meetings.
+      if (start && start <= todayStr && meetingDateStr && start > meetingDateStr) {
+        return false;
+      }
+      // End date: must be on or after the meeting date (inclusive).
+      if (end && meetingDateStr && end < meetingDateStr) return false;
       return true;
     });
   }, [roster, meetingDate]);
