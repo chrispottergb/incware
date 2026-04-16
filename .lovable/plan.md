@@ -2,38 +2,51 @@
 
 ## Diagnosis
 
-The "Upload failed. Please try again." toast in `DocumentsTab.tsx` is a **generic catch-all** (line 178: `} catch {`) that swallows the real Supabase error, so the actual cause is hidden from both you and us.
+Real error surfaced: **`new row violates row-level security policy`** on the storage upload (the `supabase.storage.from("company-documents").upload(...)` call), not on the DB insert.
 
-**Verified facts:**
-- Storage bucket `company-documents` exists, no size/MIME restrictions configured.
-- RLS policies pass — you (`demoguys1@yahoo.com`) are the owner of company `American Antiques & Jewlery, Inc.` AND have admin role.
-- File `American Antiques AMD 2025.pdf` is well under the 20 MB client-side limit.
-- Auth session is valid (other requests in network log succeed).
+**Root cause — mismatch between storage RLS policy and the upload path:**
 
-**Most likely cause — the storage object key:**
-The upload path is built as:
+The `company_docs_insert_own` policy on `storage.objects` checks:
 ```
-{companyId}/{uploadCategory}/{Date.now()}-{file.name}
-  → e.g. "e2577e07.../Meeting Minutes & Resolutions/1776364126078-American Antiques AMD 2025.pdf"
+companies.id = extract_company_id_from_path(objects.name)
 ```
-This contains spaces and an ampersand (`&`) in the folder segment plus spaces in the filename. Supabase Storage's S3 backend frequently rejects keys with `&`, spaces, commas, and other reserved characters — returning a 400 that gets swallowed by the empty catch.
+And `extract_company_id_from_path()` only returns a UUID if the **first folder segment starts with `company-`** (e.g. `company-{uuid}/...`). Otherwise it returns NULL → policy fails.
+
+But our upload code writes paths like:
+```
+{companyId}/{category}/{timestamp}-{filename}
+e.g. e2577e07-49ad-469e-bddf-8d5cd0930bdd/miscellaneous/1776...-file.pdf
+```
+No `company-` prefix → extractor returns NULL → RLS denies the insert.
+
+Existing files in the bucket use the bare-UUID format too — they were uploaded BEFORE this stricter policy was attached. This affects 4 buckets with the same pattern: `company-documents`, `filing-documents`, `ai-compliance-docs`, `generated-documents`.
 
 ## Fix Plan
 
-**1. Sanitize the storage key** in `src/components/company/DocumentsTab.tsx` `handleUpload`:
-- Replace category folder with a slug (e.g. `meeting-minutes-resolutions`) — strip `&`, spaces, punctuation.
-- Sanitize filename: replace spaces and special chars with `_`, keep the extension.
-- Keep the original `file.name` in the `company_documents.file_name` DB column (so the UI still displays the friendly name).
+The cleanest fix is to **relax the storage RLS policies** to accept the bare-UUID path format the app actually uses (and that all existing data uses). I'll update the `extract_company_id_from_path` function to handle BOTH formats: `company-{uuid}/...` AND `{uuid}/...`. This:
 
-**2. Surface real errors** instead of swallowing them:
-- Change `} catch {` to `} catch (err: any) {` and include `err.message` in the toast (e.g. `Upload failed: ${err.message}`).
-- Also `console.error(err)` for debugging.
+- Fixes uploads immediately for all 4 affected buckets in one shot
+- Keeps every existing object accessible (no orphaned files)
+- Requires no app code changes, no data migration, no path rewrites
 
-**3. Add the same sanitation** to the storage `remove()` call in `deleteDoc` is unnecessary — it uses the stored `file_path` directly, which will already be sanitized going forward. Existing uploaded files keep working.
+### Migration
 
-## Files to change
+Update `public.extract_company_id_from_path(path text)` to:
+1. Take `folder := split_part(path, '/', 1)`
+2. If `folder` starts with `company-` → strip prefix, cast remainder to uuid (current behavior)
+3. **NEW**: Else if `folder` looks like a UUID (length 36, matches UUID regex) → cast directly to uuid
+4. Else return NULL
 
-- `src/components/company/DocumentsTab.tsx` — add `sanitizeForStorage(s)` helper, use it for both category folder and filename in `handleUpload`, and improve error messaging.
+The function stays `IMMUTABLE` and `SECURITY DEFINER`-safe (no behavior change for the legacy prefix case).
 
-No database, RLS, or bucket changes required.
+### Files / changes
+
+- **DB migration only** — replace `public.extract_company_id_from_path` with the dual-format version. No table, policy, or app changes needed.
+- No changes to `src/components/company/DocumentsTab.tsx` (already sanitizes paths and surfaces errors correctly).
+
+### Verification after deploy
+
+- Retry uploading the PDF on the Documents tab — should succeed.
+- Confirm existing files still open via the Download button.
+- Same fix automatically restores uploads for `filing-documents`, `ai-compliance-docs`, and `generated-documents` if any of those were also broken.
 
