@@ -989,13 +989,13 @@ export default function MeetingDetail() {
         </TabsContent>
         <TabsContent value="directors" className="mt-5">
           <div className="space-y-4">
-            {isShareholderMeeting && companyDirectors.length > 0 && (
-              <DirectorReElection directors={companyDirectors} meetingDirectorNames={directors.map((d: any) => d.director_name)} shareholders={companyShareholders} directorLabel={term.director} directorsLabel={term.directors} shareholdersLabel={term.shareholders} />
+            {(isShareholderMeeting || isAnnualMeeting) && effectiveDirectorRoster.length > 0 && (
+              <DirectorReElection directors={effectiveDirectorRoster as any} meetingDirectorNames={directors.map((d: any) => d.director_name)} shareholders={companyShareholders} directorLabel={term.director} directorsLabel={term.directors} shareholdersLabel={term.shareholders} />
             )}
             <MeetingAttendanceSelector
               meetingId={meeting.id}
               meetingDate={meeting.meeting_date}
-              roster={companyDirectors.map((d) => ({
+              roster={effectiveDirectorRoster.map((d) => ({
                 id: d.id,
                 name: d.name,
                 startDate: d.added_date,
