@@ -220,6 +220,9 @@ export default function MeetingVehicles({ meetingId }: Props) {
       };
       const { error } = await supabase.from("meeting_vehicle_purchases" as any).insert(payload as any);
       if (error) throw error;
+      if (assetForm.seller?.trim()) {
+        upsertAddressBook.mutate({ full_name: assetForm.seller.trim() });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meeting_vehicle_purchases", meetingId] });
@@ -287,6 +290,9 @@ export default function MeetingVehicles({ meetingId }: Props) {
       };
       const { error } = await supabase.from("meeting_vehicle_leases").insert(payload as any);
       if (error) throw error;
+      if (leaseForm.lessor_name?.trim()) {
+        upsertAddressBook.mutate({ full_name: leaseForm.lessor_name.trim() });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meeting_vehicle_leases", meetingId] });
@@ -348,6 +354,9 @@ export default function MeetingVehicles({ meetingId }: Props) {
       };
       const { error } = await supabase.from("meeting_lease_terminations" as any).insert(payload as any);
       if (error) throw error;
+      if (leaseTermForm.landlord_name?.trim()) {
+        upsertAddressBook.mutate({ full_name: leaseTermForm.landlord_name.trim() });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meeting_lease_terminations", meetingId] });
@@ -407,6 +416,9 @@ export default function MeetingVehicles({ meetingId }: Props) {
       };
       const { error } = await supabase.from("meeting_vehicle_sales" as any).insert(payload as any);
       if (error) throw error;
+      if (saleForm.buyer_name?.trim()) {
+        upsertAddressBook.mutate({ full_name: saleForm.buyer_name.trim() });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meeting_vehicle_sales", meetingId] });

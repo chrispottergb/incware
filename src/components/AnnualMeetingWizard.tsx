@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -158,6 +159,7 @@ const STORAGE_KEY_PREFIX = "annual_meeting_draft_";
 
 export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated }: Props) {
   const queryClient = useQueryClient();
+  const { upsert: upsertAddressBook } = useAddressBookContext(company?.id);
   const storageKey = `${STORAGE_KEY_PREFIX}${company?.id || "unknown"}`;
   const isNonProfit = company?.entity_type === "Non-Profit";
   const STEPS = getSteps(isNonProfit);
