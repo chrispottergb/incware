@@ -24,7 +24,7 @@ export default function AIOversightPersons({ companyId }: Props) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ ai_system_id: "", person_name: "", title: "", competence_description: "", authority_scope: "", assigned_date: "", status: "active" });
 
-  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext(companyId);
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
   const { data: systems = [] } = useQuery({
     queryKey: ["ai_systems", companyId],
     queryFn: async () => {
@@ -50,6 +50,9 @@ export default function AIOversightPersons({ companyId }: Props) {
     mutationFn: async () => {
       const { error } = await supabase.from("ai_oversight_persons").insert({ ...form, assigned_date: form.assigned_date || null });
       if (error) throw error;
+      if (form.person_name?.trim()) {
+        upsertAddressBook.mutate({ full_name: form.person_name.trim(), company_id: companyId });
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["ai_oversight_persons", companyId] });
