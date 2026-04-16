@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
+import DbAddressAutocomplete from "@/components/ui/db-address-autocomplete";
+import NameAutocomplete from "@/components/NameAutocomplete";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -359,7 +359,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
               </div>
               {/* Row 2: Contact Name (50%) | Phone (50%) */}
               <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-xs">Contact Name</Label><AddressAutocomplete value={form.contact_name} onChange={(v) => setForm(p => ({ ...p, contact_name: v }))} onSelect={(entry) => { setForm(p => ({ ...p, contact_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" /></div>
+                <div><Label className="text-xs">Contact Name</Label><NameAutocomplete value={form.contact_name} onChange={(v) => setForm(p => ({ ...p, contact_name: v }))} onSelect={(entry) => { setForm(p => ({ ...p, contact_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" /></div>
                 <div><Label className="text-xs">Phone</Label><Input className="h-7 text-sm" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
               </div>
               {/* Row 3: Address (65%) | Row 4: Address 2 (35%) */}
@@ -435,7 +435,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-xs">Signer Name *</Label><AddressAutocomplete value={signerForm.signer_name} onChange={(v) => setSignerForm(p => ({ ...p, signer_name: v }))} onSelect={(entry) => { setSignerForm(p => ({ ...p, signer_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} /></div>
+                <div><Label className="text-xs">Signer Name *</Label><NameAutocomplete value={signerForm.signer_name} onChange={(v) => setSignerForm(p => ({ ...p, signer_name: v }))} onSelect={(entry) => { setSignerForm(p => ({ ...p, signer_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} /></div>
                 <div>
                   <Label className="text-xs">Authority Type *</Label>
                   <div className="relative">

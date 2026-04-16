@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
+import NameAutocomplete from "@/components/NameAutocomplete";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -451,7 +451,7 @@ export default function BatchTransferDialog({
                           </Select>
                         ) : (
                           <>
-                            <AddressAutocomplete
+                            <NameAutocomplete
                               className="h-8 text-sm"
                               value={row.buyer_name}
                               onChange={(v) => {

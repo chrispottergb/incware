@@ -3,8 +3,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import DbAddressAutocomplete from "@/components/ui/AddressAutocomplete";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
+import DbAddressAutocomplete from "@/components/ui/db-address-autocomplete";
+import NameAutocomplete from "@/components/NameAutocomplete";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -143,7 +143,7 @@ export default function LeaseTransactionDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Landlord Name</Label>
-              <AddressAutocomplete value={form.landlord_name} onChange={(v) => handleChange("landlord_name", v)} onSelect={(entry) => { handleChange("landlord_name", entry.full_name); if (entry.address) handleChange("landlord_address", entry.address); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} />
+              <NameAutocomplete value={form.landlord_name} onChange={(v) => handleChange("landlord_name", v)} onSelect={(entry) => { handleChange("landlord_name", entry.full_name); if (entry.address) handleChange("landlord_address", entry.address); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Landlord Address</Label>

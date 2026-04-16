@@ -1,5 +1,5 @@
 import { useState } from "react";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
+import NameAutocomplete from "@/components/NameAutocomplete";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -150,7 +150,7 @@ export default function MeetingAuthorizedSigners({ meetingId, companyId, meeting
         <DialogContent>
           <DialogHeader><DialogTitle>{editingId ? "Edit" : "Add"} Authorized Signer</DialogTitle></DialogHeader>
           <div className="grid gap-3">
-            <div><Label className="text-xs">Signer Name *</Label><AddressAutocomplete value={form.signer_name} onChange={(v) => setForm(p => ({ ...p, signer_name: v }))} onSelect={(entry) => { setForm(p => ({ ...p, signer_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} /></div>
+            <div><Label className="text-xs">Signer Name *</Label><NameAutocomplete value={form.signer_name} onChange={(v) => setForm(p => ({ ...p, signer_name: v }))} onSelect={(entry) => { setForm(p => ({ ...p, signer_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} /></div>
             <div className="grid grid-cols-2 gap-2">
               <div><Label className="text-xs">Title</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} /></div>
               <div><Label className="text-xs">Bank Name</Label><Input value={form.bank_name} onChange={e => setForm(p => ({ ...p, bank_name: e.target.value }))} /></div>
