@@ -12,11 +12,9 @@ import { toast } from "sonner";
 import * as pdfjsLib from "pdfjs-dist";
 import { savePdfReliably } from "@/lib/pdf-save";
 
-// Use the bundled worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.mjs",
-  import.meta.url
-).toString();
+// Disable worker to avoid cross-origin fetch issues in preview/embedded contexts
+pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+
 
 interface Props {
   label?: string;
