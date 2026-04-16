@@ -544,12 +544,8 @@ export default function MeetingFinancials({ meetingId }: Props) {
                     formatter={(value: number) => `${value.toFixed(2)}%`}
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="Current Year" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="Current Year" position="top" fontSize={9} formatter={(v: number) => `${v.toFixed(2)}%`} />
-                  </Bar>
-                  <Bar dataKey="Previous Year" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="Previous Year" position="top" fontSize={9} formatter={(v: number) => `${v.toFixed(2)}%`} />
-                  </Bar>
+                  <Bar dataKey="Current Year" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]}><LabelList dataKey="Current Year" position="top" style={{ fontSize: 9 }} formatter={(v: number) => `${v.toFixed(2)}%`} /></Bar>
+                  <Bar dataKey="Previous Year" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]}><LabelList dataKey="Previous Year" position="top" style={{ fontSize: 9 }} formatter={(v: number) => `${v.toFixed(2)}%`} /></Bar>
                 </BarChart>
               </ResponsiveContainer>
               </div>
