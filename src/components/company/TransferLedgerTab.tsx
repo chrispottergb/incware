@@ -232,9 +232,9 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     const certCancelled = findCertCancelled(transferorName || transfereeName, t.transaction_date, allSorted);
 
     const treasuryBal = (authorizedShares ?? 0) - Math.max(0, totalIssued);
-    // For transfers, show the transferor's resulting balance (the person losing shares)
-    // For everything else, show the transferee/holder's balance
-    const balanceKey = isTx && fromKey ? fromKey : holderKey;
+    // Always show the recipient's (transferee/holder's) resulting balance.
+    // For transfers this is the person receiving shares; for issuances/redemptions it's the holder.
+    const balanceKey = holderKey || fromKey;
     const shBal = Math.max(0, holderBalances[balanceKey] || 0);
     const ownershipPct = term.isLLC && totalIssued > 0 ? (Math.max(0, holderBalances[holderKey] || 0) / totalIssued) * 100 : null;
 
