@@ -52,15 +52,25 @@ export default function MeetingAttendanceSelector({
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   // Filter roster by meeting date
+  // CRITICAL: Compare dates as YYYY-MM-DD strings only (no Date/UTC conversion)
+  // to prevent timezone-shift bugs that exclude valid records.
   const eligible = useMemo(() => {
+    // Normalize meeting date to "YYYY-MM-DD" (handles ISO strings with time component)
+    const meetingDateStr = (meetingDate || "").slice(0, 10);
+    const normalizeDate = (d: string | null | undefined) =>
+      d ? String(d).slice(0, 10) : null;
+
     return roster.filter((p) => {
       if (p.isTreasury) return false;
       // Status filter: must be active (or no status field)
       if (p.status && p.status !== "active") return false;
-      // Start date filter: must be on or before meeting date
-      if (p.startDate && p.startDate > meetingDate) return false;
-      // End date filter: must be null or on/after meeting date
-      if (p.endDate && p.endDate < meetingDate) return false;
+      const start = normalizeDate(p.startDate);
+      const end = normalizeDate(p.endDate);
+      // Person is eligible if they were active ON the meeting date (inclusive on both ends).
+      // Start date: must be <= meeting date (i.e., NOT strictly after).
+      if (start && meetingDateStr && start > meetingDateStr) return false;
+      // End date: must be >= meeting date (i.e., NOT strictly before).
+      if (end && meetingDateStr && end < meetingDateStr) return false;
       return true;
     });
   }, [roster, meetingDate]);
