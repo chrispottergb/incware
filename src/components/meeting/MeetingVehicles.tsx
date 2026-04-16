@@ -128,7 +128,7 @@ const typeColors: Record<string, string> = {
 };
 
 export default function MeetingVehicles({ meetingId }: Props) {
-  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext();
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext();
   const queryClient = useQueryClient();
 
   const [assetOpen, setAssetOpen] = useState(false);

@@ -69,7 +69,7 @@ export default function BatchTransferDialog({
   const [sellerId, setSellerId] = useState("");
   const [sellerName, setSellerName] = useState("");
   const [shareClass, setShareClass] = useState(term.defaultClass);
-  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext(companyId);
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
   const [transactionDate, setTransactionDate] = useState(
     new Date().toISOString().split("T")[0]
   );

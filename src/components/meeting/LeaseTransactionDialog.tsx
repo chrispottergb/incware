@@ -33,7 +33,7 @@ interface Props {
 export default function LeaseTransactionDialog({
   companyId, companyName, entityType, meetingDate, open, onOpenChange, onLeaseCreated,
 }: Props) {
-  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext();
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const isLLC = isLLCType(entityType);
