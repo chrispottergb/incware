@@ -287,25 +287,36 @@ export default function MeetingDetail() {
     });
   }, [shareholders, companyShareholders, shareholderHoldings, totalIssuedShares]);
 
-  // Backfill missing addresses on existing meeting_shareholders rows from the
-  // company shareholders table. Runs once per meeting load when gaps are detected.
+  // Backfill missing addresses on existing meeting_shareholders rows.
+  // Source priority: company shareholders table → prior meetings' shareholder rows.
   const backfilledRef = useRef<string | null>(null);
   useEffect(() => {
     if (!meetingId || backfilledRef.current === meetingId) return;
-    if (!shareholders.length || !companyShareholders.length) return;
+    if (!shareholders.length) return;
 
     const normalizeName = (v: string | null | undefined) =>
       (v || "").toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim();
 
+    const hasAnyAddr = (r: any) => !!(r?.address || r?.city || r?.state || r?.zip);
+
+    // Index prior-meeting shareholder addresses by normalized name (most recent wins;
+    // query is ordered desc, so first occurrence is newest).
+    const priorIndex = new Map<string, any>();
+    for (const r of priorMeetingShareholders as any[]) {
+      const key = normalizeName(r.shareholder_name);
+      if (!key || priorIndex.has(key)) continue;
+      if (hasAnyAddr(r)) priorIndex.set(key, r);
+    }
+
     const updates: Array<{ id: string; address: string | null; city: string | null; state: string | null; zip: string | null }> = [];
     shareholders.forEach((sh: any) => {
-      const hasAddr = sh.address || sh.city || sh.state || sh.zip;
-      if (hasAddr) return;
-      const match = companyShareholders.find(
-        (c: any) => normalizeName(c.name) === normalizeName(sh.shareholder_name)
+      if (hasAnyAddr(sh)) return;
+      const key = normalizeName(sh.shareholder_name);
+      let match: any = companyShareholders.find(
+        (c: any) => normalizeName(c.name) === key && hasAnyAddr(c)
       );
+      if (!match) match = priorIndex.get(key);
       if (!match) return;
-      if (!match.address && !match.city && !match.state && !match.zip) return;
       updates.push({
         id: sh.id,
         address: match.address || null,
@@ -336,7 +347,7 @@ export default function MeetingDetail() {
         console.error("Address backfill failed:", err);
       }
     })();
-  }, [meetingId, shareholders, companyShareholders, queryClient]);
+  }, [meetingId, shareholders, companyShareholders, priorMeetingShareholders, queryClient]);
 
   const { data: directors = [] } = useQuery({
     queryKey: ["meeting_directors", meetingId],
