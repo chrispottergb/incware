@@ -133,6 +133,25 @@ export default function DocumentsTab({ companyId }: Props) {
   const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
   const ALLOWED_EXTENSIONS = [".pdf",".doc",".docx",".xls",".xlsx",".csv",".txt",".rtf",".jpg",".jpeg",".png"];
 
+  // Sanitize a string for safe use in a Supabase Storage object key.
+  // Keeps alphanumerics, dot, dash, underscore. Replaces everything else with `_`,
+  // collapses repeats, and trims leading/trailing separators.
+  const sanitizeForStorage = (s: string) =>
+    s
+      .normalize("NFKD")
+      .replace(/[^\w.\-]+/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^[._-]+|[._-]+$/g, "")
+      .toLowerCase() || "file";
+
+  const sanitizeFileName = (name: string) => {
+    const dot = name.lastIndexOf(".");
+    if (dot <= 0) return sanitizeForStorage(name);
+    const base = sanitizeForStorage(name.slice(0, dot));
+    const ext = name.slice(dot + 1).replace(/[^\w]+/g, "").toLowerCase();
+    return ext ? `${base}.${ext}` : base;
+  };
+
   const handleUpload = async (files: FileList | null) => {
     if (!files || !user) return;
 
@@ -154,10 +173,12 @@ export default function DocumentsTab({ companyId }: Props) {
     setUploading(true);
     try {
       for (const file of Array.from(files)) {
-        const filePath = `${companyId}/${uploadCategory}/${Date.now()}-${file.name}`;
+        const safeCategory = sanitizeForStorage(uploadCategory);
+        const safeName = sanitizeFileName(file.name);
+        const filePath = `${companyId}/${safeCategory}/${Date.now()}-${safeName}`;
         const { error: uploadError } = await supabase.storage
           .from("company-documents")
-          .upload(filePath, file);
+          .upload(filePath, file, { contentType: file.type || undefined });
         if (uploadError) throw uploadError;
 
         const { error: insertError } = await supabase
@@ -175,8 +196,9 @@ export default function DocumentsTab({ companyId }: Props) {
       }
       queryClient.invalidateQueries({ queryKey: ["company_documents", companyId] });
       toast.success(`${files.length} file(s) uploaded`);
-    } catch {
-      toast.error("Upload failed. Please try again.");
+    } catch (err: any) {
+      console.error("Document upload failed:", err);
+      toast.error(`Upload failed: ${err?.message ?? "unknown error"}`);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
