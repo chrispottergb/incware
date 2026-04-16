@@ -63,7 +63,7 @@ function TemplateNote({ text }: { text: string }) {
 }
 
 export default function OrgMeetingWizard({ company, onClose }: Props) {
-  const { search: searchAddressBook, getCompanySplitIndex } = useAddressBookContext();
+  const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(company?.id);
   const [step, setStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewCanvas, setPreviewCanvas] = useState<HTMLCanvasElement | null>(null);
@@ -152,6 +152,20 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
       toast.error("Please fill in all required fields (Company Name, Meeting Date, Chairperson, Secretary).");
       return;
     }
+
+    // Save people from this meeting to the address book
+    const peopleToSave = [
+      data.chairperson, data.secretary, data.registeredAgentName, data.einAuthorizedName,
+      ...data.managers.map(m => m.name),
+      ...data.members.map(m => m.name),
+      ...data.authorizedBinders.map(b => b.name),
+      ...data.bankSignatories.map(s => s.name),
+      ...data.memberSignatures.map(s => s.name),
+    ];
+    peopleToSave.filter(n => n?.trim()).forEach(name => {
+      upsertAddressBook.mutate({ full_name: name.trim(), company_id: company?.id });
+    });
+
     const doc = generateOrgMeetingPDF(data);
     const dateStr = data.meetingDate ? format(new Date(data.meetingDate + "T12:00:00"), "yyyy-MM-dd") : "draft";
     const { savePdfReliably } = await import("@/lib/pdf-save");
