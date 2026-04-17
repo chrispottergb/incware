@@ -964,21 +964,6 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
                   const sorted = [...transactions].sort((a, b) =>
                     (a.transaction_date || "").localeCompare(b.transaction_date || "") || (a.created_at || "").localeCompare(b.created_at || "")
                   );
-
-                  // Build map: surrendered cert # -> issuing cert # that cancelled it
-                  // Use the same chronological list as the balance setup so the first canceller wins
-                  const cancelledByMap: Record<string, string> = {};
-                  sorted.forEach((tx: any) => {
-                    const surrendered = tx.surrendered_certificate_number;
-                    const issued = tx.issued_certificate_number;
-                    if (surrendered != null && surrendered !== "" && issued != null && issued !== "") {
-                      const sKey = String(surrendered);
-                      if (!cancelledByMap[sKey]) {
-                        cancelledByMap[sKey] = String(issued);
-                      }
-                    }
-                  });
-
                   const balances: Record<string, number> = {};
                   const balanceMap = new Map<string, number>();
                   const entryNumMap = new Map<string, number>();
@@ -1033,6 +1018,20 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
                       const key = shName || (t.to_shareholder || "unknown").toLowerCase().trim();
                       balances[key] = (balances[key] || 0) + (t.num_shares || 0);
                       balanceMap.set(t.id, Math.max(0, balances[key]));
+                    }
+                  });
+
+                  // Build map: surrendered cert # -> issuing cert # that cancelled it
+                  // Use the same chronological list as the balance setup so the first canceller wins
+                  const cancelledByMap: Record<string, string> = {};
+                  sorted.forEach((tx: any) => {
+                    const surrendered = tx.surrendered_certificate_number;
+                    const issued = tx.issued_certificate_number;
+                    if (surrendered != null && surrendered !== "" && issued != null && issued !== "") {
+                      const sKey = String(surrendered);
+                      if (!cancelledByMap[sKey]) {
+                        cancelledByMap[sKey] = String(issued);
+                      }
                     }
                   });
 
