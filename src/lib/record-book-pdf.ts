@@ -281,7 +281,12 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
   y = addSectionTitle(doc, y, 4, sec4Title);
   if (intros[sec4Title]) y = addNarrative(doc, y, intros[sec4Title]);
 
-  const shareholders = companyData.shareholders;
+  const shareholders = (companyData.shareholders || []).filter((s: any) => {
+    if (s?.is_treasury) return false;
+    const op = s?.ownership_percentage;
+    if (op === 0 || op === "0" || op === "0.00") return false;
+    return true;
+  });
   y = addTableSafe(doc, y,
     [isLLC ? "Member" : "Shareholder", "Address", "City", "State", "SSN/EIN", "Status", "Date Added"],
     shareholders.map((s: any) => [
