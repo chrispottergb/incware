@@ -286,13 +286,11 @@ export default function MeetingDetail() {
       };
     });
 
-    // Exclude shareholders/members who hold zero shares (or 0% interest) as of today.
-    // They are no longer current owners and must not appear in meeting documents.
-    return hydrated.filter((s: any) => {
-      const c = Number(s?.common_shares ?? 0) || 0;
-      const p = Number(s?.preferred_shares ?? 0) || 0;
-      return c > 0 || p > 0;
-    });
+    // Note: zero-holders are intentionally retained here so they remain visible
+    // in the on-screen attendance list for record-keeping. The PDF generators
+    // (meeting-pdf-export.ts, annual-update-pdf.ts, record-book-pdf.ts) apply
+    // their own hasNonZeroHolding filter to exclude them from printed output.
+    return hydrated;
   }, [shareholders, companyShareholders, shareholderHoldings, totalIssuedShares]);
 
   // Backfill missing addresses on existing meeting_shareholders rows.
