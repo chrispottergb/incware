@@ -259,13 +259,17 @@ export default function MeetingDetail() {
     const normalizeName = (value: string | null | undefined) =>
       (value || "").toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim();
 
-    return shareholders.map((shareholder: any) => {
+    const hydrated = shareholders.map((shareholder: any) => {
       const rosterMatch = companyShareholders.find(
         (candidate: any) => normalizeName(candidate.name) === normalizeName(shareholder.shareholder_name)
       );
 
       if (!rosterMatch) return shareholder;
 
+      // Always overlay live ledger holdings — the share_transactions ledger is the
+      // single source of truth. Stored meeting_shareholders.common_shares can become
+      // stale after subsequent transfers (e.g. transfer to a Trust) and would otherwise
+      // misrepresent ownership in the PDF.
       const liveHoldings = shareholderHoldings[rosterMatch.id] ?? 0;
       const liveInterest = totalIssuedShares > 0
         ? Number(((liveHoldings / totalIssuedShares) * 100).toFixed(2))
@@ -277,13 +281,17 @@ export default function MeetingDetail() {
         city: shareholder.city || rosterMatch.city || null,
         state: shareholder.state || rosterMatch.state || null,
         zip: shareholder.zip || rosterMatch.zip || null,
-        common_shares: shareholder.common_shares && Number(shareholder.common_shares) > 0
-          ? shareholder.common_shares
-          : liveHoldings,
-        preferred_shares: shareholder.preferred_shares && Number(shareholder.preferred_shares) > 0
-          ? shareholder.preferred_shares
-          : liveInterest,
+        common_shares: liveHoldings,
+        preferred_shares: liveInterest,
       };
+    });
+
+    // Exclude shareholders/members who hold zero shares (or 0% interest) as of today.
+    // They are no longer current owners and must not appear in meeting documents.
+    return hydrated.filter((s: any) => {
+      const c = Number(s?.common_shares ?? 0) || 0;
+      const p = Number(s?.preferred_shares ?? 0) || 0;
+      return c > 0 || p > 0;
     });
   }, [shareholders, companyShareholders, shareholderHoldings, totalIssuedShares]);
 
