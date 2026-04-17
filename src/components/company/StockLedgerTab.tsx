@@ -1021,6 +1021,20 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
                     }
                   });
 
+                  // Build map: surrendered cert # -> issuing cert # that cancelled it
+                  // First (lowest cert number) canceller wins for display purposes
+                  const cancelledByMap: Record<string, string> = {};
+                  transactions.forEach((tx: any) => {
+                    const surrendered = tx.surrendered_certificate_number;
+                    const issued = tx.issued_certificate_number;
+                    if (surrendered != null && surrendered !== "" && issued != null && issued !== "") {
+                      const sKey = String(surrendered);
+                      if (!cancelledByMap[sKey]) {
+                        cancelledByMap[sKey] = String(issued);
+                      }
+                    }
+                  });
+
                   // Display in reverse chronological order (original order)
                   const txTodayStr = new Date().toISOString().split("T")[0];
                   return transactions.map((t: any) => {
