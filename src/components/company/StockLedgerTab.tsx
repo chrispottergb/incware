@@ -1021,6 +1021,20 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
                     }
                   });
 
+                  // Build map: surrendered cert # -> issuing cert # that cancelled it
+                  // First (lowest cert number) canceller wins for display purposes
+                  const cancelledByMap: Record<string, string> = {};
+                  transactions.forEach((tx: any) => {
+                    const surrendered = tx.surrendered_certificate_number;
+                    const issued = tx.issued_certificate_number;
+                    if (surrendered != null && surrendered !== "" && issued != null && issued !== "") {
+                      const sKey = String(surrendered);
+                      if (!cancelledByMap[sKey]) {
+                        cancelledByMap[sKey] = String(issued);
+                      }
+                    }
+                  });
+
                   // Display in reverse chronological order (original order)
                   const txTodayStr = new Date().toISOString().split("T")[0];
                   return transactions.map((t: any) => {
@@ -1083,9 +1097,7 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
                       <TableCell className="text-xs text-center">
                         {(() => {
                           const issued = (t as any).issued_certificate_number;
-                          const surrendered = (t as any).surrendered_certificate_number;
                           const issuedNum = issued != null && issued !== "" ? Number(issued) : null;
-                          const surrenderedNum = surrendered != null && surrendered !== "" ? Number(surrendered) : null;
 
                           // Fallback: look up cert by certificate_id, then by shareholder+class+shares
                           let resolvedCertNum = issuedNum;
@@ -1105,15 +1117,32 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
                             if (matchedCert) resolvedCertNum = matchedCert.certificate_number;
                           }
 
-                          if (resolvedCertNum != null && !isNaN(resolvedCertNum) && surrenderedNum != null && !isNaN(surrenderedNum)) {
-                            return <span>Cert #{resolvedCertNum} <span className="text-muted-foreground">/ Cancels #{surrenderedNum}</span></span>;
+                          const cancelledBy = resolvedCertNum != null && !isNaN(resolvedCertNum)
+                            ? cancelledByMap[String(resolvedCertNum)]
+                            : undefined;
+
+                          if (resolvedCertNum != null && !isNaN(resolvedCertNum) && cancelledBy) {
+                            return <span>Cert #{resolvedCertNum} <span className="text-muted-foreground">/ Cancels #{cancelledBy}</span></span>;
                           }
                           if (resolvedCertNum != null && !isNaN(resolvedCertNum)) return <span>Cert #{resolvedCertNum}</span>;
-                          if (surrenderedNum != null && !isNaN(surrenderedNum)) return <span className="text-muted-foreground">Cancels #{surrenderedNum}</span>;
                           return "—";
                         })()}
                       </TableCell>
-                      <TableCell className="text-xs text-right font-semibold bg-primary/5">{balanceMap.get(t.id)?.toLocaleString() ?? "—"}</TableCell>
+                      <TableCell className="text-xs text-right font-semibold bg-primary/5">{(() => {
+                        const issued = (t as any).issued_certificate_number;
+                        const issuedNum = issued != null && issued !== "" ? Number(issued) : null;
+                        let resolvedCertNum = issuedNum;
+                        if (resolvedCertNum == null || isNaN(resolvedCertNum)) {
+                          if (t.certificate_id) {
+                            const linkedCert = certificates.find((c: any) => c.id === t.certificate_id);
+                            if (linkedCert) resolvedCertNum = linkedCert.certificate_number;
+                          }
+                        }
+                        if (resolvedCertNum != null && !isNaN(resolvedCertNum) && cancelledByMap[String(resolvedCertNum)]) {
+                          return "0";
+                        }
+                        return balanceMap.get(t.id)?.toLocaleString() ?? "—";
+                      })()}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-0.5">
                           {txStatus === "active" && !isCorrection && (
