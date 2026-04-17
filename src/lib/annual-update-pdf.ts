@@ -212,7 +212,7 @@ export function generateAnnualUpdatePdf(data: AnnualUpdateData): jsPDF {
   y = addSectionTitle(doc, "5. Shareholders / Members", y);
   y = addDataTable(doc,
     ["Name", "Ownership %", "Status", "Address"],
-    data.shareholders.filter(s => !s.is_treasury).map(s => [
+    data.shareholders.filter(s => !s.is_treasury && !(s.ownership_percentage === 0 || s.ownership_percentage === "0" || s.ownership_percentage === "0.00")).map(s => [
       s.name || "—",
       s.ownership_percentage != null ? `${s.ownership_percentage}%` : "—",
       s.status || "—",

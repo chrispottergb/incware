@@ -1048,6 +1048,27 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   const doc = new jsPDF();
   registerArialFont(doc);
   doc.setLineHeightFactor(1.15);
+
+  // Exclude zero-share / zero-interest shareholders & members from all PDF sections.
+  // A holder is "zero" when both common and preferred (or interest %) are 0/null/undefined.
+  const hasNonZeroHolding = (s: any) => {
+    const c = Number(s?.common_shares ?? 0) || 0;
+    const p = Number(s?.preferred_shares ?? 0) || 0;
+    return c > 0 || p > 0;
+  };
+  const hasNonZeroOwnership = (s: any) => {
+    // companyShareholders: keep unless ownership_percentage is explicitly 0
+    if (s?.is_treasury) return false;
+    const op = s?.ownership_percentage;
+    if (op === 0 || op === "0" || op === "0.00") return false;
+    return true;
+  };
+  data = {
+    ...data,
+    shareholders: (data.shareholders || []).filter(hasNonZeroHolding),
+    companyShareholders: (data.companyShareholders || []).filter(hasNonZeroOwnership),
+  };
+
   const { meeting, company } = data;
   const companyName = company?.name || "Unknown Company";
   const entityType = company?.entity_type || "Corporation";
