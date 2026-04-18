@@ -188,6 +188,16 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     }
   });
 
+  // Set of all cancelled certificate numbers — combines transfer surrenders with
+  // certs whose status is "cancelled" in the certificates table (e.g. redemptions,
+  // direct cancellations not done via a transfer).
+  const cancelledCertNums = new Set<string>([
+    ...Object.keys(cancelledByMap),
+    ...certificates
+      .filter((c: any) => c.status === "cancelled" && c.certificate_number != null)
+      .map((c: any) => String(c.certificate_number)),
+  ]);
+
   sorted.forEach((t: any, idx: number) => {
     const txType = t.transaction_type || "";
     const txStatus = (t as any).status || "active";
