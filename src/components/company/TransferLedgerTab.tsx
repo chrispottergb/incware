@@ -175,6 +175,18 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     entryNumMap.set(t.id, idx + 1);
   });
 
+  // Build map: surrendered_certificate_number -> issued_certificate_number
+  // Used to annotate the ORIGINAL cert's row with "Cancels #Y" where Y is the new cert
+  // issued by the transfer that surrendered it.
+  const cancelledByMap: Record<string, string> = {};
+  allSorted.forEach((t: any) => {
+    const surrendered = (t as any).surrendered_certificate_number;
+    const issued = (t as any).issued_certificate_number;
+    if (surrendered != null && issued != null) {
+      cancelledByMap[String(surrendered)] = String(issued);
+    }
+  });
+
   sorted.forEach((t: any, idx: number) => {
     const txType = t.transaction_type || "";
     const txStatus = (t as any).status || "active";
