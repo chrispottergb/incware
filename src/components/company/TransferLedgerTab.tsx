@@ -259,11 +259,11 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     // For transfers this is the person receiving shares; for issuances/redemptions it's the holder.
     const balanceKey = holderKey || fromKey;
     let shBal = Math.max(0, holderBalances[balanceKey] || 0);
-    // If this row's issued cert was later cancelled by a transfer, the holder no longer
-    // holds those shares — display 0 to reflect the cert's current cancelled state.
+    // If this row's issued cert was later cancelled (by a transfer surrender or
+    // direct cancellation), the holder no longer holds those shares — display 0.
     const resolvedRowCertNum = (t as any).issued_certificate_number
       ?? (certIssued ? (certIssued as any).certificate_number : null);
-    if (resolvedRowCertNum != null && cancelledByMap[String(resolvedRowCertNum)]) {
+    if (resolvedRowCertNum != null && cancelledCertNums.has(String(resolvedRowCertNum))) {
       shBal = 0;
     }
     const ownershipPct = term.isLLC && totalIssued > 0 ? (Math.max(0, holderBalances[holderKey] || 0) / totalIssued) * 100 : null;
