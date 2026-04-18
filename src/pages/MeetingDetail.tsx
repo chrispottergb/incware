@@ -1013,7 +1013,11 @@ export default function MeetingDetail() {
               roster={effectiveDirectorRoster.map((d) => ({
                 id: d.id,
                 name: d.name,
-                startDate: d.added_date,
+                // Intentionally omit startDate: the company `directors` table's
+                // `added_date` reflects when the record was created in the app,
+                // not the director's actual tenure start. Passing it as startDate
+                // causes the selector to wrongly exclude directors from earlier
+                // meeting dates. Tenure start should be captured separately.
               }))}
               existingNames={directors.map((d: any) => d.director_name)}
               roleLabel={term.director}
