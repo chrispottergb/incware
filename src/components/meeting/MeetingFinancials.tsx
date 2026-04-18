@@ -395,7 +395,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
                       previous_cog_ratio: sourceFin.current_cog_ratio?.toString() ?? "",
                       previous_net_income: sourceFin.current_net_income?.toString() ?? "",
                     }));
-                    financialsAutoSave.handleBlur();
+                    financialsAutoSave.triggerSave();
                   }}
                   className="text-[10px] text-primary hover:underline inline-flex items-center gap-1"
                   title="Discard manual overrides and re-pull all prior-year values from the source meeting"
@@ -441,7 +441,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
                   }
                   return updated;
                 });
-                financialsAutoSave.handleBlur();
+                financialsAutoSave.triggerSave();
               };
               return (
                 <div key={f.key} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 mb-3 items-center">
