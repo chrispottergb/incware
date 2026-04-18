@@ -264,9 +264,18 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
       certIssued: (t as any).issued_certificate_number
         ? `Cert #${(t as any).issued_certificate_number}`
         : certIssued ? `Cert #${(certIssued as any).certificate_number}` : "—",
-      certCancelled: (t as any).surrendered_certificate_number
-        ? `Cancels #${(t as any).surrendered_certificate_number}`
-        : certCancelled ? `Cancels #${(certCancelled as any).certificate_number}` : "—",
+      certCancelled: (() => {
+        // Annotate the row whose cert was cancelled by a later transfer.
+        // Resolve this row's issued cert number first.
+        const resolvedCertNum = (t as any).issued_certificate_number
+          ?? (certIssued ? (certIssued as any).certificate_number : null);
+        if (resolvedCertNum != null && cancelledByMap[String(resolvedCertNum)]) {
+          return `Cancels #${cancelledByMap[String(resolvedCertNum)]}`;
+        }
+        // Redemption / direct cancellation lookup (not via transfer surrender).
+        if (certCancelled) return `Cancels #${(certCancelled as any).certificate_number}`;
+        return "—";
+      })(),
       transferee: transfereeName || "—",
       transferor: isIss ? "" : isTx ? (transferorName || "—") : isRed ? (transferorName || transfereeName || "—") : isCorrection ? (transferorName || "—") : "—",
       classLabel: t.share_class || "—",
