@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, TrendingUp, Lock, Info, Plus, Trash2 } from "lucide-react";
+import { Loader2, TrendingUp, Lock, Info, Plus, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -76,19 +76,24 @@ export default function MeetingFinancials({ meetingId }: Props) {
   });
 
   const { data: priorMeetingFinancials } = useQuery({
-    queryKey: ["prior_meeting_financials_for_autofill", meeting?.company_id, meetingId],
+    queryKey: ["prior_meeting_financials_for_autofill", meeting?.company_id, meetingId, meeting?.meeting_date],
     queryFn: async () => {
       const { data: priorMeetings } = await supabase
         .from("meetings")
-        .select("id, meeting_date")
+        .select("id, meeting_date, document_status")
         .eq("company_id", meeting!.company_id)
         .neq("id", meetingId)
         .order("meeting_date", { ascending: false })
-        .limit(10);
+        .limit(20);
 
       if (!priorMeetings?.length) return null;
 
-      for (const pm of priorMeetings) {
+      // Exclude canceled meetings from source resolution
+      const eligible = priorMeetings.filter(
+        (pm: any) => (pm.document_status ?? "").toLowerCase() !== "cancelled",
+      );
+
+      for (const pm of eligible) {
         const { data: fin } = await supabase
           .from("meeting_financials")
           .select("*")
@@ -102,6 +107,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
       return null;
     },
     enabled: !!meeting?.company_id,
+    staleTime: 0,
   });
 
   const isAutoFilled = !!(
@@ -120,7 +126,27 @@ export default function MeetingFinancials({ meetingId }: Props) {
      financials.previous_net_income != null)
   );
 
-  const previousYearLocked = hasSavedPreviousData || isAutoFilled;
+  // Prior-year fields are now editable. Override status is derived per-field.
+  const sourceFin = priorMeetingFinancials?.financials;
+  const sourceValueFor = (key: string): number | null => {
+    if (!sourceFin) return null;
+    const map: Record<string, any> = {
+      total_sales: sourceFin.current_total_sales,
+      cog: sourceFin.current_cog,
+      gross_profit: sourceFin.current_gross_profit,
+      cog_ratio: sourceFin.current_cog_ratio,
+      net_income: sourceFin.current_net_income,
+    };
+    const v = map[key];
+    return v == null ? null : Number(v);
+  };
+  const isFieldOverridden = (key: string): boolean => {
+    const src = sourceValueFor(key);
+    const cur = (form as any)[`previous_${key}`];
+    if (src == null) return false;
+    if (cur === "" || cur == null) return false;
+    return Number(cur) !== src;
+  };
 
   const sourceLabel = priorMeetingFinancials?.meetingDate
     ? `Auto-filled from meeting on ${format(new Date(priorMeetingFinancials.meetingDate + "T12:00:00"), "MMM d, yyyy")}`
@@ -198,7 +224,6 @@ export default function MeetingFinancials({ meetingId }: Props) {
   const toNum = (s: string) => (s ? parseFloat(s) : null);
 
   const handleFieldChange = (prefix: "current" | "previous", key: string, value: string) => {
-    if (prefix === "previous" && previousYearLocked) return;
     setForm((prev) => {
       const updated = { ...prev, [`${prefix}_${key}`]: value };
 
@@ -351,12 +376,35 @@ export default function MeetingFinancials({ meetingId }: Props) {
               <TrendingUp className="h-4 w-4 text-primary" />
               <CardTitle className="font-display text-base">Financial Comparison</CardTitle>
             </div>
-            {previousYearLocked && sourceLabel && (
-              <Badge variant="secondary" className="text-[10px] font-normal gap-1">
-                <Info className="h-3 w-3" />
-                {sourceLabel}
-              </Badge>
-            )}
+            <div className="flex items-center gap-2">
+              {sourceLabel && (
+                <Badge variant="secondary" className="text-[10px] font-normal gap-1">
+                  <Info className="h-3 w-3" />
+                  {sourceLabel}
+                </Badge>
+              )}
+              {sourceFin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForm((prev) => ({
+                      ...prev,
+                      previous_total_sales: sourceFin.current_total_sales?.toString() ?? "",
+                      previous_cog: sourceFin.current_cog?.toString() ?? "",
+                      previous_gross_profit: sourceFin.current_gross_profit?.toString() ?? "",
+                      previous_cog_ratio: sourceFin.current_cog_ratio?.toString() ?? "",
+                      previous_net_income: sourceFin.current_net_income?.toString() ?? "",
+                    }));
+                    financialsAutoSave.triggerSave();
+                  }}
+                  className="text-[10px] text-primary hover:underline inline-flex items-center gap-1"
+                  title="Discard manual overrides and re-pull all prior-year values from the source meeting"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  Re-sync all from source
+                </button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -367,17 +415,34 @@ export default function MeetingFinancials({ meetingId }: Props) {
             <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 mb-4">
               <div></div>
               <p className="text-xs font-semibold text-center text-muted-foreground uppercase tracking-wider">Current Year</p>
-              <div className="flex items-center justify-center gap-1">
-                <p className="text-xs font-semibold text-center text-muted-foreground uppercase tracking-wider">Previous Year</p>
-                {previousYearLocked && <Lock className="h-3 w-3 text-muted-foreground" />}
-              </div>
+              <p className="text-xs font-semibold text-center text-muted-foreground uppercase tracking-wider">Previous Year</p>
               <p className="w-16 text-xs font-semibold text-right text-muted-foreground uppercase tracking-wider">YoY</p>
             </div>
             {fields.map((f) => {
               const isNetIncome = f.key === "net_income";
               const change = isNetIncome ? getDisplayedYoyNetIncome() : yoyChange(`current_${f.key}`, `previous_${f.key}`);
               const prevValue = (form as any)[`previous_${f.key}`];
-              const isPrevLocked = previousYearLocked || f.computed;
+              const overridden = !f.computed && isFieldOverridden(f.key);
+              const srcVal = sourceValueFor(f.key);
+              const canResync = !f.computed && srcVal != null && (
+                prevValue === "" || prevValue == null || Number(prevValue) !== srcVal
+              );
+              const resyncField = () => {
+                setForm((prev) => {
+                  const updated = { ...prev, [`previous_${f.key}`]: srcVal != null ? srcVal.toString() : "" };
+                  // Recompute derived prev fields if total_sales or cog changes
+                  if (f.key === "total_sales" || f.key === "cog") {
+                    const sales = toNum(f.key === "total_sales" ? (srcVal?.toString() ?? "") : updated.previous_total_sales);
+                    const cog = toNum(f.key === "cog" ? (srcVal?.toString() ?? "") : updated.previous_cog);
+                    if (sales != null && cog != null) {
+                      updated.previous_gross_profit = (sales - cog).toFixed(2);
+                      updated.previous_cog_ratio = sales > 0 ? ((cog / sales) * 100).toFixed(2) : "0";
+                    }
+                  }
+                  return updated;
+                });
+                financialsAutoSave.triggerSave();
+              };
               return (
                 <div key={f.key} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 mb-3 items-center">
                   <Label className="text-sm">{f.label}</Label>
@@ -394,19 +459,33 @@ export default function MeetingFinancials({ meetingId }: Props) {
                       No previous data available
                     </div>
                   ) : (
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={prevValue}
-                      onChange={(e) => handleFieldChange("previous", f.key, e.target.value)}
-                      readOnly={isPrevLocked}
-                      tabIndex={isPrevLocked ? -1 : undefined}
-                      className={`text-right font-mono text-sm ${
-                        isPrevLocked
-                          ? "bg-muted/50 text-muted-foreground cursor-not-allowed"
-                          : ""
-                      }`}
-                    />
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={prevValue}
+                        onChange={(e) => handleFieldChange("previous", f.key, e.target.value)}
+                        readOnly={f.computed}
+                        className={`text-right font-mono text-sm ${
+                          f.computed ? "bg-muted/50 text-muted-foreground" : ""
+                        } ${overridden ? "italic" : ""}`}
+                      />
+                      {overridden && (
+                        <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 italic font-normal">
+                          Edited
+                        </Badge>
+                      )}
+                      {canResync && !f.computed && (
+                        <button
+                          type="button"
+                          onClick={resyncField}
+                          className="text-muted-foreground hover:text-primary p-0.5"
+                          title={`Re-sync from source: ${srcVal}`}
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
                   )}
                   <div className="w-16 text-right">
                     {change != null && (
