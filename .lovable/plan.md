@@ -1,52 +1,53 @@
 
 
-## Diagnosis
+## Plan: Fix Prior-Year Financial Pull (3 targeted changes)
 
-Real error surfaced: **`new row violates row-level security policy`** on the storage upload (the `supabase.storage.from("company-documents").upload(...)` call), not on the DB insert.
+### Root cause
+`MeetingFinancials.tsx` saves the auto-pulled prior-year values into the new meeting's `meeting_financials` row, then locks them via `hasSavedPreviousData`. They never re-resolve when the source meeting is deleted/canceled — that's the stale-COGS bug.
 
-**Root cause — mismatch between storage RLS policy and the upload path:**
+### Scope
+- `src/components/meeting/MeetingFinancials.tsx` — all 3 logic changes.
+- `src/components/company/MeetingsTab.tsx` — single cache-invalidation line.
 
-The `company_docs_insert_own` policy on `storage.objects` checks:
-```
-companies.id = extract_company_id_from_path(objects.name)
-```
-And `extract_company_id_from_path()` only returns a UUID if the **first folder segment starts with `company-`** (e.g. `company-{uuid}/...`). Otherwise it returns NULL → policy fails.
+No schema changes, no migrations, no touching wizard cloning logic, no touching current-year inputs.
 
-But our upload code writes paths like:
-```
-{companyId}/{category}/{timestamp}-{filename}
-e.g. e2577e07-49ad-469e-bddf-8d5cd0930bdd/miscellaneous/1776...-file.pdf
-```
-No `company-` prefix → extractor returns NULL → RLS denies the insert.
+### Change 1 — Re-resolving prior-meeting source query
 
-Existing files in the bucket use the bare-UUID format too — they were uploaded BEFORE this stricter policy was attached. This affects 4 buckets with the same pattern: `company-documents`, `filing-documents`, `ai-compliance-docs`, `generated-documents`.
+In `MeetingFinancials.tsx`:
+1. Update the `priorMeetingFinancials` query to **exclude canceled meetings** (`document_status !== 'cancelled'`).
+2. Add source meeting `id` + `meeting_date` to the React Query key; set `staleTime: 0` so re-mount refetches.
 
-## Fix Plan
+In `MeetingsTab.tsx`:
+3. Inside `deleteMeeting` mutation's `onSuccess` callback, **after the existing invalidations**, add:
+   ```ts
+   queryClient.invalidateQueries({ queryKey: ["prior_meeting_financials_for_autofill"] });
+   ```
+   This is required — without it, re-resolution will not trigger after a meeting is deleted.
 
-The cleanest fix is to **relax the storage RLS policies** to accept the bare-UUID path format the app actually uses (and that all existing data uses). I'll update the `extract_company_id_from_path` function to handle BOTH formats: `company-{uuid}/...` AND `{uuid}/...`. This:
+### Change 2 — Per-field manual override + edited badge
 
-- Fixes uploads immediately for all 4 affected buckets in one shot
-- Keeps every existing object accessible (no orphaned files)
-- Requires no app code changes, no data migration, no path rewrites
+- Remove the `previousYearLocked` gating in `handleFieldChange` so prev-year fields are always editable.
+- Derive "overridden" at render: `saved previous_X != null && saved previous_X !== source previous_X`.
+- Render an italic "Edited" badge next to any prev-year field whose saved value differs from the resolved source.
+- Keep the existing auto-fill `useEffect` guard (`!hasSavedPreviousData`) so first-open still seeds from source; once user edits + autosaves, the override sticks and is never clobbered by re-resolution.
+- No new database columns — override status is purely derived.
 
-### Migration
+### Change 3 — "Re-sync from source" per field + bulk
 
-Update `public.extract_company_id_from_path(path text)` to:
-1. Take `folder := split_part(path, '/', 1)`
-2. If `folder` starts with `company-` → strip prefix, cast remainder to uuid (current behavior)
-3. **NEW**: Else if `folder` looks like a UUID (length 36, matches UUID regex) → cast directly to uuid
-4. Else return NULL
+- Add a small `RotateCcw` icon button next to each `previous_*` input, visible only when source value exists AND current form value differs from source. Click sets that single field back to source value and triggers autosave.
+- Add a "Re-sync all from source" link in the card header.
 
-The function stays `IMMUTABLE` and `SECURITY DEFINER`-safe (no behavior change for the legacy prefix case).
+### Behavior matrix
 
-### Files / changes
+| State | Field appearance |
+|---|---|
+| Auto-pulled from source | Normal input |
+| User manually edited | Italic value + "Edited" badge + reset icon |
+| Source canceled/deleted, no override | Re-resolves to next valid prior annual meeting |
+| Source canceled/deleted, has override | Override preserved (override = source of truth) |
 
-- **DB migration only** — replace `public.extract_company_id_from_path` with the dual-format version. No table, policy, or app changes needed.
-- No changes to `src/components/company/DocumentsTab.tsx` (already sanitizes paths and surfaces errors correctly).
-
-### Verification after deploy
-
-- Retry uploading the PDF on the Documents tab — should succeed.
-- Confirm existing files still open via the Download button.
-- Same fix automatically restores uploads for `filing-documents`, `ai-compliance-docs`, and `generated-documents` if any of those were also broken.
+### What is NOT changing
+- No new DB columns or migrations.
+- `AnnualMeetingWizard` initial autopopulation and `MeetingsTab` clone-insert untouched.
+- Current-year inputs, NR items, charts, autosave hook, all other meeting sections unchanged.
 
