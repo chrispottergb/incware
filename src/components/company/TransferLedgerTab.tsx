@@ -119,11 +119,11 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
 
   // Helper to find cert by shareholder + date
   const findCertIssued = (shareholderName: string, date: string, allTxns: any[]) => {
-    // First try direct certificate lookup
+    // Match cert issued on this date to this shareholder regardless of current status
+    // (the cert may have been later cancelled by a transfer, but it was still issued here).
     const directCert = certificates.find((c: any) =>
       c.issue_date === date &&
-      (c.shareholders?.name || "").toLowerCase().trim() === shareholderName.toLowerCase().trim() &&
-      c.status === "active"
+      (c.shareholders?.name || "").toLowerCase().trim() === shareholderName.toLowerCase().trim()
     );
     if (directCert) return directCert;
     // Look for sibling reissuance transaction's certificate
