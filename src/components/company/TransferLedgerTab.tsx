@@ -123,7 +123,8 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     // (the cert may have been later cancelled by a transfer, but it was still issued here).
     const directCert = certificates.find((c: any) =>
       c.issue_date === date &&
-      (c.shareholders?.name || "").toLowerCase().trim() === shareholderName.toLowerCase().trim()
+      (c.shareholders?.name || "").toLowerCase().trim() === shareholderName.toLowerCase().trim() &&
+      (c.status === "active" || c.status === "cancelled")
     );
     if (directCert) return directCert;
     // Look for sibling reissuance transaction's certificate
