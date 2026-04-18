@@ -1927,6 +1927,14 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     doc.setLineWidth(0.2);
     doc.rect(chartX, y, chartW, chartH, "S");
 
+    const fmtShort = (v: number) => {
+      const a = Math.abs(v);
+      const sign = v < 0 ? "-" : "";
+      if (a >= 1000000) return `${sign}$${(a / 1000000).toFixed(1)}M`;
+      if (a >= 1000) return `${sign}$${Math.round(a / 1000)}K`;
+      return `${sign}$${Math.round(a)}`;
+    };
+
     metrics.forEach((m, i) => {
       const gx = chartX + i * barGroupW + barGroupW * 0.1;
       const curH = (Math.abs(m.cur || 0) / maxVal) * (chartH - 10);
@@ -1939,6 +1947,13 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       // Previous year bar (gray)
       doc.setFillColor(160, 160, 160);
       doc.rect(gx + barW + 2, chartBottom - prevH, barW, prevH, "F");
+
+      // Dollar amount labels above bars
+      doc.setFontSize(6);
+      doc.setFont("Arial", "bold");
+      doc.setTextColor(40, 40, 40);
+      doc.text(fmtShort(Number(m.cur || 0)), gx + barW / 2, chartBottom - curH - 1, { align: "center" });
+      doc.text(fmtShort(Number(m.prev || 0)), gx + barW + 2 + barW / 2, chartBottom - prevH - 1, { align: "center" });
 
       // Label
       doc.setFontSize(8);
