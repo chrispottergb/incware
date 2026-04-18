@@ -254,6 +254,9 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     const certIssued = findCertIssued(transfereeName, t.transaction_date, allSorted);
     const certCancelled = findCertCancelled(transferorName || transfereeName, t.transaction_date, allSorted);
 
+    // Resolved certificate number for this entry (from the txn record or fallback cert).
+    const e_certNum = (t as any).issued_certificate_number || (certIssued as any)?.certificate_number || null;
+
     const treasuryBal = (authorizedShares ?? 0) - Math.max(0, totalIssued);
     // Always show the recipient's (transferee/holder's) resulting balance.
     // For transfers this is the person receiving shares; for issuances/redemptions it's the holder.
@@ -261,9 +264,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
     let shBal = Math.max(0, holderBalances[balanceKey] || 0);
     // If this row's issued cert was later cancelled (by a transfer surrender or
     // direct cancellation), the holder no longer holds those shares — display 0.
-    const resolvedRowCertNum = (t as any).issued_certificate_number
-      ?? (certIssued ? (certIssued as any).certificate_number : null);
-    if (resolvedRowCertNum != null && cancelledCertNums.has(String(resolvedRowCertNum))) {
+    if (e_certNum != null && cancelledCertNums.has(String(e_certNum))) {
       shBal = 0;
     }
     const ownershipPct = term.isLLC && totalIssued > 0 ? (Math.max(0, holderBalances[holderKey] || 0) / totalIssued) * 100 : null;
@@ -284,11 +285,8 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
         : certIssued ? `Cert #${(certIssued as any).certificate_number}` : "—",
       certCancelled: (() => {
         // Annotate the row whose cert was cancelled by a later transfer.
-        // Resolve this row's issued cert number first.
-        const resolvedCertNum = (t as any).issued_certificate_number
-          ?? (certIssued ? (certIssued as any).certificate_number : null);
-        if (resolvedCertNum != null && cancelledByMap[String(resolvedCertNum)]) {
-          return `Cancels #${cancelledByMap[String(resolvedCertNum)]}`;
+        if (e_certNum != null && cancelledByMap[String(e_certNum)]) {
+          return `Cancels #${cancelledByMap[String(e_certNum)]}`;
         }
         // Redemption / direct cancellation lookup (not via transfer surrender).
         if (certCancelled) return `Cancels #${(certCancelled as any).certificate_number}`;
