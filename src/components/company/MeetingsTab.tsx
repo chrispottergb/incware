@@ -463,6 +463,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meetings", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["prior_meeting_financials_for_autofill"] });
       toast.success("Meeting deleted.");
     },
     onError: (err: Error) => toast.error(err.message),
