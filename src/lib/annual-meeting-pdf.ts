@@ -98,8 +98,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   const formattedPriorDate = data.priorMeetingDate
     ? format(new Date(data.priorMeetingDate + "T12:00:00"), "MMMM d, yyyy")
     : "[Prior Meeting Date]";
-  const generatedDate = format(new Date(), "MMMM d, yyyy");
-  const footerText = `${fullName} — Annual Meeting Minutes — Generated: ${generatedDate}`;
+  const footerText = `${fullName} — Annual Meeting Minutes`;
 
   let sectionNumber = 0;
 

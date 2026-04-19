@@ -31,10 +31,6 @@ function addHeader(doc: jsPDF, companyName: string) {
   doc.setTextColor(80, 80, 80);
   doc.text(companyName, MARGIN, 43);
 
-  doc.setFontSize(8);
-  doc.setTextColor(150, 150, 150);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - R_MARGIN, 18, { align: "right" });
-
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
   doc.line(MARGIN, 47, pageWidth - R_MARGIN, 47);

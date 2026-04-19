@@ -69,9 +69,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   const formattedDate = data.meetingDate
     ? format(new Date(data.meetingDate + "T12:00:00"), "MMMM d, yyyy")
     : "[Date]";
-  const generatedDate = format(new Date(), "MMMM d, yyyy");
-
-  const footerText = `${fullName} — Organizational Meeting Minutes — Generated: ${generatedDate}`;
+  const footerText = `${fullName} — Organizational Meeting Minutes`;
 
   function addFooter(pageDoc: jsPDF) {
     const totalPages = pageDoc.getNumberOfPages();
