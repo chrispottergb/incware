@@ -591,4 +591,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   addFooter(doc);
 
   return doc;
+  } catch (err) {
+    console.error("generateAnnualMeetingPDF error:", err);
+    return doc;
+  }
 }
