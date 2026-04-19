@@ -2479,6 +2479,13 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Vehicles Sold During the Year — mirrors UI, sourced from meeting_vehicle_sales
+  console.log("[meeting-pdf-export] Vehicles Sold guard:", {
+    isShareholder,
+    isWrittenConsent,
+    hasVehiclesSold: !!data.vehiclesSold,
+    vehiclesSoldLength: data.vehiclesSold?.length ?? 0,
+    vehiclesSoldSample: data.vehiclesSold?.[0],
+  });
   if (!isShareholder && !isWrittenConsent && data.vehiclesSold && data.vehiclesSold.length > 0) {
     const soldEstHeight = 60 + data.vehiclesSold.length * 8;
     y = checkPageBreak(doc, y, soldEstHeight);
