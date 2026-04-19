@@ -76,11 +76,12 @@ export interface AnnualMeetingData {
 
 // Blue theme colors matching org meeting
 const BLUE = { r: 31, g: 78, b: 121 }; // #1F4E79
-const LIGHT_BLUE_BG = [214, 228, 240]; // #D6E4F0
-const BODY_COLOR = [40, 40, 40];
+const LIGHT_BLUE_BG: [number, number, number] = [214, 228, 240]; // #D6E4F0
+const BODY_COLOR: [number, number, number] = [40, 40, 40];
 
 export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
+  try {
   registerArialFont(doc);
   doc.setLineHeightFactor(1.15);
   const pw = doc.internal.pageSize.getWidth();
@@ -590,4 +591,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   addFooter(doc);
 
   return doc;
+  } catch (err) {
+    console.error("generateAnnualMeetingPDF error:", err);
+    return doc;
+  }
 }

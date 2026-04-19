@@ -1046,6 +1046,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
 
 export function exportMeetingMinutesPDF(data: MeetingData) {
   const doc = new jsPDF();
+  try {
   registerArialFont(doc);
   doc.setLineHeightFactor(1.15);
 
@@ -3233,6 +3234,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     addDFIFooter(doc, companyName);
   }
   return doc;
+  } catch (err) {
+    console.error("exportMeetingMinutesPDF error:", err);
+    return doc;
+  }
 }
 
 // Export individual section PDFs
