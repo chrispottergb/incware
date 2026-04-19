@@ -49,6 +49,7 @@ import { generatePromissoryNotePDF } from "@/lib/promissory-note-pdf";
 import { exportMeetingMinutesPDF } from "@/lib/meeting-pdf-export";
 import { savePdfReliably } from "@/lib/pdf-save";
 import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { Download, ArrowLeft } from "lucide-react";
 import {
   Dialog,
@@ -58,7 +59,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
 const STEPS = ["Entity", "Action", "Resolution", "Signers", "Review"];
 
