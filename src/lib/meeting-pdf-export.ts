@@ -1046,6 +1046,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
 
 export function exportMeetingMinutesPDF(data: MeetingData) {
   const doc = new jsPDF();
+  try {
   registerArialFont(doc);
   doc.setLineHeightFactor(1.15);
 
