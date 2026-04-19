@@ -2544,6 +2544,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
     y += 6;
   }
+
+  if (!isShareholder && !isWrittenConsent && data.assets && data.assets.length > 0) {
     y = checkPageBreak(doc, y, 20 + data.assets.length * 7);
     y = section("Equipment Transactions");
     doc.setFontSize(11);
