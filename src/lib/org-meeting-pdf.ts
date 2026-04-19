@@ -401,4 +401,8 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   addFooter(doc);
 
   return doc;
+  } catch (err) {
+    console.error("generateOrgMeetingPDF error:", err);
+    return doc;
+  }
 }
