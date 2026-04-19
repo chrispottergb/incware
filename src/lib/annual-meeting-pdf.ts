@@ -54,9 +54,14 @@ export interface AnnualMeetingData {
   // Leases
   leases: { property: string; lessor: string; lessee: string; monthlyAmount: string; term: string; leaseBack: string }[];
 
-  // Vehicles & Equipment
+  // Vehicles & Equipment (legacy hand-entered fields)
   vehicles: { yearMakeModel: string; vin: string; ownedLeased: string; primaryDriver: string; businessUsePct: string; notes: string }[];
   equipment: { description: string; manufacturer: string; ownedLeased: string; value: string; notes: string }[];
+
+  // Capital Asset Additions and Disposals (sourced from meeting_vehicle_purchases — mirrors corp PDF)
+  capitalAssets?: { year_make_model?: string; asset_type?: string; transaction_type?: string; vin?: string; date?: string; amount?: number | null; seller?: string }[];
+  // Vehicles Sold During the Year (sourced from meeting_vehicle_sales — mirrors corp PDF)
+  vehiclesSold?: { year_make_model?: string; vin?: string; sale_date?: string; sale_price?: number | null; buyer_name?: string; reason_for_sale?: string }[];
 
   // Benefits
   benefitPlans: { planType: string; provider: string; eligibility: string; eligibility_comments?: string; contribution: string; status: string }[];
@@ -460,27 +465,144 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     para("No leases were reviewed or authorized at this meeting.");
   }
 
-  // ===== SECTION 11: VEHICLES & EQUIPMENT =====
-  sectionHeading("Vehicles & Equipment");
+  // ===== SECTION 11: CAPITAL ASSET ADDITIONS AND DISPOSALS (mirrors corp PDF) =====
+  const hasCapitalAssets = (data.capitalAssets?.length ?? 0) > 0;
+  const hasVehiclesSold = (data.vehiclesSold?.length ?? 0) > 0;
+  const hasLegacyVehicles = data.vehicles.length > 0;
+  const hasLegacyEquipment = data.equipment.length > 0;
 
-  if (data.vehicles.length > 0) {
-    subHeading("Company Vehicles");
-    addTable(
-      ["Year / Make / Model", "VIN", "Owned / Leased", "Primary Driver", "Business Use %", "Notes"],
-      data.vehicles.map(v => [v.yearMakeModel || "[Enter]", v.vin || "[Enter]", v.ownedLeased || "[Enter]", v.primaryDriver || "[Enter]", v.businessUsePct || "[Enter]", v.notes || ""])
-    );
-  }
+  if (hasCapitalAssets || hasVehiclesSold || hasLegacyVehicles || hasLegacyEquipment) {
+    sectionHeading("Capital Asset Additions and Disposals During the Year");
 
-  if (data.equipment.length > 0) {
-    subHeading("Major Equipment");
-    addTable(
-      ["Description", "Manufacturer", "Owned / Leased", "Value", "Notes"],
-      data.equipment.map(e => [e.description || "[Enter]", e.manufacturer || "[Enter]", e.ownedLeased || "[Enter]", e.value || "[Enter]", e.notes || ""])
-    );
-  }
+    // Badge style maps (match corp PDF)
+    const typeBadgeStyles: Record<string, { bg: [number, number, number]; text: [number, number, number] }> = {
+      Vehicle:   { bg: [220, 232, 243], text: [26, 63, 92] },
+      Equipment: { bg: [225, 240, 232], text: [26, 69, 48] },
+    };
+    const txnBadgeStyles: Record<string, { bg: [number, number, number]; text: [number, number, number] }> = {
+      Purchased:           { bg: [232, 240, 220], text: [42, 64, 16] },
+      Sold:                { bg: [253, 232, 232], text: [92, 26, 26] },
+      "Trade-in":          { bg: [237, 232, 243], text: [46, 26, 92] },
+      Scrapped:            { bg: [229, 229, 229], text: [55, 55, 55] },
+      Donated:             { bg: [220, 240, 232], text: [20, 80, 60] },
+      "Insurance Totaled": { bg: [253, 220, 220], text: [120, 20, 20] },
+    };
+    const headerBg: [number, number, number] = [220, 232, 243];
+    const headerText: [number, number, number] = [26, 63, 92];
+    const headerBorder: [number, number, number] = [176, 200, 222];
+    const cellBorder: [number, number, number] = [205, 218, 234];
+    const altRowBg: [number, number, number] = [245, 248, 252];
 
-  if (data.vehicles.length === 0 && data.equipment.length === 0) {
-    para("No vehicles or equipment were reviewed at this meeting.");
+    if (hasCapitalAssets) {
+      whereasPara(`it is necessary for the company to obtain vehicles and equipment for the efficient operation of the business, and after discussion, the members decided that it would be in the best interests of the company to acquire or dispose of the following asset(s);`);
+      resolvedPara(`that the following capital asset transactions are hereby approved and ratified:`);
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Year / Make / Model", "Type", "Transaction", "VIN / Serial No.", "Date", "Amount", "Seller / Buyer"]],
+        body: data.capitalAssets!.map(v => [
+          v.year_make_model || "—",
+          v.asset_type || "Vehicle",
+          v.transaction_type || "Purchased",
+          v.vin || "—",
+          v.date ? new Date(v.date + "T00:00:00").toLocaleDateString() : "—",
+          v.amount != null ? `$${Number(v.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—",
+          v.seller || "—",
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: headerBg, textColor: headerText, fontSize: 9, fontStyle: "bold", lineWidth: 0.18, lineColor: headerBorder },
+        bodyStyles: { fontSize: 9.5, lineWidth: 0.18, lineColor: cellBorder, cellPadding: 4, font: "Arial" },
+        margin: { left: margin, right: rMargin },
+        styles: { overflow: "linebreak", cellWidth: "auto" },
+        didParseCell: (hd: any) => {
+          if (hd.section === "body") {
+            if (hd.row.index % 2 === 1) hd.cell.styles.fillColor = altRowBg;
+            if (hd.column.index === 1) {
+              const s = typeBadgeStyles[hd.cell.raw as string];
+              if (s) { hd.cell.styles.fillColor = s.bg; hd.cell.styles.textColor = s.text; hd.cell.styles.fontStyle = "bold"; }
+            }
+            if (hd.column.index === 2) {
+              const s = txnBadgeStyles[hd.cell.raw as string];
+              if (s) { hd.cell.styles.fillColor = s.bg; hd.cell.styles.textColor = s.text; hd.cell.styles.fontStyle = "bold"; }
+            }
+          }
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
+
+      doc.setFontSize(10);
+      doc.setFont("Arial", "italic");
+      doc.setTextColor(...BODY_COLOR as [number, number, number]);
+      const closingText = "A summary of total capital expenditures and disposals for the year is maintained in the financial statements and will be depreciated or adjusted in accordance with the company's accounting policies. Supporting documentation for all transactions is retained in the company's records.";
+      const closingLines = doc.splitTextToSize(closingText, contentWidth);
+      for (const line of closingLines) {
+        checkPage(14);
+        doc.text(line, margin, y);
+        y += 12;
+      }
+      y += 6;
+    }
+
+    // Legacy hand-entered vehicles fallback (when no capitalAssets data is wired)
+    if (!hasCapitalAssets && hasLegacyVehicles) {
+      subHeading("Company Vehicles");
+      addTable(
+        ["Year / Make / Model", "VIN", "Owned / Leased", "Primary Driver", "Business Use %", "Notes"],
+        data.vehicles.map(v => [v.yearMakeModel || "[Enter]", v.vin || "[Enter]", v.ownedLeased || "[Enter]", v.primaryDriver || "[Enter]", v.businessUsePct || "[Enter]", v.notes || ""])
+      );
+    }
+
+    if (hasLegacyEquipment) {
+      subHeading("Major Equipment");
+      addTable(
+        ["Description", "Manufacturer", "Owned / Leased", "Value", "Notes"],
+        data.equipment.map(e => [e.description || "[Enter]", e.manufacturer || "[Enter]", e.ownedLeased || "[Enter]", e.value || "[Enter]", e.notes || ""])
+      );
+    }
+
+    // Vehicles Sold During the Year — mirrors corp PDF
+    if (hasVehiclesSold) {
+      subHeading("Vehicles Sold During the Year");
+      whereasPara(`during the year the company sold or otherwise disposed of certain vehicles no longer required for business operations, and the members have reviewed each disposition;`);
+      resolvedPara(`that the following vehicle dispositions are hereby approved, ratified, and confirmed:`);
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Year / Make / Model", "VIN / Serial No.", "Sale Date", "Sale Price", "Buyer", "Reason"]],
+        body: data.vehiclesSold!.map(v => [
+          v.year_make_model || "—",
+          v.vin || "—",
+          v.sale_date ? new Date(v.sale_date + "T00:00:00").toLocaleDateString() : "—",
+          v.sale_price != null ? `$${Number(v.sale_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—",
+          v.buyer_name || "—",
+          v.reason_for_sale || "—",
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: headerBg, textColor: headerText, fontSize: 9, fontStyle: "bold", lineWidth: 0.18, lineColor: headerBorder },
+        bodyStyles: { fontSize: 9.5, lineWidth: 0.18, lineColor: cellBorder, cellPadding: 4, font: "Arial" },
+        margin: { left: margin, right: rMargin },
+        styles: { overflow: "linebreak", cellWidth: "auto" },
+        didParseCell: (hd: any) => {
+          if (hd.section === "body" && hd.row.index % 2 === 1) hd.cell.styles.fillColor = altRowBg;
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
+
+      doc.setFontSize(10);
+      doc.setFont("Arial", "italic");
+      doc.setTextColor(...BODY_COLOR as [number, number, number]);
+      const soldClosing = "Proceeds from vehicle dispositions and any resulting gains or losses have been recorded in the company's financial statements in accordance with the company's accounting policies. Supporting documentation, including bills of sale and title transfer records, is retained in the company's records.";
+      const soldClosingLines = doc.splitTextToSize(soldClosing, contentWidth);
+      for (const line of soldClosingLines) {
+        checkPage(14);
+        doc.text(line, margin, y);
+        y += 12;
+      }
+      y += 6;
+    }
+  } else {
+    sectionHeading("Capital Asset Additions and Disposals During the Year");
+    para("No capital asset transactions or vehicle dispositions were reviewed at this meeting.");
   }
 
   // ===== SECTION 12: EMPLOYEE BENEFIT PLANS =====
