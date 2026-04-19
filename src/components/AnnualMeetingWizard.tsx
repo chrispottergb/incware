@@ -18,10 +18,11 @@ import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import NonProfitGovernanceStep, { type NonProfitGovernanceData } from "@/components/meeting/NonProfitGovernanceStep";
 import Form1023EZCheck from "@/components/meeting/Form1023EZCheck";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
 const BASE_STEPS = [
   "Meeting Information",
