@@ -36,6 +36,7 @@ interface MeetingData {
   authorizedSigners?: any[];
   capitalAssets?: any[];
   vehicleLeases?: any[];
+  vehiclesSold?: any[];
   leaseTerminations?: any[];
   balanceEntries?: any[];
   priorYear?: {
