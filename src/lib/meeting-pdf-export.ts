@@ -300,7 +300,7 @@ function addAnnualMeetingFooter(doc: jsPDF, companyName: string, documentLabel: 
 
     doc.setFontSize(8);
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
-    doc.text(`${companyName} — ${documentLabel} — Generated: ${generatedDate}`, pw / 2, ph - 14, { align: "center" });
+    doc.text(`${companyName} — ${documentLabel}`, pw / 2, ph - 14, { align: "center" });
     doc.setTextColor(130, 130, 130);
     doc.text(`Page ${i} of ${pageCount}`, pw - R_MARGIN, ph - 14, { align: "right" });
   }

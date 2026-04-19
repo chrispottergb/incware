@@ -165,8 +165,7 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
 
   doc.setFontSize(9);
   doc.setTextColor(140, 140, 140);
-  doc.text(`Generated: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, cx, coverY + 25, { align: "center" });
-  doc.text("Prepared by EntityIQ", cx, coverY + 31, { align: "center" });
+  doc.text("Prepared by EntityIQ", cx, coverY + 25, { align: "center" });
 
   // Confidential
   doc.setFontSize(7);

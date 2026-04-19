@@ -54,10 +54,6 @@ function addHeader(doc: jsPDF, title: string, subtitle?: string, landscape = fal
   }
 
   // Date
-  doc.setFontSize(8);
-  doc.setTextColor(150, 150, 150);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - m.right, brandY, { align: "right" });
-
   // Divider line
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
