@@ -2478,7 +2478,72 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 6;
   }
 
-  if (!isShareholder && !isWrittenConsent && data.assets && data.assets.length > 0) {
+  // Vehicles Sold During the Year — mirrors UI, sourced from meeting_vehicle_sales
+  if (!isShareholder && !isWrittenConsent && data.vehiclesSold && data.vehiclesSold.length > 0) {
+    const soldEstHeight = 60 + data.vehiclesSold.length * 8;
+    y = checkPageBreak(doc, y, soldEstHeight);
+    y = section("Vehicles Sold During the Year");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, during the year the company sold or otherwise disposed of certain vehicles no longer required for business operations, and the ${isLLC ? "members" : "directors"} have reviewed each disposition;`,
+      `RESOLVED, that the following vehicle dispositions are hereby approved, ratified, and confirmed:`,
+      bt
+    );
+
+    const soldHeaderBg: [number, number, number] = [220, 232, 243];
+    const soldHeaderText: [number, number, number] = [26, 63, 92];
+    const soldHeaderBorder: [number, number, number] = [176, 200, 222];
+    const soldCellBorder: [number, number, number] = [205, 218, 234];
+    const soldAltRowBg: [number, number, number] = [245, 248, 252];
+
+    autoTable(doc, {
+      startY: y,
+      head: [["Year / Make / Model", "VIN / Serial No.", "Sale Date", "Sale Price", "Buyer", "Reason"]],
+      body: data.vehiclesSold.map((v: any) => [
+        v.year_make_model || "—",
+        v.vin || "—",
+        v.sale_date ? new Date(v.sale_date + "T00:00:00").toLocaleDateString() : "—",
+        v.sale_price != null ? fmt(v.sale_price) : "—",
+        v.buyer_name || "—",
+        v.reason_for_sale || "—",
+      ]),
+      theme: "grid",
+      headStyles: {
+        fillColor: soldHeaderBg,
+        textColor: soldHeaderText,
+        fontSize: 8.2,
+        fontStyle: "bold",
+        lineWidth: 0.18,
+        lineColor: soldHeaderBorder,
+      },
+      bodyStyles: {
+        fontSize: 8.8,
+        lineWidth: 0.18,
+        lineColor: soldCellBorder,
+        cellPadding: 2.5,
+      },
+      margin: { left: MARGIN, right: R_MARGIN },
+      styles: { overflow: "linebreak", cellWidth: "auto" },
+      pageBreak: "avoid",
+      didParseCell: (hookData: any) => {
+        if (hookData.section === "body" && hookData.row.index % 2 === 1) {
+          hookData.cell.styles.fillColor = soldAltRowBg;
+        }
+      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 4;
+
+    doc.setFontSize(10);
+    doc.setFont("Arial", "italic");
+    doc.setTextColor(...BODY_COLOR);
+    const soldClosing = "Proceeds from vehicle dispositions and any resulting gains or losses have been recorded in the company's financial statements in accordance with the company's accounting policies. Supporting documentation, including bills of sale and title transfer records, is retained in the corporate records.";
+    const soldClosingLines = doc.splitTextToSize(soldClosing, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+    for (const line of soldClosingLines) {
+      y = checkPageBreak(doc, y, 5);
+      doc.text(line, MARGIN, y);
+      y += 4.5;
+    }
+    y += 6;
+  }
     y = checkPageBreak(doc, y, 20 + data.assets.length * 7);
     y = section("Equipment Transactions");
     doc.setFontSize(11);
