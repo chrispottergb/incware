@@ -54,9 +54,14 @@ export interface AnnualMeetingData {
   // Leases
   leases: { property: string; lessor: string; lessee: string; monthlyAmount: string; term: string; leaseBack: string }[];
 
-  // Vehicles & Equipment
+  // Vehicles & Equipment (legacy hand-entered fields)
   vehicles: { yearMakeModel: string; vin: string; ownedLeased: string; primaryDriver: string; businessUsePct: string; notes: string }[];
   equipment: { description: string; manufacturer: string; ownedLeased: string; value: string; notes: string }[];
+
+  // Capital Asset Additions and Disposals (sourced from meeting_vehicle_purchases — mirrors corp PDF)
+  capitalAssets?: { year_make_model?: string; asset_type?: string; transaction_type?: string; vin?: string; date?: string; amount?: number | null; seller?: string }[];
+  // Vehicles Sold During the Year (sourced from meeting_vehicle_sales — mirrors corp PDF)
+  vehiclesSold?: { year_make_model?: string; vin?: string; sale_date?: string; sale_price?: number | null; buyer_name?: string; reason_for_sale?: string }[];
 
   // Benefits
   benefitPlans: { planType: string; provider: string; eligibility: string; eligibility_comments?: string; contribution: string; status: string }[];
