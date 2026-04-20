@@ -922,6 +922,7 @@ export type Database = {
           filing_date: string | null
           first_year_annual_meeting: number | null
           fiscal_year_end: string | null
+          has_preferred_shares: boolean | null
           id: string
           incorporation_date: string | null
           initial_directors_count: number | null
@@ -982,6 +983,7 @@ export type Database = {
           filing_date?: string | null
           first_year_annual_meeting?: number | null
           fiscal_year_end?: string | null
+          has_preferred_shares?: boolean | null
           id?: string
           incorporation_date?: string | null
           initial_directors_count?: number | null
@@ -1042,6 +1044,7 @@ export type Database = {
           filing_date?: string | null
           first_year_annual_meeting?: number | null
           fiscal_year_end?: string | null
+          has_preferred_shares?: boolean | null
           id?: string
           incorporation_date?: string | null
           initial_directors_count?: number | null
