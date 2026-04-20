@@ -1198,7 +1198,6 @@ export default function IncorporationTab({ company }: Props) {
                           min={0}
                           value={form.preferred_authorized_shares}
                           onChange={(e) => update("preferred_authorized_shares", e.target.value.replace(/[^\d]/g, ""))}
-                          onBlur={() => triggerSave()}
                           placeholder="0"
                         />
                       </div>
