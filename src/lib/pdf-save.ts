@@ -9,11 +9,11 @@ const isEmbeddedPreview = (() => {
   }
 })();
 
-function openPdfViewerTab(dataUri: string, filename: string): boolean {
+function openPdfViewerTab(blobUrl: string, filename: string): boolean {
   const win = window.open("", "_blank");
   if (!win) return false;
 
-  const safeDataUri = JSON.stringify(dataUri);
+  const safeBlobUrl = JSON.stringify(blobUrl);
   const safeFilename = JSON.stringify(filename);
 
   win.document.write(`<!doctype html>
