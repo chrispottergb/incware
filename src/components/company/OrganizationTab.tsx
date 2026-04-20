@@ -1089,6 +1089,15 @@ export default function OrganizationTab({ companyId, company }: Props) {
                       {!filingForm.s_election_date && (
                         <p className="mt-1 text-[11px] text-destructive">S Election Effective Date is required when enabled.</p>
                       )}
+                      <a
+                        href="https://www.irs.gov/forms-pubs/about-form-2553"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        <span>📄</span>
+                        <span>Download IRS Fax Cover Sheet (Form 2553)</span>
+                      </a>
                     </div>
                   )}
                 </div>
