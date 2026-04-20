@@ -213,6 +213,7 @@ export default function IncorporationTab({ company }: Props) {
     s_election_date: company.s_election_date ?? "",
     scheduled_annual_meeting: company.scheduled_annual_meeting ?? "",
     election_1244: company.election_1244 ?? false,
+    has_preferred_shares: company.has_preferred_shares ?? false,
     seal_type: company.seal_type ?? "no_seal",
     corporate_status: company.corporate_status ?? "current",
     verification_date: company.verification_date ?? "",
@@ -275,8 +276,9 @@ export default function IncorporationTab({ company }: Props) {
       par_value: company.par_value?.toString() ?? "",
       s_election_date: company.s_election_date ?? "",
       scheduled_annual_meeting: company.scheduled_annual_meeting ?? "",
-      election_1244: company.election_1244 ?? false,
-      seal_type: company.seal_type ?? "no_seal",
+    election_1244: company.election_1244 ?? false,
+    has_preferred_shares: company.has_preferred_shares ?? false,
+    seal_type: company.seal_type ?? "no_seal",
       corporate_status: company.corporate_status ?? "current",
       verification_date: company.verification_date ?? "",
       annual_report_year: company.annual_report_year?.toString() ?? "",
@@ -1151,6 +1153,21 @@ export default function IncorporationTab({ company }: Props) {
                   </div>
                 )}
               </>
+            )}
+
+            {/* Preferred Shares (Class B) — Corporation only */}
+            {equityCard.showAuthorizedShares && (
+              <div className="col-span-full flex items-start gap-2.5 rounded-md border border-border bg-muted/30 px-3 py-2.5">
+                <Checkbox
+                  id="has_preferred_shares"
+                  checked={form.has_preferred_shares}
+                  onCheckedChange={(v) => updateAndSave("has_preferred_shares", !!v)}
+                />
+                <div>
+                  <Label htmlFor="has_preferred_shares" className="cursor-pointer text-sm font-medium">Does this corporation have Preferred Shares (Class B)?</Label>
+                  <p className="text-[11px] text-muted-foreground">Check if this corporation has authorized a separate class of Preferred shares.</p>
+                </div>
+              </div>
             )}
 
             {/* S-election controls */}
