@@ -316,6 +316,11 @@ function openPdfViewerTab(blobUrl: string, filename: string): boolean {
 export async function savePdfReliably(doc: jsPDF, filename: string): Promise<void> {
   const pdfBlob: Blob = doc.output("blob");
 
+  if (!(pdfBlob instanceof Blob) || pdfBlob.size === 0) {
+    toast.error("Failed to generate PDF.");
+    return;
+  }
+
   // Try File System Access API first in every context.
   // This avoids Chrome download blockers because the user chooses the destination file directly.
   if ("showSaveFilePicker" in window) {
@@ -340,18 +345,35 @@ export async function savePdfReliably(doc: jsPDF, filename: string): Promise<voi
     }
   }
 
-  // Fall back to a helper tab using a blob URL (much more reliable than data URIs,
-  // which can be truncated/corrupted in Chrome for large PDFs — producing
-  // "Not a PDF or corrupted" errors when opened).
-  const blobUrl = URL.createObjectURL(pdfBlob);
+  // Prefer a direct blob download from the current user gesture.
+  // This avoids the helper tab path that can yield corrupted files in some browsers/viewers.
+  try {
+    const downloadUrl = URL.createObjectURL(pdfBlob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = filename;
+    a.rel = "noopener";
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+    }, 60 * 1000);
+    toast.success("PDF download started.");
+    return;
+  } catch (err) {
+    console.warn("Direct blob download failed, falling back:", err);
+  }
 
+  // Final fallback: helper tab using a blob URL.
+  const blobUrl = URL.createObjectURL(pdfBlob);
   const opened = openPdfViewerTab(blobUrl, filename);
   if (opened) {
     toast.info("PDF opened in a new tab. Click Download PDF in that tab.");
-    // Revoke the blob URL after a delay so the helper tab has time to use it.
     setTimeout(() => URL.revokeObjectURL(blobUrl), 5 * 60 * 1000);
   } else {
     URL.revokeObjectURL(blobUrl);
-    toast.error("Popup blocked. Please allow popups and try again.");
+    toast.error("Download blocked. Please allow downloads/popups and try again.");
   }
 }
