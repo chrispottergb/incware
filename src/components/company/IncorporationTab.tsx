@@ -1166,18 +1166,54 @@ export default function IncorporationTab({ company }: Props) {
 
             {/* Preferred Shares (Class B) — Corporation only */}
             {equityCard.showAuthorizedShares && (
-              <div className="col-span-full flex items-start gap-2.5 rounded-md border border-border bg-muted/30 px-3 py-2.5">
-                <Checkbox
-                  id="has_preferred_shares"
-                  checked={form.has_preferred_shares}
-                  onCheckedChange={(v) => updateAndSave("has_preferred_shares", !!v)}
-                />
-                <div>
-                  <Label htmlFor="has_preferred_shares" className="cursor-pointer text-sm font-medium">Does this corporation have Preferred Shares (Class B)?</Label>
-                  <p className="text-[11px] text-muted-foreground">Check if this corporation has authorized a separate class of Preferred shares.</p>
+              <div className="col-span-full rounded-md border border-border bg-muted/30 px-3 py-2.5">
+                <div className="flex items-start gap-2.5">
+                  <Checkbox
+                    id="has_preferred_shares"
+                    checked={form.has_preferred_shares}
+                    onCheckedChange={(v) => updateAndSave("has_preferred_shares", !!v)}
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="has_preferred_shares" className="cursor-pointer text-sm font-medium">Does this corporation have Preferred Shares (Class B)?</Label>
+                    <p className="text-[11px] text-muted-foreground">Check if this corporation has authorized a separate class of Preferred shares.</p>
+                  </div>
                 </div>
+                {form.has_preferred_shares && (
+                  <>
+                    <div className="mt-2 grid grid-cols-12 gap-2 pl-6">
+                      <div className="field-group col-span-6 sm:col-span-4">
+                        <Label className="field-label">Preferred Class Name</Label>
+                        <Input
+                          className="h-7 text-sm"
+                          value={form.preferred_class_name}
+                          onChange={(e) => update("preferred_class_name", e.target.value)}
+                          onBlur={() => triggerSave()}
+                          placeholder="Class B"
+                        />
+                      </div>
+                      <div className="field-group col-span-6 sm:col-span-4">
+                        <Label className="field-label"># Authorized Preferred Shares</Label>
+                        <Input
+                          className="h-7 text-sm"
+                          type="number"
+                          min={0}
+                          value={form.preferred_authorized_shares}
+                          onChange={(e) => update("preferred_authorized_shares", e.target.value.replace(/[^\d]/g, ""))}
+                          onBlur={() => triggerSave()}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    {(company as any).preferred_class_name && (company as any).preferred_authorized_shares ? (
+                      <p className="mt-2 pl-6 text-[11px] text-muted-foreground">
+                        ✓ {(company as any).preferred_class_name} Preferred — {Number((company as any).preferred_authorized_shares).toLocaleString()} authorized
+                      </p>
+                    ) : null}
+                  </>
+                )}
               </div>
             )}
+
 
             {/* S-election controls */}
             {/* LLC-S: date field only, no checkbox — election is implied by entity type (S-Corp moved to main grid) */}
