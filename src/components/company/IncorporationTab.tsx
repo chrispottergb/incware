@@ -1,5 +1,6 @@
 // LLC-SPECIFIC RULES ACTIVE — See LLC FORM RULES comments at lines ~99, ~948, ~1057 before editing. DO NOT regenerate this component from a template.
 import { useState, useCallback, useEffect, useRef } from "react";
+import { generateIRSFaxCoverSheet } from "@/lib/irs-fax-cover-pdf";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import SaveStatusIndicator from "@/components/SaveStatusIndicator";
 import { useZipLookup } from "@/hooks/useZipLookup";
@@ -1184,15 +1185,22 @@ export default function IncorporationTab({ company }: Props) {
                         {!form.s_election_date && (
                           <p className="mt-1 text-[11px] text-destructive">S Election Effective Date is required when enabled.</p>
                         )}
-                        <a
-                          href="https://www.irs.gov/forms-pubs/about-form-2553"
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          type="button"
+                          onClick={() =>
+                            generateIRSFaxCoverSheet({
+                              companyName: form.name,
+                              ein: company.ein || undefined,
+                              contactName: company.contact_full_name || undefined,
+                              contactPhone: company.contact_phone || undefined,
+                              contactEmail: company.contact_email || undefined,
+                            })
+                          }
                           className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors"
                         >
                           <span>📄</span>
-                          <span>Download IRS Fax Cover Sheet (Form 2553)</span>
-                        </a>
+                          <span className="underline">Download IRS Fax Cover Sheet (Form 2553)</span>
+                        </button>
                       </div>
                     )}
                   </div>
