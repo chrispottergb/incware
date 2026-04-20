@@ -202,7 +202,7 @@ function openPdfViewerTab(blobUrl: string, filename: string): boolean {
       </div>
     </div>
     <script>
-      const dataUri = ${safeDataUri};
+      const blobUrl = ${safeBlobUrl};
       const filename = ${safeFilename};
       const downloadBtn = document.getElementById('downloadBtn');
       const fallbackLink = document.getElementById('fallbackLink');
