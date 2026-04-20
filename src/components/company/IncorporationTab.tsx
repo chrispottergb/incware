@@ -1187,7 +1187,6 @@ export default function IncorporationTab({ company }: Props) {
                           className="h-7 text-sm"
                           value={form.preferred_class_name}
                           onChange={(e) => update("preferred_class_name", e.target.value)}
-                          onBlur={() => triggerSave()}
                           placeholder="Class B"
                         />
                       </div>
