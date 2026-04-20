@@ -284,7 +284,7 @@ function openPdfViewerTab(blobUrl: string, filename: string): boolean {
  * Reliable PDF save flow for restrictive browser + extension environments.
  */
 export async function savePdfReliably(doc: jsPDF, filename: string): Promise<void> {
-  const dataUri = doc.output("datauristring");
+  const pdfBlob: Blob = doc.output("blob");
 
   // Try File System Access API first in every context.
   // This avoids Chrome download blockers because the user chooses the destination file directly.
@@ -300,7 +300,7 @@ export async function savePdfReliably(doc: jsPDF, filename: string): Promise<voi
         ],
       });
       const writable = await handle.createWritable();
-      await writable.write(doc.output("blob"));
+      await writable.write(pdfBlob);
       await writable.close();
       toast.success("PDF saved.");
       return;
@@ -310,23 +310,18 @@ export async function savePdfReliably(doc: jsPDF, filename: string): Promise<voi
     }
   }
 
-  // In embedded preview environments, direct downloads are often blocked by extensions/policies.
-  // Open a top-level utility tab with a prominent Download PDF button and a small fallback link.
-  if (isEmbeddedPreview) {
-    const opened = openPdfViewerTab(dataUri, filename);
-    if (!opened) {
-      toast.error("Popup blocked. Please allow popups and try again.");
-      return;
-    }
-    toast.info("PDF opened in a new tab. Click Download PDF in that tab.");
-    return;
-  }
+  // Fall back to a helper tab using a blob URL (much more reliable than data URIs,
+  // which can be truncated/corrupted in Chrome for large PDFs — producing
+  // "Not a PDF or corrupted" errors when opened).
+  const blobUrl = URL.createObjectURL(pdfBlob);
 
-  // Use a dedicated helper tab as the universal fallback for consistent UX.
-  const opened = openPdfViewerTab(dataUri, filename);
+  const opened = openPdfViewerTab(blobUrl, filename);
   if (opened) {
     toast.info("PDF opened in a new tab. Click Download PDF in that tab.");
+    // Revoke the blob URL after a delay so the helper tab has time to use it.
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 5 * 60 * 1000);
   } else {
-    toast.error("Unable to save PDF. Please allow popups and try again.");
+    URL.revokeObjectURL(blobUrl);
+    toast.error("Popup blocked. Please allow popups and try again.");
   }
 }
