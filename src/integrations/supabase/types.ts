@@ -935,6 +935,8 @@ export type Database = {
           par_value: number | null
           par_value_type: string | null
           phone: string | null
+          preferred_authorized_shares: number | null
+          preferred_class_name: string | null
           registered_agent_address: string | null
           registered_agent_address_2: string | null
           registered_agent_appointed_date: string | null
@@ -996,6 +998,8 @@ export type Database = {
           par_value?: number | null
           par_value_type?: string | null
           phone?: string | null
+          preferred_authorized_shares?: number | null
+          preferred_class_name?: string | null
           registered_agent_address?: string | null
           registered_agent_address_2?: string | null
           registered_agent_appointed_date?: string | null
@@ -1057,6 +1061,8 @@ export type Database = {
           par_value?: number | null
           par_value_type?: string | null
           phone?: string | null
+          preferred_authorized_shares?: number | null
+          preferred_class_name?: string | null
           registered_agent_address?: string | null
           registered_agent_address_2?: string | null
           registered_agent_appointed_date?: string | null
