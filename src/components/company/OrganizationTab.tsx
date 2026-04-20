@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { generateIRSFaxCoverSheet } from "@/lib/irs-fax-cover-pdf";
 import { isLLCType } from "@/lib/entity-terminology";
 import { maskEin } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

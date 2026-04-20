@@ -1,5 +1,6 @@
 // LLC-SPECIFIC RULES ACTIVE — See LLC FORM RULES comments at lines ~99, ~948, ~1057 before editing. DO NOT regenerate this component from a template.
 import { useState, useCallback, useEffect, useRef } from "react";
+import { generateIRSFaxCoverSheet } from "@/lib/irs-fax-cover-pdf";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import SaveStatusIndicator from "@/components/SaveStatusIndicator";
 import { useZipLookup } from "@/hooks/useZipLookup";
