@@ -209,7 +209,7 @@ function openPdfViewerTab(blobUrl: string, filename: string): boolean {
 
       async function triggerDownload() {
         const a = document.createElement('a');
-        a.href = dataUri;
+        a.href = blobUrl;
         a.download = filename;
         a.style.display = 'none';
         document.body.appendChild(a);
@@ -227,7 +227,7 @@ function openPdfViewerTab(blobUrl: string, filename: string): boolean {
                 accept: { 'application/pdf': ['.pdf'] },
               }],
             });
-            const response = await fetch(dataUri);
+            const response = await fetch(blobUrl);
             const blob = await response.blob();
             const writable = await handle.createWritable();
             await writable.write(blob);
