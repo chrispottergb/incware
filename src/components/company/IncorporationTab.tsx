@@ -213,6 +213,7 @@ export default function IncorporationTab({ company }: Props) {
     s_election_date: company.s_election_date ?? "",
     scheduled_annual_meeting: company.scheduled_annual_meeting ?? "",
     election_1244: company.election_1244 ?? false,
+    has_preferred_shares: company.has_preferred_shares ?? false,
     seal_type: company.seal_type ?? "no_seal",
     corporate_status: company.corporate_status ?? "current",
     verification_date: company.verification_date ?? "",
