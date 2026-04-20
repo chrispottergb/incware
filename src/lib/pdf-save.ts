@@ -207,14 +207,37 @@ function openPdfViewerTab(blobUrl: string, filename: string): boolean {
       const downloadBtn = document.getElementById('downloadBtn');
       const fallbackLink = document.getElementById('fallbackLink');
 
+      let localBlobUrl = null;
+      let cachedBlob = null;
+
+      async function getBlob() {
+        if (cachedBlob) return cachedBlob;
+        const response = await fetch(blobUrl);
+        cachedBlob = await response.blob();
+        return cachedBlob;
+      }
+
+      async function getLocalBlobUrl() {
+        if (localBlobUrl) return localBlobUrl;
+        const blob = await getBlob();
+        // Re-create the blob URL inside this tab so it survives even if the
+        // opener tab revokes the original URL.
+        localBlobUrl = URL.createObjectURL(blob);
+        return localBlobUrl;
+      }
+
       async function triggerDownload() {
+        const url = await getLocalBlobUrl();
         const a = document.createElement('a');
-        a.href = blobUrl;
+        a.href = url;
         a.download = filename;
+        a.rel = 'noopener';
         a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
+        setTimeout(() => {
+          document.body.removeChild(a);
+        }, 0);
       }
 
       async function downloadPdf() {
@@ -227,8 +250,7 @@ function openPdfViewerTab(blobUrl: string, filename: string): boolean {
                 accept: { 'application/pdf': ['.pdf'] },
               }],
             });
-            const response = await fetch(blobUrl);
-            const blob = await response.blob();
+            const blob = await getBlob();
             const writable = await handle.createWritable();
             await writable.write(blob);
             await writable.close();
@@ -238,9 +260,17 @@ function openPdfViewerTab(blobUrl: string, filename: string): boolean {
           await triggerDownload();
         } catch (err) {
           if (err && err.name === 'AbortError') return;
-          await triggerDownload();
+          try {
+            await triggerDownload();
+          } catch (fallbackErr) {
+            console.error('PDF download failed:', fallbackErr);
+          }
         }
       }
+
+      // Pre-fetch the blob immediately so the file is fully in this tab's
+      // memory before the opener has any chance to revoke its blob URL.
+      getLocalBlobUrl().catch((e) => console.error('Pre-fetch blob failed:', e));
 
       if (downloadBtn) {
         downloadBtn.addEventListener('click', (e) => {
