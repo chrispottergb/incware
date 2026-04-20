@@ -552,6 +552,11 @@ export default function IncorporationTab({ company }: Props) {
             : (form.s_election_date || null),
           scheduled_annual_meeting: form.scheduled_annual_meeting || null,
           election_1244: form.election_1244,
+          has_preferred_shares: form.has_preferred_shares,
+          preferred_class_name: form.has_preferred_shares ? (form.preferred_class_name || "Class B") : null,
+          preferred_authorized_shares: form.has_preferred_shares && form.preferred_authorized_shares
+            ? parseInt(form.preferred_authorized_shares)
+            : null,
           seal_type: form.seal_type,
           corporate_status: form.corporate_status,
           verification_date: form.verification_date || null,
