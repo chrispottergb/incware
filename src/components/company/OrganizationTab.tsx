@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { generateIRSFaxCoverSheet } from "@/lib/irs-fax-cover-pdf";
+
 import { isLLCType } from "@/lib/entity-terminology";
 import { maskEin } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1090,22 +1090,6 @@ export default function OrganizationTab({ companyId, company }: Props) {
                       {!filingForm.s_election_date && (
                         <p className="mt-1 text-[11px] text-destructive">S Election Effective Date is required when enabled.</p>
                       )}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          generateIRSFaxCoverSheet({
-                            companyName: filingForm.name,
-                            ein: company.ein || undefined,
-                            contactName: company.contact_full_name || undefined,
-                            contactPhone: company.contact_phone || undefined,
-                            contactEmail: company.contact_email || undefined,
-                          })
-                        }
-                        className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        <span>📄</span>
-                        <span className="underline">Download IRS Fax Cover Sheet (Form 2553)</span>
-                      </button>
                     </div>
                   )}
                 </div>
