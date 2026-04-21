@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { generateIRSFaxCoverSheet } from "@/lib/irs-fax-cover-pdf";
 
 const DFI_FILING_URL =
   "https://dfi.wi.gov/Pages/BusinessServices/BusinessEntities/FileOnline.aspx";
@@ -104,12 +105,21 @@ const statusConfig: Record<string, { label: string; color: string; icon: typeof 
   complete: { label: "Complete", color: "bg-success/10 text-success border-success/20", icon: CheckCircle2 },
 };
 
+interface CompanyInfo {
+  name?: string | null;
+  ein?: string | null;
+  contact_full_name?: string | null;
+  contact_phone?: string | null;
+  contact_email?: string | null;
+}
+
 interface Props {
   companyId: string;
   entityType: string | undefined;
+  company?: CompanyInfo;
 }
 
-export default function FilingComplianceTab({ companyId, entityType }: Props) {
+export default function FilingComplianceTab({ companyId, entityType, company }: Props) {
   const queryClient = useQueryClient();
   const [uploadingItem, setUploadingItem] = useState<string | null>(null);
 
@@ -426,6 +436,25 @@ export default function FilingComplianceTab({ companyId, entityType }: Props) {
                     File Online
                   </a>
                 </Button>
+
+                {item.item_name.toLowerCase().includes("2553") && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      generateIRSFaxCoverSheet({
+                        companyName: company?.name || undefined,
+                        ein: company?.ein || undefined,
+                        contactName: company?.contact_full_name || undefined,
+                        contactPhone: company?.contact_phone || undefined,
+                        contactEmail: company?.contact_email || undefined,
+                      })
+                    }
+                    className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <span>📄</span>
+                    <span className="underline">Download IRS Fax Cover Sheet (Form 2553)</span>
+                  </button>
+                )}
               </div>
             </div>
           );
