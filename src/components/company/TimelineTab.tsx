@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
+import { isLLCType } from "@/lib/entity-terminology";
 
 type Company = Tables<"companies">;
 
