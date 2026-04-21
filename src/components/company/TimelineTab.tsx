@@ -387,16 +387,16 @@ export default function TimelineTab({ companyId, company }: Props) {
           <div>
             <div className="flex items-center gap-2">
               <Clock className="h-3.5 w-3.5 text-primary" />
-              <CardTitle className="card-section-title">Corporate Timeline</CardTitle>
+              <CardTitle className="card-section-title">{isLLC ? "Company Timeline" : "Corporate Timeline"}</CardTitle>
             </div>
             <CardDescription className="text-[11px] mt-0.5">
-              Auto-generated from corporate records + manual entries · {timeline.length} events
+              Auto-generated from {isLLC ? "company" : "corporate"} records + manual entries · {timeline.length} events
             </CardDescription>
           </div>
           <div className="flex items-center gap-1">
             <SectionPdfActions
               config={{
-                title: "Corporate Timeline",
+                title: isLLC ? "Company Timeline" : "Corporate Timeline",
                 companyName: company.name,
                 table: {
                   headers: ["Date", "Type", "Event", "Description"],
