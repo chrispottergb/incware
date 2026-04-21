@@ -367,7 +367,7 @@ export default function TimelineTab({ companyId, company }: Props) {
     });
 
     return entries.sort((a, b) => a.sortDate - b.sortDate);
-  }, [company, meetings, certificates, transactions, companyAssets, manualEvents]);
+  }, [company, meetings, certificates, transactions, companyAssets, manualEvents, isLLC]);
 
   // Group by year
   const groupedByYear = useMemo(() => {
