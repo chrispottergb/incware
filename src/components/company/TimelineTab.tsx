@@ -198,6 +198,7 @@ export default function TimelineTab({ companyId, company }: Props) {
   });
 
   // Build auto-generated timeline
+  const isLLC = isLLCType(company.entity_type);
   const timeline = useMemo<TimelineEntry[]>(() => {
     const entries: TimelineEntry[] = [];
 
@@ -207,8 +208,8 @@ export default function TimelineTab({ companyId, company }: Props) {
         id: "inc_date",
         date: company.incorporation_date,
         sortDate: new Date(company.incorporation_date + "T00:00:00").getTime(),
-        title: "Corporation Incorporated",
-        description: `${company.name} incorporated in ${company.state_of_incorporation || "state"} as a ${company.entity_type}`,
+        title: isLLC ? "Company Organized" : "Corporation Incorporated",
+        description: `${company.name} ${isLLC ? "organized" : "incorporated"} in ${company.state_of_incorporation || "state"} as a ${company.entity_type}`,
         type: "incorporation",
         source: "auto",
         icon: typeConfig.incorporation.icon,
