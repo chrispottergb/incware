@@ -241,6 +241,10 @@ function renderCorporationCertificate(doc: jsPDF, data: StockCertificateData) {
 }
 
 export async function generateStockCertificatePdf(data: StockCertificateData): Promise<jsPDF> {
+  console.log("RUNTIME TEST MARKER: stock-certificate-pdf.generateStockCertificatePdf", {
+    certificateNumber: data.certificateNumber,
+    isLLC: data.isLLC,
+  });
   const doc = new jsPDF({ orientation: "landscape" });
   registerArialFont(doc);
   doc.setLineHeightFactor(1.15);
