@@ -1,5 +1,4 @@
 import jsPDF from "jspdf";
-import eagleImg from "@/assets/certificate-eagle.png";
 import { savePdfReliably } from "./pdf-save";
 import { registerArialFont } from "@/lib/arial-font";
 
@@ -14,244 +13,243 @@ export interface StockCertificateData {
   issueDate: string;
   authorizedShares?: number | null;
   isLLC?: boolean;
-  membershipInterest?: number | null; // percentage for LLCs
+  membershipInterest?: number | null;
+  ownershipPercentSnapshot?: number | null;
+  liveOwnershipPercent?: number | null;
 }
 
-// Preload eagle image as base64
-let eagleBase64: string | null = null;
-const eagleReady = new Promise<string>((resolve) => {
-  const img = new Image();
-  img.crossOrigin = "anonymous";
-  img.onload = () => {
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(img, 0, 0);
-    eagleBase64 = canvas.toDataURL("image/png");
-    resolve(eagleBase64);
-  };
-  img.onerror = () => resolve("");
-  img.src = eagleImg;
-});
+const NAVY: [number, number, number] = [31, 78, 121];
+const STEEL_BLUE: [number, number, number] = [214, 228, 240];
+const TEXT: [number, number, number] = [35, 35, 35];
+const MUTED: [number, number, number] = [136, 136, 136];
 
-function drawOrnateRedBorder(doc: jsPDF) {
-  const pw = doc.internal.pageSize.getWidth();
-  const ph = doc.internal.pageSize.getHeight();
-  const brickRed: [number, number, number] = [192, 58, 43]; // #C03A2B
-
-  // Outer border
-  doc.setDrawColor(...brickRed);
-  doc.setLineWidth(3);
-  doc.rect(8, 8, pw - 16, ph - 16);
-
-  // Double inner border
-  doc.setLineWidth(1);
-  doc.rect(12, 12, pw - 24, ph - 24);
-  doc.setLineWidth(0.5);
-  doc.rect(15, 15, pw - 30, ph - 30);
-
-  // Corner ornaments (small squares at each corner)
-  const corners = [
-    [8, 8],
-    [pw - 14, 8],
-    [8, ph - 14],
-    [pw - 14, ph - 14],
-  ];
-  doc.setFillColor(...brickRed);
-  for (const [cx, cy] of corners) {
-    doc.rect(cx, cy, 6, 6, "F");
-  }
-
-  // Decorative line accents along edges
-  doc.setDrawColor(...brickRed);
-  doc.setLineWidth(0.3);
-  // Top & bottom horizontal accent lines
-  doc.line(20, 18, pw - 20, 18);
-  doc.line(20, ph - 18, pw - 20, ph - 18);
-  // Left & right vertical accent lines
-  doc.line(18, 20, 18, ph - 20);
-  doc.line(pw - 18, 20, pw - 18, ph - 20);
-}
-
-export async function generateStockCertificatePdf(data: StockCertificateData): Promise<jsPDF> {
-  const doc = new jsPDF({ orientation: "landscape" });
-
-  doc.setFontSize(40);
-  doc.text("TEST", 20, 20);
-
-  registerArialFont(doc);
-  doc.setLineHeightFactor(1.15);
-  const pw = doc.internal.pageSize.getWidth();
-  const ph = doc.internal.pageSize.getHeight();
-  const isLLC = data.isLLC || false;
-
-  // Draw ornate brick red border
-  drawOrnateRedBorder(doc);
-
-  // Load eagle
-  const eagle = eagleBase64 || (await eagleReady);
-
-  let y = 30;
-
-  // Eagle centered at top
-  if (eagle) {
-    const eagleW = 40;
-    const eagleH = 40;
-    doc.addImage(eagle, "PNG", pw / 2 - eagleW / 2, y - 5, eagleW, eagleH);
-    y += eagleH + 2;
-  }
-
-  // Certificate Number and Units/Shares boxes (flanking the eagle area)
-  doc.setFontSize(9);
-  doc.setFont("Arial", "bold");
-  doc.setTextColor(80, 80, 80);
-
-  // Left box: Certificate No.
-  doc.setDrawColor(150, 150, 150);
-  doc.setLineWidth(0.3);
-  doc.rect(30, 32, 45, 12);
-  doc.text("CERTIFICATE NO.", 52.5, 37, { align: "center" });
-  doc.setFontSize(11);
-  doc.setTextColor(30, 30, 30);
-  doc.text(`C-${String(data.certificateNumber).padStart(3, "0")}`, 52.5, 42, { align: "center" });
-
-  // Right box: Shares/Units
-  doc.setFontSize(9);
-  doc.setTextColor(80, 80, 80);
-  doc.rect(pw - 75, 32, 45, 12);
-  doc.text(isLLC ? "UNITS" : "SHARES", pw - 52.5, 37, { align: "center" });
-  doc.setFontSize(11);
-  doc.setTextColor(30, 30, 30);
-  doc.text(data.numShares.toLocaleString(), pw - 52.5, 42, { align: "center" });
-
-  // Company name banner
-  y += 4;
-  const bannerH = 14;
-  doc.setFillColor(240, 240, 240);
-  doc.setDrawColor(180, 180, 180);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(35, y, pw - 70, bannerH, 2, 2, "FD");
-  doc.setFontSize(16);
-  doc.setFont("Arial", "bold");
-  doc.setTextColor(30, 30, 30);
-  doc.text(data.companyName.toUpperCase(), pw / 2, y + bannerH / 2 + 2, { align: "center" });
-  y += bannerH + 4;
-
-  // State and type info
-  if (data.stateOfIncorporation) {
-    doc.setFontSize(9);
-    doc.setFont("Arial", "normal");
-    doc.setTextColor(80, 80, 80);
-    const orgWord = isLLC ? "Organized" : "Incorporated";
-    doc.text(`${orgWord} under the laws of the State of ${data.stateOfIncorporation}`, pw / 2, y, { align: "center" });
-    y += 6;
-  }
-
-  if (data.authorizedShares) {
-    doc.setFontSize(8);
-    doc.text(`Authorized ${isLLC ? "Units" : "Shares"}: ${data.authorizedShares.toLocaleString()}`, pw / 2, y, {
-      align: "center",
-    });
-    y += 6;
-  }
-
-  // Title
-  doc.setFontSize(14);
-  doc.setFont("Arial", "bold");
-  doc.setTextColor(192, 58, 43); // brick red
-  const certTitle = isLLC ? "MEMBERSHIP UNIT CERTIFICATE" : "STOCK CERTIFICATE";
-  doc.text(certTitle, pw / 2, y + 2, { align: "center" });
-  y += 12;
-
-  // "This Certifies that" heading
-  doc.setFontSize(13);
-  doc.setFont("Arial", "bolditalic");
-  doc.setTextColor(30, 30, 30);
-  doc.text("This Certifies that", pw / 2, y, { align: "center" });
-  y += 10;
-
-  // Holder name with underline
-  doc.setFontSize(14);
-  doc.setFont("Arial", "bold");
-  doc.text(data.shareholderName, pw / 2, y, { align: "center" });
-  const nameWidth = doc.getTextWidth(data.shareholderName);
-  doc.setDrawColor(100, 100, 100);
-  doc.setLineWidth(0.3);
-  doc.line(pw / 2 - nameWidth / 2 - 5, y + 1.5, pw / 2 + nameWidth / 2 + 5, y + 1.5);
-  y += 10;
-
-  // Body text - differs for LLC vs Corporation
-  doc.setFontSize(10);
-  doc.setFont("Arial", "normal");
-  doc.setTextColor(40, 40, 40);
-
-  let bodyText: string;
-  if (isLLC) {
-    const interestStr =
-      data.membershipInterest != null
-        ? ` representing ${data.membershipInterest.toFixed(2)}% membership interest in`
-        : " of the above named";
-    bodyText = `is the owner of ${data.numShares.toLocaleString()} ${data.shareClass} units${interestStr} ${data.companyName}, Limited Liability Company, transferable only on the books of the Company by the holder hereof in person or by duly authorized Attorney upon surrender of this Certificate properly endorsed. The transfer of the units in this Limited Liability Company is subject to restrictions as set forth in the Limited Liability Company Operating Agreement and the transfer of the actual ownership rights may be dependent upon the consent or approval of members in compliance with any provision provided in the Operating Agreement.`;
-  } else {
-    const parStr = data.parValue ? ` (Par Value: $${data.parValue.toFixed(2)} per share)` : " (No Par Value)";
-    bodyText = `is the registered holder of ${data.numShares.toLocaleString()} shares of ${data.shareClass} Stock${parStr} of ${data.companyName}, transferable only on the books of the Corporation by the holder hereof in person or by duly authorized Attorney upon surrender of this Certificate properly endorsed.`;
-  }
-
-  const lines = doc.splitTextToSize(bodyText, pw - 80);
-  doc.text(lines, pw / 2, y, { align: "center", maxWidth: pw - 80 });
-  y += lines.length * 5 + 8;
-
-  // "In Witness Whereof" clause
-  doc.setFontSize(11);
-  doc.setFont("Arial", "bolditalic");
-  doc.setTextColor(30, 30, 30);
-  doc.text("In Witness Whereof,", 40, y);
-  doc.setFont("Arial", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(40, 40, 40);
-  const entityLabel = isLLC ? "Limited Liability Company" : "Corporation";
-  const witnessText = ` the said ${entityLabel} has caused this Certificate to be executed`;
-  doc.text(witnessText, 40 + doc.getTextWidth("In Witness Whereof, ") - 2, y);
-  y += 5;
-
-  const rolesText = isLLC
-    ? "on its behalf by its duly authorized manager(s), member(s), officer(s), or agent(s)."
-    : "on its behalf by its duly authorized officer(s).";
-  doc.text(rolesText, 40, y);
-  y += 8;
-
-  // Date line
-  doc.setFontSize(10);
-  const dateStr = new Date(data.issueDate + "T00:00:00").toLocaleDateString("en-US", {
+function formatDate(date: string) {
+  return new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-  doc.text(`this ${dateStr}`, pw / 2, y, { align: "center" });
-  y += 6;
+}
 
-  // Signature lines
-  const sigY = Math.max(y + 10, ph - 42);
+function formatNumber(value: number) {
+  return Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 4 });
+}
+
+function drawArtDecoBorder(doc: jsPDF) {
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+
+  doc.setDrawColor(...NAVY);
+  doc.setLineWidth(1.2);
+  doc.rect(9, 9, pw - 18, ph - 18);
+  doc.setLineWidth(0.4);
+  doc.rect(13, 13, pw - 26, ph - 26);
+
+  doc.setFillColor(...NAVY);
+  const diamonds = [
+    [18, 18],
+    [pw - 18, 18],
+    [18, ph - 18],
+    [pw - 18, ph - 18],
+  ];
+  diamonds.forEach(([x, y]) => {
+    doc.triangle(x, y - 4, x + 4, y, x, y + 4, "F");
+    doc.triangle(x, y - 4, x - 4, y, x, y + 4, "F");
+  });
+}
+
+function drawSideBoxes(doc: jsPDF, unitsLabel: string, data: StockCertificateData) {
+  const pw = doc.internal.pageSize.getWidth();
+
+  doc.setFont("Arial", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(...NAVY);
+  doc.setDrawColor(...NAVY);
+  doc.setLineWidth(0.35);
+
+  doc.rect(24, 25, 48, 13);
+  doc.text("CERTIFICATE NO.", 48, 30, { align: "center" });
+  doc.setFontSize(10);
+  doc.setTextColor(...TEXT);
+  doc.text(`C-${String(data.certificateNumber).padStart(3, "0")}`, 48, 35, { align: "center" });
+
+  doc.setFontSize(8);
+  doc.setTextColor(...NAVY);
+  doc.rect(pw - 72, 25, 48, 13);
+  doc.text(unitsLabel, pw - 48, 30, { align: "center" });
+  doc.setFontSize(10);
+  doc.setTextColor(...TEXT);
+  doc.text(formatNumber(data.numShares), pw - 48, 35, { align: "center" });
+}
+
+function drawHeader(doc: jsPDF, data: StockCertificateData, title: string) {
+  const pw = doc.internal.pageSize.getWidth();
+
+  doc.setFont("Arial", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...NAVY);
+  doc.text("TEST CERTIFICATE LAYOUT", pw / 2, 22, { align: "center" });
+
+  doc.setFontSize(18);
+  doc.text(data.companyName.toUpperCase(), pw / 2, 48, { align: "center", maxWidth: pw - 80 });
+
+  doc.setFontSize(12);
+  doc.text(title, pw / 2, 61, { align: "center" });
+
+  doc.setDrawColor(...STEEL_BLUE);
+  doc.setLineWidth(1);
+  doc.line(76, 67, pw - 76, 67);
+}
+
+function underlineCenteredText(doc: jsPDF, text: string, x: number, y: number, padding = 6) {
+  doc.text(text, x, y, { align: "center" });
+  const width = doc.getTextWidth(text);
+  doc.setDrawColor(...NAVY);
+  doc.setLineWidth(0.35);
+  doc.line(x - width / 2 - padding, y + 2, x + width / 2 + padding, y + 2);
+}
+
+function getLLCStatePhrase(state?: string) {
+  const trimmed = state?.trim();
+  if (!trimmed) return "a limited liability company";
+  if (["WI", "WISCONSIN"].includes(trimmed.toUpperCase())) return "a Wisconsin limited liability company";
+  return `a ${trimmed} limited liability company`;
+}
+
+function drawSignatures(doc: jsPDF, data: StockCertificateData, isLLC: boolean) {
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+  const sigY = ph - 43;
+
   doc.setDrawColor(100, 100, 100);
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(0.35);
   doc.line(40, sigY, 120, sigY);
   doc.line(pw - 120, sigY, pw - 40, sigY);
-  doc.setFontSize(8);
-  doc.setTextColor(100, 100, 100);
 
-  if (isLLC) {
-    doc.text("Manager / Member", 80, sigY + 5, { align: "center" });
-    doc.text("Manager / Member", pw - 80, sigY + 5, { align: "center" });
-  } else {
-    doc.text("Secretary", 80, sigY + 5, { align: "center" });
-    doc.text("President", pw - 80, sigY + 5, { align: "center" });
+  doc.setFont("Arial", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...MUTED);
+  doc.text(isLLC ? "Authorized Signatory" : "Secretary", 80, sigY + 5, { align: "center" });
+  doc.text(data.companyName, 80, sigY + 10, { align: "center", maxWidth: 84 });
+  doc.text(isLLC ? "Member Acknowledgment" : "President", pw - 80, sigY + 5, { align: "center" });
+  doc.text(isLLC ? data.shareholderName : data.companyName, pw - 80, sigY + 10, { align: "center", maxWidth: 84 });
+}
+
+function drawFooter(doc: jsPDF) {
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+
+  doc.setFont("Arial", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(...MUTED);
+  doc.text("Prepared using EntityIQ Corporate Records Management", pw / 2, ph - 12, { align: "center" });
+}
+
+function renderLLCWhimsicalCertificate(doc: jsPDF, data: StockCertificateData) {
+  const pw = doc.internal.pageSize.getWidth();
+  const statePhrase = getLLCStatePhrase(data.stateOfIncorporation);
+  // Snapshot preferred; legacy certificates fall back to live calculation.
+  const ownershipPercent = data.ownershipPercentSnapshot ?? data.liveOwnershipPercent ?? data.membershipInterest ?? null;
+
+  drawArtDecoBorder(doc);
+  drawSideBoxes(doc, "UNITS", data);
+  drawHeader(doc, data, "MEMBERSHIP UNIT CERTIFICATE");
+
+  let y = 84;
+  doc.setTextColor(...TEXT);
+  doc.setFont("Arial", "normal");
+  doc.setFontSize(11);
+  doc.text("This certifies that:", pw / 2, y, { align: "center" });
+
+  y += 14;
+  doc.setFont("Arial", "bold");
+  doc.setFontSize(14);
+  underlineCenteredText(doc, data.shareholderName, pw / 2, y);
+
+  y += 14;
+  doc.setFont("Arial", "normal");
+  doc.setFontSize(11);
+  doc.text("is the record holder of", pw / 2, y, { align: "center" });
+
+  y += 12;
+  doc.setFont("Arial", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(...NAVY);
+  doc.text(`${formatNumber(data.numShares)} Membership Units`, pw / 2, y, { align: "center" });
+
+  y += 12;
+  doc.setFont("Arial", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(...TEXT);
+  const ownershipLine =
+    ownershipPercent != null
+      ? `representing a ${Number(ownershipPercent).toFixed(4).replace(/\.0+$/, "").replace(/(\.\d*?)0+$/, "$1")}% ownership interest in ${data.companyName}, ${statePhrase}.`
+      : `a holder of ${formatNumber(data.numShares)} Membership Units in ${data.companyName}, ${statePhrase}.`;
+  doc.text(doc.splitTextToSize(ownershipLine, pw - 82), pw / 2, y, { align: "center", maxWidth: pw - 82 });
+
+  y += 22;
+  doc.text(`Issued on ${formatDate(data.issueDate)}`, pw / 2, y, { align: "center" });
+
+  drawSignatures(doc, data, true);
+  drawFooter(doc);
+}
+
+function renderCorporationCertificate(doc: jsPDF, data: StockCertificateData) {
+  const pw = doc.internal.pageSize.getWidth();
+
+  drawArtDecoBorder(doc);
+  drawSideBoxes(doc, "SHARES", data);
+  drawHeader(doc, data, "STOCK CERTIFICATE");
+
+  let y = 83;
+  if (data.stateOfIncorporation) {
+    doc.setFont("Arial", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...MUTED);
+    doc.text(`Incorporated under the laws of the State of ${data.stateOfIncorporation}`, pw / 2, y, { align: "center" });
+    y += 10;
   }
 
-  // Footer
-  doc.setFontSize(7);
-  doc.setTextColor(150, 150, 150);
-  doc.text("Generated by EntityIQ — Corporate Records Management", pw / 2, ph - 12, { align: "center" });
+  doc.setTextColor(...TEXT);
+  doc.setFont("Arial", "bolditalic");
+  doc.setFontSize(13);
+  doc.text("This certifies that", pw / 2, y, { align: "center" });
+
+  y += 13;
+  doc.setFont("Arial", "bold");
+  doc.setFontSize(14);
+  underlineCenteredText(doc, data.shareholderName, pw / 2, y);
+
+  y += 13;
+  doc.setFont("Arial", "normal");
+  doc.setFontSize(10.5);
+  const parText = data.parValue != null ? `, par value $${Number(data.parValue).toFixed(2)} per share,` : ", no par value,";
+  const body = `is the registered holder of ${formatNumber(data.numShares)} shares of ${data.shareClass} Stock${parText} of ${data.companyName}, transferable only on the books of the Corporation by the holder hereof in person or by duly authorized attorney upon surrender of this Certificate properly endorsed.`;
+  doc.text(doc.splitTextToSize(body, pw - 82), pw / 2, y, { align: "center", maxWidth: pw - 82 });
+
+  y += 30;
+  doc.setFont("Arial", "bolditalic");
+  doc.setFontSize(11);
+  doc.text("In Witness Whereof,", 40, y);
+  doc.setFont("Arial", "normal");
+  doc.setFontSize(10);
+  doc.text("the said Corporation has caused this Certificate to be executed on its behalf by its duly authorized officer(s).", 40, y + 6, { maxWidth: pw - 80 });
+  doc.text(`Issued on ${formatDate(data.issueDate)}`, pw / 2, y + 19, { align: "center" });
+
+  drawSignatures(doc, data, false);
+  drawFooter(doc);
+}
+
+export async function generateStockCertificatePdf(data: StockCertificateData): Promise<jsPDF> {
+  const doc = new jsPDF({ orientation: "landscape" });
+  registerArialFont(doc);
+  doc.setLineHeightFactor(1.15);
+
+  if (data.isLLC) {
+    renderLLCWhimsicalCertificate(doc, data);
+  } else {
+    renderCorporationCertificate(doc, data);
+  }
 
   return doc;
 }
