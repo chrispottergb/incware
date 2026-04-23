@@ -86,10 +86,6 @@ function drawHeader(doc: jsPDF, data: StockCertificateData, title: string) {
   const pw = doc.internal.pageSize.getWidth();
 
   doc.setFont("Arial", "bold");
-  doc.setFontSize(9);
-  doc.setTextColor(...NAVY);
-  doc.text("TEST CERTIFICATE LAYOUT", pw / 2, 22, { align: "center" });
-
   doc.setFontSize(18);
   doc.text(data.companyName.toUpperCase(), pw / 2, 48, { align: "center", maxWidth: pw - 80 });
 
