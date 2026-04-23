@@ -7,28 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, BookOpen, Link2, Lock, Trash2, FileText, Award, RotateCcw, History } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -44,7 +25,8 @@ import { downloadBillOfSalePdf } from "@/lib/bill-of-sale-pdf";
 function mapTxTypeToEquityType(txType: string, isLLC: boolean, consideration: number): string | null {
   if (txType === "initial_issuance") return "Original Issue";
   if (["authorized_issuance", "consideration_issuance"].includes(txType)) return "Consideration for Shares";
-  if (["initial_contribution", "additional_contribution", "membership_issuance"].includes(txType)) return "Capital Contribution";
+  if (["initial_contribution", "additional_contribution", "membership_issuance"].includes(txType))
+    return "Capital Contribution";
   if (txType === "subscription_issuance") return "Subscription Purchase";
   if (["transfer", "interest_transfer", "interest_assignment", "share_exchange"].includes(txType)) {
     return consideration > 0 ? "Transfer (Sale)" : "Transfer (Gift)";
@@ -153,16 +135,27 @@ interface Props {
   onExternalOpenHistoricalChange?: (open: boolean) => void;
 }
 
-export default function StockLedgerTab({ companyId, entityType = "Corporation", externalOpenRecord, onExternalOpenRecordChange, externalOpenHistorical, onExternalOpenHistoricalChange }: Props) {
+export default function StockLedgerTab({
+  companyId,
+  entityType = "Corporation",
+  externalOpenRecord,
+  onExternalOpenRecordChange,
+  externalOpenHistorical,
+  onExternalOpenHistoricalChange,
+}: Props) {
   const queryClient = useQueryClient();
   const [dialogInternal, setDialogInternal] = useState(false);
   const [historicalDialogInternal, setHistoricalDialogInternal] = useState(false);
 
   // Support both internal and external dialog control
   const dialog = externalOpenRecord ?? dialogInternal;
-  const setDialog = (open: boolean) => { onExternalOpenRecordChange ? onExternalOpenRecordChange(open) : setDialogInternal(open); };
+  const setDialog = (open: boolean) => {
+    onExternalOpenRecordChange ? onExternalOpenRecordChange(open) : setDialogInternal(open);
+  };
   const historicalDialog = externalOpenHistorical ?? historicalDialogInternal;
-  const setHistoricalDialog = (open: boolean) => { onExternalOpenHistoricalChange ? onExternalOpenHistoricalChange(open) : setHistoricalDialogInternal(open); };
+  const setHistoricalDialog = (open: boolean) => {
+    onExternalOpenHistoricalChange ? onExternalOpenHistoricalChange(open) : setHistoricalDialogInternal(open);
+  };
   const [newShareholderName, setNewShareholderName] = useState("");
   const [correctionTarget, setCorrectionTarget] = useState<any>(null);
   const [correctionEntryNum, setCorrectionEntryNum] = useState<number | undefined>();
@@ -172,7 +165,11 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
   const { data: shareholders = [] } = useQuery({
     queryKey: ["shareholders", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("shareholders").select("id, name").eq("company_id", companyId).order("name");
+      const { data, error } = await supabase
+        .from("shareholders")
+        .select("id, name")
+        .eq("company_id", companyId)
+        .order("name");
       if (error) throw error;
       return data;
     },
@@ -182,7 +179,11 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
   const { data: company } = useQuery({
     queryKey: ["company-ledger", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("companies").select("name, par_value, par_value_type, authorized_shares, state_of_incorporation").eq("id", companyId).single();
+      const { data, error } = await supabase
+        .from("companies")
+        .select("name, par_value, par_value_type, authorized_shares, state_of_incorporation")
+        .eq("id", companyId)
+        .single();
       if (error) throw error;
       return data;
     },
@@ -192,7 +193,11 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
   const { data: certificates = [] } = useQuery({
     queryKey: ["stock_certificates_ledger", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("stock_certificates").select("*").eq("company_id", companyId).order("certificate_number");
+      const { data, error } = await supabase
+        .from("stock_certificates")
+        .select("*")
+        .eq("company_id", companyId)
+        .order("certificate_number");
       if (error) throw error;
       return data;
     },
@@ -246,14 +251,31 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
   const [assets, setAssets] = useState<{ description: string; value: string }[]>([]);
 
   const ISSUANCE_SET = new Set([
-    "initial_issuance", "authorized_issuance", "subscription_issuance",
-    "consideration_issuance", "share_dividend", "fractional_shares",
-    "preemptive_rights", "treasury_reissue", "reissuance", "Reissuance",
-    "Capital Contribution", "Initial Contribution", "initial_contribution",
-    "additional_contribution", "membership_issuance", "Issuance",
+    "initial_issuance",
+    "authorized_issuance",
+    "subscription_issuance",
+    "consideration_issuance",
+    "share_dividend",
+    "fractional_shares",
+    "preemptive_rights",
+    "treasury_reissue",
+    "reissuance",
+    "Reissuance",
+    "Capital Contribution",
+    "Initial Contribution",
+    "initial_contribution",
+    "additional_contribution",
+    "membership_issuance",
+    "Issuance",
     "opening_balance",
   ]);
-  const TRANSFER_SET_LOCAL = new Set(["transfer", "interest_transfer", "interest_assignment", "gift", "share_exchange"]);
+  const TRANSFER_SET_LOCAL = new Set([
+    "transfer",
+    "interest_transfer",
+    "interest_assignment",
+    "gift",
+    "share_exchange",
+  ]);
 
   const add = useMutation({
     mutationFn: async () => {
@@ -261,9 +283,13 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
       const numShares = parseFloat(form.num_shares) || 0;
       const parValText = form.par_value?.trim().toLowerCase();
       const isNoParValue = parValText && isNaN(parseFloat(parValText));
-      const parVal = isNoParValue ? null : (form.par_value ? parseFloat(form.par_value) : null);
-      const issuedCertNum: number | null = form.issued_certificate_number ? parseInt(form.issued_certificate_number) : null;
-      const surrenderedCertNum: number | null = form.surrendered_certificate_number ? parseInt(form.surrendered_certificate_number) : null;
+      const parVal = isNoParValue ? null : form.par_value ? parseFloat(form.par_value) : null;
+      const issuedCertNum: number | null = form.issued_certificate_number
+        ? parseInt(form.issued_certificate_number)
+        : null;
+      const surrenderedCertNum: number | null = form.surrendered_certificate_number
+        ? parseInt(form.surrendered_certificate_number)
+        : null;
 
       // Date guard: block transactions before opening_balance_date
       const { data: companyCheck } = await supabase
@@ -272,7 +298,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
         .eq("id", companyId)
         .maybeSingle();
       if (companyCheck?.opening_balance_date && form.transaction_date < companyCheck.opening_balance_date) {
-        throw new Error(`This entity has an opening balance established as of ${new Date(companyCheck.opening_balance_date + "T00:00:00").toLocaleDateString()}. Transactions cannot be dated before the opening balance date.`);
+        throw new Error(
+          `This entity has an opening balance established as of ${new Date(companyCheck.opening_balance_date + "T00:00:00").toLocaleDateString()}. Transactions cannot be dated before the opening balance date.`,
+        );
       }
 
       // Fetch fresh transactions and shareholders for validation (cache may be stale)
@@ -288,7 +316,14 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
 
       // Validate issuance limit
       if (ISSUANCE_SET.has(txType) && company?.authorized_shares != null) {
-        const REDUCTION_SET_LOCAL = new Set(["redemption", "reacquisition", "cancellation", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout"]);
+        const REDUCTION_SET_LOCAL = new Set([
+          "redemption",
+          "reacquisition",
+          "cancellation",
+          "treasury_acquisition",
+          "withdrawal_distribution",
+          "dissociation_buyout",
+        ]);
         const currentIssued = freshTransactions
           .filter((t: any) => t.status !== "corrected")
           .reduce((sum: number, t: any) => {
@@ -303,19 +338,26 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
 
       // Validate seller holdings for transfers
       if (TRANSFER_SET_LOCAL.has(txType) && form.from_shareholder) {
-        const REDUCTION_SET_LOCAL2 = new Set(["redemption", "reacquisition", "cancellation", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout"]);
+        const REDUCTION_SET_LOCAL2 = new Set([
+          "redemption",
+          "reacquisition",
+          "cancellation",
+          "treasury_acquisition",
+          "withdrawal_distribution",
+          "dissociation_buyout",
+        ]);
         const sellerCheck = validateSellerHoldings(
           form.from_shareholder,
           numShares,
           freshTransactions,
           freshShareholders as { id: string; name: string }[],
-          term
+          term,
         );
 
         // Fallback: ID-based holdings calculation for name mismatch resilience
         let idBasedHoldings = 0;
         const sellerId = (freshShareholders as { id: string; name: string }[]).find(
-          s => s.name.toLowerCase().trim() === form.from_shareholder.toLowerCase().trim()
+          (s) => s.name.toLowerCase().trim() === form.from_shareholder.toLowerCase().trim(),
         )?.id;
         if (sellerId) {
           idBasedHoldings = freshTransactions
@@ -328,8 +370,8 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
                 const toName = (t.to_shareholder || "").toLowerCase().trim();
                 const fromName = (t.from_shareholder || "").toLowerCase().trim();
                 const sellerName = form.from_shareholder.toLowerCase().trim();
-                if (t.shareholder_id === sellerId || toName === sellerName) sum += (t.num_shares || 0);
-                if (fromName === sellerName) sum -= (t.num_shares || 0);
+                if (t.shareholder_id === sellerId || toName === sellerName) sum += t.num_shares || 0;
+                if (fromName === sellerName) sum -= t.num_shares || 0;
               }
               return sum;
             }, 0);
@@ -364,35 +406,39 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
         }
       }
 
-      const { data: txn, error } = await supabase.from("share_transactions").insert({
-        company_id: companyId,
-        transaction_type: txType,
-        shareholder_id: resolvedShareholderId,
-        share_class: form.share_class,
-        num_shares: numShares,
-        price_per_share: form.price_per_share ? parseFloat(form.price_per_share) : null,
-        total_consideration: form.total_consideration ? parseFloat(form.total_consideration) : null,
-        consideration_type: form.consideration_type,
-        transaction_date: form.transaction_date,
-        effective_date: form.effective_date || form.transaction_date,
-        from_shareholder: form.from_shareholder || null,
-        to_shareholder: form.to_shareholder || null,
-        notes: isNoParValue 
-          ? [form.notes, `Par Value: ${form.par_value.trim()}`].filter(Boolean).join(" | ") 
-          : (form.notes || null),
-        par_value: parVal,
-        issued_certificate_number: issuedCertNum,
-        surrendered_certificate_number: surrenderedCertNum,
-        certificate_id: null,
-        ...(historicalDialog ? { entry_type: "historical" } : {}),
-      } as any).select("id").single();
+      const { data: txn, error } = await supabase
+        .from("share_transactions")
+        .insert({
+          company_id: companyId,
+          transaction_type: txType,
+          shareholder_id: resolvedShareholderId,
+          share_class: form.share_class,
+          num_shares: numShares,
+          price_per_share: form.price_per_share ? parseFloat(form.price_per_share) : null,
+          total_consideration: form.total_consideration ? parseFloat(form.total_consideration) : null,
+          consideration_type: form.consideration_type,
+          transaction_date: form.transaction_date,
+          effective_date: form.effective_date || form.transaction_date,
+          from_shareholder: form.from_shareholder || null,
+          to_shareholder: form.to_shareholder || null,
+          notes: isNoParValue
+            ? [form.notes, `Par Value: ${form.par_value.trim()}`].filter(Boolean).join(" | ")
+            : form.notes || null,
+          par_value: parVal,
+          issued_certificate_number: issuedCertNum,
+          surrendered_certificate_number: surrenderedCertNum,
+          certificate_id: null,
+          ...(historicalDialog ? { entry_type: "historical" } : {}),
+        } as any)
+        .select("id")
+        .single();
       if (error) throw error;
 
       // Save transaction assets if any
       if (assets.length > 0 && txn) {
         const assetRows = assets
-          .filter(a => a.description.trim())
-          .map(a => ({
+          .filter((a) => a.description.trim())
+          .map((a) => ({
             transaction_id: txn.id,
             company_id: companyId,
             description: a.description,
@@ -407,28 +453,42 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
       // Auto-create Equity Transaction (Bill of Sale) for all entity types
       if (txn) {
         const BILL_ISSUANCE_TYPES = new Set([
-          "initial_contribution", "additional_contribution", "membership_issuance",
-          "initial_issuance", "authorized_issuance", "subscription_issuance",
-          "consideration_issuance", "reissuance", "opening_balance",
+          "initial_contribution",
+          "additional_contribution",
+          "membership_issuance",
+          "initial_issuance",
+          "authorized_issuance",
+          "subscription_issuance",
+          "consideration_issuance",
+          "reissuance",
+          "opening_balance",
         ]);
         const BILL_TRANSFER_TYPES = new Set([
-          "interest_transfer", "interest_assignment", "transfer", "gift",
-          "share_exchange", "dissociation_buyout",
+          "interest_transfer",
+          "interest_assignment",
+          "transfer",
+          "gift",
+          "share_exchange",
+          "dissociation_buyout",
         ]);
-        const BILL_REDEMPTION_TYPES = new Set([
-          "redemption", "reacquisition", "cancellation",
-        ]);
+        const BILL_REDEMPTION_TYPES = new Set(["redemption", "reacquisition", "cancellation"]);
 
         if (BILL_ISSUANCE_TYPES.has(txType) || BILL_TRANSFER_TYPES.has(txType) || BILL_REDEMPTION_TYPES.has(txType)) {
-          const memberName = shareholders.find(s => s.id === resolvedShareholderId)?.name
-            || newShareholderName.trim() || form.to_shareholder || "";
+          const memberName =
+            shareholders.find((s) => s.id === resolvedShareholderId)?.name ||
+            newShareholderName.trim() ||
+            form.to_shareholder ||
+            "";
           const sellerName = BILL_TRANSFER_TYPES.has(txType)
-            ? (form.from_shareholder || "Transfer")
+            ? form.from_shareholder || "Transfer"
             : BILL_REDEMPTION_TYPES.has(txType)
-              ? (shareholders.find(s => s.id === resolvedShareholderId)?.name || newShareholderName.trim() || form.from_shareholder || "")
+              ? shareholders.find((s) => s.id === resolvedShareholderId)?.name ||
+                newShareholderName.trim() ||
+                form.from_shareholder ||
+                ""
               : "Original Issue";
           const buyerName = BILL_REDEMPTION_TYPES.has(txType)
-            ? (form.to_shareholder || company?.name || "Company")
+            ? form.to_shareholder || company?.name || "Company"
             : memberName;
 
           const consideration = form.total_consideration ? parseFloat(form.total_consideration) : 0;
@@ -471,12 +531,21 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
 
   const resetForm = () => {
     setForm({
-      transaction_type: defaultTxType, shareholder_id: "", share_class: "Common",
-      num_shares: "", price_per_share: "", total_consideration: "",
-      consideration_type: "cash", transaction_date: new Date().toISOString().split("T")[0],
+      transaction_type: defaultTxType,
+      shareholder_id: "",
+      share_class: "Common",
+      num_shares: "",
+      price_per_share: "",
+      total_consideration: "",
+      consideration_type: "cash",
+      transaction_date: new Date().toISOString().split("T")[0],
       effective_date: new Date().toISOString().split("T")[0],
-      from_shareholder: "", to_shareholder: "", notes: "",
-      par_value: "", issued_certificate_number: "", surrendered_certificate_number: "",
+      from_shareholder: "",
+      to_shareholder: "",
+      notes: "",
+      par_value: "",
+      issued_certificate_number: "",
+      surrendered_certificate_number: "",
     });
     setAssets([]);
     setNewShareholderName("");
@@ -484,12 +553,21 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
 
   const resetHistoricalForm = () => {
     setForm({
-      transaction_type: defaultTxType, shareholder_id: "", share_class: "Common",
-      num_shares: "", price_per_share: "", total_consideration: "",
-      consideration_type: "cash", transaction_date: "",
+      transaction_type: defaultTxType,
+      shareholder_id: "",
+      share_class: "Common",
+      num_shares: "",
+      price_per_share: "",
+      total_consideration: "",
+      consideration_type: "cash",
+      transaction_date: "",
       effective_date: "",
-      from_shareholder: "", to_shareholder: "", notes: "",
-      par_value: "", issued_certificate_number: "", surrendered_certificate_number: "",
+      from_shareholder: "",
+      to_shareholder: "",
+      notes: "",
+      par_value: "",
+      issued_certificate_number: "",
+      surrendered_certificate_number: "",
     });
     setAssets([]);
     setNewShareholderName("");
@@ -510,20 +588,28 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
   const todayStr = new Date().toISOString().split("T")[0];
   const effectiveDateIsFuture = form.effective_date > todayStr;
 
-  const isTransfer = ["transfer", "interest_transfer", "interest_assignment", "share_exchange"].includes(form.transaction_type);
+  const isTransfer = ["transfer", "interest_transfer", "interest_assignment", "share_exchange"].includes(
+    form.transaction_type,
+  );
   const showAssetGrid = ["property", "other", "services"].includes(form.consideration_type);
   const assetTotal = assets.reduce((sum, a) => sum + (parseFloat(a.value) || 0), 0);
 
   const handlePrintCertificate = async (t: any) => {
     const certNum = (t as any).issued_certificate_number;
-    const cert = certNum ? certificates.find((c: any) => c.certificate_number === certNum) : 
-                 t.certificate_id ? certificates.find((c: any) => c.id === t.certificate_id) : null;
-    if (!cert && !certNum) { toast.error("No certificate linked to this transaction."); return; }
+    const cert = certNum
+      ? certificates.find((c: any) => c.certificate_number === certNum)
+      : t.certificate_id
+        ? certificates.find((c: any) => c.id === t.certificate_id)
+        : null;
+    if (!cert && !certNum) {
+      toast.error("No certificate linked to this transaction.");
+      return;
+    }
     await downloadStockCertificatePdf({
       companyName: company?.name || "",
       stateOfIncorporation: company?.state_of_incorporation || undefined,
       certificateNumber: certNum || (cert as any)?.certificate_number || 0,
-      shareholderName: t.shareholders?.name || t.to_shareholder || "",
+      shareholderName: t.shareholders?.[0]?.name || t.shareholder_name || t.to_shareholder || "",
       numShares: t.num_shares || 0,
       shareClass: t.share_class || "Common",
       parValue: (t as any).par_value || (cert as any)?.par_value || company?.par_value,
@@ -550,8 +636,8 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
   const statuteDescription = isLLCType(entityType)
     ? "Wis. Stat. Ch. 183 — Uniform Limited Liability Company Law"
     : entityType === "S-Corp"
-    ? "Wis. Stat. Ch. 180 / IRC Subchapter S — S-Corporation share transactions"
-    : "Wis. Stat. § 180.0601 / § 180.0621 — Shares may not be issued until articles filed; consideration must be received";
+      ? "Wis. Stat. Ch. 180 / IRC Subchapter S — S-Corporation share transactions"
+      : "Wis. Stat. § 180.0601 / § 180.0621 — Shares may not be issued until articles filed; consideration must be received";
 
   return (
     <Card>
@@ -559,261 +645,460 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
         <div>
           <div className="flex items-center gap-2">
             <BookOpen className="h-3.5 w-3.5 text-primary" />
-            <CardTitle className="card-section-title">
-              {term.ledgerTitle}
-            </CardTitle>
-            <span title="Permanent record — entries cannot be edited or deleted"><Lock className="h-3 w-3 text-muted-foreground" /></span>
+            <CardTitle className="card-section-title">{term.ledgerTitle}</CardTitle>
+            <span title="Permanent record — entries cannot be edited or deleted">
+              <Lock className="h-3 w-3 text-muted-foreground" />
+            </span>
           </div>
-          <CardDescription className="text-[11px] mt-0.5">
-            {statuteDescription}
-          </CardDescription>
+          <CardDescription className="text-[11px] mt-0.5">{statuteDescription}</CardDescription>
           <p className="text-[10px] text-muted-foreground mt-1 max-w-xl leading-relaxed">
-            To build a complete transfer ledger, use Record Transaction for each transaction in chronological order. To establish current ownership for a newly picked-up client without full history, use Establish Current Ownership.
+            To build a complete transfer ledger, use Record Transaction for each transaction in chronological order. To
+            establish current ownership for a newly picked-up client without full history, use Establish Current
+            Ownership.
           </p>
         </div>
         <div className="flex items-center gap-1">
-          <SectionPdfActions config={{
-            title: term.ledgerTitle,
-            companyName: "",
-            statuteRef: statuteDescription,
-            landscape: true,
-            table: {
-              headers: ["#", "Date", "Type", term.shareholder, term.classLabel, term.shareUnit, "Par Value", term.pricePerUnit, "Total", "Consideration", "Cert #", "Notes"],
-              rows: (() => {
-                const sorted = [...transactions].sort((a, b) =>
-                  (a.transaction_date || "").localeCompare(b.transaction_date || "") || (a.created_at || "").localeCompare(b.created_at || "")
-                );
-                return sorted.map((t: any, i: number) => {
-                  const pdfTodayStr = new Date().toISOString().split("T")[0];
-                  const pdfEffDate = (t as any).effective_date || t.transaction_date || "";
-                  const pdfPending = pdfEffDate > pdfTodayStr;
-                  return [
-                  String(i + 1),
-                  t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—",
-                  (() => {
-                    let typeLabel = t.transaction_type?.replace(/_/g, " ") ?? "—";
-                    if (pdfPending) typeLabel += " [PENDING]";
-                    if ((t as any).entry_type === "historical") typeLabel += " [HISTORICAL]";
-                    return typeLabel;
-                  })(),
-                  t.shareholders?.name ?? "—",
-                  t.share_class,
-                  t.num_shares?.toLocaleString(),
-                  t.par_value != null ? `$${Number(t.par_value).toFixed(2)}` : (company?.par_value_type === "no_par" ? "No Par Value" : "—"),
-                  t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—",
-                  t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—",
-                  t.consideration_type ?? "—",
-                  [t.issued_certificate_number ? `Issued #${t.issued_certificate_number}` : "", t.surrendered_certificate_number ? `Surr #${t.surrendered_certificate_number}` : ""].filter(Boolean).join(", ") || "—",
-                  t.notes ?? "",
-                ]});
-              })(),
-              noteRows: (() => {
-                const sorted = [...transactions].sort((a, b) =>
-                  (a.transaction_date || "").localeCompare(b.transaction_date || "") || (a.created_at || "").localeCompare(b.created_at || "")
-                );
-                const notes: Record<number, string> = {};
-                sorted.forEach((t: any, i: number) => {
-                  if (t.transaction_type === "correction" && (t as any).correction_memo) {
-                    notes[i] = (t as any).correction_memo;
-                  }
-                });
-                return notes;
-              })(),
-            },
-          }} />
-          <Dialog open={dialog} onOpenChange={(open) => { setDialog(open); if (!open) resetForm(); }}>
+          <SectionPdfActions
+            config={{
+              title: term.ledgerTitle,
+              companyName: "",
+              statuteRef: statuteDescription,
+              landscape: true,
+              table: {
+                headers: [
+                  "#",
+                  "Date",
+                  "Type",
+                  term.shareholder,
+                  term.classLabel,
+                  term.shareUnit,
+                  "Par Value",
+                  term.pricePerUnit,
+                  "Total",
+                  "Consideration",
+                  "Cert #",
+                  "Notes",
+                ],
+                rows: (() => {
+                  const sorted = [...transactions].sort(
+                    (a, b) =>
+                      (a.transaction_date || "").localeCompare(b.transaction_date || "") ||
+                      (a.created_at || "").localeCompare(b.created_at || ""),
+                  );
+                  return sorted.map((t: any, i: number) => {
+                    const pdfTodayStr = new Date().toISOString().split("T")[0];
+                    const pdfEffDate = (t as any).effective_date || t.transaction_date || "";
+                    const pdfPending = pdfEffDate > pdfTodayStr;
+                    return [
+                      String(i + 1),
+                      t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—",
+                      (() => {
+                        let typeLabel = t.transaction_type?.replace(/_/g, " ") ?? "—";
+                        if (pdfPending) typeLabel += " [PENDING]";
+                        if ((t as any).entry_type === "historical") typeLabel += " [HISTORICAL]";
+                        return typeLabel;
+                      })(),
+                      t.shareholders?.name ?? "—",
+                      t.share_class,
+                      t.num_shares?.toLocaleString(),
+                      t.par_value != null
+                        ? `$${Number(t.par_value).toFixed(2)}`
+                        : company?.par_value_type === "no_par"
+                          ? "No Par Value"
+                          : "—",
+                      t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—",
+                      t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—",
+                      t.consideration_type ?? "—",
+                      [
+                        t.issued_certificate_number ? `Issued #${t.issued_certificate_number}` : "",
+                        t.surrendered_certificate_number ? `Surr #${t.surrendered_certificate_number}` : "",
+                      ]
+                        .filter(Boolean)
+                        .join(", ") || "—",
+                      t.notes ?? "",
+                    ];
+                  });
+                })(),
+                noteRows: (() => {
+                  const sorted = [...transactions].sort(
+                    (a, b) =>
+                      (a.transaction_date || "").localeCompare(b.transaction_date || "") ||
+                      (a.created_at || "").localeCompare(b.created_at || ""),
+                  );
+                  const notes: Record<number, string> = {};
+                  sorted.forEach((t: any, i: number) => {
+                    if (t.transaction_type === "correction" && (t as any).correction_memo) {
+                      notes[i] = (t as any).correction_memo;
+                    }
+                  });
+                  return notes;
+                })(),
+              },
+            }}
+          />
+          <Dialog
+            open={dialog}
+            onOpenChange={(open) => {
+              setDialog(open);
+              if (!open) resetForm();
+            }}
+          >
             <DialogTrigger asChild>
               <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => resetForm()}>
                 <Plus className="mr-1 h-3 w-3" /> Record Transaction
               </Button>
             </DialogTrigger>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="font-display text-base">{term.isLLC ? "Record Interest Transaction" : "Record Share Transaction"}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); add.mutate(); }} className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="font-display text-base">
+                  {term.isLLC ? "Record Interest Transaction" : "Record Share Transaction"}
+                </DialogTitle>
+              </DialogHeader>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  add.mutate();
+                }}
+                className="space-y-3"
+              >
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="field-group">
+                    <Label className="field-label">Transaction Type</Label>
+                    <Select
+                      value={form.transaction_type}
+                      onValueChange={(v) => setForm((p) => ({ ...p, transaction_type: v }))}
+                    >
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {transactionTypes.map((t) => (
+                          <SelectItem key={t.value} value={t.value}>
+                            <span>{t.label}</span>
+                            {t.statute && (
+                              <span className="ml-1.5 text-muted-foreground text-[10px]">({t.statute})</span>
+                            )}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">Date</Label>
+                    <DatePickerField
+                      value={form.transaction_date}
+                      onChange={(v) => setForm((p) => ({ ...p, transaction_date: v }))}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="field-group">
+                    <Label className="field-label">Effective Date</Label>
+                    <DatePickerField
+                      value={form.effective_date}
+                      onChange={(v) => setForm((p) => ({ ...p, effective_date: v }))}
+                    />
+                  </div>
+                  <div className="field-group flex items-end pb-1">
+                    {effectiveDateIsFuture ? (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/20"
+                      >
+                        Pending
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] bg-green-500/10 text-green-500 border-green-500/20"
+                      >
+                        Effective
+                      </Badge>
+                    )}
+                  </div>
+                </div>
                 <div className="field-group">
-                  <Label className="field-label">Transaction Type</Label>
-                  <Select value={form.transaction_type} onValueChange={(v) => setForm(p => ({ ...p, transaction_type: v }))}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                  <Label className="field-label">{term.shareholder}</Label>
+                  <Select
+                    value={form.shareholder_id}
+                    onValueChange={(v) => setForm((p) => ({ ...p, shareholder_id: v }))}
+                  >
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder={`Select ${term.shareholder.toLowerCase()}`} />
+                    </SelectTrigger>
                     <SelectContent>
-                      {transactionTypes.map(t => (
-                        <SelectItem key={t.value} value={t.value}>
-                          <span>{t.label}</span>
-                          {t.statute && <span className="ml-1.5 text-muted-foreground text-[10px]">({t.statute})</span>}
+                      {shareholders.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="field-group">
-                  <Label className="field-label">Date</Label>
-                  <DatePickerField value={form.transaction_date} onChange={(v) => setForm(p => ({ ...p, transaction_date: v }))} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="field-group">
-                  <Label className="field-label">Effective Date</Label>
-                  <DatePickerField value={form.effective_date} onChange={(v) => setForm(p => ({ ...p, effective_date: v }))} />
-                </div>
-                <div className="field-group flex items-end pb-1">
-                  {effectiveDateIsFuture ? (
-                    <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/20">Pending</Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-[10px] bg-green-500/10 text-green-500 border-green-500/20">Effective</Badge>
-                  )}
-                </div>
-              </div>
-              <div className="field-group">
-                  <Label className="field-label">{term.shareholder}</Label>
-                  <Select value={form.shareholder_id} onValueChange={(v) => setForm(p => ({ ...p, shareholder_id: v }))}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={`Select ${term.shareholder.toLowerCase()}`} /></SelectTrigger>
-                  <SelectContent>
-                    {shareholders.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              {isTransfer && (
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label">From</Label>
-                    <Input className="h-8 text-sm" value={form.from_shareholder} onChange={(e) => setForm(p => ({ ...p, from_shareholder: e.target.value }))} />
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">To</Label>
-                    <Input className="h-8 text-sm" value={form.to_shareholder} onChange={(e) => setForm(p => ({ ...p, to_shareholder: e.target.value }))} />
-                  </div>
-                </div>
-              )}
-              <div className={`grid gap-2 ${isLLCType(entityType) ? "grid-cols-3" : "grid-cols-4"}`}>
-                <div className="field-group">
-                  <Label className="field-label">{term.classLabel}</Label>
-                  <Select value={form.share_class} onValueChange={(v) => setForm(p => ({ ...p, share_class: v }))}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {term.classOptions.map(o => (
-                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">{term.numUnitsLabel}</Label>
-                  <Input className="h-8 text-sm" type="number" step="0.0001" value={form.num_shares} onChange={(e) => {
-                    const val = e.target.value;
-                    setForm(p => ({ ...p, num_shares: val, total_consideration: updateTotal(val, p.price_per_share) || p.total_consideration }));
-                  }} required />
-                </div>
-                {!isLLCType(entityType) && (
-                  <div className="field-group">
-                    <Label className="field-label">Par Value</Label>
-                    <Input className="h-8 text-sm" type="text" value={form.par_value} onChange={(e) => setForm(p => ({ ...p, par_value: e.target.value }))} placeholder={company?.par_value ? `$${company.par_value}` : "e.g. 1.00 or No Par Value"} />
+                {isTransfer && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">From</Label>
+                      <Input
+                        className="h-8 text-sm"
+                        value={form.from_shareholder}
+                        onChange={(e) => setForm((p) => ({ ...p, from_shareholder: e.target.value }))}
+                      />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">To</Label>
+                      <Input
+                        className="h-8 text-sm"
+                        value={form.to_shareholder}
+                        onChange={(e) => setForm((p) => ({ ...p, to_shareholder: e.target.value }))}
+                      />
+                    </div>
                   </div>
                 )}
-                <div className="field-group">
-                  <Label className="field-label">{term.pricePerUnit}</Label>
-                  <Input className="h-8 text-sm" type="number" step="0.01" value={form.price_per_share} onChange={(e) => {
-                    const val = e.target.value;
-                    setForm(p => ({ ...p, price_per_share: val, total_consideration: updateTotal(p.num_shares, val) || p.total_consideration }));
-                  }} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="field-group">
-                  <Label className="field-label">Total Consideration</Label>
-                  <Input className="h-8 text-sm" type="number" step="0.01" value={form.total_consideration} onChange={(e) => setForm(p => ({ ...p, total_consideration: e.target.value }))} />
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Consideration Type</Label>
-                  <Select value={form.consideration_type} onValueChange={(v) => setForm(p => ({ ...p, consideration_type: v }))}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {CONSIDERATION_TYPES.map(ct => <SelectItem key={ct.value} value={ct.value}>{ct.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Certificate Number Fields */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="field-group">
-                  <Label className="field-label">Issued Cert #</Label>
-                  <Input className="h-8 text-sm" type="number" value={form.issued_certificate_number} onChange={(e) => setForm(p => ({ ...p, issued_certificate_number: e.target.value }))} placeholder="Auto or manual" />
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Surrendered Cert #</Label>
-                  <Input className="h-8 text-sm" type="number" value={form.surrendered_certificate_number} onChange={(e) => setForm(p => ({ ...p, surrendered_certificate_number: e.target.value }))} placeholder="If applicable" />
-                </div>
-              </div>
-
-              {/* Asset Grid for Property / Other consideration */}
-              {showAssetGrid && (
-                <div className="space-y-2 rounded-md border border-border p-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="field-label font-semibold">Non-Cash Assets</Label>
-                    <Button type="button" size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => setAssets(prev => [...prev, { description: "", value: "" }])}>
-                      <Plus className="h-2.5 w-2.5 mr-1" /> Add Asset
-                    </Button>
+                <div className={`grid gap-2 ${isLLCType(entityType) ? "grid-cols-3" : "grid-cols-4"}`}>
+                  <div className="field-group">
+                    <Label className="field-label">{term.classLabel}</Label>
+                    <Select value={form.share_class} onValueChange={(v) => setForm((p) => ({ ...p, share_class: v }))}>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {term.classOptions.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  {assets.length === 0 && (
-                    <p className="text-[10px] text-muted-foreground">Click "Add Asset" to list non-cash consideration items.</p>
+                  <div className="field-group">
+                    <Label className="field-label">{term.numUnitsLabel}</Label>
+                    <Input
+                      className="h-8 text-sm"
+                      type="number"
+                      step="0.0001"
+                      value={form.num_shares}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setForm((p) => ({
+                          ...p,
+                          num_shares: val,
+                          total_consideration: updateTotal(val, p.price_per_share) || p.total_consideration,
+                        }));
+                      }}
+                      required
+                    />
+                  </div>
+                  {!isLLCType(entityType) && (
+                    <div className="field-group">
+                      <Label className="field-label">Par Value</Label>
+                      <Input
+                        className="h-8 text-sm"
+                        type="text"
+                        value={form.par_value}
+                        onChange={(e) => setForm((p) => ({ ...p, par_value: e.target.value }))}
+                        placeholder={company?.par_value ? `$${company.par_value}` : "e.g. 1.00 or No Par Value"}
+                      />
+                    </div>
                   )}
-                  {assets.map((asset, i) => (
-                    <div key={i} className="grid grid-cols-[1fr_100px_28px] gap-1.5 items-end">
-                      <Input className="h-7 text-xs" placeholder="Description" value={asset.description} onChange={(e) => {
-                        const updated = [...assets];
-                        updated[i] = { ...updated[i], description: e.target.value };
-                        setAssets(updated);
-                      }} />
-                      <Input className="h-7 text-xs" type="number" step="0.01" placeholder="Value" value={asset.value} onChange={(e) => {
-                        const updated = [...assets];
-                        updated[i] = { ...updated[i], value: e.target.value };
-                        setAssets(updated);
-                      }} />
-                      <Button type="button" size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setAssets(prev => prev.filter((_, idx) => idx !== i))}>
-                        <Trash2 className="h-3 w-3 text-destructive" />
+                  <div className="field-group">
+                    <Label className="field-label">{term.pricePerUnit}</Label>
+                    <Input
+                      className="h-8 text-sm"
+                      type="number"
+                      step="0.01"
+                      value={form.price_per_share}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setForm((p) => ({
+                          ...p,
+                          price_per_share: val,
+                          total_consideration: updateTotal(p.num_shares, val) || p.total_consideration,
+                        }));
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="field-group">
+                    <Label className="field-label">Total Consideration</Label>
+                    <Input
+                      className="h-8 text-sm"
+                      type="number"
+                      step="0.01"
+                      value={form.total_consideration}
+                      onChange={(e) => setForm((p) => ({ ...p, total_consideration: e.target.value }))}
+                    />
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">Consideration Type</Label>
+                    <Select
+                      value={form.consideration_type}
+                      onValueChange={(v) => setForm((p) => ({ ...p, consideration_type: v }))}
+                    >
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CONSIDERATION_TYPES.map((ct) => (
+                          <SelectItem key={ct.value} value={ct.value}>
+                            {ct.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Certificate Number Fields */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="field-group">
+                    <Label className="field-label">Issued Cert #</Label>
+                    <Input
+                      className="h-8 text-sm"
+                      type="number"
+                      value={form.issued_certificate_number}
+                      onChange={(e) => setForm((p) => ({ ...p, issued_certificate_number: e.target.value }))}
+                      placeholder="Auto or manual"
+                    />
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">Surrendered Cert #</Label>
+                    <Input
+                      className="h-8 text-sm"
+                      type="number"
+                      value={form.surrendered_certificate_number}
+                      onChange={(e) => setForm((p) => ({ ...p, surrendered_certificate_number: e.target.value }))}
+                      placeholder="If applicable"
+                    />
+                  </div>
+                </div>
+
+                {/* Asset Grid for Property / Other consideration */}
+                {showAssetGrid && (
+                  <div className="space-y-2 rounded-md border border-border p-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="field-label font-semibold">Non-Cash Assets</Label>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-6 text-[10px]"
+                        onClick={() => setAssets((prev) => [...prev, { description: "", value: "" }])}
+                      >
+                        <Plus className="h-2.5 w-2.5 mr-1" /> Add Asset
                       </Button>
                     </div>
-                  ))}
-                  {assets.length > 0 && (
-                    <div className="text-right text-xs font-semibold text-foreground">
-                      Asset Total: ${assetTotal.toFixed(2)}
-                    </div>
-                  )}
-                </div>
-              )}
+                    {assets.length === 0 && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Click "Add Asset" to list non-cash consideration items.
+                      </p>
+                    )}
+                    {assets.map((asset, i) => (
+                      <div key={i} className="grid grid-cols-[1fr_100px_28px] gap-1.5 items-end">
+                        <Input
+                          className="h-7 text-xs"
+                          placeholder="Description"
+                          value={asset.description}
+                          onChange={(e) => {
+                            const updated = [...assets];
+                            updated[i] = { ...updated[i], description: e.target.value };
+                            setAssets(updated);
+                          }}
+                        />
+                        <Input
+                          className="h-7 text-xs"
+                          type="number"
+                          step="0.01"
+                          placeholder="Value"
+                          value={asset.value}
+                          onChange={(e) => {
+                            const updated = [...assets];
+                            updated[i] = { ...updated[i], value: e.target.value };
+                            setAssets(updated);
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0"
+                          onClick={() => setAssets((prev) => prev.filter((_, idx) => idx !== i))}
+                        >
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                    {assets.length > 0 && (
+                      <div className="text-right text-xs font-semibold text-foreground">
+                        Asset Total: ${assetTotal.toFixed(2)}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              <div className="field-group">
-                <Label className="field-label">Notes</Label>
-                <Textarea className="text-sm min-h-[50px]" rows={2} value={form.notes} onChange={(e) => setForm(p => ({ ...p, notes: e.target.value }))} />
-              </div>
-              <Button type="submit" className="w-full" size="sm" disabled={add.isPending}>
-                {add.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                Record Transaction
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { resetHistoricalForm(); setHistoricalDialog(true); }}>
+                <div className="field-group">
+                  <Label className="field-label">Notes</Label>
+                  <Textarea
+                    className="text-sm min-h-[50px]"
+                    rows={2}
+                    value={form.notes}
+                    onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+                  />
+                </div>
+                <Button type="submit" className="w-full" size="sm" disabled={add.isPending}>
+                  {add.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                  Record Transaction
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs"
+            onClick={() => {
+              resetHistoricalForm();
+              setHistoricalDialog(true);
+            }}
+          >
             <History className="mr-1 h-3 w-3" /> Add Historical Transaction
           </Button>
-          <Dialog open={historicalDialog} onOpenChange={(open) => { setHistoricalDialog(open); if (!open) resetForm(); }}>
+          <Dialog
+            open={historicalDialog}
+            onOpenChange={(open) => {
+              setHistoricalDialog(open);
+              if (!open) resetForm();
+            }}
+          >
             <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="font-display text-base">Record Historical Transaction</DialogTitle>
               </DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); add.mutate(); }} className="space-y-3">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  add.mutate();
+                }}
+                className="space-y-3"
+              >
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Transaction Type</Label>
-                    <Select value={form.transaction_type} onValueChange={(v) => setForm(p => ({ ...p, transaction_type: v }))}>
-                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <Select
+                      value={form.transaction_type}
+                      onValueChange={(v) => setForm((p) => ({ ...p, transaction_type: v }))}
+                    >
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
-                        {transactionTypes.map(t => (
+                        {transactionTypes.map((t) => (
                           <SelectItem key={t.value} value={t.value}>
                             <span>{t.label}</span>
-                            {t.statute && <span className="ml-1.5 text-muted-foreground text-[10px]">({t.statute})</span>}
+                            {t.statute && (
+                              <span className="ml-1.5 text-muted-foreground text-[10px]">({t.statute})</span>
+                            )}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -821,91 +1106,181 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Transaction Date</Label>
-                    <DatePickerField value={form.transaction_date} onChange={(v) => setForm(p => ({ ...p, transaction_date: v }))} />
+                    <DatePickerField
+                      value={form.transaction_date}
+                      onChange={(v) => setForm((p) => ({ ...p, transaction_date: v }))}
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Effective Date</Label>
-                    <DatePickerField value={form.effective_date} onChange={(v) => setForm(p => ({ ...p, effective_date: v }))} />
+                    <DatePickerField
+                      value={form.effective_date}
+                      onChange={(v) => setForm((p) => ({ ...p, effective_date: v }))}
+                    />
                   </div>
                   <div className="field-group flex items-end pb-1">
                     {form.effective_date && form.effective_date > todayStr ? (
-                      <Badge variant="outline" className="text-[10px] border-amber-500/20 text-amber-500 bg-amber-500/10">Pending</Badge>
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] border-amber-500/20 text-amber-500 bg-amber-500/10"
+                      >
+                        Pending
+                      </Badge>
                     ) : form.effective_date ? (
-                      <Badge variant="outline" className="text-[10px] border-green-500/20 text-green-500 bg-green-500/10">Effective</Badge>
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] border-green-500/20 text-green-500 bg-green-500/10"
+                      >
+                        Effective
+                      </Badge>
                     ) : null}
                   </div>
                 </div>
                 <div className="field-group">
                   <Label className="field-label">{term.shareholder}</Label>
-                  <Select value={form.shareholder_id} onValueChange={(v) => { setForm(p => ({ ...p, shareholder_id: v })); setNewShareholderName(""); }}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={`Select existing ${term.shareholder.toLowerCase()}`} /></SelectTrigger>
+                  <Select
+                    value={form.shareholder_id}
+                    onValueChange={(v) => {
+                      setForm((p) => ({ ...p, shareholder_id: v }));
+                      setNewShareholderName("");
+                    }}
+                  >
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder={`Select existing ${term.shareholder.toLowerCase()}`} />
+                    </SelectTrigger>
                     <SelectContent>
-                      {shareholders.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                      {shareholders.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="field-group">
                   <Label className="field-label">Or add new {term.shareholder.toLowerCase()}</Label>
-                  <Input className="h-8 text-sm" placeholder={`Type new ${term.shareholder.toLowerCase()} name`} value={newShareholderName} onChange={(e) => { setNewShareholderName(e.target.value); if (e.target.value) setForm(p => ({ ...p, shareholder_id: "" })); }} />
+                  <Input
+                    className="h-8 text-sm"
+                    placeholder={`Type new ${term.shareholder.toLowerCase()} name`}
+                    value={newShareholderName}
+                    onChange={(e) => {
+                      setNewShareholderName(e.target.value);
+                      if (e.target.value) setForm((p) => ({ ...p, shareholder_id: "" }));
+                    }}
+                  />
                 </div>
                 {isTransfer && (
                   <div className="grid grid-cols-2 gap-2">
                     <div className="field-group">
                       <Label className="field-label">From</Label>
-                      <Input className="h-8 text-sm" value={form.from_shareholder} onChange={(e) => setForm(p => ({ ...p, from_shareholder: e.target.value }))} />
+                      <Input
+                        className="h-8 text-sm"
+                        value={form.from_shareholder}
+                        onChange={(e) => setForm((p) => ({ ...p, from_shareholder: e.target.value }))}
+                      />
                     </div>
                     <div className="field-group">
                       <Label className="field-label">To</Label>
-                      <Input className="h-8 text-sm" value={form.to_shareholder} onChange={(e) => setForm(p => ({ ...p, to_shareholder: e.target.value }))} />
+                      <Input
+                        className="h-8 text-sm"
+                        value={form.to_shareholder}
+                        onChange={(e) => setForm((p) => ({ ...p, to_shareholder: e.target.value }))}
+                      />
                     </div>
                   </div>
                 )}
                 <div className={`grid gap-2 ${isLLCType(entityType) ? "grid-cols-3" : "grid-cols-4"}`}>
                   <div className="field-group">
                     <Label className="field-label">{term.classLabel}</Label>
-                    <Select value={form.share_class} onValueChange={(v) => setForm(p => ({ ...p, share_class: v }))}>
-                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <Select value={form.share_class} onValueChange={(v) => setForm((p) => ({ ...p, share_class: v }))}>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
-                        {term.classOptions.map(o => (
-                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        {term.classOptions.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="field-group">
                     <Label className="field-label">{term.numUnitsLabel}</Label>
-                    <Input className="h-8 text-sm" type="number" step="0.0001" value={form.num_shares} onChange={(e) => {
-                      const val = e.target.value;
-                      setForm(p => ({ ...p, num_shares: val, total_consideration: updateTotal(val, p.price_per_share) || p.total_consideration }));
-                    }} required />
+                    <Input
+                      className="h-8 text-sm"
+                      type="number"
+                      step="0.0001"
+                      value={form.num_shares}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setForm((p) => ({
+                          ...p,
+                          num_shares: val,
+                          total_consideration: updateTotal(val, p.price_per_share) || p.total_consideration,
+                        }));
+                      }}
+                      required
+                    />
                   </div>
                   {!isLLCType(entityType) && (
                     <div className="field-group">
                       <Label className="field-label">Par Value</Label>
-                      <Input className="h-8 text-sm" type="text" value={form.par_value} onChange={(e) => setForm(p => ({ ...p, par_value: e.target.value }))} placeholder={company?.par_value ? `$${company.par_value}` : "e.g. 1.00 or No Par Value"} />
+                      <Input
+                        className="h-8 text-sm"
+                        type="text"
+                        value={form.par_value}
+                        onChange={(e) => setForm((p) => ({ ...p, par_value: e.target.value }))}
+                        placeholder={company?.par_value ? `$${company.par_value}` : "e.g. 1.00 or No Par Value"}
+                      />
                     </div>
                   )}
                   <div className="field-group">
                     <Label className="field-label">{term.pricePerUnit}</Label>
-                    <Input className="h-8 text-sm" type="number" step="0.01" value={form.price_per_share} onChange={(e) => {
-                      const val = e.target.value;
-                      setForm(p => ({ ...p, price_per_share: val, total_consideration: updateTotal(p.num_shares, val) || p.total_consideration }));
-                    }} />
+                    <Input
+                      className="h-8 text-sm"
+                      type="number"
+                      step="0.01"
+                      value={form.price_per_share}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setForm((p) => ({
+                          ...p,
+                          price_per_share: val,
+                          total_consideration: updateTotal(p.num_shares, val) || p.total_consideration,
+                        }));
+                      }}
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Total Consideration</Label>
-                    <Input className="h-8 text-sm" type="number" step="0.01" value={form.total_consideration} onChange={(e) => setForm(p => ({ ...p, total_consideration: e.target.value }))} />
+                    <Input
+                      className="h-8 text-sm"
+                      type="number"
+                      step="0.01"
+                      value={form.total_consideration}
+                      onChange={(e) => setForm((p) => ({ ...p, total_consideration: e.target.value }))}
+                    />
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Consideration Type</Label>
-                    <Select value={form.consideration_type} onValueChange={(v) => setForm(p => ({ ...p, consideration_type: v }))}>
-                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <Select
+                      value={form.consideration_type}
+                      onValueChange={(v) => setForm((p) => ({ ...p, consideration_type: v }))}
+                    >
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
-                        {CONSIDERATION_TYPES.map(ct => <SelectItem key={ct.value} value={ct.value}>{ct.label}</SelectItem>)}
+                        {CONSIDERATION_TYPES.map((ct) => (
+                          <SelectItem key={ct.value} value={ct.value}>
+                            {ct.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -913,16 +1288,33 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Issued Cert #</Label>
-                    <Input className="h-8 text-sm" type="number" value={form.issued_certificate_number} onChange={(e) => setForm(p => ({ ...p, issued_certificate_number: e.target.value }))} placeholder="Auto or manual" />
+                    <Input
+                      className="h-8 text-sm"
+                      type="number"
+                      value={form.issued_certificate_number}
+                      onChange={(e) => setForm((p) => ({ ...p, issued_certificate_number: e.target.value }))}
+                      placeholder="Auto or manual"
+                    />
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Surrendered Cert #</Label>
-                    <Input className="h-8 text-sm" type="number" value={form.surrendered_certificate_number} onChange={(e) => setForm(p => ({ ...p, surrendered_certificate_number: e.target.value }))} placeholder="If applicable" />
+                    <Input
+                      className="h-8 text-sm"
+                      type="number"
+                      value={form.surrendered_certificate_number}
+                      onChange={(e) => setForm((p) => ({ ...p, surrendered_certificate_number: e.target.value }))}
+                      placeholder="If applicable"
+                    />
                   </div>
                 </div>
                 <div className="field-group">
                   <Label className="field-label">Notes</Label>
-                  <Textarea className="text-sm min-h-[50px]" rows={2} value={form.notes} onChange={(e) => setForm(p => ({ ...p, notes: e.target.value }))} />
+                  <Textarea
+                    className="text-sm min-h-[50px]"
+                    rows={2}
+                    value={form.notes}
+                    onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+                  />
                 </div>
                 <Button type="submit" className="w-full" size="sm" disabled={add.isPending || !form.transaction_date}>
                   {add.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
@@ -935,7 +1327,9 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
       </CardHeader>
       <CardContent className="px-4 pb-4">
         {isLoading ? (
-          <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          <div className="flex justify-center py-6">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
         ) : transactions.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-6">No transactions recorded yet.</p>
         ) : (
@@ -961,15 +1355,30 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
               <TableBody>
                 {(() => {
                   // Compute per-shareholder running balance chronologically
-                  const sorted = [...transactions].sort((a, b) =>
-                    (a.transaction_date || "").localeCompare(b.transaction_date || "") || (a.created_at || "").localeCompare(b.created_at || "")
+                  const sorted = [...transactions].sort(
+                    (a, b) =>
+                      (a.transaction_date || "").localeCompare(b.transaction_date || "") ||
+                      (a.created_at || "").localeCompare(b.created_at || ""),
                   );
                   const balances: Record<string, number> = {};
                   const balanceMap = new Map<string, number>();
                   const entryNumMap = new Map<string, number>();
 
-                  const TRANSFER_SET = new Set(["transfer", "interest_transfer", "interest_assignment", "share_exchange", "gift"]);
-                  const REDUCTION_SET = new Set(["redemption", "reacquisition", "cancellation", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout"]);
+                  const TRANSFER_SET = new Set([
+                    "transfer",
+                    "interest_transfer",
+                    "interest_assignment",
+                    "share_exchange",
+                    "gift",
+                  ]);
+                  const REDUCTION_SET = new Set([
+                    "redemption",
+                    "reacquisition",
+                    "cancellation",
+                    "treasury_acquisition",
+                    "withdrawal_distribution",
+                    "dissociation_buyout",
+                  ]);
 
                   // Map corrected_by_id to correction entry number for cross-referencing
                   const correctedByMap = new Map<string, string>();
@@ -993,7 +1402,10 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
 
                     // Skip corrected or pending entries from balance accumulation
                     if ((t as any).status === "corrected" || isPendingBal) {
-                      balanceMap.set(t.id, balances[shName || (t.to_shareholder || "unknown").toLowerCase().trim()] || 0);
+                      balanceMap.set(
+                        t.id,
+                        balances[shName || (t.to_shareholder || "unknown").toLowerCase().trim()] || 0,
+                      );
                       return;
                     }
 
@@ -1043,143 +1455,227 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
                     const isCorrection = t.transaction_type === "correction";
                     const effectiveDate = (t as any).effective_date || t.transaction_date || "";
                     const isPending = effectiveDate > txTodayStr && !isCorrected;
-                    const correctsEntryNum = isCorrection && (t as any).corrects_id ? entryNumMap.get((t as any).corrects_id) : null;
+                    const correctsEntryNum =
+                      isCorrection && (t as any).corrects_id ? entryNumMap.get((t as any).corrects_id) : null;
                     const correctedByEntryNum = isCorrected ? correctedByMap.get(t.id) : null;
                     const correctionMemo = (t as any).correction_memo || null;
 
                     return (
-                    <React.Fragment key={t.id}>
-                    <TableRow className={`${isCorrected ? "opacity-50" : ""} ${(t as any).entry_type === "opening_balance" ? "italic bg-muted/30" : ""}`}>
-                      <TableCell className="text-xs font-mono text-muted-foreground">{entryNumMap.get(t.id)}</TableCell>
-                      <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>{t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 capitalize ${isCorrected ? "line-through" : ""}`}>
-                            {(t as any).entry_type === "opening_balance"
-                              ? `Opening Balance (as of ${t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—"})`
-                              : t.transaction_type?.replace(/_/g, " ")}
-                          </Badge>
-                          {isCorrected && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Badge variant="destructive" className="text-[9px] px-1 py-0">Corrected</Badge>
-                                </TooltipTrigger>
-                                <TooltipContent><p className="text-xs">See entry #{correctedByEntryNum || "?"}</p></TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                          {isCorrection && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Badge className="text-[9px] px-1 py-0 bg-accent text-accent-foreground">Correction</Badge>
-                                </TooltipTrigger>
-                                <TooltipContent><p className="text-xs">Corrects entry #{correctsEntryNum || "?"}</p></TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                          {isPending && (
-                            <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-500/20 text-amber-500 bg-amber-500/10">Pending</Badge>
-                          )}
-                          {(t as any).entry_type === "historical" && (
-                            <Badge variant="outline" className="text-[9px] px-1 py-0 border-primary/30 text-primary bg-primary/10">Historical</Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>{t.shareholders?.name ?? t.to_shareholder ?? "—"}</TableCell>
-                      <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>{t.share_class}</TableCell>
-                      <TableCell className={`text-xs text-right ${isCorrected ? "line-through" : ""}`}>{t.num_shares?.toLocaleString()}</TableCell>
-                      <TableCell className="text-xs text-right">{(t as any).par_value != null ? `$${Number((t as any).par_value).toFixed(2)}` : (company?.par_value_type === "no_par" ? "No Par Value" : "—")}</TableCell>
-                      <TableCell className="text-xs text-right">{t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—"}</TableCell>
-                      <TableCell className="text-xs text-right">{t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—"}</TableCell>
-                      <TableCell className="text-xs capitalize">{t.consideration_type?.replace("_", " ") ?? "—"}</TableCell>
-                      <TableCell className="text-xs text-center">
-                        {(() => {
-                          const issued = (t as any).issued_certificate_number;
-                          const issuedNum = issued != null && issued !== "" ? Number(issued) : null;
+                      <React.Fragment key={t.id}>
+                        <TableRow
+                          className={`${isCorrected ? "opacity-50" : ""} ${(t as any).entry_type === "opening_balance" ? "italic bg-muted/30" : ""}`}
+                        >
+                          <TableCell className="text-xs font-mono text-muted-foreground">
+                            {entryNumMap.get(t.id)}
+                          </TableCell>
+                          <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>
+                            {t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] px-1.5 py-0 capitalize ${isCorrected ? "line-through" : ""}`}
+                              >
+                                {(t as any).entry_type === "opening_balance"
+                                  ? `Opening Balance (as of ${t.transaction_date ? new Date(t.transaction_date + "T00:00:00").toLocaleDateString() : "—"})`
+                                  : t.transaction_type?.replace(/_/g, " ")}
+                              </Badge>
+                              {isCorrected && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="destructive" className="text-[9px] px-1 py-0">
+                                        Corrected
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="text-xs">See entry #{correctedByEntryNum || "?"}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                              {isCorrection && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge className="text-[9px] px-1 py-0 bg-accent text-accent-foreground">
+                                        Correction
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="text-xs">Corrects entry #{correctsEntryNum || "?"}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                              {isPending && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[9px] px-1 py-0 border-amber-500/20 text-amber-500 bg-amber-500/10"
+                                >
+                                  Pending
+                                </Badge>
+                              )}
+                              {(t as any).entry_type === "historical" && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[9px] px-1 py-0 border-primary/30 text-primary bg-primary/10"
+                                >
+                                  Historical
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>
+                            {t.shareholders?.name ?? t.to_shareholder ?? "—"}
+                          </TableCell>
+                          <TableCell className={`text-xs ${isCorrected ? "line-through" : ""}`}>
+                            {t.share_class}
+                          </TableCell>
+                          <TableCell className={`text-xs text-right ${isCorrected ? "line-through" : ""}`}>
+                            {t.num_shares?.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-xs text-right">
+                            {(t as any).par_value != null
+                              ? `$${Number((t as any).par_value).toFixed(2)}`
+                              : company?.par_value_type === "no_par"
+                                ? "No Par Value"
+                                : "—"}
+                          </TableCell>
+                          <TableCell className="text-xs text-right">
+                            {t.price_per_share != null ? `$${Number(t.price_per_share).toFixed(2)}` : "—"}
+                          </TableCell>
+                          <TableCell className="text-xs text-right">
+                            {t.total_consideration != null ? `$${Number(t.total_consideration).toFixed(2)}` : "—"}
+                          </TableCell>
+                          <TableCell className="text-xs capitalize">
+                            {t.consideration_type?.replace("_", " ") ?? "—"}
+                          </TableCell>
+                          <TableCell className="text-xs text-center">
+                            {(() => {
+                              const issued = (t as any).issued_certificate_number;
+                              const issuedNum = issued != null && issued !== "" ? Number(issued) : null;
 
-                          // Fallback: look up cert by certificate_id, then by shareholder+class+shares
-                          let resolvedCertNum = issuedNum;
-                          if (resolvedCertNum == null || isNaN(resolvedCertNum)) {
-                            if (t.certificate_id) {
-                              const linkedCert = certificates.find((c: any) => c.id === t.certificate_id);
-                              if (linkedCert) resolvedCertNum = linkedCert.certificate_number;
-                            }
-                          }
-                          if (resolvedCertNum == null || isNaN(resolvedCertNum)) {
-                            const matchedCert = certificates.find((c: any) =>
-                              c.shareholder_id === (t.shareholder_id || (t as any).shareholders?.id) &&
-                              c.share_class === t.share_class &&
-                              c.num_shares === t.num_shares &&
-                              c.status === "active"
-                            );
-                            if (matchedCert) resolvedCertNum = matchedCert.certificate_number;
-                          }
+                              // Fallback: look up cert by certificate_id, then by shareholder+class+shares
+                              let resolvedCertNum = issuedNum;
+                              if (resolvedCertNum == null || isNaN(resolvedCertNum)) {
+                                if (t.certificate_id) {
+                                  const linkedCert = certificates.find((c: any) => c.id === t.certificate_id);
+                                  if (linkedCert) resolvedCertNum = linkedCert.certificate_number;
+                                }
+                              }
+                              if (resolvedCertNum == null || isNaN(resolvedCertNum)) {
+                                const matchedCert = certificates.find(
+                                  (c: any) =>
+                                    c.shareholder_id === (t.shareholder_id || (t as any).shareholders?.id) &&
+                                    c.share_class === t.share_class &&
+                                    c.num_shares === t.num_shares &&
+                                    c.status === "active",
+                                );
+                                if (matchedCert) resolvedCertNum = matchedCert.certificate_number;
+                              }
 
-                          const cancelledBy = resolvedCertNum != null && !isNaN(resolvedCertNum)
-                            ? cancelledByMap[String(resolvedCertNum)]
-                            : undefined;
+                              const cancelledBy =
+                                resolvedCertNum != null && !isNaN(resolvedCertNum)
+                                  ? cancelledByMap[String(resolvedCertNum)]
+                                  : undefined;
 
-                          if (resolvedCertNum != null && !isNaN(resolvedCertNum) && cancelledBy) {
-                            return <span>Cert #{resolvedCertNum} <span className="text-muted-foreground">/ Cancels #{cancelledBy}</span></span>;
-                          }
-                          if (resolvedCertNum != null && !isNaN(resolvedCertNum)) return <span>Cert #{resolvedCertNum}</span>;
-                          return "—";
-                        })()}
-                      </TableCell>
-                      <TableCell className="text-xs text-right font-semibold bg-primary/5">{(() => {
-                        const issued = (t as any).issued_certificate_number;
-                        const issuedNum = issued != null && issued !== "" ? Number(issued) : null;
-                        let resolvedCertNum = issuedNum;
-                        if (resolvedCertNum == null || isNaN(resolvedCertNum)) {
-                          if (t.certificate_id) {
-                            const linkedCert = certificates.find((c: any) => c.id === t.certificate_id);
-                            if (linkedCert) resolvedCertNum = linkedCert.certificate_number;
-                          }
-                        }
-                        if (resolvedCertNum != null && !isNaN(resolvedCertNum) && cancelledByMap[String(resolvedCertNum)]) {
-                          return "0";
-                        }
-                        return balanceMap.get(t.id)?.toLocaleString() ?? "—";
-                      })()}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-0.5">
-                          {txStatus === "active" && !isCorrection && (
-                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" title="Correct this transaction"
-                              onClick={() => { setCorrectionTarget(t); setCorrectionEntryNum(entryNumMap.get(t.id)); }}>
-                              <RotateCcw className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                            </Button>
-                          )}
-                          <AdminDeleteButton transaction={t} companyId={companyId} />
-                          {t.bill_of_sale_id && (
-                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" title="Print Bill of Sale" onClick={() => handlePrintBillOfSale(t)}>
-                              <FileText className="h-3 w-3 text-primary" />
-                            </Button>
-                          )}
-                          {((t as any).issued_certificate_number || t.certificate_id) && (
-                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" title="Print Certificate" onClick={() => handlePrintCertificate(t)}>
-                              <Award className="h-3 w-3 text-primary" />
-                            </Button>
-                          )}
-                          {txStatus === "active" && !isCorrection && !t.bill_of_sale_id && !(t as any).issued_certificate_number && !t.certificate_id && (
-                            <span aria-label="No linked documents">
-                              <Link2 className="h-3 w-3 text-muted-foreground/40" />
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                    {isCorrection && correctionMemo && (
-                      <TableRow className="border-t-0 hover:bg-transparent">
-                        <TableCell colSpan={14} className="py-1 px-4 pl-12 border-t-0">
-                          <p className="text-[10px] italic text-muted-foreground">
-                            Correction Note: {correctionMemo}
-                          </p>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                    </React.Fragment>
+                              if (resolvedCertNum != null && !isNaN(resolvedCertNum) && cancelledBy) {
+                                return (
+                                  <span>
+                                    Cert #{resolvedCertNum}{" "}
+                                    <span className="text-muted-foreground">/ Cancels #{cancelledBy}</span>
+                                  </span>
+                                );
+                              }
+                              if (resolvedCertNum != null && !isNaN(resolvedCertNum))
+                                return <span>Cert #{resolvedCertNum}</span>;
+                              return "—";
+                            })()}
+                          </TableCell>
+                          <TableCell className="text-xs text-right font-semibold bg-primary/5">
+                            {(() => {
+                              const issued = (t as any).issued_certificate_number;
+                              const issuedNum = issued != null && issued !== "" ? Number(issued) : null;
+                              let resolvedCertNum = issuedNum;
+                              if (resolvedCertNum == null || isNaN(resolvedCertNum)) {
+                                if (t.certificate_id) {
+                                  const linkedCert = certificates.find((c: any) => c.id === t.certificate_id);
+                                  if (linkedCert) resolvedCertNum = linkedCert.certificate_number;
+                                }
+                              }
+                              if (
+                                resolvedCertNum != null &&
+                                !isNaN(resolvedCertNum) &&
+                                cancelledByMap[String(resolvedCertNum)]
+                              ) {
+                                return "0";
+                              }
+                              return balanceMap.get(t.id)?.toLocaleString() ?? "—";
+                            })()}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-0.5">
+                              {txStatus === "active" && !isCorrection && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  title="Correct this transaction"
+                                  onClick={() => {
+                                    setCorrectionTarget(t);
+                                    setCorrectionEntryNum(entryNumMap.get(t.id));
+                                  }}
+                                >
+                                  <RotateCcw className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                                </Button>
+                              )}
+                              <AdminDeleteButton transaction={t} companyId={companyId} />
+                              {t.bill_of_sale_id && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  title="Print Bill of Sale"
+                                  onClick={() => handlePrintBillOfSale(t)}
+                                >
+                                  <FileText className="h-3 w-3 text-primary" />
+                                </Button>
+                              )}
+                              {((t as any).issued_certificate_number || t.certificate_id) && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  title="Print Certificate"
+                                  onClick={() => handlePrintCertificate(t)}
+                                >
+                                  <Award className="h-3 w-3 text-primary" />
+                                </Button>
+                              )}
+                              {txStatus === "active" &&
+                                !isCorrection &&
+                                !t.bill_of_sale_id &&
+                                !(t as any).issued_certificate_number &&
+                                !t.certificate_id && (
+                                  <span aria-label="No linked documents">
+                                    <Link2 className="h-3 w-3 text-muted-foreground/40" />
+                                  </span>
+                                )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {isCorrection && correctionMemo && (
+                          <TableRow className="border-t-0 hover:bg-transparent">
+                            <TableCell colSpan={14} className="py-1 px-4 pl-12 border-t-0">
+                              <p className="text-[10px] italic text-muted-foreground">
+                                Correction Note: {correctionMemo}
+                              </p>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
                     );
                   });
                 })()}
@@ -1195,7 +1691,12 @@ export default function StockLedgerTab({ companyId, entityType = "Corporation", 
 
       <CorrectionModal
         open={!!correctionTarget}
-        onOpenChange={(o) => { if (!o) { setCorrectionTarget(null); setCorrectionEntryNum(undefined); } }}
+        onOpenChange={(o) => {
+          if (!o) {
+            setCorrectionTarget(null);
+            setCorrectionEntryNum(undefined);
+          }
+        }}
         transaction={correctionTarget}
         companyId={companyId}
         entryNum={correctionEntryNum}
