@@ -3125,6 +3125,7 @@ export type Database = {
           id: string
           issue_date: string | null
           num_shares: number
+          ownership_percent_snapshot: number | null
           par_value: number | null
           share_class: string
           shareholder_id: string | null
@@ -3140,6 +3141,7 @@ export type Database = {
           id?: string
           issue_date?: string | null
           num_shares?: number
+          ownership_percent_snapshot?: number | null
           par_value?: number | null
           share_class?: string
           shareholder_id?: string | null
@@ -3155,6 +3157,7 @@ export type Database = {
           id?: string
           issue_date?: string | null
           num_shares?: number
+          ownership_percent_snapshot?: number | null
           par_value?: number | null
           share_class?: string
           shareholder_id?: string | null
