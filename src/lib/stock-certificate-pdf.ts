@@ -396,6 +396,13 @@ export async function generateStockCertificatePdf(data: StockCertificateData): P
   registerArialFont(doc);
   doc.setLineHeightFactor(1.15);
 
+  console.log("PDF debug:", {
+    entity_type: (data as any).entityType,
+    isLLC: data.isLLC,
+    snapshot: data.ownershipPercentSnapshot,
+    live: data.liveOwnershipPercent,
+  });
+
   if (data.isLLC) {
     await renderLLCWhimsicalCertificate(doc, data);
   } else {
