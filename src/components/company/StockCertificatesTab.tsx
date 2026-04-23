@@ -135,6 +135,22 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
           if (unlinkedTx?.id) {
             await supabase.from("share_transactions").update({ certificate_id: data.id }).eq("id", unlinkedTx.id);
           }
+
+          // LLC: snapshot ownership % at issuance for this cert.
+          if (t.isLLC) {
+            await supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId });
+            const { data: sh } = await supabase
+              .from("shareholders")
+              .select("ownership_percentage")
+              .eq("id", form.shareholder_id)
+              .maybeSingle();
+            if (sh?.ownership_percentage != null) {
+              await supabase
+                .from("stock_certificates")
+                .update({ ownership_percent_snapshot: sh.ownership_percentage })
+                .eq("id", data.id);
+            }
+          }
         }
         return { isEdit: false, certId: data?.id };
       }

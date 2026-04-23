@@ -435,6 +435,19 @@ Deno.serve(async (req: Request) => {
         // ── 4. LLC: recalculate ownership percentages once ──
         if (isLLC) {
           await tx`SELECT public.recalculate_ownership_percentages(${payload.company_id}::uuid)`;
+
+          // Snapshot ownership_percent on all active LLC certs that don't yet have one.
+          // Captures the % at issuance for reprints; legacy certs fall back to live calc.
+          await tx`
+            UPDATE stock_certificates sc
+            SET ownership_percent_snapshot = s.ownership_percentage
+            FROM shareholders s
+            WHERE sc.shareholder_id = s.id
+              AND sc.company_id = ${payload.company_id}
+              AND sc.status = 'active'
+              AND sc.ownership_percent_snapshot IS NULL
+              AND s.ownership_percentage IS NOT NULL
+          `;
         }
 
         // ── 5. LLC: update capital accounts once ──
