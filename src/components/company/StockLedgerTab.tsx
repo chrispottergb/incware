@@ -605,6 +605,14 @@ export default function StockLedgerTab({
       toast.error("No certificate linked to this transaction.");
       return;
     }
+    const isLLC = isLLCType(entityType);
+    const liveOwnershipPercent = (() => {
+      if (!isLLC) return null;
+      const totalUnits = certificates
+        .filter((c: any) => c.status === "active")
+        .reduce((sum: number, c: any) => sum + (c.num_shares || 0), 0);
+      return t.num_shares && totalUnits ? (t.num_shares / totalUnits) * 100 : null;
+    })();
     await downloadStockCertificatePdf({
       companyName: company?.name || "",
       stateOfIncorporation: company?.state_of_incorporation || undefined,
@@ -615,6 +623,9 @@ export default function StockLedgerTab({
       parValue: (t as any).par_value || (cert as any)?.par_value || company?.par_value,
       issueDate: t.transaction_date || new Date().toISOString().split("T")[0],
       authorizedShares: company?.authorized_shares,
+      isLLC,
+      ownershipPercentSnapshot: (cert as any)?.ownership_percent_snapshot ?? null,
+      liveOwnershipPercent,
     });
   };
 
