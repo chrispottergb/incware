@@ -944,33 +944,35 @@ export default function IncorporationTab({ company }: Props) {
 
             {showOrganizerForm && (
               <div className="mt-2 rounded-md border border-border bg-muted/30 p-3 space-y-2">
-                <div className="grid grid-cols-12 gap-x-2 gap-y-2">
-                  <div className="field-group col-span-3">
+                <div className="flex gap-2">
+                  <div className="field-group" style={{ width: "4.5in" }}>
                     <Label className="field-label">Organizer Name</Label>
                     <NameAutocomplete value={newOrganizer.organizer_name} onChange={(v) => setNewOrganizer(p => ({ ...p, organizer_name: v }))} onSelect={handleOrganizerAddressSelect} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" placeholder="Full name" />
                   </div>
-                  <div className="field-group col-span-3">
+                </div>
+                <div className="flex flex-nowrap gap-2">
+                  <div className="field-group" style={{ width: "2.5in" }}>
                     <Label className="field-label">Address</Label>
                     <Input className="h-7 text-sm" value={newOrganizer.address} onChange={(e) => setNewOrganizer(p => ({ ...p, address: e.target.value }))} />
                   </div>
-                  <div className="field-group col-span-1">
+                  <div className="field-group" style={{ width: "1in" }}>
                     <Label className="field-label">Address 2</Label>
                     <Input className="h-7 text-sm" value={newOrganizer.address_2} onChange={(e) => setNewOrganizer(p => ({ ...p, address_2: e.target.value }))} />
                   </div>
-                  <div className="field-group col-span-2">
+                  <div className="field-group" style={{ width: "1.75in" }}>
                     <Label className="field-label">City</Label>
                     <Input className="h-7 text-sm" value={newOrganizer.city} onChange={(e) => setNewOrganizer(p => ({ ...p, city: e.target.value }))} />
                   </div>
-                  <div className="field-group col-span-1">
+                  <div className="field-group" style={{ width: "0.75in" }}>
                     <Label className="field-label">State</Label>
                     <Select value={newOrganizer.state} onValueChange={(v) => setNewOrganizer(p => ({ ...p, state: v }))}>
-                      <SelectTrigger className="h-7 text-sm min-w-[60px] px-2"><SelectValue placeholder="ST" /></SelectTrigger>
+                      <SelectTrigger className="h-7 text-sm px-2"><SelectValue placeholder="ST" /></SelectTrigger>
                       <SelectContent>
                         {US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="field-group col-span-2">
+                  <div className="field-group" style={{ width: "1.25in" }}>
                     <Label className="field-label">Zip</Label>
                     <Input className="h-7 text-sm" value={newOrganizer.zip} onChange={(e) => { const v = e.target.value; setNewOrganizer(p => ({ ...p, zip: v })); handleOrganizerZip(v); }} maxLength={10} />
                     {organizerZipError && <p className="text-[10px] text-destructive mt-0.5">{organizerZipError}</p>}
