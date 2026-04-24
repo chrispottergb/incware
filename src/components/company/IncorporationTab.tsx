@@ -799,12 +799,12 @@ export default function IncorporationTab({ company }: Props) {
               <DatePickerField value={form.incorporation_date || ""} onChange={(v) => updateAndSave("incorporation_date", v)} className="h-7" />
             </div>
             <div className="field-group col-span-6 sm:col-span-2">
-              <Label className="field-label">Fiscal Year End</Label>
+              <Label className="field-label">FYE</Label>
               <Input className="h-7 text-sm" value={form.fiscal_year_end} onChange={(e) => update("fiscal_year_end", e.target.value)} placeholder="December 31" />
             </div>
-            <div className="field-group col-span-6 sm:col-span-3 flex items-center gap-2 space-y-0">
-              <Label className="field-label whitespace-nowrap">Scheduled Annual Mtg. Date</Label>
-              <Input className="h-7 text-sm flex-1" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
+            <div className="field-group col-span-6 sm:col-span-5">
+              <Label className="field-label">Scheduled Annual Mtg. Date</Label>
+              <Input className="h-7 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
             </div>
             {form.entity_type === "S-Corp" && (
               <div className="field-group col-span-6 sm:col-span-3">
