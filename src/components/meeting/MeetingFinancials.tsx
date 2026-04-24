@@ -269,11 +269,12 @@ export default function MeetingFinancials({ meetingId }: Props) {
   const toNum = (s: string) => (s ? parseFloat(s) : null);
 
   const handleFieldChange = (prefix: "current" | "previous", key: string, value: string) => {
+    const clean = sanitizeCurrencyInput(value);
     setForm((prev) => {
-      const updated = { ...prev, [`${prefix}_${key}`]: value };
+      const updated = { ...prev, [`${prefix}_${key}`]: clean };
 
-      const sales = toNum(key === "total_sales" ? value : updated[`${prefix}_total_sales`]);
-      const cog = toNum(key === "cog" ? value : updated[`${prefix}_cog`]);
+      const sales = toNum(key === "total_sales" ? clean : updated[`${prefix}_total_sales`]);
+      const cog = toNum(key === "cog" ? clean : updated[`${prefix}_cog`]);
 
       if (sales != null && cog != null) {
         updated[`${prefix}_gross_profit`] = (sales - cog).toFixed(2);
