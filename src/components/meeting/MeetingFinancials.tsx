@@ -509,10 +509,12 @@ export default function MeetingFinancials({ meetingId }: Props) {
                   ) : (
                     <div className="flex items-center gap-1">
                       <Input
-                        type="number"
-                        step="0.01"
-                        value={prevValue}
+                        type="text"
+                        inputMode="decimal"
+                        value={getDisplayValue(`previous_${f.key}`, prevValue, f.computed)}
                         onChange={(e) => handleFieldChange("previous", f.key, e.target.value)}
+                        onFocus={() => setFocused(`previous_${f.key}`, true)}
+                        onBlur={() => setFocused(`previous_${f.key}`, false)}
                         readOnly={f.computed}
                         className={`text-right font-mono text-sm ${
                           f.computed ? "bg-muted/50 text-muted-foreground" : ""
