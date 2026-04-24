@@ -802,8 +802,12 @@ export default function IncorporationTab({ company }: Props) {
               <Label className="field-label">Fiscal Year End</Label>
               <Input className="h-7 text-sm" value={form.fiscal_year_end} onChange={(e) => update("fiscal_year_end", e.target.value)} placeholder="December 31" />
             </div>
+            <div className="field-group col-span-6 sm:col-span-2">
+              <Label className="field-label">Scheduled Annual Meeting</Label>
+              <div className="h-7" aria-hidden="true" />
+            </div>
             <div className="field-group col-span-6 sm:col-span-3">
-              <Label className="field-label">Sched. Annual Mtg Date</Label>
+              <Label className="field-label">Date</Label>
               <Input className="h-7 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
             </div>
             {form.entity_type === "S-Corp" && (
@@ -949,7 +953,7 @@ export default function IncorporationTab({ company }: Props) {
                     <Label className="field-label">Address</Label>
                     <Input className="h-7 text-sm" value={newOrganizer.address} onChange={(e) => setNewOrganizer(p => ({ ...p, address: e.target.value }))} />
                   </div>
-                  <div className="field-group col-span-2">
+                  <div className="field-group col-span-1">
                     <Label className="field-label">Address 2</Label>
                     <Input className="h-7 text-sm" value={newOrganizer.address_2} onChange={(e) => setNewOrganizer(p => ({ ...p, address_2: e.target.value }))} />
                   </div>
@@ -966,7 +970,7 @@ export default function IncorporationTab({ company }: Props) {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="field-group col-span-1">
+                  <div className="field-group col-span-2">
                     <Label className="field-label">Zip</Label>
                     <Input className="h-7 text-sm" value={newOrganizer.zip} onChange={(e) => { const v = e.target.value; setNewOrganizer(p => ({ ...p, zip: v })); handleOrganizerZip(v); }} maxLength={10} />
                     {organizerZipError && <p className="text-[10px] text-destructive mt-0.5">{organizerZipError}</p>}
