@@ -493,10 +493,12 @@ export default function MeetingFinancials({ meetingId }: Props) {
                 <div key={f.key} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 mb-3 items-center">
                   <Label className="text-sm">{f.label}</Label>
                   <Input
-                    type="number"
-                    step="0.01"
-                    value={(form as any)[`current_${f.key}`]}
+                    type="text"
+                    inputMode="decimal"
+                    value={getDisplayValue(`current_${f.key}`, (form as any)[`current_${f.key}`], f.computed)}
                     onChange={(e) => handleFieldChange("current", f.key, e.target.value)}
+                    onFocus={() => setFocused(`current_${f.key}`, true)}
+                    onBlur={() => setFocused(`current_${f.key}`, false)}
                     readOnly={f.computed}
                     className={`text-right font-mono text-sm ${f.computed ? "bg-muted/50 text-muted-foreground" : ""}`}
                   />
