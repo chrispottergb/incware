@@ -568,12 +568,14 @@ export default function MeetingFinancials({ meetingId }: Props) {
                     onChange={(e) => updateNrItem(idx, "description", e.target.value)}
                   />
                   <Input
-                    type="number"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     className="text-right font-mono text-sm h-8"
                     placeholder="Amount"
-                    value={item.amount}
-                    onChange={(e) => updateNrItem(idx, "amount", e.target.value)}
+                    value={focusedFields.has(`nr_${idx}`) ? item.amount : formatCurrencyDisplay(item.amount)}
+                    onChange={(e) => updateNrItem(idx, "amount", sanitizeCurrencyInput(e.target.value))}
+                    onFocus={() => setFocused(`nr_${idx}`, true)}
+                    onBlur={() => setFocused(`nr_${idx}`, false)}
                   />
                   <Button type="button" size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" onClick={() => removeNrItem(idx)}>
                     <Trash2 className="h-3 w-3" />
