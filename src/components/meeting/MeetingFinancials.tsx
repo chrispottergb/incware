@@ -165,6 +165,51 @@ export default function MeetingFinancials({ meetingId }: Props) {
     previous_net_income: "",
   });
 
+  const [focusedFields, setFocusedFields] = useState<Set<string>>(new Set());
+
+  const sanitizeCurrencyInput = (raw: string): string => {
+    // strip everything except digits, decimal point, and leading minus
+    let s = raw.replace(/[^0-9.\-]/g, "");
+    // keep only first leading minus
+    s = s.replace(/(?!^)-/g, "");
+    // keep only first decimal
+    const firstDot = s.indexOf(".");
+    if (firstDot !== -1) {
+      s = s.slice(0, firstDot + 1) + s.slice(firstDot + 1).replace(/\./g, "");
+    }
+    return s;
+  };
+
+  const formatCurrencyDisplay = (raw: string): string => {
+    if (raw === "" || raw == null) return "";
+    const n = parseFloat(raw);
+    if (!isFinite(n)) return raw;
+    return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const getDisplayValue = (fieldId: string, raw: string, computed?: boolean): string => {
+    if (focusedFields.has(fieldId)) return raw;
+    if (computed) {
+      // computed fields: gross_profit shown as currency, cog_ratio as percent
+      if (fieldId.endsWith("cog_ratio")) {
+        if (raw === "" || raw == null) return "";
+        const n = parseFloat(raw);
+        return isFinite(n) ? `${n.toFixed(2)}%` : raw;
+      }
+      return formatCurrencyDisplay(raw);
+    }
+    return formatCurrencyDisplay(raw);
+  };
+
+  const setFocused = (id: string, focused: boolean) => {
+    setFocusedFields((prev) => {
+      const next = new Set(prev);
+      if (focused) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
   const [nrItems, setNrItems] = useState<NonRecurringItem[]>([]);
   const [excludeNrFromYoy, setExcludeNrFromYoy] = useState(false);
   const [lastFinancials, setLastFinancials] = useState<typeof financials>(undefined);
@@ -224,11 +269,12 @@ export default function MeetingFinancials({ meetingId }: Props) {
   const toNum = (s: string) => (s ? parseFloat(s) : null);
 
   const handleFieldChange = (prefix: "current" | "previous", key: string, value: string) => {
+    const clean = sanitizeCurrencyInput(value);
     setForm((prev) => {
-      const updated = { ...prev, [`${prefix}_${key}`]: value };
+      const updated = { ...prev, [`${prefix}_${key}`]: clean };
 
-      const sales = toNum(key === "total_sales" ? value : updated[`${prefix}_total_sales`]);
-      const cog = toNum(key === "cog" ? value : updated[`${prefix}_cog`]);
+      const sales = toNum(key === "total_sales" ? clean : updated[`${prefix}_total_sales`]);
+      const cog = toNum(key === "cog" ? clean : updated[`${prefix}_cog`]);
 
       if (sales != null && cog != null) {
         updated[`${prefix}_gross_profit`] = (sales - cog).toFixed(2);
@@ -447,10 +493,12 @@ export default function MeetingFinancials({ meetingId }: Props) {
                 <div key={f.key} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 mb-3 items-center">
                   <Label className="text-sm">{f.label}</Label>
                   <Input
-                    type="number"
-                    step="0.01"
-                    value={(form as any)[`current_${f.key}`]}
+                    type="text"
+                    inputMode="decimal"
+                    value={getDisplayValue(`current_${f.key}`, (form as any)[`current_${f.key}`], f.computed)}
                     onChange={(e) => handleFieldChange("current", f.key, e.target.value)}
+                    onFocus={() => setFocused(`current_${f.key}`, true)}
+                    onBlur={() => setFocused(`current_${f.key}`, false)}
                     readOnly={f.computed}
                     className={`text-right font-mono text-sm ${f.computed ? "bg-muted/50 text-muted-foreground" : ""}`}
                   />
@@ -461,10 +509,12 @@ export default function MeetingFinancials({ meetingId }: Props) {
                   ) : (
                     <div className="flex items-center gap-1">
                       <Input
-                        type="number"
-                        step="0.01"
-                        value={prevValue}
+                        type="text"
+                        inputMode="decimal"
+                        value={getDisplayValue(`previous_${f.key}`, prevValue, f.computed)}
                         onChange={(e) => handleFieldChange("previous", f.key, e.target.value)}
+                        onFocus={() => setFocused(`previous_${f.key}`, true)}
+                        onBlur={() => setFocused(`previous_${f.key}`, false)}
                         readOnly={f.computed}
                         className={`text-right font-mono text-sm ${
                           f.computed ? "bg-muted/50 text-muted-foreground" : ""
@@ -518,12 +568,14 @@ export default function MeetingFinancials({ meetingId }: Props) {
                     onChange={(e) => updateNrItem(idx, "description", e.target.value)}
                   />
                   <Input
-                    type="number"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     className="text-right font-mono text-sm h-8"
                     placeholder="Amount"
-                    value={item.amount}
-                    onChange={(e) => updateNrItem(idx, "amount", e.target.value)}
+                    value={focusedFields.has(`nr_${idx}`) ? item.amount : formatCurrencyDisplay(item.amount)}
+                    onChange={(e) => updateNrItem(idx, "amount", sanitizeCurrencyInput(e.target.value))}
+                    onFocus={() => setFocused(`nr_${idx}`, true)}
+                    onBlur={() => setFocused(`nr_${idx}`, false)}
                   />
                   <Button type="button" size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" onClick={() => removeNrItem(idx)}>
                     <Trash2 className="h-3 w-3" />
