@@ -165,6 +165,51 @@ export default function MeetingFinancials({ meetingId }: Props) {
     previous_net_income: "",
   });
 
+  const [focusedFields, setFocusedFields] = useState<Set<string>>(new Set());
+
+  const sanitizeCurrencyInput = (raw: string): string => {
+    // strip everything except digits, decimal point, and leading minus
+    let s = raw.replace(/[^0-9.\-]/g, "");
+    // keep only first leading minus
+    s = s.replace(/(?!^)-/g, "");
+    // keep only first decimal
+    const firstDot = s.indexOf(".");
+    if (firstDot !== -1) {
+      s = s.slice(0, firstDot + 1) + s.slice(firstDot + 1).replace(/\./g, "");
+    }
+    return s;
+  };
+
+  const formatCurrencyDisplay = (raw: string): string => {
+    if (raw === "" || raw == null) return "";
+    const n = parseFloat(raw);
+    if (!isFinite(n)) return raw;
+    return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const getDisplayValue = (fieldId: string, raw: string, computed?: boolean): string => {
+    if (focusedFields.has(fieldId)) return raw;
+    if (computed) {
+      // computed fields: gross_profit shown as currency, cog_ratio as percent
+      if (fieldId.endsWith("cog_ratio")) {
+        if (raw === "" || raw == null) return "";
+        const n = parseFloat(raw);
+        return isFinite(n) ? `${n.toFixed(2)}%` : raw;
+      }
+      return formatCurrencyDisplay(raw);
+    }
+    return formatCurrencyDisplay(raw);
+  };
+
+  const setFocused = (id: string, focused: boolean) => {
+    setFocusedFields((prev) => {
+      const next = new Set(prev);
+      if (focused) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
   const [nrItems, setNrItems] = useState<NonRecurringItem[]>([]);
   const [excludeNrFromYoy, setExcludeNrFromYoy] = useState(false);
   const [lastFinancials, setLastFinancials] = useState<typeof financials>(undefined);
