@@ -1,64 +1,68 @@
+# UI Layout Adjustments — `src/components/company/IncorporationTab.tsx`
 
+Two small, layout-only changes. No labels (other than the Scheduled Annual Meeting wording cleanup), no bindings, no validation, and no logic are modified.
 
-## Whimsical-Professional LLC Membership Unit Certificate (refined)
+---
 
-Add a new certificate layout for LLC entity types (LLC, SMLLC, LLC-S). Corporations keep the existing eagle/brick-red design unchanged.
+## 1. Incorporation Info — "Scheduled Annual Meeting" row
 
-### Locked decisions
-- **Applies to**: LLC entity types only — `isLLCType(entity_type) === true`. Per terminology helper, this covers `LLC`, `Single Member LLC` (SMLLC), `LLC-S`, and any future LLC-derived types.
-- **Branding**: Defaults only — navy `#1F4E79` (primary) and steel-blue `#D6E4F0` (secondary). No logo, no DB-stored brand fields.
-- **Style**: Geometric art-deco border (thin double border + small filled diamond corner flourishes in the primary color).
-- **Ownership %**: Snapshot at issuance, with live fallback for legacy rows.
+**File:** `src/components/company/IncorporationTab.tsx` (around lines 805–808)
 
-### Database change
+**Current state**
+A single field spans `col-span-3` with label `Sched. Annual Mtg Date`:
+```tsx
+<div className="field-group col-span-6 sm:col-span-3">
+  <Label className="field-label">Sched. Annual Mtg Date</Label>
+  <Input ... value={form.scheduled_annual_meeting} ... />
+</div>
+```
+This sits on the same grid row as Status (`col-span-2`), Incorporation Date (`col-span-3`), Fiscal Year End (`col-span-3`) inside a `grid-cols-12` container.
 
-Add one nullable column on `stock_certificates`:
-- `ownership_percent_snapshot numeric(7,4)`
-- Column comment: `"Ownership % at time of issuance; null = legacy, use live calc."`
+**Change**
+Split this single cell into the same two-column "label-left / field-right" pattern used by the other rows in the row (Status / Incorporation Date / Fiscal Year End each occupy a single labeled cell already, so to honor the user's request that the row be a clear two-column layout — label "Scheduled Annual Meeting" on the left and a separate "Date" column on the right — render two adjacent grid cells that together still take the same space (`col-span-3`):
 
-No backfill. Legacy LLC certificates without a snapshot fall back to live calculation at render.
+```tsx
+<div className="field-group col-span-6 sm:col-span-2">
+  <Label className="field-label">Scheduled Annual Meeting</Label>
+  <div className="h-7 flex items-center text-xs text-muted-foreground">
+    {/* static label cell, no input */}
+  </div>
+</div>
+<div className="field-group col-span-6 sm:col-span-3">
+  <Label className="field-label">Date</Label>
+  <Input
+    className="h-7 text-sm"
+    value={form.scheduled_annual_meeting}
+    onChange={(e) => update("scheduled_annual_meeting", e.target.value)}
+    placeholder="1st Monday in April"
+  />
+</div>
+```
 
-### Snapshot capture
+Result: the row reads `Scheduled Annual Meeting` (left column) | `Date: <input>` (right column), aligned to the same grid lines as the Status / Incorporation Date / Fiscal Year End row above it. Field bindings (`form.scheduled_annual_meeting`, `update(...)`) are unchanged.
 
-When a certificate is issued for an LLC entity (paths in `execute-share-transfer`, `execute-batch-transfer`, `UnifiedLedgerTab`, and `EstablishOwnershipDialog`), compute the holder's post-transaction ownership % using the same logic as `recalculate_ownership_percentages` and write it to `ownership_percent_snapshot`. Corporation issuances ignore this field.
+---
 
-### PDF generator changes — `src/lib/stock-certificate-pdf.ts`
+## 2. Organizer(s) — ZIP wider, Address 2 narrower
 
-1. Extend `StockCertificateData`:
-   - `ownershipPercentSnapshot?: number | null` — saved at issuance.
-   - `liveOwnershipPercent?: number | null` — passed in by caller as fallback.
-2. Branch at the top of `generateStockCertificatePdf`:
-   - If `data.isLLC`, call new `renderLLCWhimsicalCertificate(doc, data)`.
-   - Otherwise keep current corporation rendering path (unchanged).
-3. Inside `renderLLCWhimsicalCertificate`, resolve the percentage with:
-   ```ts
-   // Snapshot preferred; legacy certificates fall back to live calculation.
-   const ownershipPercent = data.ownershipPercentSnapshot ?? data.liveOwnershipPercent ?? null;
-   ```
-4. Body line composition:
-   - Build state phrase:
-     - WI → `"a Wisconsin limited liability company"`
-     - Other state → `"a {state} limited liability company"`
-     - Missing/null state → `"a limited liability company"` (omit state adjective)
-   - Body: `"representing a {ownershipPercent}% ownership interest in {entity}, {statePhrase}."`
-   - If `ownershipPercent` is null, omit the "representing a X% ownership interest in" clause and render `"a holder of {units} Membership Units in {entity}, {statePhrase}."`
-5. Layout (landscape, Arial, 11pt body, line-height 1.15):
-   - **Border**: thin double-line border in navy `#1F4E79` (outer ~1.2pt, inner ~0.4pt, ~4mm gap), small filled diamonds at the four corners.
-   - **Header (centered)**: entity legal name 18pt bold; `MEMBERSHIP UNIT CERTIFICATE` 12pt tracked caps; thin secondary-color rule.
-   - **Side boxes**: small "CERTIFICATE NO." (left) and "UNITS" (right) near top corners.
-   - **Body (centered)**: "This certifies that:" → member name 14pt bold underlined → "is the record holder of" → `{units} Membership Units` 13pt bold → ownership/state line → "Issued on {issueDate}".
-   - **Signatures**: left "Authorized Signatory / {Entity}", right "Member Acknowledgment / {Member}".
-   - **Footer**: muted gray "Prepared using EntityIQ Corporate Records Management".
+**File:** `src/components/company/IncorporationTab.tsx` (around lines 943–973)
 
-### Call-site changes
-- `StockCertificatesTab.tsx`, `UnifiedLedgerTab.tsx`, and any other LLC-side caller pass both:
-  - `ownershipPercentSnapshot` from the certificate row,
-  - `liveOwnershipPercent` from the same live calc already used in the ledger (fallback).
-- Issuance flows write `ownership_percent_snapshot` only when `isLLCType(company.entity_type)`.
+**Current spans inside the `grid-cols-12` row:**
+- Organizer Name: `col-span-3`
+- Address: `col-span-3`
+- Address 2: `col-span-2`  ← reduce
+- City: `col-span-2`
+- State: `col-span-1`
+- Zip: `col-span-1`        ← increase
 
-### Out of scope
-- No changes to corporation certificates.
-- No brand picker, no logo upload, no schema for brand colors.
-- No retroactive snapshot backfill.
-- No changes to `recalculate_ownership_percentages` or ledger logic.
+**Change** (keeps the row total at 12 columns):
+- Address 2: `col-span-2` → `col-span-1`
+- Zip: `col-span-1` → `col-span-2`
 
+All other field widths, labels, validation, ZIP lookup, and data bindings are untouched.
+
+---
+
+## Out of scope
+- No changes to PDF generators, terminology, validation, or any business logic.
+- No styling tokens introduced; uses existing `field-group` / `field-label` / `h-7 text-sm` conventions.
