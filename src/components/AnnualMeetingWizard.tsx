@@ -510,6 +510,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     return {
       companyName: company?.name || "",
       stateOfFormation: company?.state_of_incorporation || "Wisconsin",
+      entityType: company?.entity_type || "",
       meetingDate: "",
       meetingTime: priorMeeting?.meeting_time || "10:00 AM",
       meetingLocation: priorMeeting?.meeting_location || (company?.address ? `${company.address}, ${company.city || ""}, ${company.state || ""}` : ""),
