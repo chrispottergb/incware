@@ -978,7 +978,6 @@ export default function MeetingDetail() {
                 { key: "preferred_shares", label: term.isLLC ? "Interest %" : "Ownership %", type: "number", width: "80px" },
                 ...(isShareholderMeeting ? [] : [
                   { key: "distribution_amount", label: "Distribution", type: "number" as const, width: "100px" },
-                  { key: "basis", label: "Basis", type: "number" as const, width: "90px" },
                   { key: "additional_capital_contribution", label: "Add'l Capital", type: "number" as const, width: "100px" },
                 ]),
               ]}
