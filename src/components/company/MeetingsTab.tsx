@@ -221,7 +221,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
     const cloneTasks = [
       { table: "meeting_officers", fields: ["name", "title", "salary", "bonus"] },
       { table: "meeting_directors", fields: ["director_name"] },
-      { table: "meeting_shareholders", fields: ["shareholder_name", "common_shares", "preferred_shares", "distribution", "distribution_amount", "basis", "additional_capital_contribution"] },
+      { table: "meeting_shareholders", fields: ["shareholder_name", "common_shares", "preferred_shares", "distribution", "distribution_amount", "additional_capital_contribution"] },
       { table: "meeting_counsel", fields: ["counsel_name", "bank_name", "accountant_name", "attorney_name", "law_firm"] },
       { table: "meeting_authorized_signers", fields: ["signer_name", "title", "bank_name", "signer_id"] },
       { table: "meeting_benefits", fields: ["benefit_description", "benefit_type", "provider", "plan_year", "transaction_type", "agent_administrator", "insurance_agency", "eligibility_comments", "new_plan_effective_date", "retirement_contribution"] },

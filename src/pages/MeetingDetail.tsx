@@ -946,7 +946,7 @@ export default function MeetingDetail() {
                     "Name", "Address", "City", "St", "ZIP",
                     term.isLLC ? "Units" : "Common",
                     term.isLLC ? "Interest %" : "Ownership %",
-                    ...(isShareholderMeeting ? [] : ["Dist. Amount", "Basis", "Add'l Capital"]),
+                    ...(isShareholderMeeting ? [] : ["Dist. Amount", "Add'l Capital"]),
                   ],
                   hydratedMeetingShareholders.map(s => [
                     s.shareholder_name,
@@ -958,7 +958,6 @@ export default function MeetingDetail() {
                     term.isLLC && s.preferred_shares != null ? `${s.preferred_shares}%` : (s.preferred_shares?.toLocaleString() ?? "—"),
                     ...(isShareholderMeeting ? [] : [
                       s.distribution_amount != null ? `$${Number(s.distribution_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
-                      s.basis != null ? `$${Number(s.basis).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
                       s.additional_capital_contribution != null ? `$${Number(s.additional_capital_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
                     ]),
                   ]),
@@ -979,7 +978,6 @@ export default function MeetingDetail() {
                 { key: "preferred_shares", label: term.isLLC ? "Interest %" : "Ownership %", type: "number", width: "80px" },
                 ...(isShareholderMeeting ? [] : [
                   { key: "distribution_amount", label: "Distribution", type: "number" as const, width: "100px" },
-                  { key: "basis", label: "Basis", type: "number" as const, width: "90px" },
                   { key: "additional_capital_contribution", label: "Add'l Capital", type: "number" as const, width: "100px" },
                 ]),
               ]}
