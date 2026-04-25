@@ -77,6 +77,9 @@ export interface AnnualMeetingData {
 
   // Signatures
   memberSignatures: { name: string }[];
+
+  // Entity type (used for conditional sections like Shareholder Tax Basis disclaimer)
+  entityType?: string;
 }
 
 // Blue theme colors matching org meeting
@@ -645,6 +648,13 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   sectionHeading("General Authorization");
 
   resolvedPara("that the officers of the limited liability company are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.");
+
+  // ===== SHAREHOLDER TAX BASIS (S-election entities only) =====
+  const entityTypeLower = (data.entityType || "").toLowerCase();
+  if (entityTypeLower.includes("s-corp") || entityTypeLower.includes("llc-s")) {
+    sectionHeading("Shareholder Tax Basis");
+    para("Shareholders are responsible for maintaining their own adjusted tax basis in S-corporation stock. The corporation maintains records of contributions, distributions, and equity transactions, but does not calculate or track shareholder basis.");
+  }
 
   // ===== ADJOURNMENT =====
   checkPage(40);
