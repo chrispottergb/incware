@@ -77,6 +77,9 @@ export interface AnnualMeetingData {
 
   // Signatures
   memberSignatures: { name: string }[];
+
+  // Entity type (used for conditional sections like Shareholder Tax Basis disclaimer)
+  entityType?: string;
 }
 
 // Blue theme colors matching org meeting
