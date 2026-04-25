@@ -3188,6 +3188,28 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 5;
   }
 
+  // Shareholder Tax Basis disclaimer (S-election entities only: S-Corp or LLC-S)
+  {
+    const et = (entityType || "").toLowerCase();
+    const isSElection = et.includes("s-corp") || et.includes("llc-s");
+    if (isSElection && !isWrittenConsent && (isAnnual || isShareholder)) {
+      y += 3;
+      y = checkPageBreak(doc, y, 30);
+      y = section("Shareholder Tax Basis");
+      doc.setFontSize(11);
+      doc.setFont("Arial", "normal");
+      doc.setTextColor(...BODY_COLOR);
+      const basisText = "Shareholders are responsible for maintaining their own adjusted tax basis in S-corporation stock. The corporation maintains records of contributions, distributions, and equity transactions, but does not calculate or track shareholder basis.";
+      const basisLines = doc.splitTextToSize(basisText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of basisLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5;
+      }
+      y += 5;
+    }
+  }
+
   // Signature block — estimate height needed based on type
   const sigBlockHeight = isWrittenConsent ? 60 : 35;
   y = checkPageBreak(doc, y, sigBlockHeight);
