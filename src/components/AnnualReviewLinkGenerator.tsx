@@ -146,17 +146,7 @@ export default function AnnualReviewLinkGenerator({
 
       if (error) throw error;
 
-      const params = new URLSearchParams({
-        entityName: selectedCompany?.name ?? "",
-        contactName:
-          selectedCompany?.salutation_name ||
-          selectedCompany?.contact_full_name ||
-          "",
-        email: selectedCompany?.contact_email ?? "",
-        reviewYear: String(reviewYear),
-        token,
-      });
-      const link = `https://form.jotform.com/261175646963063?${params.toString()}`;
+      const link = `${window.location.origin}/annual-review/${token}`;
       setGeneratedLink(link);
 
       qc.invalidateQueries({ queryKey: ["annual_review_links_all"] });

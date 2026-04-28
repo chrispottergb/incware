@@ -127,17 +127,8 @@ export default function PendingReviews() {
 
   const linkMeta = (linkId: string) => links.find((l) => l.id === linkId);
 
-  const buildUrl = (token: string, companyId?: string, reviewYear?: number) => {
-    const c = companyId ? companyData(companyId) : undefined;
-    const params = new URLSearchParams({
-      entityName: c?.name ?? "",
-      contactName: c?.salutation_name || c?.contact_full_name || "",
-      email: c?.contact_email ?? "",
-      reviewYear: reviewYear != null ? String(reviewYear) : "",
-      token,
-    });
-    return `https://form.jotform.com/261175646963063?${params.toString()}`;
-  };
+  const buildUrl = (token: string) =>
+    `${window.location.origin}/annual-review/${token}`;
 
   // --- Mutations ---
 
