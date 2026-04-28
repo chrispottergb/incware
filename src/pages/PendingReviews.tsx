@@ -127,17 +127,8 @@ export default function PendingReviews() {
 
   const linkMeta = (linkId: string) => links.find((l) => l.id === linkId);
 
-  const buildUrl = (token: string, companyId?: string, reviewYear?: number) => {
-    const c = companyId ? companyData(companyId) : undefined;
-    const params = new URLSearchParams({
-      entityName: c?.name ?? "",
-      contactName: c?.salutation_name || c?.contact_full_name || "",
-      email: c?.contact_email ?? "",
-      reviewYear: reviewYear != null ? String(reviewYear) : "",
-      token,
-    });
-    return `https://form.jotform.com/261175646963063?${params.toString()}`;
-  };
+  const buildUrl = (token: string) =>
+    `${window.location.origin}/annual-review/${token}`;
 
   // --- Mutations ---
 
@@ -294,7 +285,7 @@ export default function PendingReviews() {
               </TableHeader>
               <TableBody>
                 {pendingLinks.map((link) => {
-                  const url = buildUrl(link.token, link.company_id, link.review_year);
+                  const url = buildUrl(link.token);
                   const isCopied = copiedId === `link-${link.id}`;
                   const isExpired = new Date(link.expires_at) < new Date();
                   return (
@@ -504,7 +495,7 @@ export default function PendingReviews() {
             </DialogTitle>
           </DialogHeader>
           {selectedLink && (() => {
-            const url = buildUrl(selectedLink.token, selectedLink.company_id, selectedLink.review_year);
+            const url = buildUrl(selectedLink.token);
             const company = companyData(selectedLink.company_id);
             const isExpired = new Date(selectedLink.expires_at) < new Date();
             const isCopied = copiedId === `detail-${selectedLink.id}`;
