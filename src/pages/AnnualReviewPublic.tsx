@@ -138,8 +138,7 @@ export default function AnnualReviewPublic() {
           image: { type: "jpeg", quality: 0.95 },
           html2canvas: { scale: 2, backgroundColor: "#ffffff" },
           jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
-          pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-        })
+        } as any)
         .from(snapshotRef.current)
         .save();
     } catch (err) {
