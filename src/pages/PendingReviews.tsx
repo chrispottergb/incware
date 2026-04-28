@@ -504,7 +504,7 @@ export default function PendingReviews() {
             </DialogTitle>
           </DialogHeader>
           {selectedLink && (() => {
-            const url = buildUrl(selectedLink.token);
+            const url = buildUrl(selectedLink.token, selectedLink.company_id, selectedLink.review_year);
             const company = companyData(selectedLink.company_id);
             const isExpired = new Date(selectedLink.expires_at) < new Date();
             const isCopied = copiedId === `detail-${selectedLink.id}`;
