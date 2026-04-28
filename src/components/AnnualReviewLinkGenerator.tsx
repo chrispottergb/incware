@@ -146,8 +146,17 @@ export default function AnnualReviewLinkGenerator({
 
       if (error) throw error;
 
-      const baseUrl = "https://entityiq.net";
-      const link = `${baseUrl}/annual-review/${token}`;
+      const params = new URLSearchParams({
+        entityName: selectedCompany?.name ?? "",
+        contactName:
+          selectedCompany?.salutation_name ||
+          selectedCompany?.contact_full_name ||
+          "",
+        email: selectedCompany?.contact_email ?? "",
+        reviewYear: String(reviewYear),
+        token,
+      });
+      const link = `https://form.jotform.com/261175646963063?${params.toString()}`;
       setGeneratedLink(link);
 
       qc.invalidateQueries({ queryKey: ["annual_review_links_all"] });
