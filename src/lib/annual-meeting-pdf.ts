@@ -3,6 +3,13 @@ import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { registerArialFont } from "@/lib/arial-font";
 
+function fmtCurrency(v: string | number | null | undefined): string {
+  if (v == null || v === "") return "[Enter]";
+  const n = typeof v === "number" ? v : parseFloat(String(v).replace(/[^0-9.-]/g, ""));
+  if (!isFinite(n)) return String(v);
+  return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 export interface AnnualMeetingData {
   companyName: string;
   stateOfFormation: string;
