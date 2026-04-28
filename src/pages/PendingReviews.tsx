@@ -294,7 +294,7 @@ export default function PendingReviews() {
               </TableHeader>
               <TableBody>
                 {pendingLinks.map((link) => {
-                  const url = buildUrl(link.token);
+                  const url = buildUrl(link.token, link.company_id, link.review_year);
                   const isCopied = copiedId === `link-${link.id}`;
                   const isExpired = new Date(link.expires_at) < new Date();
                   return (
