@@ -3,6 +3,13 @@ import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { registerArialFont } from "@/lib/arial-font";
 
+function fmtCurrency(v: string | number | null | undefined): string {
+  if (v == null || v === "") return "[Enter]";
+  const n = typeof v === "number" ? v : parseFloat(String(v).replace(/[^0-9.-]/g, ""));
+  if (!isFinite(n)) return String(v);
+  return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 export interface AnnualMeetingData {
   companyName: string;
   stateOfFormation: string;
@@ -335,7 +342,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   if (data.officers.length > 0) {
     addTable(
       ["Name", "Title", "Salary", "Bonus"],
-      data.officers.map(o => [o.name || "[Enter]", o.title || "[Enter]", o.salary || "[Enter]", o.bonus || "[Enter]"])
+      data.officers.map(o => [o.name || "[Enter]", o.title || "[Enter]", fmtCurrency(o.salary), fmtCurrency(o.bonus)])
     );
   }
 
@@ -373,7 +380,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     resolvedPara("that the following compensation and bonuses for officers and managers are hereby approved and ratified:");
     addTable(
       ["Name", "Title", "Salary", "Bonus", "Notes"],
-      data.compensationItems.map(c => [c.name || "[Enter]", c.title || "[Enter]", c.salary || "[Enter]", c.bonus || "[Enter]", c.notes || ""])
+      data.compensationItems.map(c => [c.name || "[Enter]", c.title || "[Enter]", fmtCurrency(c.salary), fmtCurrency(c.bonus), c.notes || ""])
     );
   }
 

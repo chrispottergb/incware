@@ -528,10 +528,10 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
                         </TableCell>
                         <TableCell>{row.name ?? "—"}</TableCell>
                         <TableCell className="text-right font-mono text-sm">
-                          {row.salary != null ? Number(row.salary).toLocaleString("en-US", { minimumFractionDigits: 2 }) : "—"}
+                          {row.salary != null ? `$${Number(row.salary).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
                         </TableCell>
                         <TableCell className="text-right font-mono text-sm">
-                          {row.bonus != null ? Number(row.bonus).toLocaleString("en-US", { minimumFractionDigits: 2 }) : "—"}
+                          {row.bonus != null ? `$${Number(row.bonus).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
                         </TableCell>
                         <TableCell className="text-center">
                           {cfg && StatusIcon ? (
