@@ -171,6 +171,47 @@ export default function AnnualReviewPublic() {
     }
   };
 
+  const handleSubmit = async () => {
+    if (!data || !token) return;
+    if (!form.contact_name.trim() || !form.contact_email.trim()) {
+      toast.error("Contact name and email are required.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error: insErr } = await supabase
+        .from("annual_review_submissions" as any)
+        .insert({
+          link_id: data.link_id,
+          company_id: data.company_id,
+          status: "pending_review",
+          submitted_at: new Date().toISOString(),
+          notes: form.notes || null,
+          new_entries: {
+            contact_name: form.contact_name,
+            contact_email: form.contact_email,
+            contact_phone: form.contact_phone,
+            contact_cell: form.contact_cell,
+          },
+        } as any);
+      if (insErr) throw insErr;
+
+      const { error: updErr } = await supabase
+        .from("annual_review_links" as any)
+        .update({ status: "submitted" })
+        .eq("token", token);
+      if (updErr) throw updErr;
+
+      setSubmitted(true);
+      toast.success("Your information has been submitted. Thank you!");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || "Failed to submit. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
