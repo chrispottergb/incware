@@ -103,20 +103,16 @@ export default function AnnualReviewPublic() {
   const [error, setError] = useState("");
   const [data, setData] = useState<Snapshot | null>(null);
   const [downloading, setDownloading] = useState(false);
-  const [jotformId, setJotformId] = useState<string>(DEFAULT_JOTFORM_ID);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [form, setForm] = useState({
+    contact_name: "",
+    contact_email: "",
+    contact_phone: "",
+    contact_cell: "",
+    notes: "",
+  });
   const snapshotRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    (async () => {
-      const { data: row } = await supabase
-        .from("app_settings" as any)
-        .select("value")
-        .eq("key", "jotform_form_id")
-        .maybeSingle();
-      const v = (row as any)?.value;
-      if (v && typeof v === "string" && v.trim()) setJotformId(v.trim());
-    })();
-  }, []);
 
   useEffect(() => {
     if (!token) return;
