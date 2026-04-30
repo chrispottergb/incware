@@ -600,7 +600,7 @@ export default function AnnualReviewPublic() {
         </Section>
       </div>
 
-      {/* Divider + Jotform iframe */}
+      {/* Divider + Update Form */}
       <div className="max-w-4xl mx-auto px-4 pb-12 space-y-4">
         <div className="border-t border-border pt-8">
           <Card className="border-border bg-card">
@@ -610,21 +610,80 @@ export default function AnnualReviewPublic() {
                 Update Your Information
               </CardTitle>
               <p className="text-xs text-muted-foreground">
-                The form below loads blank. Fill in only the items that have changed
-                or any new activity for {data.review_year}, then submit at the bottom of the form.
+                Confirm or update your contact details and add any notes about
+                changes for {data.review_year}, then click Submit.
               </p>
             </CardHeader>
             <CardContent>
-              <iframe
-                src={`https://form.jotform.com/${jotformId}`}
-                width="100%"
-                height={2000}
-                frameBorder={0}
-                scrolling="auto"
-                allow="fullscreen"
-                title="Annual Review Form"
-                className="w-full border border-border rounded-md bg-white"
-              />
+              {submitted ? (
+                <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
+                  <CheckCircle2 className="h-12 w-12 text-primary" />
+                  <h3 className="text-lg font-semibold text-foreground">Submission Received</h3>
+                  <p className="text-sm text-muted-foreground max-w-md">
+                    Thank you. Your updates for {data.review_year} have been submitted to
+                    EntityIQ for review. You may close this page.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contact_name">Contact Name *</Label>
+                      <Input
+                        id="contact_name"
+                        value={form.contact_name}
+                        onChange={(e) => setForm({ ...form, contact_name: e.target.value })}
+                        maxLength={120}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contact_email">Contact Email *</Label>
+                      <Input
+                        id="contact_email"
+                        type="email"
+                        value={form.contact_email}
+                        onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
+                        maxLength={255}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contact_phone">Contact Phone</Label>
+                      <Input
+                        id="contact_phone"
+                        value={form.contact_phone}
+                        onChange={(e) => setForm({ ...form, contact_phone: e.target.value })}
+                        maxLength={40}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contact_cell">Contact Cell</Label>
+                      <Input
+                        id="contact_cell"
+                        value={form.contact_cell}
+                        onChange={(e) => setForm({ ...form, contact_cell: e.target.value })}
+                        maxLength={40}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="notes">Notes / Changes for {data.review_year}</Label>
+                    <Textarea
+                      id="notes"
+                      value={form.notes}
+                      onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                      rows={6}
+                      maxLength={5000}
+                      placeholder="Describe any changes to officers, directors, banking, addresses, benefits, etc."
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <Button onClick={handleSubmit} disabled={submitting}>
+                      {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Submit Updates
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
