@@ -129,7 +129,15 @@ export default function AnnualReviewPublic() {
         if (!res.ok) {
           setError(body.error || "Failed to load review");
         } else {
-          setData(body as Snapshot);
+          const snap = body as Snapshot;
+          setData(snap);
+          setForm((f) => ({
+            ...f,
+            contact_name: snap.contacts?.contact_full_name || "",
+            contact_email: snap.contacts?.contact_email || "",
+            contact_phone: snap.contacts?.contact_phone || "",
+            contact_cell: snap.contacts?.contact_cell || "",
+          }));
         }
       } catch {
         if (!cancelled) setError("Failed to connect. Please try again later.");
