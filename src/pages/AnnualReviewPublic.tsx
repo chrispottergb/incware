@@ -74,6 +74,8 @@ const fmtDate = (s?: string | null) => {
 };
 
 interface Snapshot {
+  link_id: string;
+  company_id: string;
   review_year: number;
   company_name: string;
   last_updated: string;
