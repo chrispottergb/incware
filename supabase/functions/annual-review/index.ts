@@ -201,6 +201,8 @@ Deno.serve(async (req) => {
     }
 
     const payload = {
+      link_id: link.id,
+      company_id: companyId,
       review_year: link.review_year,
       company_name: company.name,
       last_updated: company.updated_at,
