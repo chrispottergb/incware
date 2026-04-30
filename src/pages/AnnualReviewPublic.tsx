@@ -2,10 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Building2, Users, UserCheck, Shield, Landmark,
   Car, Home, HeartHandshake, FileText, Calculator, Scale,
-  AlertCircle, Download, HelpCircle, Banknote, Cpu,
+  AlertCircle, Download, HelpCircle, Banknote, Cpu, CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +16,6 @@ import { supabase } from "@/integrations/supabase/client";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-const DEFAULT_JOTFORM_ID = "261175646963063";
 const SUPPORT_EMAIL = "support@entityiq.net";
 
 // Reusable read-only renderers
