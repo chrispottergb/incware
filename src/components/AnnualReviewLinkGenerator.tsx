@@ -170,30 +170,8 @@ export default function AnnualReviewLinkGenerator({
   const handleSendEmail = async () => {
     if (!selectedCompany || !generatedLink) return;
     setSending(true);
-    try {
-      const { error: emailError } = await supabase.functions.invoke("send-review-reminder", {
-        body: {
-          contactName: selectedCompany.salutation_name || selectedCompany.contact_full_name || null,
-          contactEmail: selectedCompany.contact_email,
-          entityName: selectedCompany.name,
-          reviewYear,
-          reviewUrl: generatedLink,
-          expiresAt: expiryDate.toISOString(),
-        },
-      });
-      if (emailError) {
-        console.error("Email send error:", emailError);
-        toast.error("Email failed to send. You can copy the link and send manually.");
-      } else {
-        toast.success("Email sent to " + selectedCompany.contact_email);
-      }
-    } catch (emailErr) {
-      console.error("Email send error:", emailErr);
-      toast.error("Email failed to send. You can copy the link and send manually.");
-    } finally {
-      setSending(false);
-      setStep("done");
-    }
+    setSending(false);
+    setStep("done");
   };
 
   const handleGenerate = async () => {

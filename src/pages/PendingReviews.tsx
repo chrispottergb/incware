@@ -551,37 +551,6 @@ export default function PendingReviews() {
                   </Button>
                 </div>
 
-                {company?.contact_email && (
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={async () => {
-                      try {
-                        toast.info("Sending reminder email...");
-                        const { data, error } = await supabase.functions.invoke("send-review-reminder", {
-                          body: {
-                            contactName: company.salutation_name || company.contact_full_name || "there",
-                            contactEmail: company.contact_email,
-                            entityName: company.name,
-                            reviewYear: selectedLink.review_year,
-                            reviewUrl: url,
-                            expiresAt: selectedLink.expires_at,
-                          },
-                        });
-                        if (error) throw error;
-                        if (data?.error) throw new Error(data.error);
-                        toast.success(`Reminder sent to ${company.contact_email}`);
-                      } catch (err: any) {
-                        console.error("Send reminder error:", err);
-                        toast.error(`Failed to send reminder: ${err.message || "Unknown error"}`);
-                      }
-                    }}
-                  >
-                    <Send className="mr-2 h-4 w-4" />
-                    Send Reminder to {company.contact_email}
-                  </Button>
-                )}
-
                 {/* Extend Expiration */}
                 <div className="flex gap-2">
                   {[30, 60, 90].map((days) => (
