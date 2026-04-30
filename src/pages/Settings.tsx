@@ -126,6 +126,8 @@ export default function Settings() {
       </div>
       {isError && <QueryErrorBanner message="Failed to load shortcodes." onRetry={refetch} />}
 
+      <AnnualReviewSettingsCard />
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
