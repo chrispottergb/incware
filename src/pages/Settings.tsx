@@ -292,3 +292,84 @@ export default function Settings() {
     </div>
   );
 }
+
+const DEFAULT_JOTFORM_ID = "261175646963063";
+
+function AnnualReviewSettingsCard() {
+  const { isAdmin, isLoading: roleLoading } = useUserRole();
+  const queryClient = useQueryClient();
+  const [value, setValue] = useState("");
+
+  const { data: current, isLoading } = useQuery({
+    queryKey: ["app_settings", "jotform_form_id"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("app_settings" as any)
+        .select("value")
+        .eq("key", "jotform_form_id")
+        .maybeSingle();
+      if (error) throw error;
+      return ((data as any)?.value as string | null) ?? DEFAULT_JOTFORM_ID;
+    },
+  });
+
+  useEffect(() => {
+    if (current !== undefined) setValue(current ?? DEFAULT_JOTFORM_ID);
+  }, [current]);
+
+  const saveMutation = useMutation({
+    mutationFn: async (newValue: string) => {
+      const { error } = await supabase
+        .from("app_settings" as any)
+        .upsert({ key: "jotform_form_id", value: newValue.trim() } as any, { onConflict: "key" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["app_settings", "jotform_form_id"] });
+      toast({ title: "Saved", description: "Jotform Form ID updated." });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err?.message || "Failed to save.", variant: "destructive" });
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <ClipboardList className="h-5 w-5 text-primary" />
+          Annual Review Settings
+        </CardTitle>
+        <CardDescription>
+          Configure the Jotform form embedded on the public Annual Review page.
+          {!roleLoading && !isAdmin && " Only administrators can edit this value."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2 max-w-md">
+          <Label htmlFor="jotform-id">Jotform Form ID</Label>
+          <Input
+            id="jotform-id"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder={DEFAULT_JOTFORM_ID}
+            disabled={!isAdmin || isLoading}
+            className="font-mono"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Default: <span className="font-mono">{DEFAULT_JOTFORM_ID}</span>
+          </p>
+        </div>
+        <div>
+          <Button
+            onClick={() => saveMutation.mutate(value)}
+            disabled={!isAdmin || saveMutation.isPending || !value.trim() || value.trim() === current}
+            size="sm"
+          >
+            {saveMutation.isPending ? "Saving…" : "Save"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
