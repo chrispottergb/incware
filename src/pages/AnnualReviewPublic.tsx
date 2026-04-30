@@ -8,11 +8,12 @@ import {
   AlertCircle, Download, HelpCircle, Banknote, Cpu,
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-const JOTFORM_ID = "261175646963063";
+const DEFAULT_JOTFORM_ID = "261175646963063";
 const SUPPORT_EMAIL = "support@entityiq.net";
 
 // Reusable read-only renderers
@@ -98,7 +99,20 @@ export default function AnnualReviewPublic() {
   const [error, setError] = useState("");
   const [data, setData] = useState<Snapshot | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [jotformId, setJotformId] = useState<string>(DEFAULT_JOTFORM_ID);
   const snapshotRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data: row } = await supabase
+        .from("app_settings" as any)
+        .select("value")
+        .eq("key", "jotform_form_id")
+        .maybeSingle();
+      const v = (row as any)?.value;
+      if (v && typeof v === "string" && v.trim()) setJotformId(v.trim());
+    })();
+  }, []);
 
   useEffect(() => {
     if (!token) return;
@@ -553,7 +567,7 @@ export default function AnnualReviewPublic() {
             </CardHeader>
             <CardContent>
               <iframe
-                src={`https://form.jotform.com/${JOTFORM_ID}`}
+                src={`https://form.jotform.com/${jotformId}`}
                 width="100%"
                 height={2000}
                 frameBorder={0}
