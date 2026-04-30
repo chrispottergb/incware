@@ -144,8 +144,10 @@ export default function AnnualUpdateWorkflow({ open, onOpenChange, companies }: 
     toast.success("PDF downloaded.");
   };
 
-  const handleSendEmail = () => {
-    if (!updateData) return;
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  const handleSendEmail = async () => {
+    if (!updateData || !user) return;
 
     const company = updateData.company;
     const email = company.contact_email;
@@ -155,31 +157,51 @@ export default function AnnualUpdateWorkflow({ open, onOpenChange, companies }: 
       return;
     }
 
-    // Determine salutation: salutation_name → first word of contact_full_name → first word of company name
-    const salutation = company.salutation_name
-      || (company.contact_full_name ? company.contact_full_name.split(" ")[0] : null)
-      || company.name.split(" ")[0]
-      || "Client";
+    setSendingEmail(true);
+    try {
+      // Generate a secure token and create an annual review link record
+      const arr = new Uint8Array(32);
+      crypto.getRandomValues(arr);
+      const token = Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
 
-    const subject = encodeURIComponent(`Your Annual Update Review — ${company.name}`);
-    const body = encodeURIComponent(
-      `Dear ${salutation},\n\n` +
-      `Please find attached your Annual Update Review for ${company.name}. ` +
-      `This document summarizes all current information we have on file for your entity.\n\n` +
-      `Please review each section carefully and let us know if any changes or corrections are needed.\n\n` +
-      `We appreciate your prompt attention to this matter.\n\n` +
-      `Best regards,\n` +
-      `[Your Name]\n` +
-      `[Your Firm]`
-    );
+      const reviewYear = new Date().getFullYear();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 90);
 
-    // Download the PDF first so the user has it
-    downloadAnnualUpdatePdf(updateData);
+      const { error: insertError } = await supabase.from("annual_review_links").insert({
+        company_id: company.id,
+        user_id: user.id,
+        token,
+        review_year: reviewYear,
+        status: "pending",
+      });
+      if (insertError) throw insertError;
 
-    // Open mailto
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+      const reviewUrl = `${window.location.origin}/annual-review/${token}`;
 
-    toast.success("PDF downloaded. Your email client should open — please attach the PDF manually.");
+      const contactName = company.salutation_name
+        || company.contact_full_name
+        || null;
+
+      const { error: invokeError } = await supabase.functions.invoke("send-review-reminder", {
+        body: {
+          contactName,
+          contactEmail: email,
+          entityName: company.name,
+          reviewYear,
+          reviewUrl,
+          expiresAt: expiresAt.toISOString(),
+        },
+      });
+      if (invokeError) throw invokeError;
+
+      toast.success(`Email sent to ${email}.`);
+    } catch (err: any) {
+      console.error("Send email error:", err);
+      toast.error(err.message || "Failed to send email.");
+    } finally {
+      setSendingEmail(false);
+    }
   };
 
   const selectedCompany = companies.find(c => c.id === selectedCompanyId);
@@ -273,10 +295,14 @@ export default function AnnualUpdateWorkflow({ open, onOpenChange, companies }: 
               <Button
                 onClick={handleSendEmail}
                 className="flex-1"
-                disabled={!updateData.company.contact_email}
+                disabled={!updateData.company.contact_email || sendingEmail}
               >
-                <Mail className="mr-2 h-4 w-4" />
-                Download & Email
+                {sendingEmail ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Mail className="mr-2 h-4 w-4" />
+                )}
+                Send Email
               </Button>
             </div>
 
