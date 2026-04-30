@@ -2,10 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Building2, Users, UserCheck, Shield, Landmark,
   Car, Home, HeartHandshake, FileText, Calculator, Scale,
-  AlertCircle, Download, HelpCircle, Banknote, Cpu,
+  AlertCircle, Download, HelpCircle, Banknote, Cpu, CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +16,6 @@ import { supabase } from "@/integrations/supabase/client";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-const DEFAULT_JOTFORM_ID = "261175646963063";
 const SUPPORT_EMAIL = "support@entityiq.net";
 
 // Reusable read-only renderers
@@ -72,6 +74,8 @@ const fmtDate = (s?: string | null) => {
 };
 
 interface Snapshot {
+  link_id: string;
+  company_id: string;
   review_year: number;
   company_name: string;
   last_updated: string;
@@ -99,20 +103,16 @@ export default function AnnualReviewPublic() {
   const [error, setError] = useState("");
   const [data, setData] = useState<Snapshot | null>(null);
   const [downloading, setDownloading] = useState(false);
-  const [jotformId, setJotformId] = useState<string>(DEFAULT_JOTFORM_ID);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [form, setForm] = useState({
+    contact_name: "",
+    contact_email: "",
+    contact_phone: "",
+    contact_cell: "",
+    notes: "",
+  });
   const snapshotRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    (async () => {
-      const { data: row } = await supabase
-        .from("app_settings" as any)
-        .select("value")
-        .eq("key", "jotform_form_id")
-        .maybeSingle();
-      const v = (row as any)?.value;
-      if (v && typeof v === "string" && v.trim()) setJotformId(v.trim());
-    })();
-  }, []);
 
   useEffect(() => {
     if (!token) return;
@@ -129,7 +129,15 @@ export default function AnnualReviewPublic() {
         if (!res.ok) {
           setError(body.error || "Failed to load review");
         } else {
-          setData(body as Snapshot);
+          const snap = body as Snapshot;
+          setData(snap);
+          setForm((f) => ({
+            ...f,
+            contact_name: snap.contacts?.contact_full_name || "",
+            contact_email: snap.contacts?.contact_email || "",
+            contact_phone: snap.contacts?.contact_phone || "",
+            contact_cell: snap.contacts?.contact_cell || "",
+          }));
         }
       } catch {
         if (!cancelled) setError("Failed to connect. Please try again later.");
@@ -160,6 +168,47 @@ export default function AnnualReviewPublic() {
       toast.error("Failed to generate PDF.");
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!data || !token) return;
+    if (!form.contact_name.trim() || !form.contact_email.trim()) {
+      toast.error("Contact name and email are required.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error: insErr } = await supabase
+        .from("annual_review_submissions" as any)
+        .insert({
+          link_id: data.link_id,
+          company_id: data.company_id,
+          status: "pending_review",
+          submitted_at: new Date().toISOString(),
+          notes: form.notes || null,
+          new_entries: {
+            contact_name: form.contact_name,
+            contact_email: form.contact_email,
+            contact_phone: form.contact_phone,
+            contact_cell: form.contact_cell,
+          },
+        } as any);
+      if (insErr) throw insErr;
+
+      const { error: updErr } = await supabase
+        .from("annual_review_links" as any)
+        .update({ status: "submitted" })
+        .eq("token", token);
+      if (updErr) throw updErr;
+
+      setSubmitted(true);
+      toast.success("Your information has been submitted. Thank you!");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || "Failed to submit. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -551,7 +600,7 @@ export default function AnnualReviewPublic() {
         </Section>
       </div>
 
-      {/* Divider + Jotform iframe */}
+      {/* Divider + Update Form */}
       <div className="max-w-4xl mx-auto px-4 pb-12 space-y-4">
         <div className="border-t border-border pt-8">
           <Card className="border-border bg-card">
@@ -561,21 +610,80 @@ export default function AnnualReviewPublic() {
                 Update Your Information
               </CardTitle>
               <p className="text-xs text-muted-foreground">
-                The form below loads blank. Fill in only the items that have changed
-                or any new activity for {data.review_year}, then submit at the bottom of the form.
+                Confirm or update your contact details and add any notes about
+                changes for {data.review_year}, then click Submit.
               </p>
             </CardHeader>
             <CardContent>
-              <iframe
-                src={`https://form.jotform.com/${jotformId}`}
-                width="100%"
-                height={2000}
-                frameBorder={0}
-                scrolling="auto"
-                allow="fullscreen"
-                title="Annual Review Form"
-                className="w-full border border-border rounded-md bg-white"
-              />
+              {submitted ? (
+                <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
+                  <CheckCircle2 className="h-12 w-12 text-primary" />
+                  <h3 className="text-lg font-semibold text-foreground">Submission Received</h3>
+                  <p className="text-sm text-muted-foreground max-w-md">
+                    Thank you. Your updates for {data.review_year} have been submitted to
+                    EntityIQ for review. You may close this page.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contact_name">Contact Name *</Label>
+                      <Input
+                        id="contact_name"
+                        value={form.contact_name}
+                        onChange={(e) => setForm({ ...form, contact_name: e.target.value })}
+                        maxLength={120}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contact_email">Contact Email *</Label>
+                      <Input
+                        id="contact_email"
+                        type="email"
+                        value={form.contact_email}
+                        onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
+                        maxLength={255}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contact_phone">Contact Phone</Label>
+                      <Input
+                        id="contact_phone"
+                        value={form.contact_phone}
+                        onChange={(e) => setForm({ ...form, contact_phone: e.target.value })}
+                        maxLength={40}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contact_cell">Contact Cell</Label>
+                      <Input
+                        id="contact_cell"
+                        value={form.contact_cell}
+                        onChange={(e) => setForm({ ...form, contact_cell: e.target.value })}
+                        maxLength={40}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="notes">Notes / Changes for {data.review_year}</Label>
+                    <Textarea
+                      id="notes"
+                      value={form.notes}
+                      onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                      rows={6}
+                      maxLength={5000}
+                      placeholder="Describe any changes to officers, directors, banking, addresses, benefits, etc."
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <Button onClick={handleSubmit} disabled={submitting}>
+                      {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Submit Updates
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
