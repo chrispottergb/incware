@@ -295,10 +295,14 @@ export default function AnnualUpdateWorkflow({ open, onOpenChange, companies }: 
               <Button
                 onClick={handleSendEmail}
                 className="flex-1"
-                disabled={!updateData.company.contact_email}
+                disabled={!updateData.company.contact_email || sendingEmail}
               >
-                <Mail className="mr-2 h-4 w-4" />
-                Download & Email
+                {sendingEmail ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Mail className="mr-2 h-4 w-4" />
+                )}
+                Send Email
               </Button>
             </div>
 
