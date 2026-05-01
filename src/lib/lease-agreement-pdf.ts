@@ -129,7 +129,13 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   addText("Tenant shall, at Tenant's own expense, maintain appropriate liability and property insurance covering the Premises during the term. Landlord shall maintain insurance on the structure and building. Each party shall provide proof of insurance to the other upon request.");
   gap();
 
-  // 9. Leasehold Improvements
+  // 8.5 Classification Disclosure (conditional)
+  const disclosure = data.classification ? CLASSIFICATION_DISCLOSURES[data.classification] : null;
+  if (disclosure) {
+    addText(`DISCLOSURE — ${CLASSIFICATION_LABELS[data.classification!].toUpperCase()}`, { bold: true, size: 11 });
+    addText(disclosure);
+    gap();
+  }
   addText("9. LEASEHOLD IMPROVEMENTS", { bold: true, size: 11 });
   if (data.leaseholdImprovementAmount || data.leaseholdImprovementDescription) {
     const amt = data.leaseholdImprovementAmount ? fmtCurrency(data.leaseholdImprovementAmount) : "an agreed-upon amount";
