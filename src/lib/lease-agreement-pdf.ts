@@ -25,8 +25,29 @@ interface LeaseData {
   leaseholdImprovementAmount?: string;
   leaseholdImprovementDescription?: string;
   classification?: LeaseClassification;
+  leaseStructure?: string;
+  expenseTaxes?: string;
+  expenseInsurance?: string;
+  expenseMaintenance?: string;
+  marketRentJustified?: boolean;
+  marketRentNote?: string;
   customClauses?: LeaseClauseInput[];
 }
+
+const STRUCTURE_LABEL: Record<string, string> = {
+  modified_gross: "Modified Gross Lease",
+  gross: "Gross (Full Service) Lease",
+  triple_net: "Triple Net (NNN) Lease",
+  double_net: "Double Net (NN) Lease",
+  single_net: "Single Net (N) Lease",
+  absolute_net: "Absolute Net Lease",
+};
+
+const PARTY_LABEL: Record<string, string> = {
+  landlord: "Landlord",
+  tenant: "Tenant",
+  shared: "shared between Landlord and Tenant",
+};
 
 function fmtDate(d: string) {
   if (!d) return "_______________";
