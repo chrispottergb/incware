@@ -133,6 +133,12 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
           lease_classification: classification.classification,
           classification_overridden: !!override,
           classification_reason: classification.reason,
+          lease_structure: form.lease_structure,
+          expense_taxes_party: form.expense_taxes_party,
+          expense_insurance_party: form.expense_insurance_party,
+          expense_maintenance_party: form.expense_maintenance_party,
+          market_rent_justified: form.market_rent_justified,
+          market_rent_note: form.market_rent_note || null,
         };
         let savedId = editId;
         let prevClassification: string | null = null;
@@ -220,6 +226,12 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       leasehold_improvement_amount: a.leasehold_improvement_amount != null ? String(a.leasehold_improvement_amount) : "",
       leasehold_improvement_description: a.leasehold_improvement_description || "",
       rent_frequency: a.rent_frequency || "monthly",
+      lease_structure: a.lease_structure || "modified_gross",
+      expense_taxes_party: a.expense_taxes_party || "landlord",
+      expense_insurance_party: a.expense_insurance_party || "shared",
+      expense_maintenance_party: a.expense_maintenance_party || "shared",
+      market_rent_justified: !!a.market_rent_justified,
+      market_rent_note: a.market_rent_note || "",
     });
     setLandlordParty({
       kind: (a.landlord_party_kind as any) || "external",
