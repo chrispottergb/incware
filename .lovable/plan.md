@@ -1,98 +1,64 @@
-# Lease Agreement Module — Dynamic Classification & Conditional Generation
+# Redesign Landlord/Tenant Selection
 
-Extend the existing Leases system to auto-classify lease relationships (Standard / Related-Party / Self-Rental / Intercompany) based on real ownership data, inject conditional disclosure clauses into a single PDF template, and support manual override with audit trail.
+Replace the cramped 4-tab picker with a clean two-step flow that progressively reveals the entity field after a party type is chosen.
 
-## 1. Database Changes
+## New Layout
 
-**Extend `company_assets`** (lease rows only) with:
-- `landlord_party_kind` text — `'individual' | 'company' | 'external'`
-- `landlord_company_id` uuid (nullable, FK → companies)
-- `landlord_shareholder_id` uuid (nullable, FK → shareholders)
-- `tenant_party_kind` text — same enum (defaults `'company'` = current company)
-- `tenant_company_id` uuid (nullable, FK → companies)
-- `tenant_shareholder_id` uuid (nullable, FK → shareholders)
-- `lease_classification` text — `'standard' | 'related_party' | 'self_rental' | 'intercompany'`
-- `classification_overridden` boolean default false
-- `classification_reason` text (human-readable explanation)
-- `rent_frequency` text default `'monthly'`
-- `generated_lease_text` text (snapshot of finalized lease body)
-- `finalized_at` timestamptz
+Stack Landlord and Tenant vertically (no longer side-by-side). Each section shows:
 
-**New table `lease_clauses`** — editable conditional/custom clauses per lease:
-- `id`, `lease_id` (FK → company_assets), `clause_type` (`'standard'|'disclosure'|'tax'|'custom'`), `clause_title`, `clause_text`, `sort_order`, `is_auto_generated`, `created_at`
-- RLS via parent company ownership
+```text
+┌─ LANDLORD ──────────────────────────────────┐
+│  Party Type                                 │
+│  ○ This Company   ○ Related Company         │
+│  ○ Individual     ○ External Entity         │
+│  (helper text under each)                   │
+│                                             │
+│  Selected Entity                  ← appears │
+│  [searchable selector or input]    only     │
+│                                   after     │
+│                                   step 1    │
+└─────────────────────────────────────────────┘
+```
 
-**New table `lease_classification_audit`** — override log:
-- `id`, `lease_id`, `old_classification`, `new_classification`, `reason`, `changed_by` (uuid), `changed_at`
-- RLS via parent company ownership
+## Step 1 — Party Type (Radio Cards)
 
-**New `app_settings` row**: `related_party_threshold_pct` default `25`.
+Replace `Tabs` with a 2x2 grid of radio cards. Each card:
+- Bold title (e.g. "This Company")
+- Small helper line ("Automatically uses your primary entity")
+- Selected state uses primary color border + tinted background
+- Large click target
 
-## 2. Classification Engine (`src/lib/lease-classification.ts`)
+## Step 2 — Entity Selection (progressive disclosure)
 
-Pure TypeScript, fully unit-testable. Inputs: landlord party, tenant party, share-transaction snapshot, `company_relationships`, threshold. Outputs `{ classification, reason }`.
+Renders nothing until Step 1 is chosen, then:
 
-Rules evaluated in order:
-1. **Self-Rental** — one party is `individual` (shareholder), the other is a `company` where that shareholder holds ≥ threshold computed ownership as of today.
-2. **Intercompany** — both parties are `company`, AND either (a) linked in `company_relationships`, or (b) share a common controlling owner (≥ threshold in both).
-3. **Related-Party** — any ownership overlap ≥ threshold not matching above (e.g., common trust/contact).
-4. **Standard** — fallback (includes any `external` party).
+| Party Type | Renders |
+|---|---|
+| This Company | Read-only chip showing the current company name |
+| Related Company | Search-as-you-type combobox of other companies |
+| Individual | Search-as-you-type combobox of shareholders/members + free-text fallback |
+| External Entity | Name input + optional address input |
 
-Reason string explains the calculation, e.g. *"John Smith owns 100% of Acme LLC per share ledger as of 2026-05-01."*
+Use the existing shadcn `Command` + `Popover` pattern for the searchable selectors so long lists scale without scroll-clutter.
 
-## 3. Single PDF Template with Conditional Injection
+## Files to change
 
-Modify `src/lib/lease-agreement-pdf.ts`:
-- Accept `classification` + `clauses[]` in `LeaseData`.
-- Keep all 16 base sections unchanged.
-- After Section 8 (Insurance), inject a new **"DISCLOSURE"** section only when classification ≠ `standard`, using the exact wording from your spec (Related-Party, Self-Rental, Intercompany).
-- Append any `custom` clauses from `lease_clauses` before Signatures.
-- On finalize, the rendered text body is captured and saved to `generated_lease_text` for version control.
+1. **`src/components/company/leases/EntityPartyPicker.tsx`** — full rewrite:
+   - Remove `Tabs`/`TabsList`/`TabsContent`
+   - Add `RadioCard` internal component (or inline divs styled as cards)
+   - Add `SearchableEntityCombobox` using `Command` + `Popover`
+   - Keep the same `Props` interface so `LeasesTab.tsx` doesn't change
+   - Helper text per option as listed in the request
 
-## 4. UI Changes (`LeasesTab.tsx` + new components)
+2. **`src/components/company/LeasesTab.tsx`** — one small change:
+   - Change `<div className="grid grid-cols-2 gap-3">` wrapping the two `EntityPartyPicker`s to `<div className="space-y-4">` so Landlord/Tenant stack vertically.
 
-**New `EntityPartyPicker` component** replaces free-text Landlord Name:
-- Tabs: *This Company* / *Related Company* / *Individual (Shareholder)* / *External Party*
-- Related Company → dropdown of `companies` owned by current user
-- Individual → dropdown of `shareholders` from the current company
-- External → free text (forces Standard classification)
+## Technical Notes
 
-**Add Lease dialog** updates:
-- Landlord picker (above) + Tenant picker (defaults to current company, editable)
-- Live "Detected Classification" banner with badge color + "Why?" popover showing the reason string
-- "Override classification" dropdown (writes to audit table on change)
-- Rent Frequency select (Monthly/Annual/Other)
-- "Preview" → existing flow with clauses applied
-- "Generate & Finalize" → snapshots `generated_lease_text`, sets `finalized_at`
+- Project is desktop-only (≥1280px) per project memory — skipping the "mobile responsive" requirement; keep large desktop click targets only.
+- `RadioCard` is a simple internal component (no new shadcn primitive needed): a `<button type="button">` with conditional border/background classes. Uses semantic tokens (`border-primary`, `bg-primary/5`, `border-border`) — no hardcoded colors.
+- Searchable combobox uses existing `@/components/ui/command` + `@/components/ui/popover`.
+- Queries (`my_companies_for_picker`, `shareholders_for_picker`) stay identical.
+- "This Company" auto-fills `{ kind: "company", companyId: currentCompanyId, name: <currentName> }` immediately so classification can run.
 
-**New `LeaseClausesEditor`** (collapsible section in dialog):
-- Lists auto-generated disclosure clauses (read-only badge) + editable custom clauses
-- Add/remove/reorder custom clauses before finalizing
-
-## 5. Files Touched
-
-**New**
-- `src/lib/lease-classification.ts` + `src/test/lease-classification.test.ts`
-- `src/components/company/leases/EntityPartyPicker.tsx`
-- `src/components/company/leases/LeaseClausesEditor.tsx`
-- `src/components/company/leases/ClassificationBanner.tsx`
-- `src/hooks/useLeaseClassification.ts` (TanStack Query — pulls share_transactions + relationships)
-
-**Modified**
-- `src/components/company/LeasesTab.tsx` — wire pickers, banner, editor, finalize flow
-- `src/lib/lease-agreement-pdf.ts` — accept classification + clauses, inject disclosure section
-- One migration: schema extension + 2 new tables + RLS + app_settings seed
-
-## 6. Out of Scope (this round)
-
-- Importing third-party landlords into a global directory (already covered by existing AddressBook autocomplete)
-- Versioning multiple finalized PDFs per lease (current scope: one finalized snapshot; can be extended later)
-- Cross-user shareholder lookups (RLS keeps it scoped to current owner's data)
-
-## 7. Acceptance Criteria
-
-- Selecting a shareholder as landlord + current LLC as tenant where that shareholder owns 100% → banner shows **Self-Rental** with reason string; PDF includes the IRS-rules disclosure paragraph.
-- Selecting two sibling LLCs under common ownership → **Intercompany**; intercompany documentation clause added.
-- External landlord → **Standard**; no disclosure paragraph.
-- Manual override writes a row to `lease_classification_audit` and sets `classification_overridden = true`.
-- Finalizing a lease persists `generated_lease_text` and disables further auto-regeneration unless explicitly re-finalized.
+No DB or API changes.
