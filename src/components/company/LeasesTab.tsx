@@ -331,7 +331,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                   {editId ? "Edit" : "Add"} Lease
                 </DialogTitle>
               </DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); if (!savingRef.current) saveLease.mutate(); }} className="space-y-3">
+              <form onSubmit={(e) => { e.preventDefault(); if (!savingRef.current) saveLease.mutate(); }} className="space-y-2.5">
                 <div className="field-group">
                   <Label className="field-label">Property Description</Label>
                   <Select value={leaseOptions.includes(form.description) ? form.description : "__custom"} onValueChange={(v) => setForm((p) => ({ ...p, description: v === "__custom" ? "" : v }))}>
@@ -361,7 +361,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                     placeholder="Street address"
                   />
                 </div>
-                <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
                   <EntityPartyPicker
                     label="Landlord"
                     currentCompanyId={companyId}
@@ -403,28 +403,58 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                   overridden={!!override}
                   onOverride={setOverride}
                 />
-                <ExpenseMatrix
-                  structure={form.lease_structure}
-                  taxes={form.expense_taxes_party}
-                  insurance={form.expense_insurance_party}
-                  maintenance={form.expense_maintenance_party}
-                  onChange={(patch) => setForm((p) => ({
-                    ...p,
-                    ...(patch.structure !== undefined && { lease_structure: patch.structure }),
-                    ...(patch.taxes !== undefined && { expense_taxes_party: patch.taxes }),
-                    ...(patch.insurance !== undefined && { expense_insurance_party: patch.insurance }),
-                    ...(patch.maintenance !== undefined && { expense_maintenance_party: patch.maintenance }),
-                  }))}
-                />
-                {classification.classification !== "standard" && (
-                  <MarketRentField
-                    justified={form.market_rent_justified}
-                    note={form.market_rent_note}
-                    onJustifiedChange={(v) => setForm((p) => ({ ...p, market_rent_justified: v }))}
-                    onNoteChange={(v) => setForm((p) => ({ ...p, market_rent_note: v }))}
-                    required={classification.classification === "self_rental" || classification.classification === "intercompany"}
-                  />
-                )}
+                <details className="rounded-md border border-border bg-muted/30 group">
+                  <summary className="flex items-center justify-between px-3 py-2 cursor-pointer list-none select-none">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Lease Structure & Expenses
+                    </span>
+                    <span className="text-[10px] text-muted-foreground capitalize group-open:hidden">
+                      {(form.lease_structure || "modified_gross").replace(/_/g, " ")} · click to edit
+                    </span>
+                    <span className="text-[10px] text-muted-foreground hidden group-open:inline">collapse</span>
+                  </summary>
+                  <div className="px-3 pb-3">
+                    <ExpenseMatrix
+                      structure={form.lease_structure}
+                      taxes={form.expense_taxes_party}
+                      insurance={form.expense_insurance_party}
+                      maintenance={form.expense_maintenance_party}
+                      onChange={(patch) => setForm((p) => ({
+                        ...p,
+                        ...(patch.structure !== undefined && { lease_structure: patch.structure }),
+                        ...(patch.taxes !== undefined && { expense_taxes_party: patch.taxes }),
+                        ...(patch.insurance !== undefined && { expense_insurance_party: patch.insurance }),
+                        ...(patch.maintenance !== undefined && { expense_maintenance_party: patch.maintenance }),
+                      }))}
+                    />
+                  </div>
+                </details>
+                {classification.classification !== "standard" && (() => {
+                  const isRequired = classification.classification === "self_rental" || classification.classification === "intercompany";
+                  const needsAttention = isRequired && !form.market_rent_justified;
+                  return (
+                    <details className="rounded-md border border-border bg-muted/30 group" open={needsAttention}>
+                      <summary className="flex items-center justify-between px-3 py-2 cursor-pointer list-none select-none">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                          Market Rent Justification
+                          {isRequired && <span className="text-destructive ml-1">*</span>}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {form.market_rent_justified ? "✓ Provided" : (isRequired ? "Required" : "Optional")}
+                        </span>
+                      </summary>
+                      <div className="px-3 pb-3">
+                        <MarketRentField
+                          justified={form.market_rent_justified}
+                          note={form.market_rent_note}
+                          onJustifiedChange={(v) => setForm((p) => ({ ...p, market_rent_justified: v }))}
+                          onNoteChange={(v) => setForm((p) => ({ ...p, market_rent_note: v }))}
+                          required={isRequired}
+                        />
+                      </div>
+                    </details>
+                  );
+                })()}
                 {editId && <LeaseClausesEditor leaseId={editId} />}
                 <div className="field-group">
                   <Label className="field-label">Lease Date (Signed)</Label>
