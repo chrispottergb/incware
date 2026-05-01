@@ -1,83 +1,98 @@
-## Goal
+# Lease Agreement Module — Dynamic Classification & Conditional Generation
 
-In the Add/Edit Benefit dialog (Annual Meeting → Benefits/Insurance tab), replace the single "Benefit Type" combobox with a two-step picker:
+Extend the existing Leases system to auto-classify lease relationships (Standard / Related-Party / Self-Rental / Intercompany) based on real ownership data, inject conditional disclosure clauses into a single PDF template, and support manual override with audit trail.
 
-1. **Category dropdown** (single-select)
-2. **Multi-select checkbox list** of benefits within that category, each with a hover tooltip
+## 1. Database Changes
 
-Selected benefits show in a summary chip area below. Saving creates one `meeting_benefits` row per selected benefit so the existing table rendering, edit flow, and PDF output continue to work unchanged.
+**Extend `company_assets`** (lease rows only) with:
+- `landlord_party_kind` text — `'individual' | 'company' | 'external'`
+- `landlord_company_id` uuid (nullable, FK → companies)
+- `landlord_shareholder_id` uuid (nullable, FK → shareholders)
+- `tenant_party_kind` text — same enum (defaults `'company'` = current company)
+- `tenant_company_id` uuid (nullable, FK → companies)
+- `tenant_shareholder_id` uuid (nullable, FK → shareholders)
+- `lease_classification` text — `'standard' | 'related_party' | 'self_rental' | 'intercompany'`
+- `classification_overridden` boolean default false
+- `classification_reason` text (human-readable explanation)
+- `rent_frequency` text default `'monthly'`
+- `generated_lease_text` text (snapshot of finalized lease body)
+- `finalized_at` timestamptz
 
-## Files to change
+**New table `lease_clauses`** — editable conditional/custom clauses per lease:
+- `id`, `lease_id` (FK → company_assets), `clause_type` (`'standard'|'disclosure'|'tax'|'custom'`), `clause_title`, `clause_text`, `sort_order`, `is_auto_generated`, `created_at`
+- RLS via parent company ownership
 
-- `src/components/meeting/MeetingBenefits.tsx` — only file touched.
+**New table `lease_classification_audit`** — override log:
+- `id`, `lease_id`, `old_classification`, `new_classification`, `reason`, `changed_by` (uuid), `changed_at`
+- RLS via parent company ownership
 
-## Implementation
+**New `app_settings` row**: `related_party_threshold_pct` default `25`.
 
-### 1. Benefit catalog
+## 2. Classification Engine (`src/lib/lease-classification.ts`)
 
-Add a typed catalog at the top of the file:
+Pure TypeScript, fully unit-testable. Inputs: landlord party, tenant party, share-transaction snapshot, `company_relationships`, threshold. Outputs `{ classification, reason }`.
 
-```ts
-const BENEFIT_CATALOG: Record<string, { label: string; tooltip: string }[]> = {
-  "Health Coverage": [
-    { label: "Health Insurance (Medical)", tooltip: "Core medical coverage for doctor visits, hospital care, and treatment" },
-    { label: "Dental Insurance", tooltip: "Covers routine dental care like cleanings and fillings" },
-    { label: "Vision Insurance", tooltip: "Covers eye exams, glasses, and contacts" },
-    { label: "Prescription Drug Coverage", tooltip: "Helps pay for medications" },
-    { label: "Other", tooltip: "Any additional health coverage" },
-  ],
-  "Life & Disability": [ /* …per spec… */ ],
-  "Retirement": [ /* …per spec… */ ],
-  "Time Off & Leave": [ /* …per spec… */ ],
-  "Additional Benefits": [ /* …per spec… */ ],
-  "Owner/Executive Only": [ /* …per spec… */ ],
-};
-```
+Rules evaluated in order:
+1. **Self-Rental** — one party is `individual` (shareholder), the other is a `company` where that shareholder holds ≥ threshold computed ownership as of today.
+2. **Intercompany** — both parties are `company`, AND either (a) linked in `company_relationships`, or (b) share a common controlling owner (≥ threshold in both).
+3. **Related-Party** — any ownership overlap ≥ threshold not matching above (e.g., common trust/contact).
+4. **Standard** — fallback (includes any `external` party).
 
-All categories and items copied verbatim from the spec (including the "— description" tooltip text, which becomes the tooltip body).
+Reason string explains the calculation, e.g. *"John Smith owns 100% of Acme LLC per share ledger as of 2026-05-01."*
 
-### 2. Replace `BenefitTypeCombobox` usage in the dialog
+## 3. Single PDF Template with Conditional Injection
 
-In the Add Benefit dialog body, replace the current single `BenefitTypeCombobox` field with:
+Modify `src/lib/lease-agreement-pdf.ts`:
+- Accept `classification` + `clauses[]` in `LeaseData`.
+- Keep all 16 base sections unchanged.
+- After Section 8 (Insurance), inject a new **"DISCLOSURE"** section only when classification ≠ `standard`, using the exact wording from your spec (Related-Party, Self-Rental, Intercompany).
+- Append any `custom` clauses from `lease_clauses` before Signatures.
+- On finalize, the rendered text body is captured and saved to `generated_lease_text` for version control.
 
-- **Category** — `<Select>` (shadcn) listing the 6 categories. Selecting a new category clears any currently selected benefit checkboxes.
-- **Benefits** — once a category is chosen, render a checkbox grid (2 columns on desktop, 1 column narrower) of items from `BENEFIT_CATALOG[category]`. Each row:
-  - `<Checkbox>` + `<Label>` + small `Info` icon wrapped in `<Tooltip>` (using existing `@/components/ui/tooltip` with a `<TooltipProvider>` wrapper at the dialog root).
-  - Hover/focus on the row or icon shows a 1-sentence tooltip from the catalog.
-- **"Other" handling** — when "Other" is checked in any category, show a small inline text input "Describe other benefit" so the saved row carries a meaningful name like `Health Coverage — Other: Wellness rebate`.
-- **Selected summary** — below the checkbox list, render a wrap of `Badge` chips showing each selected benefit (with an X to remove). Empty state: muted "No benefits selected yet".
+## 4. UI Changes (`LeasesTab.tsx` + new components)
 
-State additions inside the component:
-```ts
-const [category, setCategory] = useState<string>("");
-const [selectedBenefits, setSelectedBenefits] = useState<string[]>([]);
-const [otherText, setOtherText] = useState<string>("");
-```
+**New `EntityPartyPicker` component** replaces free-text Landlord Name:
+- Tabs: *This Company* / *Related Company* / *Individual (Shareholder)* / *External Party*
+- Related Company → dropdown of `companies` owned by current user
+- Individual → dropdown of `shareholders` from the current company
+- External → free text (forces Standard classification)
 
-`closeDialog` and the edit-open path reset these along with `form`.
+**Add Lease dialog** updates:
+- Landlord picker (above) + Tenant picker (defaults to current company, editable)
+- Live "Detected Classification" banner with badge color + "Why?" popover showing the reason string
+- "Override classification" dropdown (writes to audit table on change)
+- Rent Frequency select (Monthly/Annual/Other)
+- "Preview" → existing flow with clauses applied
+- "Generate & Finalize" → snapshots `generated_lease_text`, sets `finalized_at`
 
-### 3. Submit behavior
+**New `LeaseClausesEditor`** (collapsible section in dialog):
+- Lists auto-generated disclosure clauses (read-only badge) + editable custom clauses
+- Add/remove/reorder custom clauses before finalizing
 
-- **Add mode** (no `editingId`): for each entry in `selectedBenefits`, insert one `meeting_benefits` row. The benefit name stored in `benefit_type` is the catalog label, except `"Other"` which becomes `${category} — Other: ${otherText.trim()}` (or just `${category} — Other` if blank). All other form fields (Provider, Agent, Insurance Agency, Plan Year, etc.) are applied to every inserted row. Use `Promise.all` of inserts; show one success toast `"Added N benefit(s)"`.
-- **Edit mode**: keep current single-row update behavior. Pre-populate by detecting the row's `benefit_type` against the catalog to set `category` + `selectedBenefits = [matchedLabel]` (fallback: leave category blank and treat the type as a freeform "Other" entry). Saving in edit mode uses the first selected benefit only (existing single-row update path).
+## 5. Files Touched
 
-Submit button disabled until `category` is set AND `selectedBenefits.length > 0` AND (if "Other" is selected, `otherText.trim()` is non-empty).
+**New**
+- `src/lib/lease-classification.ts` + `src/test/lease-classification.test.ts`
+- `src/components/company/leases/EntityPartyPicker.tsx`
+- `src/components/company/leases/LeaseClausesEditor.tsx`
+- `src/components/company/leases/ClassificationBanner.tsx`
+- `src/hooks/useLeaseClassification.ts` (TanStack Query — pulls share_transactions + relationships)
 
-### 4. UI / design
+**Modified**
+- `src/components/company/LeasesTab.tsx` — wire pickers, banner, editor, finalize flow
+- `src/lib/lease-agreement-pdf.ts` — accept classification + clauses, inject disclosure section
+- One migration: schema extension + 2 new tables + RLS + app_settings seed
 
-- White background dialog already in place; new fields use existing rounded `Input`/`Select`/`Checkbox` styles.
-- Checkbox list lives inside a soft-bordered `rounded-md border bg-muted/20 p-3` container with a `ScrollArea` capped at `max-h-64`.
-- Selected summary uses `Badge variant="secondary"` chips with a small X button.
-- Layout: Category and Benefits sections each `col-span-2` in the existing 2-col grid. Desktop-first; the existing dialog already constrains to `max-w-lg` with vertical scroll, so no new responsive work needed.
-- Wrap the dialog body in `<TooltipProvider delayDuration={150}>`.
+## 6. Out of Scope (this round)
 
-### 5. Backwards compatibility
+- Importing third-party landlords into a global directory (already covered by existing AddressBook autocomplete)
+- Versioning multiple finalized PDFs per lease (current scope: one finalized snapshot; can be extended later)
+- Cross-user shareholder lookups (RLS keeps it scoped to current owner's data)
 
-- Database schema unchanged; we still write `benefit_type`, `benefit_description`, etc. to `meeting_benefits`.
-- Existing rows continue to display in the table and PDF as before. The `customTypes` merge logic (used to preserve unrecognized historical values) is removed since the combobox is gone — historical values still render fine in the read-only table; they just appear as "Other" in the edit dialog if their label isn't in the catalog.
-- `isRetirementType` logic stays and continues to drive the conditional Contribution Amount field, evaluated against the first selected benefit (or the category being "Retirement").
+## 7. Acceptance Criteria
 
-## Out of scope
-
-- No changes to `meeting_benefits` schema, PDF export, or the Benefits table rendering.
-- No changes to other tabs.
+- Selecting a shareholder as landlord + current LLC as tenant where that shareholder owns 100% → banner shows **Self-Rental** with reason string; PDF includes the IRS-rules disclosure paragraph.
+- Selecting two sibling LLCs under common ownership → **Intercompany**; intercompany documentation clause added.
+- External landlord → **Standard**; no disclosure paragraph.
+- Manual override writes a row to `lease_classification_audit` and sets `classification_overridden = true`.
+- Finalizing a lease persists `generated_lease_text` and disables further auto-regeneration unless explicitly re-finalized.
