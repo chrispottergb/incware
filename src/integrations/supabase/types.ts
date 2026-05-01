@@ -1119,6 +1119,9 @@ export type Database = {
           created_at: string
           description: string
           escrow: number | null
+          expense_insurance_party: string | null
+          expense_maintenance_party: string | null
+          expense_taxes_party: string | null
           finalized_at: string | null
           finance_company: string | null
           generated_lease_text: string | null
@@ -1133,11 +1136,14 @@ export type Database = {
           lease_date: string | null
           lease_end_date: string | null
           lease_start_date: string | null
+          lease_structure: string | null
           lease_term: string | null
           leasehold_improvement_amount: number | null
           leasehold_improvement_description: string | null
           make: string | null
           manufacturer: string | null
+          market_rent_justified: boolean | null
+          market_rent_note: string | null
           model: string | null
           monthly_payment: number | null
           mortgage: number | null
@@ -1166,6 +1172,9 @@ export type Database = {
           created_at?: string
           description: string
           escrow?: number | null
+          expense_insurance_party?: string | null
+          expense_maintenance_party?: string | null
+          expense_taxes_party?: string | null
           finalized_at?: string | null
           finance_company?: string | null
           generated_lease_text?: string | null
@@ -1180,11 +1189,14 @@ export type Database = {
           lease_date?: string | null
           lease_end_date?: string | null
           lease_start_date?: string | null
+          lease_structure?: string | null
           lease_term?: string | null
           leasehold_improvement_amount?: number | null
           leasehold_improvement_description?: string | null
           make?: string | null
           manufacturer?: string | null
+          market_rent_justified?: boolean | null
+          market_rent_note?: string | null
           model?: string | null
           monthly_payment?: number | null
           mortgage?: number | null
@@ -1213,6 +1225,9 @@ export type Database = {
           created_at?: string
           description?: string
           escrow?: number | null
+          expense_insurance_party?: string | null
+          expense_maintenance_party?: string | null
+          expense_taxes_party?: string | null
           finalized_at?: string | null
           finance_company?: string | null
           generated_lease_text?: string | null
@@ -1227,11 +1242,14 @@ export type Database = {
           lease_date?: string | null
           lease_end_date?: string | null
           lease_start_date?: string | null
+          lease_structure?: string | null
           lease_term?: string | null
           leasehold_improvement_amount?: number | null
           leasehold_improvement_description?: string | null
           make?: string | null
           manufacturer?: string | null
+          market_rent_justified?: boolean | null
+          market_rent_note?: string | null
           model?: string | null
           monthly_payment?: number | null
           mortgage?: number | null
