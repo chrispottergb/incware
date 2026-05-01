@@ -25,8 +25,11 @@ import { previewLeaseAgreement, downloadLeaseAgreement } from "@/lib/lease-agree
 import { EntityPartyPicker } from "./leases/EntityPartyPicker";
 import { ClassificationBanner } from "./leases/ClassificationBanner";
 import { LeaseClausesEditor } from "./leases/LeaseClausesEditor";
+import { ExpenseMatrix } from "./leases/ExpenseMatrix";
+import { MarketRentField } from "./leases/MarketRentField";
 import { useLeaseClassification } from "@/hooks/useLeaseClassification";
 import { CLASSIFICATION_LABELS, type LeaseClassification, type LeaseParty } from "@/lib/lease-classification";
+import { computeLeaseRisk, RISK_BADGE_CLASS } from "@/lib/lease-risk";
 
 interface Props {
   companyId: string;
@@ -52,6 +55,12 @@ const emptyForm = {
   leasehold_improvement_amount: "",
   leasehold_improvement_description: "",
   rent_frequency: "monthly" as string,
+  lease_structure: "modified_gross" as string,
+  expense_taxes_party: "landlord" as string,
+  expense_insurance_party: "shared" as string,
+  expense_maintenance_party: "shared" as string,
+  market_rent_justified: false as boolean,
+  market_rent_note: "" as string,
 };
 
 export default function LeasesTab({ companyId, companyName = "", companyAddress = "" }: Props) {
