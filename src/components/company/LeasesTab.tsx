@@ -403,6 +403,28 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                   overridden={!!override}
                   onOverride={setOverride}
                 />
+                <ExpenseMatrix
+                  structure={form.lease_structure}
+                  taxes={form.expense_taxes_party}
+                  insurance={form.expense_insurance_party}
+                  maintenance={form.expense_maintenance_party}
+                  onChange={(patch) => setForm((p) => ({
+                    ...p,
+                    ...(patch.structure !== undefined && { lease_structure: patch.structure }),
+                    ...(patch.taxes !== undefined && { expense_taxes_party: patch.taxes }),
+                    ...(patch.insurance !== undefined && { expense_insurance_party: patch.insurance }),
+                    ...(patch.maintenance !== undefined && { expense_maintenance_party: patch.maintenance }),
+                  }))}
+                />
+                {classification.classification !== "standard" && (
+                  <MarketRentField
+                    justified={form.market_rent_justified}
+                    note={form.market_rent_note}
+                    onJustifiedChange={(v) => setForm((p) => ({ ...p, market_rent_justified: v }))}
+                    onNoteChange={(v) => setForm((p) => ({ ...p, market_rent_note: v }))}
+                    required={classification.classification === "self_rental" || classification.classification === "intercompany"}
+                  />
+                )}
                 {editId && <LeaseClausesEditor leaseId={editId} />}
                 <div className="field-group">
                   <Label className="field-label">Lease Date (Signed)</Label>
@@ -468,6 +490,12 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                 : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
 
               const hasImprovements = a.leasehold_improvement_amount != null && Number(a.leasehold_improvement_amount) > 0;
+              const risk = computeLeaseRisk({
+                classification: (a.lease_classification as LeaseClassification) || "standard",
+                marketRentJustified: !!a.market_rent_justified,
+              });
+              const cls = (a.lease_classification as LeaseClassification) || "standard";
+              const clsLabel = CLASSIFICATION_LABELS[cls];
 
               return (
                 <div key={a.id} className="rounded-lg border border-border overflow-hidden">
@@ -476,10 +504,15 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                     <div className="flex items-center gap-2">
                       <FileText className="h-3.5 w-3.5 text-[hsl(210,59%,30%)]/80" />
                       <span className="text-sm font-semibold text-[hsl(210,59%,30%)]">Lease Agreement</span>
+                      {cls !== "standard" && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal border-[hsl(210,59%,30%)]/30 text-[hsl(210,59%,30%)]">
+                          {clsLabel}
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge className={`text-[10px] px-2 py-0.5 font-semibold ${statusClass}`}>
-                        {statusLabel}
+                      <Badge className={`text-[10px] px-2 py-0.5 font-semibold ${RISK_BADGE_CLASS[risk.level]}`} title={risk.reason}>
+                        {risk.label}
                       </Badge>
                       <div className="flex gap-0.5">
                         <Button variant="ghost" size="icon" className="h-6 w-6 text-[hsl(210,59%,30%)]/70 hover:text-[hsl(210,59%,30%)] hover:bg-[hsl(210,59%,30%)]/10" title="Preview Lease Agreement" onClick={() => generateAgreement(a, "preview")}>
