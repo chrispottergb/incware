@@ -743,7 +743,7 @@ export default function MeetingDetail() {
     { value: "vehicles", label: "Vehicles & Equipment" },
     { value: "amendments", label: "Amendments" },
     { value: "resolutions", label: "Resolutions" },
-    { value: "benefits", label: "Benefits" },
+    { value: "benefits", label: "Benefits/Insurance" },
     { value: "loans", label: "Loans & Notes Payable" },
     { value: "agreements", label: "Agreements" },
     { value: "other", label: "Other" },
