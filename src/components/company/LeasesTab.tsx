@@ -361,7 +361,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                     placeholder="Street address"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-4">
                   <EntityPartyPicker
                     label="Landlord"
                     currentCompanyId={companyId}
