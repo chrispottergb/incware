@@ -25,8 +25,11 @@ import { previewLeaseAgreement, downloadLeaseAgreement } from "@/lib/lease-agree
 import { EntityPartyPicker } from "./leases/EntityPartyPicker";
 import { ClassificationBanner } from "./leases/ClassificationBanner";
 import { LeaseClausesEditor } from "./leases/LeaseClausesEditor";
+import { ExpenseMatrix } from "./leases/ExpenseMatrix";
+import { MarketRentField } from "./leases/MarketRentField";
 import { useLeaseClassification } from "@/hooks/useLeaseClassification";
 import { CLASSIFICATION_LABELS, type LeaseClassification, type LeaseParty } from "@/lib/lease-classification";
+import { computeLeaseRisk, RISK_BADGE_CLASS } from "@/lib/lease-risk";
 
 interface Props {
   companyId: string;
@@ -52,6 +55,12 @@ const emptyForm = {
   leasehold_improvement_amount: "",
   leasehold_improvement_description: "",
   rent_frequency: "monthly" as string,
+  lease_structure: "modified_gross" as string,
+  expense_taxes_party: "landlord" as string,
+  expense_insurance_party: "shared" as string,
+  expense_maintenance_party: "shared" as string,
+  market_rent_justified: false as boolean,
+  market_rent_note: "" as string,
 };
 
 export default function LeasesTab({ companyId, companyName = "", companyAddress = "" }: Props) {
@@ -124,6 +133,12 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
           lease_classification: classification.classification,
           classification_overridden: !!override,
           classification_reason: classification.reason,
+          lease_structure: form.lease_structure,
+          expense_taxes_party: form.expense_taxes_party,
+          expense_insurance_party: form.expense_insurance_party,
+          expense_maintenance_party: form.expense_maintenance_party,
+          market_rent_justified: form.market_rent_justified,
+          market_rent_note: form.market_rent_note || null,
         };
         let savedId = editId;
         let prevClassification: string | null = null;
@@ -211,6 +226,12 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       leasehold_improvement_amount: a.leasehold_improvement_amount != null ? String(a.leasehold_improvement_amount) : "",
       leasehold_improvement_description: a.leasehold_improvement_description || "",
       rent_frequency: a.rent_frequency || "monthly",
+      lease_structure: a.lease_structure || "modified_gross",
+      expense_taxes_party: a.expense_taxes_party || "landlord",
+      expense_insurance_party: a.expense_insurance_party || "shared",
+      expense_maintenance_party: a.expense_maintenance_party || "shared",
+      market_rent_justified: !!a.market_rent_justified,
+      market_rent_note: a.market_rent_note || "",
     });
     setLandlordParty({
       kind: (a.landlord_party_kind as any) || "external",
@@ -259,6 +280,12 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       leaseholdImprovementAmount: lease.leasehold_improvement_amount != null ? String(lease.leasehold_improvement_amount) : "",
       leaseholdImprovementDescription: lease.leasehold_improvement_description || "",
       classification: (lease.lease_classification as LeaseClassification) || "standard",
+      leaseStructure: lease.lease_structure || "modified_gross",
+      expenseTaxes: lease.expense_taxes_party || "landlord",
+      expenseInsurance: lease.expense_insurance_party || "shared",
+      expenseMaintenance: lease.expense_maintenance_party || "shared",
+      marketRentJustified: !!lease.market_rent_justified,
+      marketRentNote: lease.market_rent_note || "",
       customClauses: (clauses as any[]) || [],
     };
     if (mode === "preview") previewLeaseAgreement(data);
@@ -376,6 +403,28 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                   overridden={!!override}
                   onOverride={setOverride}
                 />
+                <ExpenseMatrix
+                  structure={form.lease_structure}
+                  taxes={form.expense_taxes_party}
+                  insurance={form.expense_insurance_party}
+                  maintenance={form.expense_maintenance_party}
+                  onChange={(patch) => setForm((p) => ({
+                    ...p,
+                    ...(patch.structure !== undefined && { lease_structure: patch.structure }),
+                    ...(patch.taxes !== undefined && { expense_taxes_party: patch.taxes }),
+                    ...(patch.insurance !== undefined && { expense_insurance_party: patch.insurance }),
+                    ...(patch.maintenance !== undefined && { expense_maintenance_party: patch.maintenance }),
+                  }))}
+                />
+                {classification.classification !== "standard" && (
+                  <MarketRentField
+                    justified={form.market_rent_justified}
+                    note={form.market_rent_note}
+                    onJustifiedChange={(v) => setForm((p) => ({ ...p, market_rent_justified: v }))}
+                    onNoteChange={(v) => setForm((p) => ({ ...p, market_rent_note: v }))}
+                    required={classification.classification === "self_rental" || classification.classification === "intercompany"}
+                  />
+                )}
                 {editId && <LeaseClausesEditor leaseId={editId} />}
                 <div className="field-group">
                   <Label className="field-label">Lease Date (Signed)</Label>
@@ -441,6 +490,12 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                 : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
 
               const hasImprovements = a.leasehold_improvement_amount != null && Number(a.leasehold_improvement_amount) > 0;
+              const risk = computeLeaseRisk({
+                classification: (a.lease_classification as LeaseClassification) || "standard",
+                marketRentJustified: !!a.market_rent_justified,
+              });
+              const cls = (a.lease_classification as LeaseClassification) || "standard";
+              const clsLabel = CLASSIFICATION_LABELS[cls];
 
               return (
                 <div key={a.id} className="rounded-lg border border-border overflow-hidden">
@@ -449,8 +504,16 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                     <div className="flex items-center gap-2">
                       <FileText className="h-3.5 w-3.5 text-[hsl(210,59%,30%)]/80" />
                       <span className="text-sm font-semibold text-[hsl(210,59%,30%)]">Lease Agreement</span>
+                      {cls !== "standard" && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal border-[hsl(210,59%,30%)]/30 text-[hsl(210,59%,30%)]">
+                          {clsLabel}
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
+                      <Badge className={`text-[10px] px-2 py-0.5 font-semibold ${RISK_BADGE_CLASS[risk.level]}`} title={risk.reason}>
+                        {risk.label}
+                      </Badge>
                       <Badge className={`text-[10px] px-2 py-0.5 font-semibold ${statusClass}`}>
                         {statusLabel}
                       </Badge>

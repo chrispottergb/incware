@@ -25,8 +25,29 @@ interface LeaseData {
   leaseholdImprovementAmount?: string;
   leaseholdImprovementDescription?: string;
   classification?: LeaseClassification;
+  leaseStructure?: string;
+  expenseTaxes?: string;
+  expenseInsurance?: string;
+  expenseMaintenance?: string;
+  marketRentJustified?: boolean;
+  marketRentNote?: string;
   customClauses?: LeaseClauseInput[];
 }
+
+const STRUCTURE_LABEL: Record<string, string> = {
+  modified_gross: "Modified Gross Lease",
+  gross: "Gross (Full Service) Lease",
+  triple_net: "Triple Net (NNN) Lease",
+  double_net: "Double Net (NN) Lease",
+  single_net: "Single Net (N) Lease",
+  absolute_net: "Absolute Net Lease",
+};
+
+const PARTY_LABEL: Record<string, string> = {
+  landlord: "Landlord",
+  tenant: "Tenant",
+  shared: "shared between Landlord and Tenant",
+};
 
 function fmtDate(d: string) {
   if (!d) return "_______________";
@@ -98,6 +119,10 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   // 3. Rent
   addText("3. RENT", { bold: true, size: 11 });
   addText(`Tenant shall pay Landlord a monthly rent of ${fmtCurrency(data.monthlyRent)}, due on the first day of each calendar month during the term. Rent shall be payable to Landlord at the address set forth above, or at such other place as Landlord may designate in writing.`);
+  if (data.marketRentJustified) {
+    const noteSuffix = data.marketRentNote ? ` Supporting basis: ${data.marketRentNote}` : "";
+    addText(`The parties acknowledge that the rent stated above reflects fair market value as of the commencement date.${noteSuffix}`);
+  }
   gap();
 
   // 4. Security Deposit
@@ -114,9 +139,13 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   addText(`The Premises shall be used and occupied by Tenant exclusively for ${data.purpose || "business operations"} and for no other purpose without the prior written consent of Landlord.`);
   gap();
 
-  // 6. Maintenance
-  addText("6. MAINTENANCE AND REPAIRS", { bold: true, size: 11 });
-  addText("Tenant shall maintain the Premises in good, clean, and habitable condition during the term of this lease. Tenant shall be responsible for all minor repairs and routine maintenance. Landlord shall be responsible for structural repairs and major systems (roof, foundation, HVAC, plumbing, and electrical) unless damage is caused by Tenant's negligence.");
+  // 6. Lease Structure & Expense Responsibility
+  const structureLabel = STRUCTURE_LABEL[data.leaseStructure || "modified_gross"] || "Modified Gross Lease";
+  const taxesParty = PARTY_LABEL[data.expenseTaxes || "landlord"];
+  const insParty = PARTY_LABEL[data.expenseInsurance || "shared"];
+  const maintParty = PARTY_LABEL[data.expenseMaintenance || "shared"];
+  addText("6. LEASE STRUCTURE AND EXPENSE RESPONSIBILITY", { bold: true, size: 11 });
+  addText(`This Agreement is structured as a ${structureLabel}. Operating expenses shall be allocated as follows: property taxes shall be paid by ${taxesParty}; property and liability insurance shall be paid by ${insParty}; and routine maintenance and repairs shall be the responsibility of ${maintParty}. Structural repairs and major systems (roof, foundation, HVAC, plumbing, and electrical) remain the responsibility of Landlord unless damage is caused by Tenant's negligence.`);
   gap();
 
   // 7. Utilities
@@ -124,15 +153,10 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   addText("Unless otherwise agreed in writing, Tenant shall be responsible for the payment of all utilities and services furnished to the Premises, including but not limited to electricity, gas, water, sewer, telephone, internet, and trash removal.");
   gap();
 
-  // 8. Insurance
-  addText("8. INSURANCE", { bold: true, size: 11 });
-  addText("Tenant shall, at Tenant's own expense, maintain appropriate liability and property insurance covering the Premises during the term. Landlord shall maintain insurance on the structure and building. Each party shall provide proof of insurance to the other upon request.");
-  gap();
-
-  // 8.5 Classification Disclosure (conditional)
+  // 8. Classification Disclosure (conditional, no insurance section since covered above)
   const disclosure = data.classification ? CLASSIFICATION_DISCLOSURES[data.classification] : null;
   if (disclosure) {
-    addText(`DISCLOSURE — ${CLASSIFICATION_LABELS[data.classification!].toUpperCase()}`, { bold: true, size: 11 });
+    addText(`8. DISCLOSURE — ${CLASSIFICATION_LABELS[data.classification!].toUpperCase()}`, { bold: true, size: 11 });
     addText(disclosure);
     gap();
   }
