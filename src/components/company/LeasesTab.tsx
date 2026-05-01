@@ -22,6 +22,11 @@ import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { previewLeaseAgreement, downloadLeaseAgreement } from "@/lib/lease-agreement-pdf";
+import { EntityPartyPicker } from "./leases/EntityPartyPicker";
+import { ClassificationBanner } from "./leases/ClassificationBanner";
+import { LeaseClausesEditor } from "./leases/LeaseClausesEditor";
+import { useLeaseClassification } from "@/hooks/useLeaseClassification";
+import { CLASSIFICATION_LABELS, type LeaseClassification, type LeaseParty } from "@/lib/lease-classification";
 
 interface Props {
   companyId: string;
@@ -46,6 +51,7 @@ const emptyForm = {
   security_deposit: "",
   leasehold_improvement_amount: "",
   leasehold_improvement_description: "",
+  rent_frequency: "monthly" as string,
 };
 
 export default function LeasesTab({ companyId, companyName = "", companyAddress = "" }: Props) {
@@ -53,29 +59,17 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
+  const [landlordParty, setLandlordParty] = useState<LeaseParty>({ kind: "external" });
+  const [tenantParty, setTenantParty] = useState<LeaseParty>({ kind: "company", companyId });
+  const [override, setOverride] = useState<LeaseClassification | null>(null);
   const savingRef = useRef(false);
 
   const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
-
-  const handleLandlordSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
-    setForm(prev => ({
-      ...prev,
-      landlord_name: entry.full_name,
-      landlord_address: [entry.address, entry.city, entry.state, entry.zip].filter(Boolean).join(", "),
-    }));
-  }, []);
 
   const handlePropertySelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
     setForm(prev => ({
       ...prev,
       address: [entry.address, entry.city, entry.state, entry.zip].filter(Boolean).join(", "),
-    }));
-  }, []);
-
-  const handleLandlordAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
-    setForm(prev => ({
-      ...prev,
-      landlord_address: [entry.address, entry.city, entry.state, entry.zip].filter(Boolean).join(", "),
     }));
   }, []);
 
@@ -93,9 +87,17 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
     },
   });
 
+  // Live classification for the dialog form
+  const classification = useLeaseClassification({
+    landlord: landlordParty,
+    tenant: tenantParty,
+    currentCompanyId: companyId,
+    override,
+  });
+
   const saveLease = useMutation({
     mutationFn: async () => {
-      if (savingRef.current) return;
+      if (savingRef.current) return null;
       savingRef.current = true;
       try {
         const payload: any = {
@@ -112,14 +114,49 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
           monthly_payment: form.monthly_payment ? parseFloat(form.monthly_payment) : null,
           leasehold_improvement_amount: form.leasehold_improvement_amount ? parseFloat(form.leasehold_improvement_amount) : null,
           leasehold_improvement_description: form.leasehold_improvement_description || null,
+          rent_frequency: form.rent_frequency,
+          landlord_party_kind: landlordParty.kind,
+          landlord_company_id: landlordParty.kind === "company" ? landlordParty.companyId || null : null,
+          landlord_shareholder_id: landlordParty.kind === "individual" ? landlordParty.shareholderId || null : null,
+          tenant_party_kind: tenantParty.kind,
+          tenant_company_id: tenantParty.kind === "company" ? tenantParty.companyId || null : null,
+          tenant_shareholder_id: tenantParty.kind === "individual" ? tenantParty.shareholderId || null : null,
+          lease_classification: classification.classification,
+          classification_overridden: !!override,
+          classification_reason: classification.reason,
         };
+        let savedId = editId;
+        let prevClassification: string | null = null;
         if (editId) {
+          const { data: prev } = await supabase
+            .from("company_assets")
+            .select("lease_classification")
+            .eq("id", editId)
+            .maybeSingle();
+          prevClassification = (prev as any)?.lease_classification || null;
           const { error } = await supabase.from("company_assets").update(payload).eq("id", editId);
           if (error) throw error;
         } else {
-          const { error } = await supabase.from("company_assets").insert({ ...payload, company_id: companyId });
+          const { data, error } = await supabase
+            .from("company_assets")
+            .insert({ ...payload, company_id: companyId })
+            .select("id")
+            .single();
           if (error) throw error;
+          savedId = (data as any).id;
         }
+        // Audit log if classification changed via override
+        if (override && savedId && prevClassification !== classification.classification) {
+          const { data: u } = await supabase.auth.getUser();
+          await supabase.from("lease_classification_audit").insert({
+            lease_id: savedId,
+            old_classification: prevClassification,
+            new_classification: classification.classification,
+            reason: classification.reason,
+            changed_by: u.user?.id || null,
+          });
+        }
+        return savedId;
       } finally {
         savingRef.current = false;
       }
@@ -151,6 +188,9 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
   const resetForm = () => {
     setForm({ ...emptyForm });
     setEditId(null);
+    setLandlordParty({ kind: "external" });
+    setTenantParty({ kind: "company", companyId });
+    setOverride(null);
   };
 
   const openEdit = (a: any) => {
@@ -170,7 +210,20 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       security_deposit: "",
       leasehold_improvement_amount: a.leasehold_improvement_amount != null ? String(a.leasehold_improvement_amount) : "",
       leasehold_improvement_description: a.leasehold_improvement_description || "",
+      rent_frequency: a.rent_frequency || "monthly",
     });
+    setLandlordParty({
+      kind: (a.landlord_party_kind as any) || "external",
+      companyId: a.landlord_company_id || undefined,
+      shareholderId: a.landlord_shareholder_id || undefined,
+      name: a.landlord_name || undefined,
+    });
+    setTenantParty({
+      kind: (a.tenant_party_kind as any) || "company",
+      companyId: a.tenant_company_id || companyId,
+      shareholderId: a.tenant_shareholder_id || undefined,
+    });
+    setOverride(a.classification_overridden ? (a.lease_classification as LeaseClassification) : null);
     setDialogOpen(true);
   };
 
@@ -182,7 +235,14 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
     return new Date(d + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
   };
 
-  const generateAgreement = (lease: any, mode: "preview" | "download") => {
+  const generateAgreement = async (lease: any, mode: "preview" | "download") => {
+    // Pull custom clauses for this lease
+    const { data: clauses = [] } = await supabase
+      .from("lease_clauses")
+      .select("clause_title, clause_text, clause_type")
+      .eq("lease_id", lease.id)
+      .order("sort_order");
+
     const data = {
       landlordName: lease.landlord_name || "",
       landlordAddress: lease.landlord_address || "",
@@ -198,6 +258,8 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       purpose: "business operations",
       leaseholdImprovementAmount: lease.leasehold_improvement_amount != null ? String(lease.leasehold_improvement_amount) : "",
       leaseholdImprovementDescription: lease.leasehold_improvement_description || "",
+      classification: (lease.lease_classification as LeaseClassification) || "standard",
+      customClauses: (clauses as any[]) || [],
     };
     if (mode === "preview") previewLeaseAgreement(data);
     else downloadLeaseAgreement(data);
@@ -272,32 +334,49 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                     placeholder="Street address"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label">Landlord Name</Label>
-                    <NameAutocomplete
-                      value={form.landlord_name}
-                      onChange={(v) => setForm((p) => ({ ...p, landlord_name: v }))}
-                      onSelect={handleLandlordSelect}
-                      search={searchAddressBook}
-                      getCompanySplitIndex={getCompanySplitIndex}
-                      className="h-8 text-sm"
-                      placeholder="Landlord name"
-                    />
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">Landlord Address</Label>
-                    <NameAutocomplete
-                      value={form.landlord_address}
-                      onChange={(v) => setForm((p) => ({ ...p, landlord_address: v }))}
-                      onSelect={handleLandlordAddressSelect}
-                      search={searchAddressBook}
-                      getCompanySplitIndex={getCompanySplitIndex}
-                      className="h-8 text-sm"
-                      placeholder="Landlord address"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <EntityPartyPicker
+                    label="Landlord"
+                    currentCompanyId={companyId}
+                    value={landlordParty}
+                    onChange={(p) => {
+                      setLandlordParty(p);
+                      if ((p.kind === "company" || p.kind === "individual") && p.name) {
+                        setForm((f) => ({ ...f, landlord_name: p.name! }));
+                      }
+                    }}
+                    externalName={form.landlord_name}
+                    onExternalNameChange={(v) => setForm((f) => ({ ...f, landlord_name: v }))}
+                    externalAddress={form.landlord_address}
+                    onExternalAddressChange={(v) => setForm((f) => ({ ...f, landlord_address: v }))}
+                  />
+                  <EntityPartyPicker
+                    label="Tenant"
+                    currentCompanyId={companyId}
+                    value={tenantParty}
+                    onChange={setTenantParty}
+                    externalName=""
+                    onExternalNameChange={() => {}}
+                  />
                 </div>
+                {landlordParty.kind !== "external" && (
+                  <div className="field-group">
+                    <Label className="field-label">Landlord Address (for lease document)</Label>
+                    <Input
+                      className="h-8 text-sm"
+                      value={form.landlord_address}
+                      onChange={(e) => setForm((f) => ({ ...f, landlord_address: e.target.value }))}
+                      placeholder="Street, City, State ZIP"
+                    />
+                  </div>
+                )}
+                <ClassificationBanner
+                  classification={classification.classification}
+                  reason={classification.reason}
+                  overridden={!!override}
+                  onOverride={setOverride}
+                />
+                {editId && <LeaseClausesEditor leaseId={editId} />}
                 <div className="field-group">
                   <Label className="field-label">Lease Date (Signed)</Label>
                   <DatePickerField value={form.lease_date} onChange={(v) => setForm((p) => ({ ...p, lease_date: v }))} />

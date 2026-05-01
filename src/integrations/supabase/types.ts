@@ -1112,16 +1112,24 @@ export type Database = {
           address: string | null
           address_2: string | null
           asset_type: string
+          classification_overridden: boolean
+          classification_reason: string | null
           company_id: string
           cost: number | null
           created_at: string
           description: string
           escrow: number | null
+          finalized_at: string | null
           finance_company: string | null
+          generated_lease_text: string | null
           id: string
           landlord_address: string | null
+          landlord_company_id: string | null
           landlord_name: string | null
+          landlord_party_kind: string | null
+          landlord_shareholder_id: string | null
           lease_amount: number | null
+          lease_classification: string | null
           lease_date: string | null
           lease_end_date: string | null
           lease_start_date: string | null
@@ -1136,8 +1144,12 @@ export type Database = {
           ownership_type: string | null
           purchase_amount: number | null
           purchase_date: string | null
+          rent_frequency: string
           running_hours: number | null
           taxes: number | null
+          tenant_company_id: string | null
+          tenant_party_kind: string | null
+          tenant_shareholder_id: string | null
           updated_at: string
           value: number | null
           vin: string | null
@@ -1147,16 +1159,24 @@ export type Database = {
           address?: string | null
           address_2?: string | null
           asset_type: string
+          classification_overridden?: boolean
+          classification_reason?: string | null
           company_id: string
           cost?: number | null
           created_at?: string
           description: string
           escrow?: number | null
+          finalized_at?: string | null
           finance_company?: string | null
+          generated_lease_text?: string | null
           id?: string
           landlord_address?: string | null
+          landlord_company_id?: string | null
           landlord_name?: string | null
+          landlord_party_kind?: string | null
+          landlord_shareholder_id?: string | null
           lease_amount?: number | null
+          lease_classification?: string | null
           lease_date?: string | null
           lease_end_date?: string | null
           lease_start_date?: string | null
@@ -1171,8 +1191,12 @@ export type Database = {
           ownership_type?: string | null
           purchase_amount?: number | null
           purchase_date?: string | null
+          rent_frequency?: string
           running_hours?: number | null
           taxes?: number | null
+          tenant_company_id?: string | null
+          tenant_party_kind?: string | null
+          tenant_shareholder_id?: string | null
           updated_at?: string
           value?: number | null
           vin?: string | null
@@ -1182,16 +1206,24 @@ export type Database = {
           address?: string | null
           address_2?: string | null
           asset_type?: string
+          classification_overridden?: boolean
+          classification_reason?: string | null
           company_id?: string
           cost?: number | null
           created_at?: string
           description?: string
           escrow?: number | null
+          finalized_at?: string | null
           finance_company?: string | null
+          generated_lease_text?: string | null
           id?: string
           landlord_address?: string | null
+          landlord_company_id?: string | null
           landlord_name?: string | null
+          landlord_party_kind?: string | null
+          landlord_shareholder_id?: string | null
           lease_amount?: number | null
+          lease_classification?: string | null
           lease_date?: string | null
           lease_end_date?: string | null
           lease_start_date?: string | null
@@ -1206,8 +1238,12 @@ export type Database = {
           ownership_type?: string | null
           purchase_amount?: number | null
           purchase_date?: string | null
+          rent_frequency?: string
           running_hours?: number | null
           taxes?: number | null
+          tenant_company_id?: string | null
+          tenant_party_kind?: string | null
+          tenant_shareholder_id?: string | null
           updated_at?: string
           value?: number | null
           vin?: string | null
@@ -1219,6 +1255,34 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_assets_landlord_company_id_fkey"
+            columns: ["landlord_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_assets_landlord_shareholder_id_fkey"
+            columns: ["landlord_shareholder_id"]
+            isOneToOne: false
+            referencedRelation: "shareholders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_assets_tenant_company_id_fkey"
+            columns: ["tenant_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_assets_tenant_shareholder_id_fkey"
+            columns: ["tenant_shareholder_id"]
+            isOneToOne: false
+            referencedRelation: "shareholders"
             referencedColumns: ["id"]
           },
         ]
@@ -1557,6 +1621,88 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lease_classification_audit: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          lease_id: string
+          new_classification: string
+          old_classification: string | null
+          reason: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          lease_id: string
+          new_classification: string
+          old_classification?: string | null
+          reason?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          lease_id?: string
+          new_classification?: string
+          old_classification?: string | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_classification_audit_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "company_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lease_clauses: {
+        Row: {
+          clause_text: string
+          clause_title: string | null
+          clause_type: string
+          created_at: string
+          id: string
+          is_auto_generated: boolean
+          lease_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          clause_text: string
+          clause_title?: string | null
+          clause_type?: string
+          created_at?: string
+          id?: string
+          is_auto_generated?: boolean
+          lease_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          clause_text?: string
+          clause_title?: string | null
+          clause_type?: string
+          created_at?: string
+          id?: string
+          is_auto_generated?: boolean
+          lease_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_clauses_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "company_assets"
             referencedColumns: ["id"]
           },
         ]

@@ -1,6 +1,13 @@
 import jsPDF from "jspdf";
 import { savePdfReliably } from "./pdf-save";
 import { registerArialFont } from "@/lib/arial-font";
+import { CLASSIFICATION_DISCLOSURES, CLASSIFICATION_LABELS, type LeaseClassification } from "@/lib/lease-classification";
+
+export interface LeaseClauseInput {
+  clause_title?: string | null;
+  clause_text: string;
+  clause_type?: string | null;
+}
 
 interface LeaseData {
   landlordName: string;
@@ -17,6 +24,8 @@ interface LeaseData {
   purpose: string;
   leaseholdImprovementAmount?: string;
   leaseholdImprovementDescription?: string;
+  classification?: LeaseClassification;
+  customClauses?: LeaseClauseInput[];
 }
 
 function fmtDate(d: string) {
@@ -120,7 +129,13 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   addText("Tenant shall, at Tenant's own expense, maintain appropriate liability and property insurance covering the Premises during the term. Landlord shall maintain insurance on the structure and building. Each party shall provide proof of insurance to the other upon request.");
   gap();
 
-  // 9. Leasehold Improvements
+  // 8.5 Classification Disclosure (conditional)
+  const disclosure = data.classification ? CLASSIFICATION_DISCLOSURES[data.classification] : null;
+  if (disclosure) {
+    addText(`DISCLOSURE — ${CLASSIFICATION_LABELS[data.classification!].toUpperCase()}`, { bold: true, size: 11 });
+    addText(disclosure);
+    gap();
+  }
   addText("9. LEASEHOLD IMPROVEMENTS", { bold: true, size: 11 });
   if (data.leaseholdImprovementAmount || data.leaseholdImprovementDescription) {
     const amt = data.leaseholdImprovementAmount ? fmtCurrency(data.leaseholdImprovementAmount) : "an agreed-upon amount";
@@ -164,7 +179,20 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   // 16. Severability
   addText("16. SEVERABILITY", { bold: true, size: 11 });
   addText("If any provision of this Agreement is held to be invalid or unenforceable, the remaining provisions shall continue in full force and effect.");
-  gap(8);
+  gap();
+
+  // 17+ Custom clauses (if any)
+  if (data.customClauses && data.customClauses.length > 0) {
+    let n = 17;
+    for (const c of data.customClauses) {
+      if (!c.clause_text?.trim()) continue;
+      addText(`${n}. ${(c.clause_title || "ADDITIONAL PROVISION").toUpperCase()}`, { bold: true, size: 11 });
+      addText(c.clause_text);
+      gap();
+      n++;
+    }
+  }
+  gap(4);
 
   // Signatures
   addText("IN WITNESS WHEREOF, the parties have executed this Lease Agreement as of the date first written above.", { size: 10 });
