@@ -331,7 +331,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                   {editId ? "Edit" : "Add"} Lease
                 </DialogTitle>
               </DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); if (!savingRef.current) saveLease.mutate(); }} className="space-y-3">
+              <form onSubmit={(e) => { e.preventDefault(); if (!savingRef.current) saveLease.mutate(); }} className="space-y-2.5">
                 <div className="field-group">
                   <Label className="field-label">Property Description</Label>
                   <Select value={leaseOptions.includes(form.description) ? form.description : "__custom"} onValueChange={(v) => setForm((p) => ({ ...p, description: v === "__custom" ? "" : v }))}>
