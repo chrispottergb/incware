@@ -334,32 +334,49 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                     placeholder="Street address"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label">Landlord Name</Label>
-                    <NameAutocomplete
-                      value={form.landlord_name}
-                      onChange={(v) => setForm((p) => ({ ...p, landlord_name: v }))}
-                      onSelect={handleLandlordSelect}
-                      search={searchAddressBook}
-                      getCompanySplitIndex={getCompanySplitIndex}
-                      className="h-8 text-sm"
-                      placeholder="Landlord name"
-                    />
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">Landlord Address</Label>
-                    <NameAutocomplete
-                      value={form.landlord_address}
-                      onChange={(v) => setForm((p) => ({ ...p, landlord_address: v }))}
-                      onSelect={handleLandlordAddressSelect}
-                      search={searchAddressBook}
-                      getCompanySplitIndex={getCompanySplitIndex}
-                      className="h-8 text-sm"
-                      placeholder="Landlord address"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <EntityPartyPicker
+                    label="Landlord"
+                    currentCompanyId={companyId}
+                    value={landlordParty}
+                    onChange={(p) => {
+                      setLandlordParty(p);
+                      if ((p.kind === "company" || p.kind === "individual") && p.name) {
+                        setForm((f) => ({ ...f, landlord_name: p.name! }));
+                      }
+                    }}
+                    externalName={form.landlord_name}
+                    onExternalNameChange={(v) => setForm((f) => ({ ...f, landlord_name: v }))}
+                    externalAddress={form.landlord_address}
+                    onExternalAddressChange={(v) => setForm((f) => ({ ...f, landlord_address: v }))}
+                  />
+                  <EntityPartyPicker
+                    label="Tenant"
+                    currentCompanyId={companyId}
+                    value={tenantParty}
+                    onChange={setTenantParty}
+                    externalName=""
+                    onExternalNameChange={() => {}}
+                  />
                 </div>
+                {landlordParty.kind !== "external" && (
+                  <div className="field-group">
+                    <Label className="field-label">Landlord Address (for lease document)</Label>
+                    <Input
+                      className="h-8 text-sm"
+                      value={form.landlord_address}
+                      onChange={(e) => setForm((f) => ({ ...f, landlord_address: e.target.value }))}
+                      placeholder="Street, City, State ZIP"
+                    />
+                  </div>
+                )}
+                <ClassificationBanner
+                  classification={classification.classification}
+                  reason={classification.reason}
+                  overridden={!!override}
+                  onOverride={setOverride}
+                />
+                {editId && <LeaseClausesEditor leaseId={editId} />}
                 <div className="field-group">
                   <Label className="field-label">Lease Date (Signed)</Label>
                   <DatePickerField value={form.lease_date} onChange={(v) => setForm((p) => ({ ...p, lease_date: v }))} />
