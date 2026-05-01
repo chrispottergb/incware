@@ -22,6 +22,11 @@ import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { previewLeaseAgreement, downloadLeaseAgreement } from "@/lib/lease-agreement-pdf";
+import { EntityPartyPicker } from "./leases/EntityPartyPicker";
+import { ClassificationBanner } from "./leases/ClassificationBanner";
+import { LeaseClausesEditor } from "./leases/LeaseClausesEditor";
+import { useLeaseClassification } from "@/hooks/useLeaseClassification";
+import { CLASSIFICATION_LABELS, type LeaseClassification, type LeaseParty } from "@/lib/lease-classification";
 
 interface Props {
   companyId: string;
@@ -46,6 +51,7 @@ const emptyForm = {
   security_deposit: "",
   leasehold_improvement_amount: "",
   leasehold_improvement_description: "",
+  rent_frequency: "monthly" as string,
 };
 
 export default function LeasesTab({ companyId, companyName = "", companyAddress = "" }: Props) {
