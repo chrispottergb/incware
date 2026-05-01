@@ -179,7 +179,20 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   // 16. Severability
   addText("16. SEVERABILITY", { bold: true, size: 11 });
   addText("If any provision of this Agreement is held to be invalid or unenforceable, the remaining provisions shall continue in full force and effect.");
-  gap(8);
+  gap();
+
+  // 17+ Custom clauses (if any)
+  if (data.customClauses && data.customClauses.length > 0) {
+    let n = 17;
+    for (const c of data.customClauses) {
+      if (!c.clause_text?.trim()) continue;
+      addText(`${n}. ${(c.clause_title || "ADDITIONAL PROVISION").toUpperCase()}`, { bold: true, size: 11 });
+      addText(c.clause_text);
+      gap();
+      n++;
+    }
+  }
+  gap(4);
 
   // Signatures
   addText("IN WITNESS WHEREOF, the parties have executed this Lease Agreement as of the date first written above.", { size: 10 });
