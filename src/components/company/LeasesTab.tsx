@@ -280,6 +280,12 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       leaseholdImprovementAmount: lease.leasehold_improvement_amount != null ? String(lease.leasehold_improvement_amount) : "",
       leaseholdImprovementDescription: lease.leasehold_improvement_description || "",
       classification: (lease.lease_classification as LeaseClassification) || "standard",
+      leaseStructure: lease.lease_structure || "modified_gross",
+      expenseTaxes: lease.expense_taxes_party || "landlord",
+      expenseInsurance: lease.expense_insurance_party || "shared",
+      expenseMaintenance: lease.expense_maintenance_party || "shared",
+      marketRentJustified: !!lease.market_rent_justified,
+      marketRentNote: lease.market_rent_note || "",
       customClauses: (clauses as any[]) || [],
     };
     if (mode === "preview") previewLeaseAgreement(data);
