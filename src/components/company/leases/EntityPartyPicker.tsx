@@ -97,11 +97,11 @@ export function EntityPartyPicker({
   };
 
   return (
-    <div className="rounded-lg border border-border bg-card p-3 space-y-3">
-      <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</Label>
+    <div className="rounded-lg border border-border bg-card p-2.5 space-y-2">
+      <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</Label>
 
-      {/* STEP 1 — Party type radio cards */}
-      <div className="grid grid-cols-2 gap-2">
+      {/* STEP 1 — Party type radio cards (compact) */}
+      <div className="grid grid-cols-2 gap-1.5">
         {OPTIONS.map((opt) => {
           const selected = option === opt.id;
           const Icon = opt.Icon;
@@ -111,33 +111,31 @@ export function EntityPartyPicker({
               type="button"
               onClick={() => handleSelectOption(opt.id)}
               className={cn(
-                "flex items-start gap-2 rounded-md border p-2.5 text-left transition-colors",
+                "flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-left transition-colors",
                 "hover:border-primary/50 hover:bg-primary/5",
                 selected
                   ? "border-primary bg-primary/10 ring-1 ring-primary/30"
                   : "border-border bg-background",
               )}
+              title={opt.helper}
             >
-              <Icon className={cn("h-4 w-4 mt-0.5 shrink-0", selected ? "text-primary" : "text-muted-foreground")} />
-              <div className="min-w-0">
-                <div className={cn("text-xs font-semibold", selected ? "text-primary" : "text-foreground")}>
-                  {opt.title}
-                </div>
-                <div className="text-[10px] text-muted-foreground leading-tight mt-0.5">{opt.helper}</div>
+              <Icon className={cn("h-3.5 w-3.5 shrink-0", selected ? "text-primary" : "text-muted-foreground")} />
+              <div className={cn("text-[11px] font-semibold leading-tight truncate", selected ? "text-primary" : "text-foreground")}>
+                {opt.title}
               </div>
             </button>
           );
         })}
       </div>
 
-      {/* STEP 2 — Entity selector (progressive disclosure) */}
+      {/* STEP 2 — Entity selector (progressive disclosure, inline compact) */}
       {option && (
-        <div className="pt-1 border-t border-border">
+        <div>
           {option === "this" && (
-            <div className="flex items-center gap-2 rounded-md bg-muted/50 px-3 py-2">
+            <div className="flex items-center gap-2 rounded-md bg-muted/50 px-2.5 py-1.5">
               <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-sm text-foreground">{currentCompanyName}</span>
-              <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground">Auto</span>
+              <span className="text-xs text-foreground truncate">{currentCompanyName}</span>
+              <span className="ml-auto text-[9px] uppercase tracking-wider text-muted-foreground">Auto</span>
             </div>
           )}
 
