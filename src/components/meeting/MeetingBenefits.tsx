@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,21 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -15,11 +30,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
@@ -29,71 +39,93 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Pencil } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil, Info, X } from "lucide-react";
 import { toast } from "sonner";
 
-const BENEFIT_TYPE_OPTIONS = [
-  // Health & Wellness
-  "Health Insurance",
-  "Dental Insurance",
-  "Vision Insurance",
-  "Life Insurance",
-  "Disability Insurance (Short Term)",
-  "Disability Insurance (Long Term)",
-  "HSA / FSA Contributions",
-  "HRA",
-  "Mental Health Benefits",
-  // Retirement & Financial
-  "401(k) / Retirement Plan",
-  "Profit Sharing",
-  "SEP IRA",
-  "SIMPLE IRA",
-  "Stock Options / Equity",
-  "Bonuses (Performance, Signing, Annual)",
-  "Expense Reimbursement",
-  // Time Off
-  "Paid Time Off (PTO)",
-  "Sick Leave",
-  "Parental / Family Leave",
-  "Sabbatical",
-  // Work Perks
-  "Vehicle / Car Allowance",
-  "Cell Phone / Technology Allowance",
-  "Remote Work / Work From Home",
-  "Mileage Reimbursement",
-  "Meal / Per Diem Allowance",
-  // Education & Development
-  "Tuition Reimbursement",
-  "Professional Development",
-  "Certifications / Training",
-  // Other
-  "Child Care Assistance",
-  "Gym / Wellness Stipend",
-  "Employee Assistance Program (EAP)",
-  "Other",
-];
+type BenefitItem = { label: string; tooltip: string };
 
-const RETIREMENT_TYPES = [
-  "401(k) / Retirement Plan",
-  "SEP IRA",
-  "SIMPLE IRA",
-  "Profit Sharing",
-  "Stock Options / Equity",
-];
+const BENEFIT_CATALOG: Record<string, BenefitItem[]> = {
+  "Health Coverage": [
+    { label: "Health Insurance (Medical)", tooltip: "Core medical coverage for doctor visits, hospital care, and treatment." },
+    { label: "Dental Insurance", tooltip: "Covers routine dental care like cleanings and fillings." },
+    { label: "Vision Insurance", tooltip: "Covers eye exams, glasses, and contacts." },
+    { label: "Prescription Drug Coverage", tooltip: "Helps pay for medications." },
+    { label: "Other", tooltip: "Any additional health coverage." },
+  ],
+  "Life & Disability": [
+    { label: "Life Insurance", tooltip: "Provides financial support to beneficiaries upon death." },
+    { label: "Key Employee Life Insurance", tooltip: "Protects the business if a key employee passes away." },
+    { label: "Short-Term Disability", tooltip: "Temporary income replacement if unable to work." },
+    { label: "Long-Term Disability", tooltip: "Extended income replacement for serious disability." },
+    { label: "Accidental Death & Injury Coverage", tooltip: "Benefits for accidental death or injury." },
+    { label: "Other", tooltip: "Additional protection benefits." },
+  ],
+  "Retirement": [
+    { label: "401(k) Plan", tooltip: "Employer-sponsored retirement savings." },
+    { label: "Roth 401(k)", tooltip: "After-tax retirement savings with tax-free withdrawals." },
+    { label: "SEP IRA", tooltip: "Retirement plan for small business owners." },
+    { label: "SIMPLE IRA", tooltip: "Simplified retirement plan for small employers." },
+    { label: "Pension Plan", tooltip: "Employer-funded retirement income." },
+    { label: "Profit Sharing Plan", tooltip: "Employer contributions based on profits." },
+    { label: "Other", tooltip: "Additional retirement plans." },
+  ],
+  "Time Off & Leave": [
+    { label: "Paid Time Off", tooltip: "Vacation or personal leave." },
+    { label: "Paid Holidays", tooltip: "Company-paid holidays." },
+    { label: "Sick Leave", tooltip: "Paid time off when ill." },
+    { label: "Family or Medical Leave", tooltip: "Extended leave for family or medical reasons." },
+    { label: "Other", tooltip: "Additional leave benefits." },
+  ],
+  "Additional Benefits": [
+    { label: "Health Savings Account (HSA)", tooltip: "Tax-advantaged medical savings." },
+    { label: "Flexible Spending Account (FSA)", tooltip: "Pre-tax healthcare or dependent care funds." },
+    { label: "Dependent Care Account", tooltip: "Childcare or elder care savings." },
+    { label: "Accident Insurance", tooltip: "Coverage for accidental injuries." },
+    { label: "Critical Illness Coverage", tooltip: "Lump sum payment for serious illness." },
+    { label: "Hospital Coverage", tooltip: "Pays benefits for hospital stays." },
+    { label: "Long-Term Care Insurance", tooltip: "Covers extended care services." },
+    { label: "Employee Assistance Program", tooltip: "Confidential counseling and support." },
+    { label: "Wellness Programs", tooltip: "Health and wellness initiatives." },
+    { label: "Tuition Assistance", tooltip: "Education support." },
+    { label: "Childcare Assistance", tooltip: "Help with childcare costs." },
+    { label: "Commuting Benefits", tooltip: "Transportation support." },
+    { label: "Other", tooltip: "Additional benefits." },
+  ],
+  "Owner/Executive Only": [
+    { label: "Deferred Compensation Plan", tooltip: "Income paid later for tax planning." },
+    { label: "Executive Bonus Plan", tooltip: "Employer-funded executive benefit." },
+    { label: "Buy-Sell Agreement Funding", tooltip: "Life insurance for ownership transfer." },
+    { label: "Other", tooltip: "Additional executive arrangements." },
+  ],
+};
+
+const CATEGORIES = Object.keys(BENEFIT_CATALOG);
 
 const isRetirementType = (type: string) => {
   if (!type) return false;
-  const lower = type.toLowerCase();
-  return RETIREMENT_TYPES.some(rt => rt.toLowerCase() === lower) ||
-    /\b(ira|401|403|pension|retirement|roth)\b/i.test(lower);
+  return /\b(ira|401|403|pension|retirement|roth|profit sharing)\b/i.test(type);
 };
+
+// Find category for a stored benefit_type label (used to rehydrate edit dialog)
+function findCategoryForLabel(label: string): { category: string; itemLabel: string } | null {
+  if (!label) return null;
+  for (const [cat, items] of Object.entries(BENEFIT_CATALOG)) {
+    const match = items.find((i) => i.label.toLowerCase() === label.toLowerCase());
+    if (match) return { category: cat, itemLabel: match.label };
+  }
+  // Match "Category — Other: foo" pattern
+  const otherMatch = label.match(/^(.+?)\s+—\s+Other(?::\s*(.+))?$/);
+  if (otherMatch && BENEFIT_CATALOG[otherMatch[1]]) {
+    return { category: otherMatch[1], itemLabel: "Other" };
+  }
+  return null;
+}
 
 interface Props {
   meetingId: string;
 }
 
 interface BenefitForm {
-  benefit_type: string;
   provider: string;
   agent_administrator: string;
   insurance_agency: string;
@@ -102,11 +134,9 @@ interface BenefitForm {
   new_plan_effective_date: string;
   retirement_contribution: string;
   eligibility_comments: string;
-  benefit_description: string;
 }
 
 const emptyForm: BenefitForm = {
-  benefit_type: "",
   provider: "",
   agent_administrator: "",
   insurance_agency: "",
@@ -115,81 +145,16 @@ const emptyForm: BenefitForm = {
   new_plan_effective_date: "",
   retirement_contribution: "",
   eligibility_comments: "",
-  benefit_description: "",
 };
-
-function BenefitTypeCombobox({ value, onChange, customTypes = [] }: { value: string; onChange: (v: string) => void; customTypes?: string[] }) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  // Merge built-in options with custom types (deduplicated)
-  const allOptions = [...BENEFIT_TYPE_OPTIONS];
-  for (const ct of customTypes) {
-    if (ct && !allOptions.some(o => o.toLowerCase() === ct.toLowerCase())) {
-      allOptions.push(ct);
-    }
-  }
-
-  const filtered = search
-    ? allOptions.filter((opt) => opt.toLowerCase().includes(search.toLowerCase()))
-    : allOptions;
-
-  return (
-    <div ref={wrapperRef} className="relative">
-      <Input
-        ref={inputRef}
-        value={value}
-        onChange={(e) => {
-          onChange(e.target.value);
-          setSearch(e.target.value);
-          if (!open) setOpen(true);
-        }}
-        onFocus={() => { setSearch(value); setOpen(true); }}
-        onBlur={(e) => {
-          if (wrapperRef.current?.contains(e.relatedTarget as Node)) return;
-          setTimeout(() => setOpen(false), 150);
-        }}
-        placeholder="Type or select benefit type…"
-        className="bg-background"
-        autoComplete="off"
-      />
-      {open && (
-        <div className="absolute left-0 right-0 top-full mt-1 z-[100] rounded-md border bg-popover shadow-md">
-          <ScrollArea className="max-h-[40vh]">
-            {filtered.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-muted-foreground">No matches — your custom text will be used</div>
-            ) : (
-              filtered.map((opt) => (
-                <button
-                  key={opt}
-                  type="button"
-                  className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    onChange(opt);
-                    setSearch("");
-                    setOpen(false);
-                    inputRef.current?.focus();
-                  }}
-                >
-                  {opt}
-                </button>
-              ))
-            )}
-          </ScrollArea>
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function MeetingBenefits({ meetingId }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<BenefitForm>(emptyForm);
+  const [category, setCategory] = useState<string>("");
+  const [selectedBenefits, setSelectedBenefits] = useState<string[]>([]);
+  const [otherText, setOtherText] = useState<string>("");
 
   const { data: rows = [] } = useQuery({
     queryKey: ["meeting_benefits", meetingId],
@@ -204,17 +169,18 @@ export default function MeetingBenefits({ meetingId }: Props) {
     },
   });
 
-  // Collect custom benefit types from saved rows
-  const customTypes = rows
-    .map((r: any) => r.benefit_type)
-    .filter((t: string | null): t is string => !!t);
+  const buildBenefitTypeLabel = (item: string): string => {
+    if (item === "Other") {
+      const trimmed = otherText.trim();
+      return trimmed ? `${category} — Other: ${trimmed}` : `${category} — Other`;
+    }
+    return item;
+  };
 
   const addRow = useMutation({
     mutationFn: async () => {
-      const payload: any = {
+      const basePayload: any = {
         meeting_id: meetingId,
-        benefit_description: form.benefit_description || form.benefit_type || "—",
-        benefit_type: form.benefit_type || null,
         provider: form.provider || null,
         agent_administrator: form.agent_administrator || null,
         insurance_agency: form.insurance_agency || null,
@@ -224,22 +190,33 @@ export default function MeetingBenefits({ meetingId }: Props) {
         retirement_contribution: form.retirement_contribution ? parseFloat(form.retirement_contribution) : null,
         eligibility_comments: form.eligibility_comments || null,
       };
-      const { error } = await supabase.from("meeting_benefits" as any).insert(payload as any);
+      const payloads = selectedBenefits.map((item) => {
+        const benefitType = buildBenefitTypeLabel(item);
+        return {
+          ...basePayload,
+          benefit_type: benefitType,
+          benefit_description: benefitType,
+        };
+      });
+      const { error } = await supabase.from("meeting_benefits" as any).insert(payloads as any);
       if (error) throw error;
+      return payloads.length;
     },
-    onSuccess: () => {
+    onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ["meeting_benefits", meetingId] });
       closeDialog();
-      toast.success("Benefit added!");
+      toast.success(`Added ${count} benefit${count === 1 ? "" : "s"}!`);
     },
     onError: (err: Error) => toast.error(err.message),
   });
 
   const updateRow = useMutation({
     mutationFn: async () => {
+      const item = selectedBenefits[0] || "";
+      const benefitType = buildBenefitTypeLabel(item);
       const payload: any = {
-        benefit_description: form.benefit_description || form.benefit_type || "—",
-        benefit_type: form.benefit_type || null,
+        benefit_type: benefitType,
+        benefit_description: benefitType,
         provider: form.provider || null,
         agent_administrator: form.agent_administrator || null,
         insurance_agency: form.insurance_agency || null,
@@ -279,12 +256,14 @@ export default function MeetingBenefits({ meetingId }: Props) {
     setDialogOpen(false);
     setEditingId(null);
     setForm(emptyForm);
+    setCategory("");
+    setSelectedBenefits([]);
+    setOtherText("");
   };
 
   const openEdit = (row: any) => {
     setEditingId(row.id);
     setForm({
-      benefit_type: row.benefit_type || "",
       provider: row.provider || "",
       agent_administrator: row.agent_administrator || "",
       insurance_agency: row.insurance_agency || "",
@@ -293,9 +272,39 @@ export default function MeetingBenefits({ meetingId }: Props) {
       new_plan_effective_date: row.new_plan_effective_date || "",
       retirement_contribution: row.retirement_contribution?.toString() || "",
       eligibility_comments: row.eligibility_comments || "",
-      benefit_description: row.benefit_description || "",
     });
+    const stored = row.benefit_type || row.benefit_description || "";
+    const matched = findCategoryForLabel(stored);
+    if (matched) {
+      setCategory(matched.category);
+      setSelectedBenefits([matched.itemLabel]);
+      if (matched.itemLabel === "Other") {
+        const m = stored.match(/^.+?\s+—\s+Other(?::\s*(.+))?$/);
+        setOtherText(m?.[1] || "");
+      } else {
+        setOtherText("");
+      }
+    } else {
+      setCategory("");
+      setSelectedBenefits([]);
+      setOtherText(stored);
+    }
     setDialogOpen(true);
+  };
+
+  // When category changes, reset selected items
+  const handleCategoryChange = (newCat: string) => {
+    setCategory(newCat);
+    setSelectedBenefits([]);
+    setOtherText("");
+  };
+
+  const toggleBenefit = (label: string, checked: boolean) => {
+    setSelectedBenefits((prev) => {
+      if (checked) return prev.includes(label) ? prev : [...prev, label];
+      return prev.filter((l) => l !== label);
+    });
+    if (label === "Other" && !checked) setOtherText("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -312,73 +321,176 @@ export default function MeetingBenefits({ meetingId }: Props) {
   const updateField = (key: keyof BenefitForm, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
+  const otherSelected = selectedBenefits.includes("Other");
+  const submitDisabled =
+    isPending ||
+    !category ||
+    selectedBenefits.length === 0 ||
+    (otherSelected && !otherText.trim());
+
+  // Show retirement contribution if category is Retirement OR any selected benefit looks retirement-related
+  const showContribution =
+    category === "Retirement" || selectedBenefits.some((b) => isRetirementType(b));
+
   return (
     <Card>
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <CardTitle className="font-display text-base">Benefits</CardTitle>
         <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setForm(emptyForm); }}>
+            <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setForm(emptyForm); setCategory(""); setSelectedBenefits([]); setOtherText(""); }}>
               <Plus className="mr-2 h-4 w-4" /> Add
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-background/95">
             <DialogHeader>
               <DialogTitle className="font-display">{editingId ? "Edit Benefit" : "Add Benefit"}</DialogTitle>
               <DialogDescription>
-                Enter the benefit plan details.
+                Choose a benefit category, then select one or more specific benefits.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2 space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Benefit Type</Label>
-                  <BenefitTypeCombobox
-                    value={form.benefit_type}
-                    onChange={(v) => updateField("benefit_type", v)}
-                    customTypes={customTypes}
-                  />
-                </div>
+            <TooltipProvider delayDuration={150}>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Step 1: Category */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Provider</Label>
-                  <Input value={form.provider} onChange={(e) => updateField("provider", e.target.value)} placeholder="Plan provider" />
+                  <Label className="text-xs font-medium text-muted-foreground">Benefit Category</Label>
+                  <Select value={category} onValueChange={handleCategoryChange}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="Select a category…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Agent / Administrator</Label>
-                  <Input value={form.agent_administrator} onChange={(e) => updateField("agent_administrator", e.target.value)} placeholder="Agent name" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Insurance Agency</Label>
-                  <Input value={form.insurance_agency} onChange={(e) => updateField("insurance_agency", e.target.value)} placeholder="Agency name" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Transaction Type</Label>
-                  <Input value={form.transaction_type} onChange={(e) => updateField("transaction_type", e.target.value)} placeholder="e.g., New, Renewal" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Plan Year</Label>
-                  <Input type="number" value={form.plan_year} onChange={(e) => updateField("plan_year", e.target.value)} placeholder="e.g., 2024" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">New Plan Effective Date</Label>
-                  <DatePickerField value={form.new_plan_effective_date || ""} onChange={(v) => updateField("new_plan_effective_date", v)} />
-                </div>
-                {isRetirementType(form.benefit_type) && (
-                  <div className="col-span-2 space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">Contribution Amount</Label>
-                    <Input type="number" step="0.01" value={form.retirement_contribution} onChange={(e) => updateField("retirement_contribution", e.target.value)} placeholder="$0.00" />
+
+                {/* Step 2: Benefits multi-select */}
+                {category && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">
+                      Benefits in {category} <span className="text-muted-foreground/70">(select all that apply)</span>
+                    </Label>
+                    <div className="rounded-md border bg-muted/20 p-3">
+                      <ScrollArea className="max-h-64">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pr-2">
+                          {BENEFIT_CATALOG[category].map((item) => {
+                            const id = `bf-${category}-${item.label}`;
+                            const checked = selectedBenefits.includes(item.label);
+                            return (
+                              <div key={item.label} className="flex items-center gap-2 rounded-sm px-2 py-1.5 hover:bg-accent/40 transition-colors">
+                                <Checkbox
+                                  id={id}
+                                  checked={checked}
+                                  onCheckedChange={(c) => toggleBenefit(item.label, !!c)}
+                                />
+                                <Label htmlFor={id} className="flex-1 cursor-pointer text-sm font-normal">
+                                  {item.label}
+                                </Label>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button type="button" className="text-muted-foreground hover:text-foreground" aria-label={`About ${item.label}`}>
+                                      <Info className="h-3.5 w-3.5" />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="max-w-xs">
+                                    {item.tooltip}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+                    </div>
+
+                    {otherSelected && (
+                      <div className="space-y-1.5 pt-2">
+                        <Label className="text-xs font-medium text-muted-foreground">Describe other benefit</Label>
+                        <Input
+                          value={otherText}
+                          onChange={(e) => setOtherText(e.target.value)}
+                          placeholder="e.g., Wellness rebate program"
+                          className="bg-background"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
-                <div className="col-span-2 space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Eligibility / Comments</Label>
-                  <Textarea value={form.eligibility_comments} onChange={(e) => updateField("eligibility_comments", e.target.value)} rows={3} placeholder="Eligibility requirements, waiting periods, enrollment windows…" />
+
+                {/* Selected summary */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Selected</Label>
+                  {selectedBenefits.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic">No benefits selected yet</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedBenefits.map((b) => (
+                        <Badge key={b} variant="secondary" className="gap-1 pr-1">
+                          {b === "Other" ? `Other${otherText.trim() ? `: ${otherText.trim()}` : ""}` : b}
+                          <button
+                            type="button"
+                            onClick={() => toggleBenefit(b, false)}
+                            className="rounded-sm hover:bg-background/60 p-0.5"
+                            aria-label={`Remove ${b}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-              <Button type="submit" className="w-full" disabled={isPending || !form.benefit_type}>
-                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editingId ? "Save Changes" : "Add Benefit"}
-              </Button>
-            </form>
+
+                {/* Common plan-detail fields */}
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Provider</Label>
+                    <Input value={form.provider} onChange={(e) => updateField("provider", e.target.value)} placeholder="Plan provider" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Agent / Administrator</Label>
+                    <Input value={form.agent_administrator} onChange={(e) => updateField("agent_administrator", e.target.value)} placeholder="Agent name" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Insurance Agency</Label>
+                    <Input value={form.insurance_agency} onChange={(e) => updateField("insurance_agency", e.target.value)} placeholder="Agency name" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Transaction Type</Label>
+                    <Input value={form.transaction_type} onChange={(e) => updateField("transaction_type", e.target.value)} placeholder="e.g., New, Renewal" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Plan Year</Label>
+                    <Input type="number" value={form.plan_year} onChange={(e) => updateField("plan_year", e.target.value)} placeholder="e.g., 2024" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">New Plan Effective Date</Label>
+                    <DatePickerField value={form.new_plan_effective_date || ""} onChange={(v) => updateField("new_plan_effective_date", v)} />
+                  </div>
+                  {showContribution && (
+                    <div className="col-span-2 space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground">Contribution Amount</Label>
+                      <Input type="number" step="0.01" value={form.retirement_contribution} onChange={(e) => updateField("retirement_contribution", e.target.value)} placeholder="$0.00" />
+                    </div>
+                  )}
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Eligibility / Comments</Label>
+                    <Textarea value={form.eligibility_comments} onChange={(e) => updateField("eligibility_comments", e.target.value)} rows={3} placeholder="Eligibility requirements, waiting periods, enrollment windows…" />
+                  </div>
+                </div>
+
+                <Button type="submit" className="w-full" disabled={submitDisabled}>
+                  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {editingId
+                    ? "Save Changes"
+                    : selectedBenefits.length > 1
+                      ? `Add ${selectedBenefits.length} Benefits`
+                      : "Add Benefit"}
+                </Button>
+              </form>
+            </TooltipProvider>
           </DialogContent>
         </Dialog>
       </CardHeader>
