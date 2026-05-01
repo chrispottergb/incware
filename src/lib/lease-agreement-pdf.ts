@@ -1,6 +1,13 @@
 import jsPDF from "jspdf";
 import { savePdfReliably } from "./pdf-save";
 import { registerArialFont } from "@/lib/arial-font";
+import { CLASSIFICATION_DISCLOSURES, CLASSIFICATION_LABELS, type LeaseClassification } from "@/lib/lease-classification";
+
+export interface LeaseClauseInput {
+  clause_title?: string | null;
+  clause_text: string;
+  clause_type?: string | null;
+}
 
 interface LeaseData {
   landlordName: string;
@@ -17,6 +24,8 @@ interface LeaseData {
   purpose: string;
   leaseholdImprovementAmount?: string;
   leaseholdImprovementDescription?: string;
+  classification?: LeaseClassification;
+  customClauses?: LeaseClauseInput[];
 }
 
 function fmtDate(d: string) {
