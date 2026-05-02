@@ -425,6 +425,15 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                   </div>
                 </div>
                 <div className="field-group">
+                  <Label className="field-label">Landlord Address</Label>
+                  <Input
+                    className="h-8 text-sm"
+                    value={form.landlord_address}
+                    onChange={(e) => setForm((p) => ({ ...p, landlord_address: e.target.value }))}
+                    placeholder="Street, City, State ZIP"
+                  />
+                </div>
+                <div className="field-group">
                   <Label className="field-label">Lease Type</Label>
                   <Select value={form.lease_type_choice} onValueChange={(v) => handleLeaseTypeChange(v as LeaseTypeChoice)}>
                     <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
