@@ -295,20 +295,47 @@ export default function UserManagement() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs"
-                          disabled={u.user_id === user?.id}
-                          onClick={() => {
-                            setSelectedUser(u);
-                            setNewRole(u.roles[0] || "viewer");
-                            setRoleDialogOpen(true);
-                          }}
-                        >
-                          <Shield className="h-3.5 w-3.5 mr-1" />
-                          Role
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => {
+                              setSelectedUser(u);
+                              setEditForm({ full_name: u.full_name || "", email: u.email || "" });
+                              setEditOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-3.5 w-3.5 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs"
+                            disabled={u.user_id === user?.id}
+                            onClick={() => {
+                              setSelectedUser(u);
+                              setNewRole(u.roles[0] || "viewer");
+                              setRoleDialogOpen(true);
+                            }}
+                          >
+                            <Shield className="h-3.5 w-3.5 mr-1" />
+                            Role
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            disabled={u.user_id === user?.id}
+                            onClick={() => {
+                              setUserToDelete(u);
+                              setDeleteOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
