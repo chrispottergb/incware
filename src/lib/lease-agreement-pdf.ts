@@ -144,13 +144,41 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
   addText(`The Premises shall be used and occupied by Tenant exclusively for ${data.purpose || "business operations"} and for no other purpose without the prior written consent of Landlord.`);
   gap();
 
-  // 6. Lease Structure & Expense Responsibility
-  const structureLabel = STRUCTURE_LABEL[data.leaseStructure || "modified_gross"] || "Modified Gross Lease";
+  // 6. Lease Structure & Expense Responsibility (conditional by lease type)
+  const structure = data.leaseStructure || "modified_gross";
+  const structureLabel = STRUCTURE_LABEL[structure] || "Modified Gross Lease";
   const taxesParty = PARTY_LABEL[data.expenseTaxes || "landlord"];
   const insParty = PARTY_LABEL[data.expenseInsurance || "shared"];
   const maintParty = PARTY_LABEL[data.expenseMaintenance || "shared"];
   addText("6. LEASE STRUCTURE AND EXPENSE RESPONSIBILITY", { bold: true, size: 11 });
-  addText(`This Agreement is structured as a ${structureLabel}. Operating expenses shall be allocated as follows: property taxes shall be paid by ${taxesParty}; property and liability insurance shall be paid by ${insParty}; and routine maintenance and repairs shall be the responsibility of ${maintParty}. Structural repairs and major systems (roof, foundation, HVAC, plumbing, and electrical) remain the responsibility of Landlord unless damage is caused by Tenant's negligence.`);
+
+  if (structure === "gross") {
+    addText(`This Agreement is structured as a ${structureLabel}. Landlord shall be responsible for all operating expenses associated with the Premises, including but not limited to property taxes, property and liability insurance, routine maintenance and repairs, and structural repairs and major systems (roof, foundation, HVAC, plumbing, and electrical), except where damage is caused by Tenant's negligence.`);
+  } else if (structure === "triple_net") {
+    addText(`This Agreement is structured as a ${structureLabel}. In addition to the base rent set forth in Section 3, Tenant shall be solely responsible for the following operating expenses:`);
+    gap(2);
+    addText("6.a PROPERTY TAXES", { bold: true, size: 10, indent: 6 });
+    addText("Tenant shall pay, when due, all real property taxes, assessments, and governmental charges levied against the Premises during the term of this Agreement. Tenant shall provide Landlord with evidence of payment upon request.", { indent: 6 });
+    gap(2);
+    addText("6.b INSURANCE", { bold: true, size: 10, indent: 6 });
+    addText("Tenant shall maintain, at Tenant's sole cost and expense, property and general liability insurance covering the Premises in amounts customary for similar properties, naming Landlord as an additional insured. Tenant shall furnish Landlord with certificates of insurance upon request.", { indent: 6 });
+    gap(2);
+    addText("6.c MAINTENANCE AND REPAIRS", { bold: true, size: 10, indent: 6 });
+    addText("Tenant shall be responsible for all routine maintenance and repairs of the Premises, including but not limited to interior, exterior, structural, mechanical, plumbing, electrical, and HVAC systems, throughout the term of this Agreement.", { indent: 6 });
+  } else if (structure === "percentage") {
+    addText(`This Agreement is structured as a ${structureLabel}. Operating expenses shall be allocated as follows: property taxes shall be paid by ${taxesParty}; property and liability insurance shall be paid by ${insParty}; and routine maintenance and repairs shall be the responsibility of ${maintParty}.`);
+    gap(2);
+    addText("6.a PERCENTAGE RENT", { bold: true, size: 10, indent: 6 });
+    const pct = data.percentageRentPct ? `${data.percentageRentPct}%` : "_____%";
+    const basis = data.percentageRentBasis?.trim() || "Tenant's gross sales generated from the Premises";
+    addText(`In addition to the base monthly rent set forth in Section 3, Tenant shall pay to Landlord, as additional rent, an amount equal to ${pct} of ${basis}. Such percentage rent shall be calculated and paid monthly, accompanied by a statement certified by Tenant detailing the figures upon which the calculation is based. Landlord shall have the right, upon reasonable notice, to inspect Tenant's books and records to verify such calculations.`, { indent: 6 });
+  } else if (structure === "full_service") {
+    const inclusions = data.fullServiceInclusions?.trim() || "electricity, water, gas, HVAC, janitorial services, common-area maintenance, security, and trash removal";
+    addText(`This Agreement is structured as a ${structureLabel}. The base rent set forth in Section 3 is inclusive of the following services and utilities furnished by Landlord at no additional cost to Tenant: ${inclusions}. Landlord shall also be responsible for property taxes, property and liability insurance, and structural repairs and major systems (roof, foundation, HVAC, plumbing, and electrical), except where damage is caused by Tenant's negligence.`);
+  } else {
+    // modified_gross + net variants — itemized split
+    addText(`This Agreement is structured as a ${structureLabel}. Operating expenses shall be allocated as follows: property taxes shall be paid by ${taxesParty}; property and liability insurance shall be paid by ${insParty}; and routine maintenance and repairs shall be the responsibility of ${maintParty}. Structural repairs and major systems (roof, foundation, HVAC, plumbing, and electrical) remain the responsibility of Landlord unless damage is caused by Tenant's negligence.`);
+  }
   gap();
 
   // 7. Utilities
