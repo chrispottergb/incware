@@ -306,6 +306,20 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
     return new Date(d + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
   };
 
+  const computeLeaseTerm = (s: string, e: string) => {
+    if (!s || !e) return "";
+    const start = new Date(s + "T00:00:00");
+    const end = new Date(e + "T00:00:00");
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return "";
+    const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+    if (months <= 0) return "";
+    if (months % 12 === 0) {
+      const years = months / 12;
+      return `${years} year${years > 1 ? "s" : ""}`;
+    }
+    return `${months} months`;
+  };
+
   const generateAgreement = async (lease: any, mode: "preview" | "download") => {
     // Pull custom clauses for this lease
     const { data: clauses = [] } = await supabase
