@@ -88,6 +88,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
   const [tenantParty, setTenantParty] = useState<LeaseParty>({ kind: "company", companyId });
   const [override, setOverride] = useState<LeaseClassification | null>(null);
   const savingRef = useRef(false);
+  const goingToPart2Ref = useRef(false);
 
   const handleLeaseTypeChange = useCallback((choice: LeaseTypeChoice) => {
     const defaults = getLeaseTypeDefaults(choice);
