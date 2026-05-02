@@ -317,6 +317,9 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       expenseMaintenance: lease.expense_maintenance_party || "shared",
       marketRentJustified: !!lease.market_rent_justified,
       marketRentNote: lease.market_rent_note || "",
+      percentageRentPct: lease.percentage_rent_pct != null ? String(lease.percentage_rent_pct) : "",
+      percentageRentBasis: lease.percentage_rent_basis || "",
+      fullServiceInclusions: lease.full_service_inclusions || "",
       customClauses: (clauses as any[]) || [],
     };
     if (mode === "preview") previewLeaseAgreement(data);
