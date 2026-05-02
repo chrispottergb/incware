@@ -211,6 +211,12 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       }
     },
     onSuccess: (savedId) => {
+      // Apply any pre-save overrides to the form state so Part 2 modal pre-populates correctly
+      if (formOverrideRef.current) {
+        const overrides = formOverrideRef.current;
+        setForm((p) => ({ ...p, ...overrides }));
+        formOverrideRef.current = null;
+      }
       if (form.landlord_name.trim()) {
         upsertAddressBook.mutate({ full_name: form.landlord_name.trim(), company_id: companyId });
       }
@@ -224,7 +230,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       resetForm();
       toast.success(editId ? "Lease updated!" : "Lease added!");
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => { formOverrideRef.current = null; toast.error(err.message); },
   });
 
   const deleteLease = useMutation({
