@@ -11,8 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Search, Users, Shield, Trash2, Mail, Lock, Loader2 } from "lucide-react";
+import { Plus, Search, Users, Shield, Trash2, Mail, Lock, Loader2, Pencil } from "lucide-react";
 
 type UserWithRole = {
   user_id: string;
