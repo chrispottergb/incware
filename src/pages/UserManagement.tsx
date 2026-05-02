@@ -151,6 +151,44 @@ export default function UserManagement() {
     },
   });
 
+  const updateProfileMutation = useMutation({
+    mutationFn: async ({ userId, full_name }: { userId: string; full_name: string }) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ full_name })
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all_users_with_roles"] });
+      toast({ title: "Member updated" });
+      setEditOpen(false);
+      setSelectedUser(null);
+    },
+    onError: (e: any) => {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("admin-delete-user", {
+        body: { user_id: userId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all_users_with_roles"] });
+      toast({ title: "Team member deleted" });
+      setDeleteOpen(false);
+      setUserToDelete(null);
+    },
+    onError: (e: any) => {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    },
+  });
+
   const migrateSsnMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke("encrypt-legacy-ssn");
