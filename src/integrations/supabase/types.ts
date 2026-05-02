@@ -1124,6 +1124,7 @@ export type Database = {
           expense_taxes_party: string | null
           finalized_at: string | null
           finance_company: string | null
+          full_service_inclusions: string | null
           generated_lease_text: string | null
           id: string
           landlord_address: string | null
@@ -1148,6 +1149,8 @@ export type Database = {
           monthly_payment: number | null
           mortgage: number | null
           ownership_type: string | null
+          percentage_rent_basis: string | null
+          percentage_rent_pct: number | null
           purchase_amount: number | null
           purchase_date: string | null
           rent_frequency: string
@@ -1177,6 +1180,7 @@ export type Database = {
           expense_taxes_party?: string | null
           finalized_at?: string | null
           finance_company?: string | null
+          full_service_inclusions?: string | null
           generated_lease_text?: string | null
           id?: string
           landlord_address?: string | null
@@ -1201,6 +1205,8 @@ export type Database = {
           monthly_payment?: number | null
           mortgage?: number | null
           ownership_type?: string | null
+          percentage_rent_basis?: string | null
+          percentage_rent_pct?: number | null
           purchase_amount?: number | null
           purchase_date?: string | null
           rent_frequency?: string
@@ -1230,6 +1236,7 @@ export type Database = {
           expense_taxes_party?: string | null
           finalized_at?: string | null
           finance_company?: string | null
+          full_service_inclusions?: string | null
           generated_lease_text?: string | null
           id?: string
           landlord_address?: string | null
@@ -1254,6 +1261,8 @@ export type Database = {
           monthly_payment?: number | null
           mortgage?: number | null
           ownership_type?: string | null
+          percentage_rent_basis?: string | null
+          percentage_rent_pct?: number | null
           purchase_amount?: number | null
           purchase_date?: string | null
           rent_frequency?: string
