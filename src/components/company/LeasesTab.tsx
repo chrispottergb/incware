@@ -525,9 +525,6 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                 isSaving={saveLease.isPending}
                 onEditTypeFromPart1={() => setGenModalOpen(false)}
               />
-            </form>
-            </>
-            <></>
             </DialogContent>
           </Dialog>
         </div>
