@@ -11,8 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Search, Users, Shield, Trash2, Mail, Lock, Loader2 } from "lucide-react";
+import { Plus, Search, Users, Shield, Trash2, Mail, Lock, Loader2, Pencil } from "lucide-react";
 
 type UserWithRole = {
   user_id: string;
@@ -48,6 +49,10 @@ export default function UserManagement() {
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   const [newRole, setNewRole] = useState("viewer");
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ full_name: "", email: "" });
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserWithRole | null>(null);
 
   // Fetch all profiles (admins can see all)
   const { data: users = [], isLoading } = useQuery({
@@ -146,6 +151,44 @@ export default function UserManagement() {
     },
   });
 
+  const updateProfileMutation = useMutation({
+    mutationFn: async ({ userId, full_name }: { userId: string; full_name: string }) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ full_name })
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all_users_with_roles"] });
+      toast({ title: "Member updated" });
+      setEditOpen(false);
+      setSelectedUser(null);
+    },
+    onError: (e: any) => {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("admin-delete-user", {
+        body: { user_id: userId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all_users_with_roles"] });
+      toast({ title: "Team member deleted" });
+      setDeleteOpen(false);
+      setUserToDelete(null);
+    },
+    onError: (e: any) => {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    },
+  });
+
   const migrateSsnMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke("encrypt-legacy-ssn");
@@ -230,7 +273,7 @@ export default function UserManagement() {
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
-                    <TableHead className="w-24 text-right">Actions</TableHead>
+                    <TableHead className="w-56 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -252,20 +295,47 @@ export default function UserManagement() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs"
-                          disabled={u.user_id === user?.id}
-                          onClick={() => {
-                            setSelectedUser(u);
-                            setNewRole(u.roles[0] || "viewer");
-                            setRoleDialogOpen(true);
-                          }}
-                        >
-                          <Shield className="h-3.5 w-3.5 mr-1" />
-                          Role
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => {
+                              setSelectedUser(u);
+                              setEditForm({ full_name: u.full_name || "", email: u.email || "" });
+                              setEditOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-3.5 w-3.5 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs"
+                            disabled={u.user_id === user?.id}
+                            onClick={() => {
+                              setSelectedUser(u);
+                              setNewRole(u.roles[0] || "viewer");
+                              setRoleDialogOpen(true);
+                            }}
+                          >
+                            <Shield className="h-3.5 w-3.5 mr-1" />
+                            Role
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            disabled={u.user_id === user?.id}
+                            onClick={() => {
+                              setUserToDelete(u);
+                              setDeleteOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -460,6 +530,58 @@ export default function UserManagement() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Member Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Team Member</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Full Name</Label>
+              <Input
+                value={editForm.full_name}
+                onChange={(e) => setEditForm((f) => ({ ...f, full_name: e.target.value }))}
+                placeholder="Jane Doe"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input value={editForm.email} disabled className="bg-muted" />
+              <p className="text-[11px] text-muted-foreground">
+                Email is managed by authentication and cannot be changed here.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  if (selectedUser) {
+                    updateProfileMutation.mutate({
+                      userId: selectedUser.user_id,
+                      full_name: editForm.full_name.trim(),
+                    });
+                  }
+                }}
+                disabled={updateProfileMutation.isPending}
+              >
+                {updateProfileMutation.isPending ? "Saving…" : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={() => {
+          if (userToDelete) deleteUserMutation.mutate(userToDelete.user_id);
+        }}
+        title="Delete team member?"
+        description={`This will permanently remove ${userToDelete?.full_name || userToDelete?.email || "this user"} and revoke their access. This action cannot be undone.`}
+      />
     </div>
   );
 }
