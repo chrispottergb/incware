@@ -472,61 +472,65 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                       if (!editId && !savingRef.current) {
                         await saveLease.mutateAsync();
                       }
-                      setGenModalOpen(true);
+                      setDialogOpen(false);
+                      setTimeout(() => setGenModalOpen(true), 50);
                     }}
                   >
                     <FileText className="mr-1 h-3.5 w-3.5" /> Generate Lease Document
                   </Button>
                 </div>
               </form>
-              <GenerateLeaseModal
-                open={genModalOpen}
-                onOpenChange={setGenModalOpen}
-                companyId={companyId}
-                editId={editId}
-                form={{
-                  lease_date: form.lease_date,
-                  lease_term: form.lease_term,
-                  landlord_name: form.landlord_name,
-                  landlord_address: form.landlord_address,
-                  lease_structure: form.lease_structure,
-                  expense_taxes_party: form.expense_taxes_party,
-                  expense_insurance_party: form.expense_insurance_party,
-                  expense_maintenance_party: form.expense_maintenance_party,
-                  market_rent_justified: form.market_rent_justified,
-                  market_rent_note: form.market_rent_note,
-                  percentage_rent_pct: form.percentage_rent_pct,
-                  percentage_rent_basis: form.percentage_rent_basis,
-                  full_service_inclusions: form.full_service_inclusions,
-                }}
-                onFormChange={(patch) => setForm((p) => ({ ...p, ...patch }))}
-                landlordParty={landlordParty}
-                tenantParty={tenantParty}
-                onLandlordChange={(p) => {
-                  setLandlordParty(p);
-                  if ((p.kind === "company" || p.kind === "individual") && p.name) {
-                    setForm((f) => ({ ...f, landlord_name: p.name! }));
-                  }
-                }}
-                onTenantChange={setTenantParty}
-                override={override}
-                onOverrideChange={setOverride}
-                onSave={() => saveLease.mutate()}
-                onPreview={async () => {
-                  if (!editId) return;
-                  const { data } = await supabase.from("company_assets").select("*").eq("id", editId).maybeSingle();
-                  if (data) generateAgreement(data, "preview");
-                }}
-                onDownload={async () => {
-                  if (!editId) return;
-                  const { data } = await supabase.from("company_assets").select("*").eq("id", editId).maybeSingle();
-                  if (data) generateAgreement(data, "download");
-                }}
-                isSaving={saveLease.isPending}
-                onEditTypeFromPart1={() => setGenModalOpen(false)}
-              />
             </DialogContent>
           </Dialog>
+          <GenerateLeaseModal
+            open={genModalOpen}
+            onOpenChange={setGenModalOpen}
+            companyId={companyId}
+            editId={editId}
+            form={{
+              lease_date: form.lease_date,
+              lease_term: form.lease_term,
+              landlord_name: form.landlord_name,
+              landlord_address: form.landlord_address,
+              lease_structure: form.lease_structure,
+              expense_taxes_party: form.expense_taxes_party,
+              expense_insurance_party: form.expense_insurance_party,
+              expense_maintenance_party: form.expense_maintenance_party,
+              market_rent_justified: form.market_rent_justified,
+              market_rent_note: form.market_rent_note,
+              percentage_rent_pct: form.percentage_rent_pct,
+              percentage_rent_basis: form.percentage_rent_basis,
+              full_service_inclusions: form.full_service_inclusions,
+            }}
+            onFormChange={(patch) => setForm((p) => ({ ...p, ...patch }))}
+            landlordParty={landlordParty}
+            tenantParty={tenantParty}
+            onLandlordChange={(p) => {
+              setLandlordParty(p);
+              if ((p.kind === "company" || p.kind === "individual") && p.name) {
+                setForm((f) => ({ ...f, landlord_name: p.name! }));
+              }
+            }}
+            onTenantChange={setTenantParty}
+            override={override}
+            onOverrideChange={setOverride}
+            onSave={() => saveLease.mutate()}
+            onPreview={async () => {
+              if (!editId) return;
+              const { data } = await supabase.from("company_assets").select("*").eq("id", editId).maybeSingle();
+              if (data) generateAgreement(data, "preview");
+            }}
+            onDownload={async () => {
+              if (!editId) return;
+              const { data } = await supabase.from("company_assets").select("*").eq("id", editId).maybeSingle();
+              if (data) generateAgreement(data, "download");
+            }}
+            isSaving={saveLease.isPending}
+            onEditTypeFromPart1={() => {
+              setGenModalOpen(false);
+              setTimeout(() => setDialogOpen(true), 50);
+            }}
+          />
         </div>
       </CardHeader>
       <CardContent className="px-4 pb-4">
