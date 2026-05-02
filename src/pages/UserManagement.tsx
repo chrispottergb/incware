@@ -530,6 +530,58 @@ export default function UserManagement() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Member Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Team Member</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Full Name</Label>
+              <Input
+                value={editForm.full_name}
+                onChange={(e) => setEditForm((f) => ({ ...f, full_name: e.target.value }))}
+                placeholder="Jane Doe"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input value={editForm.email} disabled className="bg-muted" />
+              <p className="text-[11px] text-muted-foreground">
+                Email is managed by authentication and cannot be changed here.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  if (selectedUser) {
+                    updateProfileMutation.mutate({
+                      userId: selectedUser.user_id,
+                      full_name: editForm.full_name.trim(),
+                    });
+                  }
+                }}
+                disabled={updateProfileMutation.isPending}
+              >
+                {updateProfileMutation.isPending ? "Saving…" : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={() => {
+          if (userToDelete) deleteUserMutation.mutate(userToDelete.user_id);
+        }}
+        title="Delete team member?"
+        description={`This will permanently remove ${userToDelete?.full_name || userToDelete?.email || "this user"} and revoke their access. This action cannot be undone.`}
+      />
     </div>
   );
 }
