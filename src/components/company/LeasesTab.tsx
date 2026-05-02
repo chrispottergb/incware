@@ -208,11 +208,16 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
         savingRef.current = false;
       }
     },
-    onSuccess: () => {
+    onSuccess: (savedId) => {
       if (form.landlord_name.trim()) {
         upsertAddressBook.mutate({ full_name: form.landlord_name.trim(), company_id: companyId });
       }
       queryClient.invalidateQueries({ queryKey: ["company_assets", companyId, "lease"] });
+      if (goingToPart2Ref.current) {
+        // Keep form state intact so Part 2 modal pre-populates; ensure editId is set.
+        if (savedId) setEditId(savedId);
+        return;
+      }
       setDialogOpen(false);
       resetForm();
       toast.success(editId ? "Lease updated!" : "Lease added!");
