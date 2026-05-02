@@ -81,12 +81,25 @@ const emptyForm = {
 export default function LeasesTab({ companyId, companyName = "", companyAddress = "" }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [genModalOpen, setGenModalOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
   const [landlordParty, setLandlordParty] = useState<LeaseParty>({ kind: "external" });
   const [tenantParty, setTenantParty] = useState<LeaseParty>({ kind: "company", companyId });
   const [override, setOverride] = useState<LeaseClassification | null>(null);
   const savingRef = useRef(false);
+
+  const handleLeaseTypeChange = useCallback((choice: LeaseTypeChoice) => {
+    const defaults = getLeaseTypeDefaults(choice);
+    setForm((p) => ({
+      ...p,
+      lease_type_choice: choice,
+      lease_structure: defaults.lease_structure,
+      expense_taxes_party: defaults.expense_taxes_party,
+      expense_insurance_party: defaults.expense_insurance_party,
+      expense_maintenance_party: defaults.expense_maintenance_party,
+    }));
+  }, []);
 
   const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
 
