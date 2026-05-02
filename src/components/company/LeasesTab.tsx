@@ -148,12 +148,15 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
           lease_classification: classification.classification,
           classification_overridden: !!override,
           classification_reason: classification.reason,
-          lease_structure: form.lease_structure,
+          lease_structure: form.lease_type_choice === "auto" ? null : form.lease_structure,
           expense_taxes_party: form.expense_taxes_party,
           expense_insurance_party: form.expense_insurance_party,
           expense_maintenance_party: form.expense_maintenance_party,
           market_rent_justified: form.market_rent_justified,
           market_rent_note: form.market_rent_note || null,
+          percentage_rent_pct: form.percentage_rent_pct ? parseFloat(form.percentage_rent_pct) : null,
+          percentage_rent_basis: form.percentage_rent_basis || null,
+          full_service_inclusions: form.full_service_inclusions || null,
         };
         let savedId = editId;
         let prevClassification: string | null = null;
