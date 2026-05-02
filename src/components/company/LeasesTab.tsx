@@ -89,6 +89,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
   const [override, setOverride] = useState<LeaseClassification | null>(null);
   const savingRef = useRef(false);
   const goingToPart2Ref = useRef(false);
+  const formOverrideRef = useRef<Partial<typeof emptyForm> | null>(null);
 
   const handleLeaseTypeChange = useCallback((choice: LeaseTypeChoice) => {
     const defaults = getLeaseTypeDefaults(choice);
@@ -138,21 +139,22 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       if (savingRef.current) return null;
       savingRef.current = true;
       try {
+        const f = { ...form, ...(formOverrideRef.current || {}) };
         const payload: any = {
           asset_type: "lease",
-          description: form.description || "Lease",
-          value: form.value ? parseFloat(form.value) : null,
-          address: form.address || null,
-          landlord_name: form.landlord_name || null,
-          landlord_address: form.landlord_address || null,
-          lease_date: form.lease_date || null,
-          lease_start_date: form.lease_start_date || null,
-          lease_end_date: form.lease_end_date || null,
-          lease_term: form.lease_term || null,
-          monthly_payment: form.monthly_payment ? parseFloat(form.monthly_payment) : null,
-          leasehold_improvement_amount: form.leasehold_improvement_amount ? parseFloat(form.leasehold_improvement_amount) : null,
-          leasehold_improvement_description: form.leasehold_improvement_description || null,
-          rent_frequency: form.rent_frequency,
+          description: f.description || "Lease",
+          value: f.value ? parseFloat(f.value) : null,
+          address: f.address || null,
+          landlord_name: f.landlord_name || null,
+          landlord_address: f.landlord_address || null,
+          lease_date: f.lease_date || null,
+          lease_start_date: f.lease_start_date || null,
+          lease_end_date: f.lease_end_date || null,
+          lease_term: f.lease_term || null,
+          monthly_payment: f.monthly_payment ? parseFloat(f.monthly_payment) : null,
+          leasehold_improvement_amount: f.leasehold_improvement_amount ? parseFloat(f.leasehold_improvement_amount) : null,
+          leasehold_improvement_description: f.leasehold_improvement_description || null,
+          rent_frequency: f.rent_frequency,
           landlord_party_kind: landlordParty.kind,
           landlord_company_id: landlordParty.kind === "company" ? landlordParty.companyId || null : null,
           landlord_shareholder_id: landlordParty.kind === "individual" ? landlordParty.shareholderId || null : null,
@@ -162,15 +164,15 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
           lease_classification: classification.classification,
           classification_overridden: !!override,
           classification_reason: classification.reason,
-          lease_structure: form.lease_type_choice === "auto" ? null : form.lease_structure,
-          expense_taxes_party: form.expense_taxes_party,
-          expense_insurance_party: form.expense_insurance_party,
-          expense_maintenance_party: form.expense_maintenance_party,
-          market_rent_justified: form.market_rent_justified,
-          market_rent_note: form.market_rent_note || null,
-          percentage_rent_pct: form.percentage_rent_pct ? parseFloat(form.percentage_rent_pct) : null,
-          percentage_rent_basis: form.percentage_rent_basis || null,
-          full_service_inclusions: form.full_service_inclusions || null,
+          lease_structure: f.lease_type_choice === "auto" ? null : f.lease_structure,
+          expense_taxes_party: f.expense_taxes_party,
+          expense_insurance_party: f.expense_insurance_party,
+          expense_maintenance_party: f.expense_maintenance_party,
+          market_rent_justified: f.market_rent_justified,
+          market_rent_note: f.market_rent_note || null,
+          percentage_rent_pct: f.percentage_rent_pct ? parseFloat(f.percentage_rent_pct) : null,
+          percentage_rent_basis: f.percentage_rent_basis || null,
+          full_service_inclusions: f.full_service_inclusions || null,
         };
         let savedId = editId;
         let prevClassification: string | null = null;
@@ -209,6 +211,12 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       }
     },
     onSuccess: (savedId) => {
+      // Apply any pre-save overrides to the form state so Part 2 modal pre-populates correctly
+      if (formOverrideRef.current) {
+        const overrides = formOverrideRef.current;
+        setForm((p) => ({ ...p, ...overrides }));
+        formOverrideRef.current = null;
+      }
       if (form.landlord_name.trim()) {
         upsertAddressBook.mutate({ full_name: form.landlord_name.trim(), company_id: companyId });
       }
@@ -222,7 +230,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       resetForm();
       toast.success(editId ? "Lease updated!" : "Lease added!");
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => { formOverrideRef.current = null; toast.error(err.message); },
   });
 
   const deleteLease = useMutation({
@@ -304,6 +312,20 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
   const fmtDate = (d: string | null | undefined) => {
     if (!d) return "—";
     return new Date(d + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  };
+
+  const computeLeaseTerm = (s: string, e: string) => {
+    if (!s || !e) return "";
+    const start = new Date(s + "T00:00:00");
+    const end = new Date(e + "T00:00:00");
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return "";
+    const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+    if (months <= 0) return "";
+    if (months % 12 === 0) {
+      const years = months / 12;
+      return `${years} year${years > 1 ? "s" : ""}`;
+    }
+    return `${months} months`;
   };
 
   const generateAgreement = async (lease: any, mode: "preview" | "download") => {
@@ -425,6 +447,15 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                   </div>
                 </div>
                 <div className="field-group">
+                  <Label className="field-label">Landlord Address</Label>
+                  <Input
+                    className="h-8 text-sm"
+                    value={form.landlord_address}
+                    onChange={(e) => setForm((p) => ({ ...p, landlord_address: e.target.value }))}
+                    placeholder="Street, City, State ZIP"
+                  />
+                </div>
+                <div className="field-group">
                   <Label className="field-label">Lease Type</Label>
                   <Select value={form.lease_type_choice} onValueChange={(v) => handleLeaseTypeChange(v as LeaseTypeChoice)}>
                     <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
@@ -475,6 +506,13 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                         toast.error("Add a property description or address first.");
                         return;
                       }
+                      // Pre-fill Part 2 fields from Part 1 data so they're not blank in the modal.
+                      // Use a ref so the values are visible to the mutation BEFORE setState flushes.
+                      const derivedTerm = computeLeaseTerm(form.lease_start_date, form.lease_end_date);
+                      formOverrideRef.current = {
+                        lease_date: form.lease_date || form.lease_start_date,
+                        lease_term: form.lease_term || derivedTerm,
+                      };
                       goingToPart2Ref.current = true;
                       try {
                         if (!savingRef.current) {
@@ -531,7 +569,11 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
             onPreview={async () => {
               if (!editId) return;
               const { data } = await supabase.from("company_assets").select("*").eq("id", editId).maybeSingle();
-              if (data) generateAgreement(data, "preview");
+              if (!data) return;
+              // Close the Part 2 modal first so the Radix focus-trap / pointer-events lock
+              // doesn't block the preview overlay iframe (which would otherwise render blank).
+              setGenModalOpen(false);
+              setTimeout(() => generateAgreement(data, "preview"), 150);
             }}
             onDownload={async () => {
               if (!editId) return;
