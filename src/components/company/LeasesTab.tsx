@@ -27,9 +27,10 @@ import { ClassificationBanner } from "./leases/ClassificationBanner";
 import { LeaseClausesEditor } from "./leases/LeaseClausesEditor";
 import { ExpenseMatrix } from "./leases/ExpenseMatrix";
 import { MarketRentField } from "./leases/MarketRentField";
+import { GenerateLeaseModal } from "./leases/GenerateLeaseModal";
 import { useLeaseClassification } from "@/hooks/useLeaseClassification";
 import { CLASSIFICATION_LABELS, type LeaseClassification, type LeaseParty } from "@/lib/lease-classification";
-import { computeLeaseRisk, RISK_BADGE_CLASS } from "@/lib/lease-risk";
+import { computeLeaseRisk, RISK_BADGE_CLASS, getLeaseTypeDefaults, type LeaseTypeChoice } from "@/lib/lease-risk";
 
 interface Props {
   companyId: string;
@@ -39,12 +40,23 @@ interface Props {
 
 const leaseOptions = ["Home Office", "Office Space", "Shared / Coworking Space", "Storage Unit", "Warehouse Space", "Garage", "Shed / Outbuilding", "Small Workshop", "Parking Area", "Small Land Parcel", "Flex Space", "Showroom/Office Space", "Mixed-Use Commercial", "Service Center"];
 
+const LEASE_TYPE_OPTIONS: Array<{ value: LeaseTypeChoice; label: string }> = [
+  { value: "gross", label: "Gross" },
+  { value: "modified_gross", label: "Modified Gross" },
+  { value: "triple_net", label: "NNN (Triple Net)" },
+  { value: "percentage", label: "Percentage" },
+  { value: "full_service", label: "Full Service" },
+  { value: "auto", label: "Auto-detect" },
+];
+
 const emptyForm = {
   description: "",
   value: "",
   address: "",
   landlord_name: "",
   landlord_address: "",
+  tenant_name: "",
+  lease_type_choice: "modified_gross" as LeaseTypeChoice,
   lease_date: "",
   lease_start_date: "",
   lease_end_date: "",
@@ -61,6 +73,9 @@ const emptyForm = {
   expense_maintenance_party: "shared" as string,
   market_rent_justified: false as boolean,
   market_rent_note: "" as string,
+  percentage_rent_pct: "" as string,
+  percentage_rent_basis: "" as string,
+  full_service_inclusions: "" as string,
 };
 
 export default function LeasesTab({ companyId, companyName = "", companyAddress = "" }: Props) {
