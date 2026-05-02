@@ -88,6 +88,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
   const [tenantParty, setTenantParty] = useState<LeaseParty>({ kind: "company", companyId });
   const [override, setOverride] = useState<LeaseClassification | null>(null);
   const savingRef = useRef(false);
+  const goingToPart2Ref = useRef(false);
 
   const handleLeaseTypeChange = useCallback((choice: LeaseTypeChoice) => {
     const defaults = getLeaseTypeDefaults(choice);
@@ -207,11 +208,16 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
         savingRef.current = false;
       }
     },
-    onSuccess: () => {
+    onSuccess: (savedId) => {
       if (form.landlord_name.trim()) {
         upsertAddressBook.mutate({ full_name: form.landlord_name.trim(), company_id: companyId });
       }
       queryClient.invalidateQueries({ queryKey: ["company_assets", companyId, "lease"] });
+      if (goingToPart2Ref.current) {
+        // Keep form state intact so Part 2 modal pre-populates; ensure editId is set.
+        if (savedId) setEditId(savedId);
+        return;
+      }
       setDialogOpen(false);
       resetForm();
       toast.success(editId ? "Lease updated!" : "Lease added!");
@@ -469,11 +475,18 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                         toast.error("Add a property description or address first.");
                         return;
                       }
-                      if (!editId && !savingRef.current) {
-                        await saveLease.mutateAsync();
+                      goingToPart2Ref.current = true;
+                      try {
+                        if (!savingRef.current) {
+                          await saveLease.mutateAsync();
+                        }
+                        setDialogOpen(false);
+                        setTimeout(() => setGenModalOpen(true), 50);
+                      } catch (e) {
+                        // error toast already shown by onError
+                      } finally {
+                        goingToPart2Ref.current = false;
                       }
-                      setDialogOpen(false);
-                      setTimeout(() => setGenModalOpen(true), 50);
                     }}
                   >
                     <FileText className="mr-1 h-3.5 w-3.5" /> Generate Lease Document
