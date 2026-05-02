@@ -408,104 +408,26 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                     placeholder="Street address"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <EntityPartyPicker
-                    label="Landlord"
-                    currentCompanyId={companyId}
-                    value={landlordParty}
-                    onChange={(p) => {
-                      setLandlordParty(p);
-                      if ((p.kind === "company" || p.kind === "individual") && p.name) {
-                        setForm((f) => ({ ...f, landlord_name: p.name! }));
-                      }
-                    }}
-                    externalName={form.landlord_name}
-                    onExternalNameChange={(v) => setForm((f) => ({ ...f, landlord_name: v }))}
-                    externalAddress={form.landlord_address}
-                    onExternalAddressChange={(v) => setForm((f) => ({ ...f, landlord_address: v }))}
-                  />
-                  <EntityPartyPicker
-                    label="Tenant"
-                    currentCompanyId={companyId}
-                    value={tenantParty}
-                    onChange={setTenantParty}
-                    externalName=""
-                    onExternalNameChange={() => {}}
-                  />
-                </div>
-                {landlordParty.kind !== "external" && (
+                <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
-                    <Label className="field-label">Landlord Address (for lease document)</Label>
-                    <Input
-                      className="h-8 text-sm"
-                      value={form.landlord_address}
-                      onChange={(e) => setForm((f) => ({ ...f, landlord_address: e.target.value }))}
-                      placeholder="Street, City, State ZIP"
-                    />
+                    <Label className="field-label">Landlord</Label>
+                    <Input className="h-8 text-sm" value={form.landlord_name} onChange={(e) => setForm((p) => ({ ...p, landlord_name: e.target.value }))} placeholder="Landlord name" />
                   </div>
-                )}
-                <ClassificationBanner
-                  classification={classification.classification}
-                  reason={classification.reason}
-                  overridden={!!override}
-                  onOverride={setOverride}
-                />
-                <details className="rounded-md border border-border bg-muted/30 group">
-                  <summary className="flex items-center justify-between px-3 py-2 cursor-pointer list-none select-none">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Lease Structure & Expenses
-                    </span>
-                    <span className="text-[10px] text-muted-foreground capitalize group-open:hidden">
-                      {(form.lease_structure || "modified_gross").replace(/_/g, " ")} · click to edit
-                    </span>
-                    <span className="text-[10px] text-muted-foreground hidden group-open:inline">collapse</span>
-                  </summary>
-                  <div className="px-3 pb-3">
-                    <ExpenseMatrix
-                      structure={form.lease_structure}
-                      taxes={form.expense_taxes_party}
-                      insurance={form.expense_insurance_party}
-                      maintenance={form.expense_maintenance_party}
-                      onChange={(patch) => setForm((p) => ({
-                        ...p,
-                        ...(patch.structure !== undefined && { lease_structure: patch.structure }),
-                        ...(patch.taxes !== undefined && { expense_taxes_party: patch.taxes }),
-                        ...(patch.insurance !== undefined && { expense_insurance_party: patch.insurance }),
-                        ...(patch.maintenance !== undefined && { expense_maintenance_party: patch.maintenance }),
-                      }))}
-                    />
+                  <div className="field-group">
+                    <Label className="field-label">Tenant</Label>
+                    <Input className="h-8 text-sm" value={form.tenant_name || companyName} onChange={(e) => setForm((p) => ({ ...p, tenant_name: e.target.value }))} placeholder="Tenant name" />
                   </div>
-                </details>
-                {classification.classification !== "standard" && (() => {
-                  const isRequired = classification.classification === "self_rental" || classification.classification === "intercompany";
-                  const needsAttention = isRequired && !form.market_rent_justified;
-                  return (
-                    <details className="rounded-md border border-border bg-muted/30 group" open={needsAttention}>
-                      <summary className="flex items-center justify-between px-3 py-2 cursor-pointer list-none select-none">
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                          Market Rent Justification
-                          {isRequired && <span className="text-destructive ml-1">*</span>}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {form.market_rent_justified ? "✓ Provided" : (isRequired ? "Required" : "Optional")}
-                        </span>
-                      </summary>
-                      <div className="px-3 pb-3">
-                        <MarketRentField
-                          justified={form.market_rent_justified}
-                          note={form.market_rent_note}
-                          onJustifiedChange={(v) => setForm((p) => ({ ...p, market_rent_justified: v }))}
-                          onNoteChange={(v) => setForm((p) => ({ ...p, market_rent_note: v }))}
-                          required={isRequired}
-                        />
-                      </div>
-                    </details>
-                  );
-                })()}
-                {editId && <LeaseClausesEditor leaseId={editId} />}
+                </div>
                 <div className="field-group">
-                  <Label className="field-label">Lease Date (Signed)</Label>
-                  <DatePickerField value={form.lease_date} onChange={(v) => setForm((p) => ({ ...p, lease_date: v }))} />
+                  <Label className="field-label">Lease Type</Label>
+                  <Select value={form.lease_type_choice} onValueChange={(v) => handleLeaseTypeChange(v as LeaseTypeChoice)}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {LEASE_TYPE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
@@ -517,17 +439,10 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                     <DatePickerField value={form.lease_end_date} onChange={(v) => setForm((p) => ({ ...p, lease_end_date: v }))} />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label">Lease Term</Label>
-                    <Input className="h-8 text-sm" value={form.lease_term} onChange={(e) => setForm((p) => ({ ...p, lease_term: e.target.value }))} placeholder="e.g. 12 months" />
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">Monthly Payment ($)</Label>
-                    <Input type="number" step="0.01" className="h-8 text-sm" value={form.monthly_payment} onChange={(e) => setForm((p) => ({ ...p, monthly_payment: e.target.value }))} />
-                  </div>
+                <div className="field-group">
+                  <Label className="field-label">Monthly Payment ($)</Label>
+                  <Input type="number" step="0.01" className="h-8 text-sm" value={form.monthly_payment} onChange={(e) => setForm((p) => ({ ...p, monthly_payment: e.target.value }))} />
                 </div>
-                {/* Leasehold Improvements */}
                 <div className="pt-2 border-t border-border">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Leasehold Improvements</p>
                   <div className="grid grid-cols-2 gap-2">
@@ -541,11 +456,78 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                     </div>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" size="sm" disabled={saveLease.isPending}>
-                  {saveLease.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                  {editId ? "Save Changes" : "Add Lease"}
-                </Button>
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
+                  <Button type="submit" variant="outline" size="sm" disabled={saveLease.isPending}>
+                    {saveLease.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                    {editId ? "Save Changes" : "Add Lease"}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={async () => {
+                      if (!form.description.trim() && !form.address.trim()) {
+                        toast.error("Add a property description or address first.");
+                        return;
+                      }
+                      if (!editId && !savingRef.current) {
+                        await saveLease.mutateAsync();
+                      }
+                      setGenModalOpen(true);
+                    }}
+                  >
+                    <FileText className="mr-1 h-3.5 w-3.5" /> Generate Lease Document
+                  </Button>
+                </div>
               </form>
+              <GenerateLeaseModal
+                open={genModalOpen}
+                onOpenChange={setGenModalOpen}
+                companyId={companyId}
+                editId={editId}
+                form={{
+                  lease_date: form.lease_date,
+                  lease_term: form.lease_term,
+                  landlord_name: form.landlord_name,
+                  landlord_address: form.landlord_address,
+                  lease_structure: form.lease_structure,
+                  expense_taxes_party: form.expense_taxes_party,
+                  expense_insurance_party: form.expense_insurance_party,
+                  expense_maintenance_party: form.expense_maintenance_party,
+                  market_rent_justified: form.market_rent_justified,
+                  market_rent_note: form.market_rent_note,
+                  percentage_rent_pct: form.percentage_rent_pct,
+                  percentage_rent_basis: form.percentage_rent_basis,
+                  full_service_inclusions: form.full_service_inclusions,
+                }}
+                onFormChange={(patch) => setForm((p) => ({ ...p, ...patch }))}
+                landlordParty={landlordParty}
+                tenantParty={tenantParty}
+                onLandlordChange={(p) => {
+                  setLandlordParty(p);
+                  if ((p.kind === "company" || p.kind === "individual") && p.name) {
+                    setForm((f) => ({ ...f, landlord_name: p.name! }));
+                  }
+                }}
+                onTenantChange={setTenantParty}
+                override={override}
+                onOverrideChange={setOverride}
+                onSave={() => saveLease.mutate()}
+                onPreview={async () => {
+                  if (!editId) return;
+                  const { data } = await supabase.from("company_assets").select("*").eq("id", editId).maybeSingle();
+                  if (data) generateAgreement(data, "preview");
+                }}
+                onDownload={async () => {
+                  if (!editId) return;
+                  const { data } = await supabase.from("company_assets").select("*").eq("id", editId).maybeSingle();
+                  if (data) generateAgreement(data, "download");
+                }}
+                isSaving={saveLease.isPending}
+                onEditTypeFromPart1={() => setGenModalOpen(false)}
+              />
+            </form>
+            </>
+            <></>
             </DialogContent>
           </Dialog>
         </div>
