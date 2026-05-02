@@ -498,6 +498,13 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                         toast.error("Add a property description or address first.");
                         return;
                       }
+                      // Pre-fill Part 2 fields from Part 1 data so they're not blank in the modal
+                      const derivedTerm = computeLeaseTerm(form.lease_start_date, form.lease_end_date);
+                      setForm((p) => ({
+                        ...p,
+                        lease_date: p.lease_date || p.lease_start_date,
+                        lease_term: p.lease_term || derivedTerm,
+                      }));
                       goingToPart2Ref.current = true;
                       try {
                         if (!savingRef.current) {
