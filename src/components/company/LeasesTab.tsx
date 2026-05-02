@@ -475,11 +475,18 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                         toast.error("Add a property description or address first.");
                         return;
                       }
-                      if (!editId && !savingRef.current) {
-                        await saveLease.mutateAsync();
+                      goingToPart2Ref.current = true;
+                      try {
+                        if (!savingRef.current) {
+                          await saveLease.mutateAsync();
+                        }
+                        setDialogOpen(false);
+                        setTimeout(() => setGenModalOpen(true), 50);
+                      } catch (e) {
+                        // error toast already shown by onError
+                      } finally {
+                        goingToPart2Ref.current = false;
                       }
-                      setDialogOpen(false);
-                      setTimeout(() => setGenModalOpen(true), 50);
                     }}
                   >
                     <FileText className="mr-1 h-3.5 w-3.5" /> Generate Lease Document
