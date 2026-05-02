@@ -31,16 +31,21 @@ interface LeaseData {
   expenseMaintenance?: string;
   marketRentJustified?: boolean;
   marketRentNote?: string;
+  percentageRentPct?: string;
+  percentageRentBasis?: string;
+  fullServiceInclusions?: string;
   customClauses?: LeaseClauseInput[];
 }
 
 const STRUCTURE_LABEL: Record<string, string> = {
   modified_gross: "Modified Gross Lease",
-  gross: "Gross (Full Service) Lease",
+  gross: "Gross Lease",
   triple_net: "Triple Net (NNN) Lease",
   double_net: "Double Net (NN) Lease",
   single_net: "Single Net (N) Lease",
   absolute_net: "Absolute Net Lease",
+  percentage: "Percentage Lease",
+  full_service: "Full Service Lease",
 };
 
 const PARTY_LABEL: Record<string, string> = {
