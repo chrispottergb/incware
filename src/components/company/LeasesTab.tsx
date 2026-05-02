@@ -228,12 +228,22 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
 
   const openEdit = (a: any) => {
     setEditId(a.id);
+    const structure = a.lease_structure || "modified_gross";
+    const choice: LeaseTypeChoice = (
+      a.lease_structure == null
+        ? "auto"
+        : (["gross", "modified_gross", "triple_net", "percentage", "full_service"] as const).includes(structure as any)
+          ? (structure as LeaseTypeChoice)
+          : "modified_gross"
+    );
     setForm({
       description: a.description || "",
       value: a.value != null ? String(a.value) : "",
       address: a.address || "",
       landlord_name: a.landlord_name || "",
       landlord_address: a.landlord_address || "",
+      tenant_name: a.tenant_name || companyName || "",
+      lease_type_choice: choice,
       lease_date: a.lease_date || "",
       lease_start_date: a.lease_start_date || "",
       lease_end_date: a.lease_end_date || "",
@@ -244,12 +254,15 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       leasehold_improvement_amount: a.leasehold_improvement_amount != null ? String(a.leasehold_improvement_amount) : "",
       leasehold_improvement_description: a.leasehold_improvement_description || "",
       rent_frequency: a.rent_frequency || "monthly",
-      lease_structure: a.lease_structure || "modified_gross",
+      lease_structure: structure,
       expense_taxes_party: a.expense_taxes_party || "landlord",
       expense_insurance_party: a.expense_insurance_party || "shared",
       expense_maintenance_party: a.expense_maintenance_party || "shared",
       market_rent_justified: !!a.market_rent_justified,
       market_rent_note: a.market_rent_note || "",
+      percentage_rent_pct: a.percentage_rent_pct != null ? String(a.percentage_rent_pct) : "",
+      percentage_rent_basis: a.percentage_rent_basis || "",
+      full_service_inclusions: a.full_service_inclusions || "",
     });
     setLandlordParty({
       kind: (a.landlord_party_kind as any) || "external",
