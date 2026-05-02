@@ -58,11 +58,13 @@ export const RISK_BADGE_CLASS: Record<LeaseRiskLevel, string> = {
 
 export const LEASE_STRUCTURE_LABELS: Record<string, string> = {
   modified_gross: "Modified Gross",
-  gross: "Gross (Full Service)",
-  triple_net: "Triple Net (NNN)",
+  gross: "Gross",
+  triple_net: "NNN (Triple Net)",
   double_net: "Double Net (NN)",
   single_net: "Single Net (N)",
   absolute_net: "Absolute Net",
+  percentage: "Percentage",
+  full_service: "Full Service",
 };
 
 export const EXPENSE_PARTY_LABELS: Record<string, string> = {
@@ -70,3 +72,36 @@ export const EXPENSE_PARTY_LABELS: Record<string, string> = {
   tenant: "Tenant",
   shared: "Shared",
 };
+
+/** Maps Part 1 lease type → defaults for lease_structure + expense responsibility. */
+export type LeaseTypeChoice =
+  | "gross"
+  | "modified_gross"
+  | "triple_net"
+  | "percentage"
+  | "full_service"
+  | "auto";
+
+export interface LeaseTypeDefaults {
+  lease_structure: string;
+  expense_taxes_party: string;
+  expense_insurance_party: string;
+  expense_maintenance_party: string;
+}
+
+export function getLeaseTypeDefaults(choice: LeaseTypeChoice): LeaseTypeDefaults {
+  switch (choice) {
+    case "gross":
+      return { lease_structure: "gross", expense_taxes_party: "landlord", expense_insurance_party: "landlord", expense_maintenance_party: "landlord" };
+    case "triple_net":
+      return { lease_structure: "triple_net", expense_taxes_party: "tenant", expense_insurance_party: "tenant", expense_maintenance_party: "tenant" };
+    case "percentage":
+      return { lease_structure: "percentage", expense_taxes_party: "landlord", expense_insurance_party: "landlord", expense_maintenance_party: "shared" };
+    case "full_service":
+      return { lease_structure: "full_service", expense_taxes_party: "landlord", expense_insurance_party: "landlord", expense_maintenance_party: "landlord" };
+    case "auto":
+    case "modified_gross":
+    default:
+      return { lease_structure: "modified_gross", expense_taxes_party: "landlord", expense_insurance_party: "shared", expense_maintenance_party: "shared" };
+  }
+}
