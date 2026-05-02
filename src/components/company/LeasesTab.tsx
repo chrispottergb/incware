@@ -472,7 +472,8 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                       if (!editId && !savingRef.current) {
                         await saveLease.mutateAsync();
                       }
-                      setGenModalOpen(true);
+                      setDialogOpen(false);
+                      setTimeout(() => setGenModalOpen(true), 50);
                     }}
                   >
                     <FileText className="mr-1 h-3.5 w-3.5" /> Generate Lease Document
