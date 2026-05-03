@@ -20,6 +20,7 @@ import { Plus, Pencil, Trash2, Landmark, PenTool, ChevronRight, Loader2 } from "
 import { toast } from "sonner";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { cn } from "@/lib/utils";
+import { formatPhone } from "@/lib/phone-format";
 
 interface BanksTabProps {
   companyId: string;
