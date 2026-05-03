@@ -1225,18 +1225,16 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
           const line1 = [addr, addr2].filter(Boolean).join(", ");
           const line2 = [city, state].filter(Boolean).join(", ");
           const address = [line1, line2, zip].filter(Boolean).join(" ");
-          const basisVal = s.basis != null ? `$${Number(s.basis).toLocaleString()}` : "—";
           return [
             s.shareholder_name,
             address || "—",
             s.common_shares?.toLocaleString() ?? "—",
-            basisVal,
           ];
         });
 
         autoTable(doc, {
           startY: y,
-          head: [["Shareholder", "Address", "Common Shares", "Shareholder Basis"]],
+          head: [["Shareholder", "Address", "Common Shares"]],
           body: shareholderTableBody,
           theme: "grid",
           headStyles: tableHeadStyles,
@@ -1245,8 +1243,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
           columnStyles: {
             0: { cellWidth: 45 },
             1: { cellWidth: 'auto' },
-            2: { cellWidth: 25 },
-            3: { cellWidth: 30 },
+            2: { cellWidth: 30 },
           },
         });
         y = (doc as any).lastAutoTable.finalY + 6;
