@@ -31,6 +31,7 @@ import { GenerateLeaseModal } from "./leases/GenerateLeaseModal";
 import { useLeaseClassification } from "@/hooks/useLeaseClassification";
 import { CLASSIFICATION_LABELS, type LeaseClassification, type LeaseParty } from "@/lib/lease-classification";
 import { computeLeaseRisk, RISK_BADGE_CLASS, getLeaseTypeDefaults, type LeaseTypeChoice } from "@/lib/lease-risk";
+import { sanitizeCurrencyInput, formatCurrencyDisplay } from "@/lib/currency-format";
 
 interface Props {
   companyId: string;
