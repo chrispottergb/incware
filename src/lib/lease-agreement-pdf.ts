@@ -1,6 +1,12 @@
 import jsPDF from "jspdf";
+import * as pdfjsLib from "pdfjs-dist";
 import { savePdfReliably } from "./pdf-save";
 import { registerArialFont } from "@/lib/arial-font";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.mjs",
+  import.meta.url
+).toString();
 import { CLASSIFICATION_DISCLOSURES, CLASSIFICATION_LABELS, type LeaseClassification } from "@/lib/lease-classification";
 
 export interface LeaseClauseInput {
