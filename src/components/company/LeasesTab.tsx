@@ -343,7 +343,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       landlordName: lease.landlord_name || "",
       landlordAddress: lease.landlord_address || "",
       tenantName: companyName,
-      tenantAddress: companyAddress,
+      tenantAddress: lease.tenant_address || companyAddress,
       propertyAddress: lease.address || "",
       leaseDate: lease.lease_date || "",
       leaseStartDate: lease.lease_start_date || "",
