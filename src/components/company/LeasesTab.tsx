@@ -31,6 +31,7 @@ import { GenerateLeaseModal } from "./leases/GenerateLeaseModal";
 import { useLeaseClassification } from "@/hooks/useLeaseClassification";
 import { CLASSIFICATION_LABELS, type LeaseClassification, type LeaseParty } from "@/lib/lease-classification";
 import { computeLeaseRisk, RISK_BADGE_CLASS, getLeaseTypeDefaults, type LeaseTypeChoice } from "@/lib/lease-risk";
+import { sanitizeCurrencyInput, formatCurrencyDisplay } from "@/lib/currency-format";
 
 interface Props {
   companyId: string;
@@ -85,6 +86,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
   const [genModalOpen, setGenModalOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
+  const [focusedFields, setFocusedFields] = useState<Set<string>>(new Set());
   const [landlordParty, setLandlordParty] = useState<LeaseParty>({ kind: "external" });
   const [tenantParty, setTenantParty] = useState<LeaseParty>({ kind: "company", companyId });
   const [override, setOverride] = useState<LeaseClassification | null>(null);
@@ -492,11 +494,29 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Monthly Payment ($)</Label>
-                    <Input type="number" step="0.01" className="h-8 text-sm" value={form.monthly_payment} onChange={(e) => setForm((p) => ({ ...p, monthly_payment: e.target.value }))} />
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      className="h-8 text-sm"
+                      value={focusedFields.has("monthly_payment") ? form.monthly_payment : formatCurrencyDisplay(form.monthly_payment)}
+                      onFocus={() => setFocusedFields((s) => new Set(s).add("monthly_payment"))}
+                      onBlur={() => setFocusedFields((s) => { const n = new Set(s); n.delete("monthly_payment"); return n; })}
+                      onChange={(e) => setForm((p) => ({ ...p, monthly_payment: sanitizeCurrencyInput(e.target.value) }))}
+                      placeholder="$0.00"
+                    />
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Security Deposit ($)</Label>
-                    <Input type="number" step="0.01" className="h-8 text-sm" value={form.security_deposit} onChange={(e) => setForm((p) => ({ ...p, security_deposit: e.target.value }))} placeholder="0.00" />
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      className="h-8 text-sm"
+                      value={focusedFields.has("security_deposit") ? form.security_deposit : formatCurrencyDisplay(form.security_deposit)}
+                      onFocus={() => setFocusedFields((s) => new Set(s).add("security_deposit"))}
+                      onBlur={() => setFocusedFields((s) => { const n = new Set(s); n.delete("security_deposit"); return n; })}
+                      onChange={(e) => setForm((p) => ({ ...p, security_deposit: sanitizeCurrencyInput(e.target.value) }))}
+                      placeholder="$0.00"
+                    />
                   </div>
                 </div>
                 <div className="pt-2 border-t border-border">
@@ -504,7 +524,16 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                   <div className="grid grid-cols-2 gap-2">
                     <div className="field-group">
                       <Label className="field-label">Amount ($)</Label>
-                      <Input type="number" step="0.01" className="h-8 text-sm" value={form.leasehold_improvement_amount} onChange={(e) => setForm((p) => ({ ...p, leasehold_improvement_amount: e.target.value }))} placeholder="0.00" />
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        className="h-8 text-sm"
+                        value={focusedFields.has("leasehold_improvement_amount") ? form.leasehold_improvement_amount : formatCurrencyDisplay(form.leasehold_improvement_amount)}
+                        onFocus={() => setFocusedFields((s) => new Set(s).add("leasehold_improvement_amount"))}
+                        onBlur={() => setFocusedFields((s) => { const n = new Set(s); n.delete("leasehold_improvement_amount"); return n; })}
+                        onChange={(e) => setForm((p) => ({ ...p, leasehold_improvement_amount: sanitizeCurrencyInput(e.target.value) }))}
+                        placeholder="$0.00"
+                      />
                     </div>
                     <div className="field-group">
                       <Label className="field-label">Description</Label>
