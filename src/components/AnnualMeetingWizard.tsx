@@ -1491,6 +1491,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
                     { key: "buyer_name", label: "Buyer" },
                     { key: "reason_for_sale", label: "Reason" },
                   ], { year_make_model: "", vin: "", sale_date: "", sale_price: "", buyer_name: "", reason_for_sale: "" })}
+              </div>
 
               <div>
                 <h4 className="text-xs font-semibold mb-2">Major Equipment</h4>
