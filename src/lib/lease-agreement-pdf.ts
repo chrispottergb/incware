@@ -289,7 +289,15 @@ export function generateLeaseAgreementPdf(data: LeaseData): jsPDF {
 
 export async function downloadLeaseAgreement(data: LeaseData) {
   const doc = generateLeaseAgreementPdf(data);
-  await savePdfReliably(doc, "lease-agreement.pdf");
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "lease-agreement.pdf";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export function previewLeaseAgreement(data: LeaseData) {
