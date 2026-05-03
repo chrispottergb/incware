@@ -86,6 +86,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
   const [genModalOpen, setGenModalOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
+  const [focusedFields, setFocusedFields] = useState<Set<string>>(new Set());
   const [landlordParty, setLandlordParty] = useState<LeaseParty>({ kind: "external" });
   const [tenantParty, setTenantParty] = useState<LeaseParty>({ kind: "company", companyId });
   const [override, setOverride] = useState<LeaseClassification | null>(null);
