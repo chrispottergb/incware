@@ -552,6 +552,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
 
       leases: leaseList,
       vehicles: vehicleList,
+      vehiclesSold: [] as { year_make_model: string; vin: string; sale_date: string; sale_price: number | null; buyer_name: string; reason_for_sale: string }[],
       equipment: equipmentList,
 
       benefitPlans: benefitList,
@@ -886,6 +887,18 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
           notes: v.notes || null,
         }));
         if (leasedVehicles.length > 0) await supabase.from("meeting_vehicle_leases").insert(leasedVehicles);
+
+        // Save vehicles sold to meeting_vehicle_sales
+        const soldVehicles = (data.vehiclesSold || []).filter((v: any) => v.year_make_model).map((v: any) => ({
+          meeting_id: mid,
+          year_make_model: v.year_make_model,
+          vin: v.vin || null,
+          sale_date: v.sale_date || null,
+          sale_price: v.sale_price !== "" && v.sale_price != null ? parseFloat(String(v.sale_price).replace(/[,$]/g, "")) : null,
+          buyer_name: v.buyer_name || null,
+          reason_for_sale: v.reason_for_sale || null,
+        }));
+        if (soldVehicles.length > 0) await (supabase.from("meeting_vehicle_sales" as any).insert(soldVehicles as any));
 
         // Save equipment as meeting assets
         const equipRows = (data.equipment || []).filter(e => e.description).map(e => ({
@@ -1477,6 +1490,19 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
                     { key: "businessUsePct", label: "Business Use %" },
                     { key: "notes", label: "Notes" },
                   ], { yearMakeModel: "", vin: "", ownedLeased: "Owned", primaryDriver: "", businessUsePct: "", notes: "" })}
+              </div>
+
+              <div>
+                <h4 className="text-xs font-semibold mb-2">Vehicles Sold During the Year</h4>
+                <TemplateNote text="List vehicles sold or otherwise disposed of during the year." />
+                {renderTable("vehiclesSold" as any, [
+                    { key: "year_make_model", label: "Year / Make / Model" },
+                    { key: "vin", label: "VIN" },
+                    { key: "sale_date", label: "Sale Date" },
+                    { key: "sale_price", label: "Sale Price" },
+                    { key: "buyer_name", label: "Buyer" },
+                    { key: "reason_for_sale", label: "Reason" },
+                  ], { year_make_model: "", vin: "", sale_date: "", sale_price: "", buyer_name: "", reason_for_sale: "" })}
               </div>
 
               <div>
