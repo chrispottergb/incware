@@ -33,9 +33,13 @@ export default {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        workspace: "hsl(var(--workspace))",
+        disabled: "hsl(var(--disabled-foreground))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          hover: "hsl(var(--primary-hover))",
+          active: "hsl(var(--primary-active))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -60,6 +64,7 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+          elevated: "hsl(var(--card-elevated))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -78,6 +83,16 @@ export default {
         warning: {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
+        },
+        required: {
+          DEFAULT: "hsl(var(--required))",
+          foreground: "hsl(var(--required-foreground))",
+        },
+        table: {
+          header: "hsl(var(--table-header-bg))",
+          "header-fg": "hsl(var(--table-header-fg))",
+          divider: "hsl(var(--table-divider))",
+          "row-hover": "hsl(var(--table-row-hover))",
         },
       },
       borderRadius: {
