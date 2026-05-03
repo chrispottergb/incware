@@ -474,7 +474,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                     <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {LEASE_TYPE_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        <SelectItem key={opt.value} value={opt.value} title={opt.tip}>{opt.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
