@@ -1,0 +1,88 @@
+/* EntityIQ v2 design tokens — scoped to [data-v2-theme] */
+[data-v2-theme] {
+  --v2-brand: #C0392B;
+  --v2-brand-hover: #A93226;
+  --v2-brand-tint: #FDEDEA;
+  --v2-bg-page: #F7F6F3;
+  --v2-bg-card: #FFFFFF;
+  --v2-bg-sidebar: #F2F0EA;
+  --v2-border: #E8E5DE;
+  --v2-text-primary: #1A1A1A;
+  --v2-text-secondary: #6B6B6B;
+  --v2-text-meta: #9A9A9A;
+  --v2-row-alt: #FCFBF8;
+  --v2-row-hover: #FAF8F4;
+  --v2-status-current-fg: #1F8A4C;
+  --v2-status-current-bg: #E6F4EC;
+  --v2-status-due-fg: #B7791F;
+  --v2-status-due-bg: #FBF0DA;
+  --v2-status-overdue-fg: #B3261E;
+  --v2-status-overdue-bg: #FCE9E7;
+  --v2-status-archived-fg: #6B6B6B;
+  --v2-status-archived-bg: #EDEAE4;
+  --v2-info-blue-fg: #3E6FD9;
+  --v2-info-blue-bg: #E6EEFB;
+  --v2-violet: #6B4BC8;
+  --v2-violet-tint: #EFEAFB;
+
+  background-color: var(--v2-bg-page);
+  color: var(--v2-text-primary);
+  font-family: 'Geist', 'Inter', sans-serif;
+  transition: background-color 200ms ease, color 200ms ease;
+  min-height: 100vh;
+}
+
+[data-v2-theme="dark"] {
+  --v2-brand: #D14A3A;
+  --v2-brand-hover: #E15A4A;
+  --v2-brand-tint: rgba(209, 74, 58, 0.14);
+  --v2-bg-page: #0E0E10;
+  --v2-bg-card: #17171A;
+  --v2-bg-sidebar: #111114;
+  --v2-border: #27272B;
+  --v2-text-primary: #F2F1ED;
+  --v2-text-secondary: #A8A6A0;
+  --v2-text-meta: #6B6A65;
+  --v2-row-alt: #1B1B1F;
+  --v2-row-hover: #1F1F23;
+  --v2-status-current-fg: #4ADE80;
+  --v2-status-current-bg: rgba(74, 222, 128, 0.12);
+  --v2-status-due-fg: #FBBF24;
+  --v2-status-due-bg: rgba(251, 191, 36, 0.12);
+  --v2-status-overdue-fg: #F87171;
+  --v2-status-overdue-bg: rgba(248, 113, 113, 0.14);
+  --v2-status-archived-fg: #A8A6A0;
+  --v2-status-archived-bg: rgba(168, 166, 160, 0.12);
+  --v2-info-blue-fg: #93B4F6;
+  --v2-info-blue-bg: rgba(62, 111, 217, 0.16);
+  --v2-violet: #9B82E0;
+  --v2-violet-tint: rgba(155, 130, 224, 0.14);
+}
+
+[data-v2-theme] .v2-serif { font-family: 'Fraunces', Georgia, serif; font-feature-settings: "ss01"; }
+[data-v2-theme] .v2-mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+[data-v2-theme] :focus-visible {
+  outline: 2px solid var(--v2-brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* sparkline draw-in */
+@keyframes v2-draw {
+  to { stroke-dashoffset: 0; }
+}
+.v2-sparkline path {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: v2-draw 600ms ease-out forwards;
+}
+
+/* donut arc draw-in */
+@keyframes v2-donut {
+  from { stroke-dashoffset: var(--v2-donut-from); }
+  to { stroke-dashoffset: var(--v2-donut-to); }
+}
+.v2-donut-arc {
+  animation: v2-donut 800ms ease-out forwards;
+}
