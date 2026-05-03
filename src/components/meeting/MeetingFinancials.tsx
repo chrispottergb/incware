@@ -184,7 +184,9 @@ export default function MeetingFinancials({ meetingId }: Props) {
     if (raw === "" || raw == null) return "";
     const n = parseFloat(raw);
     if (!isFinite(n)) return raw;
-    return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const abs = Math.abs(n);
+    const formatted = `$${abs.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return n < 0 ? `-${formatted}` : formatted;
   };
 
   const getDisplayValue = (fieldId: string, raw: string, computed?: boolean): string => {
