@@ -296,9 +296,28 @@ export function previewLeaseAgreement(data: LeaseData) {
   const doc = generateLeaseAgreementPdf(data);
   const blob = doc.output("blob");
   const url = URL.createObjectURL(blob);
-  const win = window.open(url, "_blank");
-  if (!win) {
-    // Popup blocked — fall back to a direct navigation in current tab via a temporary anchor
+
+  // Open a blank tab synchronously (avoids popup blockers) and embed the PDF
+  // via an <iframe>. Navigating directly to a blob: URL causes some browsers
+  // (notably Chrome with certain configs) to download instead of preview.
+  const win = window.open("", "_blank");
+  if (win) {
+    win.document.write(`<!DOCTYPE html>
+<html>
+  <head>
+    <title>Lease Agreement Preview</title>
+    <style>
+      html, body { margin: 0; padding: 0; height: 100%; background: #525659; }
+      iframe { border: 0; width: 100%; height: 100%; }
+    </style>
+  </head>
+  <body>
+    <iframe src="${url}" type="application/pdf"></iframe>
+  </body>
+</html>`);
+    win.document.close();
+  } else {
+    // Popup blocked — fall back to a direct navigation via a temporary anchor
     const a = document.createElement("a");
     a.href = url;
     a.target = "_blank";
