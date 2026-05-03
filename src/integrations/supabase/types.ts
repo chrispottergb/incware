@@ -1156,6 +1156,7 @@ export type Database = {
           rent_frequency: string
           running_hours: number | null
           taxes: number | null
+          tenant_address: string | null
           tenant_company_id: string | null
           tenant_party_kind: string | null
           tenant_shareholder_id: string | null
@@ -1212,6 +1213,7 @@ export type Database = {
           rent_frequency?: string
           running_hours?: number | null
           taxes?: number | null
+          tenant_address?: string | null
           tenant_company_id?: string | null
           tenant_party_kind?: string | null
           tenant_shareholder_id?: string | null
@@ -1268,6 +1270,7 @@ export type Database = {
           rent_frequency?: string
           running_hours?: number | null
           taxes?: number | null
+          tenant_address?: string | null
           tenant_company_id?: string | null
           tenant_party_kind?: string | null
           tenant_shareholder_id?: string | null
