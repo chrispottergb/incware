@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { formatPhone } from "@/lib/phone-format";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -650,18 +651,22 @@ export default function AnnualReviewPublic() {
                       <Label htmlFor="contact_phone">Contact Phone</Label>
                       <Input
                         id="contact_phone"
+                        type="tel"
                         value={form.contact_phone}
-                        onChange={(e) => setForm({ ...form, contact_phone: e.target.value })}
+                        onChange={(e) => setForm({ ...form, contact_phone: formatPhone(e.target.value) })}
                         maxLength={40}
+                        placeholder="(555) 555-5555"
                       />
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="contact_cell">Contact Cell</Label>
                       <Input
                         id="contact_cell"
+                        type="tel"
                         value={form.contact_cell}
-                        onChange={(e) => setForm({ ...form, contact_cell: e.target.value })}
+                        onChange={(e) => setForm({ ...form, contact_cell: formatPhone(e.target.value) })}
                         maxLength={40}
+                        placeholder="(555) 555-5555"
                       />
                     </div>
                   </div>
