@@ -652,7 +652,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                         {statusLabel}
                       </Badge>
                       <div className="flex gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-[hsl(210,59%,30%)]/70 hover:text-[hsl(210,59%,30%)] hover:bg-[hsl(210,59%,30%)]/10" title="Preview Lease Agreement" onClick={() => generateAgreement(a, "preview", window.open("", "_blank"))}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-[hsl(210,59%,30%)]/70 hover:text-[hsl(210,59%,30%)] hover:bg-[hsl(210,59%,30%)]/10" title="Preview Lease Agreement" onClick={() => generateAgreement(a, "preview")}>
                           <Eye className="h-3 w-3" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-6 w-6 text-[hsl(210,59%,30%)]/70 hover:text-[hsl(210,59%,30%)] hover:bg-[hsl(210,59%,30%)]/10" title="Download Lease Agreement" onClick={() => generateAgreement(a, "download")}>
