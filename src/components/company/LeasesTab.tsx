@@ -40,13 +40,13 @@ interface Props {
 
 const leaseOptions = ["Home Office", "Office Space", "Shared / Coworking Space", "Storage Unit", "Warehouse Space", "Garage", "Shed / Outbuilding", "Small Workshop", "Parking Area", "Small Land Parcel", "Flex Space", "Showroom/Office Space", "Mixed-Use Commercial", "Service Center"];
 
-const LEASE_TYPE_OPTIONS: Array<{ value: LeaseTypeChoice; label: string }> = [
-  { value: "gross", label: "Gross" },
-  { value: "modified_gross", label: "Modified Gross" },
-  { value: "triple_net", label: "NNN (Triple Net)" },
-  { value: "percentage", label: "Percentage" },
-  { value: "full_service", label: "Full Service" },
-  { value: "auto", label: "Auto-detect" },
+const LEASE_TYPE_OPTIONS: Array<{ value: LeaseTypeChoice; label: string; tip: string }> = [
+  { value: "gross", label: "Gross", tip: "Tenant pays a flat rent. Landlord covers property taxes, insurance, and most maintenance." },
+  { value: "modified_gross", label: "Modified Gross", tip: "Tenant pays base rent plus a negotiated share of operating expenses (e.g., utilities or janitorial)." },
+  { value: "triple_net", label: "NNN (Triple Net)", tip: "Tenant pays base rent plus property taxes, insurance, and common-area maintenance (CAM)." },
+  { value: "percentage", label: "Percentage", tip: "Tenant pays base rent plus a percentage of gross sales — common in retail leases." },
+  { value: "full_service", label: "Full Service", tip: "Rent includes essentially all operating costs: taxes, insurance, maintenance, utilities, and janitorial." },
+  { value: "auto", label: "Auto-detect", tip: "Let the system pick a structure based on the lease details you've entered." },
 ];
 
 const emptyForm = {
@@ -474,7 +474,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                     <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {LEASE_TYPE_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        <SelectItem key={opt.value} value={opt.value} title={opt.tip}>{opt.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
