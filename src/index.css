@@ -6,50 +6,67 @@
 
 @layer base {
   :root {
-    /* entityIQ dark design system */
-    --background: 0 0% 6%;
-    --foreground: 215 25% 91%;
+    /* entityIQ dark design system — optimized CPA-friendly palette */
+    /* Backgrounds (depth structure) */
+    --background: 220 9% 9%;            /* #121417 primary app bg */
+    --workspace: 220 12% 11%;           /* #171A1F panels / main content */
+    --foreground: 214 9% 91%;           /* #E6E8EB primary text */
 
-    --card: 0 0% 12%;
-    --card-foreground: 215 25% 91%;
+    --card: 220 16% 14%;                /* #1E2229 */
+    --card-foreground: 214 9% 91%;
+    --card-elevated: 218 14% 17%;       /* #252B33 hover/elevated */
 
-    --popover: 0 0% 12%;
-    --popover-foreground: 215 25% 91%;
+    --popover: 220 16% 14%;             /* #1E2229 */
+    --popover-foreground: 214 9% 91%;
 
-    --primary: 4 63% 46%;
-    --primary-foreground: 0 0% 100%;
+    /* Brick-red signal accent (no large fills) */
+    --primary: 8 55% 50%;               /* #C24A3A */
+    --primary-foreground: 214 9% 91%;
+    --primary-hover: 8 64% 56%;         /* #D85A48 */
+    --primary-active: 8 55% 43%;        /* #A93E31 */
 
-    --secondary: 0 0% 14%;
-    --secondary-foreground: 215 16% 65%;
+    --secondary: 220 16% 14%;           /* #1E2229 */
+    --secondary-foreground: 214 11% 70%;/* #AAB2BD */
 
-    --muted: 0 0% 14%;
-    --muted-foreground: 215 16% 65%;
+    --muted: 218 18% 13%;               /* #1A1F26 */
+    --muted-foreground: 215 11% 53%;    /* #7A8594 */
+    --disabled-foreground: 217 14% 34%; /* #4B5563 */
 
-    --accent: 4 63% 46%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 8 55% 50%;                /* #C24A3A */
+    --accent-foreground: 214 9% 91%;
 
-    --destructive: 0 68% 48%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 8 55% 50%;           /* unified brick red */
+    --destructive-foreground: 214 9% 91%;
 
-    --border: 0 0% 16%;
-    --input: 0 0% 16%;
-    --ring: 4 63% 46%;
+    --border: 218 17% 22%;              /* #2E3642 */
+    --input: 218 17% 22%;
+    --ring: 8 55% 50%;
 
     --radius: 0.375rem;
 
-    --sidebar-background: 0 0% 10%;
-    --sidebar-foreground: 215 16% 65%;
-    --sidebar-primary: 4 63% 46%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 14%;
-    --sidebar-accent-foreground: 215 25% 91%;
-    --sidebar-border: 0 0% 16%;
-    --sidebar-ring: 4 63% 46%;
+    /* Tables */
+    --table-header-bg: 218 18% 13%;     /* #1A1F26 */
+    --table-header-fg: 213 13% 82%;     /* #C9D1D9 */
+    --table-row-hover: 219 20% 17%;     /* #222833 */
+    --table-divider: 218 17% 20%;       /* #2A313C */
 
-    --success: 152 44% 38%;
-    --success-foreground: 0 0% 100%;
-    --warning: 36 80% 50%;
-    --warning-foreground: 0 0% 100%;
+    /* Sidebar */
+    --sidebar-background: 220 13% 7%;   /* #0F1216 deepest */
+    --sidebar-foreground: 214 11% 70%;  /* #AAB2BD */
+    --sidebar-primary: 8 55% 50%;       /* #C24A3A active bar */
+    --sidebar-primary-foreground: 214 9% 91%;
+    --sidebar-accent: 218 18% 14%;      /* #1C222B active item bg */
+    --sidebar-accent-foreground: 214 9% 91%;
+    --sidebar-border: 218 18% 13%;
+    --sidebar-ring: 8 55% 50%;
+
+    /* Status (warm, muted) */
+    --required: 13 71% 59%;             /* #E06C4F muted red-orange */
+    --required-foreground: 220 9% 9%;
+    --warning: 41 67% 55%;              /* #D9A441 */
+    --warning-foreground: 220 9% 9%;
+    --success: 127 49% 49%;             /* #3FB950 */
+    --success-foreground: 220 9% 9%;
   }
 
   /* Light mode override — keep minimal, app is dark-first */
