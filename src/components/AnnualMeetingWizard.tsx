@@ -1481,6 +1481,18 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
               </div>
 
               <div>
+                <h4 className="text-xs font-semibold mb-2">Vehicles Sold During the Year</h4>
+                <TemplateNote text="List vehicles sold or otherwise disposed of during the year." />
+                {renderTable("vehiclesSold" as any, [
+                    { key: "year_make_model", label: "Year / Make / Model" },
+                    { key: "vin", label: "VIN" },
+                    { key: "sale_date", label: "Sale Date" },
+                    { key: "sale_price", label: "Sale Price" },
+                    { key: "buyer_name", label: "Buyer" },
+                    { key: "reason_for_sale", label: "Reason" },
+                  ], { year_make_model: "", vin: "", sale_date: "", sale_price: "", buyer_name: "", reason_for_sale: "" })}
+
+              <div>
                 <h4 className="text-xs font-semibold mb-2">Major Equipment</h4>
                 <TemplateNote text="List significant equipment items owned or leased by the company." />
                 {renderTable("equipment", [
