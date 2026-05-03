@@ -888,6 +888,18 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         }));
         if (leasedVehicles.length > 0) await supabase.from("meeting_vehicle_leases").insert(leasedVehicles);
 
+        // Save vehicles sold to meeting_vehicle_sales
+        const soldVehicles = (data.vehiclesSold || []).filter((v: any) => v.year_make_model).map((v: any) => ({
+          meeting_id: mid,
+          year_make_model: v.year_make_model,
+          vin: v.vin || null,
+          sale_date: v.sale_date || null,
+          sale_price: v.sale_price !== "" && v.sale_price != null ? parseFloat(String(v.sale_price).replace(/[,$]/g, "")) : null,
+          buyer_name: v.buyer_name || null,
+          reason_for_sale: v.reason_for_sale || null,
+        }));
+        if (soldVehicles.length > 0) await (supabase.from("meeting_vehicle_sales" as any).insert(soldVehicles as any));
+
         // Save equipment as meeting assets
         const equipRows = (data.equipment || []).filter(e => e.description).map(e => ({
           meeting_id: mid,
