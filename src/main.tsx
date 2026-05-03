@@ -4,5 +4,6 @@ import { Buffer } from "buffer";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import "./styles/v2-theme.css";
 
 createRoot(document.getElementById("root")!).render(<App />);
