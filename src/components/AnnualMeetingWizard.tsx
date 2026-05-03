@@ -552,6 +552,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
 
       leases: leaseList,
       vehicles: vehicleList,
+      vehiclesSold: [] as { year_make_model: string; vin: string; sale_date: string; sale_price: number | null; buyer_name: string; reason_for_sale: string }[],
       equipment: equipmentList,
 
       benefitPlans: benefitList,
