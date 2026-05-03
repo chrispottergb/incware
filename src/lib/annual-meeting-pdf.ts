@@ -170,7 +170,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   function para(text: string, indent: number = 0) {
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
-    doc.setTextColor(...BODY_COLOR as [number, number, number]);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     const lines = doc.splitTextToSize(text, contentWidth - indent);
     for (const line of lines) {
       checkPage(18);
@@ -185,7 +185,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     const indent = 36;
     const prefix = "RESOLVED, ";
     doc.setFontSize(11);
-    doc.setTextColor(...BODY_COLOR as [number, number, number]);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     const fullText = prefix + rest;
     const lines = doc.splitTextToSize(fullText, contentWidth - indent);
     checkPage(lines.length * 16 + 10);
@@ -212,7 +212,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     const indent = 0;
     const prefix = "WHEREAS, ";
     doc.setFontSize(11);
-    doc.setTextColor(...BODY_COLOR as [number, number, number]);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     const fullText = prefix + rest;
     const lines = doc.splitTextToSize(fullText, contentWidth - indent);
     checkPage(lines.length * 16 + 10);
@@ -542,7 +542,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
       doc.setFontSize(10);
       doc.setFont("Arial", "italic");
-      doc.setTextColor(...BODY_COLOR as [number, number, number]);
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
       const closingText = "A summary of total capital expenditures and disposals for the year is maintained in the financial statements and will be depreciated or adjusted in accordance with the company's accounting policies. Supporting documentation for all transactions is retained in the company's records.";
       const closingLines = doc.splitTextToSize(closingText, contentWidth);
       for (const line of closingLines) {
@@ -600,7 +600,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
       doc.setFontSize(10);
       doc.setFont("Arial", "italic");
-      doc.setTextColor(...BODY_COLOR as [number, number, number]);
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
       const soldClosing = "Proceeds from vehicle dispositions and any resulting gains or losses have been recorded in the company's financial statements in accordance with the company's accounting policies. Supporting documentation, including bills of sale and title transfer records, is retained in the company's records.";
       const soldClosingLines = doc.splitTextToSize(soldClosing, contentWidth);
       for (const line of soldClosingLines) {
@@ -691,7 +691,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   y += 14;
   doc.setFontSize(10);
   doc.setFont("Arial", "normal");
-  doc.setTextColor(...BODY_COLOR as [number, number, number]);
+  doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
   doc.text(data.chairperson || "Chairperson", margin, y);
   doc.text("Chairperson", margin, y + 13);
   doc.text("Date: ________________", margin, y + 26);
@@ -718,7 +718,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       doc.line(xPos, y, xPos + colW - 20, y);
       doc.setFontSize(10);
       doc.setFont("Arial", "normal");
-      doc.setTextColor(...BODY_COLOR as [number, number, number]);
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
       doc.text(`Member: ${sig.name || "[Name]"}`, xPos, y + 14);
       doc.text("Date: ________________", xPos, y + 27);
       doc.text("Title: ________________", xPos, y + 40);
