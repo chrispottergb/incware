@@ -306,9 +306,7 @@ export function previewLeaseAgreement(data: LeaseData, targetWindow?: Window | n
 
   const win = targetWindow && !targetWindow.closed ? targetWindow : window.open("", "_blank");
   if (win) {
-    win.document.open();
-    win.document.write(`<html><head><title>Lease Agreement Preview</title></head><body style="margin:0;padding:0;height:100vh"><embed width="100%" height="100%" src="${dataUri}" type="application/pdf" /></body></html>`);
-    win.document.close();
+    win.location.replace(dataUri);
   } else {
     const a = document.createElement("a");
     a.href = dataUri;
