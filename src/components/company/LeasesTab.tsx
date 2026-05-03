@@ -367,7 +367,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       fullServiceInclusions: lease.full_service_inclusions || "",
       customClauses: (clauses as any[]) || [],
     };
-    if (mode === "preview") previewLeaseAgreement(data, previewWindow);
+    if (mode === "preview") previewLeaseAgreement(data);
     else downloadLeaseAgreement(data);
   };
 
