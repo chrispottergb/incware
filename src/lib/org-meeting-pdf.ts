@@ -189,7 +189,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   para(`The organizational meeting of ${fullName}, a ${data.stateOfFormation} limited liability company, was held on ${dayOfWeek}, ${formattedDate}, at ${data.meetingTime || "[Time]"}, at ${data.meetingLocation || "[Location]"}.`);
 
   // Present members
-  const memberNames = data.members.map(m => m.name).filter(Boolean);
+  const memberNames = (data.members ?? []).map(m => m.name).filter(Boolean);
   if (memberNames.length > 0) {
     para(`The following were present at the meeting:`);
     memberNames.forEach(name => {
@@ -224,11 +224,11 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   heading("Initial Managers / Officers");
   resolvedPara(`that the following persons are hereby elected as the initial managers and officers of ${fullName}:`);
 
-  if (data.managers.length > 0) {
+  if ((data.managers ?? []).length > 0) {
     autoTable(doc, {
       startY: y,
       head: [["Name", "Title"]],
-      body: data.managers.map(m => [m.name || "[Enter]", m.title || "[Enter]"]),
+      body: (data.managers ?? []).map(m => [m.name || "[Enter]", m.title || "[Enter]"]),
       margin: { left: margin, right: rMargin },
       styles: { fontSize: 11, cellPadding: 6, font: "Arial" },
       headStyles: {
@@ -246,12 +246,12 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   heading("Initial Members");
   resolvedPara(`that the following persons are the initial members of ${fullName} and hold ownership interests as set forth below:`);
 
-  if (data.members.length > 0) {
+  if ((data.members ?? []).length > 0) {
     const usable = pw - margin - rMargin;
     autoTable(doc, {
       startY: y,
       head: [["Name", "Address", "Membership Units", "Membership Interest %"]],
-      body: data.members.map(m => [m.name || "[Enter]", m.address || "[Enter]", m.membershipUnits || "[Enter]", m.membershipInterestPct ? `${m.membershipInterestPct}%` : "[Enter]"]),
+      body: (data.members ?? []).map(m => [m.name || "[Enter]", m.address || "[Enter]", m.membershipUnits || "[Enter]", m.membershipInterestPct ? `${m.membershipInterestPct}%` : "[Enter]"]),
       margin: { left: margin, right: rMargin },
       styles: { fontSize: 10, cellPadding: 6, font: "Arial" },
       headStyles: {
@@ -305,7 +305,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   if (data.includeBanking) {
     heading("Banking Resolutions");
     resolvedPara(`that the limited liability company is hereby authorized to open and maintain a checking account at ${data.bankName || "[Bank Name]"}, ${data.bankCity || "[City, State]"}, and that the following persons are hereby authorized as signers on said account:`);
-    data.bankSignatories.forEach(s => {
+    (data.bankSignatories ?? []).forEach(s => {
       para(`• ${s.name || "[Name]"}, ${s.title || "[Title]"}`, 10);
     });
   }
@@ -315,11 +315,11 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   whereasPara(`the members of the limited liability company desire to formally designate and record the persons who shall serve as authorized binders, consistent with Wis. Stat. § 183.0407;`);
   resolvedPara(`that the following persons are hereby designated as authorized binders of the limited liability company for the ensuing year, each authorized to act on behalf of the company in their designated capacity:`);
 
-  if (data.authorizedBinders.length > 0) {
+  if ((data.authorizedBinders ?? []).length > 0) {
     autoTable(doc, {
       startY: y,
       head: [["Name", "Title", "Scope of Authority"]],
-      body: data.authorizedBinders.map(b => [b.name || "[Enter]", b.title || "[Enter]", b.scopeOfAuthority || "[Enter]"]),
+      body: (data.authorizedBinders ?? []).map(b => [b.name || "[Enter]", b.title || "[Enter]", b.scopeOfAuthority || "[Enter]"]),
       margin: { left: margin, right: rMargin },
       styles: { fontSize: 11, cellPadding: 6, font: "Arial" },
       headStyles: {
@@ -371,10 +371,10 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   y += 60;
 
   // Member signatures
-  if (data.memberSignatures.length > 0) {
-    checkPage(data.memberSignatures.length * 70);
+  if ((data.memberSignatures ?? []).length > 0) {
+    checkPage((data.memberSignatures ?? []).length * 70);
     y += 10;
-    data.memberSignatures.forEach((sig, i) => {
+    (data.memberSignatures ?? []).forEach((sig, i) => {
       checkPage(70);
       const col = i % 2;
       const xPos = col === 0 ? margin : margin + colW + 20;
@@ -389,7 +389,7 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
       doc.text("Date: ________________", xPos, y + 27);
       doc.text("Title: ________________", xPos, y + 40);
     });
-    if (data.memberSignatures.length % 2 !== 0) {
+    if ((data.memberSignatures ?? []).length % 2 !== 0) {
       y += 60;
     } else {
       y += 60;
