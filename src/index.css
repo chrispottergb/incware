@@ -159,7 +159,7 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: hsl(4 63% 40%);
+    background-color: hsl(var(--primary-active));
     border-color: hsl(var(--foreground));
   }
 
