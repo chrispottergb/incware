@@ -376,7 +376,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
               {/* Row 2: Contact Name (50%) | Phone (50%) */}
               <div className="grid grid-cols-2 gap-2">
                 <div><Label className="text-xs">Contact Name</Label><NameAutocomplete value={form.contact_name} onChange={(v) => setForm(p => ({ ...p, contact_name: v }))} onSelect={(entry) => { setForm(p => ({ ...p, contact_name: entry.full_name })); }} search={searchAddressBook} getCompanySplitIndex={getCompanySplitIndex} className="h-7 text-sm" /></div>
-                <div><Label className="text-xs">Phone</Label><Input className="h-7 text-sm" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
+                <div><Label className="text-xs">Phone</Label><Input type="tel" className="h-7 text-sm" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: formatPhone(e.target.value) }))} placeholder="(555) 555-5555" /></div>
               </div>
               {/* Row 3: Address (65%) | Row 4: Address 2 (35%) */}
               <div className="grid grid-cols-20 gap-2">
