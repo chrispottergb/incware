@@ -347,7 +347,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       leaseEndDate: lease.lease_end_date || "",
       monthlyRent: lease.monthly_payment != null ? String(lease.monthly_payment) : "",
       leaseTerm: lease.lease_term || "",
-      securityDeposit: "",
+      securityDeposit: lease.security_deposit != null ? String(lease.security_deposit) : "",
       purpose: "business operations",
       leaseholdImprovementAmount: lease.leasehold_improvement_amount != null ? String(lease.leasehold_improvement_amount) : "",
       leaseholdImprovementDescription: lease.leasehold_improvement_description || "",
