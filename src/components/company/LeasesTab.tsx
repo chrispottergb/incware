@@ -590,10 +590,9 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
               const { data } = await supabase.from("company_assets").select("*").eq("id", editId).maybeSingle();
               if (!data) return;
               // Close the Part 2 modal first so the Radix focus-trap / pointer-events lock
-              // doesn't block the preview overlay iframe (which would otherwise render blank).
+              // doesn't block the preview overlay.
               setGenModalOpen(false);
-              const previewWindow = window.open("", "_blank");
-              setTimeout(() => generateAgreement(data, "preview", previewWindow), 150);
+              setTimeout(() => generateAgreement(data, "preview"), 150);
             }}
             onDownload={async () => {
               if (!editId) return;
