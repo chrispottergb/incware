@@ -332,7 +332,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
     return `${months} months`;
   };
 
-  const generateAgreement = async (lease: any, mode: "preview" | "download", previewWindow?: Window | null) => {
+  const generateAgreement = async (lease: any, mode: "preview" | "download") => {
     // Pull custom clauses for this lease
     const { data: clauses = [] } = await supabase
       .from("lease_clauses")
