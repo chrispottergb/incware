@@ -332,7 +332,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
     return `${months} months`;
   };
 
-  const generateAgreement = async (lease: any, mode: "preview" | "download") => {
+  const generateAgreement = async (lease: any, mode: "preview" | "download", previewWindow?: Window | null) => {
     // Pull custom clauses for this lease
     const { data: clauses = [] } = await supabase
       .from("lease_clauses")
@@ -367,7 +367,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       fullServiceInclusions: lease.full_service_inclusions || "",
       customClauses: (clauses as any[]) || [],
     };
-    if (mode === "preview") previewLeaseAgreement(data);
+    if (mode === "preview") previewLeaseAgreement(data, previewWindow);
     else downloadLeaseAgreement(data);
   };
 
@@ -592,7 +592,8 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
               // Close the Part 2 modal first so the Radix focus-trap / pointer-events lock
               // doesn't block the preview overlay iframe (which would otherwise render blank).
               setGenModalOpen(false);
-              setTimeout(() => generateAgreement(data, "preview"), 150);
+              const previewWindow = window.open("", "_blank");
+              setTimeout(() => generateAgreement(data, "preview", previewWindow), 150);
             }}
             onDownload={async () => {
               if (!editId) return;
@@ -652,7 +653,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                         {statusLabel}
                       </Badge>
                       <div className="flex gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-[hsl(210,59%,30%)]/70 hover:text-[hsl(210,59%,30%)] hover:bg-[hsl(210,59%,30%)]/10" title="Preview Lease Agreement" onClick={() => generateAgreement(a, "preview")}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-[hsl(210,59%,30%)]/70 hover:text-[hsl(210,59%,30%)] hover:bg-[hsl(210,59%,30%)]/10" title="Preview Lease Agreement" onClick={() => generateAgreement(a, "preview", window.open("", "_blank"))}>
                           <Eye className="h-3 w-3" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-6 w-6 text-[hsl(210,59%,30%)]/70 hover:text-[hsl(210,59%,30%)] hover:bg-[hsl(210,59%,30%)]/10" title="Download Lease Agreement" onClick={() => generateAgreement(a, "download")}>
