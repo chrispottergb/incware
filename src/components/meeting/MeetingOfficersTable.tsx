@@ -54,8 +54,8 @@ const STATUS_CONFIG: Record<CompensationStatus, { label: string; icon: React.Ele
   pending_approval: { label: "Pending Approval", icon: Clock, color: "text-violet-500", badgeVariant: "bg-violet-100 text-violet-700 border-violet-200" },
   reasonable: { label: "Reasonable", icon: CheckCircle2, color: "text-emerald-600", badgeVariant: "bg-emerald-100 text-emerald-700 border-emerald-200" },
   below_market: { label: "Below Market", icon: AlertTriangle, color: "text-amber-500", badgeVariant: "bg-amber-100 text-amber-700 border-amber-200" },
-  above_market: { label: "Above Market", icon: Flag, color: "text-orange-500", badgeVariant: "bg-orange-100 text-orange-700 border-orange-200" },
-  included_in_primary: { label: "Included in Primary", icon: Link2, color: "text-blue-500", badgeVariant: "bg-blue-100 text-blue-700 border-blue-200" },
+  above_market: { label: "Above Market", icon: Flag, color: "text-required", badgeVariant: "bg-required text-required border-required" },
+  included_in_primary: { label: "Included in Primary", icon: Link2, color: "text-primary", badgeVariant: "bg-blue-100 text-primary border-blue-200" },
   non_compensable: { label: "Non-Compensable", icon: Minus, color: "text-muted-foreground", badgeVariant: "bg-muted text-muted-foreground border-border" },
 };
 
@@ -516,7 +516,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
                                 variant="outline"
                                 className={`text-[9px] px-1.5 py-0 ${
                                   primary
-                                    ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                    ? "bg-primary/10 text-primary border-primary/20"
                                     : "bg-muted text-muted-foreground border-border"
                                 }`}
                               >
@@ -573,7 +573,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
                                       variant="ghost"
                                       size="icon"
                                       onClick={() => setDualRole.mutate({ rowId: row.id, roleType: "primary" })}
-                                      className="h-8 w-8 text-blue-500 hover:text-blue-700"
+                                      className="h-8 w-8 text-primary hover:text-primary"
                                     >
                                       <Users className="h-4 w-4" />
                                     </Button>
@@ -620,7 +620,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
           </DialogHeader>
           <div className="space-y-4">
             {compOfficer && isDualRole(compOfficer) && (
-              <div className="rounded-md bg-blue-50 border border-blue-200 p-3 text-xs text-blue-800">
+              <div className="rounded-md bg-blue-50 border border-blue-200 p-3 text-xs text-primary">
                 <div className="flex items-center gap-1.5 font-medium mb-1">
                   <Users className="h-3.5 w-3.5" />
                   Dual Role Detected

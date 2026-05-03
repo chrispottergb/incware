@@ -841,9 +841,9 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
                 placeholder="MM/DD/YYYY"
               />
             </div>
-            <Alert className="border-yellow-300 bg-yellow-50">
-              <AlertTriangle className="h-4 w-4 text-yellow-700" />
-              <AlertDescription className="text-xs text-yellow-800">
+            <Alert className="border-warning bg-warning">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+              <AlertDescription className="text-xs text-warning">
                 All future transactions must be dated on or after this date. This date becomes the permanent starting point for this entity's ownership records.
               </AlertDescription>
             </Alert>

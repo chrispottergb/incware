@@ -821,7 +821,7 @@ export default function StockLedgerTab({
                     ) : (
                       <Badge
                         variant="outline"
-                        className="text-[10px] bg-green-500/10 text-green-500 border-green-500/20"
+                        className="text-[10px] bg-success/10 text-success border-success/20"
                       >
                         Effective
                       </Badge>
@@ -1142,7 +1142,7 @@ export default function StockLedgerTab({
                     ) : form.effective_date ? (
                       <Badge
                         variant="outline"
-                        className="text-[10px] border-green-500/20 text-green-500 bg-green-500/10"
+                        className="text-[10px] border-success/20 text-success bg-success/10"
                       >
                         Effective
                       </Badge>

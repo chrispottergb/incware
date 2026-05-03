@@ -627,7 +627,7 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                     <TableCell className="text-sm">{row.loan_date ? new Date(row.loan_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
                     <TableCell className="text-center">
                       {row.promissory_note_file_url ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-green-600">
+                        <span className="inline-flex items-center gap-1 text-xs text-success">
                           <CheckCircle2 className="h-3.5 w-3.5" /> On File
                         </span>
                       ) : row.promissory_note_required ? (
@@ -674,7 +674,7 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDownloadNote(row)}
-                            className="h-7 w-7 text-green-600/60 hover:text-green-700"
+                            className="h-7 w-7 text-success/60 hover:text-success"
                             title={`Download: ${row.promissory_note_file_name || "Promissory Note"}`}
                           >
                             <Download className="h-3.5 w-3.5" />

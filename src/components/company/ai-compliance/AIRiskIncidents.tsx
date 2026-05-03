@@ -20,14 +20,14 @@ interface Props {
 
 const severityColors: Record<string, string> = {
   low: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
-  medium: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
-  high: "bg-orange-500/10 text-orange-700 border-orange-500/20",
+  medium: "bg-warning/10 text-warning border-warning/20",
+  high: "bg-required/10 text-required border-required/20",
   serious: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 const statusColors: Record<string, string> = {
   open: "bg-destructive/10 text-destructive border-destructive/20",
-  investigating: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
+  investigating: "bg-warning/10 text-warning border-warning/20",
   resolved: "bg-success/10 text-success border-success/20",
 };
 

@@ -21,14 +21,14 @@ interface Props {
 
 const riskColors: Record<string, string> = {
   minimal: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
-  limited: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
-  high: "bg-orange-500/10 text-orange-700 border-orange-500/20",
+  limited: "bg-warning/10 text-warning border-warning/20",
+  high: "bg-required/10 text-required border-required/20",
   unacceptable: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 const statusColors: Record<string, string> = {
   active: "bg-success/10 text-success border-success/20",
-  suspended: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
+  suspended: "bg-warning/10 text-warning border-warning/20",
   decommissioned: "bg-muted text-muted-foreground border-muted",
 };
 

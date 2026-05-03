@@ -61,7 +61,7 @@ export default function Form1023EZCheck() {
             const isFailing = answer !== null && answer !== undefined && !isPassing;
 
             return (
-              <Card key={q.id} className={isFailing ? "border-destructive/50" : isPassing ? "border-green-300" : ""}>
+              <Card key={q.id} className={isFailing ? "border-destructive/50" : isPassing ? "border-success" : ""}>
                 <CardContent className="py-3 px-4">
                   <div className="flex items-start justify-between gap-3">
                     <p className="text-xs leading-relaxed flex-1">
@@ -105,8 +105,8 @@ export default function Form1023EZCheck() {
             {allPassing ? (
               <>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
-                  <span className="text-sm font-semibold text-green-700">Eligible for Form 1023-EZ</span>
+                  <CheckCircle2 className="h-5 w-5 text-success" />
+                  <span className="text-sm font-semibold text-success">Eligible for Form 1023-EZ</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Based on your answers, your organization may qualify for the streamlined Form 1023-EZ. The filing fee is $275.
