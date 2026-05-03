@@ -391,7 +391,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
                  {bswEffectiveDateIsFuture ? (
                    <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/20">Pending</Badge>
                  ) : (
-                   <Badge variant="outline" className="text-[10px] bg-green-500/10 text-green-500 border-green-500/20">Effective</Badge>
+                   <Badge variant="outline" className="text-[10px] bg-success/10 text-success border-success/20">Effective</Badge>
                 )}
               </div>
             </div>

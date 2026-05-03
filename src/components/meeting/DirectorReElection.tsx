@@ -71,7 +71,7 @@ export default function DirectorReElection({ directors, meetingDirectorNames, sh
               {approvedDirectors.map((d) => (
                 <div key={d.id} className="flex items-center justify-between px-3 py-2.5">
                   <span className="text-sm font-medium">{d.name}</span>
-                  <div className="flex items-center gap-1.5 text-xs text-green-600">
+                  <div className="flex items-center gap-1.5 text-xs text-success">
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     Approved
                   </div>

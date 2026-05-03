@@ -19,7 +19,7 @@ interface Props {
 
 const decisionColors: Record<string, string> = {
   approved: "bg-success/10 text-success border-success/20",
-  modified: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
+  modified: "bg-warning/10 text-warning border-warning/20",
   rejected: "bg-destructive/10 text-destructive border-destructive/20",
 };
 

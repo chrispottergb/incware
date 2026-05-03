@@ -432,7 +432,7 @@ export default function TransferLedgerTab({ companyId, entityType = "Corporation
                           </TooltipProvider>
                         )}
                         {e.isPending && (
-                          <Badge variant="outline" className="text-[9px] px-1 py-0 border-yellow-300 text-yellow-700 bg-yellow-50">Pending</Badge>
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 border-warning text-warning bg-warning">Pending</Badge>
                         )}
                       </div>
                     </TableCell>

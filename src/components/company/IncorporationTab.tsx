@@ -1478,9 +1478,9 @@ export default function IncorporationTab({ company }: Props) {
                   {result.type && <span>{result.type}</span>}
                   <span className={cn(
                     "font-medium",
-                    result.mappedStatus === "current" && "text-green-600",
-                    result.mappedStatus === "delinquent" && "text-yellow-600",
-                    result.mappedStatus === "admin_dissolved" && "text-red-600",
+                    result.mappedStatus === "current" && "text-success",
+                    result.mappedStatus === "delinquent" && "text-warning",
+                    result.mappedStatus === "admin_dissolved" && "text-destructive",
                   )}>
                     {result.status}
                   </span>

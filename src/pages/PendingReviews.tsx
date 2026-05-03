@@ -220,9 +220,9 @@ export default function PendingReviews() {
 
   const statusBadge = (status: string) => {
     if (status === "approved")
-      return <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Approved</Badge>;
+      return <Badge className="bg-success/10 text-success border-success/20">Approved</Badge>;
     if (status === "rejected")
-      return <Badge className="bg-red-500/10 text-red-400 border-red-500/20">Rejected</Badge>;
+      return <Badge className="bg-destructive/10 text-destructive border-destructive/20">Rejected</Badge>;
     if (status === "pending_review")
       return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">Pending Review</Badge>;
     return <Badge variant="outline">{status}</Badge>;
@@ -309,7 +309,7 @@ export default function PendingReviews() {
                         {isExpired && <span className="ml-1 text-[10px]">(expired)</span>}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={`text-xs ${isExpired ? "bg-red-500/10 text-red-400 border-red-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`}>
+                        <Badge variant="outline" className={`text-xs ${isExpired ? "bg-destructive/10 text-destructive border-destructive/20" : "bg-primary/10 text-primary border-primary/20"}`}>
                           {isExpired ? "Expired" : "Awaiting Client"}
                         </Badge>
                       </TableCell>
@@ -322,7 +322,7 @@ export default function PendingReviews() {
                             onClick={() => handleCopy(url, `link-${link.id}`)}
                             title="Copy link"
                           >
-                            {isCopied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                            {isCopied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -528,7 +528,7 @@ export default function PendingReviews() {
                   <div className="flex gap-2">
                     <Input readOnly value={url} className="h-7 text-xs font-mono" />
                     <Button size="sm" variant="outline" onClick={() => handleCopy(url, `detail-${selectedLink.id}`)}>
-                      {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                      {isCopied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>

@@ -337,7 +337,7 @@ export default function MeetingAgreements({ meetingId, meetingDate }: Props) {
                   {rows.map((row: any) => {
                     const expiring = isExpiringSoon(row.expiration_date, meetingDate);
                     return (
-                      <TableRow key={row.id} className={expiring ? "bg-yellow-500/10" : ""}>
+                      <TableRow key={row.id} className={expiring ? "bg-warning/10" : ""}>
                         <TableCell className="font-medium text-sm">
                           <div className="flex items-center gap-1.5">
                             {row.agreement_type}
@@ -356,7 +356,7 @@ export default function MeetingAgreements({ meetingId, meetingDate }: Props) {
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger>
-                                    <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" />
+                                    <AlertTriangle className="h-3.5 w-3.5 text-warning" />
                                   </TooltipTrigger>
                                   <TooltipContent>Expires within 90 days of meeting date</TooltipContent>
                                 </Tooltip>

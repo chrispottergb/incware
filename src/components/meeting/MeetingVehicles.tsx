@@ -119,12 +119,12 @@ const transactionColors: Record<string, string> = {
   "Trade-in": "bg-purple-100 text-purple-800 border-purple-200",
   Scrapped: "bg-gray-100 text-gray-800 border-gray-200",
   Donated: "bg-teal-100 text-teal-800 border-teal-200",
-  "Insurance Totaled": "bg-red-100 text-red-800 border-red-200",
+  "Insurance Totaled": "bg-destructive text-destructive border-destructive",
 };
 
 const typeColors: Record<string, string> = {
   Vehicle: "bg-slate-100 text-slate-800 border-slate-200",
-  Equipment: "bg-orange-100 text-orange-800 border-orange-200",
+  Equipment: "bg-required text-required border-required",
 };
 
 export default function MeetingVehicles({ meetingId }: Props) {

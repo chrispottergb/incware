@@ -957,7 +957,7 @@ export default function TaxReturnUpload({ companyId, mode = "extract", onExtract
               <div key={job.id} className="flex items-center justify-between text-xs border border-border rounded-md px-3 py-2">
                 <div className="flex items-center gap-2 min-w-0">
                   {job.status === "completed" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />}
-                  {job.status === "processing" && <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin shrink-0" />}
+                  {job.status === "processing" && <Loader2 className="h-3.5 w-3.5 text-primary animate-spin shrink-0" />}
                   {job.status === "failed" && <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" />}
                   <span className="truncate">{job.file_name || "Tax return"}</span>
                 </div>
