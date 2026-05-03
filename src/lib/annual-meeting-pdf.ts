@@ -272,9 +272,9 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   para(`The Annual Meeting of ${fullName}, a ${data.stateOfFormation} limited liability company, was held on ${dayOfWeek}, ${formattedDate}, at ${data.meetingTime || "[Time]"}, at ${data.meetingLocation || "[Location]"}.`);
 
-  if (data.attendees.length > 0) {
+  if ((data.attendees ?? []).length > 0) {
     para("The following were present at the meeting:");
-    data.attendees.forEach(a => {
+    (data.attendees ?? []).forEach(a => {
       para(`• ${a.name}${a.title ? `, ${a.title}` : ""}`, 10);
     });
   }
@@ -295,10 +295,10 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   resolvedPara("that the following professional advisors are hereby confirmed as the company's advisors of record for the current year:");
 
-  if (data.advisors.length > 0) {
+  if ((data.advisors ?? []).length > 0) {
     addTable(
       ["Role", "Name / Firm", "Address", "Phone / Email"],
-      data.advisors.map(a => [a.role || "[Enter]", a.nameFirm || "[Enter]", a.address || "[Enter]", a.phoneEmail || "[Enter]"])
+      (data.advisors ?? []).map(a => [a.role || "[Enter]", a.nameFirm || "[Enter]", a.address || "[Enter]", a.phoneEmail || "[Enter]"])
     );
   }
 
@@ -310,12 +310,12 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   whereasPara(`the members of ${fullName} hold ownership interests as set forth below;`);
   resolvedPara("that the following membership interests are hereby acknowledged and confirmed for the current year:");
 
-  if (data.members.length > 0) {
+  if ((data.members ?? []).length > 0) {
     const usable = pw - margin - rMargin;
     autoTable(doc, {
       startY: y,
       head: [["Name", "Address", "Membership Units", "Membership Interest %"]],
-      body: data.members.map(m => [m.name || "[Enter]", m.address || "[Enter]", m.units || "[Enter]", m.interestPct ? `${m.interestPct}%` : "[Enter]"]),
+      body: (data.members ?? []).map(m => [m.name || "[Enter]", m.address || "[Enter]", m.units || "[Enter]", m.interestPct ? `${m.interestPct}%` : "[Enter]"]),
       margin: { left: margin, right: rMargin },
       styles: { fontSize: 10, cellPadding: 5, font: "Arial" },
       headStyles: {
@@ -339,10 +339,10 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   resolvedPara("that the following persons are hereby re-appointed or newly elected as managers/officers of the limited liability company, to serve until the next annual meeting or until their successors are duly appointed:");
 
-  if (data.officers.length > 0) {
+  if ((data.officers ?? []).length > 0) {
     addTable(
       ["Name", "Title", "Salary", "Bonus"],
-      data.officers.map(o => [o.name || "[Enter]", o.title || "[Enter]", fmtCurrency(o.salary), fmtCurrency(o.bonus)])
+      (data.officers ?? []).map(o => [o.name || "[Enter]", o.title || "[Enter]", fmtCurrency(o.salary), fmtCurrency(o.bonus)])
     );
   }
 
@@ -353,10 +353,10 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   resolvedPara(`that the following persons are hereby confirmed as authorized binders of ${data.companyName || "the limited liability company"} for the ensuing year, authorized to act on behalf of the company in their designated capacity:`);
 
-  if (data.authorizedBinders.length > 0) {
+  if ((data.authorizedBinders ?? []).length > 0) {
     addTable(
       ["Name", "Title", "Scope of Authority", "Status (Confirmed / New / Removed)"],
-      data.authorizedBinders.map(b => [b.name || "[Enter]", b.title || "[Enter]", b.scope || "[Enter]", b.status || "[Enter]"])
+      (data.authorizedBinders ?? []).map(b => [b.name || "[Enter]", b.title || "[Enter]", b.scope || "[Enter]", b.status || "[Enter]"])
     );
   }
 
@@ -367,29 +367,29 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   resolvedPara(`that the members have reviewed the financial statements for the fiscal year ended ${data.fiscalYearEnd || "December 31"}, ${data.taxYear || "[Year]"}:`);
 
-  if (data.financialItems.length > 0) {
+  if ((data.financialItems ?? []).length > 0) {
     addTable(
       ["Item", "Amount", "Notes"],
-      data.financialItems.map(f => [f.item || "[Enter]", f.amount || "[Enter]", f.notes || ""])
+      (data.financialItems ?? []).map(f => [f.item || "[Enter]", f.amount || "[Enter]", f.notes || ""])
     );
   }
 
   subHeading("Compensation & Bonuses");
 
-  if (data.compensationItems.length > 0) {
+  if ((data.compensationItems ?? []).length > 0) {
     resolvedPara("that the following compensation and bonuses for officers and managers are hereby approved and ratified:");
     addTable(
       ["Name", "Title", "Salary", "Bonus", "Notes"],
-      data.compensationItems.map(c => [c.name || "[Enter]", c.title || "[Enter]", fmtCurrency(c.salary), fmtCurrency(c.bonus), c.notes || ""])
+      (data.compensationItems ?? []).map(c => [c.name || "[Enter]", c.title || "[Enter]", fmtCurrency(c.salary), fmtCurrency(c.bonus), c.notes || ""])
     );
   }
 
   subHeading("Distributions");
 
-  if (data.distributions.length > 0) {
+  if ((data.distributions ?? []).length > 0) {
     addTable(
       ["Member Name", "Distribution Amount", "Distribution Date", "Notes"],
-      data.distributions.map(d => [d.memberName || "[Enter]", d.amount || "[Enter]", d.date || "[Enter]", d.notes || ""])
+      (data.distributions ?? []).map(d => [d.memberName || "[Enter]", d.amount || "[Enter]", d.date || "[Enter]", d.notes || ""])
     );
   }
 
@@ -404,23 +404,23 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   // ===== SECTION 7: BANKING =====
   sectionHeading("Banking");
 
-  if (data.includeBanking && data.bankAccounts.length > 0) {
+  if (data.includeBanking && (data.bankAccounts ?? []).length > 0) {
     subHeading("Current Banking Relationships");
     resolvedPara("that the company shall continue to maintain the following account(s), and the following persons are authorized as signers:");
     addTable(
       ["Institution", "Account Type", "Authorized Signer", "Authority Type"],
-      data.bankAccounts.map(b => [b.institution || "[Enter]", b.accountType || "[Enter]", b.signatory || "[Enter]", b.title || "[Enter]"])
+      (data.bankAccounts ?? []).map(b => [b.institution || "[Enter]", b.accountType || "[Enter]", b.signatory || "[Enter]", b.title || "[Enter]"])
     );
   } else {
     para("No changes to banking relationships were proposed at this meeting.");
   }
 
-  if (data.includeBankingChanges && data.bankingChanges.length > 0) {
+  if (data.includeBankingChanges && (data.bankingChanges ?? []).length > 0) {
     subHeading("Banking Changes");
     resolvedPara("that the following banking changes are hereby authorized:");
     addTable(
       ["Change Type", "Institution", "Details"],
-      data.bankingChanges.map(b => [b.changeType || "[Enter]", b.institution || "[Enter]", b.details || "[Enter]"])
+      (data.bankingChanges ?? []).map(b => [b.changeType || "[Enter]", b.institution || "[Enter]", b.details || "[Enter]"])
     );
   }
 
@@ -430,44 +430,44 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   subHeading("Fiscal Year Confirmation");
   resolvedPara(`that the fiscal year of the limited liability company shall continue to end on ${data.fiscalYearEnd || "December 31"}, and the company shall continue to maintain its books on the ${data.accountingMethod || "cash"} basis method of accounting.`);
 
-  if (data.taxElections.length > 0) {
+  if ((data.taxElections ?? []).length > 0) {
     subHeading("Tax Elections — Confirmation or Changes");
     addTable(
       ["Election", "Status", "Effective Date", "Notes"],
-      data.taxElections.map(t => [t.election || "[Enter]", t.status || "[Enter]", t.effectiveDate || "[Enter]", t.notes || ""])
+      (data.taxElections ?? []).map(t => [t.election || "[Enter]", t.status || "[Enter]", t.effectiveDate || "[Enter]", t.notes || ""])
     );
   }
 
   // ===== SECTION 9: LOANS =====
   sectionHeading("Loans");
 
-  if (data.institutionalLoans.length > 0) {
+  if ((data.institutionalLoans ?? []).length > 0) {
     subHeading("Loans From Financial Institutions");
     addTable(
       ["Lender", "Loan Type", "Balance / Amount", "Interest Rate", "Maturity Date", "Auth. Signer"],
-      data.institutionalLoans.map(l => [l.lender || "[Enter]", l.loanType || "[Enter]", l.balance || "[Enter]", l.rate || "[Enter]", l.maturity || "[Enter]", l.signatory || "[Enter]"])
+      (data.institutionalLoans ?? []).map(l => [l.lender || "[Enter]", l.loanType || "[Enter]", l.balance || "[Enter]", l.rate || "[Enter]", l.maturity || "[Enter]", l.signatory || "[Enter]"])
     );
   }
 
-  if (data.memberLoans.length > 0) {
+  if ((data.memberLoans ?? []).length > 0) {
     subHeading("Member Loans");
     addTable(
       ["Lender", "Borrower", "Amount", "Interest Rate", "Terms", "Notes"],
-      data.memberLoans.map(l => [l.lender || "[Enter]", l.borrower || "[Enter]", l.amount || "[Enter]", l.rate || "[Enter]", l.terms || "[Enter]", l.notes || ""])
+      (data.memberLoans ?? []).map(l => [l.lender || "[Enter]", l.borrower || "[Enter]", l.amount || "[Enter]", l.rate || "[Enter]", l.terms || "[Enter]", l.notes || ""])
     );
   }
 
-  if (data.institutionalLoans.length === 0 && data.memberLoans.length === 0) {
+  if ((data.institutionalLoans ?? []).length === 0 && (data.memberLoans ?? []).length === 0) {
     para("No loans were reviewed or authorized at this meeting.");
   }
 
   // ===== SECTION 10: LEASES =====
   sectionHeading("Leases");
 
-  if (data.leases.length > 0) {
+  if ((data.leases ?? []).length > 0) {
     addTable(
       ["Property / Asset", "Lessor", "Lessee", "Monthly Amount", "Term / Expiration", "Lease-Back? (Y/N)"],
-      data.leases.map(l => [l.property || "[Enter]", l.lessor || "[Enter]", l.lessee || "[Enter]", l.monthlyAmount || "[Enter]", l.term || "[Enter]", l.leaseBack || "N"])
+      (data.leases ?? []).map(l => [l.property || "[Enter]", l.lessor || "[Enter]", l.lessee || "[Enter]", l.monthlyAmount || "[Enter]", l.term || "[Enter]", l.leaseBack || "N"])
     );
 
     resolvedPara("that the above-referenced lease agreements are hereby ratified and confirmed. Any lease-back arrangements between the company and its members have been reviewed and acknowledged as being on terms consistent with fair market value.");
@@ -478,8 +478,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   // ===== SECTION 11: CAPITAL ASSET ADDITIONS AND DISPOSALS (mirrors corp PDF) =====
   const hasCapitalAssets = (data.capitalAssets?.length ?? 0) > 0;
   const hasVehiclesSold = (data.vehiclesSold?.length ?? 0) > 0;
-  const hasLegacyVehicles = data.vehicles.length > 0;
-  const hasLegacyEquipment = data.equipment.length > 0;
+  const hasLegacyVehicles = (data.vehicles ?? []).length > 0;
+  const hasLegacyEquipment = (data.equipment ?? []).length > 0;
 
   if (hasCapitalAssets || hasVehiclesSold || hasLegacyVehicles || hasLegacyEquipment) {
     sectionHeading("Capital Asset Additions and Disposals During the Year");
@@ -558,7 +558,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       subHeading("Company Vehicles");
       addTable(
         ["Year / Make / Model", "VIN", "Owned / Leased", "Primary Driver", "Business Use %", "Notes"],
-        data.vehicles.map(v => [v.yearMakeModel || "[Enter]", v.vin || "[Enter]", v.ownedLeased || "[Enter]", v.primaryDriver || "[Enter]", v.businessUsePct || "[Enter]", v.notes || ""])
+        (data.vehicles ?? []).map(v => [v.yearMakeModel || "[Enter]", v.vin || "[Enter]", v.ownedLeased || "[Enter]", v.primaryDriver || "[Enter]", v.businessUsePct || "[Enter]", v.notes || ""])
       );
     }
 
@@ -566,7 +566,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       subHeading("Major Equipment");
       addTable(
         ["Description", "Manufacturer", "Owned / Leased", "Value", "Notes"],
-        data.equipment.map(e => [e.description || "[Enter]", e.manufacturer || "[Enter]", e.ownedLeased || "[Enter]", e.value || "[Enter]", e.notes || ""])
+        (data.equipment ?? []).map(e => [e.description || "[Enter]", e.manufacturer || "[Enter]", e.ownedLeased || "[Enter]", e.value || "[Enter]", e.notes || ""])
       );
     }
 
@@ -618,10 +618,10 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   // ===== SECTION 12: EMPLOYEE BENEFIT PLANS =====
   sectionHeading("Employee Benefit Plans");
 
-  if (data.benefitPlans.length > 0) {
+  if ((data.benefitPlans ?? []).length > 0) {
     addTable(
       ["Plan Type", "Provider", "Eligibility / Comments", "Company Contribution", "Status (Active / New / Terminated)"],
-      data.benefitPlans.map(b => [b.planType || "[Enter]", b.provider || "[Enter]", b.eligibility || b.eligibility_comments || "[Enter]", b.contribution || "[Enter]", b.status || "[Enter]"])
+      (data.benefitPlans ?? []).map(b => [b.planType || "[Enter]", b.provider || "[Enter]", b.eligibility || b.eligibility_comments || "[Enter]", b.contribution || "[Enter]", b.status || "[Enter]"])
     );
   }
 
@@ -630,14 +630,14 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     resolvedPara(`that the profit sharing contribution for the fiscal year ended December 31, ${data.taxYear || "[Year]"} shall be $${data.profitSharingAmount}.`);
   }
 
-  if (data.benefitPlans.length === 0 && !data.profitSharingAmount) {
+  if ((data.benefitPlans ?? []).length === 0 && !data.profitSharingAmount) {
     para("No benefit plan changes were proposed at this meeting.");
   }
 
   // ===== SECTION 13: SPECIAL RESOLUTIONS =====
-  if (data.includeSpecialResolutions && data.specialResolutions.length > 0) {
+  if (data.includeSpecialResolutions && (data.specialResolutions ?? []).length > 0) {
     sectionHeading("Special Resolutions");
-    data.specialResolutions.forEach((r, i) => {
+    (data.specialResolutions ?? []).forEach((r, i) => {
       subHeading(`Resolution ${i + 1} — ${r.title || "[Title]"}`);
       if (r.whereas) {
         whereasPara(r.whereas);
@@ -707,8 +707,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   y += 60;
 
   // Member signatures
-  if (data.memberSignatures.length > 0) {
-    data.memberSignatures.forEach((sig, i) => {
+  if ((data.memberSignatures ?? []).length > 0) {
+    (data.memberSignatures ?? []).forEach((sig, i) => {
       checkPage(70);
       const col = i % 2;
       const xPos = col === 0 ? margin : margin + colW + 20;

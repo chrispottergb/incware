@@ -835,9 +835,9 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
   const stateOfInc = company?.state_of_incorporation || "Wisconsin";
   const pw = doc.internal.pageSize.getWidth();
 
-  const hasOfficerData = (data.officers && data.officers.length > 0);
-  const hasShareholderData = (data.shareholders && data.shareholders.length > 0);
-  const hasDirectorData = (data.directors && data.directors.length > 0);
+  const hasOfficerData = (data.officers && (data.officers ?? []).length > 0);
+  const hasShareholderData = (data.shareholders && (data.shareholders ?? []).length > 0);
+  const hasDirectorData = (data.directors && (data.directors ?? []).length > 0);
 
   // 1. Formation
   y += 3;
@@ -991,8 +991,8 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
     y = addSectionTitle(doc, y, "Banking Resolutions");
     bankSource.forEach((bank: any) => {
       let bankSigners = signerSource.filter((s: any) => s.bank_id === bank.id);
-      if (bankSigners.length === 0 && data.authorizedSigners && data.authorizedSigners.length > 0) {
-        bankSigners = data.authorizedSigners.filter((s: any) =>
+      if (bankSigners.length === 0 && data.authorizedSigners && (data.authorizedSigners ?? []).length > 0) {
+        bankSigners = (data.authorizedSigners ?? []).filter((s: any) =>
           s.bank_name && bank.bank_name && s.bank_name.toLowerCase().trim() === bank.bank_name.toLowerCase().trim()
         );
       }
@@ -1505,9 +1505,9 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
 
   // Directors / Board Election (shareholder meetings only)
-  if (data.directors && data.directors.length > 0 && isShareholder) {
+  if (data.directors && (data.directors ?? []).length > 0 && isShareholder) {
     y += 3;
-    y = checkPageBreak(doc, y, 30 + data.directors.length * 7);
+    y = checkPageBreak(doc, y, 30 + (data.directors ?? []).length * 7);
     y = section("Nomination and Election of Board of Directors");
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
@@ -1520,7 +1520,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y += 5.5;
     }
     y += 3;
-    data.directors.forEach(d => {
+    (data.directors ?? []).forEach(d => {
       y = checkPageBreak(doc, y, 6);
       doc.text(`•  ${d.director_name}`, MARGIN + 6, y);
       y += 5.5;
@@ -1562,7 +1562,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
     y += 5;
 
-    data.directors.forEach(d => {
+    (data.directors ?? []).forEach(d => {
       y = checkPageBreak(doc, y, 6);
       doc.setFont("Arial", "normal");
       doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
@@ -1573,14 +1573,14 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Non-shareholder corp: Directors Present (before officers) — skip for written consents
-  if (data.directors && data.directors.length > 0 && !isShareholder && !isWrittenConsent && !isLLC) {
+  if (data.directors && (data.directors ?? []).length > 0 && !isShareholder && !isWrittenConsent && !isLLC) {
     y += 3;
-    y = checkPageBreak(doc, y, 30 + data.directors.length * 7);
+    y = checkPageBreak(doc, y, 30 + (data.directors ?? []).length * 7);
     y = section("Directors Present");
     autoTable(doc, {
       startY: y,
       head: [["Director Name"]],
-      body: data.directors.map(d => [d.director_name]),
+      body: (data.directors ?? []).map(d => [d.director_name]),
       theme: "grid",
       headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
@@ -1590,15 +1590,15 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Officers (with salary/bonus) — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.officers && data.officers.length > 0) {
-    y = checkPageBreak(doc, y, 30 + data.officers.length * 7);
+  if (!isShareholder && !isWrittenConsent && data.officers && (data.officers ?? []).length > 0) {
+    y = checkPageBreak(doc, y, 30 + (data.officers ?? []).length * 7);
     y = section("Officers");
     const isSCorp = entityType === "S-Corp";
 
     const priorOfficerNames = new Set(
       (data.priorYear?.officers || []).map((o: any) => o.name?.toLowerCase())
     );
-    const hasNewOfficers = data.officers.some((o: any) => !priorOfficerNames.has(o.name?.toLowerCase()));
+    const hasNewOfficers = (data.officers ?? []).some((o: any) => !priorOfficerNames.has(o.name?.toLowerCase()));
     const electionVerb = hasNewOfficers ? (isLLC ? "appointed" : "elected") : (isLLC ? "appointed" : "re-elected");
 
     y = addWhereasResolved(doc, y,
@@ -1621,11 +1621,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bt
     );
 
-    const hasSalaryData = data.officers.some(o => o.salary != null || o.bonus != null);
+    const hasSalaryData = (data.officers ?? []).some(o => o.salary != null || o.bonus != null);
     autoTable(doc, {
       startY: y,
       head: [hasSalaryData ? ["Title", "Name", "Salary", "Bonus"] : ["Title", "Name"]],
-      body: data.officers.map(o => hasSalaryData
+      body: (data.officers ?? []).map(o => hasSalaryData
         ? [o.title, o.name, o.salary != null ? fmt(o.salary) : "\u2014", o.bonus != null ? fmt(o.bonus) : "\u2014"]
         : [o.title, o.name]
       ),
@@ -1645,7 +1645,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       const nameKey = (o.name || "").trim().toLowerCase();
       if (o.compensation_status === "included_in_primary") continue;
 
-      const secondaryRoles = data.officers.filter((other: any) =>
+      const secondaryRoles = (data.officers ?? []).filter((other: any) =>
         other.id !== o.id &&
         (other.name || "").trim().toLowerCase() === nameKey &&
         other.compensation_status === "included_in_primary" &&
@@ -1694,9 +1694,9 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Authorized Binders (LLC only, non-shareholder) — AFTER officers — skip for written consents
-  if (data.directors && data.directors.length > 0 && !isShareholder && !isWrittenConsent && isLLC) {
+  if (data.directors && (data.directors ?? []).length > 0 && !isShareholder && !isWrittenConsent && isLLC) {
     y += 3;
-    y = checkPageBreak(doc, y, 30 + data.directors.length * 7);
+    y = checkPageBreak(doc, y, 30 + (data.directors ?? []).length * 7);
     y = section("Authorized Binders");
     if (mType.includes("annual")) {
       y = addWhereasResolved(doc, y,
@@ -1708,7 +1708,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     autoTable(doc, {
       startY: y,
       head: [["Authorized Binder Name"]],
-      body: data.directors.map(d => [d.director_name]),
+      body: (data.directors ?? []).map(d => [d.director_name]),
       theme: "grid",
       headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
@@ -1718,8 +1718,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Shareholders — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.shareholders && data.shareholders.length > 0) {
-    y = checkPageBreak(doc, y, 30 + data.shareholders.length * 7);
+  if (!isShareholder && !isWrittenConsent && data.shareholders && (data.shareholders ?? []).length > 0) {
+    y = checkPageBreak(doc, y, 30 + (data.shareholders ?? []).length * 7);
     const memberLabel = isLLC ? "Members" : "Shareholders";
     y = section(memberLabel);
     y = addWhereasResolved(doc, y,
@@ -1727,7 +1727,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       `NOW, THEREFORE, BE IT RESOLVED, that the following ${isLLC ? "membership interests" : "share ownership"} is hereby acknowledged and confirmed:`,
       bt
     );
-    const hasDistribution = data.shareholders.some(s => s.distribution_amount != null && Number(s.distribution_amount) > 0);
+    const hasDistribution = (data.shareholders ?? []).some(s => s.distribution_amount != null && Number(s.distribution_amount) > 0);
     const usableW = doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN;
     autoTable(doc, {
       startY: y,
@@ -1737,7 +1737,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         isLLC ? "Membership Units" : "Common Shares",
         isLLC ? "Membership Interest %" : "Ownership %",
       ]],
-      body: data.shareholders.map(s => {
+      body: (data.shareholders ?? []).map(s => {
         const matchingShareholder = (data.companyShareholders || []).find(
           cs => cs.name?.toLowerCase().trim() === s.shareholder_name?.toLowerCase().trim()
         );
@@ -1773,7 +1773,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     // Distribution resolution for each member/shareholder with a distribution amount
     if (hasDistribution) {
       const isSCorpEntity = entityType === "S-Corp";
-      const distribMembers = data.shareholders.filter(s => s.distribution_amount != null && Number(s.distribution_amount) > 0);
+      const distribMembers = (data.shareholders ?? []).filter(s => s.distribution_amount != null && Number(s.distribution_amount) > 0);
 
       if (distribMembers.length > 0) {
         const sCorpClause = isSCorpEntity || isLLC
@@ -1978,8 +1978,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Counsel / Professional Advisors — skip for shareholder meetings and written consents
-  const shouldRenderCounselSection = !isShareholder && !isWrittenConsent && (bt || (data.counsel && data.counsel.length > 0));
-  const counselRows = data.counsel && data.counsel.length > 0 ? data.counsel : [{} as any];
+  const shouldRenderCounselSection = !isShareholder && !isWrittenConsent && (bt || (data.counsel && (data.counsel ?? []).length > 0));
+  const counselRows = data.counsel && (data.counsel ?? []).length > 0 ? data.counsel : [{} as any];
 
   if (shouldRenderCounselSection) {
     y = checkPageBreak(doc, y, 20 + counselRows.length * 7);
@@ -1993,12 +1993,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     let accountingFirm = counselRec.counsel_name?.trim() || ""; // counsel_name maps to accounting firm
 
     // Fallback to company-level attorneys/accountants if meeting_counsel is empty
-    if (!attorneyName && data.companyAttorneys && data.companyAttorneys.length > 0) {
+    if (!attorneyName && data.companyAttorneys && (data.companyAttorneys ?? []).length > 0) {
       const atty = data.companyAttorneys[0];
       attorneyName = atty.attorney_name || "";
       lawFirm = atty.attorney_firms?.firm_name || "";
     }
-    if (!accountantName && data.companyAccountants && data.companyAccountants.length > 0) {
+    if (!accountantName && data.companyAccountants && (data.companyAccountants ?? []).length > 0) {
       const acct = data.companyAccountants[0];
       accountantName = acct.accountant_name || "";
       accountingFirm = acct.accountant_firms?.firm_name || "";
@@ -2116,15 +2116,15 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (!isShareholder && !isWrittenConsent) {
     const counselRec = counselRows[0] || {} as any;
     let bankNameForTable = counselRec.bank_name?.trim() || "";
-    if (!bankNameForTable && data.companyBanks && data.companyBanks.length > 0) {
-      bankNameForTable = data.companyBanks.map((b: any) => b.bank_name).filter(Boolean).join(", ");
+    if (!bankNameForTable && data.companyBanks && (data.companyBanks ?? []).length > 0) {
+      bankNameForTable = (data.companyBanks ?? []).map((b: any) => b.bank_name).filter(Boolean).join(", ");
     }
 
     const hasLOC = counselRec.loc_enabled;
     const locAmount = counselRec.loc_amount;
     const locRate = counselRec.loc_interest_rate;
 
-    const hasBankingContent = bt || bankNameForTable || hasLOC || (data.companyBanks && data.companyBanks.length > 0) || (data.authorizedSigners && data.authorizedSigners.length > 0);
+    const hasBankingContent = bt || bankNameForTable || hasLOC || (data.companyBanks && (data.companyBanks ?? []).length > 0) || (data.authorizedSigners && (data.authorizedSigners ?? []).length > 0);
 
     if (hasBankingContent) {
       y = checkPageBreak(doc, y, 40);
@@ -2170,8 +2170,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         annualBanks.forEach((bank: any) => {
           // First try company-level bank signers; fall back to meeting-level authorized signers matched by bank name
           let bankSignerList = annualSigners.filter((s: any) => s.bank_id === bank.id);
-          if (bankSignerList.length === 0 && data.authorizedSigners && data.authorizedSigners.length > 0) {
-            bankSignerList = data.authorizedSigners.filter((s: any) =>
+          if (bankSignerList.length === 0 && data.authorizedSigners && (data.authorizedSigners ?? []).length > 0) {
+            bankSignerList = (data.authorizedSigners ?? []).filter((s: any) =>
               s.bank_name && bank.bank_name && s.bank_name.toLowerCase().trim() === bank.bank_name.toLowerCase().trim()
             );
           }
@@ -2184,10 +2184,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         });
       }
       // Also render authorized signers from meeting_authorized_signers if available
-      if (data.authorizedSigners && data.authorizedSigners.length > 0) {
+      if (data.authorizedSigners && (data.authorizedSigners ?? []).length > 0) {
         // Filter out signers already rendered via bank resolutions above
         const renderedBankNames = new Set(annualBanks.map((b: any) => b.bank_name?.toLowerCase().trim()));
-        const remainingSigners = data.authorizedSigners.filter((s: any) =>
+        const remainingSigners = (data.authorizedSigners ?? []).filter((s: any) =>
           !renderedBankNames.has(s.bank_name?.toLowerCase().trim())
         );
         if (remainingSigners.length > 0) {
@@ -2212,8 +2212,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Loans — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.loans && data.loans.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.loans.length * 7);
+  if (!isShareholder && !isWrittenConsent && data.loans && (data.loans ?? []).length > 0) {
+    y = checkPageBreak(doc, y, 20 + (data.loans ?? []).length * 7);
     y = section("Loans");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the borrowing needs and existing loan obligations of ${companyName}; and`,
@@ -2223,7 +2223,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     autoTable(doc, {
       startY: y,
       head: [["Type", "Rate", "Amount", "Date", "Notes"]],
-      body: data.loans.map(l => [
+      body: (data.loans ?? []).map(l => [
         l.loan_type || "—",
         l.loan_rate != null ? `${Number(l.loan_rate).toFixed(2)}%` : "—",
         l.loan_amount != null ? fmt(l.loan_amount) : "—",
@@ -2268,7 +2268,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   const vehiclePolicyText = meeting?.vehicle_policy_text?.trim();
-  const hasVehicleActivity = !isShareholder && !isWrittenConsent && data.capitalAssets && data.capitalAssets.length > 0;
+  const hasVehicleActivity = !isShareholder && !isWrittenConsent && data.capitalAssets && (data.capitalAssets ?? []).length > 0;
 
   if (bt && vehiclePolicyText && hasVehicleActivity) {
     y = checkPageBreak(doc, y, 30);
@@ -2286,9 +2286,9 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Capital Asset Additions and Disposals — unified table
-  if (!isShareholder && !isWrittenConsent && data.capitalAssets && data.capitalAssets.length > 0) {
+  if (!isShareholder && !isWrittenConsent && data.capitalAssets && (data.capitalAssets ?? []).length > 0) {
     // Estimate total height: header ~10 + rows ~8 each + whereas/resolved ~30 + closing ~15
-    const estimatedHeight = 60 + data.capitalAssets.length * 8;
+    const estimatedHeight = 60 + (data.capitalAssets ?? []).length * 8;
     y = checkPageBreak(doc, y, estimatedHeight);
     y = section("Capital Asset Additions and Disposals During the Year");
     y = addWhereasResolved(doc, y,
@@ -2321,7 +2321,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     autoTable(doc, {
       startY: y,
       head: [["Year / Make / Model", "Type", "Transaction", "VIN / Serial No.", "Date", "Amount", "Seller / Buyer"]],
-      body: data.capitalAssets.map((v: any) => [
+      body: (data.capitalAssets ?? []).map((v: any) => [
         v.year_make_model || "—",
         v.asset_type || "Vehicle",
         v.transaction_type || "Purchased",
@@ -2392,8 +2392,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Vehicle and Equipment Leases section
-  if (!isShareholder && !isWrittenConsent && data.vehicleLeases && data.vehicleLeases.length > 0) {
-    const leaseEstHeight = 60 + data.vehicleLeases.length * 8;
+  if (!isShareholder && !isWrittenConsent && data.vehicleLeases && (data.vehicleLeases ?? []).length > 0) {
+    const leaseEstHeight = 60 + (data.vehicleLeases ?? []).length * 8;
     y = checkPageBreak(doc, y, leaseEstHeight);
     y = section("Vehicle and Equipment Leases Entered Into During the Year");
     y = addWhereasResolved(doc, y,
@@ -2416,7 +2416,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     autoTable(doc, {
       startY: y,
       head: [["Year / Make / Model", "Type", "VIN / Serial No.", "Lessor", "Start Date", "End Date", "Monthly\nPayment", "Total Lease\nValue"]],
-      body: data.vehicleLeases.map((v: any) => [
+      body: (data.vehicleLeases ?? []).map((v: any) => [
         v.year_make_model || "—",
         v.asset_type || "Vehicle",
         v.vin || "—",
@@ -2483,8 +2483,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     vehiclesSoldLength: data.vehiclesSold?.length ?? 0,
     vehiclesSoldSample: data.vehiclesSold?.[0],
   });
-  if (!isShareholder && !isWrittenConsent && data.vehiclesSold && data.vehiclesSold.length > 0) {
-    const soldEstHeight = 60 + data.vehiclesSold.length * 8;
+  if (!isShareholder && !isWrittenConsent && data.vehiclesSold && (data.vehiclesSold ?? []).length > 0) {
+    const soldEstHeight = 60 + (data.vehiclesSold ?? []).length * 8;
     y = checkPageBreak(doc, y, soldEstHeight);
     y = section("Vehicles Sold During the Year");
     y = addWhereasResolved(doc, y,
@@ -2502,7 +2502,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     autoTable(doc, {
       startY: y,
       head: [["Year / Make / Model", "VIN / Serial No.", "Sale Date", "Sale Price", "Buyer", "Reason"]],
-      body: data.vehiclesSold.map((v: any) => [
+      body: (data.vehiclesSold ?? []).map((v: any) => [
         v.year_make_model || "—",
         v.vin || "—",
         v.sale_date ? new Date(v.sale_date + "T00:00:00").toLocaleDateString() : "—",
@@ -2549,8 +2549,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 6;
   }
 
-  if (!isShareholder && !isWrittenConsent && data.assets && data.assets.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.assets.length * 7);
+  if (!isShareholder && !isWrittenConsent && data.assets && (data.assets ?? []).length > 0) {
+    y = checkPageBreak(doc, y, 20 + (data.assets ?? []).length * 7);
     y = section("Equipment Transactions");
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
@@ -2587,7 +2587,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     autoTable(doc, {
       startY: y,
       head: [["Transaction", "Date", "Equipment", "Make/Model", "Amount"]],
-      body: data.assets.map((a: any) => [
+      body: (data.assets ?? []).map((a: any) => [
         a.asset_type || "Purchased",
         a.value != null ? "—" : "—",
         a.description || "—",
@@ -2604,8 +2604,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Lease Terminations — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.leaseTerminations && data.leaseTerminations.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.leaseTerminations.length * 7);
+  if (!isShareholder && !isWrittenConsent && data.leaseTerminations && (data.leaseTerminations ?? []).length > 0) {
+    y = checkPageBreak(doc, y, 20 + (data.leaseTerminations ?? []).length * 7);
     y = section("Leases Ended During the Year");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the leases that have expired or been terminated by ${companyName} during the year; and`,
@@ -2615,7 +2615,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     autoTable(doc, {
       startY: y,
       head: [["Property / Vehicle", "Landlord / Lessor", "End Date", "Reason", "Early Term.", "Penalty"]],
-      body: data.leaseTerminations.map((v: any) => [
+      body: (data.leaseTerminations ?? []).map((v: any) => [
         v.property_description || "—",
         v.landlord_name || "—",
         v.lease_end_date ? new Date(v.lease_end_date + "T00:00:00").toLocaleDateString() : "—",
@@ -2633,8 +2633,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Company-Level Leases (from company_assets table)
-  if (!isShareholder && !isWrittenConsent && data.companyLeases && data.companyLeases.length > 0) {
-    const clEstHeight = 60 + data.companyLeases.length * 8;
+  if (!isShareholder && !isWrittenConsent && data.companyLeases && (data.companyLeases ?? []).length > 0) {
+    const clEstHeight = 60 + (data.companyLeases ?? []).length * 8;
     y = checkPageBreak(doc, y, clEstHeight);
     y = section("Real Property and Facility Leases");
     y = addWhereasResolved(doc, y,
@@ -2652,7 +2652,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     autoTable(doc, {
       startY: y,
       head: [["Property Description", "Property Address", "Landlord", "Landlord Address", "Monthly\nPayment"]],
-      body: data.companyLeases.map((l: any) => [
+      body: (data.companyLeases ?? []).map((l: any) => [
         l.description || "—",
         l.address || "—",
         l.landlord_name || "—",
@@ -2685,7 +2685,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 4;
 
     // Render leasehold improvements if any lease has them
-    const leasesWithImprovements = data.companyLeases.filter((l: any) => l.leasehold_improvement_amount || l.leasehold_improvement_description);
+    const leasesWithImprovements = (data.companyLeases ?? []).filter((l: any) => l.leasehold_improvement_amount || l.leasehold_improvement_description);
     if (leasesWithImprovements.length > 0) {
       y += 2;
       y = checkPageBreak(doc, y, 20);
@@ -2740,15 +2740,15 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Amendments — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.amendments && data.amendments.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.amendments.length * 12);
+  if (!isShareholder && !isWrittenConsent && data.amendments && (data.amendments ?? []).length > 0) {
+    y = checkPageBreak(doc, y, 20 + (data.amendments ?? []).length * 12);
     y = section("Amendments");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have determined that certain amendments to the governing documents of ${companyName} are in the best interests of the ${isLLC ? "company" : "corporation"}; and`,
       `NOW, THEREFORE, BE IT RESOLVED, that the following amendments are hereby adopted:`,
       bt
     );
-    data.amendments.forEach((a) => {
+    (data.amendments ?? []).forEach((a) => {
       y = checkPageBreak(doc, y, 25);
       doc.setFontSize(11);
       doc.setFont("Arial", "bold");
@@ -2769,10 +2769,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Resolutions
-  if (data.resolutions && data.resolutions.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.resolutions.length * 15);
+  if (data.resolutions && (data.resolutions ?? []).length > 0) {
+    y = checkPageBreak(doc, y, 20 + (data.resolutions ?? []).length * 15);
     y = section("Special Resolutions");
-    data.resolutions.forEach((r) => {
+    (data.resolutions ?? []).forEach((r) => {
       y = addResolutionBlock(doc, y, r.purpose, r.resolution_text || "");
     });
   }
@@ -2785,12 +2785,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const entityLabel = isLLC ? "LLC" : "corporation";
 
     // Officer changes: new officers, title changes, salary/bonus changes
-    if (data.officers && data.officers.length > 0) {
+    if (data.officers && (data.officers ?? []).length > 0) {
       const priorOfficers = data.priorYear.officers || [];
       const priorByName: Record<string, any> = {};
       priorOfficers.forEach((o: any) => { priorByName[o.name?.toLowerCase()] = o; });
 
-      data.officers.forEach((o: any) => {
+      (data.officers ?? []).forEach((o: any) => {
         const prior = priorByName[o.name?.toLowerCase()];
         if (!prior) {
           // New officer elections are now handled in the combined Officers section above
@@ -2819,11 +2819,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
 
     // Benefit changes
-    if (data.benefits && data.benefits.length > 0) {
+    if (data.benefits && (data.benefits ?? []).length > 0) {
       const priorBenefits = data.priorYear.benefits || [];
       const priorTypes = new Set(priorBenefits.map((b: any) => (b.benefit_type || b.benefit_description || "").toLowerCase()));
 
-      data.benefits.forEach((b: any) => {
+      (data.benefits ?? []).forEach((b: any) => {
         const bType = b.benefit_type || b.benefit_description || "Benefit Plan";
         if (!priorTypes.has(bType.toLowerCase())) {
           autoResolutions.push({
@@ -2843,11 +2843,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
 
     // Loan changes
-    if (data.loans && data.loans.length > 0) {
+    if (data.loans && (data.loans ?? []).length > 0) {
       const priorLoans = data.priorYear.loans || [];
       const priorLoanTypes = new Set(priorLoans.map((l: any) => `${l.loan_type || ""}|${l.loan_amount || ""}`));
 
-      data.loans.forEach((l: any) => {
+      (data.loans ?? []).forEach((l: any) => {
         const key = `${l.loan_type || ""}|${l.loan_amount || ""}`;
         if (!priorLoanTypes.has(key)) {
           autoResolutions.push({
@@ -2859,11 +2859,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
 
     // Authorized signer changes
-    if (data.authorizedSigners && data.authorizedSigners.length > 0) {
+    if (data.authorizedSigners && (data.authorizedSigners ?? []).length > 0) {
       const priorSigners = data.priorYear.authorizedSigners || [];
       const priorNames = new Set(priorSigners.map((s: any) => s.signer_name?.toLowerCase()));
 
-      data.authorizedSigners.forEach((s: any) => {
+      (data.authorizedSigners ?? []).forEach((s: any) => {
         if (!priorNames.has(s.signer_name?.toLowerCase())) {
           autoResolutions.push({
             purpose: `Authorize Bank Signer`,
@@ -2906,8 +2906,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
   }
 
-  if (!isShareholder && !isWrittenConsent && data.benefits && data.benefits.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.benefits.length * 18);
+  if (!isShareholder && !isWrittenConsent && data.benefits && (data.benefits ?? []).length > 0) {
+    y = checkPageBreak(doc, y, 20 + (data.benefits ?? []).length * 18);
     y = section("Benefits");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the employee benefit plans of ${companyName} for the current plan year; and`,
@@ -2915,7 +2915,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bt
     );
 
-    data.benefits.forEach((b, index) => {
+    (data.benefits ?? []).forEach((b, index) => {
       // Row 1: Benefit Type / Provider / Agent/Admin — blue header with grid borders on body
       autoTable(doc, {
         startY: y,
@@ -2973,14 +2973,14 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         },
       });
 
-      y = (doc as any).lastAutoTable.finalY + (index < data.benefits.length - 1 ? 5 : 10);
+      y = (doc as any).lastAutoTable.finalY + (index < (data.benefits ?? []).length - 1 ? 5 : 10);
     });
   }
 
   // Agreements — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.agreements && data.agreements.length > 0) {
-    const newOrUpdated = data.agreements.filter((a: any) => !a.is_carried_forward);
-    const carriedForward = data.agreements.filter((a: any) => a.is_carried_forward && (a.status === "Active" || !a.status));
+  if (!isShareholder && !isWrittenConsent && data.agreements && (data.agreements ?? []).length > 0) {
+    const newOrUpdated = (data.agreements ?? []).filter((a: any) => !a.is_carried_forward);
+    const carriedForward = (data.agreements ?? []).filter((a: any) => a.is_carried_forward && (a.status === "Active" || !a.status));
 
     y = checkPageBreak(doc, y, 30);
     y = section("Agreements");
@@ -3026,7 +3026,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     autoTable(doc, {
       startY: y,
       head: [["Type", "Counterparty", "Date", "Amount", "Status"]],
-      body: data.agreements.map((a: any) => [
+      body: (data.agreements ?? []).map((a: any) => [
         a.agreement_type,
         a.agreement_with || "—",
         a.agreement_date ? new Date(a.agreement_date + "T00:00:00").toLocaleDateString() : "—",
@@ -3042,13 +3042,13 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Other — skip for written consents
-  if (!isWrittenConsent && data.other && data.other.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.other.length * 7);
+  if (!isWrittenConsent && data.other && (data.other ?? []).length > 0) {
+    y = checkPageBreak(doc, y, 20 + (data.other ?? []).length * 7);
     y = section("Other Notes");
     autoTable(doc, {
       startY: y,
       head: [["Notes"]],
-      body: data.other.map(o => [o.notes]),
+      body: (data.other ?? []).map(o => [o.notes]),
       theme: "grid",
       headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
@@ -3058,8 +3058,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Authorized Signers — skip for written consents
-  if (!isWrittenConsent && data.authorizedSigners && data.authorizedSigners.length > 0) {
-    y = checkPageBreak(doc, y, 20 + data.authorizedSigners.length * 7);
+  if (!isWrittenConsent && data.authorizedSigners && (data.authorizedSigners ?? []).length > 0) {
+    y = checkPageBreak(doc, y, 20 + (data.authorizedSigners ?? []).length * 7);
     y = section("Authorized Signers");
     y = addWhereasResolved(doc, y,
       `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the authorized signers on the banking accounts of ${companyName}; and`,
@@ -3069,7 +3069,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     autoTable(doc, {
       startY: y,
       head: [["Name", "Authority Type", "Bank"]],
-      body: data.authorizedSigners.map(s => [s.signer_name, s.title || "—", s.bank_name || "—"]),
+      body: (data.authorizedSigners ?? []).map(s => [s.signer_name, s.title || "—", s.bank_name || "—"]),
       theme: "grid",
       headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
@@ -3104,7 +3104,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Tax Return Filing Acknowledgment (Annual Meeting)
   if (bt && !isShareholder && meeting?.tax_year) {
     y = checkPageBreak(doc, y, 30);
-    const counselRec = (data.counsel && data.counsel.length > 0) ? data.counsel[0] : null;
+    const counselRec = (data.counsel && (data.counsel ?? []).length > 0) ? data.counsel[0] : null;
     const acctName = counselRec?.accountant_name?.trim() || "";
     const acctFirm = counselRec?.counsel_name?.trim() || "";
     const acctLabel = acctName && acctName.toLowerCase() !== "none appointed"
