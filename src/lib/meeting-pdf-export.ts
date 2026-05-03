@@ -385,7 +385,7 @@ function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string
         y = checkPageBreak(doc, y, 6);
         if (i === 0) {
           doc.setFont("Arial", "bolditalic");
-          doc.setTextColor(...BODY_COLOR);
+          doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
           const prefixWidth = doc.getTextWidth(prefix);
           doc.text(prefix, MARGIN + WHEREAS_INDENT, y);
           doc.setFont("Arial", "italic");
@@ -393,7 +393,7 @@ function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string
           if (remainder) doc.text(remainder, MARGIN + WHEREAS_INDENT + prefixWidth, y);
         } else {
           doc.setFont("Arial", "italic");
-          doc.setTextColor(...BODY_COLOR);
+          doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
           doc.text(firstLines[i], MARGIN + WHEREAS_INDENT, y);
         }
         y += 5.5;
@@ -402,7 +402,7 @@ function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string
       // Render remaining sub-lines as continuation
       for (let s = 1; s < bodySubLines.length; s++) {
         doc.setFont("Arial", "italic");
-        doc.setTextColor(...BODY_COLOR);
+        doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
         const wrapped = doc.splitTextToSize(bodySubLines[s], contentWidth - WHEREAS_INDENT);
         for (const wl of wrapped) {
           y = checkPageBreak(doc, y, 6);
@@ -456,7 +456,7 @@ function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string
         y = checkPageBreak(doc, y, 6);
         if (i === 0) {
           doc.setFont("Arial", "bold");
-          doc.setTextColor(...BODY_COLOR);
+          doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
           const prefixWidth = doc.getTextWidth(prefix);
           doc.text(prefix, MARGIN + RESOLVED_INDENT, y);
           doc.setFont("Arial", "normal");
@@ -464,7 +464,7 @@ function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string
           if (remainder) doc.text(remainder, MARGIN + RESOLVED_INDENT + prefixWidth, y);
         } else {
           doc.setFont("Arial", "normal");
-          doc.setTextColor(...BODY_COLOR);
+          doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
           doc.text(firstLines[i], MARGIN + RESOLVED_INDENT, y);
         }
         y += 5.5;
@@ -473,7 +473,7 @@ function addResolutionBlock(doc: jsPDF, y: number, purpose: string, text: string
       // Render remaining sub-lines as continuation
       for (let s = 1; s < bodySubLines.length; s++) {
         doc.setFont("Arial", "normal");
-        doc.setTextColor(...BODY_COLOR);
+        doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
         const wrapped = doc.splitTextToSize(bodySubLines[s], contentWidth - RESOLVED_INDENT);
         for (const wl of wrapped) {
           y = checkPageBreak(doc, y, 6);
@@ -529,7 +529,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
     const wIndent = WHEREAS_INDENT;
     const whereasPrefix = "WHEREAS, ";
     doc.setFontSize(11);
-    doc.setTextColor(...BODY_COLOR);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     // Strip leading "WHEREAS, " if present in the text
     let whereasBody = whereas;
     if (whereasBody.toUpperCase().startsWith("WHEREAS,")) {
@@ -605,7 +605,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
     const wLines = doc.splitTextToSize(fullWhereas, pw - MARGIN - R_MARGIN - WHEREAS_INDENT);
     y = checkPageBreak(doc, y, wLines.length * 5.5 + 6);
     doc.setFontSize(11);
-    doc.setTextColor(...BODY_COLOR);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
 
     for (let i = 0; i < wLines.length; i++) {
       y = checkPageBreak(doc, y, 6);
@@ -644,7 +644,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
       y = checkPageBreak(doc, y, 6);
       if (i === 0) {
         doc.setFont("Arial", "bold");
-        doc.setTextColor(...BODY_COLOR);
+        doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
         const prefixWidth = doc.getTextWidth(resolvedPrefix);
         doc.text(resolvedPrefix, MARGIN + RESOLVED_INDENT, y);
         doc.setFont("Arial", "normal");
@@ -652,7 +652,7 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
         if (remainder) doc.text(remainder, MARGIN + RESOLVED_INDENT + prefixWidth, y);
       } else {
         doc.setFont("Arial", "normal");
-        doc.setTextColor(...BODY_COLOR);
+        doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
         doc.text(rLines[i], MARGIN + RESOLVED_INDENT, y);
       }
       y += 5.5;
@@ -752,7 +752,7 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
 
   doc.setFontSize(11);
   doc.setFont("Arial", "normal");
-  doc.setTextColor(...BODY_COLOR);
+  doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
   doc.text("The purposes of this meeting are to:", MARGIN, y);
   y += 8;
 
@@ -780,7 +780,7 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
 
   doc.setFontSize(11);
   doc.setFont("Arial", "normal");
-  doc.setTextColor(...BODY_COLOR);
+  doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
 
   const meetingDescriptor = isShareholderMeeting ? "meeting of shareholders" : `annual meeting of said ${governingLabelLower}`;
   const followingClause = isShareholderMeeting || isLLC ? "" : " immediately following the meeting of shareholders";
@@ -1129,7 +1129,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
 
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
-    doc.setTextColor(...BODY_COLOR);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
 
     if (isShareholder) {
       // Shareholder meeting intro matches the uploaded template format
@@ -1192,7 +1192,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
       if (shareholderData.length > 0) {
         doc.setFontSize(11);
         doc.setFont("Arial", "normal");
-        doc.setTextColor(...BODY_COLOR);
+        doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
         const chairText = `The meeting was called to order by ${meeting.chairperson || "[Chairperson]"}, who chaired the meeting, and ${meeting.mtg_secretary || "[Secretary]"}, acting as secretary, recorded the proceedings.`;
         const chairLines = doc.splitTextToSize(chairText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
         for (const line of chairLines) {
@@ -1284,7 +1284,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
       if (attendeeEntries.length > 0) {
         doc.setFontSize(11);
         doc.setFont("Arial", "normal");
-        doc.setTextColor(...BODY_COLOR);
+        doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
         doc.text("The following were present at the meeting:", MARGIN, y);
         y += 6;
 
@@ -1391,7 +1391,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         const priorDate = new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
         doc.setFontSize(11);
         doc.setFont("Arial", "normal");
-        doc.setTextColor(...BODY_COLOR);
+        doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
         const priorText = `The minutes of the last annual meeting of shareholders, having been held on ${priorDate}, were read and approved.`;
         const priorLines = doc.splitTextToSize(priorText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
         for (const line of priorLines) {
@@ -1405,7 +1405,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       // Old business for shareholder meeting
       doc.setFontSize(11);
       doc.setFont("Arial", "normal");
-      doc.setTextColor(...BODY_COLOR);
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
       const oldBizText = meeting.old_business?.trim()
         ? `The first order of business to come before the meeting was a discussion of old business. ${meeting.old_business.trim()}`
         : `The first order of business to come before the meeting was a discussion of old business. There being none, the meeting proceeded.`;
@@ -1422,7 +1422,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y = section("Presentation of Corporate Records");
       doc.setFontSize(11);
       doc.setFont("Arial", "normal");
-      doc.setTextColor(...BODY_COLOR);
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
       const presentText = `Thereupon, the chairperson presented to the meeting the following papers and documents, all of which were laid upon the table and were publicly declared by the chairperson to be open for inspection by any shareholder:`;
       const presentLines = doc.splitTextToSize(presentText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
       for (const line of presentLines) {
@@ -1449,7 +1449,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       // Ratification resolution
       doc.setFontSize(11);
       doc.setFont("Arial", "normal");
-      doc.setTextColor(...BODY_COLOR);
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
       const motionText = `On motion duly made and seconded, it was`;
       doc.text(motionText, MARGIN, y);
       y += 8;
@@ -1485,7 +1485,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = section("Old Business");
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
-    doc.setTextColor(...BODY_COLOR);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     const oldBizText = `The first order of business to come before the meeting was the discussion of old business.`;
     const oldBizLines = doc.splitTextToSize(oldBizText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of oldBizLines) {
@@ -1511,7 +1511,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = section("Nomination and Election of Board of Directors");
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
-    doc.setTextColor(...BODY_COLOR);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     const nominationText = `The chairperson announced that the next item of business was the nomination and election of the board of directors in accordance with the bylaws of the corporation. The following nomination(s) for the position of director(s) of the corporation were made and seconded:`;
     const nomLines = doc.splitTextToSize(nominationText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of nomLines) {
@@ -1529,7 +1529,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
-    doc.setTextColor(...BODY_COLOR);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     const voteText = `The secretary next took the votes of the shareholders entitled to vote for the election of directors at the meeting and upon motion duly made and seconded, it was unanimously`;
     const voteLines = doc.splitTextToSize(voteText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of voteLines) {
@@ -1565,7 +1565,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     data.directors.forEach(d => {
       y = checkPageBreak(doc, y, 6);
       doc.setFont("Arial", "normal");
-      doc.setTextColor(...BODY_COLOR);
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
       doc.text(`•  ${d.director_name}`, MARGIN + 6, y);
       y += 5.5;
     });
@@ -1667,7 +1667,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y = checkPageBreak(doc, y, 20);
       doc.setFontSize(11);
       doc.setFont("Arial", "normal");
-      doc.setTextColor(...BODY_COLOR);
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
       const introText = `The ${isLLC ? "members" : "Board of Directors"} made the following compensation determinations with respect to the ${isLLC ? "managers/officers" : "officers"} of the ${isLLC ? "LLC" : "corporation"}:`;
       const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
       for (const line of introLines) {
@@ -1681,7 +1681,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         y = checkPageBreak(doc, y, 20);
         doc.setFontSize(11);
         doc.setFont("Arial", "normal");
-        doc.setTextColor(...BODY_COLOR);
+        doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
         const noteLines = doc.splitTextToSize(para, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
         for (const line of noteLines) {
           y = checkPageBreak(doc, y, 6);
@@ -1892,7 +1892,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         doc.text(lines, MARGIN, y);
         y += lines.length * 4 + 2;
       });
-      doc.setTextColor(...BODY_COLOR);
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
       y += 3;
     }
 
@@ -2008,7 +2008,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 30);
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
-    doc.setTextColor(...BODY_COLOR);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     if (attorneyName && attorneyName.toLowerCase() !== "none appointed") {
       const firmPart = lawFirm ? ` of ${lawFirm}` : "";
       const attyText = `The chairperson then reviewed the legal associations of the ${isLLC ? "company" : "corporation"} and upon motion duly made and seconded, the following resolution was adopted:`;
@@ -2062,7 +2062,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 30);
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
-    doc.setTextColor(...BODY_COLOR);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     if (accountantName && accountantName.toLowerCase() !== "none appointed") {
       const firmPart = accountingFirm ? ` of ${accountingFirm}` : "";
       const acctText = `The chairperson then reviewed the accounting associations of the ${isLLC ? "company" : "corporation"} and upon motion duly made and seconded, the following resolution was adopted:`;
@@ -2158,7 +2158,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         y = checkPageBreak(doc, y, 30 + annualBanks.length * 12);
         doc.setFontSize(11);
         doc.setFont("Arial", "normal");
-        doc.setTextColor(...BODY_COLOR);
+        doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
         const bankIntro = `The chairperson then reviewed the banking relationships of the ${isLLC ? "company" : "corporation"} and upon motion duly made and seconded, the following resolution was adopted:`;
         const bankIntroLines = doc.splitTextToSize(bankIntro, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
         for (const line of bankIntroLines) {
@@ -2252,14 +2252,14 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y = section("Annual Balance Reporting");
 
       if (toRows.length > 0) {
-        doc.setFontSize(11); doc.setFont("Arial", "bold"); doc.setTextColor(...BODY_COLOR);
+        doc.setFontSize(11); doc.setFont("Arial", "bold"); doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
         doc.text("Loans TO Shareholders / Members / Related Parties", MARGIN, y); y += 5;
         autoTable(doc, { startY: y, head: balHead, body: toRows.map(mapRow), theme: "grid", headStyles: tableHeadStyles, bodyStyles: { fontSize: 10 }, margin: { left: MARGIN, right: R_MARGIN } });
         y = (doc as any).lastAutoTable.finalY + 6;
       }
       if (fromRows.length > 0) {
         y = checkPageBreak(doc, y, 30);
-        doc.setFontSize(11); doc.setFont("Arial", "bold"); doc.setTextColor(...BODY_COLOR);
+        doc.setFontSize(11); doc.setFont("Arial", "bold"); doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
         doc.text("Loans FROM Shareholders / Members / Related Parties", MARGIN, y); y += 5;
         autoTable(doc, { startY: y, head: balHead, body: fromRows.map(mapRow), theme: "grid", headStyles: tableHeadStyles, bodyStyles: { fontSize: 10 }, margin: { left: MARGIN, right: R_MARGIN } });
         y = (doc as any).lastAutoTable.finalY + 6;
@@ -2275,7 +2275,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = section("Company Vehicle Policy");
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
-    doc.setTextColor(...BODY_COLOR);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     const policyLines = doc.splitTextToSize(vehiclePolicyText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of policyLines) {
       y = checkPageBreak(doc, y, 6);
@@ -2380,7 +2380,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     // Closing paragraph
     doc.setFontSize(10);
     doc.setFont("Arial", "italic");
-    doc.setTextColor(...BODY_COLOR);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     const closingText = "A summary of total capital expenditures and disposals for the year is maintained in the financial statements and will be depreciated or adjusted in accordance with the company's accounting policies. Supporting documentation for all transactions is retained in the corporate records.";
     const closingLines = doc.splitTextToSize(closingText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of closingLines) {
@@ -2464,7 +2464,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     doc.setFontSize(10);
     doc.setFont("Arial", "italic");
-    doc.setTextColor(...BODY_COLOR);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     const leaseClosing = "Leased assets are not owned by the company and are not recorded as capital assets on the balance sheet. Lease obligations are recorded in accordance with the company's accounting policies. Supporting documentation for all lease agreements is retained in the corporate records.";
     const leaseClosingLines = doc.splitTextToSize(leaseClosing, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of leaseClosingLines) {
@@ -2538,7 +2538,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     doc.setFontSize(10);
     doc.setFont("Arial", "italic");
-    doc.setTextColor(...BODY_COLOR);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     const soldClosing = "Proceeds from vehicle dispositions and any resulting gains or losses have been recorded in the company's financial statements in accordance with the company's accounting policies. Supporting documentation, including bills of sale and title transfer records, is retained in the corporate records.";
     const soldClosingLines = doc.splitTextToSize(soldClosing, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of soldClosingLines) {
@@ -2554,7 +2554,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = section("Equipment Transactions");
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
-    doc.setTextColor(...(bt ? BODY_COLOR : [30, 30, 30] as [number, number, number]));
+    doc.setTextColor(bt ? BODY_COLOR[0] : 30, bt ? BODY_COLOR[1] : 30, bt ? BODY_COLOR[2] : 30);
     const equipIntro = `Next, the chairperson reviewed the equipment needs of the ${isLLC ? "company" : "corporation"}, and whereas it is necessary to acquire or dispose of certain equipment for the efficient operation of the business, it was`;
     const equipLines = doc.splitTextToSize(equipIntro, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of equipLines) {
@@ -2728,7 +2728,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 2;
     doc.setFontSize(10);
     doc.setFont("Arial", "italic");
-    doc.setTextColor(...BODY_COLOR);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     const clClosing = "All lease obligations are recorded in accordance with the company's accounting policies. Supporting documentation for all lease agreements is retained in the corporate records.";
     const clLines = doc.splitTextToSize(clClosing, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of clLines) {
@@ -2757,7 +2757,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y += 6;
       doc.setFont("Arial", "normal");
       doc.setFontSize(11);
-      doc.setTextColor(...(bt ? BODY_COLOR : [30, 30, 30] as [number, number, number]));
+      doc.setTextColor(bt ? BODY_COLOR[0] : 30, bt ? BODY_COLOR[1] : 30, bt ? BODY_COLOR[2] : 30);
       const lines = doc.splitTextToSize(a.amendment_text || "", doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
       for (const line of lines) {
         y = checkPageBreak(doc, y, 6);
@@ -2894,7 +2894,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         y += 6;
         doc.setFont("Arial", "normal");
         doc.setFontSize(11);
-        doc.setTextColor(...(bt ? BODY_COLOR : [30, 30, 30] as [number, number, number]));
+        doc.setTextColor(bt ? BODY_COLOR[0] : 30, bt ? BODY_COLOR[1] : 30, bt ? BODY_COLOR[2] : 30);
         const lines = doc.splitTextToSize(r.text, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
         for (const line of lines) {
           y = checkPageBreak(doc, y, 6);
@@ -3003,7 +3003,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y = checkPageBreak(doc, y, 20 + carriedForward.length * 6);
       doc.setFontSize(11);
       doc.setFont("Arial", "normal");
-      doc.setTextColor(...BODY_COLOR);
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
       const disclosureIntro = `The following agreements remain active and in good standing as of the date of this meeting:`;
       const disclosureLines = doc.splitTextToSize(disclosureIntro, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
       for (const line of disclosureLines) {
@@ -3113,7 +3113,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
-    doc.setTextColor(...BODY_COLOR);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     const taxText = `The ${isLLC ? "company's" : "corporation's"} income tax return for year ended December 31, ${meeting.tax_year} was prepared by ${acctLabel} and was duly filed with the Internal Revenue Service. The annual filing form has been filed with the state of ${company?.state_of_incorporation || company?.state || "Wisconsin"} by the corporate registered agent.`;
     const taxLines = doc.splitTextToSize(taxText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of taxLines) {
@@ -3145,7 +3145,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = section("Other Business");
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
-    doc.setTextColor(...BODY_COLOR);
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     const otherIntro = `The chairperson then reported on other business of the ${isLLC ? "company" : "corporation"} as follows:`;
     const otherIntroLines = doc.splitTextToSize(otherIntro, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
     for (const line of otherIntroLines) {
@@ -3195,7 +3195,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y = section("Shareholder Tax Basis");
       doc.setFontSize(11);
       doc.setFont("Arial", "normal");
-      doc.setTextColor(...BODY_COLOR);
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
       const basisText = "Shareholders are responsible for maintaining their own adjusted tax basis in S-corporation stock. The corporation maintains records of contributions, distributions, and equity transactions, but does not calculate or track shareholder basis.";
       const basisLines = doc.splitTextToSize(basisText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
       for (const line of basisLines) {
