@@ -9,6 +9,7 @@ import {
   Loader2, Building2, Users, UserCheck, Shield, Landmark,
   Car, Home, HeartHandshake, FileText, Calculator, Scale,
   AlertCircle, Download, HelpCircle, Banknote, Cpu, CheckCircle2,
+  Plus, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,54 +20,93 @@ const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 const SUPPORT_EMAIL = "support@entityiq.net";
 
-// Reusable read-only renderers
-function Field({ label, value }: { label: string; value?: React.ReactNode }) {
-  const display =
-    value === null || value === undefined || value === "" ? "—" : value;
-  return (
-    <div className="flex justify-between items-start gap-4 py-1.5 border-b border-border/50 last:border-0">
-      <span className="text-sm font-medium text-muted-foreground shrink-0">{label}</span>
-      <span className="text-sm text-foreground text-right break-words">{display}</span>
-    </div>
-  );
-}
-
+// ---- UI helpers ----
 function Section({
   title,
   icon: Icon,
   children,
+  action,
 }: {
   title: string;
   icon?: any;
   children: React.ReactNode;
+  action?: React.ReactNode;
 }) {
   return (
     <Card className="border-border bg-card">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
           {Icon && <Icon className="h-4 w-4 text-primary" />}
           {title}
         </CardTitle>
+        {action}
       </CardHeader>
-      <CardContent className="space-y-1">{children}</CardContent>
+      <CardContent className="space-y-3">{children}</CardContent>
     </Card>
   );
 }
 
-function Subsection({ title, children }: { title: string; children: React.ReactNode }) {
+function Subsection({
+  title,
+  children,
+  action,
+}: {
+  title: string;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
   return (
     <div className="mt-4 pt-3 border-t border-border">
-      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-        {title}
-      </h4>
-      <div className="space-y-1">{children}</div>
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          {title}
+        </h4>
+        {action}
+      </div>
+      <div className="space-y-3">{children}</div>
+    </div>
+  );
+}
+
+function EditField({
+  label,
+  value,
+  onChange,
+  type = "text",
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  placeholder?: string;
+}) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <Input
+        type={type}
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="h-9"
+      />
+    </div>
+  );
+}
+
+function ReadOnlyField({ label, value }: { label: string; value?: React.ReactNode }) {
+  return (
+    <div className="flex justify-between items-start gap-4 py-1.5 border-b border-border/50 last:border-0">
+      <span className="text-sm font-medium text-muted-foreground shrink-0">{label}</span>
+      <span className="text-sm text-foreground text-right break-words">
+        {value === null || value === undefined || value === "" ? "—" : value}
+      </span>
     </div>
   );
 }
 
 // Formatters
-const fmtMoney = (v: any) =>
-  v == null || v === "" ? null : `$${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const joinAddr = (...parts: any[]) => parts.filter(Boolean).join(", ") || null;
 const fmtDate = (s?: string | null) => {
   if (!s) return null;
@@ -98,6 +138,16 @@ interface Snapshot {
   ai: any;
 }
 
+// ---- Default factories ----
+const blankSigner = () => ({ signer_name: "", title: "" });
+const blankShareholder = () => ({ name: "", address: "", city: "", state: "", zip: "", shares_held: "", ownership_percentage: "" });
+const blankDirector = () => ({ name: "" });
+const blankOfficer = () => ({ title: "", name: "", salary: "", bonus: "" });
+const blankBenefit = () => ({ benefit_description: "", benefit_type: "", provider: "", insurance_agency: "", agent_administrator: "", eligibility_comments: "", retirement_contribution: "" });
+const blankAsset = () => ({ asset_type: "", description: "", ownership_type: "", year: "", make: "", model: "", manufacturer: "", vin: "", purchase_date: "", purchase_amount: "" });
+const blankLoan = () => ({ lender_name: "", borrower_name: "", loan_amount: "", loan_rate: "" });
+const blankContribution = () => ({ agreement_type: "", agreement_with: "", amount: "", agreement_date: "", agreement_purpose: "" });
+
 export default function AnnualReviewPublic() {
   const { token } = useParams<{ token: string }>();
   const [loading, setLoading] = useState(true);
@@ -106,13 +156,8 @@ export default function AnnualReviewPublic() {
   const [downloading, setDownloading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [form, setForm] = useState({
-    contact_name: "",
-    contact_email: "",
-    contact_phone: "",
-    contact_cell: "",
-    notes: "",
-  });
+  const [edits, setEdits] = useState<any>(null);
+  const [notes, setNotes] = useState("");
   const snapshotRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -132,13 +177,24 @@ export default function AnnualReviewPublic() {
         } else {
           const snap = body as Snapshot;
           setData(snap);
-          setForm((f) => ({
-            ...f,
-            contact_name: snap.contacts?.contact_full_name || "",
-            contact_email: snap.contacts?.contact_email || "",
-            contact_phone: snap.contacts?.contact_phone || "",
-            contact_cell: snap.contacts?.contact_cell || "",
-          }));
+          // Seed edits from snapshot
+          setEdits({
+            company: { ...(snap.company || {}) },
+            contacts: { ...(snap.contacts || {}) },
+            registeredAgent: { ...(snap.registeredAgent || {}) },
+            accountant: { ...(snap.accountant || {}) },
+            attorney: { ...(snap.attorney || {}) },
+            bank: { ...(snap.banking?.bank || {}) },
+            signers: (snap.banking?.signers || []).map((s) => ({ ...s })),
+            shareholders: (snap.shareholders || []).map((s) => ({ ...s })),
+            directors: (snap.directors || []).map((d) => ({ ...d })),
+            officers: (snap.officers || []).map((o) => ({ ...o })),
+            lease: { ...(snap.lease || {}) },
+            benefits: (snap.benefits || []).map((b) => ({ ...b })),
+            assets: (snap.assets || []).map((a) => ({ ...a })),
+            loans: (snap.loans || []).map((l) => ({ ...l })),
+            contributions: (snap.contributions || []).map((c) => ({ ...c })),
+          });
         }
       } catch {
         if (!cancelled) setError("Failed to connect. Please try again later.");
@@ -148,6 +204,23 @@ export default function AnnualReviewPublic() {
     })();
     return () => { cancelled = true; };
   }, [token]);
+
+  // ---- edit helpers ----
+  const setObj = (key: string, field: string, value: any) =>
+    setEdits((p: any) => ({ ...p, [key]: { ...(p[key] || {}), [field]: value } }));
+
+  const setArrItem = (key: string, idx: number, field: string, value: any) =>
+    setEdits((p: any) => {
+      const arr = [...(p[key] || [])];
+      arr[idx] = { ...arr[idx], [field]: value };
+      return { ...p, [key]: arr };
+    });
+
+  const addArrItem = (key: string, blank: any) =>
+    setEdits((p: any) => ({ ...p, [key]: [...(p[key] || []), blank] }));
+
+  const removeArrItem = (key: string, idx: number) =>
+    setEdits((p: any) => ({ ...p, [key]: (p[key] || []).filter((_: any, i: number) => i !== idx) }));
 
   const handleDownloadPdf = async () => {
     if (!snapshotRef.current || !data) return;
@@ -173,9 +246,9 @@ export default function AnnualReviewPublic() {
   };
 
   const handleSubmit = async () => {
-    if (!data || !token) return;
-    if (!form.contact_name.trim() || !form.contact_email.trim()) {
-      toast.error("Contact name and email are required.");
+    if (!data || !token || !edits) return;
+    if (!edits.contacts?.contact_full_name?.trim() || !edits.contacts?.contact_email?.trim()) {
+      toast.error("Primary contact name and email are required.");
       return;
     }
     setSubmitting(true);
@@ -187,13 +260,8 @@ export default function AnnualReviewPublic() {
           company_id: data.company_id,
           status: "pending_review",
           submitted_at: new Date().toISOString(),
-          notes: form.notes || null,
-          new_entries: {
-            contact_name: form.contact_name,
-            contact_email: form.contact_email,
-            contact_phone: form.contact_phone,
-            contact_cell: form.contact_cell,
-          },
+          notes: notes || null,
+          new_entries: edits,
         } as any);
       if (insErr) throw insErr;
 
@@ -241,17 +309,41 @@ export default function AnnualReviewPublic() {
     );
   }
 
-  if (!data) return null;
+  if (!data || !edits) return null;
 
-  const {
-    company, contacts, registeredAgent, accountant, attorney,
-    banking, shareholders, directors, officers, lease,
-    benefits, assets, loans, contributions, meeting, ai,
-  } = data;
-
+  const { company, banking } = data;
   const isLLC = (company.entity_type || "").toLowerCase().includes("llc");
   const ownerLabel = isLLC ? "Members" : "Shareholders";
   const sharesLabel = isLLC ? "Units" : "Shares";
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full border-border bg-card">
+          <CardContent className="pt-8 pb-8 text-center space-y-3">
+            <CheckCircle2 className="h-12 w-12 text-primary mx-auto" />
+            <h3 className="text-lg font-semibold text-foreground">Submission Received</h3>
+            <p className="text-sm text-muted-foreground">
+              Thank you. Your updates for {data.review_year} have been submitted to
+              EntityIQ for review. You may close this page.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const addBtn = (onClick: () => void, label: string) => (
+    <Button type="button" variant="outline" size="sm" onClick={onClick} className="h-7 text-xs">
+      <Plus className="h-3 w-3 mr-1" /> {label}
+    </Button>
+  );
+
+  const removeBtn = (onClick: () => void) => (
+    <Button type="button" variant="ghost" size="sm" onClick={onClick} className="h-7 px-2 text-destructive">
+      <Trash2 className="h-3.5 w-3.5" />
+    </Button>
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -291,177 +383,187 @@ export default function AnnualReviewPublic() {
               Review &amp; Update Your Information
             </h2>
             <p className="text-sm text-muted-foreground">
-              Below is the information EntityIQ currently has on file. Please review it carefully,
-              then complete the form at the bottom of the page with any updates for {data.review_year}.
-              The form loads blank — only fill in what has changed or what is new.
+              Below is the information EntityIQ currently has on file for {data.review_year}.
+              Edit any field directly, add or remove entries as needed, then click
+              <strong> Submit Updates </strong> at the bottom of the page.
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Snapshot */}
+      {/* Editable Snapshot */}
       <div ref={snapshotRef} className="max-w-4xl mx-auto px-4 py-6 space-y-4">
 
         {/* 1. Company */}
         <Section title="Company Information" icon={Building2}>
-          <Field label="Company Name" value={company.name} />
-          <Field label="Entity Type" value={company.entity_type} />
-          <Field label="Address" value={joinAddr(company.address, company.address_2)} />
-          <Field label="City" value={company.city} />
-          <Field label="State" value={company.state} />
-          <Field label="ZIP" value={company.zip} />
-          <Field label="Phone" value={company.phone} />
-          <Field label="Website" value={company.contact_webpage} />
-          <Field label="Incorporation Date" value={fmtDate(company.incorporation_date)} />
-          <Field label="EIN" value={company.ein_last4 ? `***-**-${company.ein_last4}` : null} />
-          <Field label="Fiscal Year End" value={company.fiscal_year_end} />
-          <Field label="S-Election Date" value={fmtDate(company.s_election_date)} />
+          <div className="grid grid-cols-2 gap-3">
+            <EditField label="Company Name" value={edits.company.name || ""} onChange={(v) => setObj("company", "name", v)} />
+            <EditField label="Entity Type" value={edits.company.entity_type || ""} onChange={(v) => setObj("company", "entity_type", v)} />
+            <EditField label="Address" value={edits.company.address || ""} onChange={(v) => setObj("company", "address", v)} />
+            <EditField label="Address 2" value={edits.company.address_2 || ""} onChange={(v) => setObj("company", "address_2", v)} />
+            <EditField label="City" value={edits.company.city || ""} onChange={(v) => setObj("company", "city", v)} />
+            <EditField label="State" value={edits.company.state || ""} onChange={(v) => setObj("company", "state", v)} />
+            <EditField label="ZIP" value={edits.company.zip || ""} onChange={(v) => setObj("company", "zip", v)} />
+            <EditField label="Phone" type="tel" value={edits.company.phone || ""} onChange={(v) => setObj("company", "phone", formatPhone(v))} placeholder="(555) 555-5555" />
+            <EditField label="Website" value={edits.company.contact_webpage || ""} onChange={(v) => setObj("company", "contact_webpage", v)} />
+            <EditField label="Fiscal Year End" value={edits.company.fiscal_year_end || ""} onChange={(v) => setObj("company", "fiscal_year_end", v)} placeholder="MM-DD" />
+          </div>
+          <ReadOnlyField label="Incorporation Date" value={fmtDate(company.incorporation_date)} />
+          <ReadOnlyField label="EIN" value={company.ein_last4 ? `***-**-${company.ein_last4}` : "—"} />
+          <ReadOnlyField label="S-Election Date" value={fmtDate(company.s_election_date)} />
+
           <Subsection title="Primary Contact">
-            <Field label="Contact Name" value={contacts.contact_full_name} />
-            <Field label="Email" value={contacts.contact_email} />
-            <Field label="Phone" value={contacts.contact_phone} />
-            <Field label="Cell" value={contacts.contact_cell} />
+            <div className="grid grid-cols-2 gap-3">
+              <EditField label="Contact Name *" value={edits.contacts.contact_full_name || ""} onChange={(v) => setObj("contacts", "contact_full_name", v)} />
+              <EditField label="Email *" type="email" value={edits.contacts.contact_email || ""} onChange={(v) => setObj("contacts", "contact_email", v)} />
+              <EditField label="Phone" type="tel" value={edits.contacts.contact_phone || ""} onChange={(v) => setObj("contacts", "contact_phone", formatPhone(v))} placeholder="(555) 555-5555" />
+              <EditField label="Cell" type="tel" value={edits.contacts.contact_cell || ""} onChange={(v) => setObj("contacts", "contact_cell", formatPhone(v))} placeholder="(555) 555-5555" />
+            </div>
           </Subsection>
         </Section>
 
         {/* 2. Registered Agent */}
         <Section title="Registered Agent" icon={Shield}>
-          <Field label="Agent Name" value={registeredAgent.name} />
-          <Field label="Agent Type" value={registeredAgent.type} />
-          <Field label="Address" value={joinAddr(registeredAgent.address, registeredAgent.address_2)} />
-          <Field label="City" value={registeredAgent.city} />
-          <Field label="State" value={registeredAgent.state} />
-          <Field label="ZIP" value={registeredAgent.zip} />
-          <Field label="Phone" value={registeredAgent.phone} />
-          <Field label="Email" value={registeredAgent.email} />
-          <Field label="Annual Filing Status" value={registeredAgent.annual_filing_status} />
-          <Field label="Annual Filing Year on Record" value={registeredAgent.annual_filing_fee_year} />
+          <div className="grid grid-cols-2 gap-3">
+            <EditField label="Agent Name" value={edits.registeredAgent.name || ""} onChange={(v) => setObj("registeredAgent", "name", v)} />
+            <EditField label="Agent Type" value={edits.registeredAgent.type || ""} onChange={(v) => setObj("registeredAgent", "type", v)} />
+            <EditField label="Address" value={edits.registeredAgent.address || ""} onChange={(v) => setObj("registeredAgent", "address", v)} />
+            <EditField label="Address 2" value={edits.registeredAgent.address_2 || ""} onChange={(v) => setObj("registeredAgent", "address_2", v)} />
+            <EditField label="City" value={edits.registeredAgent.city || ""} onChange={(v) => setObj("registeredAgent", "city", v)} />
+            <EditField label="State" value={edits.registeredAgent.state || ""} onChange={(v) => setObj("registeredAgent", "state", v)} />
+            <EditField label="ZIP" value={edits.registeredAgent.zip || ""} onChange={(v) => setObj("registeredAgent", "zip", v)} />
+            <EditField label="Phone" type="tel" value={edits.registeredAgent.phone || ""} onChange={(v) => setObj("registeredAgent", "phone", formatPhone(v))} placeholder="(555) 555-5555" />
+            <EditField label="Email" type="email" value={edits.registeredAgent.email || ""} onChange={(v) => setObj("registeredAgent", "email", v)} />
+          </div>
         </Section>
 
         {/* 3. Accountant */}
         <Section title="Accountant" icon={Calculator}>
-          {accountant ? (
-            <>
-              <Field label="Accountant Name" value={accountant.accountant_name} />
-              <Field label="Firm" value={accountant.firm_name} />
-              <Field label="Address" value={accountant.address} />
-              <Field label="City" value={accountant.city} />
-              <Field label="State" value={accountant.state} />
-              <Field label="ZIP" value={accountant.zip} />
-              <Field label="Phone" value={accountant.phone} />
-              <Field label="Email" value={accountant.email} />
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground italic">No accountant on file.</p>
-          )}
+          <div className="grid grid-cols-2 gap-3">
+            <EditField label="Accountant Name" value={edits.accountant.accountant_name || ""} onChange={(v) => setObj("accountant", "accountant_name", v)} />
+            <EditField label="Firm" value={edits.accountant.firm_name || ""} onChange={(v) => setObj("accountant", "firm_name", v)} />
+            <EditField label="Address" value={edits.accountant.address || ""} onChange={(v) => setObj("accountant", "address", v)} />
+            <EditField label="City" value={edits.accountant.city || ""} onChange={(v) => setObj("accountant", "city", v)} />
+            <EditField label="State" value={edits.accountant.state || ""} onChange={(v) => setObj("accountant", "state", v)} />
+            <EditField label="ZIP" value={edits.accountant.zip || ""} onChange={(v) => setObj("accountant", "zip", v)} />
+            <EditField label="Phone" type="tel" value={edits.accountant.phone || ""} onChange={(v) => setObj("accountant", "phone", formatPhone(v))} placeholder="(555) 555-5555" />
+            <EditField label="Email" type="email" value={edits.accountant.email || ""} onChange={(v) => setObj("accountant", "email", v)} />
+          </div>
         </Section>
 
         {/* 4. Attorney */}
         <Section title="Attorney" icon={Scale}>
-          {attorney ? (
-            <>
-              <Field label="Attorney Name" value={attorney.attorney_name} />
-              <Field label="Firm" value={attorney.firm_name} />
-              <Field label="Address" value={attorney.address} />
-              <Field label="City" value={attorney.city} />
-              <Field label="State" value={attorney.state} />
-              <Field label="ZIP" value={attorney.zip} />
-              <Field label="Phone" value={attorney.phone} />
-              <Field label="Email" value={attorney.email} />
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground italic">No attorney on file.</p>
-          )}
+          <div className="grid grid-cols-2 gap-3">
+            <EditField label="Attorney Name" value={edits.attorney.attorney_name || ""} onChange={(v) => setObj("attorney", "attorney_name", v)} />
+            <EditField label="Firm" value={edits.attorney.firm_name || ""} onChange={(v) => setObj("attorney", "firm_name", v)} />
+            <EditField label="Address" value={edits.attorney.address || ""} onChange={(v) => setObj("attorney", "address", v)} />
+            <EditField label="City" value={edits.attorney.city || ""} onChange={(v) => setObj("attorney", "city", v)} />
+            <EditField label="State" value={edits.attorney.state || ""} onChange={(v) => setObj("attorney", "state", v)} />
+            <EditField label="ZIP" value={edits.attorney.zip || ""} onChange={(v) => setObj("attorney", "zip", v)} />
+            <EditField label="Phone" type="tel" value={edits.attorney.phone || ""} onChange={(v) => setObj("attorney", "phone", formatPhone(v))} placeholder="(555) 555-5555" />
+            <EditField label="Email" type="email" value={edits.attorney.email || ""} onChange={(v) => setObj("attorney", "email", v)} />
+          </div>
         </Section>
 
         {/* 5. Banking */}
         <Section title="Banking" icon={Landmark}>
-          {banking.bank ? (
-            <>
-              <Field label="Bank Name" value={banking.bank.bank_name} />
-              <Field label="Branch Address" value={banking.bank.address} />
-              <Field label="City" value={banking.bank.city} />
-              <Field label="State" value={banking.bank.state} />
-              <Field label="ZIP" value={banking.bank.zip} />
-              <Field label="Account Type" value={banking.bank.account_type} />
-              <Field label="Account Number" value={banking.bank.account_number_last4 ? `****${banking.bank.account_number_last4}` : null} />
-              <Subsection title="Line of Credit">
-                <Field label="LOC Amount" value={fmtMoney(banking.bank.loc_amount)} />
-                <Field label="LOC Rate" value={banking.bank.loc_rate} />
-                <Field label="LOC Lender" value={banking.bank.loc_lender} />
-              </Subsection>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground italic">No bank on file.</p>
-          )}
-          <Subsection title="Authorized Signers">
-            {banking.signers.length === 0 ? (
+          <div className="grid grid-cols-2 gap-3">
+            <EditField label="Bank Name" value={edits.bank.bank_name || ""} onChange={(v) => setObj("bank", "bank_name", v)} />
+            <EditField label="Account Type" value={edits.bank.account_type || ""} onChange={(v) => setObj("bank", "account_type", v)} />
+            <EditField label="Branch Address" value={edits.bank.address || ""} onChange={(v) => setObj("bank", "address", v)} />
+            <EditField label="City" value={edits.bank.city || ""} onChange={(v) => setObj("bank", "city", v)} />
+            <EditField label="State" value={edits.bank.state || ""} onChange={(v) => setObj("bank", "state", v)} />
+            <EditField label="ZIP" value={edits.bank.zip || ""} onChange={(v) => setObj("bank", "zip", v)} />
+          </div>
+          <ReadOnlyField label="Account Number" value={banking.bank?.account_number_last4 ? `****${banking.bank.account_number_last4}` : "—"} />
+
+          <Subsection title="Line of Credit">
+            <div className="grid grid-cols-2 gap-3">
+              <EditField label="LOC Amount ($)" value={String(edits.bank.loc_amount ?? "")} onChange={(v) => setObj("bank", "loc_amount", v)} />
+              <EditField label="LOC Rate (%)" value={String(edits.bank.loc_rate ?? "")} onChange={(v) => setObj("bank", "loc_rate", v)} />
+              <EditField label="LOC Lender" value={edits.bank.loc_lender || ""} onChange={(v) => setObj("bank", "loc_lender", v)} />
+            </div>
+          </Subsection>
+
+          <Subsection
+            title="Authorized Signers"
+            action={addBtn(() => addArrItem("signers", blankSigner()), "Add Signer")}
+          >
+            {edits.signers.length === 0 ? (
               <p className="text-sm text-muted-foreground italic">No authorized signers on file.</p>
             ) : (
-              banking.signers.map((s, i) => (
-                <Field key={i} label={s.signer_name} value={s.title || "Signer"} />
+              edits.signers.map((s: any, i: number) => (
+                <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
+                  <EditField label="Signer Name" value={s.signer_name || ""} onChange={(v) => setArrItem("signers", i, "signer_name", v)} />
+                  <EditField label="Title" value={s.title || ""} onChange={(v) => setArrItem("signers", i, "title", v)} />
+                  {removeBtn(() => removeArrItem("signers", i))}
+                </div>
               ))
             )}
           </Subsection>
         </Section>
 
         {/* 6. Shareholders / Members */}
-        <Section title={ownerLabel} icon={Users}>
-          {shareholders.length === 0 ? (
+        <Section
+          title={ownerLabel}
+          icon={Users}
+          action={addBtn(() => addArrItem("shareholders", blankShareholder()), `Add ${isLLC ? "Member" : "Shareholder"}`)}
+        >
+          {edits.shareholders.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">No {ownerLabel.toLowerCase()} on file.</p>
           ) : (
-            shareholders.map((s, i) => (
-              <div key={i} className="py-2 border-b border-border/50 last:border-0">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm font-semibold text-foreground">{s.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {Number(s.shares_held || 0).toLocaleString()} {sharesLabel.toLowerCase()}
-                    {s.ownership_percentage != null && ` · ${s.ownership_percentage}%`}
-                  </span>
+            edits.shareholders.map((s: any, i: number) => (
+              <div key={i} className="border border-border/50 rounded-md p-3 space-y-2">
+                <div className="flex justify-end">{removeBtn(() => removeArrItem("shareholders", i))}</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <EditField label="Name" value={s.name || ""} onChange={(v) => setArrItem("shareholders", i, "name", v)} />
+                  <EditField label={`${sharesLabel} Held`} value={String(s.shares_held ?? "")} onChange={(v) => setArrItem("shareholders", i, "shares_held", v)} />
+                  <EditField label="Address" value={s.address || ""} onChange={(v) => setArrItem("shareholders", i, "address", v)} />
+                  <EditField label="City" value={s.city || ""} onChange={(v) => setArrItem("shareholders", i, "city", v)} />
+                  <EditField label="State" value={s.state || ""} onChange={(v) => setArrItem("shareholders", i, "state", v)} />
+                  <EditField label="ZIP" value={s.zip || ""} onChange={(v) => setArrItem("shareholders", i, "zip", v)} />
+                  <EditField label="Ownership %" value={String(s.ownership_percentage ?? "")} onChange={(v) => setArrItem("shareholders", i, "ownership_percentage", v)} />
                 </div>
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  {joinAddr(s.address, s.city, s.state, s.zip) || "No address on file"}
-                </div>
-                {s.distribution_amount != null && (
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    Capital balance: {fmtMoney(s.distribution_amount)}
-                  </div>
-                )}
-                {isLLC && (
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    Can bind LLC: {s.can_bind_llc ? "Yes" : "No"}
-                  </div>
-                )}
               </div>
             ))
           )}
         </Section>
 
         {/* 7. Directors */}
-        <Section title="Directors" icon={UserCheck}>
-          {directors.length === 0 ? (
+        <Section
+          title="Directors"
+          icon={UserCheck}
+          action={addBtn(() => addArrItem("directors", blankDirector()), "Add Director")}
+        >
+          {edits.directors.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">No directors on file.</p>
           ) : (
-            directors.map((d, i) => (
-              <Field key={i} label={`Director ${i + 1}`} value={d.name} />
+            edits.directors.map((d: any, i: number) => (
+              <div key={i} className="grid grid-cols-[1fr_auto] gap-2 items-end">
+                <EditField label={`Director ${i + 1}`} value={d.name || ""} onChange={(v) => setArrItem("directors", i, "name", v)} />
+                {removeBtn(() => removeArrItem("directors", i))}
+              </div>
             ))
           )}
         </Section>
 
         {/* 8. Officers */}
-        <Section title="Officers" icon={UserCheck}>
-          {officers.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">No officers on file from the most recent meeting.</p>
+        <Section
+          title="Officers"
+          icon={UserCheck}
+          action={addBtn(() => addArrItem("officers", blankOfficer()), "Add Officer")}
+        >
+          {edits.officers.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">No officers on file.</p>
           ) : (
-            officers.map((o, i) => (
-              <div key={i} className="py-1.5 border-b border-border/50 last:border-0">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm font-medium text-foreground">{o.title}</span>
-                  <span className="text-sm text-foreground">{o.name}</span>
-                </div>
-                <div className="flex justify-between text-xs text-muted-foreground mt-0.5">
-                  <span>Salary: {fmtMoney(o.salary) || "—"}</span>
-                  <span>Bonus: {fmtMoney(o.bonus) || "—"}</span>
+            edits.officers.map((o: any, i: number) => (
+              <div key={i} className="border border-border/50 rounded-md p-3 space-y-2">
+                <div className="flex justify-end">{removeBtn(() => removeArrItem("officers", i))}</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <EditField label="Title" value={o.title || ""} onChange={(v) => setArrItem("officers", i, "title", v)} />
+                  <EditField label="Name" value={o.name || ""} onChange={(v) => setArrItem("officers", i, "name", v)} />
+                  <EditField label="Salary ($)" value={String(o.salary ?? "")} onChange={(v) => setArrItem("officers", i, "salary", v)} />
+                  <EditField label="Bonus ($)" value={String(o.bonus ?? "")} onChange={(v) => setArrItem("officers", i, "bonus", v)} />
                 </div>
               </div>
             ))
@@ -470,39 +572,45 @@ export default function AnnualReviewPublic() {
 
         {/* 9. Lease */}
         <Section title="Lease Information" icon={Home}>
-          {lease ? (
-            <>
-              <Field label="Property Address" value={lease.property_address} />
-              <Field label="Landlord" value={lease.landlord_name} />
-              <Field label="Landlord Address" value={lease.landlord_address} />
-              <Field label="Monthly Payment" value={fmtMoney(lease.monthly_payment)} />
-              <Field label="Lease Start" value={fmtDate(lease.lease_start_date)} />
-              <Field label="Lease End" value={fmtDate(lease.lease_end_date)} />
-              <Field label="Leasehold Improvements" value={lease.leasehold_improvements} />
-              <Field label="Improvement Amount" value={fmtMoney(lease.leasehold_improvement_amount)} />
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground italic">No lease on file.</p>
-          )}
+          <div className="grid grid-cols-2 gap-3">
+            <EditField label="Property Address" value={edits.lease.property_address || ""} onChange={(v) => setObj("lease", "property_address", v)} />
+            <EditField label="Landlord" value={edits.lease.landlord_name || ""} onChange={(v) => setObj("lease", "landlord_name", v)} />
+            <EditField label="Landlord Address" value={edits.lease.landlord_address || ""} onChange={(v) => setObj("lease", "landlord_address", v)} />
+            <EditField label="Monthly Payment ($)" value={String(edits.lease.monthly_payment ?? "")} onChange={(v) => setObj("lease", "monthly_payment", v)} />
+            <EditField label="Lease Start" type="date" value={edits.lease.lease_start_date || ""} onChange={(v) => setObj("lease", "lease_start_date", v)} />
+            <EditField label="Lease End" type="date" value={edits.lease.lease_end_date || ""} onChange={(v) => setObj("lease", "lease_end_date", v)} />
+            <EditField label="Leasehold Improvements" value={edits.lease.leasehold_improvements || ""} onChange={(v) => setObj("lease", "leasehold_improvements", v)} />
+            <EditField label="Improvement Amount ($)" value={String(edits.lease.leasehold_improvement_amount ?? "")} onChange={(v) => setObj("lease", "leasehold_improvement_amount", v)} />
+          </div>
         </Section>
 
         {/* 10. Benefits */}
-        <Section title="Benefits" icon={HeartHandshake}>
-          {benefits.length === 0 ? (
+        <Section
+          title="Benefits"
+          icon={HeartHandshake}
+          action={addBtn(() => addArrItem("benefits", blankBenefit()), "Add Benefit")}
+        >
+          {edits.benefits.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">No benefits on file.</p>
           ) : (
-            benefits.map((b, i) => (
-              <div key={i} className="py-2 border-b border-border/50 last:border-0">
-                <div className="text-sm font-medium text-foreground">
-                  {b.benefit_description || b.benefit_type || `Benefit ${i + 1}`}
+            edits.benefits.map((b: any, i: number) => (
+              <div key={i} className="border border-border/50 rounded-md p-3 space-y-2">
+                <div className="flex justify-end">{removeBtn(() => removeArrItem("benefits", i))}</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <EditField label="Description" value={b.benefit_description || ""} onChange={(v) => setArrItem("benefits", i, "benefit_description", v)} />
+                  <EditField label="Type" value={b.benefit_type || ""} onChange={(v) => setArrItem("benefits", i, "benefit_type", v)} />
+                  <EditField label="Provider" value={b.provider || ""} onChange={(v) => setArrItem("benefits", i, "provider", v)} />
+                  <EditField label="Insurance Agency" value={b.insurance_agency || ""} onChange={(v) => setArrItem("benefits", i, "insurance_agency", v)} />
+                  <EditField label="Agent / Administrator" value={b.agent_administrator || ""} onChange={(v) => setArrItem("benefits", i, "agent_administrator", v)} />
+                  <EditField label="Retirement Contribution ($)" value={String(b.retirement_contribution ?? "")} onChange={(v) => setArrItem("benefits", i, "retirement_contribution", v)} />
                 </div>
-                <div className="grid grid-cols-2 gap-x-4 text-xs text-muted-foreground mt-1">
-                  {b.benefit_type && <div>Type: {b.benefit_type}</div>}
-                  {b.provider && <div>Provider: {b.provider}</div>}
-                  {b.insurance_agency && <div>Agency: {b.insurance_agency}</div>}
-                  {b.agent_administrator && <div>Agent: {b.agent_administrator}</div>}
-                  {b.eligibility_comments && <div className="col-span-2">Eligibility: {b.eligibility_comments}</div>}
-                  {b.retirement_contribution != null && <div>Contribution: {fmtMoney(b.retirement_contribution)}</div>}
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Eligibility Comments</Label>
+                  <Textarea
+                    value={b.eligibility_comments || ""}
+                    onChange={(e) => setArrItem("benefits", i, "eligibility_comments", e.target.value)}
+                    rows={2}
+                  />
                 </div>
               </div>
             ))
@@ -510,26 +618,28 @@ export default function AnnualReviewPublic() {
         </Section>
 
         {/* 11. Vehicles & Equipment */}
-        <Section title="Vehicles &amp; Equipment" icon={Car}>
-          {assets.length === 0 ? (
+        <Section
+          title="Vehicles &amp; Equipment"
+          icon={Car}
+          action={addBtn(() => addArrItem("assets", blankAsset()), "Add Asset")}
+        >
+          {edits.assets.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">No vehicles or equipment on file.</p>
           ) : (
-            assets.map((a, i) => (
-              <div key={i} className="py-2 border-b border-border/50 last:border-0">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm font-medium text-foreground capitalize">
-                    {a.asset_type}: {a.description || `${a.year || ""} ${a.make || ""} ${a.model || ""}`.trim() || "Untitled"}
-                  </span>
-                  <span className="text-xs text-muted-foreground">{a.ownership_type}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-x-4 text-xs text-muted-foreground mt-1">
-                  {a.year && <div>Year: {a.year}</div>}
-                  {a.make && <div>Make: {a.make}</div>}
-                  {a.model && <div>Model: {a.model}</div>}
-                  {a.manufacturer && <div>Manufacturer: {a.manufacturer}</div>}
-                  {a.vin && <div>VIN: {a.vin}</div>}
-                  {a.purchase_date && <div>Purchased: {fmtDate(a.purchase_date)}</div>}
-                  {a.purchase_amount != null && <div>Amount: {fmtMoney(a.purchase_amount)}</div>}
+            edits.assets.map((a: any, i: number) => (
+              <div key={i} className="border border-border/50 rounded-md p-3 space-y-2">
+                <div className="flex justify-end">{removeBtn(() => removeArrItem("assets", i))}</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <EditField label="Asset Type" value={a.asset_type || ""} onChange={(v) => setArrItem("assets", i, "asset_type", v)} placeholder="vehicle / equipment" />
+                  <EditField label="Ownership Type" value={a.ownership_type || ""} onChange={(v) => setArrItem("assets", i, "ownership_type", v)} />
+                  <EditField label="Description" value={a.description || ""} onChange={(v) => setArrItem("assets", i, "description", v)} />
+                  <EditField label="Year" value={String(a.year ?? "")} onChange={(v) => setArrItem("assets", i, "year", v)} />
+                  <EditField label="Make" value={a.make || ""} onChange={(v) => setArrItem("assets", i, "make", v)} />
+                  <EditField label="Model" value={a.model || ""} onChange={(v) => setArrItem("assets", i, "model", v)} />
+                  <EditField label="Manufacturer" value={a.manufacturer || ""} onChange={(v) => setArrItem("assets", i, "manufacturer", v)} />
+                  <EditField label="VIN" value={a.vin || ""} onChange={(v) => setArrItem("assets", i, "vin", v)} />
+                  <EditField label="Purchase Date" type="date" value={a.purchase_date || ""} onChange={(v) => setArrItem("assets", i, "purchase_date", v)} />
+                  <EditField label="Purchase Amount ($)" value={String(a.purchase_amount ?? "")} onChange={(v) => setArrItem("assets", i, "purchase_amount", v)} />
                 </div>
               </div>
             ))
@@ -538,161 +648,75 @@ export default function AnnualReviewPublic() {
 
         {/* 12. Loans & Contributions */}
         <Section title="Loans &amp; Contributions" icon={Banknote}>
-          <Subsection title="Loans">
-            {loans.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">No loans on file from the most recent meeting.</p>
+          <Subsection
+            title="Loans"
+            action={addBtn(() => addArrItem("loans", blankLoan()), "Add Loan")}
+          >
+            {edits.loans.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">No loans on file.</p>
             ) : (
-              loans.map((l, i) => (
-                <div key={i} className="py-1.5 border-b border-border/50 last:border-0">
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-sm text-foreground">{l.lender_name} → {l.borrower_name}</span>
-                    <span className="text-xs text-muted-foreground">{fmtMoney(l.loan_amount)} · {l.loan_rate}%</span>
+              edits.loans.map((l: any, i: number) => (
+                <div key={i} className="border border-border/50 rounded-md p-3 space-y-2">
+                  <div className="flex justify-end">{removeBtn(() => removeArrItem("loans", i))}</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <EditField label="Lender" value={l.lender_name || ""} onChange={(v) => setArrItem("loans", i, "lender_name", v)} />
+                    <EditField label="Borrower" value={l.borrower_name || ""} onChange={(v) => setArrItem("loans", i, "borrower_name", v)} />
+                    <EditField label="Amount ($)" value={String(l.loan_amount ?? "")} onChange={(v) => setArrItem("loans", i, "loan_amount", v)} />
+                    <EditField label="Rate (%)" value={String(l.loan_rate ?? "")} onChange={(v) => setArrItem("loans", i, "loan_rate", v)} />
                   </div>
                 </div>
               ))
             )}
           </Subsection>
-          <Subsection title="Agreements / Contributions">
-            {contributions.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">No agreements on file from the most recent meeting.</p>
+          <Subsection
+            title="Agreements / Contributions"
+            action={addBtn(() => addArrItem("contributions", blankContribution()), "Add Agreement")}
+          >
+            {edits.contributions.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">No agreements on file.</p>
             ) : (
-              contributions.map((c, i) => (
-                <div key={i} className="py-1.5 border-b border-border/50 last:border-0">
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-sm text-foreground">{c.agreement_type} — {c.agreement_with}</span>
-                    <span className="text-xs text-muted-foreground">{fmtMoney(c.amount)} · {fmtDate(c.agreement_date)}</span>
+              edits.contributions.map((c: any, i: number) => (
+                <div key={i} className="border border-border/50 rounded-md p-3 space-y-2">
+                  <div className="flex justify-end">{removeBtn(() => removeArrItem("contributions", i))}</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <EditField label="Agreement Type" value={c.agreement_type || ""} onChange={(v) => setArrItem("contributions", i, "agreement_type", v)} />
+                    <EditField label="Agreement With" value={c.agreement_with || ""} onChange={(v) => setArrItem("contributions", i, "agreement_with", v)} />
+                    <EditField label="Amount ($)" value={String(c.amount ?? "")} onChange={(v) => setArrItem("contributions", i, "amount", v)} />
+                    <EditField label="Date" type="date" value={c.agreement_date || ""} onChange={(v) => setArrItem("contributions", i, "agreement_date", v)} />
                   </div>
-                  {c.agreement_purpose && (
-                    <div className="text-xs text-muted-foreground mt-0.5">{c.agreement_purpose}</div>
-                  )}
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Purpose</Label>
+                    <Textarea
+                      value={c.agreement_purpose || ""}
+                      onChange={(e) => setArrItem("contributions", i, "agreement_purpose", e.target.value)}
+                      rows={2}
+                    />
+                  </div>
                 </div>
               ))
             )}
           </Subsection>
         </Section>
 
-        {/* 13. Meeting */}
-        <Section title="Last Meeting on Record" icon={FileText}>
-          {meeting ? (
-            <>
-              <Field label="Meeting Date" value={fmtDate(meeting.meeting_date)} />
-              <Field label="Location" value={meeting.location} />
-              <Field label="Attendees" value={meeting.attendees} />
-              <Field label="Notes" value={meeting.notes} />
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground italic">No meeting on file.</p>
-          )}
-        </Section>
-
-        {/* 14. AI Compliance */}
-        <Section title="AI Compliance" icon={Cpu}>
-          <Field label="Active AI Systems" value={ai.systems_count} />
-          <Field label="Recent Usage Events (90 days)" value={ai.recent_usage_count} />
-          <Field
-            label="Usage Frequency"
-            value={
-              ai.frequency === "regularly" ? "Regularly" :
-              ai.frequency === "occasionally" ? "Occasionally" :
-              ai.frequency === "not_aware" ? "Systems registered, no recent usage logged" :
-              "No AI systems registered"
-            }
+        {/* 13. Notes & Submit */}
+        <Section title="Additional Notes" icon={FileText}>
+          <Textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={5}
+            maxLength={5000}
+            placeholder="Anything else you'd like to share with EntityIQ about changes for this review year."
           />
+          <div className="flex justify-end pt-2">
+            <Button onClick={handleSubmit} disabled={submitting}>
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Submit Updates
+            </Button>
+          </div>
         </Section>
       </div>
 
-      {/* Divider + Update Form */}
-      <div className="max-w-4xl mx-auto px-4 pb-12 space-y-4">
-        <div className="border-t border-border pt-8">
-          <Card className="border-border bg-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                Update Your Information
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Confirm or update your contact details and add any notes about
-                changes for {data.review_year}, then click Submit.
-              </p>
-            </CardHeader>
-            <CardContent>
-              {submitted ? (
-                <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
-                  <CheckCircle2 className="h-12 w-12 text-primary" />
-                  <h3 className="text-lg font-semibold text-foreground">Submission Received</h3>
-                  <p className="text-sm text-muted-foreground max-w-md">
-                    Thank you. Your updates for {data.review_year} have been submitted to
-                    EntityIQ for review. You may close this page.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="contact_name">Contact Name *</Label>
-                      <Input
-                        id="contact_name"
-                        value={form.contact_name}
-                        onChange={(e) => setForm({ ...form, contact_name: e.target.value })}
-                        maxLength={120}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="contact_email">Contact Email *</Label>
-                      <Input
-                        id="contact_email"
-                        type="email"
-                        value={form.contact_email}
-                        onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
-                        maxLength={255}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="contact_phone">Contact Phone</Label>
-                      <Input
-                        id="contact_phone"
-                        type="tel"
-                        value={form.contact_phone}
-                        onChange={(e) => setForm({ ...form, contact_phone: formatPhone(e.target.value) })}
-                        maxLength={40}
-                        placeholder="(555) 555-5555"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="contact_cell">Contact Cell</Label>
-                      <Input
-                        id="contact_cell"
-                        type="tel"
-                        value={form.contact_cell}
-                        onChange={(e) => setForm({ ...form, contact_cell: formatPhone(e.target.value) })}
-                        maxLength={40}
-                        placeholder="(555) 555-5555"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="notes">Notes / Changes for {data.review_year}</Label>
-                    <Textarea
-                      id="notes"
-                      value={form.notes}
-                      onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                      rows={6}
-                      maxLength={5000}
-                      placeholder="Describe any changes to officers, directors, banking, addresses, benefits, etc."
-                    />
-                  </div>
-                  <div className="flex justify-end">
-                    <Button onClick={handleSubmit} disabled={submitting}>
-                      {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Submit Updates
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
+      <div className="max-w-4xl mx-auto px-4 pb-12">
         <div className="text-center text-xs text-muted-foreground pt-4">
           <HelpCircle className="inline h-3.5 w-3.5 mr-1" />
           Need help? <a href={`mailto:${SUPPORT_EMAIL}`} className="text-primary underline">Contact support</a>.
