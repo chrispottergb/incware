@@ -662,9 +662,11 @@ export default function AnnualReviewPublic() {
                       <Label htmlFor="contact_cell">Contact Cell</Label>
                       <Input
                         id="contact_cell"
+                        type="tel"
                         value={form.contact_cell}
-                        onChange={(e) => setForm({ ...form, contact_cell: e.target.value })}
+                        onChange={(e) => setForm({ ...form, contact_cell: formatPhone(e.target.value) })}
                         maxLength={40}
+                        placeholder="(555) 555-5555"
                       />
                     </div>
                   </div>
