@@ -1155,6 +1155,7 @@ export type Database = {
           purchase_date: string | null
           rent_frequency: string
           running_hours: number | null
+          security_deposit: number | null
           taxes: number | null
           tenant_address: string | null
           tenant_company_id: string | null
@@ -1212,6 +1213,7 @@ export type Database = {
           purchase_date?: string | null
           rent_frequency?: string
           running_hours?: number | null
+          security_deposit?: number | null
           taxes?: number | null
           tenant_address?: string | null
           tenant_company_id?: string | null
@@ -1269,6 +1271,7 @@ export type Database = {
           purchase_date?: string | null
           rent_frequency?: string
           running_hours?: number | null
+          security_deposit?: number | null
           taxes?: number | null
           tenant_address?: string | null
           tenant_company_id?: string | null

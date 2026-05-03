@@ -154,6 +154,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
           lease_end_date: f.lease_end_date || null,
           lease_term: f.lease_term || null,
           monthly_payment: f.monthly_payment ? parseFloat(f.monthly_payment) : null,
+          security_deposit: f.security_deposit ? parseFloat(f.security_deposit) : null,
           leasehold_improvement_amount: f.leasehold_improvement_amount ? parseFloat(f.leasehold_improvement_amount) : null,
           leasehold_improvement_description: f.leasehold_improvement_description || null,
           rent_frequency: f.rent_frequency,
@@ -280,7 +281,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       lease_term: a.lease_term || "",
       monthly_payment: a.monthly_payment != null ? String(a.monthly_payment) : "",
       purpose: "",
-      security_deposit: "",
+      security_deposit: a.security_deposit != null ? String(a.security_deposit) : "",
       leasehold_improvement_amount: a.leasehold_improvement_amount != null ? String(a.leasehold_improvement_amount) : "",
       leasehold_improvement_description: a.leasehold_improvement_description || "",
       rent_frequency: a.rent_frequency || "monthly",
@@ -488,9 +489,15 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                     <DatePickerField value={form.lease_end_date} onChange={(v) => setForm((p) => ({ ...p, lease_end_date: v }))} />
                   </div>
                 </div>
-                <div className="field-group">
-                  <Label className="field-label">Monthly Payment ($)</Label>
-                  <Input type="number" step="0.01" className="h-8 text-sm" value={form.monthly_payment} onChange={(e) => setForm((p) => ({ ...p, monthly_payment: e.target.value }))} />
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="field-group">
+                    <Label className="field-label">Monthly Payment ($)</Label>
+                    <Input type="number" step="0.01" className="h-8 text-sm" value={form.monthly_payment} onChange={(e) => setForm((p) => ({ ...p, monthly_payment: e.target.value }))} />
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">Security Deposit ($)</Label>
+                    <Input type="number" step="0.01" className="h-8 text-sm" value={form.security_deposit} onChange={(e) => setForm((p) => ({ ...p, security_deposit: e.target.value }))} placeholder="0.00" />
+                  </div>
                 </div>
                 <div className="pt-2 border-t border-border">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Leasehold Improvements</p>
