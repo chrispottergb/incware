@@ -56,6 +56,7 @@ const emptyForm = {
   landlord_name: "",
   landlord_address: "",
   tenant_name: "",
+  tenant_address: "",
   lease_type_choice: "modified_gross" as LeaseTypeChoice,
   lease_date: "",
   lease_start_date: "",
@@ -147,6 +148,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
           address: f.address || null,
           landlord_name: f.landlord_name || null,
           landlord_address: f.landlord_address || null,
+          tenant_address: f.tenant_address || null,
           lease_date: f.lease_date || null,
           lease_start_date: f.lease_start_date || null,
           lease_end_date: f.lease_end_date || null,
@@ -270,6 +272,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       landlord_name: a.landlord_name || "",
       landlord_address: a.landlord_address || "",
       tenant_name: a.tenant_name || companyName || "",
+      tenant_address: a.tenant_address || "",
       lease_type_choice: choice,
       lease_date: a.lease_date || "",
       lease_start_date: a.lease_start_date || "",
@@ -452,6 +455,15 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                     className="h-8 text-sm"
                     value={form.landlord_address}
                     onChange={(e) => setForm((p) => ({ ...p, landlord_address: e.target.value }))}
+                    placeholder="Street, City, State ZIP"
+                  />
+                </div>
+                <div className="field-group">
+                  <Label className="field-label">Tenant Address</Label>
+                  <Input
+                    className="h-8 text-sm"
+                    value={form.tenant_address}
+                    onChange={(e) => setForm((p) => ({ ...p, tenant_address: e.target.value }))}
                     placeholder="Street, City, State ZIP"
                   />
                 </div>
