@@ -17,6 +17,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Plus, Pencil, Trash2, Building, Scale, Calculator, ChevronDown, ChevronRight, X, BookOpen, Loader2 } from "lucide-react";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { toast } from "sonner";
+import { formatPhone } from "@/lib/phone-format";
 
 interface CounselTabProps {
   companyId: string;
