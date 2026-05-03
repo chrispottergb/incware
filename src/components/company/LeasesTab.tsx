@@ -493,11 +493,29 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Monthly Payment ($)</Label>
-                    <Input type="number" step="0.01" className="h-8 text-sm" value={form.monthly_payment} onChange={(e) => setForm((p) => ({ ...p, monthly_payment: e.target.value }))} />
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      className="h-8 text-sm"
+                      value={focusedFields.has("monthly_payment") ? form.monthly_payment : formatCurrencyDisplay(form.monthly_payment)}
+                      onFocus={() => setFocusedFields((s) => new Set(s).add("monthly_payment"))}
+                      onBlur={() => setFocusedFields((s) => { const n = new Set(s); n.delete("monthly_payment"); return n; })}
+                      onChange={(e) => setForm((p) => ({ ...p, monthly_payment: sanitizeCurrencyInput(e.target.value) }))}
+                      placeholder="$0.00"
+                    />
                   </div>
                   <div className="field-group">
                     <Label className="field-label">Security Deposit ($)</Label>
-                    <Input type="number" step="0.01" className="h-8 text-sm" value={form.security_deposit} onChange={(e) => setForm((p) => ({ ...p, security_deposit: e.target.value }))} placeholder="0.00" />
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      className="h-8 text-sm"
+                      value={focusedFields.has("security_deposit") ? form.security_deposit : formatCurrencyDisplay(form.security_deposit)}
+                      onFocus={() => setFocusedFields((s) => new Set(s).add("security_deposit"))}
+                      onBlur={() => setFocusedFields((s) => { const n = new Set(s); n.delete("security_deposit"); return n; })}
+                      onChange={(e) => setForm((p) => ({ ...p, security_deposit: sanitizeCurrencyInput(e.target.value) }))}
+                      placeholder="$0.00"
+                    />
                   </div>
                 </div>
                 <div className="pt-2 border-t border-border">
@@ -505,7 +523,16 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                   <div className="grid grid-cols-2 gap-2">
                     <div className="field-group">
                       <Label className="field-label">Amount ($)</Label>
-                      <Input type="number" step="0.01" className="h-8 text-sm" value={form.leasehold_improvement_amount} onChange={(e) => setForm((p) => ({ ...p, leasehold_improvement_amount: e.target.value }))} placeholder="0.00" />
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        className="h-8 text-sm"
+                        value={focusedFields.has("leasehold_improvement_amount") ? form.leasehold_improvement_amount : formatCurrencyDisplay(form.leasehold_improvement_amount)}
+                        onFocus={() => setFocusedFields((s) => new Set(s).add("leasehold_improvement_amount"))}
+                        onBlur={() => setFocusedFields((s) => { const n = new Set(s); n.delete("leasehold_improvement_amount"); return n; })}
+                        onChange={(e) => setForm((p) => ({ ...p, leasehold_improvement_amount: sanitizeCurrencyInput(e.target.value) }))}
+                        placeholder="$0.00"
+                      />
                     </div>
                     <div className="field-group">
                       <Label className="field-label">Description</Label>
