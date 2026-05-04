@@ -267,6 +267,27 @@ export default function PromissoryNote() {
             </div>
 
             <div className="space-y-1.5">
+              <Label htmlFor="noteType" className="text-xs">
+                Type of Promissory Note <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={form.noteType || undefined}
+                onValueChange={(v) => handleNoteTypeChange(v as Exclude<NoteType, "">)}
+              >
+                <SelectTrigger id="noteType">
+                  <SelectValue placeholder="Select a note type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {NOTE_TYPE_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
               <Label htmlFor="repaymentTerms" className="text-xs">
                 Repayment Terms
               </Label>
@@ -274,9 +295,12 @@ export default function PromissoryNote() {
                 id="repaymentTerms"
                 value={form.repaymentTerms}
                 onChange={(e) => set("repaymentTerms", e.target.value)}
-                placeholder="Equal monthly installments of principal and interest, due on the 1st of each month, beginning the month following the commencement date."
-                rows={4}
+                placeholder="Select a Note Type above to auto-fill, or write custom terms."
+                rows={6}
               />
+              <p className="text-[11px] text-muted-foreground">
+                Auto-filled from selected Note Type. You may edit before generating.
+              </p>
             </div>
           </CardContent>
         </Card>
