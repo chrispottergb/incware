@@ -71,6 +71,10 @@ export default function PromissoryNote() {
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  const handleNoteTypeChange = (v: Exclude<NoteType, "">) => {
+    setForm((f) => ({ ...f, noteType: v, repaymentTerms: repaymentTermsByType[v] }));
+  };
+
   const data = useMemo(
     () => ({
       companyName: form.companyName,
