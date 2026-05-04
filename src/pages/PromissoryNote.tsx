@@ -5,9 +5,39 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Download, Eye, Printer, RotateCcw } from "lucide-react";
 import { generatePromissoryNotePDF } from "@/lib/promissory-note-pdf";
 import { toast } from "@/hooks/use-toast";
+
+type NoteType =
+  | ""
+  | "standard_term"
+  | "demand"
+  | "installment"
+  | "revolving"
+  | "zero_interest";
+
+const NOTE_TYPE_OPTIONS: { value: Exclude<NoteType, "">; label: string }[] = [
+  { value: "standard_term", label: "Standard Term Note" },
+  { value: "demand", label: "Demand Note" },
+  { value: "installment", label: "Installment Note" },
+  { value: "revolving", label: "Line of Credit / Revolving Note" },
+  { value: "zero_interest", label: "Zero-Interest / Below-Market Interest Note" },
+];
+
+const repaymentTermsByType: Record<Exclude<NoteType, "">, string> = {
+  standard_term:
+    'Borrower will repay the entire outstanding Principal Amount, plus any agreed interest, in one lump-sum payment due on ____________________. If payment is not made by the due date, Borrower agrees to contact Lender to arrange a mutually acceptable plan for curing the late payment.',
+  demand:
+    'This Note is payable "on demand." Borrower will repay the outstanding Principal Amount, plus any agreed interest, within ______ days after receiving written notice from Lender demanding repayment. No fixed maturity date applies unless both parties later agree in writing.',
+  installment:
+    'Borrower will repay the Principal Amount, plus any agreed interest, in equal installments of $__________, due on the ______ day of each month, beginning ____________________. Payments will continue until the balance is paid in full. Any unpaid balance becomes immediately due at maturity on ____________________.',
+  revolving:
+    'Lender agrees to make advances to Borrower up to a maximum outstanding balance of $__________________. Borrower may borrow, repay, and re-borrow amounts during the term of this Note. Borrower will make minimum monthly payments of $__________ or the outstanding balance, whichever is less. All remaining amounts are due in full on ____________________.',
+  zero_interest:
+    'This Note carries no interest (or interest at a rate of ______% per year, if applicable). Borrower will repay the Principal Amount in a single payment due on ____________________. Both parties acknowledge that this arrangement is intended for administrative clarity and may have tax implications that Borrower and Lender should evaluate separately.',
+};
 
 interface FormState {
   companyName: string;
@@ -18,6 +48,7 @@ interface FormState {
   loanDuration: string;
   startDate: string;
   endDate: string;
+  noteType: NoteType;
   repaymentTerms: string;
 }
 
@@ -30,6 +61,7 @@ const EMPTY: FormState = {
   loanDuration: "",
   startDate: "",
   endDate: "",
+  noteType: "",
   repaymentTerms: "",
 };
 
@@ -38,6 +70,10 @@ export default function PromissoryNote() {
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
+
+  const handleNoteTypeChange = (v: Exclude<NoteType, "">) => {
+    setForm((f) => ({ ...f, noteType: v, repaymentTerms: repaymentTermsByType[v] }));
+  };
 
   const data = useMemo(
     () => ({
@@ -231,6 +267,27 @@ export default function PromissoryNote() {
             </div>
 
             <div className="space-y-1.5">
+              <Label htmlFor="noteType" className="text-xs">
+                Type of Promissory Note <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={form.noteType || undefined}
+                onValueChange={(v) => handleNoteTypeChange(v as Exclude<NoteType, "">)}
+              >
+                <SelectTrigger id="noteType">
+                  <SelectValue placeholder="Select a note type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {NOTE_TYPE_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
               <Label htmlFor="repaymentTerms" className="text-xs">
                 Repayment Terms
               </Label>
@@ -238,9 +295,12 @@ export default function PromissoryNote() {
                 id="repaymentTerms"
                 value={form.repaymentTerms}
                 onChange={(e) => set("repaymentTerms", e.target.value)}
-                placeholder="Equal monthly installments of principal and interest, due on the 1st of each month, beginning the month following the commencement date."
-                rows={4}
+                placeholder="Select a Note Type above to auto-fill, or write custom terms."
+                rows={6}
               />
+              <p className="text-[11px] text-muted-foreground">
+                Auto-filled from selected Note Type. You may edit before generating.
+              </p>
             </div>
           </CardContent>
         </Card>
