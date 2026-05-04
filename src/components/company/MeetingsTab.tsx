@@ -625,26 +625,28 @@ export default function MeetingsTab({ companyId, company }: Props) {
                 />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                {!isOrgMeeting && (
+              {form.meeting_type !== "Written Consent" && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {!isOrgMeeting && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground">Prior Meeting Date</Label>
+                      <DatePickerField
+                        value={form.prior_mtg_date}
+                        onChange={(val) => setForm((p) => ({ ...p, prior_mtg_date: val }))}
+                        placeholder="Pick a date"
+                      />
+                    </div>
+                  )}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">Prior Meeting Date</Label>
+                    <Label className="text-xs font-medium text-muted-foreground">Next Annual Meeting</Label>
                     <DatePickerField
-                      value={form.prior_mtg_date}
-                      onChange={(val) => setForm((p) => ({ ...p, prior_mtg_date: val }))}
+                      value={form.next_annual_mtg}
+                      onChange={(val) => setForm((p) => ({ ...p, next_annual_mtg: val }))}
                       placeholder="Pick a date"
                     />
                   </div>
-                )}
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Next Annual Meeting</Label>
-                  <DatePickerField
-                    value={form.next_annual_mtg}
-                    onChange={(val) => setForm((p) => ({ ...p, next_annual_mtg: val }))}
-                    placeholder="Pick a date"
-                  />
                 </div>
-              </div>
+              )}
 
               {/* Company info at time of meeting */}
               <div className="border-t pt-4">
