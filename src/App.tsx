@@ -27,6 +27,7 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 const AnnualReviewPublic = lazy(() => import("@/pages/AnnualReviewPublic"));
 const PendingReviews = lazy(() => import("@/pages/PendingReviews"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
+const PromissoryNote = lazy(() => import("@/pages/PromissoryNote"));
 const V2Layout = lazy(() => import("@/pages/v2/V2Layout"));
 const DashboardV2 = lazy(() => import("@/pages/v2/DashboardV2"));
 const ClientsV2 = lazy(() => import("@/pages/v2/ClientsV2"));
@@ -160,6 +161,16 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <PendingReviews />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/promissory-note"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <PromissoryNote />
                   </AppLayout>
                 </ProtectedRoute>
               }
