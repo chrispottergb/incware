@@ -125,11 +125,12 @@ interface Snapshot {
   registeredAgent: any;
   accountant: any;
   attorney: any;
-  banking: { bank: any; signers: any[] };
+  banking: { bank: any; banks: any[]; signers: any[] };
   shareholders: any[];
   directors: any[];
   officers: any[];
   lease: any;
+  leases: any[];
   benefits: any[];
   assets: any[];
   loans: any[];
@@ -139,12 +140,14 @@ interface Snapshot {
 }
 
 // ---- Default factories ----
-const blankSigner = () => ({ signer_name: "", title: "" });
+const blankSigner = () => ({ signer_name: "", title: "", bank_id: null });
 const blankShareholder = () => ({ name: "", address: "", city: "", state: "", zip: "", shares_held: "", ownership_percentage: "" });
 const blankDirector = () => ({ name: "" });
-const blankOfficer = () => ({ title: "", name: "", salary: "", bonus: "" });
+const blankOfficer = () => ({ title: "", name: "", salary: "", bonus: "", compensation_status: "", compensation_note: "" });
 const blankBenefit = () => ({ benefit_description: "", benefit_type: "", provider: "", insurance_agency: "", agent_administrator: "", eligibility_comments: "", retirement_contribution: "" });
 const blankAsset = () => ({ asset_type: "", description: "", ownership_type: "", year: "", make: "", model: "", manufacturer: "", vin: "", purchase_date: "", purchase_amount: "" });
+const blankLease = () => ({ property_address: "", landlord_name: "", landlord_address: "", monthly_payment: "", lease_start_date: "", lease_end_date: "", lease_classification: "", leasehold_improvements: "", leasehold_improvement_amount: "" });
+const blankBank = () => ({ bank_name: "", account_type: "", address: "", city: "", state: "", zip: "", loc_amount: "", loc_rate: "", loc_lender: "" });
 const blankLoan = () => ({ lender_name: "", borrower_name: "", loan_amount: "", loan_rate: "" });
 const blankContribution = () => ({ agreement_type: "", agreement_with: "", amount: "", agreement_date: "", agreement_purpose: "" });
 
