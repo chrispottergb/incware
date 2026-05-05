@@ -521,7 +521,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
             total_consideration: consideration || null,
             issued_certificate_number: certNum,
             par_value: isCorp && parValueType === "par" ? (parseFloat(parValue) || null) : null,
-            notes: `Opening balance established as of ${openingBalanceDate}`,
+            notes: sh.notes?.trim() ? sh.notes.trim() : `Opening balance established as of ${openingBalanceDate}`,
           } as any);
 
           // Insert bills_of_sale (equity transaction)
