@@ -9,7 +9,7 @@ import {
   Loader2, Building2, Users, UserCheck, Shield, Landmark,
   Car, Home, HeartHandshake, FileText, Calculator, Scale,
   AlertCircle, Download, HelpCircle, Banknote, Cpu, CheckCircle2,
-  Plus, Trash2,
+  Plus, Trash2, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -371,16 +371,30 @@ export default function AnnualReviewPublic() {
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadPdf}
-            disabled={downloading}
-            className="shrink-0"
-          >
-            {downloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-            Download Snapshot
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadPdf}
+              disabled={downloading}
+            >
+              {downloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+              Download Snapshot
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                try { window.close(); } catch {}
+                // Fallback if window wasn't opened by script
+                setTimeout(() => { window.location.href = "about:blank"; }, 50);
+              }}
+              title="Close"
+            >
+              <X className="mr-1 h-4 w-4" />
+              Close
+            </Button>
+          </div>
         </div>
       </div>
 
