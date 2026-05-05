@@ -140,7 +140,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "EntityIQ <noreply@entityiq.net>",
+        from: "EntityIQ <onboarding@resend.dev>",
         reply_to: "mike@klecknerlaw.com",
         to: [contactEmail],
         subject: `Action Required: ${reviewYear} Annual Review — ${entityName}`,
