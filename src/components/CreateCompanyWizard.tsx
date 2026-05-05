@@ -54,11 +54,12 @@ interface InitialShareholder {
   cert_number: string;
   consideration: string;
   consideration_type: string;
+  notes: string;
 }
 
 const emptyShareholder = (): InitialShareholder => ({
   name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", num_shares: 0, share_class: "Common",
-  cert_number: "", consideration: "", consideration_type: "Cash",
+  cert_number: "", consideration: "", consideration_type: "Cash", notes: "",
 });
 
 interface InitialDirector {
