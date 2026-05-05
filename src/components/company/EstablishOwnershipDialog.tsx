@@ -18,6 +18,7 @@ interface OwnerRow {
   share_class: string;
   num_shares: string;
   certificate_number: string;
+  notes: string;
 }
 
 interface Props {
@@ -34,7 +35,7 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
 
   const [balanceDate, setBalanceDate] = useState("");
   const [owners, setOwners] = useState<OwnerRow[]>([
-    { name: "", share_class: "Common", num_shares: "", certificate_number: "" },
+    { name: "", share_class: "Common", num_shares: "", certificate_number: "", notes: "" },
   ]);
   const [confirm, setConfirm] = useState(false);
 
@@ -50,7 +51,7 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
 
   const hasExistingBalance = !!company?.opening_balance_date;
 
-  const addRow = () => setOwners(p => [...p, { name: "", share_class: "Common", num_shares: "", certificate_number: "" }]);
+  const addRow = () => setOwners(p => [...p, { name: "", share_class: "Common", num_shares: "", certificate_number: "", notes: "" }]);
   const removeRow = (i: number) => setOwners(p => p.filter((_, idx) => idx !== i));
   const updateRow = (i: number, field: keyof OwnerRow, val: string) =>
     setOwners(p => p.map((r, idx) => idx === i ? { ...r, [field]: val } : r));
@@ -127,7 +128,7 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
           certificate_id: cert.id,
           issued_certificate_number: cert.certificate_number,
           par_value: parValue,
-          notes: `Opening balance established as of ${balanceDate}`,
+          notes: owner.notes.trim() ? owner.notes.trim() : `Opening balance established as of ${balanceDate}`,
         } as any);
       }
 
@@ -142,7 +143,7 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
     onSuccess: () => {
       toast.success("Opening balances established successfully!");
       onOpenChange(false);
-      setOwners([{ name: "", share_class: "Common", num_shares: "", certificate_number: "" }]);
+      setOwners([{ name: "", share_class: "Common", num_shares: "", certificate_number: "", notes: "" }]);
       setBalanceDate("");
       setConfirm(false);
     },
@@ -155,7 +156,7 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
 
   return (
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setConfirm(false); } }}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-display text-base">
             <Clipboard className="h-4 w-4" /> Establish Current Ownership
@@ -197,15 +198,16 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
               </div>
 
               <div className="rounded-md border border-border">
-                <div className="grid grid-cols-[1fr_100px_100px_80px_32px] gap-2 px-3 py-1.5 bg-muted/50 border-b text-[10px] font-medium uppercase text-muted-foreground">
+                <div className="grid grid-cols-[1fr_100px_100px_80px_1fr_32px] gap-2 px-3 py-1.5 bg-muted/50 border-b text-[10px] font-medium uppercase text-muted-foreground">
                   <span>Name</span>
                   <span>{isLLC ? "Class" : "Share Class"}</span>
                   <span>{unitLabel}</span>
                   <span>Cert #</span>
+                  <span>Notes / Memo</span>
                   <span></span>
                 </div>
                 {owners.map((row, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_100px_100px_80px_32px] gap-2 px-3 py-1.5 border-b last:border-b-0 items-center">
+                  <div key={i} className="grid grid-cols-[1fr_100px_100px_80px_1fr_32px] gap-2 px-3 py-1.5 border-b last:border-b-0 items-center">
                     <Input
                       className="h-7 text-xs"
                       placeholder={`${term.shareholder} name`}
@@ -231,6 +233,12 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
                       placeholder="Auto"
                       value={row.certificate_number}
                       onChange={(e) => updateRow(i, "certificate_number", e.target.value)}
+                    />
+                    <Input
+                      className="h-7 text-xs"
+                      placeholder="Optional notes"
+                      value={row.notes}
+                      onChange={(e) => updateRow(i, "notes", e.target.value)}
                     />
                     <Button
                       type="button"
