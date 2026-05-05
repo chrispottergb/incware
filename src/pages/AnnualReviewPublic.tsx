@@ -388,7 +388,7 @@ export default function AnnualReviewPublic() {
               onClick={() => {
                 try { window.close(); } catch {}
                 // Fallback if window wasn't opened by script
-                setTimeout(() => { window.location.href = "about:blank"; }, 50);
+                setTimeout(() => { window.location.href = "https://entityiq.net"; }, 50);
               }}
               title="Close"
             >
