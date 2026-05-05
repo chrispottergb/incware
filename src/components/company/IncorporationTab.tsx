@@ -883,7 +883,7 @@ export default function IncorporationTab({ company }: Props) {
                 <Label className="field-label whitespace-nowrap">Address 2</Label>
                 <Input className="h-7 text-sm" value={form.address_2} onChange={(e) => update("address_2", e.target.value)} placeholder="Suite, Unit, Floor" />
               </div>
-              <div className="field-group col-span-6 sm:col-span-3">
+              <div className="field-group col-span-6 sm:col-span-2">
                 <Label className="field-label">City</Label>
                 <Input className="h-7 text-sm" value={form.city} onChange={(e) => update("city", e.target.value)} />
               </div>
@@ -898,7 +898,7 @@ export default function IncorporationTab({ company }: Props) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="field-group col-span-3 sm:col-span-1">
+              <div className="field-group col-span-3 sm:col-span-2">
                 <Label className="field-label">Zip</Label>
                 <Input className="h-7 text-sm" value={form.zip} onChange={(e) => { const v = e.target.value.replace(/[^\d-]/g, "").slice(0, 10); update("zip", v); handleCompanyZip(v); }} placeholder="55555" />
                 {companyZipError && <p className="text-[10px] text-destructive mt-0.5">{companyZipError}</p>}
