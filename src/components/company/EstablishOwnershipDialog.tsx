@@ -18,6 +18,7 @@ interface OwnerRow {
   share_class: string;
   num_shares: string;
   certificate_number: string;
+  notes: string;
 }
 
 interface Props {
