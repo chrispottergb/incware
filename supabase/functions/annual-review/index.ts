@@ -164,6 +164,14 @@ Deno.serve(async (req) => {
           if (data && data.length > 0) { benefits = data; break; }
         }
       }
+
+      // Same fallback for officers — latest meeting may not include officers
+      if (officers.length === 0) {
+        for (const m of latestMeetings.slice(1)) {
+          const { data } = await supabase.from("meeting_officers").select("*").eq("meeting_id", m.id);
+          if (data && data.length > 0) { officers = data; break; }
+        }
+      }
     }
 
     // Compute shares_held per shareholder from share_transactions
@@ -177,9 +185,9 @@ Deno.serve(async (req) => {
       sharesByHolder[tx.shareholder_id] = (sharesByHolder[tx.shareholder_id] || 0) + (isAdd ? n : isSub ? -n : 0);
     }
 
-    // Split assets: lease (single record for snapshot) vs vehicles/equipment
+    // Split assets: leases (all) vs vehicles/equipment
     const allAssets = assetsRes.data || [];
-    const leaseAsset = allAssets.find((a: any) => a.asset_type === "lease") || null;
+    const leaseAssets = allAssets.filter((a: any) => a.asset_type === "lease");
     const physicalAssets = allAssets.filter((a: any) => a.asset_type !== "lease" && a.asset_type !== "benefit");
 
     // AI usage frequency derivation
@@ -270,6 +278,7 @@ Deno.serve(async (req) => {
       } : null,
 
       banking: {
+        // Legacy single-bank alias (first bank). Prefer `banks` (array) below.
         bank: (banksRes.data && banksRes.data[0]) ? {
           bank_name: banksRes.data[0].bank_name,
           address: banksRes.data[0].address,
@@ -282,9 +291,25 @@ Deno.serve(async (req) => {
           loc_rate: counsel?.loc_interest_rate ?? null,
           loc_lender: counsel?.bank_name ?? banksRes.data[0].bank_name ?? null,
         } : null,
+        banks: (banksRes.data || []).map((b: any, idx: number) => ({
+          id: b.id,
+          bank_name: b.bank_name,
+          address: b.address,
+          address_2: b.address_2,
+          city: b.city,
+          state: b.state,
+          zip: b.zip,
+          account_type: b.account_type,
+          account_number_last4: last4(b.account_number),
+          // LOC info is meeting-level; only attach to the first bank
+          loc_amount: idx === 0 ? counsel?.loc_amount ?? null : null,
+          loc_rate: idx === 0 ? counsel?.loc_interest_rate ?? null : null,
+          loc_lender: idx === 0 ? (counsel?.bank_name ?? b.bank_name ?? null) : null,
+        })),
         signers: (bankSignersRes.data || []).map((s: any) => ({
           signer_name: s.signer_name,
           title: s.title,
+          bank_id: s.bank_id ?? null,
         })),
       },
 
@@ -307,18 +332,33 @@ Deno.serve(async (req) => {
         name: o.name,
         salary: o.salary,
         bonus: o.bonus,
+        compensation_status: o.compensation_status ?? null,
+        compensation_note: o.compensation_note ?? null,
       })),
 
-      lease: leaseAsset ? {
-        property_address: [leaseAsset.address, leaseAsset.address_2].filter(Boolean).join(", "),
-        landlord_name: leaseAsset.landlord_name,
-        landlord_address: leaseAsset.landlord_address,
-        monthly_payment: leaseAsset.monthly_payment ?? leaseAsset.lease_amount,
-        lease_start_date: leaseAsset.lease_start_date,
-        lease_end_date: leaseAsset.lease_end_date,
-        leasehold_improvements: leaseAsset.leasehold_improvement_description,
-        leasehold_improvement_amount: leaseAsset.leasehold_improvement_amount,
+      // Legacy single-lease alias (first lease). Prefer `leases` (array) below.
+      lease: leaseAssets[0] ? {
+        property_address: [leaseAssets[0].address, leaseAssets[0].address_2].filter(Boolean).join(", "),
+        landlord_name: leaseAssets[0].landlord_name,
+        landlord_address: leaseAssets[0].landlord_address,
+        monthly_payment: leaseAssets[0].monthly_payment ?? leaseAssets[0].lease_amount,
+        lease_start_date: leaseAssets[0].lease_start_date,
+        lease_end_date: leaseAssets[0].lease_end_date,
+        leasehold_improvements: leaseAssets[0].leasehold_improvement_description,
+        leasehold_improvement_amount: leaseAssets[0].leasehold_improvement_amount,
       } : null,
+
+      leases: leaseAssets.map((la: any) => ({
+        property_address: [la.address, la.address_2].filter(Boolean).join(", "),
+        landlord_name: la.landlord_name,
+        landlord_address: la.landlord_address,
+        monthly_payment: la.monthly_payment ?? la.lease_amount,
+        lease_start_date: la.lease_start_date,
+        lease_end_date: la.lease_end_date,
+        lease_classification: la.lease_classification,
+        leasehold_improvements: la.leasehold_improvement_description,
+        leasehold_improvement_amount: la.leasehold_improvement_amount,
+      })),
 
       benefits: benefits.map((b: any) => ({
         benefit_type: b.benefit_type,

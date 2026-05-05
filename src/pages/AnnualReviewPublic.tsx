@@ -125,11 +125,12 @@ interface Snapshot {
   registeredAgent: any;
   accountant: any;
   attorney: any;
-  banking: { bank: any; signers: any[] };
+  banking: { bank: any; banks: any[]; signers: any[] };
   shareholders: any[];
   directors: any[];
   officers: any[];
   lease: any;
+  leases: any[];
   benefits: any[];
   assets: any[];
   loans: any[];
@@ -139,12 +140,14 @@ interface Snapshot {
 }
 
 // ---- Default factories ----
-const blankSigner = () => ({ signer_name: "", title: "" });
+const blankSigner = () => ({ signer_name: "", title: "", bank_id: null });
 const blankShareholder = () => ({ name: "", address: "", city: "", state: "", zip: "", shares_held: "", ownership_percentage: "" });
 const blankDirector = () => ({ name: "" });
-const blankOfficer = () => ({ title: "", name: "", salary: "", bonus: "" });
+const blankOfficer = () => ({ title: "", name: "", salary: "", bonus: "", compensation_status: "", compensation_note: "" });
 const blankBenefit = () => ({ benefit_description: "", benefit_type: "", provider: "", insurance_agency: "", agent_administrator: "", eligibility_comments: "", retirement_contribution: "" });
 const blankAsset = () => ({ asset_type: "", description: "", ownership_type: "", year: "", make: "", model: "", manufacturer: "", vin: "", purchase_date: "", purchase_amount: "" });
+const blankLease = () => ({ property_address: "", landlord_name: "", landlord_address: "", monthly_payment: "", lease_start_date: "", lease_end_date: "", lease_classification: "", leasehold_improvements: "", leasehold_improvement_amount: "" });
+const blankBank = () => ({ bank_name: "", account_type: "", address: "", city: "", state: "", zip: "", loc_amount: "", loc_rate: "", loc_lender: "" });
 const blankLoan = () => ({ lender_name: "", borrower_name: "", loan_amount: "", loan_rate: "" });
 const blankContribution = () => ({ agreement_type: "", agreement_with: "", amount: "", agreement_date: "", agreement_purpose: "" });
 
@@ -185,11 +188,17 @@ export default function AnnualReviewPublic() {
             accountant: { ...(snap.accountant || {}) },
             attorney: { ...(snap.attorney || {}) },
             bank: { ...(snap.banking?.bank || {}) },
+            banks: (snap.banking?.banks && snap.banking.banks.length > 0)
+              ? snap.banking.banks.map((b: any) => ({ ...b }))
+              : (snap.banking?.bank ? [{ ...snap.banking.bank }] : []),
             signers: (snap.banking?.signers || []).map((s) => ({ ...s })),
             shareholders: (snap.shareholders || []).map((s) => ({ ...s })),
             directors: (snap.directors || []).map((d) => ({ ...d })),
             officers: (snap.officers || []).map((o) => ({ ...o })),
             lease: { ...(snap.lease || {}) },
+            leases: (snap.leases && snap.leases.length > 0)
+              ? snap.leases.map((l: any) => ({ ...l }))
+              : (snap.lease && Object.keys(snap.lease || {}).length > 0 ? [{ ...snap.lease }] : []),
             benefits: (snap.benefits || []).map((b) => ({ ...b })),
             assets: (snap.assets || []).map((a) => ({ ...a })),
             loans: (snap.loans || []).map((l) => ({ ...l })),
@@ -466,24 +475,44 @@ export default function AnnualReviewPublic() {
         </Section>
 
         {/* 5. Banking */}
-        <Section title="Banking" icon={Landmark}>
-          <div className="grid grid-cols-2 gap-3">
-            <EditField label="Bank Name" value={edits.bank.bank_name || ""} onChange={(v) => setObj("bank", "bank_name", v)} />
-            <EditField label="Account Type" value={edits.bank.account_type || ""} onChange={(v) => setObj("bank", "account_type", v)} />
-            <EditField label="Branch Address" value={edits.bank.address || ""} onChange={(v) => setObj("bank", "address", v)} />
-            <EditField label="City" value={edits.bank.city || ""} onChange={(v) => setObj("bank", "city", v)} />
-            <EditField label="State" value={edits.bank.state || ""} onChange={(v) => setObj("bank", "state", v)} />
-            <EditField label="ZIP" value={edits.bank.zip || ""} onChange={(v) => setObj("bank", "zip", v)} />
-          </div>
-          <ReadOnlyField label="Account Number" value={banking.bank?.account_number_last4 ? `****${banking.bank.account_number_last4}` : "—"} />
-
-          <Subsection title="Line of Credit">
-            <div className="grid grid-cols-2 gap-3">
-              <EditField label="LOC Amount ($)" value={String(edits.bank.loc_amount ?? "")} onChange={(v) => setObj("bank", "loc_amount", v)} />
-              <EditField label="LOC Rate (%)" value={String(edits.bank.loc_rate ?? "")} onChange={(v) => setObj("bank", "loc_rate", v)} />
-              <EditField label="LOC Lender" value={edits.bank.loc_lender || ""} onChange={(v) => setObj("bank", "loc_lender", v)} />
-            </div>
-          </Subsection>
+        <Section
+          title="Banking"
+          icon={Landmark}
+          action={addBtn(() => addArrItem("banks", blankBank()), "Add Bank")}
+        >
+          {edits.banks.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">No bank accounts on file.</p>
+          ) : (
+            edits.banks.map((bk: any, bi: number) => (
+              <div key={bi} className="border border-border/50 rounded-md p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Bank {bi + 1}
+                  </span>
+                  {removeBtn(() => removeArrItem("banks", bi))}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <EditField label="Bank Name" value={bk.bank_name || ""} onChange={(v) => setArrItem("banks", bi, "bank_name", v)} />
+                  <EditField label="Account Type" value={bk.account_type || ""} onChange={(v) => setArrItem("banks", bi, "account_type", v)} />
+                  <EditField label="Branch Address" value={bk.address || ""} onChange={(v) => setArrItem("banks", bi, "address", v)} />
+                  <EditField label="City" value={bk.city || ""} onChange={(v) => setArrItem("banks", bi, "city", v)} />
+                  <EditField label="State" value={bk.state || ""} onChange={(v) => setArrItem("banks", bi, "state", v)} />
+                  <EditField label="ZIP" value={bk.zip || ""} onChange={(v) => setArrItem("banks", bi, "zip", v)} />
+                </div>
+                <ReadOnlyField
+                  label="Account Number"
+                  value={bk.account_number_last4 ? `****${bk.account_number_last4}` : "—"}
+                />
+                <Subsection title="Line of Credit">
+                  <div className="grid grid-cols-2 gap-3">
+                    <EditField label="LOC Amount ($)" value={String(bk.loc_amount ?? "")} onChange={(v) => setArrItem("banks", bi, "loc_amount", v)} />
+                    <EditField label="LOC Rate (%)" value={String(bk.loc_rate ?? "")} onChange={(v) => setArrItem("banks", bi, "loc_rate", v)} />
+                    <EditField label="LOC Lender" value={bk.loc_lender || ""} onChange={(v) => setArrItem("banks", bi, "loc_lender", v)} />
+                  </div>
+                </Subsection>
+              </div>
+            ))
+          )}
 
           <Subsection
             title="Authorized Signers"
@@ -492,13 +521,22 @@ export default function AnnualReviewPublic() {
             {edits.signers.length === 0 ? (
               <p className="text-sm text-muted-foreground italic">No authorized signers on file.</p>
             ) : (
-              edits.signers.map((s: any, i: number) => (
-                <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
-                  <EditField label="Signer Name" value={s.signer_name || ""} onChange={(v) => setArrItem("signers", i, "signer_name", v)} />
-                  <EditField label="Title" value={s.title || ""} onChange={(v) => setArrItem("signers", i, "title", v)} />
-                  {removeBtn(() => removeArrItem("signers", i))}
-                </div>
-              ))
+              edits.signers.map((s: any, i: number) => {
+                const bank = edits.banks.find((b: any) => b.id && b.id === s.bank_id);
+                return (
+                  <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
+                    <EditField label="Signer Name" value={s.signer_name || ""} onChange={(v) => setArrItem("signers", i, "signer_name", v)} />
+                    <EditField label="Title" value={s.title || ""} onChange={(v) => setArrItem("signers", i, "title", v)} />
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Bank</Label>
+                      <div className="text-sm py-2 px-2 border border-border rounded-md bg-muted/30 truncate">
+                        {bank?.bank_name || "—"}
+                      </div>
+                    </div>
+                    {removeBtn(() => removeArrItem("signers", i))}
+                  </div>
+                );
+              })
             )}
           </Subsection>
         </Section>
@@ -564,24 +602,45 @@ export default function AnnualReviewPublic() {
                   <EditField label="Name" value={o.name || ""} onChange={(v) => setArrItem("officers", i, "name", v)} />
                   <EditField label="Salary ($)" value={String(o.salary ?? "")} onChange={(v) => setArrItem("officers", i, "salary", v)} />
                   <EditField label="Bonus ($)" value={String(o.bonus ?? "")} onChange={(v) => setArrItem("officers", i, "bonus", v)} />
+                  <EditField label="Compensation Status" value={o.compensation_status || ""} onChange={(v) => setArrItem("officers", i, "compensation_status", v)} />
+                  <EditField label="Compensation Note" value={o.compensation_note || ""} onChange={(v) => setArrItem("officers", i, "compensation_note", v)} />
                 </div>
               </div>
             ))
           )}
         </Section>
 
-        {/* 9. Lease */}
-        <Section title="Lease Information" icon={Home}>
-          <div className="grid grid-cols-2 gap-3">
-            <EditField label="Property Address" value={edits.lease.property_address || ""} onChange={(v) => setObj("lease", "property_address", v)} />
-            <EditField label="Landlord" value={edits.lease.landlord_name || ""} onChange={(v) => setObj("lease", "landlord_name", v)} />
-            <EditField label="Landlord Address" value={edits.lease.landlord_address || ""} onChange={(v) => setObj("lease", "landlord_address", v)} />
-            <EditField label="Monthly Payment ($)" value={String(edits.lease.monthly_payment ?? "")} onChange={(v) => setObj("lease", "monthly_payment", v)} />
-            <EditField label="Lease Start" type="date" value={edits.lease.lease_start_date || ""} onChange={(v) => setObj("lease", "lease_start_date", v)} />
-            <EditField label="Lease End" type="date" value={edits.lease.lease_end_date || ""} onChange={(v) => setObj("lease", "lease_end_date", v)} />
-            <EditField label="Leasehold Improvements" value={edits.lease.leasehold_improvements || ""} onChange={(v) => setObj("lease", "leasehold_improvements", v)} />
-            <EditField label="Improvement Amount ($)" value={String(edits.lease.leasehold_improvement_amount ?? "")} onChange={(v) => setObj("lease", "leasehold_improvement_amount", v)} />
-          </div>
+        {/* 9. Leases */}
+        <Section
+          title="Lease Information"
+          icon={Home}
+          action={addBtn(() => addArrItem("leases", blankLease()), "Add Lease")}
+        >
+          {edits.leases.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">No leases on file.</p>
+          ) : (
+            edits.leases.map((l: any, li: number) => (
+              <div key={li} className="border border-border/50 rounded-md p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Lease {li + 1}
+                  </span>
+                  {removeBtn(() => removeArrItem("leases", li))}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <EditField label="Property Address" value={l.property_address || ""} onChange={(v) => setArrItem("leases", li, "property_address", v)} />
+                  <EditField label="Landlord" value={l.landlord_name || ""} onChange={(v) => setArrItem("leases", li, "landlord_name", v)} />
+                  <EditField label="Landlord Address" value={l.landlord_address || ""} onChange={(v) => setArrItem("leases", li, "landlord_address", v)} />
+                  <EditField label="Monthly Payment ($)" value={String(l.monthly_payment ?? "")} onChange={(v) => setArrItem("leases", li, "monthly_payment", v)} />
+                  <EditField label="Lease Start" type="date" value={l.lease_start_date || ""} onChange={(v) => setArrItem("leases", li, "lease_start_date", v)} />
+                  <EditField label="Lease End" type="date" value={l.lease_end_date || ""} onChange={(v) => setArrItem("leases", li, "lease_end_date", v)} />
+                  <EditField label="Classification" value={l.lease_classification || ""} onChange={(v) => setArrItem("leases", li, "lease_classification", v)} placeholder="standard / related_party / self_rental" />
+                  <EditField label="Leasehold Improvements" value={l.leasehold_improvements || ""} onChange={(v) => setArrItem("leases", li, "leasehold_improvements", v)} />
+                  <EditField label="Improvement Amount ($)" value={String(l.leasehold_improvement_amount ?? "")} onChange={(v) => setArrItem("leases", li, "leasehold_improvement_amount", v)} />
+                </div>
+              </div>
+            ))
+          )}
         </Section>
 
         {/* 10. Benefits */}
