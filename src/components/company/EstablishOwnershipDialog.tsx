@@ -156,7 +156,7 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
 
   return (
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setConfirm(false); } }}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-display text-base">
             <Clipboard className="h-4 w-4" /> Establish Current Ownership
