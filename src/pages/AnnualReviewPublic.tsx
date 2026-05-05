@@ -698,7 +698,7 @@ export default function AnnualReviewPublic() {
           action={addBtn(() => addArrItem("assets", blankAsset()), "Add Asset")}
         >
           {edits.assets.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">No vehicles or equipment on file.</p>
+            <p className="text-sm text-muted-foreground italic">No new vehicles or equipment added this year.</p>
           ) : (
             edits.assets.map((a: any, i: number) => (
               <div key={i} className="border border-border/50 rounded-md p-3 space-y-2">
@@ -727,7 +727,7 @@ export default function AnnualReviewPublic() {
             action={addBtn(() => addArrItem("loans", blankLoan()), "Add Loan")}
           >
             {edits.loans.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">No loans on file.</p>
+              <p className="text-sm text-muted-foreground italic">No new loans added this year.</p>
             ) : (
               edits.loans.map((l: any, i: number) => (
                 <div key={i} className="border border-border/50 rounded-md p-3 space-y-2">
@@ -747,7 +747,7 @@ export default function AnnualReviewPublic() {
             action={addBtn(() => addArrItem("contributions", blankContribution()), "Add Agreement")}
           >
             {edits.contributions.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">No agreements on file.</p>
+              <p className="text-sm text-muted-foreground italic">No new agreements or contributions added this year.</p>
             ) : (
               edits.contributions.map((c: any, i: number) => (
                 <div key={i} className="border border-border/50 rounded-md p-3 space-y-2">
