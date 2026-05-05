@@ -660,7 +660,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
           </Select>
         </div>
       </div>
-      <div className="grid grid-cols-[1fr_70px_1fr] gap-1.5">
+      <div className="grid grid-cols-[110px_70px_1fr] gap-1.5">
         <div className="field-group">
           <Label className="field-label">{term.numUnitsLabel}</Label>
           <Input className="h-7 text-xs" type="number" step="0.0001" value={editingSh.num_shares || ""} onChange={(e) => setEditingSh(p => ({ ...p, num_shares: parseFloat(e.target.value) || 0 }))} />
