@@ -164,6 +164,14 @@ Deno.serve(async (req) => {
           if (data && data.length > 0) { benefits = data; break; }
         }
       }
+
+      // Same fallback for officers — latest meeting may not include officers
+      if (officers.length === 0) {
+        for (const m of latestMeetings.slice(1)) {
+          const { data } = await supabase.from("meeting_officers").select("*").eq("meeting_id", m.id);
+          if (data && data.length > 0) { officers = data; break; }
+        }
+      }
     }
 
     // Compute shares_held per shareholder from share_transactions
