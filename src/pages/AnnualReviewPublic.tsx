@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,23 +68,18 @@ function Subsection({
   );
 }
 
-function EditField({
-  label,
-  value,
-  onChange,
-  type = "text",
-  placeholder,
-}: {
+const EditField = React.forwardRef<HTMLInputElement, {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
   placeholder?: string;
-}) {
+}>(function EditField({ label, value, onChange, type = "text", placeholder }, ref) {
   return (
     <div className="space-y-1">
       <Label className="text-xs text-muted-foreground">{label}</Label>
       <Input
+        ref={ref}
         type={type}
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
@@ -93,13 +88,13 @@ function EditField({
       />
     </div>
   );
-}
+});
 
 function ReadOnlyField({ label, value }: { label: string; value?: React.ReactNode }) {
   return (
-    <div className="flex justify-between items-start gap-4 py-1.5 border-b border-border/50 last:border-0">
+    <div className="flex justify-between items-center gap-4 py-1.5 border-b border-border/50 last:border-0">
       <span className="text-sm font-medium text-muted-foreground shrink-0">{label}</span>
-      <span className="text-sm text-foreground text-right whitespace-nowrap">
+      <span className="text-sm text-foreground text-right whitespace-nowrap min-w-0 flex-1 overflow-visible">
         {value === null || value === undefined || value === "" ? "—" : value}
       </span>
     </div>
@@ -110,6 +105,12 @@ function ReadOnlyField({ label, value }: { label: string; value?: React.ReactNod
 const joinAddr = (...parts: any[]) => parts.filter(Boolean).join(", ") || null;
 const fmtDate = (s?: string | null) => {
   if (!s) return null;
+  // Guard against malformed dates with 1-3 digit years (e.g. "0199-08-12")
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (match) {
+    const y = parseInt(match[1], 10);
+    if (y < 1000 || y > 9999) return s;
+  }
   try { return new Date(s + (s.length === 10 ? "T00:00:00" : "")).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }); }
   catch { return s; }
 };
