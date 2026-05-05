@@ -661,7 +661,7 @@ export default function AnnualReviewPublic() {
                   <EditField label="Provider" value={b.provider || ""} onChange={(v) => setArrItem("benefits", i, "provider", v)} />
                   <EditField label="Insurance Agency" value={b.insurance_agency || ""} onChange={(v) => setArrItem("benefits", i, "insurance_agency", v)} />
                   <EditField label="Agent / Administrator" value={b.agent_administrator || ""} onChange={(v) => setArrItem("benefits", i, "agent_administrator", v)} />
-                  <EditField label="Retirement Contribution ($)" value={String(b.retirement_contribution ?? "")} onChange={(v) => setArrItem("benefits", i, "retirement_contribution", v)} />
+                  <EditField label="Contribution" value={String(b.retirement_contribution ?? "")} onChange={(v) => setArrItem("benefits", i, "retirement_contribution", v)} />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Eligibility Comments</Label>
