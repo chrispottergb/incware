@@ -198,15 +198,16 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
               </div>
 
               <div className="rounded-md border border-border">
-                <div className="grid grid-cols-[1fr_100px_100px_80px_32px] gap-2 px-3 py-1.5 bg-muted/50 border-b text-[10px] font-medium uppercase text-muted-foreground">
+                <div className="grid grid-cols-[1fr_100px_100px_80px_1fr_32px] gap-2 px-3 py-1.5 bg-muted/50 border-b text-[10px] font-medium uppercase text-muted-foreground">
                   <span>Name</span>
                   <span>{isLLC ? "Class" : "Share Class"}</span>
                   <span>{unitLabel}</span>
                   <span>Cert #</span>
+                  <span>Notes / Memo</span>
                   <span></span>
                 </div>
                 {owners.map((row, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_100px_100px_80px_32px] gap-2 px-3 py-1.5 border-b last:border-b-0 items-center">
+                  <div key={i} className="grid grid-cols-[1fr_100px_100px_80px_1fr_32px] gap-2 px-3 py-1.5 border-b last:border-b-0 items-center">
                     <Input
                       className="h-7 text-xs"
                       placeholder={`${term.shareholder} name`}
@@ -232,6 +233,12 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
                       placeholder="Auto"
                       value={row.certificate_number}
                       onChange={(e) => updateRow(i, "certificate_number", e.target.value)}
+                    />
+                    <Input
+                      className="h-7 text-xs"
+                      placeholder="Optional notes"
+                      value={row.notes}
+                      onChange={(e) => updateRow(i, "notes", e.target.value)}
                     />
                     <Button
                       type="button"
