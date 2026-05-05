@@ -35,7 +35,7 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
 
   const [balanceDate, setBalanceDate] = useState("");
   const [owners, setOwners] = useState<OwnerRow[]>([
-    { name: "", share_class: "Common", num_shares: "", certificate_number: "" },
+    { name: "", share_class: "Common", num_shares: "", certificate_number: "", notes: "" },
   ]);
   const [confirm, setConfirm] = useState(false);
 
@@ -51,7 +51,7 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
 
   const hasExistingBalance = !!company?.opening_balance_date;
 
-  const addRow = () => setOwners(p => [...p, { name: "", share_class: "Common", num_shares: "", certificate_number: "" }]);
+  const addRow = () => setOwners(p => [...p, { name: "", share_class: "Common", num_shares: "", certificate_number: "", notes: "" }]);
   const removeRow = (i: number) => setOwners(p => p.filter((_, idx) => idx !== i));
   const updateRow = (i: number, field: keyof OwnerRow, val: string) =>
     setOwners(p => p.map((r, idx) => idx === i ? { ...r, [field]: val } : r));
@@ -143,7 +143,7 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
     onSuccess: () => {
       toast.success("Opening balances established successfully!");
       onOpenChange(false);
-      setOwners([{ name: "", share_class: "Common", num_shares: "", certificate_number: "" }]);
+      setOwners([{ name: "", share_class: "Common", num_shares: "", certificate_number: "", notes: "" }]);
       setBalanceDate("");
       setConfirm(false);
     },
