@@ -1,18 +1,23 @@
-## Update Annual Review empty-state copy
+## Remove Agent Type and Phone from Registered Agent UI
 
-The Annual Review page already separates the historical snapshot (rendered earlier on the page) from the user's new entries (stored in the `edits` state arrays — `edits.assets`, `edits.loans`, `edits.contributions`). The empty-state messages in the new-entry sections currently read "on file", which sounds like they're describing the historical record. Update them to reflect that these are this year's new additions.
+The Registered Agent section in `src/pages/AnnualReviewPublic.tsx` currently renders two fields that don't exist in the schema: Agent Type and Phone. Remove them so only the valid fields display and the submission JSON omits them.
 
 ### Changes — `src/pages/AnnualReviewPublic.tsx`
 
-Three text-only edits (logic already correctly references the new-entry arrays):
+Remove two lines from the Registered Agent `<Section>` (lines 449–461):
 
-- Line 701: `No vehicles or equipment on file.` → `No new vehicles or equipment added this year.`
-- Line 730: `No loans on file.` → `No new loans added this year.`
-- Line 750: `No agreements on file.` → `No new agreements or contributions added this year.`
+- Line 453: `<EditField label="Agent Type" ... />` — delete
+- Line 459: `<EditField label="Phone" ... />` — delete
+
+Resulting section will render only: Agent Name, Address, Address 2, City, State, ZIP, Email.
+
+### Submission JSON
+
+`new_entries.registeredAgent` is built from the `edits.registeredAgent` state object. Once the two inputs are removed, the `type` and `phone` keys will no longer be written by the user. Existing snapshot values for those keys (if any) flow in via `...(snap.registeredAgent || {})` at line 188 — leave that spread alone since it's snapshot pass-through, not new-entry capture. No other code paths reference `registeredAgent.type` or `registeredAgent.phone`.
 
 ### Not changed
 
-- Snapshot data, snapshot UI, and historical record rendering
+- Snapshot data and snapshot UI rendering
 - Database schema
 - Jotform integration
-- Any conditional logic (the existing `edits.assets.length === 0` checks already target new entries, not the snapshot)
+- Any other Annual Review sections (the `agent_administrator` field on benefits at line 678 is unrelated and stays)

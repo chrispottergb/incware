@@ -450,13 +450,13 @@ export default function AnnualReviewPublic() {
         <Section title="Registered Agent" icon={Shield}>
           <div className="grid grid-cols-2 gap-3">
             <EditField label="Agent Name" value={edits.registeredAgent.name || ""} onChange={(v) => setObj("registeredAgent", "name", v)} />
-            <EditField label="Agent Type" value={edits.registeredAgent.type || ""} onChange={(v) => setObj("registeredAgent", "type", v)} />
+            
             <EditField label="Address" value={edits.registeredAgent.address || ""} onChange={(v) => setObj("registeredAgent", "address", v)} />
             <EditField label="Address 2" value={edits.registeredAgent.address_2 || ""} onChange={(v) => setObj("registeredAgent", "address_2", v)} />
             <EditField label="City" value={edits.registeredAgent.city || ""} onChange={(v) => setObj("registeredAgent", "city", v)} />
             <EditField label="State" value={edits.registeredAgent.state || ""} onChange={(v) => setObj("registeredAgent", "state", v)} />
             <EditField label="ZIP" value={edits.registeredAgent.zip || ""} onChange={(v) => setObj("registeredAgent", "zip", v)} />
-            <EditField label="Phone" type="tel" value={edits.registeredAgent.phone || ""} onChange={(v) => setObj("registeredAgent", "phone", formatPhone(v))} placeholder="(555) 555-5555" />
+            
             <EditField label="Email" type="email" value={edits.registeredAgent.email || ""} onChange={(v) => setObj("registeredAgent", "email", v)} />
           </div>
         </Section>
