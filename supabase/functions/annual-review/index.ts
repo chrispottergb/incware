@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
       supabase.from("share_transactions").select("shareholder_id, num_shares, transaction_type, status, effective_date").eq("company_id", companyId),
       supabase.from("directors").select("*").eq("company_id", companyId).order("name"),
       supabase.from("company_assets").select("*").eq("company_id", companyId),
-      supabase.from("meetings").select("id, meeting_date, meeting_location, attendees, meeting_other").eq("company_id", companyId).order("meeting_date", { ascending: false }).limit(5),
+      supabase.from("meetings").select("id, meeting_date, meeting_location").eq("company_id", companyId).order("meeting_date", { ascending: false }).limit(5),
       supabase.from("ai_systems").select("id, status").eq("company_id", companyId),
       supabase.from("ai_usage_logs").select("id, usage_date").eq("company_id", companyId).gte("usage_date", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()),
     ]);
@@ -198,13 +198,15 @@ Deno.serve(async (req) => {
     else if (aiSystemsCount > 0 && recentAiUsage > 0) aiFrequency = "occasionally";
     else if (aiSystemsCount > 0) aiFrequency = "not_aware";
 
-    // Latest meeting "other notes" parse
+    // Latest meeting "other notes" parse — meeting_other is a separate table
     let meetingNotes: string | null = null;
-    if (latestMeetings[0]?.meeting_other) {
-      const mo = latestMeetings[0].meeting_other;
-      if (typeof mo === "string") meetingNotes = mo;
-      else if (typeof mo === "object" && mo !== null) {
-        meetingNotes = (mo as any).notes || (mo as any).other_notes || JSON.stringify(mo);
+    if (latestMeetingId) {
+      const { data: moRows } = await supabase
+        .from("meeting_other")
+        .select("notes")
+        .eq("meeting_id", latestMeetingId);
+      if (moRows && moRows.length > 0) {
+        meetingNotes = moRows.map((r: any) => r.notes).filter(Boolean).join("\n\n") || null;
       }
     }
 
@@ -402,7 +404,7 @@ Deno.serve(async (req) => {
       meeting: latestMeetings[0] ? {
         meeting_date: latestMeetings[0].meeting_date,
         location: latestMeetings[0].meeting_location,
-        attendees: latestMeetings[0].attendees,
+        attendees: null,
         notes: meetingNotes,
       } : null,
 
