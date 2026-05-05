@@ -185,9 +185,9 @@ Deno.serve(async (req) => {
       sharesByHolder[tx.shareholder_id] = (sharesByHolder[tx.shareholder_id] || 0) + (isAdd ? n : isSub ? -n : 0);
     }
 
-    // Split assets: lease (single record for snapshot) vs vehicles/equipment
+    // Split assets: leases (all) vs vehicles/equipment
     const allAssets = assetsRes.data || [];
-    const leaseAsset = allAssets.find((a: any) => a.asset_type === "lease") || null;
+    const leaseAssets = allAssets.filter((a: any) => a.asset_type === "lease");
     const physicalAssets = allAssets.filter((a: any) => a.asset_type !== "lease" && a.asset_type !== "benefit");
 
     // AI usage frequency derivation
