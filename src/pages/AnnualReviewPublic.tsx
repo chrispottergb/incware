@@ -99,7 +99,7 @@ function ReadOnlyField({ label, value }: { label: string; value?: React.ReactNod
   return (
     <div className="flex justify-between items-start gap-4 py-1.5 border-b border-border/50 last:border-0">
       <span className="text-sm font-medium text-muted-foreground shrink-0">{label}</span>
-      <span className="text-sm text-foreground text-right break-words">
+      <span className="text-sm text-foreground text-right whitespace-nowrap">
         {value === null || value === undefined || value === "" ? "—" : value}
       </span>
     </div>
