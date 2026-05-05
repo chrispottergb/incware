@@ -188,11 +188,17 @@ export default function AnnualReviewPublic() {
             accountant: { ...(snap.accountant || {}) },
             attorney: { ...(snap.attorney || {}) },
             bank: { ...(snap.banking?.bank || {}) },
+            banks: (snap.banking?.banks && snap.banking.banks.length > 0)
+              ? snap.banking.banks.map((b: any) => ({ ...b }))
+              : (snap.banking?.bank ? [{ ...snap.banking.bank }] : []),
             signers: (snap.banking?.signers || []).map((s) => ({ ...s })),
             shareholders: (snap.shareholders || []).map((s) => ({ ...s })),
             directors: (snap.directors || []).map((d) => ({ ...d })),
             officers: (snap.officers || []).map((o) => ({ ...o })),
             lease: { ...(snap.lease || {}) },
+            leases: (snap.leases && snap.leases.length > 0)
+              ? snap.leases.map((l: any) => ({ ...l }))
+              : (snap.lease && Object.keys(snap.lease || {}).length > 0 ? [{ ...snap.lease }] : []),
             benefits: (snap.benefits || []).map((b) => ({ ...b })),
             assets: (snap.assets || []).map((a) => ({ ...a })),
             loans: (snap.loans || []).map((l) => ({ ...l })),
