@@ -660,16 +660,16 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
           </Select>
         </div>
       </div>
-      <div className="grid grid-cols-[110px_70px_1fr] gap-1.5">
-        <div className="field-group">
-          <Label className="field-label">{term.numUnitsLabel}</Label>
+      <div className="flex gap-1.5 w-full">
+        <div className="field-group w-[90px] shrink-0">
+          <Label className="field-label whitespace-nowrap">{term.numUnitsLabel}</Label>
           <Input className="h-7 text-xs" type="number" step="0.0001" value={editingSh.num_shares || ""} onChange={(e) => setEditingSh(p => ({ ...p, num_shares: parseFloat(e.target.value) || 0 }))} />
         </div>
-        <div className="field-group">
-          <Label className="field-label">Current Cert #</Label>
+        <div className="field-group w-[80px] shrink-0">
+          <Label className="field-label whitespace-nowrap">Cert #</Label>
           <Input className="h-7 text-xs" type="number" value={editingSh.cert_number} onChange={(e) => setEditingSh(p => ({ ...p, cert_number: e.target.value }))} placeholder="e.g. 1" />
         </div>
-        <div className="field-group">
+        <div className="field-group flex-1 min-w-0">
           <Label className="field-label whitespace-nowrap">Consideration Type</Label>
           <Select value={editingSh.consideration_type || "Cash"} onValueChange={(v) => setEditingSh(p => ({ ...p, consideration_type: v }))}>
             <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
