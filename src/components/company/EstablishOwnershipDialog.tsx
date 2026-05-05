@@ -128,7 +128,7 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
           certificate_id: cert.id,
           issued_certificate_number: cert.certificate_number,
           par_value: parValue,
-          notes: `Opening balance established as of ${balanceDate}`,
+          notes: owner.notes.trim() ? owner.notes.trim() : `Opening balance established as of ${balanceDate}`,
         } as any);
       }
 
