@@ -54,11 +54,12 @@ interface InitialShareholder {
   cert_number: string;
   consideration: string;
   consideration_type: string;
+  notes: string;
 }
 
 const emptyShareholder = (): InitialShareholder => ({
   name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", num_shares: 0, share_class: "Common",
-  cert_number: "", consideration: "", consideration_type: "Cash",
+  cert_number: "", consideration: "", consideration_type: "Cash", notes: "",
 });
 
 interface InitialDirector {
@@ -520,7 +521,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
             total_consideration: consideration || null,
             issued_certificate_number: certNum,
             par_value: isCorp && parValueType === "par" ? (parseFloat(parValue) || null) : null,
-            notes: `Opening balance established as of ${openingBalanceDate}`,
+            notes: sh.notes?.trim() ? sh.notes.trim() : `Opening balance established as of ${openingBalanceDate}`,
           } as any);
 
           // Insert bills_of_sale (equity transaction)
@@ -614,15 +615,17 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
           placeholder="Start typing a name..."
         />
       </div>
-      <div className="field-group">
-        <Label className="field-label">Address</Label>
-        <DbAddressAutocomplete className="h-7 text-xs" value={editingSh.address} onChange={(v) => setEditingSh(p => ({ ...p, address: v }))} onSelect={(addr) => { setEditingSh(p => ({ ...p, address: addr.line1, address_2: addr.line2, city: addr.city, state: addr.state, zip: addr.zip })); }} source="shareholders" />
+      <div className="grid grid-cols-2 gap-1.5">
+        <div className="field-group">
+          <Label className="field-label">Address</Label>
+          <DbAddressAutocomplete className="h-7 text-xs" value={editingSh.address} onChange={(v) => setEditingSh(p => ({ ...p, address: v }))} onSelect={(addr) => { setEditingSh(p => ({ ...p, address: addr.line1, address_2: addr.line2, city: addr.city, state: addr.state, zip: addr.zip })); }} source="shareholders" />
+        </div>
+        <div className="field-group">
+          <Label className="field-label">Address 2</Label>
+          <Input className="h-7 text-xs" value={editingSh.address_2} onChange={(e) => setEditingSh(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor" />
+        </div>
       </div>
-      <div className="field-group">
-        <Label className="field-label">Address 2</Label>
-        <Input className="h-7 text-xs" value={editingSh.address_2} onChange={(e) => setEditingSh(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit, Floor" />
-      </div>
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-[2fr_60px_80px] gap-1.5">
         <div className="field-group">
           <Label className="field-label">City</Label>
           <Input className="h-7 text-xs" value={editingSh.city} onChange={(e) => setEditingSh(p => ({ ...p, city: e.target.value }))} />
@@ -657,7 +660,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
           </Select>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-[1fr_70px_1fr] gap-1.5">
         <div className="field-group">
           <Label className="field-label">{term.numUnitsLabel}</Label>
           <Input className="h-7 text-xs" type="number" step="0.0001" value={editingSh.num_shares || ""} onChange={(e) => setEditingSh(p => ({ ...p, num_shares: parseFloat(e.target.value) || 0 }))} />
@@ -667,7 +670,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
           <Input className="h-7 text-xs" type="number" value={editingSh.cert_number} onChange={(e) => setEditingSh(p => ({ ...p, cert_number: e.target.value }))} placeholder="e.g. 1" />
         </div>
         <div className="field-group">
-          <Label className="field-label">Consideration Type</Label>
+          <Label className="field-label whitespace-nowrap">Consideration Type</Label>
           <Select value={editingSh.consideration_type || "Cash"} onValueChange={(v) => setEditingSh(p => ({ ...p, consideration_type: v }))}>
             <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -679,6 +682,10 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
       <div className="field-group">
         <Label className="field-label">Consideration Amount ($){isLLC ? " — required" : " — optional"}</Label>
         <Input className="h-7 text-xs" type="number" step="0.01" value={editingSh.consideration} onChange={(e) => setEditingSh(p => ({ ...p, consideration: e.target.value }))} placeholder="0.00" />
+      </div>
+      <div className="field-group">
+        <Label className="field-label">Notes / Memo</Label>
+        <Input className="h-7 text-xs" value={editingSh.notes} onChange={(e) => setEditingSh(p => ({ ...p, notes: e.target.value }))} placeholder="Optional notes about this opening balance" />
       </div>
       <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={addShareholder}>
         <Plus className="mr-1 h-3 w-3" /> {editingIdx !== null ? "Update" : "+ Add"} {term.shareholder}
