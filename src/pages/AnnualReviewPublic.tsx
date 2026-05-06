@@ -182,12 +182,21 @@ export default function AnnualReviewPublic() {
           const snap = body as Snapshot;
           setData(snap);
           // Seed edits from snapshot
+          const c = snap.company || {};
+          const ct = snap.contacts || {};
+          const ra = snap.registeredAgent || {};
+          const ac = snap.accountant || {};
+          const at = snap.attorney || {};
           setEdits({
-            company: { ...(snap.company || {}) },
-            contacts: { ...(snap.contacts || {}) },
-            registeredAgent: { ...(snap.registeredAgent || {}) },
-            accountant: { ...(snap.accountant || {}) },
-            attorney: { ...(snap.attorney || {}) },
+            company: { ...c, phone: c.phone ? formatPhone(c.phone) : "" },
+            contacts: {
+              ...ct,
+              contact_phone: ct.contact_phone ? formatPhone(ct.contact_phone) : "",
+              contact_cell: ct.contact_cell ? formatPhone(ct.contact_cell) : "",
+            },
+            registeredAgent: { ...ra, city: ra.city ?? "" },
+            accountant: { ...ac, phone: ac.phone ? formatPhone(ac.phone) : "" },
+            attorney: { ...at, phone: at.phone ? formatPhone(at.phone) : "" },
             bank: { ...(snap.banking?.bank || {}) },
             banks: (snap.banking?.banks && snap.banking.banks.length > 0)
               ? snap.banking.banks.map((b: any) => ({ ...b }))
@@ -322,7 +331,8 @@ export default function AnnualReviewPublic() {
   if (!data || !edits) return null;
 
   const { company, banking } = data;
-  const isLLC = (company.entity_type || "").toLowerCase().includes("llc");
+  const entityTypeLower = (edits.company?.entity_type || company.entity_type || "").toLowerCase();
+  const isLLC = ["llc", "single member llc", "llc-s"].includes(entityTypeLower) || entityTypeLower.includes("llc");
   const ownerLabel = isLLC ? "Members" : "Shareholders";
   const sharesLabel = isLLC ? "Units" : "Shares";
 
@@ -582,23 +592,25 @@ export default function AnnualReviewPublic() {
           )}
         </Section>
 
-        {/* 7. Directors */}
-        <Section
-          title="Directors"
-          icon={UserCheck}
-          action={addBtn(() => addArrItem("directors", blankDirector()), "Add Director")}
-        >
-          {edits.directors.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">No directors on file.</p>
-          ) : (
-            edits.directors.map((d: any, i: number) => (
-              <div key={i} className="grid grid-cols-[1fr_auto] gap-2 items-end">
-                <EditField label={`Director ${i + 1}`} value={d.name || ""} onChange={(v) => setArrItem("directors", i, "name", v)} />
-                {removeBtn(() => removeArrItem("directors", i))}
-              </div>
-            ))
-          )}
-        </Section>
+        {/* 7. Directors — hidden for LLC entity types */}
+        {!isLLC && (
+          <Section
+            title="Directors"
+            icon={UserCheck}
+            action={addBtn(() => addArrItem("directors", blankDirector()), "Add Director")}
+          >
+            {edits.directors.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">No directors on file.</p>
+            ) : (
+              edits.directors.map((d: any, i: number) => (
+                <div key={i} className="grid grid-cols-[1fr_auto] gap-2 items-end">
+                  <EditField label={`Director ${i + 1}`} value={d.name || ""} onChange={(v) => setArrItem("directors", i, "name", v)} />
+                  {removeBtn(() => removeArrItem("directors", i))}
+                </div>
+              ))
+            )}
+          </Section>
+        )}
 
         {/* 8. Officers */}
         <Section
