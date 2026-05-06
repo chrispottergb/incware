@@ -66,12 +66,12 @@ export const EmailChangeEmail = ({
 
 export default EmailChangeEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, Helvetica, sans-serif' }
 const container = { padding: '20px 25px' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,
-  color: '#000000',
+  color: '#1a1a2e',
   margin: '0 0 20px',
 }
 const text = {
@@ -82,10 +82,10 @@ const text = {
 }
 const link = { color: 'inherit', textDecoration: 'underline' }
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: '#2563eb',
   color: '#ffffff',
   fontSize: '14px',
-  borderRadius: '8px',
+  borderRadius: '6px', padding: '14px 32px', fontWeight: 600 as const,
   padding: '12px 20px',
   textDecoration: 'none',
 }
