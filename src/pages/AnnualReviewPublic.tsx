@@ -592,23 +592,25 @@ export default function AnnualReviewPublic() {
           )}
         </Section>
 
-        {/* 7. Directors */}
-        <Section
-          title="Directors"
-          icon={UserCheck}
-          action={addBtn(() => addArrItem("directors", blankDirector()), "Add Director")}
-        >
-          {edits.directors.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">No directors on file.</p>
-          ) : (
-            edits.directors.map((d: any, i: number) => (
-              <div key={i} className="grid grid-cols-[1fr_auto] gap-2 items-end">
-                <EditField label={`Director ${i + 1}`} value={d.name || ""} onChange={(v) => setArrItem("directors", i, "name", v)} />
-                {removeBtn(() => removeArrItem("directors", i))}
-              </div>
-            ))
-          )}
-        </Section>
+        {/* 7. Directors — hidden for LLC entity types */}
+        {!isLLC && (
+          <Section
+            title="Directors"
+            icon={UserCheck}
+            action={addBtn(() => addArrItem("directors", blankDirector()), "Add Director")}
+          >
+            {edits.directors.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">No directors on file.</p>
+            ) : (
+              edits.directors.map((d: any, i: number) => (
+                <div key={i} className="grid grid-cols-[1fr_auto] gap-2 items-end">
+                  <EditField label={`Director ${i + 1}`} value={d.name || ""} onChange={(v) => setArrItem("directors", i, "name", v)} />
+                  {removeBtn(() => removeArrItem("directors", i))}
+                </div>
+              ))
+            )}
+          </Section>
+        )}
 
         {/* 8. Officers */}
         <Section
