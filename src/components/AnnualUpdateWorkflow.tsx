@@ -183,14 +183,18 @@ export default function AnnualUpdateWorkflow({ open, onOpenChange, companies }: 
         || company.contact_full_name
         || null;
 
-      const { error: invokeError } = await supabase.functions.invoke("send-review-reminder", {
+      const { error: invokeError } = await supabase.functions.invoke("send-transactional-email", {
         body: {
-          contactName,
-          contactEmail: email,
-          entityName: company.name,
-          reviewYear,
-          reviewUrl,
-          expiresAt: expiresAt.toISOString(),
+          templateName: "review-reminder",
+          recipientEmail: email,
+          idempotencyKey: `review-reminder-${company.id}-${reviewYear}-${token}`,
+          templateData: {
+            contactName,
+            entityName: company.name,
+            reviewYear,
+            reviewUrl,
+            expiresAt: expiresAt.toISOString(),
+          },
         },
       });
       if (invokeError) throw invokeError;

@@ -171,14 +171,18 @@ export default function AnnualReviewLinkGenerator({
     if (!selectedCompany || !generatedLink) return;
     setSending(true);
     try {
-      const { data, error } = await supabase.functions.invoke("send-review-reminder", {
+      const { data, error } = await supabase.functions.invoke("send-transactional-email", {
         body: {
-          contactName: salutation,
-          contactEmail: selectedCompany.contact_email,
-          entityName: selectedCompany.name,
-          reviewYear,
-          reviewUrl: generatedLink,
-          expiresAt: expiryDate.toISOString(),
+          templateName: "review-reminder",
+          recipientEmail: selectedCompany.contact_email,
+          idempotencyKey: `review-reminder-${selectedCompany.id}-${reviewYear}-${Date.now()}`,
+          templateData: {
+            contactName: salutation,
+            entityName: selectedCompany.name,
+            reviewYear,
+            reviewUrl: generatedLink,
+            expiresAt: expiryDate.toISOString(),
+          },
         },
       });
       if (error) throw error;
