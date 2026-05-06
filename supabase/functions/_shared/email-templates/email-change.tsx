@@ -86,7 +86,6 @@ const button = {
   color: '#ffffff',
   fontSize: '14px',
   borderRadius: '6px', padding: '14px 32px', fontWeight: 600 as const,
-  padding: '12px 20px',
   textDecoration: 'none',
 }
 const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
