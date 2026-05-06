@@ -27,6 +27,7 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 const AnnualReviewPublic = lazy(() => import("@/pages/AnnualReviewPublic"));
 const PendingReviews = lazy(() => import("@/pages/PendingReviews"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
+const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
 const PromissoryNote = lazy(() => import("@/pages/PromissoryNote"));
 const V2Layout = lazy(() => import("@/pages/v2/V2Layout"));
 const DashboardV2 = lazy(() => import("@/pages/v2/DashboardV2"));
@@ -55,6 +56,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route
               path="/"
               element={
