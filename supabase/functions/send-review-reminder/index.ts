@@ -140,7 +140,11 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "EntityIQ <onboarding@resend.dev>",
+        // IMPORTANT: onboarding@resend.dev only delivers to Resend account owner email.
+        // Set RESEND_FROM_EMAIL env var to a verified custom domain sender
+        // (e.g. 'EntityIQ <noreply@klecknerlaw.com>') in Supabase project settings
+        // to send to actual client emails.
+        from: Deno.env.get("RESEND_FROM_EMAIL") || "EntityIQ <onboarding@resend.dev>",
         reply_to: "mike@klecknerlaw.com",
         to: [contactEmail],
         subject: `Action Required: ${reviewYear} Annual Review — ${entityName}`,
