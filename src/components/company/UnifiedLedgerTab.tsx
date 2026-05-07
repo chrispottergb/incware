@@ -298,12 +298,15 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
     const cert = certNum ? certificates.find((c: any) => c.certificate_number === certNum) :
                  t.certificate_id ? certificates.find((c: any) => c.id === t.certificate_id) : null;
     if (!cert && !certNum) { toast.error("No certificate linked."); return; }
-    // Live calc fallback for legacy certs without an issuance snapshot.
+    // Live ownership %: this holder's total active units / company's total active units.
+    const holderName = (t.shareholders?.name || t.to_shareholder || "").toLowerCase().trim();
     const liveOwnershipPercent = (() => {
-      const totalUnits = certificates
-        .filter((c: any) => c.status === "active")
-        .reduce((s: number, c: any) => s + (c.num_shares || 0), 0);
-      return t.num_shares && totalUnits ? (t.num_shares / totalUnits) * 100 : null;
+      const active = certificates.filter((c: any) => c.status === "active");
+      const totalUnits = active.reduce((s: number, c: any) => s + Number(c.num_shares || 0), 0);
+      const holderUnits = active
+        .filter((c: any) => ((c.shareholders?.name || c.holder_name || "")).toLowerCase().trim() === holderName)
+        .reduce((s: number, c: any) => s + Number(c.num_shares || 0), 0);
+      return totalUnits ? (holderUnits / totalUnits) * 100 : null;
     })();
     await downloadStockCertificatePdf({
       companyName: company?.name || "",
@@ -316,7 +319,8 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
       issueDate: t.transaction_date || new Date().toISOString().split("T")[0],
       authorizedShares: company?.authorized_shares,
       isLLC: true,
-      ownershipPercentSnapshot: (cert as any)?.ownership_percent_snapshot ?? null,
+      // For LLCs, prefer current ownership over a possibly-stale issuance snapshot.
+      ownershipPercentSnapshot: null,
       liveOwnershipPercent,
     });
   };
