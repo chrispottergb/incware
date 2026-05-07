@@ -311,6 +311,65 @@ function openPdfViewerTab(blobUrl: string, filename: string): boolean {
 }
 
 /**
+ * Render the generated PDF in a hidden same-origin iframe and trigger the
+ * browser's native print dialog. Works inside the Lovable preview iframe
+ * (no popup blocker), unlike window.open. Returns false if anything fails
+ * so the caller can fall back to a download.
+ */
+export async function printPdfInIframe(doc: jsPDF): Promise<boolean> {
+  try {
+    try { (doc as any).autoPrint?.(); } catch {}
+    const blob: Blob = doc.output("blob");
+    if (!(blob instanceof Blob) || blob.size === 0) return false;
+    const url = URL.createObjectURL(blob);
+
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText =
+      "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;";
+    iframe.src = url;
+
+    let cleaned = false;
+    const cleanup = () => {
+      if (cleaned) return;
+      cleaned = true;
+      try { URL.revokeObjectURL(url); } catch {}
+      try { iframe.remove(); } catch {}
+    };
+
+    iframe.onload = () => {
+      try {
+        const win = iframe.contentWindow;
+        if (!win) { cleanup(); return; }
+        try {
+          win.addEventListener("afterprint", () => setTimeout(cleanup, 1000));
+        } catch {}
+        setTimeout(() => {
+          try {
+            win.focus();
+            win.print();
+          } catch (err) {
+            console.warn("iframe print failed:", err);
+            cleanup();
+          }
+        }, 200);
+        // Safety cleanup after 5 minutes
+        setTimeout(cleanup, 5 * 60 * 1000);
+      } catch (err) {
+        console.warn("iframe onload error:", err);
+        cleanup();
+      }
+    };
+
+    document.body.appendChild(iframe);
+    toast.success("Opening print dialog…");
+    return true;
+  } catch (err) {
+    console.warn("printPdfInIframe failed:", err);
+    return false;
+  }
+}
+
+/**
  * Open the generated PDF in the browser's native print preview.
  * jsPDF's autoPrint embeds an OpenAction so the print dialog appears
  * automatically when the PDF loads in a new tab.

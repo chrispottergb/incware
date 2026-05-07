@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as pdfjsLib from "pdfjs-dist";
-import { savePdfReliably } from "./pdf-save";
+import { savePdfReliably, printPdfInIframe } from "./pdf-save";
 import { registerArialFont } from "@/lib/arial-font";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -277,5 +277,6 @@ export async function previewSectionPdf(config: SectionPdfConfig) {
 export async function printSectionPdf(config: SectionPdfConfig) {
   const doc = generateSectionPdf(config);
   const filename = `${config.title.replace(/\s+/g, "_")}.pdf`;
-  await savePdfReliably(doc, filename);
+  const ok = await printPdfInIframe(doc);
+  if (!ok) await savePdfReliably(doc, filename);
 }

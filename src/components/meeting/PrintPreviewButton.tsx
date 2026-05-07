@@ -10,7 +10,7 @@ import { Printer, Eye, Download, Loader2, ChevronLeft, ChevronRight } from "luci
 import jsPDF from "jspdf";
 import { toast } from "sonner";
 import * as pdfjsLib from "pdfjs-dist";
-import { savePdfReliably } from "@/lib/pdf-save";
+import { savePdfReliably, printPdfInIframe } from "@/lib/pdf-save";
 
 // Use bundled worker via Vite's ?url import for reliable loading
 import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -208,42 +208,24 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     }
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     try {
-      
       const doc = generatePDF();
       if (!doc) {
         console.warn("[PDF Print] generatePDF returned null/falsy — aborting.");
         return;
       }
-      
       const blob = doc.output("blob");
       if (!blob || blob.size === 0) {
         console.error("[PDF Print] Generated PDF blob is empty.");
         toast.error("PDF generation produced an empty document.");
         return;
       }
-      
 
-      if (isEmbeddedPreview) {
-        const opened = openPdfInNewTab(blob);
-        if (!opened) {
-          downloadBlob(blob, fileName);
-          toast.info("Popup blocked. PDF downloaded instead.");
-          return;
-        }
-        toast.info("PDF opened — use Ctrl+P / ⌘+P to print from your PDF viewer.");
-        return;
+      const ok = await printPdfInIframe(doc);
+      if (!ok) {
+        await savePdfReliably(doc, fileName);
       }
-
-      const opened = openPdfInNewTab(blob);
-      if (!opened) {
-        downloadBlob(blob, fileName);
-        toast.info("Popup blocked. PDF downloaded instead.");
-        return;
-      }
-
-      toast.info("PDF opened — use Ctrl+P / ⌘+P to print from your PDF viewer.");
     } catch (err: any) {
       console.error("PDF print error:", err);
       toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
