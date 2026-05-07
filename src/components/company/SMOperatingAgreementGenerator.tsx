@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner";
 import {
   FileText, Download, Eye, Loader2, Printer, Copy, Check, Share2,
-  Sparkles, ChevronDown, History, RotateCcw, FileDown,
+  Sparkles, ChevronDown, History, RotateCcw, FileDown, Upload,
 } from "lucide-react";
 import {
   generateSMOperatingAgreementPDF,
