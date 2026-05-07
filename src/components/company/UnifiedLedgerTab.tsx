@@ -353,7 +353,7 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
         <div className="flex items-center gap-1">
           <SectionPdfActions config={{
             title: "Unified Membership Ledger",
-            companyName: "",
+            companyName: company?.name || "",
             statuteRef: "Unified ledger — Wis. Stat. Ch. 183 — Permanent record, entries cannot be edited or deleted",
             landscape: true,
             table: {
