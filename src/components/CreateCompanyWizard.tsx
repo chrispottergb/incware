@@ -24,6 +24,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Plus, Trash2, ArrowRight, ArrowLeft, CheckCircle2, Building2, Users, AlertTriangle, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import TaxReturnUpload from "@/components/TaxReturnUpload";
+import OperatingAgreementUpload, { type OAExtracted } from "@/components/OperatingAgreementUpload";
 import { Upload } from "lucide-react";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { getNextCertificateNumber, validateIssuanceLimit } from "@/lib/transaction-validation";
