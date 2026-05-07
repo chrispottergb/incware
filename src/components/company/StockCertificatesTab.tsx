@@ -61,9 +61,42 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
     enabled: !!companyId,
   });
 
+  // Total units actually issued by certificates (used for cert-table % column).
   const totalActiveUnits = certificates
     .filter((c: any) => c.status === "active")
     .reduce((sum: number, c: any) => sum + (c.num_shares || 0), 0);
+
+  // Authoritative entity-wide total units from share_transactions (matches Members tab).
+  // This is the correct denominator for Membership Interest %, even before any
+  // certificates have been issued.
+  const { data: entityTotalUnits = 0 } = useQuery({
+    queryKey: ["entity-total-units", companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("share_transactions")
+        .select("transaction_type, num_shares, status")
+        .eq("company_id", companyId);
+      if (error) throw error;
+      const ISS = new Set([
+        "issuance","Issuance","initial_issuance","initial_contribution",
+        "Initial Contribution","Capital Contribution","capital_contribution",
+        "membership_issuance","opening_balance","reissuance",
+      ]);
+      const RED = new Set([
+        "redemption","Redemption","cancellation","Cancellation",
+        "Return of Capital","return_of_capital",
+      ]);
+      let total = 0;
+      for (const r of (data ?? []) as any[]) {
+        if (r.status === "corrected") continue;
+        const n = Number(r.num_shares || 0);
+        if (ISS.has(r.transaction_type)) total += n;
+        else if (RED.has(r.transaction_type)) total -= n;
+      }
+      return total;
+    },
+  });
 
   const [form, setForm] = useState({
     certificate_number: "",
@@ -289,19 +322,17 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                       <Input
                         className="h-8 text-sm bg-muted"
                         readOnly
-                        value={
-                           form.num_shares
-                             ? `${(
-                                 (parseFloat(form.num_shares) /
-                                   (totalActiveUnits -
-                                     (editId
-                                       ? certificates.find((c: any) => c.id === editId)?.num_shares || 0
-                                       : 0) +
-                                     (parseFloat(form.num_shares) || 0))) *
-                                 100
-                               ).toFixed(2)}%`
-                            : "—"
-                        }
+                        value={(() => {
+                          const n = parseFloat(form.num_shares);
+                          if (!n) return "—";
+                          // Denominator: authoritative entity total from share_transactions.
+                          // Fallback to certificate-derived total if no transactions exist yet.
+                          const base = entityTotalUnits || totalActiveUnits;
+                          // If this cert's units exceed what's recorded in transactions
+                          // (e.g. issuing a new tranche), expand the denominator.
+                          const denom = Math.max(base, n);
+                          return `${((n / denom) * 100).toFixed(2)}%`;
+                        })()}
                       />
                     </div>
                   )}
