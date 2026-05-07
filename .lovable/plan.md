@@ -1,24 +1,28 @@
-## Problem (verified)
+## Goal
 
-Members table shows Andy 60% / Christopher 40%, but the membership-interest unit certificate PDF prints the wrong %.
+Whenever the user clicks any **Print** button in the app (forms, certificates, ledgers, meetings, agreements, etc.), the browser's native **print preview** should appear instead of just downloading the PDF.
 
-Two bugs in the certificate PDF data flow:
+## Approach
 
-1. **Stale snapshot**: `stock_certificates.ownership_percent_snapshot` is captured at issuance via `recalculate_ownership_percentages`. Andy's cert was snapshotted as 100% when he was the only member; adding Christopher never re-snapshotted Andy's cert. The PDF then preferred this stale snapshot (`ownershipPercentSnapshot ?? liveOwnershipPercent`).
+All 40+ Print/Save call sites already funnel through one helper: `savePdfReliably(doc, filename)` in `src/lib/pdf-save.ts`. Changing that single function gives uniform print-preview behaviour everywhere with **zero changes** at call sites.
 
-2. **Wrong live fallback**: in both `UnifiedLedgerTab.handlePrintCertificate` and `StockLedgerTab.handlePrintCertificate`, the live % is computed as `t.num_shares / totalUnits`, i.e. *this single transaction's units* over the company total — not the holder's aggregate units. For a single-cert holder this happens to be right, but it bypasses the holder concept entirely and any later edits are wrong.
+## Change
 
-## Fix
+In `src/lib/pdf-save.ts`, replace `savePdfReliably` with this flow:
 
-In both `UnifiedLedgerTab.tsx` (~line 296) and `StockLedgerTab.tsx` (~line 595) `handlePrintCertificate`:
+1. Call `doc.autoPrint()` — jsPDF embeds a `/OpenAction` so the browser's PDF viewer auto-opens the print dialog when the file loads.
+2. `window.open(blobUrl, "_blank")` to show the browser's built-in PDF preview UI (Chrome, Edge, Safari, Firefox all support this). With `autoPrint` set, the print dialog appears automatically inside that preview.
+3. Fallback A — popup blocked: trigger a direct download (with a toast telling the user to open the file to print).
+4. Fallback B — download blocked: keep the existing helper tab (`openPdfViewerTab`) as a last resort.
 
-- Compute `liveOwnershipPercent` as: holder's total active units across all their certificates / company's total active units.
-- For LLCs, pass `ownershipPercentSnapshot: null` so the PDF uses the live current ownership (matches Members tab and the freshly-fixed Unified Ledger).
-- For corporations, keep the existing snapshot/live fallback unchanged (snapshots are a legal record at issuance for stock certificates).
-
-Optional follow-up (not in this change): backfill / clear stale `ownership_percent_snapshot` for existing LLC certs.
+The existing `openPdfViewerTab` helper and its modal stay in place as the final fallback. No call sites change.
 
 ## Files
 
-- `src/components/company/UnifiedLedgerTab.tsx`
-- `src/components/company/StockLedgerTab.tsx`
+- `src/lib/pdf-save.ts` — rewrite the body of `savePdfReliably` (keep signature and helper tab fallback).
+
+## Notes
+
+- jsPDF's `autoPrint()` is supported in jsPDF v2+ which this project uses.
+- The Lovable preview iframe blocks `window.open` to `about:blank` but allows blob URLs in a new tab on a real user-gesture click. If the popup is blocked the user falls cleanly to the download path with a toast.
+- No DB or schema changes.
