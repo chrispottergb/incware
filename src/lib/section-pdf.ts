@@ -108,9 +108,7 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
   registerArialFont(doc);
   doc.setLineHeightFactor(1.15);
   const m = getMargins(isLandscape);
-  const subtitle = [config.companyName, config.statuteRef].filter(Boolean).join(" — ");
-
-  addHeader(doc, config.title, subtitle, isLandscape);
+  addHeader(doc, config.title, config.companyName || "", config.statuteRef, isLandscape);
 
   // startY after header — matches the lineY + some padding
   const headerLineY = config.statuteRef
