@@ -277,5 +277,6 @@ export async function previewSectionPdf(config: SectionPdfConfig) {
 export async function printSectionPdf(config: SectionPdfConfig) {
   const doc = generateSectionPdf(config);
   const filename = `${config.title.replace(/\s+/g, "_")}.pdf`;
-  await savePdfReliably(doc, filename);
+  const ok = await printPdfInIframe(doc);
+  if (!ok) await savePdfReliably(doc, filename);
 }
