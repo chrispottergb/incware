@@ -34,6 +34,8 @@ import {
   PenTool,
   Lightbulb,
   ShieldCheck,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { isLLCType } from "@/lib/entity-terminology";
 import ResourcesPanel from "@/components/ResourcesPanel";
@@ -54,6 +56,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("entityiq-sidebar-collapsed") === "1";
+  });
+  const toggleDesktopSidebar = () => {
+    setDesktopCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("entityiq-sidebar-collapsed", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
   const [companySearch, setCompanySearch] = useState("");
 
   const [companiesOpen, setCompaniesOpen] = useState(false);
@@ -163,9 +176,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </a>
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-col bg-sidebar text-sidebar-foreground transition-transform md:static md:translate-x-0 ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-40 flex flex-col bg-sidebar text-sidebar-foreground transition-all duration-200 md:static ${
+          mobileOpen ? "translate-x-0 w-60" : "-translate-x-full w-60"
+        } ${desktopCollapsed ? "md:w-0 md:overflow-hidden md:border-0" : "md:w-60 md:translate-x-0"}`}
       >
         <div className="flex h-14 items-center border-b border-sidebar-border px-4">
           <img src={logoEntityIQ} alt="EntityIQ" className="h-7" />
@@ -448,6 +461,16 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
           >
             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden md:inline-flex h-8 w-8"
+            onClick={toggleDesktopSidebar}
+            aria-label={desktopCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={desktopCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {desktopCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
           </Button>
           <div className="flex-1" />
           <span className="text-xs text-muted-foreground hidden sm:inline">
