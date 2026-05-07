@@ -1731,6 +1731,20 @@ export default function StockLedgerTab({
         companyId={companyId}
         entryNum={correctionEntryNum}
       />
+
+      <EditTransactionModal
+        open={!!editTarget}
+        onOpenChange={(o) => {
+          if (!o) {
+            setEditTarget(null);
+            setEditEntryNum(undefined);
+          }
+        }}
+        transaction={editTarget}
+        companyId={companyId}
+        entityType={entityType}
+        entryNum={editEntryNum}
+      />
     </Card>
   );
 }
