@@ -56,6 +56,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("entityiq-sidebar-collapsed") === "1";
+  });
+  const toggleDesktopSidebar = () => {
+    setDesktopCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("entityiq-sidebar-collapsed", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
   const [companySearch, setCompanySearch] = useState("");
 
   const [companiesOpen, setCompaniesOpen] = useState(false);
