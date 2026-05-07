@@ -11,10 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, BookOpen, Link2, Lock, Trash2, FileText, Award, RotateCcw, History } from "lucide-react";
+import { Plus, Loader2, BookOpen, Link2, Lock, Trash2, FileText, Award, RotateCcw, History, Pencil } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import CorrectionModal from "./CorrectionModal";
+import EditTransactionModal from "./EditTransactionModal";
 import AdminDeleteButton from "./AdminDeleteButton";
+import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
