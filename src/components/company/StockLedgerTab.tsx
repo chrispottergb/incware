@@ -11,10 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, BookOpen, Link2, Lock, Trash2, FileText, Award, RotateCcw, History } from "lucide-react";
+import { Plus, Loader2, BookOpen, Link2, Lock, Trash2, FileText, Award, RotateCcw, History, Pencil } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import CorrectionModal from "./CorrectionModal";
+import EditTransactionModal from "./EditTransactionModal";
 import AdminDeleteButton from "./AdminDeleteButton";
+import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
@@ -159,6 +161,9 @@ export default function StockLedgerTab({
   const [newShareholderName, setNewShareholderName] = useState("");
   const [correctionTarget, setCorrectionTarget] = useState<any>(null);
   const [correctionEntryNum, setCorrectionEntryNum] = useState<number | undefined>();
+  const [editTarget, setEditTarget] = useState<any>(null);
+  const [editEntryNum, setEditEntryNum] = useState<number | undefined>();
+  const { isAdmin } = useUserRole();
   const transactionTypes = TRANSACTION_TYPES_BY_ENTITY[entityType] || DEFAULT_TRANSACTION_TYPES;
   const term = getTerminology(entityType);
 
@@ -1642,6 +1647,20 @@ export default function StockLedgerTab({
                                   <RotateCcw className="h-3 w-3 text-muted-foreground hover:text-foreground" />
                                 </Button>
                               )}
+                              {isAdmin && txStatus === "active" && !isCorrection && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  title="Edit (admin: overwrites record)"
+                                  onClick={() => {
+                                    setEditTarget(t);
+                                    setEditEntryNum(entryNumMap.get(t.id));
+                                  }}
+                                >
+                                  <Pencil className="h-3 w-3 text-amber-500 hover:text-amber-600" />
+                                </Button>
+                              )}
                               <AdminDeleteButton transaction={t} companyId={companyId} />
                               {t.bill_of_sale_id && (
                                 <Button
@@ -1711,6 +1730,20 @@ export default function StockLedgerTab({
         transaction={correctionTarget}
         companyId={companyId}
         entryNum={correctionEntryNum}
+      />
+
+      <EditTransactionModal
+        open={!!editTarget}
+        onOpenChange={(o) => {
+          if (!o) {
+            setEditTarget(null);
+            setEditEntryNum(undefined);
+          }
+        }}
+        transaction={editTarget}
+        companyId={companyId}
+        entityType={entityType}
+        entryNum={editEntryNum}
       />
     </Card>
   );
