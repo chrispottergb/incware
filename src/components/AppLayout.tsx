@@ -34,6 +34,8 @@ import {
   PenTool,
   Lightbulb,
   ShieldCheck,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { isLLCType } from "@/lib/entity-terminology";
 import ResourcesPanel from "@/components/ResourcesPanel";

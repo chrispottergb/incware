@@ -1,28 +1,24 @@
 ## Goal
 
-Whenever the user clicks any **Print** button in the app (forms, certificates, ledgers, meetings, agreements, etc.), the browser's native **print preview** should appear instead of just downloading the PDF.
+Add a desktop sidebar collapse toggle so users can hide the left navigation and view the full application width.
 
-## Approach
+## Current state
 
-All 40+ Print/Save call sites already funnel through one helper: `savePdfReliably(doc, filename)` in `src/lib/pdf-save.ts`. Changing that single function gives uniform print-preview behaviour everywhere with **zero changes** at call sites.
+`src/components/AppLayout.tsx` has a fixed-width 240px (`w-60`) sidebar that's always visible on desktop (`md:` breakpoint). It already supports a mobile slide-in via `mobileOpen`, but there's no way to collapse it on desktop.
 
 ## Change
 
-In `src/lib/pdf-save.ts`, replace `savePdfReliably` with this flow:
+In `src/components/AppLayout.tsx`:
 
-1. Call `doc.autoPrint()` — jsPDF embeds a `/OpenAction` so the browser's PDF viewer auto-opens the print dialog when the file loads.
-2. `window.open(blobUrl, "_blank")` to show the browser's built-in PDF preview UI (Chrome, Edge, Safari, Firefox all support this). With `autoPrint` set, the print dialog appears automatically inside that preview.
-3. Fallback A — popup blocked: trigger a direct download (with a toast telling the user to open the file to print).
-4. Fallback B — download blocked: keep the existing helper tab (`openPdfViewerTab`) as a last resort.
+1. Add `desktopCollapsed` state (persisted in `localStorage` as `entityiq-sidebar-collapsed` so the choice survives refresh).
+2. On the `<aside>`, switch width based on collapse state:
+   - Expanded: `md:w-60` (current)
+   - Collapsed: `md:w-0 md:overflow-hidden md:border-0` (fully hidden so main content takes full width)
+3. In the header, add a desktop-only toggle button (chevron-left / panel icon) that calls `toggleDesktopSidebar()`. Keep the existing mobile menu button as-is.
+4. The button stays visible in the header even when sidebar is collapsed, so the user can bring it back.
 
-The existing `openPdfViewerTab` helper and its modal stay in place as the final fallback. No call sites change.
+No other files change. Mobile behavior unchanged.
 
 ## Files
 
-- `src/lib/pdf-save.ts` — rewrite the body of `savePdfReliably` (keep signature and helper tab fallback).
-
-## Notes
-
-- jsPDF's `autoPrint()` is supported in jsPDF v2+ which this project uses.
-- The Lovable preview iframe blocks `window.open` to `about:blank` but allows blob URLs in a new tab on a real user-gesture click. If the popup is blocked the user falls cleanly to the download path with a toast.
-- No DB or schema changes.
+- `src/components/AppLayout.tsx` — add collapse state + toggle button + conditional sidebar width.
