@@ -257,12 +257,10 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
       totalIssuedByDate[d] = running;
     }
   }
-  // Recompute holder balances per entry as a running tally per holder, then
-  // divide by end-of-day totalIssued for that entry's date.
-  const runHolder: Record<string, number> = {};
-  let runTotal = 0;
-  for (const e of entries) {
-    const t = e.raw as any;
+  // Final per-holder balances and final total issued (mirrors Members tab "current ownership")
+  const finalHolder: Record<string, number> = {};
+  let finalTotal = 0;
+  for (const t of sorted) {
     const txType = t.transaction_type || "";
     const isIss = ISSUANCE_TYPES.includes(txType);
     const isRed = REDUCTION_TYPES.includes(txType);
@@ -273,20 +271,26 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
     const transferorName = (t.from_shareholder || "").toLowerCase().trim();
     const n = Number(t.num_shares || 0);
     if (isIss || isReissuance) {
-      runHolder[transfereeName] = (runHolder[transfereeName] || 0) + n;
-      runTotal += n;
+      finalHolder[transfereeName] = (finalHolder[transfereeName] || 0) + n;
+      finalTotal += n;
     } else if (isRed || isCancellation) {
       const k = transferorName || transfereeName;
-      runHolder[k] = (runHolder[k] || 0) - n;
-      runTotal -= n;
+      finalHolder[k] = (finalHolder[k] || 0) - n;
+      finalTotal -= n;
     } else if (isTx) {
-      if (transferorName) runHolder[transferorName] = (runHolder[transferorName] || 0) - n;
-      if (transfereeName) runHolder[transfereeName] = (runHolder[transfereeName] || 0) + n;
+      if (transferorName) finalHolder[transferorName] = (finalHolder[transferorName] || 0) - n;
+      if (transfereeName) finalHolder[transfereeName] = (finalHolder[transfereeName] || 0) + n;
     }
+  }
+  // Each entry's Own. % reflects the holder's CURRENT (final) ownership of the entity,
+  // matching what is shown in the Members tab.
+  for (const e of entries) {
+    const t = e.raw as any;
+    const transfereeName = (t.to_shareholder || t.shareholders?.name || "").toLowerCase().trim();
+    const transferorName = (t.from_shareholder || "").toLowerCase().trim();
     const holderKey = transfereeName || transferorName;
-    const denom = totalIssuedByDate[e.date] ?? runTotal;
-    const bal = Math.max(0, runHolder[holderKey] || 0);
-    e.ownershipPct = denom > 0 ? (bal / denom) * 100 : null;
+    const bal = Math.max(0, finalHolder[holderKey] || 0);
+    e.ownershipPct = finalTotal > 0 ? (bal / finalTotal) * 100 : null;
   }
 
   const handlePrintCertificate = async (t: any) => {

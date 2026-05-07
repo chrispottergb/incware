@@ -1,23 +1,26 @@
-## Remove Agent Type and Phone from Registered Agent UI
+## Problem (verified)
 
-The Registered Agent section in `src/pages/AnnualReviewPublic.tsx` currently renders two fields that don't exist in the schema: Agent Type and Phone. Remove them so only the valid fields display and the submission JSON omits them.
+Queried `share_transactions` for Heritage Holdings:
+- May 5: Andy — 600 units (initial_contribution)
+- May 7: Christopher — 400 units (initial_contribution)
 
-### Changes — `src/pages/AnnualReviewPublic.tsx`
+The Unified Membership Ledger's **Own. %** column computes ownership using a *running* denominator at the moment each row is processed:
+- Row 1 (Andy, May 5): denom = 600 → **100%**
+- Row 2 (Christopher, May 7): denom = 1,000 → **40%**
 
-Remove two lines from the Registered Agent `<Section>` (lines 449–461):
+The Members UI correctly shows **60% / 40%** because it uses the final cumulative total.
 
-- Line 453: `<EditField label="Agent Type" ... />` — delete
-- Line 459: `<EditField label="Phone" ... />` — delete
+My earlier patch only equalized rows that share the same date — these don't, so it had no effect.
 
-Resulting section will render only: Agent Name, Address, Address 2, City, State, ZIP, Email.
+## Fix
 
-### Submission JSON
+In `src/components/company/UnifiedLedgerTab.tsx`, replace the second-pass running-denominator logic with a final-balance computation:
 
-`new_entries.registeredAgent` is built from the `edits.registeredAgent` state object. Once the two inputs are removed, the `type` and `phone` keys will no longer be written by the user. Existing snapshot values for those keys (if any) flow in via `...(snap.registeredAgent || {})` at line 188 — leave that spread alone since it's snapshot pass-through, not new-entry capture. No other code paths reference `registeredAgent.type` or `registeredAgent.phone`.
+1. Walk all `sorted` transactions once to compute `finalHolder[name]` and `finalTotal` (issuances add, redemptions/cancellations subtract, transfers move between holders).
+2. For every entry row, set `e.ownershipPct = (finalHolder[holderKey] / finalTotal) * 100`.
 
-### Not changed
+This makes every row in the Own. % column reflect each member's **current** ownership of the entity — consistent with the Members tab (Andy 60%, Christopher 40%). The SH Bal. column (per-row running balance) is unchanged.
 
-- Snapshot data and snapshot UI rendering
-- Database schema
-- Jotform integration
-- Any other Annual Review sections (the `agent_administrator` field on benefits at line 678 is unrelated and stays)
+## Files changed
+
+- `src/components/company/UnifiedLedgerTab.tsx` — replace lines 260–290 with the final-balance loop.
