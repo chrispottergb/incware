@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner";
 import {
   FileText, Download, Eye, Loader2, Sparkles, Printer, Copy, Check, Share2,
-  ChevronDown, History, RotateCcw, FileDown, ChevronLeft, ChevronRight,
+  ChevronDown, History, RotateCcw, FileDown, ChevronLeft, ChevronRight, Upload,
 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import {
@@ -84,6 +84,8 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
   const [previewPages, setPreviewPages] = useState(0);
   const [previewPage, setPreviewPage] = useState(1);
   const [isRenderingPreview, setIsRenderingPreview] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const previewPdfRef = useRef<any>(null);
@@ -167,6 +169,65 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
       queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId, "Operating Agreement"] });
     } catch (err: any) {
       console.error("Save version error:", err);
+    }
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = "";
+    if (!file) return;
+
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    if (!["pdf", "doc", "docx"].includes(ext)) {
+      toast.error("Only PDF, DOC, or DOCX files are supported");
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("File must be 20 MB or smaller");
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) { toast.error("Please log in first"); return; }
+
+      const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_");
+      const fileName = `${userId}/${safeName}_Operating_Agreement_imported_${Date.now()}.${ext}`;
+      const contentType =
+        file.type ||
+        (ext === "pdf" ? "application/pdf"
+          : ext === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          : "application/msword");
+
+      const { error: upErr } = await supabase.storage
+        .from("generated-documents")
+        .upload(fileName, file, { contentType, upsert: true });
+      if (upErr) throw upErr;
+
+      const { data: signedData } = await supabase.storage
+        .from("generated-documents")
+        .createSignedUrl(fileName, 60 * 60 * 24 * 365);
+
+      const { error: regErr } = await supabase.from("document_registry").insert({
+        company_id: companyId,
+        title: `Operating Agreement (Imported) — ${file.name} — ${new Date().toLocaleDateString()}`,
+        document_category: "corporate",
+        document_type: "Operating Agreement",
+        status: "final",
+        file_name: fileName,
+        file_url: signedData?.signedUrl || null,
+        statute_reference: "Wis. Stat. Ch. 183",
+      });
+      if (regErr) throw regErr;
+
+      queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId, "Operating Agreement"] });
+      toast.success("Operating Agreement imported successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Import failed");
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -471,7 +532,7 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
           {/* Generation Buttons */}
           <div className="flex flex-wrap gap-2">
             <div className="relative group">
-              <Button onClick={handleClientGenerate} disabled={isGenerating || isAiGenerating} variant="outline">
+              <Button onClick={handleClientGenerate} disabled={isGenerating || isAiGenerating || isImporting} variant="outline">
                 {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
                 {isGenerating ? "Generating…" : "Generate Standard"}
               </Button>
@@ -480,7 +541,7 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
               </span>
             </div>
             <div className="relative group">
-              <Button onClick={handleAiGenerate} disabled={isGenerating || isAiGenerating}>
+              <Button onClick={handleAiGenerate} disabled={isGenerating || isAiGenerating || isImporting}>
                 {isAiGenerating ? (
                   <><Loader2 className="h-4 w-4 animate-spin" /> Drafting with AI…</>
                 ) : (
@@ -489,6 +550,26 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
               </Button>
               <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] bg-popover text-popover-foreground border border-border px-2 py-0.5 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                 Customized using AI — takes a moment
+              </span>
+            </div>
+            <div className="relative group">
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx"
+                className="hidden"
+                onChange={handleImportFile}
+              />
+              <Button
+                variant="outline"
+                onClick={() => importInputRef.current?.click()}
+                disabled={isGenerating || isAiGenerating || isImporting}
+              >
+                {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {isImporting ? "Importing…" : "Import Existing"}
+              </Button>
+              <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] bg-popover text-popover-foreground border border-border px-2 py-0.5 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                Upload an existing PDF or Word file
               </span>
             </div>
           </div>
