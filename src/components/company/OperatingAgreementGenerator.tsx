@@ -541,7 +541,7 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
               </span>
             </div>
             <div className="relative group">
-              <Button onClick={handleAiGenerate} disabled={isGenerating || isAiGenerating}>
+              <Button onClick={handleAiGenerate} disabled={isGenerating || isAiGenerating || isImporting}>
                 {isAiGenerating ? (
                   <><Loader2 className="h-4 w-4 animate-spin" /> Drafting with AI…</>
                 ) : (
@@ -550,6 +550,26 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
               </Button>
               <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] bg-popover text-popover-foreground border border-border px-2 py-0.5 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                 Customized using AI — takes a moment
+              </span>
+            </div>
+            <div className="relative group">
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx"
+                className="hidden"
+                onChange={handleImportFile}
+              />
+              <Button
+                variant="outline"
+                onClick={() => importInputRef.current?.click()}
+                disabled={isGenerating || isAiGenerating || isImporting}
+              >
+                {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {isImporting ? "Importing…" : "Import Existing"}
+              </Button>
+              <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] bg-popover text-popover-foreground border border-border px-2 py-0.5 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                Upload an existing PDF or Word file
               </span>
             </div>
           </div>
