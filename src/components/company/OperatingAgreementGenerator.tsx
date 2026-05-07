@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner";
 import {
   FileText, Download, Eye, Loader2, Sparkles, Printer, Copy, Check, Share2,
-  ChevronDown, History, RotateCcw, FileDown, ChevronLeft, ChevronRight,
+  ChevronDown, History, RotateCcw, FileDown, ChevronLeft, ChevronRight, Upload,
 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import {
