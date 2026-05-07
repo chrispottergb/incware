@@ -176,9 +176,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </a>
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-col bg-sidebar text-sidebar-foreground transition-transform md:static md:translate-x-0 ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-40 flex flex-col bg-sidebar text-sidebar-foreground transition-all duration-200 md:static ${
+          mobileOpen ? "translate-x-0 w-60" : "-translate-x-full w-60"
+        } ${desktopCollapsed ? "md:w-0 md:overflow-hidden md:border-0" : "md:w-60 md:translate-x-0"}`}
       >
         <div className="flex h-14 items-center border-b border-sidebar-border px-4">
           <img src={logoEntityIQ} alt="EntityIQ" className="h-7" />
