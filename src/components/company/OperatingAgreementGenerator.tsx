@@ -532,7 +532,7 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
           {/* Generation Buttons */}
           <div className="flex flex-wrap gap-2">
             <div className="relative group">
-              <Button onClick={handleClientGenerate} disabled={isGenerating || isAiGenerating} variant="outline">
+              <Button onClick={handleClientGenerate} disabled={isGenerating || isAiGenerating || isImporting} variant="outline">
                 {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
                 {isGenerating ? "Generating…" : "Generate Standard"}
               </Button>
