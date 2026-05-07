@@ -1647,6 +1647,20 @@ export default function StockLedgerTab({
                                   <RotateCcw className="h-3 w-3 text-muted-foreground hover:text-foreground" />
                                 </Button>
                               )}
+                              {isAdmin && txStatus === "active" && !isCorrection && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  title="Edit (admin: overwrites record)"
+                                  onClick={() => {
+                                    setEditTarget(t);
+                                    setEditEntryNum(entryNumMap.get(t.id));
+                                  }}
+                                >
+                                  <Pencil className="h-3 w-3 text-amber-500 hover:text-amber-600" />
+                                </Button>
+                              )}
                               <AdminDeleteButton transaction={t} companyId={companyId} />
                               {t.bill_of_sale_id && (
                                 <Button
