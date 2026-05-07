@@ -161,6 +161,9 @@ export default function StockLedgerTab({
   const [newShareholderName, setNewShareholderName] = useState("");
   const [correctionTarget, setCorrectionTarget] = useState<any>(null);
   const [correctionEntryNum, setCorrectionEntryNum] = useState<number | undefined>();
+  const [editTarget, setEditTarget] = useState<any>(null);
+  const [editEntryNum, setEditEntryNum] = useState<number | undefined>();
+  const { isAdmin } = useUserRole();
   const transactionTypes = TRANSACTION_TYPES_BY_ENTITY[entityType] || DEFAULT_TRANSACTION_TYPES;
   const term = getTerminology(entityType);
 
