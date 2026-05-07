@@ -169,6 +169,65 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
     }
   };
 
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = "";
+    if (!file) return;
+
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    if (!["pdf", "doc", "docx"].includes(ext)) {
+      toast.error("Only PDF, DOC, or DOCX files are supported");
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("File must be 20 MB or smaller");
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) { toast.error("Please log in first"); return; }
+
+      const safeName = (formCompanyName || companyName).replace(/[^a-zA-Z0-9]/g, "_") || "SMLLC";
+      const fileName = `${userId}/${safeName}_SM_Operating_Agreement_imported_${Date.now()}.${ext}`;
+      const contentType =
+        file.type ||
+        (ext === "pdf" ? "application/pdf"
+          : ext === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          : "application/msword");
+
+      const { error: upErr } = await supabase.storage
+        .from("generated-documents")
+        .upload(fileName, file, { contentType, upsert: true });
+      if (upErr) throw upErr;
+
+      const { data: signedData } = await supabase.storage
+        .from("generated-documents")
+        .createSignedUrl(fileName, 60 * 60 * 24 * 365);
+
+      const { error: regErr } = await supabase.from("document_registry").insert({
+        company_id: companyId,
+        title: `SM Operating Agreement (Imported) — ${file.name} — ${new Date().toLocaleDateString()}`,
+        document_category: "corporate",
+        document_type: "Sole Member Operating Agreement",
+        status: "final",
+        file_name: fileName,
+        file_url: signedData?.signedUrl || null,
+        statute_reference: "Wis. Stat. Ch. 183",
+      });
+      if (regErr) throw regErr;
+
+      queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId, "Sole Member Operating Agreement"] });
+      toast.success("Operating Agreement imported successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Import failed");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
