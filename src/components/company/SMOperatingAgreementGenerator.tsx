@@ -515,16 +515,31 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
 
           {/* Generate Buttons */}
           <div className="flex flex-wrap gap-2">
-            <Button onClick={handleGenerate} disabled={isGenerating || isAiGenerating} variant="outline">
+            <Button onClick={handleGenerate} disabled={isGenerating || isAiGenerating || isImporting} variant="outline">
               {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
               Generate Standard
             </Button>
-            <Button onClick={handleAiGenerate} disabled={isGenerating || isAiGenerating}>
+            <Button onClick={handleAiGenerate} disabled={isGenerating || isAiGenerating || isImporting}>
               {isAiGenerating ? (
                 <><Loader2 className="h-4 w-4 animate-spin" /> Drafting with AI…</>
               ) : (
                 <><Sparkles className="h-4 w-4" /> AI-Assisted Draft</>
               )}
+            </Button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx"
+              className="hidden"
+              onChange={handleImportFile}
+            />
+            <Button
+              variant="outline"
+              onClick={() => importInputRef.current?.click()}
+              disabled={isGenerating || isAiGenerating || isImporting}
+            >
+              {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {isImporting ? "Importing…" : "Import Existing"}
             </Button>
           </div>
 
