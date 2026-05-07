@@ -322,19 +322,17 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                       <Input
                         className="h-8 text-sm bg-muted"
                         readOnly
-                        value={
-                           form.num_shares
-                             ? `${(
-                                 (parseFloat(form.num_shares) /
-                                   (totalActiveUnits -
-                                     (editId
-                                       ? certificates.find((c: any) => c.id === editId)?.num_shares || 0
-                                       : 0) +
-                                     (parseFloat(form.num_shares) || 0))) *
-                                 100
-                               ).toFixed(2)}%`
-                            : "—"
-                        }
+                        value={(() => {
+                          const n = parseFloat(form.num_shares);
+                          if (!n) return "—";
+                          // Denominator: authoritative entity total from share_transactions.
+                          // Fallback to certificate-derived total if no transactions exist yet.
+                          const base = entityTotalUnits || totalActiveUnits;
+                          // If this cert's units exceed what's recorded in transactions
+                          // (e.g. issuing a new tranche), expand the denominator.
+                          const denom = Math.max(base, n);
+                          return `${((n / denom) * 100).toFixed(2)}%`;
+                        })()}
                       />
                     </div>
                   )}
