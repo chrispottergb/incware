@@ -50,6 +50,8 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   const [pendingDownloadType, setPendingDownloadType] = useState<"pdf" | "docx" | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [isAiDraft, setIsAiDraft] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   // Editable form fields
   const [formCompanyName, setFormCompanyName] = useState("");
