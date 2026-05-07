@@ -59,7 +59,7 @@ function addHeader(doc: jsPDF, title: string, companyName: string, statuteRef?: 
 
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
-  const lineY = subtitle ? subtitleY + 4 : titleY + 4;
+  const lineY = statuteRef ? subtitleY + 4 : titleY + 4;
   doc.line(m.left, lineY, pageWidth - m.right, lineY);
 }
 
