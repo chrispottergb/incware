@@ -61,9 +61,42 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
     enabled: !!companyId,
   });
 
+  // Total units actually issued by certificates (used for cert-table % column).
   const totalActiveUnits = certificates
     .filter((c: any) => c.status === "active")
     .reduce((sum: number, c: any) => sum + (c.num_shares || 0), 0);
+
+  // Authoritative entity-wide total units from share_transactions (matches Members tab).
+  // This is the correct denominator for Membership Interest %, even before any
+  // certificates have been issued.
+  const { data: entityTotalUnits = 0 } = useQuery({
+    queryKey: ["entity-total-units", companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("share_transactions")
+        .select("transaction_type, num_shares, status")
+        .eq("company_id", companyId);
+      if (error) throw error;
+      const ISS = new Set([
+        "issuance","Issuance","initial_issuance","initial_contribution",
+        "Initial Contribution","Capital Contribution","capital_contribution",
+        "membership_issuance","opening_balance","reissuance",
+      ]);
+      const RED = new Set([
+        "redemption","Redemption","cancellation","Cancellation",
+        "Return of Capital","return_of_capital",
+      ]);
+      let total = 0;
+      for (const r of (data ?? []) as any[]) {
+        if (r.status === "corrected") continue;
+        const n = Number(r.num_shares || 0);
+        if (ISS.has(r.transaction_type)) total += n;
+        else if (RED.has(r.transaction_type)) total -= n;
+      }
+      return total;
+    },
+  });
 
   const [form, setForm] = useState({
     certificate_number: "",
