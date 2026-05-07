@@ -1,37 +1,24 @@
-## Fix: Print buttons don't open print preview
+## Problem
 
-### Root cause
+The Unified Membership Ledger PDF (and every other section PDF generated via `generateSectionPdf`) prints **"EntityIQ"** as the large header brand, with **"Corporate Records Management"** as a subline. The actual company name is buried in a small grey subtitle next to the statute reference. So the document reads as an EntityIQ-branded page rather than a record of the company.
 
-The Print action calls `savePdfReliably`, which uses `window.open(blobUrl, "_blank")`. Inside the Lovable preview iframe this is blocked by the popup blocker, so it falls through to a plain download — exactly the "Popup blocked — PDF downloaded instead" toast you saw. No print dialog ever appears. `autoPrint()` only fires inside a real PDF viewer, so the downloaded file won't auto-print either.
+## Fix
 
-### Fix
+In `src/lib/section-pdf.ts`, change `addHeader` so the **company name** is the primary header line, not the hardcoded `BRAND` constant.
 
-Render the PDF in a hidden same-origin iframe inside the current page and call `print()` on it. Same-origin blob iframes work inside the Lovable preview, so the native print dialog opens reliably with no popup.
+### Specific changes (`src/lib/section-pdf.ts`)
 
-### Changes
+1. Update `generateSectionPdf` to pass `config.companyName` into `addHeader` and stop concatenating it into the grey subtitle.
+2. Update `addHeader(doc, title, companyName, statuteRef, landscape)`:
+   - Big bold line (18pt, dark): **company name** (fallback to `BRAND` only if empty).
+   - Small grey subline (8pt): `BRAND_SUB` ("Corporate Records Management") — keeps the EntityIQ attribution subtle.
+   - Title line (14pt bold): the section title (e.g. "Unified Membership Ledger").
+   - Subtitle line (9pt grey): just the `statuteRef` (e.g. "Unified ledger — Wis. Stat. Ch. 183 …").
+3. Keep the footer `${BRAND} — Confidential` unchanged (small attribution at the bottom).
 
-1. **`src/lib/pdf-save.ts`** — add new helper `printPdfInIframe(doc)`:
-   - Build blob from `doc.output("blob")`.
-   - Append a hidden `<iframe>` with `src = URL.createObjectURL(blob)`.
-   - On `iframe.onload`, call `contentWindow.focus()` then `contentWindow.print()`.
-   - Cleanup on `afterprint` with safety timeout. Returns `false` on error so caller can fall back.
+No callers need to change — every existing `SectionPdfActions` / `downloadSectionPdf` / `printSectionPdf` invocation already passes `companyName`.
 
-2. **`src/lib/section-pdf.ts`** — `printSectionPdf` calls `printPdfInIframe`; on failure, falls back to existing `savePdfReliably` (download).
+## Verification
 
-3. **`src/components/meeting/PrintPreviewButton.tsx`** — `handlePrint` uses `printPdfInIframe` with the same fallback. Download button stays on `savePdfReliably`.
-
-4. **Save your new preference** to user memory: "Always verify changes are complete and functional before reporting them as done."
-
-### Verification (per your new rule)
-
-After edits I will use the browser tool to:
-1. Click Print on a Section PDF (Stock Ledger / Shareholders) and confirm the native browser print dialog opens.
-2. Click Print on a meeting PDF via `PrintPreviewButton` and confirm the same.
-3. Confirm Download and Preview buttons still work unchanged.
-
-Only after those checks pass will I report the fix as done.
-
-### Out of scope
-
-- No PDF content/layout changes.
-- No changes to the Preview overlay or Download flow.
+- Open a company → Unified Membership Ledger → Print/Preview. Confirm the top of the PDF shows the company name large, with the section title and statute reference below it.
+- Spot-check one or two other section PDFs (e.g. Stock Ledger, Officers) to confirm the header reads consistently.

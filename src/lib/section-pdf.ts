@@ -23,7 +23,7 @@ function getMargins(landscape: boolean) {
   };
 }
 
-function addHeader(doc: jsPDF, title: string, subtitle?: string, landscape = false) {
+function addHeader(doc: jsPDF, title: string, companyName: string, statuteRef?: string, landscape = false) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const m = getMargins(landscape);
   const topOffset = m.top;
@@ -33,10 +33,12 @@ function addHeader(doc: jsPDF, title: string, subtitle?: string, landscape = fal
   const titleY = subY + 12;
   const subtitleY = titleY + 7;
 
+  const headline = companyName && companyName.trim().length > 0 ? companyName : BRAND;
+
   doc.setFontSize(18);
   doc.setFont("Arial", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text(BRAND, m.left, brandY);
+  doc.text(headline, m.left, brandY);
 
   doc.setFontSize(8);
   doc.setFont("Arial", "normal");
@@ -48,16 +50,16 @@ function addHeader(doc: jsPDF, title: string, subtitle?: string, landscape = fal
   doc.setTextColor(30, 30, 30);
   doc.text(title, m.left, titleY);
 
-  if (subtitle) {
+  if (statuteRef) {
     doc.setFontSize(9);
     doc.setFont("Arial", "normal");
     doc.setTextColor(100, 100, 100);
-    doc.text(subtitle, m.left, subtitleY);
+    doc.text(statuteRef, m.left, subtitleY);
   }
 
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
-  const lineY = subtitle ? subtitleY + 4 : titleY + 4;
+  const lineY = statuteRef ? subtitleY + 4 : titleY + 4;
   doc.line(m.left, lineY, pageWidth - m.right, lineY);
 }
 
@@ -106,9 +108,7 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
   registerArialFont(doc);
   doc.setLineHeightFactor(1.15);
   const m = getMargins(isLandscape);
-  const subtitle = [config.companyName, config.statuteRef].filter(Boolean).join(" — ");
-
-  addHeader(doc, config.title, subtitle, isLandscape);
+  addHeader(doc, config.title, config.companyName || "", config.statuteRef, isLandscape);
 
   // startY after header — matches the lineY + some padding
   const headerLineY = config.statuteRef
