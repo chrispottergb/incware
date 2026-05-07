@@ -311,46 +311,41 @@ function openPdfViewerTab(blobUrl: string, filename: string): boolean {
 }
 
 /**
- * Reliable PDF save flow for restrictive browser + extension environments.
+ * Open the generated PDF in the browser's native print preview.
+ * jsPDF's autoPrint embeds an OpenAction so the print dialog appears
+ * automatically when the PDF loads in a new tab.
  */
 export async function savePdfReliably(doc: jsPDF, filename: string): Promise<void> {
-  const pdfBlob: Blob = doc.output("blob");
+  try {
+    (doc as any).autoPrint?.();
+  } catch {
+    // Older jsPDF builds may not expose autoPrint; preview still opens.
+  }
 
+  const pdfBlob: Blob = doc.output("blob");
   if (!(pdfBlob instanceof Blob) || pdfBlob.size === 0) {
     toast.error("Failed to generate PDF.");
     return;
   }
 
-  // Try File System Access API first in every context.
-  // This avoids Chrome download blockers because the user chooses the destination file directly.
-  if ("showSaveFilePicker" in window) {
-    try {
-      const handle = await (window as any).showSaveFilePicker({
-        suggestedName: filename,
-        types: [
-          {
-            description: "PDF Document",
-            accept: { "application/pdf": [".pdf"] },
-          },
-        ],
-      });
-      const writable = await handle.createWritable();
-      await writable.write(pdfBlob);
-      await writable.close();
-      toast.success("PDF saved.");
+  const blobUrl = URL.createObjectURL(pdfBlob);
+
+  // 1) Open in a new tab → browser's PDF viewer shows print preview.
+  try {
+    const win = window.open(blobUrl, "_blank", "noopener,noreferrer");
+    if (win) {
+      toast.success("Opening print preview…");
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 5 * 60 * 1000);
       return;
-    } catch (err: any) {
-      if (err?.name === "AbortError") return;
-      console.warn("showSaveFilePicker failed, falling back:", err);
     }
+  } catch (err) {
+    console.warn("Opening PDF in new tab failed:", err);
   }
 
-  // Prefer a direct blob download from the current user gesture.
-  // This avoids the helper tab path that can yield corrupted files in some browsers/viewers.
+  // 2) Popup blocked → direct download from the current user gesture.
   try {
-    const downloadUrl = URL.createObjectURL(pdfBlob);
     const a = document.createElement("a");
-    a.href = downloadUrl;
+    a.href = blobUrl;
     a.download = filename;
     a.rel = "noopener";
     a.style.display = "none";
@@ -358,22 +353,21 @@ export async function savePdfReliably(doc: jsPDF, filename: string): Promise<voi
     a.click();
     setTimeout(() => {
       document.body.removeChild(a);
-      URL.revokeObjectURL(downloadUrl);
+      URL.revokeObjectURL(blobUrl);
     }, 60 * 1000);
-    toast.success("PDF download started.");
+    toast.info("Popup blocked — PDF downloaded instead. Open it to print.");
     return;
   } catch (err) {
     console.warn("Direct blob download failed, falling back:", err);
   }
 
-  // Final fallback: helper tab using a blob URL.
-  const blobUrl = URL.createObjectURL(pdfBlob);
+  // 3) Final fallback: helper tab with explicit download button.
   const opened = openPdfViewerTab(blobUrl, filename);
   if (opened) {
     toast.info("PDF opened in a new tab. Click Download PDF in that tab.");
     setTimeout(() => URL.revokeObjectURL(blobUrl), 5 * 60 * 1000);
   } else {
     URL.revokeObjectURL(blobUrl);
-    toast.error("Download blocked. Please allow downloads/popups and try again.");
+    toast.error("Print blocked. Please allow popups and try again.");
   }
 }
