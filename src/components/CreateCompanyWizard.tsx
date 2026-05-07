@@ -185,7 +185,121 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
     setTimeout(resetAll, 300);
   };
 
-  // Add/update shareholder in list
+  const handleOAImport = async ({ extracted, file }: { extracted: OAExtracted; file: File }) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    if (!userId) { toast.error("Please log in first"); return; }
+
+    const c = extracted.company;
+    const allowedEntityTypes = ["LLC", "LLC-S", "Single Member LLC"];
+    const entityType = allowedEntityTypes.includes(c.entity_type || "")
+      ? c.entity_type!
+      : (extracted.members.length === 1 ? "Single Member LLC" : "LLC");
+
+    // 1. Create the company
+    const { data: newComp, error: compErr } = await supabase
+      .from("companies")
+      .insert({
+        user_id: userId,
+        name: c.name || file.name,
+        entity_type: entityType,
+        state_of_incorporation: c.state_of_incorporation || null,
+        incorporation_date: c.formation_date || null,
+        address: c.address || null,
+        address_2: c.address_2 || null,
+        city: c.city || null,
+        state: c.state || null,
+        zip: c.zip || null,
+        ein: c.ein || null,
+        business_purpose: c.business_purpose || null,
+        fiscal_year_end: c.fiscal_year_end || null,
+        management_type: c.management_type || null,
+        registered_agent_name: c.registered_agent_name || null,
+        registered_agent_address: c.registered_agent_address || null,
+        registered_agent_city: c.registered_agent_city || null,
+        registered_agent_state: c.registered_agent_state || null,
+        registered_agent_zip: c.registered_agent_zip || null,
+      })
+      .select("id")
+      .single();
+    if (compErr) throw compErr;
+    const companyId = newComp.id;
+
+    // 2. Insert members as shareholders + initial share_transactions
+    const initDate = c.formation_date || new Date().toISOString().slice(0, 10);
+    for (const m of extracted.members) {
+      const { data: sh, error: shErr } = await supabase
+        .from("shareholders")
+        .insert({
+          company_id: companyId,
+          name: m.name,
+          address: m.address || null,
+          address_2: m.address_2 || null,
+          city: m.city || null,
+          state: m.state || null,
+          zip: m.zip || null,
+          status: "active",
+        })
+        .select("id")
+        .single();
+      if (shErr) { console.error(shErr); continue; }
+
+      const units = m.units_held ?? m.ownership_pct ?? 0;
+      if (units > 0) {
+        await supabase.from("share_transactions").insert({
+          company_id: companyId,
+          shareholder_id: sh.id,
+          transaction_type: "Initial Contribution",
+          num_shares: units,
+          share_class: "Common",
+          consideration: m.capital_contribution ?? null,
+          consideration_type: "Cash",
+          transaction_date: initDate,
+          effective_date: initDate,
+        } as any);
+      }
+    }
+
+    // 3. Insert managers as directors (for manager-managed LLCs)
+    for (const mgr of extracted.managers || []) {
+      await supabase.from("directors").insert({
+        company_id: companyId,
+        name: mgr.name,
+        added_date: initDate,
+      });
+    }
+
+    // 4. Upload original OA file + register in document_registry
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "pdf";
+      const safeName = (c.name || "company").replace(/[^a-zA-Z0-9]/g, "_");
+      const fileName = `${userId}/${safeName}_Operating_Agreement_imported_${Date.now()}.${ext}`;
+      const contentType = file.type || (ext === "pdf"
+        ? "application/pdf"
+        : "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      await supabase.storage.from("generated-documents").upload(fileName, file, { contentType, upsert: true });
+      const { data: signed } = await supabase.storage
+        .from("generated-documents")
+        .createSignedUrl(fileName, 60 * 60 * 24 * 365);
+      await supabase.from("document_registry").insert({
+        company_id: companyId,
+        title: `Operating Agreement (Imported) — ${file.name} — ${new Date().toLocaleDateString()}`,
+        document_category: "corporate",
+        document_type: "Operating Agreement",
+        status: "final",
+        file_name: fileName,
+        file_url: signed?.signedUrl || null,
+        statute_reference: "Wis. Stat. Ch. 183",
+      });
+    } catch (uploadErr) {
+      console.error("OA file upload failed (non-fatal):", uploadErr);
+    }
+
+    queryClient.invalidateQueries({ queryKey: ["companies"] });
+    toast.success(`Created ${c.name} from operating agreement`);
+    handleClose();
+    navigate(`/company/${companyId}`);
+  };
   const addShareholder = () => {
     if (!editingSh.name.trim() || editingSh.num_shares <= 0) {
       toast.error(`Name and number of ${term.shareUnit.toLowerCase()} are required.`);
