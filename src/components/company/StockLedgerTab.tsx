@@ -611,12 +611,15 @@ export default function StockLedgerTab({
       return;
     }
     const isLLC = isLLCType(entityType);
+    const holderName = (t.shareholders?.[0]?.name || t.shareholder_name || t.to_shareholder || "").toLowerCase().trim();
     const liveOwnershipPercent = (() => {
       if (!isLLC) return null;
-      const totalUnits = certificates
-        .filter((c: any) => c.status === "active")
-        .reduce((sum: number, c: any) => sum + (c.num_shares || 0), 0);
-      return t.num_shares && totalUnits ? (t.num_shares / totalUnits) * 100 : null;
+      const active = certificates.filter((c: any) => c.status === "active");
+      const totalUnits = active.reduce((sum: number, c: any) => sum + Number(c.num_shares || 0), 0);
+      const holderUnits = active
+        .filter((c: any) => ((c.shareholders?.name || c.holder_name || "")).toLowerCase().trim() === holderName)
+        .reduce((sum: number, c: any) => sum + Number(c.num_shares || 0), 0);
+      return totalUnits ? (holderUnits / totalUnits) * 100 : null;
     })();
     await downloadStockCertificatePdf({
       companyName: company?.name || "",
@@ -629,7 +632,8 @@ export default function StockLedgerTab({
       issueDate: t.transaction_date || new Date().toISOString().split("T")[0],
       authorizedShares: company?.authorized_shares,
       isLLC,
-      ownershipPercentSnapshot: (cert as any)?.ownership_percent_snapshot ?? null,
+      // For LLCs, prefer current ownership over a possibly-stale issuance snapshot.
+      ownershipPercentSnapshot: isLLC ? null : ((cert as any)?.ownership_percent_snapshot ?? null),
       liveOwnershipPercent,
     });
   };
