@@ -237,6 +237,58 @@ export default function UnifiedLedgerTab({ companyId, entityType = "LLC", author
     });
   });
 
+  // Second pass: recompute Ownership % using the end-of-day total issued as denominator,
+  // so simultaneous issuances on the same date reflect the final split (e.g. 60/40)
+  // rather than the running total at the moment each row was processed.
+  const totalIssuedByDate: Record<string, number> = {};
+  {
+    let running = 0;
+    for (const t of sorted) {
+      const txType = t.transaction_type || "";
+      const isIss = ISSUANCE_TYPES.includes(txType);
+      const isRed = REDUCTION_TYPES.includes(txType);
+      const isCancellation = txType === "cancellation";
+      const isReissuance = txType === "reissuance";
+      const n = Number(t.num_shares || 0);
+      if (isIss || isReissuance) running += n;
+      else if (isRed || isCancellation) running -= n;
+      // transfers do not change total issued
+      const d = t.transaction_date || "";
+      totalIssuedByDate[d] = running;
+    }
+  }
+  // Recompute holder balances per entry as a running tally per holder, then
+  // divide by end-of-day totalIssued for that entry's date.
+  const runHolder: Record<string, number> = {};
+  let runTotal = 0;
+  for (const e of entries) {
+    const t = e.raw as any;
+    const txType = t.transaction_type || "";
+    const isIss = ISSUANCE_TYPES.includes(txType);
+    const isRed = REDUCTION_TYPES.includes(txType);
+    const isTx = TRANSFER_TYPES.includes(txType);
+    const isCancellation = txType === "cancellation";
+    const isReissuance = txType === "reissuance";
+    const transfereeName = (t.to_shareholder || t.shareholders?.name || "").toLowerCase().trim();
+    const transferorName = (t.from_shareholder || "").toLowerCase().trim();
+    const n = Number(t.num_shares || 0);
+    if (isIss || isReissuance) {
+      runHolder[transfereeName] = (runHolder[transfereeName] || 0) + n;
+      runTotal += n;
+    } else if (isRed || isCancellation) {
+      const k = transferorName || transfereeName;
+      runHolder[k] = (runHolder[k] || 0) - n;
+      runTotal -= n;
+    } else if (isTx) {
+      if (transferorName) runHolder[transferorName] = (runHolder[transferorName] || 0) - n;
+      if (transfereeName) runHolder[transfereeName] = (runHolder[transfereeName] || 0) + n;
+    }
+    const holderKey = transfereeName || transferorName;
+    const denom = totalIssuedByDate[e.date] ?? runTotal;
+    const bal = Math.max(0, runHolder[holderKey] || 0);
+    e.ownershipPct = denom > 0 ? (bal / denom) * 100 : null;
+  }
+
   const handlePrintCertificate = async (t: any) => {
     const certNum = t.issued_certificate_number;
     const cert = certNum ? certificates.find((c: any) => c.certificate_number === certNum) :
