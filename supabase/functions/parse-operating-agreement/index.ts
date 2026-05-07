@@ -119,9 +119,10 @@ Deno.serve(async (req) => {
       ];
     } else if (ext === "docx") {
       // Extract text from DOCX using mammoth
-      const mammoth = await import("https://esm.sh/mammoth@1.8.0");
+      const mammothMod: any = await import("npm:mammoth@1.8.0");
+      const mammoth = mammothMod.default ?? mammothMod;
       const arrayBuf = await file.arrayBuffer();
-      const result = await mammoth.extractRawText({ arrayBuffer: arrayBuf });
+      const result = await mammoth.extractRawText({ buffer: new Uint8Array(arrayBuf) });
       const text = (result.value || "").slice(0, 200_000);
       if (!text.trim()) {
         return new Response(JSON.stringify({ error: "Could not extract text from DOCX" }), {
