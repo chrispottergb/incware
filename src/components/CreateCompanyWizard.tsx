@@ -932,6 +932,15 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
                     </Button>
                   }
                 />
+
+                <OperatingAgreementUpload
+                  onConfirm={handleOAImport}
+                  trigger={
+                    <Button variant="outline" className="w-full" size="sm">
+                      <Upload className="mr-2 h-3.5 w-3.5" /> Import from Operating Agreement
+                    </Button>
+                  }
+                />
               </>
             )}
 
