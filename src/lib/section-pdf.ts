@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as pdfjsLib from "pdfjs-dist";
-import { savePdfReliably } from "./pdf-save";
+import { savePdfReliably, printPdfInIframe } from "./pdf-save";
 import { registerArialFont } from "@/lib/arial-font";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
