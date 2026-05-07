@@ -208,42 +208,24 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     }
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     try {
-      
       const doc = generatePDF();
       if (!doc) {
         console.warn("[PDF Print] generatePDF returned null/falsy — aborting.");
         return;
       }
-      
       const blob = doc.output("blob");
       if (!blob || blob.size === 0) {
         console.error("[PDF Print] Generated PDF blob is empty.");
         toast.error("PDF generation produced an empty document.");
         return;
       }
-      
 
-      if (isEmbeddedPreview) {
-        const opened = openPdfInNewTab(blob);
-        if (!opened) {
-          downloadBlob(blob, fileName);
-          toast.info("Popup blocked. PDF downloaded instead.");
-          return;
-        }
-        toast.info("PDF opened — use Ctrl+P / ⌘+P to print from your PDF viewer.");
-        return;
+      const ok = await printPdfInIframe(doc);
+      if (!ok) {
+        await savePdfReliably(doc, fileName);
       }
-
-      const opened = openPdfInNewTab(blob);
-      if (!opened) {
-        downloadBlob(blob, fileName);
-        toast.info("Popup blocked. PDF downloaded instead.");
-        return;
-      }
-
-      toast.info("PDF opened — use Ctrl+P / ⌘+P to print from your PDF viewer.");
     } catch (err: any) {
       console.error("PDF print error:", err);
       toast.error("Failed to generate PDF: " + (err?.message || "Unknown error"));
