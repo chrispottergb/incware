@@ -84,6 +84,8 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
   const [previewPages, setPreviewPages] = useState(0);
   const [previewPage, setPreviewPage] = useState(1);
   const [isRenderingPreview, setIsRenderingPreview] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const previewPdfRef = useRef<any>(null);
