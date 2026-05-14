@@ -57,6 +57,7 @@ const STATUS_CONFIG: Record<CompensationStatus, { label: string; icon: React.Ele
   above_market: { label: "Above Market", icon: Flag, color: "text-required", badgeVariant: "bg-required text-required border-required" },
   included_in_primary: { label: "Included in Primary", icon: Link2, color: "text-primary", badgeVariant: "bg-blue-100 text-primary border-blue-200" },
   non_compensable: { label: "Non-Compensable", icon: Minus, color: "text-muted-foreground", badgeVariant: "bg-muted text-muted-foreground border-border" },
+  payroll_wages: { label: "Officer Wages (Paid Through Employee Payroll)", icon: Users, color: "text-primary", badgeVariant: "bg-blue-100 text-primary border-blue-200" },
 };
 
 function getDefaultNoteText(
