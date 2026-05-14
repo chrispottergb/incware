@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-type CompensationStatus = "pending_approval" | "reasonable" | "below_market" | "above_market" | "included_in_primary" | "non_compensable";
+type CompensationStatus = "pending_approval" | "reasonable" | "below_market" | "above_market" | "included_in_primary" | "non_compensable" | "payroll_wages";
 type DualRoleType = "primary" | "secondary" | null;
 
 const TITLE_RANK: Record<string, number> = {
