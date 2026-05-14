@@ -399,6 +399,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
     const options: CompensationStatus[] = ["pending_approval", "reasonable", "below_market", "above_market"];
     if (isDualRole(row)) options.push("included_in_primary");
     options.push("non_compensable");
+    options.push("payroll_wages");
     return options;
   };
 
