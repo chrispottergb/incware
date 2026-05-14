@@ -82,6 +82,8 @@ function getDefaultNoteText(
       return `${name} serves as both ${primaryTitle || "[PRIMARY TITLE]"} and ${secondaryTitle || "[SECONDARY TITLE]"} of the corporation. Compensation is reported under the ${primaryTitle || "[PRIMARY TITLE]"} title. The Board determined that no separate compensation is assigned to the ${secondaryTitle || "[SECONDARY TITLE]"} role, as it is fulfilled by the same individual in conjunction with their primary duties.`;
     case "non_compensable":
       return `The Board determined that the ${title} position is held in a limited, non-compensable capacity, as the duties performed do not constitute substantial services under IRC § 1366.`;
+    case "payroll_wages":
+      return `The Board noted that ${name} holds an officer title but is compensated through standard employee payroll for operational services. Wages will be reported as officer compensation on the Company's tax return in accordance with IRS requirements.`;
   }
 }
 
