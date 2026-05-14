@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-type CompensationStatus = "pending_approval" | "reasonable" | "below_market" | "above_market" | "included_in_primary" | "non_compensable";
+type CompensationStatus = "pending_approval" | "reasonable" | "below_market" | "above_market" | "included_in_primary" | "non_compensable" | "payroll_wages";
 type DualRoleType = "primary" | "secondary" | null;
 
 const TITLE_RANK: Record<string, number> = {
@@ -57,6 +57,7 @@ const STATUS_CONFIG: Record<CompensationStatus, { label: string; icon: React.Ele
   above_market: { label: "Above Market", icon: Flag, color: "text-required", badgeVariant: "bg-required text-required border-required" },
   included_in_primary: { label: "Included in Primary", icon: Link2, color: "text-primary", badgeVariant: "bg-blue-100 text-primary border-blue-200" },
   non_compensable: { label: "Non-Compensable", icon: Minus, color: "text-muted-foreground", badgeVariant: "bg-muted text-muted-foreground border-border" },
+  payroll_wages: { label: "Officer Wages (Paid Through Employee Payroll)", icon: Users, color: "text-primary", badgeVariant: "bg-blue-100 text-primary border-blue-200" },
 };
 
 function getDefaultNoteText(
@@ -81,6 +82,8 @@ function getDefaultNoteText(
       return `${name} serves as both ${primaryTitle || "[PRIMARY TITLE]"} and ${secondaryTitle || "[SECONDARY TITLE]"} of the corporation. Compensation is reported under the ${primaryTitle || "[PRIMARY TITLE]"} title. The Board determined that no separate compensation is assigned to the ${secondaryTitle || "[SECONDARY TITLE]"} role, as it is fulfilled by the same individual in conjunction with their primary duties.`;
     case "non_compensable":
       return `The Board determined that the ${title} position is held in a limited, non-compensable capacity, as the duties performed do not constitute substantial services under IRC § 1366.`;
+    case "payroll_wages":
+      return `The Board noted that ${name} holds an officer title but is compensated through standard employee payroll for operational services. Wages will be reported as officer compensation on the Company's tax return in accordance with IRS requirements.`;
   }
 }
 
