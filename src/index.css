@@ -8,15 +8,15 @@
   :root {
     /* entityIQ dark design system — optimized CPA-friendly palette */
     /* Backgrounds (depth structure) */
-    --background: 220 9% 9%;            /* #121417 primary app bg */
-    --workspace: 220 12% 11%;           /* #171A1F panels / main content */
+    --background: 218 18% 13%;          /* #1A1F26 primary app bg */
+    --workspace: 218 16% 15%;           /* #1F242C panels / main content */
     --foreground: 214 9% 91%;           /* #E6E8EB primary text */
 
-    --card: 220 16% 14%;                /* #1E2229 */
+    --card: 218 16% 15%;                /* #1F242C */
     --card-foreground: 214 9% 91%;
     --card-elevated: 218 14% 17%;       /* #252B33 hover/elevated */
 
-    --popover: 220 16% 14%;             /* #1E2229 */
+    --popover: 218 16% 15%;             /* #1F242C */
     --popover-foreground: 214 9% 91%;
 
     /* Brick-red signal accent (no large fills) */
