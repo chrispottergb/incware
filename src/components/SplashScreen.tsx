@@ -39,10 +39,23 @@ function Corner({ pos, color, flipX, flipY }: CornerProps) {
   );
 }
 
+const SPLASH_SEEN_KEY = "eiq_splash_shown";
+
 export default function SplashScreen({ duration = DURATION, onComplete }: SplashScreenProps) {
-  const [phase, setPhase] = useState<"visible" | "exiting" | "done">("visible");
+  const alreadyShown =
+    typeof window !== "undefined" && sessionStorage.getItem(SPLASH_SEEN_KEY) === "1";
+  const [phase, setPhase] = useState<"visible" | "exiting" | "done">(
+    alreadyShown ? "done" : "visible"
+  );
 
   useEffect(() => {
+    if (alreadyShown) {
+      onComplete?.();
+      return;
+    }
+    try {
+      sessionStorage.setItem(SPLASH_SEEN_KEY, "1");
+    } catch {}
     const exitTimer = setTimeout(() => setPhase("exiting"), duration);
     const doneTimer = setTimeout(() => {
       setPhase("done");
@@ -53,7 +66,7 @@ export default function SplashScreen({ duration = DURATION, onComplete }: Splash
       clearTimeout(exitTimer);
       clearTimeout(doneTimer);
     };
-  }, [duration, onComplete]);
+  }, [duration, onComplete, alreadyShown]);
 
   if (phase === "done") return null;
 
