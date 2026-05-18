@@ -12,9 +12,9 @@
     --workspace: 218 16% 15%;           /* #1F242C panels / main content */
     --foreground: 214 9% 91%;           /* #E6E8EB primary text */
 
-    --card: 218 14% 17%;                /* #252B33 */
+    --card: 218 19% 22%;                /* #2E3744 clearly lighter */
     --card-foreground: 214 9% 91%;
-    --card-elevated: 218 14% 17%;       /* #252B33 hover/elevated */
+    --card-elevated: 218 19% 22%;       /* #2E3744 hover/elevated */
 
     --popover: 218 16% 15%;             /* #1F242C */
     --popover-foreground: 214 9% 91%;
