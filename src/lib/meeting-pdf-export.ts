@@ -1105,7 +1105,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     addDFIHeader(doc, `${meeting.meeting_type} — Minutes`, companyName, entityType, meeting, company);
   }
 
-  let y = bt ? 52 : 45;
+  let y = bt ? 52 : (isWrittenConsent ? 22 : 45);
 
   // For Annual Meeting blue theme: use a cleaner title block
   if (bt) {
@@ -1121,7 +1121,30 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     y = addMeetingTypeHeader(doc, y, meeting.meeting_type, companyName, meetingDate, isWrittenConsent, meeting, company, data);
   }
 
+  // Optional Recitals block for Written Consents (rendered before resolutions section)
+  if (isWrittenConsent && meeting.consent_recitals) {
+    const pw = doc.internal.pageSize.getWidth();
+    y = checkPageBreak(doc, y, 20);
+    doc.setFontSize(11);
+    doc.setFont("Arial", "bold");
+    doc.setTextColor(30, 30, 30);
+    doc.text("RECITALS", MARGIN, y);
+    y += 5;
+    doc.setFont("Arial", "normal");
+    const recLines = doc.splitTextToSize(String(meeting.consent_recitals), pw - MARGIN - R_MARGIN);
+    for (const line of recLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5.5;
+    }
+    y += 4;
+  }
+
+  // Skip the "Meeting Information" section entirely for Written Consents
+  // (no meeting occurred — date/location/chairperson are not applicable).
+  if (!isWrittenConsent) {
   y = section("Meeting Information");
+
 
   if (bt) {
     // For blue theme: write introductory paragraph
