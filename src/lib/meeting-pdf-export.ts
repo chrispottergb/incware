@@ -98,42 +98,77 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
   const cx = pw / 2;
 
   if (isWrittenConsent) {
-    // Written Consent Header - compact spacing
+    // Determine the consenting body (board / shareholders / members)
+    const entityTypeLower = (company?.entity_type || "").toLowerCase();
+    const isLLCEntity = entityTypeLower.includes("llc") || entityTypeLower.includes("limited liability");
+    const rawBody = (meeting?.consent_body || "").toString().toLowerCase();
+    const consentBody: "board" | "shareholders" | "members" =
+      rawBody === "shareholders" ? "shareholders"
+        : rawBody === "members" ? "members"
+        : rawBody === "board" ? "board"
+        : (isLLCEntity ? "members" : "board");
+
+    const bodyTitle =
+      consentBody === "shareholders" ? "SHAREHOLDERS"
+        : consentBody === "members" ? "MEMBERS"
+        : "BOARD OF DIRECTORS";
+
+    // Title block (company name appears ONLY here)
     doc.setFontSize(14);
     doc.setFont("Arial", "bold");
     doc.setTextColor(30, 30, 30);
-    doc.text("WRITTEN CONSENT", cx, y, { align: "center" });
-    y += 5;
-    doc.setFontSize(12);
-    doc.text("IN LIEU OF A MEETING", cx, y, { align: "center" });
-    y += 5;
+    doc.text(`WRITTEN CONSENT OF THE ${bodyTitle}`, cx, y, { align: "center" });
+    y += 6;
+    doc.text(`OF ${companyName.toUpperCase()}`, cx, y, { align: "center" });
+    y += 6;
+
+    // Principal office address (single line, only here)
+    const addrLine = meeting?.company_address_at_meeting || company?.address || "";
+    const cityPart = meeting?.company_city_at_meeting || company?.city || "";
+    const statePart = meeting?.company_state_at_meeting || company?.state || "";
+    const zipPart = meeting?.company_zip_at_meeting || company?.zip || "";
+    const addressFull = [addrLine, [cityPart, statePart].filter(Boolean).join(", "), zipPart]
+      .filter(Boolean).join(" • ");
+    if (addressFull) {
+      doc.setFontSize(10);
+      doc.setFont("Arial", "normal");
+      doc.setTextColor(80, 80, 80);
+      doc.text(addressFull, cx, y, { align: "center" });
+      y += 5;
+    }
+
+    // Date
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
-    doc.setTextColor(60, 60, 60);
-    doc.text(`OF THE BOARD OF DIRECTORS / MEMBERS OF`, cx, y, { align: "center" });
-    y += 5;
-    doc.setFont("Arial", "bold");
-    doc.setTextColor(30, 30, 30);
-    doc.text(companyName.toUpperCase(), cx, y, { align: "center" });
-    y += 4;
-    doc.setFont("Arial", "normal");
-    doc.setTextColor(60, 60, 60);
+    doc.setTextColor(40, 40, 40);
     doc.text(`Date: ${meetingDate}`, cx, y, { align: "center" });
     y += 4;
-    // Blue horizontal line beneath header
+
+    // Blue rule
     doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
     doc.setLineWidth(1);
     doc.line(MARGIN, y, pw - R_MARGIN, y);
     y += 6;
-    // Intro paragraph
+
+    // Intro paragraph (varies by consenting body)
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
     doc.setTextColor(30, 30, 30);
-    const purposeText = meeting?.purpose ? ` The purpose of this action is: ${meeting.purpose}.` : "";
-    const introText = `The undersigned, being all of the directors/members of ${companyName}, do hereby consent to and adopt the following resolutions and actions without a formal meeting, pursuant to the applicable provisions of the Wisconsin Statutes.${purposeText}`;
+    let introText: string;
+    if (consentBody === "shareholders") {
+      introText = `The undersigned, being all shareholders holding the required voting power of ${companyName}, hereby adopt the following resolutions by written consent without a meeting, pursuant to applicable law and the corporation's governing documents.`;
+    } else if (consentBody === "members") {
+      introText = `The undersigned, being all Members of ${companyName}, hereby adopt the following resolutions by written consent without a meeting, pursuant to applicable law and the operating agreement.`;
+    } else {
+      introText = `The undersigned, being all members of the Board of Directors of ${companyName}, hereby adopt the following resolutions by written consent without a meeting, pursuant to applicable law and the corporation's bylaws.`;
+    }
+    if (meeting?.purpose && !/^Written Consent($| —)/i.test(String(meeting.purpose))) {
+      introText += ` The purpose of this action is: ${meeting.purpose}.`;
+    }
     const lines = doc.splitTextToSize(introText, pw - MARGIN - R_MARGIN);
     doc.text(lines, MARGIN, y);
     y += lines.length * 5 + 6;
+
   } else {
     // Standard Meeting Type Header - compact spacing
     doc.setFontSize(13);
@@ -1098,9 +1133,14 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     addWaiverOfNoticePages(doc, data);
   }
 
-  addDFIHeader(doc, isWrittenConsent ? "Written Consent" : `${meeting.meeting_type} — Minutes`, companyName, entityType, meeting, company);
+  // For written consents, the title block contains the company name + address
+  // (so we skip the standard DFI page header to avoid duplication). For all
+  // other meeting types, render the DFI header at the top of the document.
+  if (!isWrittenConsent) {
+    addDFIHeader(doc, `${meeting.meeting_type} — Minutes`, companyName, entityType, meeting, company);
+  }
 
-  let y = bt ? 52 : 45;
+  let y = bt ? 52 : (isWrittenConsent ? 22 : 45);
 
   // For Annual Meeting blue theme: use a cleaner title block
   if (bt) {
@@ -1116,7 +1156,30 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     y = addMeetingTypeHeader(doc, y, meeting.meeting_type, companyName, meetingDate, isWrittenConsent, meeting, company, data);
   }
 
+  // Optional Recitals block for Written Consents (rendered before resolutions section)
+  if (isWrittenConsent && meeting.consent_recitals) {
+    const pw = doc.internal.pageSize.getWidth();
+    y = checkPageBreak(doc, y, 20);
+    doc.setFontSize(11);
+    doc.setFont("Arial", "bold");
+    doc.setTextColor(30, 30, 30);
+    doc.text("RECITALS", MARGIN, y);
+    y += 5;
+    doc.setFont("Arial", "normal");
+    const recLines = doc.splitTextToSize(String(meeting.consent_recitals), pw - MARGIN - R_MARGIN);
+    for (const line of recLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5.5;
+    }
+    y += 4;
+  }
+
+  // Skip the "Meeting Information" section entirely for Written Consents
+  // (no meeting occurred — date/location/chairperson are not applicable).
+  if (!isWrittenConsent) {
   y = section("Meeting Information");
+
 
   if (bt) {
     // For blue theme: write introductory paragraph
@@ -1338,6 +1401,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     if (meeting.tax_year) y = addLabelValue(doc, y, "Tax Year", String(meeting.tax_year));
     if (meeting.others_present) y = addLabelValue(doc, y, "Others Present", meeting.others_present);
   }
+  } // end if (!isWrittenConsent) Meeting Information section
 
   // Section 1244 Stock Plan - include in Organizational Meeting if checked (Corp only, not applicable to LLCs)
   if (meeting.meeting_type === "Organizational Meeting" && company?.election_1244 && !isLLC) {
@@ -3219,39 +3283,48 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   doc.setTextColor(80, 80, 80);
 
   if (isWrittenConsent) {
-    // Written Consents: no adjournment language; signatures from governing body
-    const isManagerManaged = company?.management_type?.toLowerCase().includes("manager");
+    // Determine consent body from meeting (defaults: LLC → members, else → board)
+    const rawBody = (meeting?.consent_body || "").toString().toLowerCase();
+    const consentBody: "board" | "shareholders" | "members" =
+      rawBody === "shareholders" ? "shareholders"
+        : rawBody === "members" ? "members"
+        : rawBody === "board" ? "board"
+        : (isLLC ? "members" : "board");
 
-    // Determine signer role label based on entity type
-    let signerRoleLabel: string;
-    if (isLLC) {
-      signerRoleLabel = isManagerManaged ? "Manager" : "Member";
-    } else if (isShareholder) {
-      signerRoleLabel = "Shareholder";
-    } else {
-      signerRoleLabel = "Director";
-    }
+    const signerRoleLabel =
+      consentBody === "shareholders" ? "Shareholder"
+        : consentBody === "members" ? "Member"
+        : "Director";
 
-    // Collect signers: for LLCs use shareholders (members), for shareholder actions use shareholders, otherwise directors
-    const wcSignerNames: string[] = [];
+    // Collect signers from the appropriate source
+    type SignerRow = { name: string; shares?: number; ownership?: number };
+    const wcSigners: SignerRow[] = [];
     const wcSeen = new Set<string>();
-    const wcAddUnique = (name: string) => {
-      const n = name.trim();
+    const wcAddUnique = (row: SignerRow) => {
+      const n = row.name.trim();
       if (!n) return;
       const key = n.toLowerCase().replace(/\s+/g, " ").trim();
       if (wcSeen.has(key)) return;
       wcSeen.add(key);
-      wcSignerNames.push(n);
+      wcSigners.push({ ...row, name: n });
     };
 
-    if (isLLC || isShareholder) {
-      (data.shareholders || []).forEach(s => { if (s.shareholder_name) wcAddUnique(s.shareholder_name); });
+    if (consentBody === "board") {
+      (data.directors || []).forEach(d => { if (d.director_name) wcAddUnique({ name: d.director_name }); });
     } else {
-      (data.directors || []).forEach(d => { if (d.director_name) wcAddUnique(d.director_name); });
+      // shareholders or members — both source from data.shareholders
+      (data.shareholders || []).forEach(s => {
+        if (!s.shareholder_name) return;
+        wcAddUnique({
+          name: s.shareholder_name,
+          shares: Number(s.common_shares ?? 0) || 0,
+          ownership: Number(s.preferred_shares ?? 0) || 0,
+        });
+      });
     }
-    // Fallback: use officers if no signers found
-    if (wcSignerNames.length === 0) {
-      (data.officers || []).forEach(o => { if (o.name) wcAddUnique(o.name); });
+    // Fallback: officers if nothing else
+    if (wcSigners.length === 0) {
+      (data.officers || []).forEach(o => { if (o.name) wcAddUnique({ name: o.name }); });
     }
 
     // Date line
@@ -3261,32 +3334,45 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
       const dateStr = `${days[mtgDate.getDay()]}, ${months[mtgDate.getMonth()]} ${mtgDate.getDate()}, ${mtgDate.getFullYear()}`;
       doc.text(`DATED: ${dateStr}`, MARGIN, y);
-      y += 12;
+      y += 10;
     } else {
       y += 4;
     }
 
-    // Render signature lines for each signer
+    // Signature rows — one line per signer, with body-specific columns
     doc.setFontSize(10);
-    wcSignerNames.forEach(name => {
-      y = checkPageBreak(doc, y, 15);
+    wcSigners.forEach(s => {
+      y = checkPageBreak(doc, y, 16);
       doc.setDrawColor(30, 30, 30);
       doc.setLineWidth(0.3);
-      doc.line(MARGIN, y, MARGIN + 70, y);
-      y += 5;
-      doc.text(`${name}, ${signerRoleLabel}`, MARGIN, y);
+      // Signature line
+      doc.line(MARGIN, y, MARGIN + 90, y);
+      y += 4;
+      let label = `${s.name}, ${signerRoleLabel}`;
+      if (consentBody === "shareholders" && s.shares != null) {
+        label += `  —  Shares Held: ${s.shares.toLocaleString()}`;
+      } else if (consentBody === "members") {
+        if (s.shares && s.shares > 0) label += `  —  Units: ${s.shares.toLocaleString()}`;
+        if (s.ownership && s.ownership > 0) label += `  —  Ownership: ${Number(s.ownership).toFixed(2)}%`;
+      }
+      doc.text(label, MARGIN, y);
+      // "Date: ____" on the right
+      const pw2 = doc.internal.pageSize.getWidth();
+      const dateLineX = pw2 - R_MARGIN - 50;
+      doc.line(dateLineX, y - 4, pw2 - R_MARGIN, y - 4);
+      doc.text("Date", dateLineX, y);
       y += 10;
     });
 
-    // If no signers found, show blank signature lines
-    if (wcSignerNames.length === 0) {
+    // If no signers, render blank line
+    if (wcSigners.length === 0) {
       const pw = doc.internal.pageSize.getWidth();
       const sigLineW = (pw - MARGIN - R_MARGIN - 20) / 2;
       doc.line(MARGIN, y, MARGIN + sigLineW, y);
       doc.text(signerRoleLabel, MARGIN, y + 5);
       const rightX = MARGIN + sigLineW + 20;
       doc.line(rightX, y, rightX + sigLineW, y);
-      doc.text(signerRoleLabel, rightX, y + 5);
+      doc.text("Date", rightX, y + 5);
     }
   } else {
     // Regular meetings: adjournment + Chairperson/Secretary signatures

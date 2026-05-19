@@ -100,7 +100,12 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   );
   const [ownershipThreshold, setOwnershipThreshold] = useState("100");
 
+  // Consent body: who is signing this written consent (Board / Shareholders / Members)
+  type ConsentBody = "board" | "shareholders" | "members";
+  const [consentBody, setConsentBody] = useState<ConsentBody>(isLLC ? "members" : "board");
+
   // Step 3: Resolution
+  const [recitals, setRecitals] = useState("");
   const [resolutionText, setResolutionText] = useState("");
 
   // Promissory Note wizard state
@@ -368,9 +373,17 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     return resolutionOptions.find((r) => r.label === selectedAction);
   }, [selectedAction, resolutionOptions]);
 
-  // Compute signers based on entity type
+  // Compute signers based on entity type and selected consent body
   const signers = useMemo(() => {
     if (isCorp) {
+      if (consentBody === "shareholders") {
+        return shareholders.map((s) => ({
+          name: s.name,
+          role: "Shareholder",
+          id: s.id,
+          ownershipPct: s.ownership_percentage,
+        }));
+      }
       return directors.map((d) => ({
         name: d.name,
         role: t.director,
@@ -402,7 +415,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       }));
     }
     return [];
-  }, [isCorp, isLLC, isSMLLC, managementType, directors, shareholders, t]);
+  }, [isCorp, isLLC, isSMLLC, managementType, consentBody, directors, shareholders, t]);
 
   // Voting statute
   const votingStatute = useMemo(() => {
@@ -448,7 +461,9 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   };
 
   const buildConsentPdfData = useCallback((meetingId: string) => {
-    const shareholderRows = !isCorp
+    // For LLCs, or Corps where shareholders are the consenting body, build shareholder rows
+    const useShareholderRows = !isCorp || consentBody === "shareholders";
+    const shareholderRows = useShareholderRows
       ? signers.map((signer) => {
           const shareholder = shareholders.find((row) => row.id === signer.id);
           const holdings = shareholder ? (shareholderHoldings[shareholder.id] ?? 0) : 0;
@@ -485,15 +500,18 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         company_city_at_meeting: company.city || null,
         company_state_at_meeting: company.state || null,
         company_zip_at_meeting: company.zip || null,
+        // Discriminator for the three written-consent variants
+        consent_body: consentBody,
+        consent_recitals: recitals.trim() || null,
       },
       company,
       resolutions: resolutionText.trim()
         ? [{ purpose: selectedAction || "Written Consent", resolution_text: resolutionText }]
         : [],
-      directors: isCorp ? signers.map((signer) => ({ director_name: signer.name })) : [],
+      directors: !useShareholderRows ? signers.map((signer) => ({ director_name: signer.name })) : [],
       shareholders: shareholderRows,
     };
-  }, [company, effectiveDate, isCorp, resolutionText, selectedAction, shareholders, shareholderHoldings, signers, taxYear, totalIssuedShares]);
+  }, [company, consentBody, recitals, effectiveDate, isCorp, resolutionText, selectedAction, shareholders, shareholderHoldings, signers, taxYear, totalIssuedShares]);
 
   const renderPdfPages = useCallback(async (bytes: ArrayBuffer) => {
     const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
@@ -590,8 +608,10 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       setWizardResolutionId(null);
     }
 
-    // Save signers (delete + re-insert)
-    if (isCorp) {
+    // Save signers (delete + re-insert). Persist into directors table when the
+    // board is the consenting body; otherwise persist as shareholders/members.
+    const persistAsDirectors = isCorp && consentBody === "board";
+    if (persistAsDirectors) {
       const { error: deleteDirectorError } = await supabase
         .from("meeting_directors")
         .delete()
@@ -606,6 +626,8 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         const { error: insertDirectorError } = await supabase.from("meeting_directors").insert(directorRows);
         if (insertDirectorError) throw insertDirectorError;
       }
+      // Also clear any stale shareholder rows from a previous body selection
+      await supabase.from("meeting_shareholders").delete().eq("meeting_id", meetingId);
     } else {
       const { error: deleteShareholderError } = await supabase
         .from("meeting_shareholders")
@@ -634,6 +656,8 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         const { error: insertShareholderError } = await supabase.from("meeting_shareholders").insert(memberRows);
         if (insertShareholderError) throw insertShareholderError;
       }
+      // Clear any stale director rows from a previous body selection
+      await supabase.from("meeting_directors").delete().eq("meeting_id", meetingId);
     }
 
     const metadata = JSON.stringify({
@@ -642,6 +666,8 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       actionCategory,
       consentType,
       ownershipThreshold,
+      consentBody,
+      recitals,
     });
 
     const { data: existingOtherRows, error: existingOtherRowsError } = await supabase
@@ -680,6 +706,8 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     actionCategory,
     buildMeetingPayload,
     consentType,
+    consentBody,
+    recitals,
     draftMeetingId,
     isCorp,
     managementType,
@@ -758,6 +786,10 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
             if (parsed.actionCategory) setActionCategory(parsed.actionCategory);
             if (parsed.consentType) setConsentType(parsed.consentType);
             if (parsed.ownershipThreshold) setOwnershipThreshold(parsed.ownershipThreshold);
+            if (parsed.consentBody === "board" || parsed.consentBody === "shareholders" || parsed.consentBody === "members") {
+              setConsentBody(parsed.consentBody);
+            }
+            if (typeof parsed.recitals === "string") setRecitals(parsed.recitals);
           } catch {
             // Ignore legacy non-JSON notes rows
           }
@@ -993,6 +1025,46 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
             </div>
           )}
 
+          {/* Consent body selector: who is signing this written consent */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Whose Consent Is This? *</Label>
+            {isCorp ? (
+              <div className="inline-flex rounded-md border border-border overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setConsentBody("board")}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                    consentBody === "board"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background hover:bg-muted"
+                  }`}
+                >
+                  Board of Directors
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConsentBody("shareholders")}
+                  className={`px-3 py-1.5 text-xs font-medium border-l border-border transition-colors ${
+                    consentBody === "shareholders"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background hover:bg-muted"
+                  }`}
+                >
+                  Shareholders
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Input value="Members" disabled className="bg-muted/50 w-40" />
+                <Badge variant="secondary" className="text-[10px] shrink-0">LLC</Badge>
+              </div>
+            )}
+            <p className="text-[10px] text-muted-foreground">
+              Determines the title, intro language, and signature block of the consent.
+            </p>
+          </div>
+
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Effective Date *</Label>
@@ -1149,6 +1221,19 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
               </AlertDescription>
             </Alert>
           )}
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">
+              Recitals (optional)
+            </Label>
+            <Textarea
+              value={recitals}
+              onChange={(e) => setRecitals(e.target.value)}
+              rows={4}
+              className="text-sm"
+              placeholder='Optional background or "WHEREAS" clauses. Leave blank to omit the Recitals section from the consent.'
+            />
+          </div>
 
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground">Resolution Text *</Label>
