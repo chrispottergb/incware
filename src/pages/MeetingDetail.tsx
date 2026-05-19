@@ -696,8 +696,8 @@ export default function MeetingDetail() {
             const p = JSON.parse(metaRow.notes);
             meetingForPdf = {
               ...meeting,
-              consent_body: p.consentBody || meeting.consent_body,
-              consent_recitals: p.recitals || meeting.consent_recitals,
+              consent_body: p.consentBody || (meeting as any).consent_body,
+              consent_recitals: p.recitals || (meeting as any).consent_recitals,
             };
           } catch { /* ignore */ }
         }
