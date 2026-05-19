@@ -1223,6 +1223,19 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
           )}
 
           <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">
+              Recitals (optional)
+            </Label>
+            <Textarea
+              value={recitals}
+              onChange={(e) => setRecitals(e.target.value)}
+              rows={4}
+              className="text-sm"
+              placeholder='Optional background or "WHEREAS" clauses. Leave blank to omit the Recitals section from the consent.'
+            />
+          </div>
+
+          <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground">Resolution Text *</Label>
             <Textarea
               value={resolutionText}
