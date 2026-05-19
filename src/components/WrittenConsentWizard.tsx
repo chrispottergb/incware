@@ -1025,6 +1025,46 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
             </div>
           )}
 
+          {/* Consent body selector: who is signing this written consent */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Whose Consent Is This? *</Label>
+            {isCorp ? (
+              <div className="inline-flex rounded-md border border-border overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setConsentBody("board")}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                    consentBody === "board"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background hover:bg-muted"
+                  }`}
+                >
+                  Board of Directors
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConsentBody("shareholders")}
+                  className={`px-3 py-1.5 text-xs font-medium border-l border-border transition-colors ${
+                    consentBody === "shareholders"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background hover:bg-muted"
+                  }`}
+                >
+                  Shareholders
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Input value="Members" disabled className="bg-muted/50 w-40" />
+                <Badge variant="secondary" className="text-[10px] shrink-0">LLC</Badge>
+              </div>
+            )}
+            <p className="text-[10px] text-muted-foreground">
+              Determines the title, intro language, and signature block of the consent.
+            </p>
+          </div>
+
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Effective Date *</Label>
