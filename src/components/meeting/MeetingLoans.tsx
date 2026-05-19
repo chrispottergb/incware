@@ -537,11 +537,11 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Principal Amount ($)</Label>
-                  <Input type="number" step="0.01" value={form.loan_amount} onChange={(e) => updateField("loan_amount", e.target.value)} placeholder="0.00" />
+                  <Input type="text" inputMode="decimal" value={form.loan_amount} onChange={(e) => updateField("loan_amount", e.target.value)} placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Interest Rate (%)</Label>
-                  <Input type="number" step="0.01" value={form.loan_rate} onChange={(e) => updateField("loan_rate", e.target.value)} placeholder="0.00" />
+                  <Input type="text" inputMode="decimal" value={form.loan_rate} onChange={(e) => updateField("loan_rate", e.target.value)} placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Loan Duration</Label>
@@ -719,11 +719,11 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Principal Amount ($)</Label>
-                  <Input type="number" step="0.01" value={noteForm.loanAmount} onChange={(e) => updateNoteField("loanAmount", e.target.value)} placeholder="0.00" />
+                  <Input type="text" inputMode="decimal" value={noteForm.loanAmount} onChange={(e) => updateNoteField("loanAmount", e.target.value)} placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Interest Rate (%)</Label>
-                  <Input type="number" step="0.01" value={noteForm.interestRate} onChange={(e) => updateNoteField("interestRate", e.target.value)} placeholder="0.00" />
+                  <Input type="text" inputMode="decimal" value={noteForm.interestRate} onChange={(e) => updateNoteField("interestRate", e.target.value)} placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Loan Duration</Label>
@@ -890,16 +890,16 @@ function BalanceRow({ entry, onUpdate, onDelete }: {
         <Input className="h-8 text-sm" value={local.relationship} onChange={(e) => setLocal(p => ({ ...p, relationship: e.target.value }))} onBlur={() => handleBlur("relationship")} placeholder="Relationship" />
       </TableCell>
       <TableCell className="p-1">
-        <Input className="h-8 text-sm text-right" type="number" step="0.01" value={local.beginning_balance} onChange={(e) => setLocal(p => ({ ...p, beginning_balance: e.target.value }))} onBlur={() => handleBlur("beginning_balance")} />
+        <Input className="h-8 text-sm text-right" type="text" inputMode="decimal" value={local.beginning_balance} onChange={(e) => setLocal(p => ({ ...p, beginning_balance: e.target.value }))} onBlur={() => handleBlur("beginning_balance")} />
       </TableCell>
       <TableCell className="p-1">
-        <Input className="h-8 text-sm text-right" type="number" step="0.01" value={local.advances} onChange={(e) => setLocal(p => ({ ...p, advances: e.target.value }))} onBlur={() => handleBlur("advances")} />
+        <Input className="h-8 text-sm text-right" type="text" inputMode="decimal" value={local.advances} onChange={(e) => setLocal(p => ({ ...p, advances: e.target.value }))} onBlur={() => handleBlur("advances")} />
       </TableCell>
       <TableCell className="p-1">
-        <Input className="h-8 text-sm text-right" type="number" step="0.01" value={local.repayments} onChange={(e) => setLocal(p => ({ ...p, repayments: e.target.value }))} onBlur={() => handleBlur("repayments")} />
+        <Input className="h-8 text-sm text-right" type="text" inputMode="decimal" value={local.repayments} onChange={(e) => setLocal(p => ({ ...p, repayments: e.target.value }))} onBlur={() => handleBlur("repayments")} />
       </TableCell>
       <TableCell className="p-1">
-        <Input className="h-8 text-sm text-right" type="number" step="0.01" value={local.ending_balance} onChange={(e) => setLocal(p => ({ ...p, ending_balance: e.target.value }))} onBlur={() => handleBlur("ending_balance")} />
+        <Input className="h-8 text-sm text-right" type="text" inputMode="decimal" value={local.ending_balance} onChange={(e) => setLocal(p => ({ ...p, ending_balance: e.target.value }))} onBlur={() => handleBlur("ending_balance")} />
       </TableCell>
       <TableCell className="p-1">
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(entry.id)}>
