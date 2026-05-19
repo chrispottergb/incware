@@ -786,6 +786,10 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
             if (parsed.actionCategory) setActionCategory(parsed.actionCategory);
             if (parsed.consentType) setConsentType(parsed.consentType);
             if (parsed.ownershipThreshold) setOwnershipThreshold(parsed.ownershipThreshold);
+            if (parsed.consentBody === "board" || parsed.consentBody === "shareholders" || parsed.consentBody === "members") {
+              setConsentBody(parsed.consentBody);
+            }
+            if (typeof parsed.recitals === "string") setRecitals(parsed.recitals);
           } catch {
             // Ignore legacy non-JSON notes rows
           }
