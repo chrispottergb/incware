@@ -608,8 +608,10 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       setWizardResolutionId(null);
     }
 
-    // Save signers (delete + re-insert)
-    if (isCorp) {
+    // Save signers (delete + re-insert). Persist into directors table when the
+    // board is the consenting body; otherwise persist as shareholders/members.
+    const persistAsDirectors = isCorp && consentBody === "board";
+    if (persistAsDirectors) {
       const { error: deleteDirectorError } = await supabase
         .from("meeting_directors")
         .delete()
@@ -624,6 +626,8 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         const { error: insertDirectorError } = await supabase.from("meeting_directors").insert(directorRows);
         if (insertDirectorError) throw insertDirectorError;
       }
+      // Also clear any stale shareholder rows from a previous body selection
+      await supabase.from("meeting_shareholders").delete().eq("meeting_id", meetingId);
     } else {
       const { error: deleteShareholderError } = await supabase
         .from("meeting_shareholders")
@@ -652,6 +656,8 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         const { error: insertShareholderError } = await supabase.from("meeting_shareholders").insert(memberRows);
         if (insertShareholderError) throw insertShareholderError;
       }
+      // Clear any stale director rows from a previous body selection
+      await supabase.from("meeting_directors").delete().eq("meeting_id", meetingId);
     }
 
     const metadata = JSON.stringify({
@@ -660,6 +666,8 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       actionCategory,
       consentType,
       ownershipThreshold,
+      consentBody,
+      recitals,
     });
 
     const { data: existingOtherRows, error: existingOtherRowsError } = await supabase
