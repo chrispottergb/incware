@@ -461,7 +461,9 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   };
 
   const buildConsentPdfData = useCallback((meetingId: string) => {
-    const shareholderRows = !isCorp
+    // For LLCs, or Corps where shareholders are the consenting body, build shareholder rows
+    const useShareholderRows = !isCorp || consentBody === "shareholders";
+    const shareholderRows = useShareholderRows
       ? signers.map((signer) => {
           const shareholder = shareholders.find((row) => row.id === signer.id);
           const holdings = shareholder ? (shareholderHoldings[shareholder.id] ?? 0) : 0;
@@ -498,15 +500,18 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         company_city_at_meeting: company.city || null,
         company_state_at_meeting: company.state || null,
         company_zip_at_meeting: company.zip || null,
+        // Discriminator for the three written-consent variants
+        consent_body: consentBody,
+        consent_recitals: recitals.trim() || null,
       },
       company,
       resolutions: resolutionText.trim()
         ? [{ purpose: selectedAction || "Written Consent", resolution_text: resolutionText }]
         : [],
-      directors: isCorp ? signers.map((signer) => ({ director_name: signer.name })) : [],
+      directors: !useShareholderRows ? signers.map((signer) => ({ director_name: signer.name })) : [],
       shareholders: shareholderRows,
     };
-  }, [company, effectiveDate, isCorp, resolutionText, selectedAction, shareholders, shareholderHoldings, signers, taxYear, totalIssuedShares]);
+  }, [company, consentBody, recitals, effectiveDate, isCorp, resolutionText, selectedAction, shareholders, shareholderHoldings, signers, taxYear, totalIssuedShares]);
 
   const renderPdfPages = useCallback(async (bytes: ArrayBuffer) => {
     const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
