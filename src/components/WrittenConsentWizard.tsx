@@ -100,7 +100,12 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   );
   const [ownershipThreshold, setOwnershipThreshold] = useState("100");
 
+  // Consent body: who is signing this written consent (Board / Shareholders / Members)
+  type ConsentBody = "board" | "shareholders" | "members";
+  const [consentBody, setConsentBody] = useState<ConsentBody>(isLLC ? "members" : "board");
+
   // Step 3: Resolution
+  const [recitals, setRecitals] = useState("");
   const [resolutionText, setResolutionText] = useState("");
 
   // Promissory Note wizard state
