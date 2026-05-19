@@ -98,42 +98,77 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
   const cx = pw / 2;
 
   if (isWrittenConsent) {
-    // Written Consent Header - compact spacing
+    // Determine the consenting body (board / shareholders / members)
+    const entityTypeLower = (company?.entity_type || "").toLowerCase();
+    const isLLCEntity = entityTypeLower.includes("llc") || entityTypeLower.includes("limited liability");
+    const rawBody = (meeting?.consent_body || "").toString().toLowerCase();
+    const consentBody: "board" | "shareholders" | "members" =
+      rawBody === "shareholders" ? "shareholders"
+        : rawBody === "members" ? "members"
+        : rawBody === "board" ? "board"
+        : (isLLCEntity ? "members" : "board");
+
+    const bodyTitle =
+      consentBody === "shareholders" ? "SHAREHOLDERS"
+        : consentBody === "members" ? "MEMBERS"
+        : "BOARD OF DIRECTORS";
+
+    // Title block (company name appears ONLY here)
     doc.setFontSize(14);
     doc.setFont("Arial", "bold");
     doc.setTextColor(30, 30, 30);
-    doc.text("WRITTEN CONSENT", cx, y, { align: "center" });
-    y += 5;
-    doc.setFontSize(12);
-    doc.text("IN LIEU OF A MEETING", cx, y, { align: "center" });
-    y += 5;
+    doc.text(`WRITTEN CONSENT OF THE ${bodyTitle}`, cx, y, { align: "center" });
+    y += 6;
+    doc.text(`OF ${companyName.toUpperCase()}`, cx, y, { align: "center" });
+    y += 6;
+
+    // Principal office address (single line, only here)
+    const addrLine = meeting?.company_address_at_meeting || company?.address || "";
+    const cityPart = meeting?.company_city_at_meeting || company?.city || "";
+    const statePart = meeting?.company_state_at_meeting || company?.state || "";
+    const zipPart = meeting?.company_zip_at_meeting || company?.zip || "";
+    const addressFull = [addrLine, [cityPart, statePart].filter(Boolean).join(", "), zipPart]
+      .filter(Boolean).join(" • ");
+    if (addressFull) {
+      doc.setFontSize(10);
+      doc.setFont("Arial", "normal");
+      doc.setTextColor(80, 80, 80);
+      doc.text(addressFull, cx, y, { align: "center" });
+      y += 5;
+    }
+
+    // Date
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
-    doc.setTextColor(60, 60, 60);
-    doc.text(`OF THE BOARD OF DIRECTORS / MEMBERS OF`, cx, y, { align: "center" });
-    y += 5;
-    doc.setFont("Arial", "bold");
-    doc.setTextColor(30, 30, 30);
-    doc.text(companyName.toUpperCase(), cx, y, { align: "center" });
-    y += 4;
-    doc.setFont("Arial", "normal");
-    doc.setTextColor(60, 60, 60);
+    doc.setTextColor(40, 40, 40);
     doc.text(`Date: ${meetingDate}`, cx, y, { align: "center" });
     y += 4;
-    // Blue horizontal line beneath header
+
+    // Blue rule
     doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
     doc.setLineWidth(1);
     doc.line(MARGIN, y, pw - R_MARGIN, y);
     y += 6;
-    // Intro paragraph
+
+    // Intro paragraph (varies by consenting body)
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
     doc.setTextColor(30, 30, 30);
-    const purposeText = meeting?.purpose ? ` The purpose of this action is: ${meeting.purpose}.` : "";
-    const introText = `The undersigned, being all of the directors/members of ${companyName}, do hereby consent to and adopt the following resolutions and actions without a formal meeting, pursuant to the applicable provisions of the Wisconsin Statutes.${purposeText}`;
+    let introText: string;
+    if (consentBody === "shareholders") {
+      introText = `The undersigned, being all shareholders holding the required voting power of ${companyName}, hereby adopt the following resolutions by written consent without a meeting, pursuant to applicable law and the corporation's governing documents.`;
+    } else if (consentBody === "members") {
+      introText = `The undersigned, being all Members of ${companyName}, hereby adopt the following resolutions by written consent without a meeting, pursuant to applicable law and the operating agreement.`;
+    } else {
+      introText = `The undersigned, being all members of the Board of Directors of ${companyName}, hereby adopt the following resolutions by written consent without a meeting, pursuant to applicable law and the corporation's bylaws.`;
+    }
+    if (meeting?.purpose && !/^Written Consent($| —)/i.test(String(meeting.purpose))) {
+      introText += ` The purpose of this action is: ${meeting.purpose}.`;
+    }
     const lines = doc.splitTextToSize(introText, pw - MARGIN - R_MARGIN);
     doc.text(lines, MARGIN, y);
     y += lines.length * 5 + 6;
+
   } else {
     // Standard Meeting Type Header - compact spacing
     doc.setFontSize(13);
