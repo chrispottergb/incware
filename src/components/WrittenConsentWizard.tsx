@@ -373,9 +373,17 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     return resolutionOptions.find((r) => r.label === selectedAction);
   }, [selectedAction, resolutionOptions]);
 
-  // Compute signers based on entity type
+  // Compute signers based on entity type and selected consent body
   const signers = useMemo(() => {
     if (isCorp) {
+      if (consentBody === "shareholders") {
+        return shareholders.map((s) => ({
+          name: s.name,
+          role: "Shareholder",
+          id: s.id,
+          ownershipPct: s.ownership_percentage,
+        }));
+      }
       return directors.map((d) => ({
         name: d.name,
         role: t.director,
@@ -407,7 +415,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       }));
     }
     return [];
-  }, [isCorp, isLLC, isSMLLC, managementType, directors, shareholders, t]);
+  }, [isCorp, isLLC, isSMLLC, managementType, consentBody, directors, shareholders, t]);
 
   // Voting statute
   const votingStatute = useMemo(() => {
