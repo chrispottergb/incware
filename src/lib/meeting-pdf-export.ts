@@ -1366,6 +1366,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     if (meeting.tax_year) y = addLabelValue(doc, y, "Tax Year", String(meeting.tax_year));
     if (meeting.others_present) y = addLabelValue(doc, y, "Others Present", meeting.others_present);
   }
+  } // end if (!isWrittenConsent) Meeting Information section
 
   // Section 1244 Stock Plan - include in Organizational Meeting if checked (Corp only, not applicable to LLCs)
   if (meeting.meeting_type === "Organizational Meeting" && company?.election_1244 && !isLLC) {
