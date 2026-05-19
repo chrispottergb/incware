@@ -682,9 +682,28 @@ export default function MeetingDetail() {
       return null as any;
     }
     try {
-      
+      // For Written Consents, hydrate consent_body/recitals from meeting_other JSON metadata
+      let meetingForPdf: any = meeting;
+      if (meeting?.meeting_type === "Written Consent") {
+        const metaRow = (other || []).find((r: any) => {
+          try {
+            const p = JSON.parse(r.notes);
+            return p?.kind === "written-consent-meta";
+          } catch { return false; }
+        });
+        if (metaRow) {
+          try {
+            const p = JSON.parse(metaRow.notes);
+            meetingForPdf = {
+              ...meeting,
+              consent_body: p.consentBody || meeting.consent_body,
+              consent_recitals: p.recitals || meeting.consent_recitals,
+            };
+          } catch { /* ignore */ }
+        }
+      }
       const doc = exportMeetingMinutesPDF({
-        meeting,
+        meeting: meetingForPdf,
         company,
         shareholders: hydratedMeetingShareholders,
         directors,
