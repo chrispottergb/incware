@@ -3283,39 +3283,48 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   doc.setTextColor(80, 80, 80);
 
   if (isWrittenConsent) {
-    // Written Consents: no adjournment language; signatures from governing body
-    const isManagerManaged = company?.management_type?.toLowerCase().includes("manager");
+    // Determine consent body from meeting (defaults: LLC → members, else → board)
+    const rawBody = (meeting?.consent_body || "").toString().toLowerCase();
+    const consentBody: "board" | "shareholders" | "members" =
+      rawBody === "shareholders" ? "shareholders"
+        : rawBody === "members" ? "members"
+        : rawBody === "board" ? "board"
+        : (isLLC ? "members" : "board");
 
-    // Determine signer role label based on entity type
-    let signerRoleLabel: string;
-    if (isLLC) {
-      signerRoleLabel = isManagerManaged ? "Manager" : "Member";
-    } else if (isShareholder) {
-      signerRoleLabel = "Shareholder";
-    } else {
-      signerRoleLabel = "Director";
-    }
+    const signerRoleLabel =
+      consentBody === "shareholders" ? "Shareholder"
+        : consentBody === "members" ? "Member"
+        : "Director";
 
-    // Collect signers: for LLCs use shareholders (members), for shareholder actions use shareholders, otherwise directors
-    const wcSignerNames: string[] = [];
+    // Collect signers from the appropriate source
+    type SignerRow = { name: string; shares?: number; ownership?: number };
+    const wcSigners: SignerRow[] = [];
     const wcSeen = new Set<string>();
-    const wcAddUnique = (name: string) => {
-      const n = name.trim();
+    const wcAddUnique = (row: SignerRow) => {
+      const n = row.name.trim();
       if (!n) return;
       const key = n.toLowerCase().replace(/\s+/g, " ").trim();
       if (wcSeen.has(key)) return;
       wcSeen.add(key);
-      wcSignerNames.push(n);
+      wcSigners.push({ ...row, name: n });
     };
 
-    if (isLLC || isShareholder) {
-      (data.shareholders || []).forEach(s => { if (s.shareholder_name) wcAddUnique(s.shareholder_name); });
+    if (consentBody === "board") {
+      (data.directors || []).forEach(d => { if (d.director_name) wcAddUnique({ name: d.director_name }); });
     } else {
-      (data.directors || []).forEach(d => { if (d.director_name) wcAddUnique(d.director_name); });
+      // shareholders or members — both source from data.shareholders
+      (data.shareholders || []).forEach(s => {
+        if (!s.shareholder_name) return;
+        wcAddUnique({
+          name: s.shareholder_name,
+          shares: Number(s.common_shares ?? 0) || 0,
+          ownership: Number(s.preferred_shares ?? 0) || 0,
+        });
+      });
     }
-    // Fallback: use officers if no signers found
-    if (wcSignerNames.length === 0) {
-      (data.officers || []).forEach(o => { if (o.name) wcAddUnique(o.name); });
+    // Fallback: officers if nothing else
+    if (wcSigners.length === 0) {
+      (data.officers || []).forEach(o => { if (o.name) wcAddUnique({ name: o.name }); });
     }
 
     // Date line
@@ -3325,32 +3334,45 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
       const dateStr = `${days[mtgDate.getDay()]}, ${months[mtgDate.getMonth()]} ${mtgDate.getDate()}, ${mtgDate.getFullYear()}`;
       doc.text(`DATED: ${dateStr}`, MARGIN, y);
-      y += 12;
+      y += 10;
     } else {
       y += 4;
     }
 
-    // Render signature lines for each signer
+    // Signature rows — one line per signer, with body-specific columns
     doc.setFontSize(10);
-    wcSignerNames.forEach(name => {
-      y = checkPageBreak(doc, y, 15);
+    wcSigners.forEach(s => {
+      y = checkPageBreak(doc, y, 16);
       doc.setDrawColor(30, 30, 30);
       doc.setLineWidth(0.3);
-      doc.line(MARGIN, y, MARGIN + 70, y);
-      y += 5;
-      doc.text(`${name}, ${signerRoleLabel}`, MARGIN, y);
+      // Signature line
+      doc.line(MARGIN, y, MARGIN + 90, y);
+      y += 4;
+      let label = `${s.name}, ${signerRoleLabel}`;
+      if (consentBody === "shareholders" && s.shares != null) {
+        label += `  —  Shares Held: ${s.shares.toLocaleString()}`;
+      } else if (consentBody === "members") {
+        if (s.shares && s.shares > 0) label += `  —  Units: ${s.shares.toLocaleString()}`;
+        if (s.ownership && s.ownership > 0) label += `  —  Ownership: ${Number(s.ownership).toFixed(2)}%`;
+      }
+      doc.text(label, MARGIN, y);
+      // "Date: ____" on the right
+      const pw2 = doc.internal.pageSize.getWidth();
+      const dateLineX = pw2 - R_MARGIN - 50;
+      doc.line(dateLineX, y - 4, pw2 - R_MARGIN, y - 4);
+      doc.text("Date", dateLineX, y);
       y += 10;
     });
 
-    // If no signers found, show blank signature lines
-    if (wcSignerNames.length === 0) {
+    // If no signers, render blank line
+    if (wcSigners.length === 0) {
       const pw = doc.internal.pageSize.getWidth();
       const sigLineW = (pw - MARGIN - R_MARGIN - 20) / 2;
       doc.line(MARGIN, y, MARGIN + sigLineW, y);
       doc.text(signerRoleLabel, MARGIN, y + 5);
       const rightX = MARGIN + sigLineW + 20;
       doc.line(rightX, y, rightX + sigLineW, y);
-      doc.text(signerRoleLabel, rightX, y + 5);
+      doc.text("Date", rightX, y + 5);
     }
   } else {
     // Regular meetings: adjournment + Chairperson/Secretary signatures
