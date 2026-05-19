@@ -1098,7 +1098,12 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     addWaiverOfNoticePages(doc, data);
   }
 
-  addDFIHeader(doc, isWrittenConsent ? "Written Consent" : `${meeting.meeting_type} — Minutes`, companyName, entityType, meeting, company);
+  // For written consents, the title block contains the company name + address
+  // (so we skip the standard DFI page header to avoid duplication). For all
+  // other meeting types, render the DFI header at the top of the document.
+  if (!isWrittenConsent) {
+    addDFIHeader(doc, `${meeting.meeting_type} — Minutes`, companyName, entityType, meeting, company);
+  }
 
   let y = bt ? 52 : 45;
 
