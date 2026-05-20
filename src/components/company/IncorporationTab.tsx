@@ -598,6 +598,10 @@ export default function IncorporationTab({ company }: Props) {
            authorized_binders: form.authorized_binders || null,
            business_purpose: form.business_purpose || null,
            naics_code: form.naics_code || null,
+           state_filing_number: form.state_filing_number || null,
+           ntee_code: form.ntee_code || null,
+           tax_exempt_purpose: form.tax_exempt_purpose || null,
+           non_distribution_clause: form.non_distribution_clause || null,
         } as any)
         .eq("id", company.id);
       if (error) throw error;
