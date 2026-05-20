@@ -214,7 +214,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
 
   const [nrItems, setNrItems] = useState<NonRecurringItem[]>([]);
   const [excludeNrFromYoy, setExcludeNrFromYoy] = useState(false);
-  const [lastFinancials, setLastFinancials] = useState<typeof financials>(undefined);
+  const [financialsLoadedId, setFinancialsLoadedId] = useState<string | null>(null);
   const [autoFillApplied, setAutoFillApplied] = useState(false);
   const [nrInitialized, setNrInitialized] = useState(false);
 
@@ -230,10 +230,12 @@ export default function MeetingFinancials({ meetingId }: Props) {
     }
   }, [nonRecurringItems, nrInitialized]);
 
-  // Sync form from saved financials
-  if (financials !== lastFinancials) {
-    setLastFinancials(financials);
-    if (financials) {
+  // Hydrate form from saved financials ONCE per row.
+  // Re-syncing on every refetch (e.g., after auto-save) clobbers digits the
+  // user is still typing, which caused leading/trailing digits to be dropped
+  // in Cost of Goods and other fields.
+  useEffect(() => {
+    if (financials && financials.id && financials.id !== financialsLoadedId) {
       setForm({
         current_total_sales: financials.current_total_sales?.toString() ?? "",
         current_gross_profit: financials.current_gross_profit?.toString() ?? "",
@@ -246,8 +248,9 @@ export default function MeetingFinancials({ meetingId }: Props) {
         previous_cog_ratio: financials.previous_cog_ratio?.toString() ?? "",
         previous_net_income: financials.previous_net_income?.toString() ?? "",
       });
+      setFinancialsLoadedId(financials.id);
     }
-  }
+  }, [financials, financialsLoadedId]);
 
   useEffect(() => {
     if (

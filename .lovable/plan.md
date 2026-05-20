@@ -1,76 +1,25 @@
-# Separate Written Consents (Board, Shareholders, Members)
+## Problem
+On the Meeting → Financial tab, the Cost of Goods (and other) inputs can lose leading/trailing digits while typing. Root cause: `MeetingFinancials.tsx` re-hydrates the entire form from the database on **every** React Query refetch, including the refetch that auto-save itself triggers. If the user is still typing when the save round-trips, the freshly typed digits are overwritten with the just-persisted (partial) value.
 
-## Goal
-Replace today's single combined "Written Consent" template (header reads `OF THE BOARD OF DIRECTORS / MEMBERS OF`) with three distinct templates chosen by the user, each with its own title, intro paragraph, and signature block. Strip any meeting-only fields/language from all three.
+## Fix
 
-## 1. Wizard: add a "Consent Body" selector
+Change the sync-from-server logic so it only runs on the **initial load** of a meeting's financials, not on every refetch.
 
-File: `src/components/WrittenConsentWizard.tsx`
+### File: `src/components/meeting/MeetingFinancials.tsx`
 
-- Add state `consentBody: "board" | "shareholders" | "members"`.
-- Default by entity type:
-  - LLC / SMLLC → `members`
-  - Corporation / S-Corp / LLC-S → `board` (with option to switch to `shareholders`)
-- Render a small segmented control on Step 1 (Entity) labeled "Whose consent is this?" Options shown per entity type:
-  - LLC family: **Members** only (locked).
-  - Corp family: **Board of Directors**, **Shareholders**.
-- Persist `consentBody` inside the existing `written-consent-meta` JSON the wizard already writes to `meeting_other` (alongside `consentType`, `ownershipThreshold`, `signers`). No DB migration needed.
-- On load of an existing draft, hydrate `consentBody` from that JSON; fall back to the entity-type default.
-- Signer roster source already follows entity type; additionally, when `consentBody === "shareholders"`, source from `shareholders` (with share counts); when `members`, from members/holdings (with units / ownership %); when `board`, from directors (printed name only).
+1. Replace the render-phase `if (financials !== lastFinancials) { ... setForm(...) }` block with a `useEffect` keyed on `financials?.id` (mirroring the pattern already used for `nonRecurringItems` via `nrInitialized`):
+   - Track `financialsLoadedId` in state.
+   - When `financials?.id` is present and differs from `financialsLoadedId`, populate `form` from the DB row and store the id.
+   - This guarantees a one-time hydrate per meeting/row, so post-save refetches no longer clobber the field being typed.
 
-## 2. PDF: three header + intro variants
+2. Leave `lastFinancials` removed (no longer needed), keeping the rest of the file unchanged.
 
-File: `src/lib/meeting-pdf-export.ts` (function `addMeetingTypeHeader`, lines ~96-154, and the `isWrittenConsent` branches below).
+3. No changes to auto-save cadence, sanitize logic, save mutation payload, or PDF export — the persisted value will now match what the user actually typed.
 
-Replace the current combined header with body-aware output:
+## Verification
 
-```text
-WRITTEN CONSENT OF THE {BOARD OF DIRECTORS | SHAREHOLDERS | MEMBERS}
-OF {COMPANY NAME}
-
-{Principal office address — single line, only here}
-
-Date: {Effective Date}
-```
-
-Rules enforced:
-- Company name appears **only** in the title block (remove the existing duplicate company line above the date).
-- Drop the secondary "IN LIEU OF A MEETING" line.
-- Principal office address renders once, immediately under the title block (pulled from `meeting.company_*_at_meeting` snapshot, falling back to `company`).
-- No "Prior Meeting Date" or "Next Annual Meeting" fields anywhere in the consent path.
-
-Intro paragraphs (replace the current generic `directors/members` text):
-
-- **Board**: "The undersigned, being all members of the Board of Directors of {Company Name}, hereby adopt the following resolutions by written consent without a meeting, pursuant to applicable law and the corporation's bylaws."
-- **Shareholders**: "The undersigned, being all shareholders holding the required voting power of {Company Name}, hereby adopt the following resolutions by written consent without a meeting, pursuant to applicable law and the corporation's governing documents."
-- **Members**: "The undersigned, being all Members of {Company Name}, hereby adopt the following resolutions by written consent without a meeting, pursuant to applicable law and the operating agreement."
-
-Optional Recitals section: if the wizard captured `recitals` text (new optional textarea on Step 3), render a `RECITALS` block before Resolutions; otherwise omit silently.
-
-## 3. PDF: signature blocks per variant
-
-In the consent signature renderer:
-
-- **Board** → columns: `Director Name` | `Signature` | `Date`.
-- **Shareholders** → columns: `Shareholder Name` | `Shares Held` | `Signature` | `Date`.
-- **Members** → columns: `Member Name` | `Units / Ownership %` | `Signature` | `Date`.
-
-Share/unit values come from the signer rows the wizard already collects.
-
-## 4. Audit consent flow for meeting-only language
-
-Sweep `meeting-pdf-export.ts` for any block executed when `isWrittenConsent === true` that still references "meeting location", "meeting time", "attendees", "prior meeting", or "next annual meeting" and gate them off. The existing code already skips most of these; confirm none leak through for the three new bodies. Also make sure the meeting form (`MeetingInfoCard.tsx`) hides those fields when `meeting_type === "Written Consent"` (it largely does; verify and patch any leftovers).
-
-## 5. Plumbing
-
-- Pass `consentBody` from the wizard into `exportMeetingMinutesPDF` (extend `meetingData` or the options arg) so the PDF function can branch on it. Persist alongside the meta JSON so re-opens and re-exports are stable.
-- `MeetingDetail.tsx` preview path must read `consentBody` from `meeting_other` JSON and forward it to the same PDF function so previews match what the wizard renders.
-
-## Out of scope
-- No DB schema changes (uses existing `meeting_other` JSON for the new field).
-- No changes to non-consent meeting templates.
-- No new resolution catalog entries.
-
-## Technical notes
-- Keep `meeting.meeting_type` as `"Written Consent"` to preserve existing filters and saved drafts; the three variants are differentiated by the new `consentBody` discriminator only.
-- `isLLCType(company.entity_type)` already exists in `src/lib/entity-terminology.ts` — reuse for default selection and for locking the LLC case to `members`.
+- Open a meeting → Financial tab.
+- Type `133000` into Cost of Goods slowly enough that auto-save (2s) fires mid-typing.
+- Confirm the field retains `133,000` and that the saved row in `meeting_financials.current_cog` is `133000`.
+- Export Financials PDF and confirm `Cost of Goods` line shows `$133,000.00`.
+- Re-test by editing an existing value (e.g. changing `33,101` → `133,101`) to make sure mid-edit refetches no longer revert it.
