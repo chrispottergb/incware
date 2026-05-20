@@ -949,6 +949,8 @@ export type Database = {
           max_vps_allowed: number | null
           naics_code: string | null
           name: string
+          non_distribution_clause: string | null
+          ntee_code: string | null
           opening_balance_date: string | null
           par_value: number | null
           par_value_type: string | null
@@ -972,8 +974,10 @@ export type Database = {
           seal_type: string | null
           second_name_choice: string | null
           state: string | null
+          state_filing_number: string | null
           state_of_incorporation: string | null
           status: string | null
+          tax_exempt_purpose: string | null
           updated_at: string
           user_id: string
           verification_date: string | null
@@ -1012,6 +1016,8 @@ export type Database = {
           max_vps_allowed?: number | null
           naics_code?: string | null
           name: string
+          non_distribution_clause?: string | null
+          ntee_code?: string | null
           opening_balance_date?: string | null
           par_value?: number | null
           par_value_type?: string | null
@@ -1035,8 +1041,10 @@ export type Database = {
           seal_type?: string | null
           second_name_choice?: string | null
           state?: string | null
+          state_filing_number?: string | null
           state_of_incorporation?: string | null
           status?: string | null
+          tax_exempt_purpose?: string | null
           updated_at?: string
           user_id: string
           verification_date?: string | null
@@ -1075,6 +1083,8 @@ export type Database = {
           max_vps_allowed?: number | null
           naics_code?: string | null
           name?: string
+          non_distribution_clause?: string | null
+          ntee_code?: string | null
           opening_balance_date?: string | null
           par_value?: number | null
           par_value_type?: string | null
@@ -1098,8 +1108,10 @@ export type Database = {
           seal_type?: string | null
           second_name_choice?: string | null
           state?: string | null
+          state_filing_number?: string | null
           state_of_incorporation?: string | null
           status?: string | null
+          tax_exempt_purpose?: string | null
           updated_at?: string
           user_id?: string
           verification_date?: string | null

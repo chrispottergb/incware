@@ -103,6 +103,9 @@ const STATE_SOS_INFO: Record<string, { name: string; url: string }> = {
   DC: { name: "DC DCRA", url: "https://corponline.dcra.dc.gov/BizEntity.aspx" },
 };
 
+const DEFAULT_NON_DISTRIBUTION_CLAUSE =
+  "No part of the net earnings of the corporation shall inure to the benefit of, or be distributable to its members, directors, officers, or other private persons, except that the corporation shall be authorized to pay reasonable compensation for services rendered and to make payments in furtherance of its exempt purposes.";
+
 // ─── Entity-aware card config ────────────────────────────────────────────────
 // LLC FORM RULES: Members not Directors. Section renamed to Management & Elections. Management Type dropdown: Member Managed / Manager Managed. No share/par value fields. Keep: S-Election, Seal. DO NOT REVERT.
 function getEquityCardConfig(entityType: string) {
@@ -242,6 +245,12 @@ export default function IncorporationTab({ company }: Props) {
     authorized_binders: (company as any).authorized_binders ?? "",
     business_purpose: company.business_purpose ?? "",
     naics_code: company.naics_code ?? "",
+    state_filing_number: (company as any).state_filing_number ?? "",
+    ntee_code: (company as any).ntee_code ?? "",
+    tax_exempt_purpose: (company as any).tax_exempt_purpose ?? "",
+    non_distribution_clause:
+      (company as any).non_distribution_clause ??
+      (company.entity_type === "Non-Profit" ? DEFAULT_NON_DISTRIBUTION_CLAUSE : ""),
   });
 
   // Phone formatting helper
@@ -308,6 +317,12 @@ export default function IncorporationTab({ company }: Props) {
       authorized_binders: (company as any).authorized_binders ?? "",
       business_purpose: company.business_purpose ?? "",
       naics_code: company.naics_code ?? "",
+      state_filing_number: (company as any).state_filing_number ?? "",
+      ntee_code: (company as any).ntee_code ?? "",
+      tax_exempt_purpose: (company as any).tax_exempt_purpose ?? "",
+      non_distribution_clause:
+        (company as any).non_distribution_clause ??
+        (company.entity_type === "Non-Profit" ? DEFAULT_NON_DISTRIBUTION_CLAUSE : ""),
     });
     setLlcSElectionEnabled(isLLCType(company.entity_type) ? !!company.s_election_date : false);
   }, [company.id]);
@@ -583,6 +598,10 @@ export default function IncorporationTab({ company }: Props) {
            authorized_binders: form.authorized_binders || null,
            business_purpose: form.business_purpose || null,
            naics_code: form.naics_code || null,
+           state_filing_number: form.state_filing_number || null,
+           ntee_code: form.ntee_code || null,
+           tax_exempt_purpose: form.tax_exempt_purpose || null,
+           non_distribution_clause: form.non_distribution_clause || null,
         } as any)
         .eq("id", company.id);
       if (error) throw error;
@@ -739,6 +758,146 @@ export default function IncorporationTab({ company }: Props) {
         </CardHeader>
         <CardContent className="px-4 pb-4 space-y-5">
           {/* Company Details - compact grid */}
+          {form.entity_type === "Non-Profit" ? (
+            <>
+              {/* Registration Details */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Building2 className="h-3.5 w-3.5 text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">Registration Details</h3>
+                </div>
+                <div className="grid grid-cols-12 gap-x-3 gap-y-2">
+                  {/* Row 1 */}
+                  <div className="field-group col-span-3">
+                    <Label className="field-label">Company Name</Label>
+                    <Input className="h-7 text-sm" value={form.name} onChange={(e) => update("name", e.target.value)} required />
+                  </div>
+                  <div className="field-group col-span-3">
+                    <Label className="field-label">Entity Type</Label>
+                    <Select value={form.entity_type} onValueChange={(v) => updateAndSave("entity_type", v)}>
+                      <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {ENTITY_TYPES.map((t) => (
+                          <SelectItem key={t} value={t}>{t}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="field-group col-span-2">
+                    <Label className="field-label">State of Inc.</Label>
+                    <Select value={form.state_of_incorporation} onValueChange={(v) => updateAndSave("state_of_incorporation", v)}>
+                      <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="ST" /></SelectTrigger>
+                      <SelectContent>
+                        {US_STATES.map((s) => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="field-group col-span-2">
+                    <Label className="field-label">State Filing #</Label>
+                    <Input className="h-7 text-sm" value={form.state_filing_number} onChange={(e) => update("state_filing_number", e.target.value)} />
+                  </div>
+                  <div className="field-group col-span-2">
+                    <Label className="field-label">EIN</Label>
+                    <Input
+                      className="h-7 text-sm"
+                      value={einFocused ? (form as any).ein : maskEin((form as any).ein)}
+                      onFocus={() => setEinFocused(true)}
+                      onBlur={() => setEinFocused(false)}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
+                        let formatted = digits;
+                        if (digits.length > 2) formatted = digits.slice(0, 2) + "-" + digits.slice(2);
+                        updateAndSave("ein", formatted);
+                      }}
+                      placeholder="XX-XXXXXXX"
+                      maxLength={10}
+                    />
+                  </div>
+                  {/* Row 2 */}
+                  <div className="field-group col-span-2">
+                    <Label className="field-label">Status</Label>
+                    <Select value={form.corporate_status} onValueChange={(v) => updateAndSave("corporate_status", v)}>
+                      <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="current">Current</SelectItem>
+                        <SelectItem value="delinquent">Delinquent</SelectItem>
+                        <SelectItem value="admin_dissolved">Administratively Dissolved</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="field-group col-span-3">
+                    <Label className="field-label">Incorporation Date</Label>
+                    <DatePickerField value={form.incorporation_date || ""} onChange={(v) => updateAndSave("incorporation_date", v)} className="h-7" />
+                  </div>
+                  <div className="field-group col-span-2">
+                    <Label className="field-label">FYE</Label>
+                    <Input className="h-7 text-sm" value={form.fiscal_year_end} onChange={(e) => update("fiscal_year_end", e.target.value)} placeholder="December 31" />
+                  </div>
+                  <div className="field-group col-span-1">
+                    <Label className="field-label flex items-center gap-1">
+                      NAICS
+                      <a href="https://www.naics.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </Label>
+                    <Input className="h-7 text-sm" value={form.naics_code} onChange={(e) => update("naics_code", e.target.value)} placeholder="Code" />
+                  </div>
+                  <div className="field-group col-span-1">
+                    <Label className="field-label">NTEE Code</Label>
+                    <Input className="h-7 text-sm" value={form.ntee_code} onChange={(e) => update("ntee_code", e.target.value)} placeholder="Code" />
+                  </div>
+                  <div className="field-group col-span-3">
+                    <Label className="field-label">Scheduled Annual Mtg. Date</Label>
+                    <Input className="h-7 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-border" />
+
+              {/* Corporate Language */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Heart className="h-3.5 w-3.5 text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">Corporate Language</h3>
+                </div>
+                <div className="space-y-3">
+                  <div className="field-group">
+                    <Label className="field-label">Corporate Purpose / Mission Statement</Label>
+                    <Textarea
+                      className="text-sm min-h-[110px]"
+                      value={form.business_purpose}
+                      onChange={(e) => update("business_purpose", e.target.value)}
+                      placeholder="Describe the corporate purpose and mission..."
+                      rows={5}
+                    />
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">Tax-Exempt Purpose</Label>
+                    <Textarea
+                      className="text-sm min-h-[90px]"
+                      value={form.tax_exempt_purpose}
+                      onChange={(e) => update("tax_exempt_purpose", e.target.value)}
+                      placeholder="Describe the tax-exempt purpose..."
+                      rows={4}
+                    />
+                  </div>
+                  <div className="field-group">
+                    <Label className="field-label">Non-Distribution Clause</Label>
+                    <Textarea
+                      className="text-sm min-h-[110px]"
+                      value={form.non_distribution_clause}
+                      onChange={(e) => update("non_distribution_clause", e.target.value)}
+                      rows={5}
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
           <div className="grid grid-cols-12 gap-x-3 gap-y-2">
             <div className="field-group col-span-12 sm:col-span-5">
               <Label className="field-label">Company Name</Label>
@@ -826,6 +985,7 @@ export default function IncorporationTab({ company }: Props) {
               <Input className="h-7 text-sm" value={form.naics_code} onChange={(e) => update("naics_code", e.target.value)} placeholder="Code" />
             </div>
           </div>
+          )}
 
           {/* Primary Contact - compact */}
           <div className="border-t border-border pt-3">
