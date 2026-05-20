@@ -138,11 +138,12 @@ export default function CompanyDetail() {
       ];
     }
     const isCorp = entityType === "Corporation" || entityType === "S-Corp";
+    const isNonProfit = entityType === "Non-Profit";
     const tabs = [
       { value: "incorporation", label: "Incorporation Info" },
-      ...(!isCorp ? [{ value: "organization", label: "Organizational Info" }] : []),
+      ...(!isCorp && !isNonProfit ? [{ value: "organization", label: "Organizational Info" }] : []),
       { value: "meetings", label: "Meetings" },
-      { value: "shareholders", label: getTerminology(entityType).shareholdersTab },
+      { value: "shareholders", label: isNonProfit ? "Governance" : getTerminology(entityType).shareholdersTab },
       { value: "timeline", label: "Timeline" },
       { value: "leases", label: "Leases" },
       { value: "counsel", label: "Counsel" },
@@ -153,11 +154,13 @@ export default function CompanyDetail() {
     if (entityType === "Corporation" || entityType === "S-Corp") {
       tabs.push({ value: "bylaws", label: "Bylaws" });
     }
-    if (entityType === "Non-Profit") {
+    if (isNonProfit) {
       tabs.push({ value: "nonprofit-bylaws", label: "Bylaws" });
       tabs.push({ value: "conflict-of-interest", label: "Conflict of Interest" });
     }
-    tabs.push({ value: "business-sales", label: "Business Sales" });
+    if (!isNonProfit) {
+      tabs.push({ value: "business-sales", label: "Business Sales" });
+    }
     tabs.push({ value: "filing-compliance", label: "Filing & Compliance" });
     tabs.push({ value: "record-book", label: "Record Book" });
     tabs.push({ value: "documents", label: "Documents" });
