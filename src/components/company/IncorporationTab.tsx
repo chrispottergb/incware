@@ -103,6 +103,9 @@ const STATE_SOS_INFO: Record<string, { name: string; url: string }> = {
   DC: { name: "DC DCRA", url: "https://corponline.dcra.dc.gov/BizEntity.aspx" },
 };
 
+const DEFAULT_NON_DISTRIBUTION_CLAUSE =
+  "No part of the net earnings of the corporation shall inure to the benefit of, or be distributable to its members, directors, officers, or other private persons, except that the corporation shall be authorized to pay reasonable compensation for services rendered and to make payments in furtherance of its exempt purposes.";
+
 // ─── Entity-aware card config ────────────────────────────────────────────────
 // LLC FORM RULES: Members not Directors. Section renamed to Management & Elections. Management Type dropdown: Member Managed / Manager Managed. No share/par value fields. Keep: S-Election, Seal. DO NOT REVERT.
 function getEquityCardConfig(entityType: string) {
