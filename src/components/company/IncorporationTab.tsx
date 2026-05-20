@@ -828,7 +828,7 @@ export default function IncorporationTab({ company }: Props) {
                     </Select>
                   </div>
                   <div className="field-group col-span-2">
-                    <Label className="field-label">Incorporation Date</Label>
+                    <Label className="field-label">Inc Date</Label>
                     <DatePickerField value={form.incorporation_date || ""} onChange={(v) => updateAndSave("incorporation_date", v)} className="h-7" />
                   </div>
                   <div className="field-group col-span-2">
@@ -836,7 +836,7 @@ export default function IncorporationTab({ company }: Props) {
                     <Input className="h-7 text-sm" value={form.fiscal_year_end} onChange={(e) => update("fiscal_year_end", e.target.value)} placeholder="December 31" />
                   </div>
                   <div className="field-group col-span-1">
-                    <Label className="field-label flex items-center gap-1">
+                    <Label className="field-label flex items-center gap-1 whitespace-nowrap">
                       NAICS
                       <a href="https://www.naics.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
                         <ExternalLink className="h-3 w-3" />
