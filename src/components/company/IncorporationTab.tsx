@@ -827,7 +827,7 @@ export default function IncorporationTab({ company }: Props) {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="field-group col-span-3">
+                  <div className="field-group col-span-2">
                     <Label className="field-label">Incorporation Date</Label>
                     <DatePickerField value={form.incorporation_date || ""} onChange={(v) => updateAndSave("incorporation_date", v)} className="h-7" />
                   </div>
@@ -844,7 +844,7 @@ export default function IncorporationTab({ company }: Props) {
                     </Label>
                     <Input className="h-7 text-sm" value={form.naics_code} onChange={(e) => update("naics_code", e.target.value)} placeholder="Code" />
                   </div>
-                  <div className="field-group col-span-1">
+                  <div className="field-group col-span-2">
                     <Label className="field-label">NTEE Code</Label>
                     <Input className="h-7 text-sm" value={form.ntee_code} onChange={(e) => update("ntee_code", e.target.value)} placeholder="Code" />
                   </div>
