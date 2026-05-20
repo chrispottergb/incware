@@ -835,7 +835,7 @@ export default function IncorporationTab({ company }: Props) {
                     <Label className="field-label">FYE</Label>
                     <Input className="h-7 text-sm" value={form.fiscal_year_end} onChange={(e) => update("fiscal_year_end", e.target.value)} placeholder="December 31" />
                   </div>
-                  <div className="field-group col-span-1">
+                  <div className="field-group col-span-1 flex flex-col justify-end">
                     <Label className="field-label flex items-center gap-1 whitespace-nowrap">
                       NAICS
                       <a href="https://www.naics.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
@@ -844,8 +844,13 @@ export default function IncorporationTab({ company }: Props) {
                     </Label>
                     <Input className="h-7 text-sm" value={form.naics_code} onChange={(e) => update("naics_code", e.target.value)} placeholder="Code" />
                   </div>
-                  <div className="field-group col-span-2">
-                    <Label className="field-label">NTEE Code</Label>
+                  <div className="field-group col-span-2 flex flex-col justify-end">
+                    <Label className="field-label flex items-center gap-1 whitespace-nowrap">
+                      NTEE Code
+                      <a href="https://nccs.urban.org/publication/ntee-naics-crosswalk" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80" title="NTEE NAICS Crosswalk">
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </Label>
                     <Input className="h-7 text-sm" value={form.ntee_code} onChange={(e) => update("ntee_code", e.target.value)} placeholder="Code" />
                   </div>
                   <div className="field-group col-span-3">
