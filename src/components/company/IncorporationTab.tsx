@@ -242,6 +242,12 @@ export default function IncorporationTab({ company }: Props) {
     authorized_binders: (company as any).authorized_binders ?? "",
     business_purpose: company.business_purpose ?? "",
     naics_code: company.naics_code ?? "",
+    state_filing_number: (company as any).state_filing_number ?? "",
+    ntee_code: (company as any).ntee_code ?? "",
+    tax_exempt_purpose: (company as any).tax_exempt_purpose ?? "",
+    non_distribution_clause:
+      (company as any).non_distribution_clause ??
+      (company.entity_type === "Non-Profit" ? DEFAULT_NON_DISTRIBUTION_CLAUSE : ""),
   });
 
   // Phone formatting helper
