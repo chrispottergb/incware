@@ -791,42 +791,46 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {isNonProfit && (
-            <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 p-4 space-y-2">
-              <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">IRS Compliance Requirements</p>
-              <p className="text-xs text-amber-900/90 dark:text-amber-200/90">
-                To avoid excess benefit transactions, all loans to the corporation must meet the following requirements:
-              </p>
-              <ul className="list-disc pl-5 text-xs text-amber-900/90 dark:text-amber-200/90 space-y-0.5">
-                <li>Loan must have market-rate interest</li>
-                <li>Must be repayable and not a disguised gift</li>
-                <li>Must have a written promissory note</li>
-                <li>Must follow a repayment schedule</li>
-                <li>Must be approved by disinterested directors</li>
-                <li>Must be reported on Form 990 if from an insider</li>
-              </ul>
-            </div>
-          )}
-          {/* Loans TO table — hidden for Non-Profit */}
+          {/* Loans TO table — renamed for Non-Profit */}
+          <BalanceTable
+            title={isNonProfit ? "Loans to Corporation" : "Loans TO Shareholders / Members / Related Parties"}
+            entries={toEntries}
+            onAdd={() => addBalanceEntry("to")}
+            onUpdate={updateBalanceEntry}
+            onDelete={deleteBalanceEntry}
+          />
+          {/* Loans FROM table — hidden for Non-Profit */}
           {!isNonProfit && (
             <BalanceTable
-              title="Loans TO Shareholders / Members / Related Parties"
-              entries={toEntries}
-              onAdd={() => addBalanceEntry("to")}
+              title="Loans FROM Shareholders / Members / Related Parties"
+              entries={fromEntries}
+              onAdd={() => addBalanceEntry("from")}
               onUpdate={updateBalanceEntry}
               onDelete={deleteBalanceEntry}
             />
           )}
-          {/* Loans FROM table */}
-          <BalanceTable
-            title={isNonProfit ? "Loans to Corporation" : "Loans FROM Shareholders / Members / Related Parties"}
-            entries={fromEntries}
-            onAdd={() => addBalanceEntry("from")}
-            onUpdate={updateBalanceEntry}
-            onDelete={deleteBalanceEntry}
-          />
         </CardContent>
       </Card>
+
+      {isNonProfit && (
+        <>
+          <Separator className="my-4" />
+          <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 p-4 space-y-2">
+            <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">IRS Compliance Requirements</p>
+            <p className="text-xs text-amber-900/90 dark:text-amber-200/90">
+              To avoid excess benefit transactions, all loans to the corporation must meet the following requirements:
+            </p>
+            <ul className="list-disc pl-5 text-xs text-amber-900/90 dark:text-amber-200/90 space-y-0.5">
+              <li>Loan must have market-rate interest</li>
+              <li>Must be repayable and not a disguised gift</li>
+              <li>Must have a written promissory note</li>
+              <li>Must follow a repayment schedule</li>
+              <li>Must be approved by disinterested directors</li>
+              <li>Must be reported on Form 990 if from an insider</li>
+            </ul>
+          </div>
+        </>
+      )}
     </>
   );
 }
