@@ -166,7 +166,7 @@ function getEquityCardConfig(entityType: string) {
         showParValue: false,
         showSElection: false,
         show1244: false,
-        showSeal: true,
+        showSeal: false,
         showMembershipUnits: false,
         showManagementType: false,
         showPartnershipInterest: false,
