@@ -112,6 +112,8 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<LoanForm>(emptyForm);
   const [uploading, setUploading] = useState(false);
+  const [irsComplianceOpen, setIrsComplianceOpen] = useState(false);
+
 
   // Balance entries queries
   const { data: balanceEntries = [] } = useQuery({
