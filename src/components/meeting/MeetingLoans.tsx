@@ -835,15 +835,18 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
             <button
               type="button"
               onClick={() => setIrsComplianceOpen((o) => !o)}
-              className="flex w-full items-center justify-between p-4 text-left"
+              className="flex w-full items-center justify-between p-4 text-left hover:bg-amber-100/50 dark:hover:bg-amber-900/20 transition-colors rounded-md"
             >
-              <span className="text-sm font-semibold text-amber-900 dark:text-amber-200">IRS Compliance Requirements</span>
-              {irsComplianceOpen ? (
-                <ChevronDown className="h-4 w-4 text-amber-900 dark:text-amber-200" />
-              ) : (
-                <ChevronRight className="h-4 w-4 text-amber-900 dark:text-amber-200" />
-              )}
+              <div className="flex items-center gap-2">
+                <Info className="h-4 w-4 text-amber-900 dark:text-amber-200" />
+                <span className="text-sm font-semibold text-amber-900 dark:text-amber-200">IRS Compliance Requirements</span>
+                {!irsComplianceOpen && (
+                  <span className="text-xs font-normal text-amber-900/70 dark:text-amber-200/70">— Click to view requirements</span>
+                )}
+              </div>
+              <ChevronDown className={`h-4 w-4 text-amber-900 dark:text-amber-200 transition-transform ${irsComplianceOpen ? "rotate-180" : ""}`} />
             </button>
+
             {irsComplianceOpen && (
               <div className="px-4 pb-4 space-y-2">
                 <p className="text-xs text-amber-900/90 dark:text-amber-200/90">
