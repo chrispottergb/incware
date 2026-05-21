@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { toast } from "@/hooks/use-toast";
+import { Form1023EZScreener } from "./Form1023EZScreener";
 
 interface Props {
   companyId: string;
@@ -242,6 +243,15 @@ export function TaxExemptionTab({ companyId }: Props) {
               }
               className="bg-muted"
             />
+            {form.form_selection === "1023-EZ" && (
+              <div className="pt-1">
+                <Form1023EZScreener
+                  onComplete={(result, date) =>
+                    save({ eligibility_result: result, eligibility_run_date: date })
+                  }
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-1">
