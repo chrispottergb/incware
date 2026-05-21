@@ -41,6 +41,8 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash2, Loader2, Pencil, Info, X } from "lucide-react";
 import { toast } from "sonner";
+import NonProfitDirectorBenefits from "./NonProfitDirectorBenefits";
+
 
 type BenefitItem = { label: string; tooltip: string };
 
@@ -123,7 +125,9 @@ function findCategoryForLabel(label: string): { category: string; itemLabel: str
 
 interface Props {
   meetingId: string;
+  entityType?: string;
 }
+
 
 interface BenefitForm {
   provider: string;
@@ -147,7 +151,7 @@ const emptyForm: BenefitForm = {
   eligibility_comments: "",
 };
 
-export default function MeetingBenefits({ meetingId }: Props) {
+export default function MeetingBenefits({ meetingId, entityType }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -165,9 +169,12 @@ export default function MeetingBenefits({ meetingId }: Props) {
         .eq("meeting_id", meetingId)
         .order("created_at");
       if (error) throw error;
-      return data as any[];
+      return ((data as any[]) || []).filter(
+        (r) => !(r.benefit_type || "").startsWith("__np_director__:")
+      );
     },
   });
+
 
   const buildBenefitTypeLabel = (item: string): string => {
     if (item === "Other") {
@@ -333,7 +340,10 @@ export default function MeetingBenefits({ meetingId }: Props) {
     category === "Retirement" || selectedBenefits.some((b) => isRetirementType(b));
 
   return (
-    <Card>
+    <div className="space-y-5">
+      {entityType === "Non-Profit" && <NonProfitDirectorBenefits meetingId={meetingId} />}
+      <Card>
+
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <CardTitle className="font-display text-base">Benefits</CardTitle>
         <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
@@ -564,5 +574,7 @@ export default function MeetingBenefits({ meetingId }: Props) {
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }
+
