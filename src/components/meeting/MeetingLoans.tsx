@@ -33,7 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Pencil, FileText, Upload, Download, CheckCircle2, ArrowLeft, DollarSign, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil, FileText, Upload, Download, CheckCircle2, ArrowLeft, DollarSign, ChevronDown, ChevronRight, Info } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { generatePromissoryNotePDF } from "@/lib/promissory-note-pdf";
