@@ -1235,6 +1235,7 @@ export default function IncorporationTab({ company }: Props) {
       </Card>
 
       {/* ─── Dynamic Equity / Governance Card ─────────────────────────────────── */}
+      {form.entity_type !== "Non-Profit" && (
       <Card>
         <CardHeader className="pb-2 pt-4 px-4">
           <div className="flex items-center justify-between">
