@@ -142,6 +142,22 @@ export function NonProfitGovernanceTab({ companyId }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* SEAL */}
+      <section className="space-y-2">
+        <Label className="text-xs font-semibold uppercase tracking-wide">Seal</Label>
+        <Select value={sealType} onValueChange={updateSeal}>
+          <SelectTrigger className="h-8 w-48 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="no_seal">No Seal</SelectItem>
+            <SelectItem value="seal">Seal</SelectItem>
+          </SelectContent>
+        </Select>
+      </section>
+
+      <Separator />
+
       {/* SECTION 1 — Initial Directors */}
       <section className="space-y-3">
         <div>
