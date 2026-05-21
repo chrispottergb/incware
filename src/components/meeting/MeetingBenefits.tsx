@@ -338,7 +338,10 @@ export default function MeetingBenefits({ meetingId, entityType }: Props) {
     category === "Retirement" || selectedBenefits.some((b) => isRetirementType(b));
 
   return (
-    <Card>
+    <div className="space-y-5">
+      {entityType === "Non-Profit" && <NonProfitDirectorBenefits meetingId={meetingId} />}
+      <Card>
+
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <CardTitle className="font-display text-base">Benefits</CardTitle>
         <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
