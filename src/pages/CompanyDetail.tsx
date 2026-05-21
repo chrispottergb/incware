@@ -296,7 +296,11 @@ export default function CompanyDetail() {
           <MeetingsTab companyId={company.id} company={company} />
         </TabsContent>
         <TabsContent value="shareholders" className="mt-5">
+          {company.entity_type === "Non-Profit" ? (
+            <NonProfitGovernanceTab companyId={company.id} />
+          ) : (
           <div className="space-y-5">
+
             {/* Workflow Action Cards */}
             <ShareholderWorkflowCards
               entityType={company.entity_type}
