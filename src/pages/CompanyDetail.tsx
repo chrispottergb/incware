@@ -378,6 +378,11 @@ export default function CompanyDetail() {
             onOpenChange={setEstablishOwnershipOpen}
           />
         </TabsContent>
+        {company.entity_type === "Non-Profit" && (
+          <TabsContent value="tax-exemption" className="mt-5">
+            <TaxExemptionTab companyId={company.id} />
+          </TabsContent>
+        )}
         <TabsContent value="timeline" className="mt-5">
           <TimelineTab companyId={company.id} company={company} />
         </TabsContent>
