@@ -1521,6 +1521,9 @@ export default function IncorporationTab({ company }: Props) {
 
         </CardContent>
       </Card>
+      )}
+
+
 
       {/* Registered Agent */}
       <Card>
