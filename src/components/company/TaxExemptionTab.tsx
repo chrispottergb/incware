@@ -243,6 +243,15 @@ export function TaxExemptionTab({ companyId }: Props) {
               }
               className="bg-muted"
             />
+            {form.form_selection === "1023-EZ" && (
+              <div className="pt-1">
+                <Form1023EZScreener
+                  onComplete={(result, date) =>
+                    save({ eligibility_result: result, eligibility_run_date: date })
+                  }
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-1">
