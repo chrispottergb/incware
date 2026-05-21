@@ -2947,6 +2947,50 @@ export type Database = {
           },
         ]
       }
+      nonprofit_form990_filings: {
+        Row: {
+          company_id: string
+          created_at: string
+          date_filed: string | null
+          form_version: string | null
+          id: string
+          sort_order: number | null
+          status: string | null
+          updated_at: string
+          year: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          date_filed?: string | null
+          form_version?: string | null
+          id?: string
+          sort_order?: number | null
+          status?: string | null
+          updated_at?: string
+          year?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          date_filed?: string | null
+          form_version?: string | null
+          id?: string
+          sort_order?: number | null
+          status?: string | null
+          updated_at?: string
+          year?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nonprofit_form990_filings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nonprofit_initial_directors: {
         Row: {
           address: string | null
@@ -3001,6 +3045,104 @@ export type Database = {
             foreignKeyName: "nonprofit_initial_directors_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nonprofit_tax_exemption: {
+        Row: {
+          annual_renewal_due_date: string | null
+          application_status: string | null
+          authorized_signatory: string | null
+          company_id: string
+          created_at: string
+          date_application_submitted: string | null
+          determination_letter_path: string | null
+          effective_date_of_exemption: string | null
+          electing_501c3: boolean | null
+          eligibility_result: string | null
+          eligibility_run_date: string | null
+          expiration_date: string | null
+          filing_due_date: string | null
+          filing_fee_amount: number | null
+          filing_fee_date_paid: string | null
+          form_990_version_required: string | null
+          form_selection: string | null
+          id: string
+          irs_determination_letter_date: string | null
+          method_of_submission: string | null
+          public_charity_classification: string | null
+          registration_certificate_path: string | null
+          registration_date: string | null
+          registration_number: string | null
+          registration_status: string | null
+          state_registration_required: string | null
+          updated_at: string
+        }
+        Insert: {
+          annual_renewal_due_date?: string | null
+          application_status?: string | null
+          authorized_signatory?: string | null
+          company_id: string
+          created_at?: string
+          date_application_submitted?: string | null
+          determination_letter_path?: string | null
+          effective_date_of_exemption?: string | null
+          electing_501c3?: boolean | null
+          eligibility_result?: string | null
+          eligibility_run_date?: string | null
+          expiration_date?: string | null
+          filing_due_date?: string | null
+          filing_fee_amount?: number | null
+          filing_fee_date_paid?: string | null
+          form_990_version_required?: string | null
+          form_selection?: string | null
+          id?: string
+          irs_determination_letter_date?: string | null
+          method_of_submission?: string | null
+          public_charity_classification?: string | null
+          registration_certificate_path?: string | null
+          registration_date?: string | null
+          registration_number?: string | null
+          registration_status?: string | null
+          state_registration_required?: string | null
+          updated_at?: string
+        }
+        Update: {
+          annual_renewal_due_date?: string | null
+          application_status?: string | null
+          authorized_signatory?: string | null
+          company_id?: string
+          created_at?: string
+          date_application_submitted?: string | null
+          determination_letter_path?: string | null
+          effective_date_of_exemption?: string | null
+          electing_501c3?: boolean | null
+          eligibility_result?: string | null
+          eligibility_run_date?: string | null
+          expiration_date?: string | null
+          filing_due_date?: string | null
+          filing_fee_amount?: number | null
+          filing_fee_date_paid?: string | null
+          form_990_version_required?: string | null
+          form_selection?: string | null
+          id?: string
+          irs_determination_letter_date?: string | null
+          method_of_submission?: string | null
+          public_charity_classification?: string | null
+          registration_certificate_path?: string | null
+          registration_date?: string | null
+          registration_number?: string | null
+          registration_status?: string | null
+          state_registration_required?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nonprofit_tax_exemption_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
