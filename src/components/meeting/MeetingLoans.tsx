@@ -510,18 +510,29 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="font-display">{editingId ? "Edit Loan" : "Add Loan"}</DialogTitle>
-              <DialogDescription>Enter the loan details for shareholders, members, or related parties.</DialogDescription>
+              <DialogDescription>{isNonProfit ? "Enter the loan details for the corporation." : "Enter the loan details for shareholders, members, or related parties."}</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2 space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Direction</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">{isNonProfit ? "Loan Source" : "Direction"}</Label>
                   <Select value={form.loan_direction} onValueChange={(v) => updateField("loan_direction", v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="to_shareholder">Loan TO Shareholder/Member</SelectItem>
-                      <SelectItem value="from_shareholder">Loan FROM Shareholder/Member</SelectItem>
-                      <SelectItem value="from_company">Company Loan (from Bank/Lender)</SelectItem>
+                      {isNonProfit ? (
+                        <>
+                          <SelectItem value="bank">Bank</SelectItem>
+                          <SelectItem value="director">Director</SelectItem>
+                          <SelectItem value="officer">Officer</SelectItem>
+                          <SelectItem value="related_party">Related Party</SelectItem>
+                        </>
+                      ) : (
+                        <>
+                          <SelectItem value="to_shareholder">Loan TO Shareholder/Member</SelectItem>
+                          <SelectItem value="from_shareholder">Loan FROM Shareholder/Member</SelectItem>
+                          <SelectItem value="from_company">Company Loan (from Bank/Lender)</SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -529,10 +540,13 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
                   <Label className="text-xs font-medium text-muted-foreground">Lender Name</Label>
                   <Input value={form.lender_name} onChange={(e) => updateField("lender_name", e.target.value)} placeholder="Who is lending?" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Borrower Name</Label>
-                  <Input value={form.borrower_name} onChange={(e) => updateField("borrower_name", e.target.value)} placeholder="Who is borrowing?" />
-                </div>
+                {!isNonProfit && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Borrower Name</Label>
+                    <Input value={form.borrower_name} onChange={(e) => updateField("borrower_name", e.target.value)} placeholder="Who is borrowing?" />
+                  </div>
+                )}
+
                 <div className="col-span-2 space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Loan Type</Label>
                   <Input value={form.loan_type} onChange={(e) => updateField("loan_type", e.target.value)} placeholder="e.g., Line of Credit, Term Loan, Promissory Note" />
