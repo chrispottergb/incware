@@ -46,6 +46,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 interface Props {
   meetingId: string;
   companyName?: string;
+  entityType?: string;
 }
 
 interface BalanceEntry {
