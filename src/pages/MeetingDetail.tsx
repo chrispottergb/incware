@@ -1195,7 +1195,7 @@ export default function MeetingDetail() {
                 fileName={`benefits-${meetingFileName}`}
               />
             </div>
-            <MeetingBenefits meetingId={meeting.id} />
+            <MeetingBenefits meetingId={meeting.id} entityType={company?.entity_type} />
           </div>
         </TabsContent>
         <TabsContent value="loans" className="mt-5">
