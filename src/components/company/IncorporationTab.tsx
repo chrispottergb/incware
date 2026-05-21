@@ -1515,14 +1515,8 @@ export default function IncorporationTab({ company }: Props) {
             </div>
           )}
 
-          {/* Non-Profit: No equity note */}
-          {form.entity_type === "Non-Profit" && (
-            <div className="mt-3 rounded-md border border-border bg-muted/30 px-3 py-2.5">
-              <p className="text-[11px] text-muted-foreground">
-                Non-profit organizations do not issue shares or membership interests. Governance is managed through the Board of Directors and organizational bylaws.
-              </p>
-            </div>
-          )}
+
+
 
         </CardContent>
       </Card>
