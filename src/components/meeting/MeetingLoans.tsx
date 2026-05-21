@@ -606,10 +606,10 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead>Direction</TableHead>
+                  {!isNonProfit && <TableHead>Direction</TableHead>}
                   <TableHead>Type</TableHead>
                   <TableHead>Lender</TableHead>
-                  <TableHead>Borrower</TableHead>
+                  {!isNonProfit && <TableHead>Borrower</TableHead>}
                   <TableHead className="text-right">Rate</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead>Date</TableHead>
@@ -620,10 +620,10 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
               <TableBody>
                 {rows.map((row: any) => (
                   <TableRow key={row.id}>
-                    <TableCell className="text-xs">{directionLabel(row.loan_direction || "from_company")}</TableCell>
+                    {!isNonProfit && <TableCell className="text-xs">{directionLabel(row.loan_direction || "from_company")}</TableCell>}
                     <TableCell className="font-medium text-sm">{row.loan_type || "—"}</TableCell>
                     <TableCell className="text-sm">{row.lender_name || "—"}</TableCell>
-                    <TableCell className="text-sm">{row.borrower_name || "—"}</TableCell>
+                    {!isNonProfit && <TableCell className="text-sm">{row.borrower_name || "—"}</TableCell>}
                     <TableCell className="text-right text-sm">{row.loan_rate != null ? `${Number(row.loan_rate).toFixed(2)}%` : "—"}</TableCell>
                     <TableCell className="text-right font-mono text-xs">{fmt(row.loan_amount)}</TableCell>
                     <TableCell className="text-sm">{row.loan_date ? new Date(row.loan_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
@@ -791,24 +791,24 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Loans TO table — renamed for Non-Profit */}
-          <BalanceTable
-            title={isNonProfit ? "Loans to Corporation" : "Loans TO Shareholders / Members / Related Parties"}
-            entries={toEntries}
-            onAdd={() => addBalanceEntry("to")}
-            onUpdate={updateBalanceEntry}
-            onDelete={deleteBalanceEntry}
-          />
-          {/* Loans FROM table — hidden for Non-Profit */}
+          {/* Loans TO table — hidden for Non-Profit */}
           {!isNonProfit && (
             <BalanceTable
-              title="Loans FROM Shareholders / Members / Related Parties"
-              entries={fromEntries}
-              onAdd={() => addBalanceEntry("from")}
+              title="Loans TO Shareholders / Members / Related Parties"
+              entries={toEntries}
+              onAdd={() => addBalanceEntry("to")}
               onUpdate={updateBalanceEntry}
               onDelete={deleteBalanceEntry}
             />
           )}
+          {/* Loans FROM table — renamed for Non-Profit */}
+          <BalanceTable
+            title={isNonProfit ? "Loans to Corporation" : "Loans FROM Shareholders / Members / Related Parties"}
+            entries={fromEntries}
+            onAdd={() => addBalanceEntry("from")}
+            onUpdate={updateBalanceEntry}
+            onDelete={deleteBalanceEntry}
+          />
         </CardContent>
       </Card>
 
