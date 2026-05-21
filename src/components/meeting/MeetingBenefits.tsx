@@ -123,7 +123,9 @@ function findCategoryForLabel(label: string): { category: string; itemLabel: str
 
 interface Props {
   meetingId: string;
+  entityType?: string;
 }
+
 
 interface BenefitForm {
   provider: string;
