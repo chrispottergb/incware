@@ -22,6 +22,7 @@ import OrganizationTab from "@/components/company/OrganizationTab";
 import MeetingsTab from "@/components/company/MeetingsTab";
 import ShareholdersTab from "@/components/company/ShareholdersTab";
 import { NonProfitGovernanceTab } from "@/components/company/NonProfitGovernanceTab";
+import { TaxExemptionTab } from "@/components/company/TaxExemptionTab";
 import StockCertificatesTab from "@/components/company/StockCertificatesTab";
 import StockLedgerTab from "@/components/company/StockLedgerTab";
 import BillsOfSaleTab from "@/components/company/BillsOfSaleTab";
@@ -145,6 +146,7 @@ export default function CompanyDetail() {
       ...(!isCorp && !isNonProfit ? [{ value: "organization", label: "Organizational Info" }] : []),
       { value: "meetings", label: "Meetings" },
       { value: "shareholders", label: isNonProfit ? "Governance" : getTerminology(entityType).shareholdersTab },
+      ...(isNonProfit ? [{ value: "tax-exemption", label: "Tax Exemption" }] : []),
       { value: "timeline", label: "Timeline" },
       { value: "leases", label: "Leases" },
       { value: "counsel", label: "Counsel" },
@@ -376,6 +378,11 @@ export default function CompanyDetail() {
             onOpenChange={setEstablishOwnershipOpen}
           />
         </TabsContent>
+        {company.entity_type === "Non-Profit" && (
+          <TabsContent value="tax-exemption" className="mt-5">
+            <TaxExemptionTab companyId={company.id} />
+          </TabsContent>
+        )}
         <TabsContent value="timeline" className="mt-5">
           <TimelineTab companyId={company.id} company={company} />
         </TabsContent>
