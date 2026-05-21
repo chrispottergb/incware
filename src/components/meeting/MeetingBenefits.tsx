@@ -572,5 +572,7 @@ export default function MeetingBenefits({ meetingId, entityType }: Props) {
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }
+
