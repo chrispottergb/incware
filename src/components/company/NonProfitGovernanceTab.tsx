@@ -241,7 +241,21 @@ export function NonProfitGovernanceTab({ companyId }: Props) {
                     <Input
                       className="h-7 text-xs"
                       value={r.zip ?? ""}
-                      onChange={(e) => updateRow(r.id, { zip: e.target.value })}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        updateRow(r.id, { zip: v });
+                        const m = v.match(/^(\d{5})(?:-?\d{0,4})?$/);
+                        if (m) {
+                          supabase.functions
+                            .invoke("zip-lookup", { body: { zip: m[1] } })
+                            .then(({ data }) => {
+                              if (data?.city && data?.state) {
+                                updateRow(r.id, { zip: v, city: data.city, state: data.state });
+                                persistRow(r.id, { zip: v, city: data.city, state: data.state });
+                              }
+                            });
+                        }
+                      }}
                       onBlur={(e) => persistRow(r.id, { zip: e.target.value })}
                     />
                   </td>
