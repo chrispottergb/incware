@@ -46,6 +46,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 interface Props {
   meetingId: string;
   companyName?: string;
+  entityType?: string;
 }
 
 interface BalanceEntry {
@@ -103,7 +104,8 @@ const emptyForm: LoanForm = {
   promissory_note_required: false,
 };
 
-export default function MeetingLoans({ meetingId, companyName }: Props) {
+export default function MeetingLoans({ meetingId, companyName, entityType }: Props) {
+  const isNonProfit = entityType === "Non-Profit";
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -789,17 +791,35 @@ export default function MeetingLoans({ meetingId, companyName }: Props) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Loans TO table */}
-          <BalanceTable
-            title="Loans TO Shareholders / Members / Related Parties"
-            entries={toEntries}
-            onAdd={() => addBalanceEntry("to")}
-            onUpdate={updateBalanceEntry}
-            onDelete={deleteBalanceEntry}
-          />
+          {isNonProfit && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 p-4 space-y-2">
+              <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">IRS Compliance Requirements</p>
+              <p className="text-xs text-amber-900/90 dark:text-amber-200/90">
+                To avoid excess benefit transactions, all loans to the corporation must meet the following requirements:
+              </p>
+              <ul className="list-disc pl-5 text-xs text-amber-900/90 dark:text-amber-200/90 space-y-0.5">
+                <li>Loan must have market-rate interest</li>
+                <li>Must be repayable and not a disguised gift</li>
+                <li>Must have a written promissory note</li>
+                <li>Must follow a repayment schedule</li>
+                <li>Must be approved by disinterested directors</li>
+                <li>Must be reported on Form 990 if from an insider</li>
+              </ul>
+            </div>
+          )}
+          {/* Loans TO table — hidden for Non-Profit */}
+          {!isNonProfit && (
+            <BalanceTable
+              title="Loans TO Shareholders / Members / Related Parties"
+              entries={toEntries}
+              onAdd={() => addBalanceEntry("to")}
+              onUpdate={updateBalanceEntry}
+              onDelete={deleteBalanceEntry}
+            />
+          )}
           {/* Loans FROM table */}
           <BalanceTable
-            title="Loans FROM Shareholders / Members / Related Parties"
+            title={isNonProfit ? "Loans to Corporation" : "Loans FROM Shareholders / Members / Related Parties"}
             entries={fromEntries}
             onAdd={() => addBalanceEntry("from")}
             onUpdate={updateBalanceEntry}

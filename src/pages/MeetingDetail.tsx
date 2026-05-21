@@ -1219,6 +1219,7 @@ export default function MeetingDetail() {
             <MeetingLoans
               meetingId={meeting.id}
               companyName={company?.name}
+              entityType={company?.entity_type}
             />
           </div>
         </TabsContent>
