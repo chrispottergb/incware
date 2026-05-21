@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { toast } from "@/hooks/use-toast";
+import { Form1023EZScreener } from "./Form1023EZScreener";
 
 interface Props {
   companyId: string;
