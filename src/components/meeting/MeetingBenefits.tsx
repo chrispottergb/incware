@@ -149,7 +149,7 @@ const emptyForm: BenefitForm = {
   eligibility_comments: "",
 };
 
-export default function MeetingBenefits({ meetingId }: Props) {
+export default function MeetingBenefits({ meetingId, entityType }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
