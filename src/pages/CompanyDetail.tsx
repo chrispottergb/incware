@@ -358,6 +358,8 @@ export default function CompanyDetail() {
               </>
             )}
           </div>
+          )}
+
           <BuySellWorkflow
             companyId={company.id}
             companyName={company.name}
