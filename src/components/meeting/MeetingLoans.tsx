@@ -33,7 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Pencil, FileText, Upload, Download, CheckCircle2, ArrowLeft, DollarSign } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil, FileText, Upload, Download, CheckCircle2, ArrowLeft, DollarSign, ChevronDown, ChevronRight } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { generatePromissoryNotePDF } from "@/lib/promissory-note-pdf";
@@ -112,6 +112,8 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<LoanForm>(emptyForm);
   const [uploading, setUploading] = useState(false);
+  const [irsComplianceOpen, setIrsComplianceOpen] = useState(false);
+
 
   // Balance entries queries
   const { data: balanceEntries = [] } = useQuery({
@@ -829,22 +831,38 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
       {isNonProfit && (
         <>
           <Separator className="my-4" />
-          <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 p-4 space-y-2">
-            <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">IRS Compliance Requirements</p>
-            <p className="text-xs text-amber-900/90 dark:text-amber-200/90">
-              To avoid excess benefit transactions, all loans to the corporation must meet the following requirements:
-            </p>
-            <ul className="list-disc pl-5 text-xs text-amber-900/90 dark:text-amber-200/90 space-y-0.5">
-              <li>Loan must have market-rate interest</li>
-              <li>Must be repayable and not a disguised gift</li>
-              <li>Must have a written promissory note</li>
-              <li>Must follow a repayment schedule</li>
-              <li>Must be approved by disinterested directors</li>
-              <li>Must be reported on Form 990 if from an insider</li>
-            </ul>
+          <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+            <button
+              type="button"
+              onClick={() => setIrsComplianceOpen((o) => !o)}
+              className="flex w-full items-center justify-between p-4 text-left"
+            >
+              <span className="text-sm font-semibold text-amber-900 dark:text-amber-200">IRS Compliance Requirements</span>
+              {irsComplianceOpen ? (
+                <ChevronDown className="h-4 w-4 text-amber-900 dark:text-amber-200" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-amber-900 dark:text-amber-200" />
+              )}
+            </button>
+            {irsComplianceOpen && (
+              <div className="px-4 pb-4 space-y-2">
+                <p className="text-xs text-amber-900/90 dark:text-amber-200/90">
+                  To avoid excess benefit transactions, all loans to the corporation must meet the following requirements:
+                </p>
+                <ul className="list-disc pl-5 text-xs text-amber-900/90 dark:text-amber-200/90 space-y-0.5">
+                  <li>Loan must have market-rate interest</li>
+                  <li>Must be repayable and not a disguised gift</li>
+                  <li>Must have a written promissory note</li>
+                  <li>Must follow a repayment schedule</li>
+                  <li>Must be approved by disinterested directors</li>
+                  <li>Must be reported on Form 990 if from an insider</li>
+                </ul>
+              </div>
+            )}
           </div>
         </>
       )}
+
     </>
   );
 }
