@@ -41,6 +41,8 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash2, Loader2, Pencil, Info, X } from "lucide-react";
 import { toast } from "sonner";
+import NonProfitDirectorBenefits from "./NonProfitDirectorBenefits";
+
 
 type BenefitItem = { label: string; tooltip: string };
 
