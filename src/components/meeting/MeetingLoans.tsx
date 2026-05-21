@@ -791,24 +791,24 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Loans TO table — renamed for Non-Profit */}
-          <BalanceTable
-            title={isNonProfit ? "Loans to Corporation" : "Loans TO Shareholders / Members / Related Parties"}
-            entries={toEntries}
-            onAdd={() => addBalanceEntry("to")}
-            onUpdate={updateBalanceEntry}
-            onDelete={deleteBalanceEntry}
-          />
-          {/* Loans FROM table — hidden for Non-Profit */}
+          {/* Loans TO table — hidden for Non-Profit */}
           {!isNonProfit && (
             <BalanceTable
-              title="Loans FROM Shareholders / Members / Related Parties"
-              entries={fromEntries}
-              onAdd={() => addBalanceEntry("from")}
+              title="Loans TO Shareholders / Members / Related Parties"
+              entries={toEntries}
+              onAdd={() => addBalanceEntry("to")}
               onUpdate={updateBalanceEntry}
               onDelete={deleteBalanceEntry}
             />
           )}
+          {/* Loans FROM table — renamed for Non-Profit */}
+          <BalanceTable
+            title={isNonProfit ? "Loans to Corporation" : "Loans FROM Shareholders / Members / Related Parties"}
+            entries={fromEntries}
+            onAdd={() => addBalanceEntry("from")}
+            onUpdate={updateBalanceEntry}
+            onDelete={deleteBalanceEntry}
+          />
         </CardContent>
       </Card>
 
