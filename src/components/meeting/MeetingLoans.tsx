@@ -620,10 +620,10 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
               <TableBody>
                 {rows.map((row: any) => (
                   <TableRow key={row.id}>
-                    <TableCell className="text-xs">{directionLabel(row.loan_direction || "from_company")}</TableCell>
+                    {!isNonProfit && <TableCell className="text-xs">{directionLabel(row.loan_direction || "from_company")}</TableCell>}
                     <TableCell className="font-medium text-sm">{row.loan_type || "—"}</TableCell>
                     <TableCell className="text-sm">{row.lender_name || "—"}</TableCell>
-                    <TableCell className="text-sm">{row.borrower_name || "—"}</TableCell>
+                    {!isNonProfit && <TableCell className="text-sm">{row.borrower_name || "—"}</TableCell>}
                     <TableCell className="text-right text-sm">{row.loan_rate != null ? `${Number(row.loan_rate).toFixed(2)}%` : "—"}</TableCell>
                     <TableCell className="text-right font-mono text-xs">{fmt(row.loan_amount)}</TableCell>
                     <TableCell className="text-sm">{row.loan_date ? new Date(row.loan_date + "T00:00:00").toLocaleDateString() : "—"}</TableCell>
