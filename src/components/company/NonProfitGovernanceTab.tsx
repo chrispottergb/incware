@@ -49,6 +49,35 @@ export function NonProfitGovernanceTab({ companyId }: Props) {
   const qc = useQueryClient();
   const [rows, setRows] = useState<InitialDirector[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [sealType, setSealType] = useState<string>("no_seal");
+
+  const { data: companyData } = useQuery({
+    queryKey: ["company_seal", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("seal_type")
+        .eq("id", companyId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (companyData?.seal_type) setSealType(companyData.seal_type);
+  }, [companyData]);
+
+  const updateSeal = async (v: string) => {
+    setSealType(v);
+    const { error } = await supabase
+      .from("companies")
+      .update({ seal_type: v })
+      .eq("id", companyId);
+    if (error) {
+      toast({ title: "Save failed", description: error.message, variant: "destructive" });
+    }
+  };
 
   const { data } = useQuery({
     queryKey: ["nonprofit_initial_directors", companyId],
