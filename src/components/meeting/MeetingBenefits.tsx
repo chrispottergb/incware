@@ -167,9 +167,12 @@ export default function MeetingBenefits({ meetingId, entityType }: Props) {
         .eq("meeting_id", meetingId)
         .order("created_at");
       if (error) throw error;
-      return data as any[];
+      return ((data as any[]) || []).filter(
+        (r) => !(r.benefit_type || "").startsWith("__np_director__:")
+      );
     },
   });
+
 
   const buildBenefitTypeLabel = (item: string): string => {
     if (item === "Other") {
