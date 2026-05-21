@@ -22,6 +22,7 @@ import OrganizationTab from "@/components/company/OrganizationTab";
 import MeetingsTab from "@/components/company/MeetingsTab";
 import ShareholdersTab from "@/components/company/ShareholdersTab";
 import { NonProfitGovernanceTab } from "@/components/company/NonProfitGovernanceTab";
+import { TaxExemptionTab } from "@/components/company/TaxExemptionTab";
 import StockCertificatesTab from "@/components/company/StockCertificatesTab";
 import StockLedgerTab from "@/components/company/StockLedgerTab";
 import BillsOfSaleTab from "@/components/company/BillsOfSaleTab";
