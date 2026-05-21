@@ -606,10 +606,10 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead>Direction</TableHead>
+                  {!isNonProfit && <TableHead>Direction</TableHead>}
                   <TableHead>Type</TableHead>
                   <TableHead>Lender</TableHead>
-                  <TableHead>Borrower</TableHead>
+                  {!isNonProfit && <TableHead>Borrower</TableHead>}
                   <TableHead className="text-right">Rate</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead>Date</TableHead>
