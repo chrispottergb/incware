@@ -21,6 +21,7 @@ import IncorporationTab from "@/components/company/IncorporationTab";
 import OrganizationTab from "@/components/company/OrganizationTab";
 import MeetingsTab from "@/components/company/MeetingsTab";
 import ShareholdersTab from "@/components/company/ShareholdersTab";
+import { NonProfitGovernanceTab } from "@/components/company/NonProfitGovernanceTab";
 import StockCertificatesTab from "@/components/company/StockCertificatesTab";
 import StockLedgerTab from "@/components/company/StockLedgerTab";
 import BillsOfSaleTab from "@/components/company/BillsOfSaleTab";
@@ -295,7 +296,11 @@ export default function CompanyDetail() {
           <MeetingsTab companyId={company.id} company={company} />
         </TabsContent>
         <TabsContent value="shareholders" className="mt-5">
+          {company.entity_type === "Non-Profit" ? (
+            <NonProfitGovernanceTab companyId={company.id} />
+          ) : (
           <div className="space-y-5">
+
             {/* Workflow Action Cards */}
             <ShareholderWorkflowCards
               entityType={company.entity_type}
@@ -353,6 +358,8 @@ export default function CompanyDetail() {
               </>
             )}
           </div>
+          )}
+
           <BuySellWorkflow
             companyId={company.id}
             companyName={company.name}

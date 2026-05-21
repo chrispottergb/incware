@@ -2947,6 +2947,65 @@ export type Database = {
           },
         ]
       }
+      nonprofit_initial_directors: {
+        Row: {
+          address: string | null
+          city: string | null
+          company_id: string
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          sort_order: number
+          state: string | null
+          term_length: string | null
+          term_start_date: string | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company_id: string
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          sort_order?: number
+          state?: string | null
+          term_length?: string | null
+          term_start_date?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company_id?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          sort_order?: number
+          state?: string | null
+          term_length?: string | null
+          term_start_date?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nonprofit_initial_directors_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       officers: {
         Row: {
           company_id: string
