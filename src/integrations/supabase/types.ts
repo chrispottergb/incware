@@ -3061,6 +3061,7 @@ export type Database = {
           determination_letter_path: string | null
           effective_date_of_exemption: string | null
           electing_501c3: boolean | null
+          eligibility_answers: Json | null
           eligibility_result: string | null
           eligibility_run_date: string | null
           expiration_date: string | null
@@ -3090,6 +3091,7 @@ export type Database = {
           determination_letter_path?: string | null
           effective_date_of_exemption?: string | null
           electing_501c3?: boolean | null
+          eligibility_answers?: Json | null
           eligibility_result?: string | null
           eligibility_run_date?: string | null
           expiration_date?: string | null
@@ -3119,6 +3121,7 @@ export type Database = {
           determination_letter_path?: string | null
           effective_date_of_exemption?: string | null
           electing_501c3?: boolean | null
+          eligibility_answers?: Json | null
           eligibility_result?: string | null
           eligibility_run_date?: string | null
           expiration_date?: string | null

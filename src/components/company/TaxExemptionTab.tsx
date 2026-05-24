@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/select";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { toast } from "@/hooks/use-toast";
-import { Form1023EZScreener } from "./Form1023EZScreener";
+import { Form1023EZScreener, type ScreenerAnswers } from "./Form1023EZScreener";
+import { Form1023EZResultsView } from "./Form1023EZResultsView";
 
 interface Props {
   companyId: string;
@@ -30,6 +31,7 @@ type Exemption = {
   form_selection: string | null;
   eligibility_result: string | null;
   eligibility_run_date: string | null;
+  eligibility_answers: ScreenerAnswers | null;
   date_application_submitted: string | null;
   filing_fee_amount: string | null;
   filing_fee_date_paid: string | null;
@@ -66,6 +68,7 @@ const EMPTY: Exemption = {
   form_selection: null,
   eligibility_result: null,
   eligibility_run_date: null,
+  eligibility_answers: null,
   date_application_submitted: null,
   filing_fee_amount: null,
   filing_fee_date_paid: null,
@@ -92,6 +95,7 @@ export function TaxExemptionTab({ companyId }: Props) {
   const [form, setForm] = useState<Exemption>(EMPTY);
   const [filings, setFilings] = useState<Filing[]>([]);
   const [deleteFilingId, setDeleteFilingId] = useState<string | null>(null);
+  const [rerunSignal, setRerunSignal] = useState(0);
 
   const { data } = useQuery({
     queryKey: ["nonprofit_tax_exemption", companyId],
@@ -244,15 +248,29 @@ export function TaxExemptionTab({ companyId }: Props) {
               className="bg-muted"
             />
             {form.form_selection === "1023-EZ" && (
-              <div className="pt-1">
+              <div className="pt-1 flex flex-wrap gap-2">
                 <Form1023EZScreener
-                  onComplete={(result, date) =>
-                    save({ eligibility_result: result, eligibility_run_date: date })
+                  externalOpenSignal={rerunSignal}
+                  onComplete={(result, date, answers) =>
+                    save({
+                      eligibility_result: result,
+                      eligibility_run_date: date,
+                      eligibility_answers: answers,
+                    })
                   }
                 />
+                {form.eligibility_result && (
+                  <Form1023EZResultsView
+                    answers={form.eligibility_answers}
+                    result={form.eligibility_result}
+                    runDate={form.eligibility_run_date}
+                    onRerun={() => setRerunSignal((n) => n + 1)}
+                  />
+                )}
               </div>
             )}
           </div>
+
 
           <div className="space-y-1">
             <Label>Date Application Submitted</Label>
