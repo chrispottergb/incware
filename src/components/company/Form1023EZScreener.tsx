@@ -9,7 +9,7 @@ interface Question {
   why: string;
 }
 
-const QUESTIONS: Question[] = [
+export const QUESTIONS_1023EZ: Question[] = [
   { id: 1, text: "Do you project that your annual gross receipts will exceed $50,000 in any of the next 3 years?", why: "Gross receipts are total amounts received from all sources without subtracting costs or expenses. Consider this year and the next 2 years." },
   { id: 2, text: "Have your annual gross receipts exceeded $50,000 in any of the past 3 years?", why: "Past receipts exceeding this threshold disqualify you from using the simplified form." },
   { id: 3, text: "Do you have total assets with a fair market value exceeding $250,000?", why: "Total assets include cash, receivables, investments, land, buildings, equipment, and all other assets." },
@@ -46,20 +46,25 @@ const QUESTIONS: Question[] = [
   { id: 34, text: "Are you engaged in exchanging, creating, or distributing digital assets?", why: "Organizations engaged in digital asset activities must use Form 1023." },
 ];
 
+export type ScreenerAnswers = Record<number, "Yes" | "No">;
+
 interface Props {
-  onComplete: (result: "Pass" | "Fail", date: string) => void;
+  onComplete: (result: "Pass" | "Fail", date: string, answers: ScreenerAnswers) => void;
+  triggerLabel?: string;
 }
 
-export function Form1023EZScreener({ onComplete }: Props) {
+export function Form1023EZScreener({ onComplete, triggerLabel = "Run Eligibility Screener" }: Props) {
   const [open, setOpen] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [outcome, setOutcome] = useState<"Pass" | "Fail" | null>(null);
+  const [answers, setAnswers] = useState<ScreenerAnswers>({});
 
   const today = () => new Date().toISOString().slice(0, 10);
 
   const reset = () => {
     setCurrentIdx(0);
     setOutcome(null);
+    setAnswers({});
   };
 
   const handleOpenChange = (v: boolean) => {
@@ -68,27 +73,30 @@ export function Form1023EZScreener({ onComplete }: Props) {
   };
 
   const answer = (yes: boolean) => {
+    const q = QUESTIONS_1023EZ[currentIdx];
+    const nextAnswers: ScreenerAnswers = { ...answers, [q.id]: yes ? "Yes" : "No" };
+    setAnswers(nextAnswers);
     if (yes) {
       const date = today();
       setOutcome("Fail");
-      onComplete("Fail", date);
+      onComplete("Fail", date, nextAnswers);
       return;
     }
-    if (currentIdx + 1 >= QUESTIONS.length) {
+    if (currentIdx + 1 >= QUESTIONS_1023EZ.length) {
       const date = today();
       setOutcome("Pass");
-      onComplete("Pass", date);
+      onComplete("Pass", date, nextAnswers);
     } else {
       setCurrentIdx(currentIdx + 1);
     }
   };
 
-  const q = QUESTIONS[currentIdx];
+  const q = QUESTIONS_1023EZ[currentIdx];
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <Button type="button" variant="outline" size="sm" onClick={() => handleOpenChange(true)}>
-        <ClipboardCheck className="h-3 w-3 mr-1" /> Run Eligibility Screener
+        <ClipboardCheck className="h-3 w-3 mr-1" /> {triggerLabel}
       </Button>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
@@ -105,7 +113,7 @@ export function Form1023EZScreener({ onComplete }: Props) {
         {outcome === null && q && (
           <div className="space-y-4">
             <div className="text-xs text-muted-foreground">
-              Question {currentIdx + 1} of {QUESTIONS.length}
+              Question {currentIdx + 1} of {QUESTIONS_1023EZ.length}
             </div>
             <div className="space-y-2">
               <p className="text-sm font-semibold leading-relaxed">{q.text}</p>
