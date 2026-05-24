@@ -137,6 +137,17 @@ export function TaxExemptionTab({ companyId }: Props) {
     setForm(next);
     const payload = { ...next, company_id: companyId };
     delete (payload as any).id;
+    if ("eligibility_answers" in patch || "eligibility_result" in patch) {
+      // Diagnostic: verify screener answers reach the upsert payload
+      // eslint-disable-next-line no-console
+      console.log("[1023-EZ] saving screener payload", {
+        result: payload.eligibility_result,
+        run_date: payload.eligibility_run_date,
+        answer_count: payload.eligibility_answers
+          ? Object.keys(payload.eligibility_answers).length
+          : 0,
+      });
+    }
     const { error } = await (supabase as any)
       .from("nonprofit_tax_exemption")
       .upsert(payload, { onConflict: "company_id" });
@@ -146,6 +157,7 @@ export function TaxExemptionTab({ companyId }: Props) {
       qc.invalidateQueries({ queryKey: ["nonprofit_tax_exemption", companyId] });
     }
   };
+
 
   const handleUpload = async (
     field: "determination_letter_path" | "registration_certificate_path",
