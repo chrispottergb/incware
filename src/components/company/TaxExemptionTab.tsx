@@ -19,6 +19,7 @@ import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { toast } from "@/hooks/use-toast";
 import { Form1023EZScreener, type ScreenerAnswers } from "./Form1023EZScreener";
 import { Form1023EZResultsView } from "./Form1023EZResultsView";
+import { Form1023EZReferenceView } from "./Form1023EZReferenceView";
 
 interface Props {
   companyId: string;
