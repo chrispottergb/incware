@@ -188,9 +188,9 @@ export function Form1023EZReferenceView({ companyId }: Props) {
               />
               <Field label="Fiscal Year End Month" value={company?.fiscal_year_end} />
               <Field label="State of Incorporation" value={company?.state_of_incorporation} />
-              <Field label="Date of Incorporation" value={company?.incorporation_date} />
+              <Field label="Date of Incorporation" value={formatMonthYear(company?.incorporation_date)} />
               <Field label="NTEE Code" value={company?.ntee_code} />
-              <Field label="Organizational Structure" value={company?.entity_type} />
+              <Field label="Organizational Structure" value={company?.organizational_structure} />
               <Field label="Primary Contact Name" value={company?.contact_full_name} />
               <Field label="Primary Contact Phone" value={company?.contact_phone} />
             </div>
