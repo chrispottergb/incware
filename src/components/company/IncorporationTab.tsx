@@ -602,6 +602,7 @@ export default function IncorporationTab({ company }: Props) {
            ntee_code: form.ntee_code || null,
            tax_exempt_purpose: form.tax_exempt_purpose || null,
            non_distribution_clause: form.non_distribution_clause || null,
+           organizational_structure: form.organizational_structure || null,
         } as any)
         .eq("id", company.id);
       if (error) throw error;
