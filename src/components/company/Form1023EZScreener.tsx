@@ -51,6 +51,7 @@ export type ScreenerAnswers = Record<number, "Yes" | "No">;
 interface Props {
   onComplete: (result: "Pass" | "Fail", date: string, answers: ScreenerAnswers) => void;
   triggerLabel?: string;
+  externalOpenSignal?: number;
 }
 
 export function Form1023EZScreener({ onComplete, triggerLabel = "Run Eligibility Screener" }: Props) {
