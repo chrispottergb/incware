@@ -60,9 +60,22 @@ export function Form1023EZScreener({ onComplete, triggerLabel = "Run Eligibility
   const [outcome, setOutcome] = useState<"Pass" | "Fail" | null>(null);
   const [answers, setAnswers] = useState<ScreenerAnswers>({});
 
-  // Open the screener when external signal increments
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useState(() => {});
+  const today = () => new Date().toISOString().slice(0, 10);
+
+  const reset = () => {
+    setCurrentIdx(0);
+    setOutcome(null);
+    setAnswers({});
+  };
+
+  useEffect(() => {
+    if (externalOpenSignal && externalOpenSignal > 0) {
+      reset();
+      setOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalOpenSignal]);
+
 
 
   const today = () => new Date().toISOString().slice(0, 10);
