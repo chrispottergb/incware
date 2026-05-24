@@ -33,6 +33,8 @@ type Exemption = {
   eligibility_result: string | null;
   eligibility_run_date: string | null;
   eligibility_answers: ScreenerAnswers | null;
+  filing_status: string | null;
+  determination_letter_date: string | null;
   date_application_submitted: string | null;
   filing_fee_amount: string | null;
   filing_fee_date_paid: string | null;
