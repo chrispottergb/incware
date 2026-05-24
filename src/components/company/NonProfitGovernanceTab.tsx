@@ -367,11 +367,12 @@ export function NonProfitGovernanceTab({ companyId }: Props) {
                 <th className="px-2 py-2 font-medium whitespace-nowrap">Term Start</th>
                 <th className="px-2 py-2 font-medium whitespace-nowrap">Term End</th>
                 <th className="px-2 py-2 font-medium whitespace-nowrap">Status</th>
+                <th className="px-2 py-2 font-medium whitespace-nowrap">Hours/Week</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td colSpan={11} className="px-2 py-6 text-center text-muted-foreground italic">
+                <td colSpan={12} className="px-2 py-6 text-center text-muted-foreground italic">
                   Will populate after the Organizational Meeting is completed.
                 </td>
               </tr>
