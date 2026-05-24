@@ -278,8 +278,10 @@ export function TaxExemptionTab({ companyId }: Props) {
                     runDate={form.eligibility_run_date}
                     onRerun={() => setRerunSignal((n) => n + 1)}
                   />
+                )}
               </div>
             )}
+
             {form.form_selection === "1023-EZ" &&
               form.eligibility_result &&
               (!form.eligibility_answers ||
