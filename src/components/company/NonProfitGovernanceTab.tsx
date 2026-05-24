@@ -38,6 +38,7 @@ type InitialDirector = {
   phone: string | null;
   term_length: string | null;
   term_start_date: string | null;
+  hours_per_week: string | null;
   sort_order: number;
 };
 
