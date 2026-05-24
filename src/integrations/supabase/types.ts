@@ -2999,6 +2999,7 @@ export type Database = {
           created_at: string
           email: string | null
           full_name: string | null
+          hours_per_week: string | null
           id: string
           phone: string | null
           sort_order: number
@@ -3015,6 +3016,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           full_name?: string | null
+          hours_per_week?: string | null
           id?: string
           phone?: string | null
           sort_order?: number
@@ -3031,6 +3033,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           full_name?: string | null
+          hours_per_week?: string | null
           id?: string
           phone?: string | null
           sort_order?: number
@@ -3058,6 +3061,7 @@ export type Database = {
           company_id: string
           created_at: string
           date_application_submitted: string | null
+          determination_letter_date: string | null
           determination_letter_path: string | null
           effective_date_of_exemption: string | null
           electing_501c3: boolean | null
@@ -3068,6 +3072,7 @@ export type Database = {
           filing_due_date: string | null
           filing_fee_amount: number | null
           filing_fee_date_paid: string | null
+          filing_status: string | null
           form_990_version_required: string | null
           form_selection: string | null
           id: string
@@ -3088,6 +3093,7 @@ export type Database = {
           company_id: string
           created_at?: string
           date_application_submitted?: string | null
+          determination_letter_date?: string | null
           determination_letter_path?: string | null
           effective_date_of_exemption?: string | null
           electing_501c3?: boolean | null
@@ -3098,6 +3104,7 @@ export type Database = {
           filing_due_date?: string | null
           filing_fee_amount?: number | null
           filing_fee_date_paid?: string | null
+          filing_status?: string | null
           form_990_version_required?: string | null
           form_selection?: string | null
           id?: string
@@ -3118,6 +3125,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           date_application_submitted?: string | null
+          determination_letter_date?: string | null
           determination_letter_path?: string | null
           effective_date_of_exemption?: string | null
           electing_501c3?: boolean | null
@@ -3128,6 +3136,7 @@ export type Database = {
           filing_due_date?: string | null
           filing_fee_amount?: number | null
           filing_fee_date_paid?: string | null
+          filing_status?: string | null
           form_990_version_required?: string | null
           form_selection?: string | null
           id?: string

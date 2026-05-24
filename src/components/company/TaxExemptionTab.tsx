@@ -19,6 +19,7 @@ import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { toast } from "@/hooks/use-toast";
 import { Form1023EZScreener, type ScreenerAnswers } from "./Form1023EZScreener";
 import { Form1023EZResultsView } from "./Form1023EZResultsView";
+import { Form1023EZReferenceView } from "./Form1023EZReferenceView";
 
 interface Props {
   companyId: string;
@@ -32,6 +33,8 @@ type Exemption = {
   eligibility_result: string | null;
   eligibility_run_date: string | null;
   eligibility_answers: ScreenerAnswers | null;
+  filing_status: string | null;
+  determination_letter_date: string | null;
   date_application_submitted: string | null;
   filing_fee_amount: string | null;
   filing_fee_date_paid: string | null;
@@ -69,6 +72,8 @@ const EMPTY: Exemption = {
   eligibility_result: null,
   eligibility_run_date: null,
   eligibility_answers: null,
+  filing_status: null,
+  determination_letter_date: null,
   date_application_submitted: null,
   filing_fee_amount: null,
   filing_fee_date_paid: null,
@@ -291,7 +296,40 @@ export function TaxExemptionTab({ companyId }: Props) {
                   screener to capture a full audit trail.
                 </p>
               )}
+
+            {form.form_selection === "1023-EZ" && form.eligibility_result === "Pass" && (
+              <div className="pt-2">
+                <Form1023EZReferenceView companyId={companyId} />
+              </div>
+            )}
           </div>
+
+          <div className="space-y-1">
+            <Label>Filing Status</Label>
+            <Select
+              value={form.filing_status ?? ""}
+              onValueChange={(v) => save({ filing_status: v })}
+            >
+              <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Not Started">Not Started</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Submitted">Submitted</SelectItem>
+                <SelectItem value="Approved">Approved</SelectItem>
+                <SelectItem value="Denied">Denied</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Determination Letter Date</Label>
+            <DatePickerField
+              value={form.determination_letter_date ?? ""}
+              onChange={(v) => save({ determination_letter_date: v || null })}
+            />
+          </div>
+
+
 
 
 

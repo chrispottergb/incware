@@ -38,6 +38,7 @@ type InitialDirector = {
   phone: string | null;
   term_length: string | null;
   term_start_date: string | null;
+  hours_per_week: string | null;
   sort_order: number;
 };
 
@@ -180,13 +181,14 @@ export function NonProfitGovernanceTab({ companyId }: Props) {
                 <th className="px-2 py-2 font-medium whitespace-nowrap">Phone</th>
                 <th className="px-2 py-2 font-medium whitespace-nowrap">Term Length</th>
                 <th className="px-2 py-2 font-medium whitespace-nowrap">Term Start</th>
+                <th className="px-2 py-2 font-medium whitespace-nowrap">Hours/Week</th>
                 <th className="px-2 py-2 w-8"></th>
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-2 py-4 text-center text-muted-foreground">
+                  <td colSpan={11} className="px-2 py-4 text-center text-muted-foreground">
                     No initial directors yet. Click "Add Director" to begin.
                   </td>
                 </tr>
@@ -306,6 +308,17 @@ export function NonProfitGovernanceTab({ companyId }: Props) {
                       className="h-7 text-xs"
                     />
                   </td>
+                  <td className="px-1 py-1 w-[90px]">
+                    <Input
+                      className="h-7 text-xs"
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      value={r.hours_per_week ?? ""}
+                      onChange={(e) => updateRow(r.id, { hours_per_week: e.target.value })}
+                      onBlur={(e) => persistRow(r.id, { hours_per_week: e.target.value || null })}
+                    />
+                  </td>
                   <td className="px-1 py-1 text-center">
                     <Button
                       variant="ghost"
@@ -354,11 +367,12 @@ export function NonProfitGovernanceTab({ companyId }: Props) {
                 <th className="px-2 py-2 font-medium whitespace-nowrap">Term Start</th>
                 <th className="px-2 py-2 font-medium whitespace-nowrap">Term End</th>
                 <th className="px-2 py-2 font-medium whitespace-nowrap">Status</th>
+                <th className="px-2 py-2 font-medium whitespace-nowrap">Hours/Week</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td colSpan={11} className="px-2 py-6 text-center text-muted-foreground italic">
+                <td colSpan={12} className="px-2 py-6 text-center text-muted-foreground italic">
                   Will populate after the Organizational Meeting is completed.
                 </td>
               </tr>
