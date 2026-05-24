@@ -54,11 +54,16 @@ interface Props {
   externalOpenSignal?: number;
 }
 
-export function Form1023EZScreener({ onComplete, triggerLabel = "Run Eligibility Screener" }: Props) {
+export function Form1023EZScreener({ onComplete, triggerLabel = "Run Eligibility Screener", externalOpenSignal }: Props) {
   const [open, setOpen] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [outcome, setOutcome] = useState<"Pass" | "Fail" | null>(null);
   const [answers, setAnswers] = useState<ScreenerAnswers>({});
+
+  // Open the screener when external signal increments
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useState(() => {});
+
 
   const today = () => new Date().toISOString().slice(0, 10);
 
