@@ -1,0 +1,1 @@
+ALTER TABLE public.nonprofit_tax_exemption ADD COLUMN IF NOT EXISTS eligibility_answers jsonb;
