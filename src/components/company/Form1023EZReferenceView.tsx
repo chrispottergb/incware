@@ -29,6 +29,7 @@ type Company = {
   incorporation_date: string | null;
   ntee_code: string | null;
   entity_type: string | null;
+  organizational_structure: string | null;
   contact_full_name: string | null;
   contact_phone: string | null;
   business_purpose: string | null;
