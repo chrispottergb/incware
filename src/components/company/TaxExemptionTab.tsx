@@ -296,7 +296,40 @@ export function TaxExemptionTab({ companyId }: Props) {
                   screener to capture a full audit trail.
                 </p>
               )}
+
+            {form.form_selection === "1023-EZ" && form.eligibility_result === "Pass" && (
+              <div className="pt-2">
+                <Form1023EZReferenceView companyId={companyId} />
+              </div>
+            )}
           </div>
+
+          <div className="space-y-1">
+            <Label>Filing Status</Label>
+            <Select
+              value={form.filing_status ?? ""}
+              onValueChange={(v) => save({ filing_status: v })}
+            >
+              <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Not Started">Not Started</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Submitted">Submitted</SelectItem>
+                <SelectItem value="Approved">Approved</SelectItem>
+                <SelectItem value="Denied">Denied</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Determination Letter Date</Label>
+            <DatePickerField
+              value={form.determination_letter_date ?? ""}
+              onChange={(v) => save({ determination_letter_date: v || null })}
+            />
+          </div>
+
+
 
 
 
