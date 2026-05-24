@@ -308,7 +308,17 @@ export function NonProfitGovernanceTab({ companyId }: Props) {
                       className="h-7 text-xs"
                     />
                   </td>
-                  <td className="px-1 py-1 text-center">
+                  <td className="px-1 py-1 w-[90px]">
+                    <Input
+                      className="h-7 text-xs"
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      value={r.hours_per_week ?? ""}
+                      onChange={(e) => updateRow(r.id, { hours_per_week: e.target.value })}
+                      onBlur={(e) => persistRow(r.id, { hours_per_week: e.target.value || null })}
+                    />
+                  </td>
                     <Button
                       variant="ghost"
                       size="icon"
