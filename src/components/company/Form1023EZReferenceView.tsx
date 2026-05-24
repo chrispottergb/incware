@@ -29,6 +29,7 @@ type Company = {
   incorporation_date: string | null;
   ntee_code: string | null;
   entity_type: string | null;
+  organizational_structure: string | null;
   contact_full_name: string | null;
   contact_phone: string | null;
   business_purpose: string | null;
@@ -70,6 +71,17 @@ function formatAddress(
   return full || "—";
 }
 
+function formatMonthYear(dateStr: string | null | undefined) {
+  if (!dateStr) return null;
+  // Accept YYYY-MM-DD or ISO; build date in local TZ to avoid off-by-one
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr);
+  const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
+
+
 function Field({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="space-y-0.5">
@@ -89,7 +101,7 @@ export function Form1023EZReferenceView({ companyId }: Props) {
       const { data, error } = await supabase
         .from("companies")
         .select(
-          "name, ein, address, address_2, city, state, zip, fiscal_year_end, state_of_incorporation, incorporation_date, ntee_code, entity_type, contact_full_name, contact_phone, business_purpose, tax_exempt_purpose"
+          "name, ein, address, address_2, city, state, zip, fiscal_year_end, state_of_incorporation, incorporation_date, ntee_code, entity_type, organizational_structure, contact_full_name, contact_phone, business_purpose, tax_exempt_purpose"
         )
         .eq("id", companyId)
         .maybeSingle();
@@ -176,9 +188,9 @@ export function Form1023EZReferenceView({ companyId }: Props) {
               />
               <Field label="Fiscal Year End Month" value={company?.fiscal_year_end} />
               <Field label="State of Incorporation" value={company?.state_of_incorporation} />
-              <Field label="Date of Incorporation" value={company?.incorporation_date} />
+              <Field label="Date of Incorporation" value={formatMonthYear(company?.incorporation_date)} />
               <Field label="NTEE Code" value={company?.ntee_code} />
-              <Field label="Organizational Structure" value={company?.entity_type} />
+              <Field label="Organizational Structure" value={company?.organizational_structure} />
               <Field label="Primary Contact Name" value={company?.contact_full_name} />
               <Field label="Primary Contact Phone" value={company?.contact_phone} />
             </div>

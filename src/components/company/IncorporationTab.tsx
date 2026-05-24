@@ -251,6 +251,7 @@ export default function IncorporationTab({ company }: Props) {
     non_distribution_clause:
       (company as any).non_distribution_clause ??
       (company.entity_type === "Non-Profit" ? DEFAULT_NON_DISTRIBUTION_CLAUSE : ""),
+    organizational_structure: (company as any).organizational_structure ?? "",
   });
 
   // Phone formatting helper
@@ -323,6 +324,7 @@ export default function IncorporationTab({ company }: Props) {
       non_distribution_clause:
         (company as any).non_distribution_clause ??
         (company.entity_type === "Non-Profit" ? DEFAULT_NON_DISTRIBUTION_CLAUSE : ""),
+      organizational_structure: (company as any).organizational_structure ?? "",
     });
     setLlcSElectionEnabled(isLLCType(company.entity_type) ? !!company.s_election_date : false);
   }, [company.id]);
@@ -602,6 +604,7 @@ export default function IncorporationTab({ company }: Props) {
            ntee_code: form.ntee_code || null,
            tax_exempt_purpose: form.tax_exempt_purpose || null,
            non_distribution_clause: form.non_distribution_clause || null,
+           organizational_structure: form.organizational_structure || null,
         } as any)
         .eq("id", company.id);
       if (error) throw error;
@@ -852,6 +855,17 @@ export default function IncorporationTab({ company }: Props) {
                       </a>
                     </Label>
                     <Input className="h-7 text-sm" value={form.ntee_code} onChange={(e) => update("ntee_code", e.target.value)} placeholder="Code" />
+                  </div>
+                  <div className="field-group col-span-3">
+                    <Label className="field-label">Organizational Structure</Label>
+                    <Select value={form.organizational_structure || ""} onValueChange={(v) => updateAndSave("organizational_structure", v)}>
+                      <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Corporation">Corporation</SelectItem>
+                        <SelectItem value="Unincorporated Association">Unincorporated Association</SelectItem>
+                        <SelectItem value="Trust">Trust</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="field-group col-span-3">
                     <Label className="field-label">Scheduled Annual Mtg. Date</Label>
