@@ -181,6 +181,7 @@ export function NonProfitGovernanceTab({ companyId }: Props) {
                 <th className="px-2 py-2 font-medium whitespace-nowrap">Phone</th>
                 <th className="px-2 py-2 font-medium whitespace-nowrap">Term Length</th>
                 <th className="px-2 py-2 font-medium whitespace-nowrap">Term Start</th>
+                <th className="px-2 py-2 font-medium whitespace-nowrap">Hours/Week</th>
                 <th className="px-2 py-2 w-8"></th>
               </tr>
             </thead>
