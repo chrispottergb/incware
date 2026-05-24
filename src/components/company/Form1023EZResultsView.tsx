@@ -47,6 +47,12 @@ export function Form1023EZResultsView({ answers, result, runDate, onRerun }: Pro
           <div className="text-xs text-muted-foreground">Run date: {runDate ?? "—"}</div>
         </div>
 
+        {!hasAnswers && result && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+            This result was recorded before per-question answers were saved. Re-run the screener to capture a full audit trail.
+          </div>
+        )}
+
         <div className="border rounded-md overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
