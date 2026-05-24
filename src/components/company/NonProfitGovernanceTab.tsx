@@ -188,7 +188,7 @@ export function NonProfitGovernanceTab({ companyId }: Props) {
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-2 py-4 text-center text-muted-foreground">
+                  <td colSpan={11} className="px-2 py-4 text-center text-muted-foreground">
                     No initial directors yet. Click "Add Director" to begin.
                   </td>
                 </tr>
