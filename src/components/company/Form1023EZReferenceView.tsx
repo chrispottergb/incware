@@ -78,6 +78,9 @@ function formatMonthYear(dateStr: string | null | undefined) {
   const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(dateStr);
   if (isNaN(d.getTime())) return dateStr;
   return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
+
 
 function Field({ label, value }: { label: string; value: string | null | undefined }) {
   return (
