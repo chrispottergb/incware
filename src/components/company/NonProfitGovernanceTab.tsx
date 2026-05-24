@@ -319,6 +319,7 @@ export function NonProfitGovernanceTab({ companyId }: Props) {
                       onBlur={(e) => persistRow(r.id, { hours_per_week: e.target.value || null })}
                     />
                   </td>
+                  <td className="px-1 py-1 text-center">
                     <Button
                       variant="ghost"
                       size="icon"
