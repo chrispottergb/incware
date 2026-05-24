@@ -857,6 +857,17 @@ export default function IncorporationTab({ company }: Props) {
                     <Input className="h-7 text-sm" value={form.ntee_code} onChange={(e) => update("ntee_code", e.target.value)} placeholder="Code" />
                   </div>
                   <div className="field-group col-span-3">
+                    <Label className="field-label">Organizational Structure</Label>
+                    <Select value={form.organizational_structure || ""} onValueChange={(v) => updateAndSave("organizational_structure", v)}>
+                      <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Corporation">Corporation</SelectItem>
+                        <SelectItem value="Unincorporated Association">Unincorporated Association</SelectItem>
+                        <SelectItem value="Trust">Trust</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="field-group col-span-3">
                     <Label className="field-label">Scheduled Annual Mtg. Date</Label>
                     <Input className="h-7 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
                   </div>
