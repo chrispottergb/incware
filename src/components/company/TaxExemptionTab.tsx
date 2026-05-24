@@ -72,6 +72,8 @@ const EMPTY: Exemption = {
   eligibility_result: null,
   eligibility_run_date: null,
   eligibility_answers: null,
+  filing_status: null,
+  determination_letter_date: null,
   date_application_submitted: null,
   filing_fee_amount: null,
   filing_fee_date_paid: null,
