@@ -251,6 +251,7 @@ export default function IncorporationTab({ company }: Props) {
     non_distribution_clause:
       (company as any).non_distribution_clause ??
       (company.entity_type === "Non-Profit" ? DEFAULT_NON_DISTRIBUTION_CLAUSE : ""),
+    organizational_structure: (company as any).organizational_structure ?? "",
   });
 
   // Phone formatting helper
