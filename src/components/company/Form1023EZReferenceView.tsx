@@ -71,6 +71,14 @@ function formatAddress(
   return full || "—";
 }
 
+function formatMonthYear(dateStr: string | null | undefined) {
+  if (!dateStr) return null;
+  // Accept YYYY-MM-DD or ISO; build date in local TZ to avoid off-by-one
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr);
+  const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
 function Field({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="space-y-0.5">
