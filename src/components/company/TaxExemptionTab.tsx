@@ -247,15 +247,29 @@ export function TaxExemptionTab({ companyId }: Props) {
               className="bg-muted"
             />
             {form.form_selection === "1023-EZ" && (
-              <div className="pt-1">
+              <div className="pt-1 flex flex-wrap gap-2">
                 <Form1023EZScreener
-                  onComplete={(result, date) =>
-                    save({ eligibility_result: result, eligibility_run_date: date })
+                  externalOpenSignal={rerunSignal}
+                  onComplete={(result, date, answers) =>
+                    save({
+                      eligibility_result: result,
+                      eligibility_run_date: date,
+                      eligibility_answers: answers,
+                    })
                   }
                 />
+                {form.eligibility_result && (
+                  <Form1023EZResultsView
+                    answers={form.eligibility_answers}
+                    result={form.eligibility_result}
+                    runDate={form.eligibility_run_date}
+                    onRerun={() => setRerunSignal((n) => n + 1)}
+                  />
+                )}
               </div>
             )}
           </div>
+
 
           <div className="space-y-1">
             <Label>Date Application Submitted</Label>
