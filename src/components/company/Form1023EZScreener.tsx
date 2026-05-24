@@ -77,15 +77,6 @@ export function Form1023EZScreener({ onComplete, triggerLabel = "Run Eligibility
   }, [externalOpenSignal]);
 
 
-
-  const today = () => new Date().toISOString().slice(0, 10);
-
-  const reset = () => {
-    setCurrentIdx(0);
-    setOutcome(null);
-    setAnswers({});
-  };
-
   const handleOpenChange = (v: boolean) => {
     setOpen(v);
     if (v) reset();
