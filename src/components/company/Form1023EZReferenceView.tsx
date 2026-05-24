@@ -101,7 +101,7 @@ export function Form1023EZReferenceView({ companyId }: Props) {
       const { data, error } = await supabase
         .from("companies")
         .select(
-          "name, ein, address, address_2, city, state, zip, fiscal_year_end, state_of_incorporation, incorporation_date, ntee_code, entity_type, contact_full_name, contact_phone, business_purpose, tax_exempt_purpose"
+          "name, ein, address, address_2, city, state, zip, fiscal_year_end, state_of_incorporation, incorporation_date, ntee_code, entity_type, organizational_structure, contact_full_name, contact_phone, business_purpose, tax_exempt_purpose"
         )
         .eq("id", companyId)
         .maybeSingle();
