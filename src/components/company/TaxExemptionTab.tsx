@@ -95,6 +95,7 @@ export function TaxExemptionTab({ companyId }: Props) {
   const [form, setForm] = useState<Exemption>(EMPTY);
   const [filings, setFilings] = useState<Filing[]>([]);
   const [deleteFilingId, setDeleteFilingId] = useState<string | null>(null);
+  const [rerunSignal, setRerunSignal] = useState(0);
 
   const { data } = useQuery({
     queryKey: ["nonprofit_tax_exemption", companyId],
