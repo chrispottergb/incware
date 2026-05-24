@@ -21,6 +21,7 @@ interface Props {
 export function Form1023EZResultsView({ answers, result, runDate, onRerun }: Props) {
   const [open, setOpen] = useState(false);
   const isPass = result === "Pass";
+  const hasAnswers = !!answers && Object.keys(answers).length > 0;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
