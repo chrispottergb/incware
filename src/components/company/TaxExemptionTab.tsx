@@ -278,10 +278,19 @@ export function TaxExemptionTab({ companyId }: Props) {
                     runDate={form.eligibility_run_date}
                     onRerun={() => setRerunSignal((n) => n + 1)}
                   />
-                )}
               </div>
             )}
+            {form.form_selection === "1023-EZ" &&
+              form.eligibility_result &&
+              (!form.eligibility_answers ||
+                Object.keys(form.eligibility_answers).length === 0) && (
+                <p className="text-xs text-amber-700 pt-1">
+                  This result was recorded before per-question answers were saved. Re-run the
+                  screener to capture a full audit trail.
+                </p>
+              )}
           </div>
+
 
 
           <div className="space-y-1">
