@@ -101,6 +101,7 @@ export default function LeaseTransactionDialog({
       if (error) throw error;
 
       queryClient.invalidateQueries({ queryKey: ["company_assets", companyId, "lease"] });
+      queryClient.invalidateQueries({ queryKey: ["company_leases", companyId] });
 
       // Save landlord to address book
       if (form.landlord_name?.trim()) {
