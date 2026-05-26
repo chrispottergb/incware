@@ -187,10 +187,20 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     doc.text(`MINUTES OF ${meetingType.toUpperCase()}`, cx, y, { align: "center" });
     y += 4;
     doc.setFontSize(11);
-    doc.setFont("Arial", "normal");
     doc.setTextColor(60, 60, 60);
-    doc.text(`${companyName} — ${meetingDate}`, cx, y, { align: "center" });
+    const namePart = `${companyName} — `;
+    doc.setFont("Arial", "normal");
+    const namePartWidth = doc.getTextWidth(namePart);
+    doc.setFont("Arial", "italic");
+    const dPartWidth = doc.getTextWidth(meetingDate);
+    const startX = cx - (namePartWidth + dPartWidth) / 2;
+    doc.setFont("Arial", "normal");
+    doc.text(namePart, startX, y);
+    doc.setFont("Arial", "italic");
+    doc.text(meetingDate, startX + namePartWidth, y);
+    doc.setFont("Arial", "normal");
     y += 4;
+
     // Blue horizontal line beneath header
     doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
     doc.setLineWidth(1);
