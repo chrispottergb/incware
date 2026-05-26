@@ -572,7 +572,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {(isLLCType(company.entity_type) ? LLC_MEETING_TYPES : CORP_MEETING_TYPES).map((t) => (
-                        <SelectItem key={t} value={t}>{t === "Shareholder Meeting" ? "Annual Shareholder Meeting" : t}</SelectItem>
+                        <SelectItem key={t} value={t}>{t === "Shareholder Meeting" ? "Annual Shareholder Meeting" : t === "Annual Meeting" && !isLLCType(company.entity_type) ? "Annual Meeting of Directors" : t}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
