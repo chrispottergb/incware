@@ -1250,6 +1250,21 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         }
         y += 3;
 
+        // S-Corporation status paragraph (rendered after secretary is elected)
+        const hasSElection = company?.s_election_date != null;
+        if (!isLLC && hasSElection) {
+          const fye = company?.fiscal_year_end || "December 31";
+          const sCorpText = `The Secretary noted that the corporation has elected S corporation status under Subchapter S of the Internal Revenue Code, and that said election remains in full force and effect for the tax year ending ${fye}.`;
+          const sCorpLines = doc.splitTextToSize(sCorpText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+          for (const line of sCorpLines) {
+            y = checkPageBreak(doc, y, 6);
+            doc.text(line, MARGIN, y);
+            y += 5.5;
+          }
+          y += 3;
+        }
+
+
         const quorumText = `The secretary announced that there were, present in person or by proxy, the following shareholder(s), representing a quorum of the shareholders and showing the current resident address and the number of shares held by each:`;
         const quorumLines = doc.splitTextToSize(quorumText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
         for (const line of quorumLines) {
