@@ -139,10 +139,20 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
 
     // Date
     doc.setFontSize(11);
-    doc.setFont("Arial", "normal");
     doc.setTextColor(40, 40, 40);
-    doc.text(`Date: ${meetingDate}`, cx, y, { align: "center" });
+    const dateLabel = "Date: ";
+    doc.setFont("Arial", "normal");
+    const dateLabelWidth = doc.getTextWidth(dateLabel);
+    doc.setFont("Arial", "italic");
+    const dateValueWidth = doc.getTextWidth(meetingDate);
+    const dateStartX = cx - (dateLabelWidth + dateValueWidth) / 2;
+    doc.setFont("Arial", "normal");
+    doc.text(dateLabel, dateStartX, y);
+    doc.setFont("Arial", "italic");
+    doc.text(meetingDate, dateStartX + dateLabelWidth, y);
+    doc.setFont("Arial", "normal");
     y += 4;
+
 
     // Blue rule
     doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
