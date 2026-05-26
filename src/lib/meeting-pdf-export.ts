@@ -139,10 +139,20 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
 
     // Date
     doc.setFontSize(11);
-    doc.setFont("Arial", "normal");
     doc.setTextColor(40, 40, 40);
-    doc.text(`Date: ${meetingDate}`, cx, y, { align: "center" });
+    const dateLabel = "Date: ";
+    doc.setFont("Arial", "normal");
+    const dateLabelWidth = doc.getTextWidth(dateLabel);
+    doc.setFont("Arial", "italic");
+    const dateValueWidth = doc.getTextWidth(meetingDate);
+    const dateStartX = cx - (dateLabelWidth + dateValueWidth) / 2;
+    doc.setFont("Arial", "normal");
+    doc.text(dateLabel, dateStartX, y);
+    doc.setFont("Arial", "italic");
+    doc.text(meetingDate, dateStartX + dateLabelWidth, y);
+    doc.setFont("Arial", "normal");
     y += 4;
+
 
     // Blue rule
     doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
@@ -177,10 +187,20 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     doc.text(`MINUTES OF ${meetingType.toUpperCase()}`, cx, y, { align: "center" });
     y += 4;
     doc.setFontSize(11);
-    doc.setFont("Arial", "normal");
     doc.setTextColor(60, 60, 60);
-    doc.text(`${companyName} — ${meetingDate}`, cx, y, { align: "center" });
+    const namePart = `${companyName} — `;
+    doc.setFont("Arial", "normal");
+    const namePartWidth = doc.getTextWidth(namePart);
+    doc.setFont("Arial", "italic");
+    const dPartWidth = doc.getTextWidth(meetingDate);
+    const startX = cx - (namePartWidth + dPartWidth) / 2;
+    doc.setFont("Arial", "normal");
+    doc.text(namePart, startX, y);
+    doc.setFont("Arial", "italic");
+    doc.text(meetingDate, startX + namePartWidth, y);
+    doc.setFont("Arial", "normal");
     y += 4;
+
     // Blue horizontal line beneath header
     doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
     doc.setLineWidth(1);
@@ -772,10 +792,12 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
   y += 4;
 
   doc.setFontSize(12);
-  doc.setFont("Arial", "normal");
+  doc.setFont("Arial", "italic");
   doc.setTextColor(30, 30, 30);
   doc.text(fullDateStr, cx, y, { align: "center" });
+  doc.setFont("Arial", "normal");
   y += 4;
+
 
   // Blue horizontal line beneath header
   doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
@@ -838,7 +860,12 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
 
   y += 6;
   y = checkPageBreak(doc, y, 10 + signerNames.length * 15);
-  doc.text(`DATED: ${fullDateStr}`, MARGIN, y);
+  doc.setFont("Arial", "normal");
+  doc.text("DATED: ", MARGIN, y);
+  const datedLabelWidth = doc.getTextWidth("DATED: ");
+  doc.setFont("Arial", "italic");
+  doc.text(fullDateStr, MARGIN + datedLabelWidth, y);
+  doc.setFont("Arial", "normal");
   y += 12;
 
   signerNames.forEach(name => {
@@ -1146,7 +1173,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setFontSize(14);
     doc.setFont("Arial", "bold");
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
-    const titleText = isShareholder ? "MINUTES OF THE MEETING OF SHAREHOLDERS" : "MINUTES OF THE ANNUAL MEETING";
+    const titleText = isShareholder ? "MINUTES OF THE ANNUAL MEETING OF SHAREHOLDERS" : "MINUTES OF THE ANNUAL MEETING";
     doc.text(titleText, pw / 2, y, { align: "center" });
     y += 6;
   } else {
@@ -1207,19 +1234,6 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
       }
       y += 3;
 
-      // S-Corporation status paragraph for corporations with S-election
-      const hasSElection = company?.s_election_date != null;
-      if (!isLLC && hasSElection) {
-        const fye = company?.fiscal_year_end || "December 31";
-        const sCorpText = `The Secretary noted that the corporation has elected S corporation status under Subchapter S of the Internal Revenue Code, and that said election remains in full force and effect for the tax year ending ${fye}.`;
-        const sCorpLines = doc.splitTextToSize(sCorpText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-        for (const line of sCorpLines) {
-          y = checkPageBreak(doc, y, 6);
-          doc.text(line, MARGIN, y);
-          y += 5.5;
-        }
-        y += 3;
-      }
     } else {
       const meetingLabel = "Annual Meeting";
       const introText = `The ${meetingLabel} of the ${stateOfInc} ${entityLabel} was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${meeting.meeting_location ? `, at ${meeting.meeting_location}` : ""}.`;
@@ -1262,6 +1276,21 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
           y += 5.5;
         }
         y += 3;
+
+        // S-Corporation status paragraph (rendered after secretary is elected)
+        const hasSElection = company?.s_election_date != null;
+        if (!isLLC && hasSElection) {
+          const fye = company?.fiscal_year_end || "December 31";
+          const sCorpText = `The Secretary noted that the corporation has elected S corporation status under Subchapter S of the Internal Revenue Code, and that said election remains in full force and effect for the tax year ending ${fye}.`;
+          const sCorpLines = doc.splitTextToSize(sCorpText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+          for (const line of sCorpLines) {
+            y = checkPageBreak(doc, y, 6);
+            doc.text(line, MARGIN, y);
+            y += 5.5;
+          }
+          y += 3;
+        }
+
 
         const quorumText = `The secretary announced that there were, present in person or by proxy, the following shareholder(s), representing a quorum of the shareholders and showing the current resident address and the number of shares held by each:`;
         const quorumLines = doc.splitTextToSize(quorumText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
