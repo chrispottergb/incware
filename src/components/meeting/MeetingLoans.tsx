@@ -133,6 +133,11 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
   const toEntries = useMemo(() => balanceEntries.filter(e => e.direction === "to"), [balanceEntries]);
   const fromEntries = useMemo(() => balanceEntries.filter(e => e.direction === "from"), [balanceEntries]);
 
+  const invalidateBalanceQueries = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["meeting-balance-entries", meetingId] });
+    queryClient.invalidateQueries({ queryKey: ["meeting-balance-entries-pdf", meetingId] });
+  }, [meetingId, queryClient]);
+
   const addBalanceEntry = useCallback(async (direction: string) => {
     const { error } = await supabase.from("meeting_balance_entries").insert({
       meeting_id: meetingId,
@@ -145,22 +150,22 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
       ending_balance: 0,
     } as any);
     if (error) { toast.error("Failed to add row"); return; }
-    queryClient.invalidateQueries({ queryKey: ["meeting-balance-entries", meetingId] });
-  }, [meetingId, queryClient]);
+    invalidateBalanceQueries();
+  }, [meetingId, invalidateBalanceQueries]);
 
   const updateBalanceEntry = useCallback(async (id: string, field: string, value: string) => {
     const numFields = ["beginning_balance", "advances", "repayments", "ending_balance"];
     const updateVal = numFields.includes(field) ? (value ? parseFloat(value) : 0) : value;
     const { error } = await supabase.from("meeting_balance_entries").update({ [field]: updateVal } as any).eq("id", id);
     if (error) { toast.error("Failed to save"); return; }
-    queryClient.invalidateQueries({ queryKey: ["meeting-balance-entries", meetingId] });
-  }, [meetingId, queryClient]);
+    invalidateBalanceQueries();
+  }, [invalidateBalanceQueries]);
 
   const deleteBalanceEntry = useCallback(async (id: string) => {
     const { error } = await supabase.from("meeting_balance_entries").delete().eq("id", id);
     if (error) { toast.error("Failed to delete"); return; }
-    queryClient.invalidateQueries({ queryKey: ["meeting-balance-entries", meetingId] });
-  }, [meetingId, queryClient]);
+    invalidateBalanceQueries();
+  }, [invalidateBalanceQueries]);
   // Promissory note wizard state
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [noteForm, setNoteForm] = useState<NoteForm>({
