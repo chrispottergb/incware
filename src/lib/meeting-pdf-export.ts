@@ -860,7 +860,12 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
 
   y += 6;
   y = checkPageBreak(doc, y, 10 + signerNames.length * 15);
-  doc.text(`DATED: ${fullDateStr}`, MARGIN, y);
+  doc.setFont("Arial", "normal");
+  doc.text("DATED: ", MARGIN, y);
+  const datedLabelWidth = doc.getTextWidth("DATED: ");
+  doc.setFont("Arial", "italic");
+  doc.text(fullDateStr, MARGIN + datedLabelWidth, y);
+  doc.setFont("Arial", "normal");
   y += 12;
 
   signerNames.forEach(name => {
