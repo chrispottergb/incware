@@ -391,15 +391,18 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
               title: "Leases",
               companyName,
               table: {
-                headers: ["Property Description", "Property Address", "Landlord", "Landlord Address", "Monthly Payment"],
+                headers: ["Property Description", "Property Address", "Landlord", "Landlord Address", "Monthly Payment", "Leasehold Improvements", "Improvement Description"],
                 rows: leases.map((a: any) => [
                   a.description || "—",
                   a.address || "—",
                   a.landlord_name || "—",
                   a.landlord_address || "—",
                   fmt(a.monthly_payment),
+                  a.leasehold_improvement_amount != null && Number(a.leasehold_improvement_amount) > 0 ? fmt(a.leasehold_improvement_amount) : "—",
+                  a.leasehold_improvement_description || "—",
                 ]),
               },
+              landscape: true,
             }}
           />
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
