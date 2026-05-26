@@ -792,10 +792,12 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
   y += 4;
 
   doc.setFontSize(12);
-  doc.setFont("Arial", "normal");
+  doc.setFont("Arial", "italic");
   doc.setTextColor(30, 30, 30);
   doc.text(fullDateStr, cx, y, { align: "center" });
+  doc.setFont("Arial", "normal");
   y += 4;
+
 
   // Blue horizontal line beneath header
   doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
