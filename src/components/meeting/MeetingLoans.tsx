@@ -920,6 +920,31 @@ function BalanceTable({ title, entries, onAdd, onUpdate, onDelete }: {
   );
 }
 
+/* ---- Currency cell — formats on blur, raw on focus ---- */
+function CurrencyCell({ value, onChange, onCommit }: {
+  value: string;
+  onChange: (v: string) => void;
+  onCommit: () => void;
+}) {
+  const [focused, setFocused] = useState(false);
+  const formatted = (() => {
+    const n = parseFloat(value);
+    if (!isFinite(n)) return "";
+    return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  })();
+  return (
+    <Input
+      className="h-8 text-sm text-right"
+      type="text"
+      inputMode="decimal"
+      value={focused ? value : formatted}
+      onFocus={() => setFocused(true)}
+      onChange={(e) => onChange(e.target.value.replace(/[$,\s]/g, ""))}
+      onBlur={() => { setFocused(false); onCommit(); }}
+    />
+  );
+}
+
 /* ---- Individual row — saves on blur ---- */
 function BalanceRow({ entry, onUpdate, onDelete }: {
   entry: BalanceEntry;
@@ -954,16 +979,16 @@ function BalanceRow({ entry, onUpdate, onDelete }: {
         <Input className="h-8 text-sm" value={local.relationship} onChange={(e) => setLocal(p => ({ ...p, relationship: e.target.value }))} onBlur={() => handleBlur("relationship")} placeholder="Relationship" />
       </TableCell>
       <TableCell className="p-1">
-        <Input className="h-8 text-sm text-right" type="text" inputMode="decimal" value={local.beginning_balance} onChange={(e) => setLocal(p => ({ ...p, beginning_balance: e.target.value }))} onBlur={() => handleBlur("beginning_balance")} />
+        <CurrencyCell value={local.beginning_balance} onChange={(v) => setLocal(p => ({ ...p, beginning_balance: v }))} onCommit={() => handleBlur("beginning_balance")} />
       </TableCell>
       <TableCell className="p-1">
-        <Input className="h-8 text-sm text-right" type="text" inputMode="decimal" value={local.advances} onChange={(e) => setLocal(p => ({ ...p, advances: e.target.value }))} onBlur={() => handleBlur("advances")} />
+        <CurrencyCell value={local.advances} onChange={(v) => setLocal(p => ({ ...p, advances: v }))} onCommit={() => handleBlur("advances")} />
       </TableCell>
       <TableCell className="p-1">
-        <Input className="h-8 text-sm text-right" type="text" inputMode="decimal" value={local.repayments} onChange={(e) => setLocal(p => ({ ...p, repayments: e.target.value }))} onBlur={() => handleBlur("repayments")} />
+        <CurrencyCell value={local.repayments} onChange={(v) => setLocal(p => ({ ...p, repayments: v }))} onCommit={() => handleBlur("repayments")} />
       </TableCell>
       <TableCell className="p-1">
-        <Input className="h-8 text-sm text-right" type="text" inputMode="decimal" value={local.ending_balance} onChange={(e) => setLocal(p => ({ ...p, ending_balance: e.target.value }))} onBlur={() => handleBlur("ending_balance")} />
+        <CurrencyCell value={local.ending_balance} onChange={(v) => setLocal(p => ({ ...p, ending_balance: v }))} onCommit={() => handleBlur("ending_balance")} />
       </TableCell>
       <TableCell className="p-1">
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(entry.id)}>
