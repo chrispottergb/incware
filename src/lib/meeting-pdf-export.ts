@@ -1146,7 +1146,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setFontSize(14);
     doc.setFont("Arial", "bold");
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
-    const titleText = isShareholder ? "MINUTES OF THE MEETING OF SHAREHOLDERS" : "MINUTES OF THE ANNUAL MEETING";
+    const titleText = isShareholder ? "MINUTES OF THE ANNUAL MEETING OF SHAREHOLDERS" : "MINUTES OF THE ANNUAL MEETING";
     doc.text(titleText, pw / 2, y, { align: "center" });
     y += 6;
   } else {
