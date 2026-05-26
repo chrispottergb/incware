@@ -246,6 +246,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company_assets", companyId, "lease"] });
+      queryClient.invalidateQueries({ queryKey: ["company_leases", companyId] });
       toast.success("Lease removed.");
     },
     onError: (err: Error) => toast.error(err.message),
