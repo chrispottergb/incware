@@ -299,6 +299,8 @@ export type Database = {
       ai_systems: {
         Row: {
           adverse_action_notice_in_place: boolean | null
+          annual_review_date: string | null
+          board_approval_date: string | null
           company_id: string
           compliance_lead: string | null
           created_at: string
@@ -336,6 +338,8 @@ export type Database = {
         }
         Insert: {
           adverse_action_notice_in_place?: boolean | null
+          annual_review_date?: string | null
+          board_approval_date?: string | null
           company_id: string
           compliance_lead?: string | null
           created_at?: string
@@ -373,6 +377,8 @@ export type Database = {
         }
         Update: {
           adverse_action_notice_in_place?: boolean | null
+          annual_review_date?: string | null
+          board_approval_date?: string | null
           company_id?: string
           compliance_lead?: string | null
           created_at?: string
