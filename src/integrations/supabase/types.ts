@@ -189,15 +189,59 @@ export type Database = {
           },
         ]
       }
+      ai_oversight_contacts: {
+        Row: {
+          company_id: string
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_oversight_contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_oversight_persons: {
         Row: {
           ai_system_id: string
           assigned_date: string | null
           authority_scope: string | null
           competence_description: string | null
+          contact_id: string | null
           created_at: string
+          effective_date: string | null
           id: string
+          notes: string | null
+          oversight_role: string | null
           person_name: string
+          source_id: string | null
+          source_type: string | null
           status: string
           title: string | null
         }
@@ -206,9 +250,15 @@ export type Database = {
           assigned_date?: string | null
           authority_scope?: string | null
           competence_description?: string | null
+          contact_id?: string | null
           created_at?: string
+          effective_date?: string | null
           id?: string
+          notes?: string | null
+          oversight_role?: string | null
           person_name: string
+          source_id?: string | null
+          source_type?: string | null
           status?: string
           title?: string | null
         }
@@ -217,9 +267,15 @@ export type Database = {
           assigned_date?: string | null
           authority_scope?: string | null
           competence_description?: string | null
+          contact_id?: string | null
           created_at?: string
+          effective_date?: string | null
           id?: string
+          notes?: string | null
+          oversight_role?: string | null
           person_name?: string
+          source_id?: string | null
+          source_type?: string | null
           status?: string
           title?: string | null
         }
@@ -229,6 +285,13 @@ export type Database = {
             columns: ["ai_system_id"]
             isOneToOne: false
             referencedRelation: "ai_systems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_oversight_persons_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "ai_oversight_contacts"
             referencedColumns: ["id"]
           },
         ]
