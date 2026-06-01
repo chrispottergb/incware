@@ -197,6 +197,8 @@ export default function AISystemsRegistry({ companyId }: Props) {
       risk_level: s.risk_level || "minimal",
       status: s.status || "active",
       deployment_date: s.deployment_date || "",
+      board_approval_date: s.board_approval_date || "",
+      annual_review_date: s.annual_review_date || "",
       decision_domains: s.decision_domains || "",
       triggered_state_laws: s.triggered_state_laws || "",
       nist_impact_level: s.nist_impact_level || "",
@@ -272,6 +274,18 @@ export default function AISystemsRegistry({ companyId }: Props) {
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label className="text-xs">Foundation Model (if applicable)</Label><Input {...f("foundation_model")} placeholder="e.g. GPT-4, Claude 3.5, Gemini" /></div>
                   <div><Label className="text-xs">Deployment Date</Label><DatePickerField value={form.deployment_date || ""} onChange={(v) => setForm(p => ({ ...p, deployment_date: v }))} /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Board/Principal Approval Date</Label>
+                    <DatePickerField value={form.board_approval_date || ""} onChange={(v) => setForm(p => ({ ...p, board_approval_date: v }))} />
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Date AI system was formally approved by board or principal</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Next Annual Review Date</Label>
+                    <DatePickerField value={form.annual_review_date || ""} onChange={(v) => setForm(p => ({ ...p, annual_review_date: v }))} />
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Date scheduled for next periodic review of this AI system</p>
+                  </div>
                 </div>
                 <div><Label className="text-xs">Vendor's Stated Intended Use</Label><Textarea rows={2} {...f("vendor_intended_use")} placeholder="As described in vendor documentation or terms of service" /></div>
                 <div><Label className="text-xs">Your Organization's Purpose / Use Case</Label><Textarea rows={2} {...f("purpose")} /></div>
