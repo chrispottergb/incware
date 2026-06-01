@@ -1,34 +1,52 @@
-## What I found
+## Goal
 
-I read the live record for this company and the current code:
+Replace the free-text "Assign Person" dialog in **AI Compliance → Oversight** with a structured form that picks from existing officers/directors (or adds an ad-hoc contact), captures an oversight role, effective date and notes, and links the assignment back to the source record.
 
-- DB row for company `46430db4…`: `eligibility_result = 'Pass'`, `eligibility_run_date = 2026-05-21`, `eligibility_answers = NULL`.
-- The `eligibility_answers jsonb` column exists. The `nonprofit_tax_exemption` table has a `UNIQUE (company_id)` constraint, so the upsert with `onConflict: "company_id"` works.
-- `Form1023EZScreener` already builds `nextAnswers` and calls `onComplete("Pass" | "Fail", date, nextAnswers)`.
-- `TaxExemptionTab.save({ eligibility_result, eligibility_run_date, eligibility_answers: answers })` already writes all three fields together.
+## Database changes (one migration)
 
-The persisted row is a **legacy Pass from before the answer-saving code shipped** (run on 2026-05-21, before today's changes). That's why every row in the View modal correctly shows "—": no answers were ever stored for that historical run. New runs from the current build should save all 34 answers — but the UI gives no signal that the displayed result is a legacy result with no audit trail, so it looks broken.
+1. **New table `public.ai_oversight_contacts`** for ad-hoc people who aren't officers/directors:
+   - `company_id` (uuid, FK → companies), `full_name`, `title`, `email` (nullable)
+   - Standard `id`, `created_at`, `updated_at`
+   - GRANTs + RLS scoped to the owning company (mirrors existing AI-compliance tables)
 
-## Fix plan
+2. **Extend `public.ai_oversight_persons`** (additive, nullable — keeps existing rows valid):
+   - `oversight_role text` — one of `Primary AI Oversight Officer`, `Secondary AI Oversight Officer`, `Delegated Reviewer`
+   - `effective_date date`
+   - `notes text`
+   - `source_type text` — `officer` | `director` | `contact`
+   - `source_id uuid` — id of the officer row, director row, or `ai_oversight_contacts` row
+   - `contact_id uuid` FK → `ai_oversight_contacts(id)` (nullable, used when `source_type = 'contact'`)
 
-1. **Add a console-logged confirmation on save** in `TaxExemptionTab.save` for the screener payload only, so future regressions are obvious in the network/console tab. (Cheap diagnostic, no UX impact.)
+   Existing `person_name` / `title` / `assigned_date` stay (snapshotted at assignment time so historical records survive renames/deletes). `assigned_date` keeps working; new UI writes to both `assigned_date` and `effective_date`.
 
-2. **Surface the legacy "no answers stored" state in the View Screener Results modal** (`Form1023EZResultsView.tsx`):
-   - If `eligibility_result` exists but `eligibility_answers` is null or empty, render an amber notice at the top of the modal: *"This result was recorded before per-question answers were saved. Re-run the screener to capture a full audit trail."*
-   - Keep the existing per-question table (all "—") and the Re-run Screener button.
+## UI changes — `src/components/company/ai-compliance/AIOversightPersons.tsx`
 
-3. **Same notice on the Tax Exemption tab itself**, inline next to the screener buttons, so the user sees it without opening the modal — only shown when `eligibility_result` is set and `eligibility_answers` is null/empty.
+Rebuild the dialog body:
 
-4. **No schema changes.** The column and unique constraint are already in place.
+1. **AI System** — unchanged dropdown.
+2. **Select Person** — single dropdown populated from two queries:
+   - `officers` row for the company → expanded into up to 4 entries (President / Vice President / Secretary / Treasurer) where the name is non-empty, formatted `"<Name> — <Title>"`.
+   - `directors` rows → `"<Name> — Director"`.
+   - `ai_oversight_contacts` rows for the company → `"<Name> — <Title>"`.
+   - Final item: **`+ Add Someone Else`**.
+   - Each option's value encodes `source_type:source_id` so the save handler knows where it came from.
+3. **Add Someone Else inline form** (revealed when that option is chosen): Full Name (required), Title/Role (required), Email (optional). On save, insert into `ai_oversight_contacts` first, then use the returned id as the assignment's `source_id`/`contact_id`.
+4. **Oversight Role** — dropdown with the three fixed options.
+5. **Effective Date** — `DatePickerField` with helper text "Date this oversight assignment takes effect".
+6. **Notes** — optional `Textarea`.
+7. Remove the old free-text Name / Competence / Authority / Status inputs from this dialog (existing data still renders on the cards via the unchanged DB columns).
 
-5. **Verify end-to-end after the edit**:
-   - Open the screener on the current company, answer all 34 "No", confirm Pass.
-   - Re-query the row and confirm `eligibility_answers` is a populated JSON object with 34 keys.
-   - Open the View Screener Results modal and confirm every row shows "Yes"/"No" (not "—").
-   - Trigger a Fail path (answer "Yes" on Q1) and confirm `eligibility_answers` contains `{"1":"Yes"}` and the modal shows that single answer plus "—" for the rest.
+Save flow:
+- If "Add Someone Else" path: insert contact → get id → insert assignment with `source_type='contact'`, `contact_id`, `source_id = contact.id`, and snapshot `person_name`/`title` from the form.
+- Otherwise: insert assignment with selected `source_type`/`source_id`, snapshot `person_name`/`title` from the chosen officer/director/contact, `oversight_role`, `effective_date`, `notes`.
 
-## Technical notes
+Card list:
+- Show `person_name`, snapshot `title`, an **Oversight Role** badge, the AI system name, effective date, and notes when present. Keep the existing delete button.
 
-- Files touched: `src/components/company/Form1023EZResultsView.tsx`, `src/components/company/TaxExemptionTab.tsx`. No new files, no migration.
-- The amber notice uses existing `border-amber-300 bg-amber-50 text-amber-900` styling already used elsewhere in this tab.
-- Detection rule for "no answers stored": `!answers || Object.keys(answers).length === 0`.
+Styling stays on the current dark-theme tokens (`Card`, `Badge`, `Input`, `Select`, `Textarea`, `DatePickerField`) — no new colors.
+
+## Out of scope
+
+- LLC members/managers are not part of this request (user specified officers/directors only).
+- No edits to existing assignments — assignments remain create + delete (matches current behavior).
+- No schema changes to `officers` / `directors`.
