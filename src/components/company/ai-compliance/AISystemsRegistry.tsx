@@ -84,6 +84,7 @@ const emptyForm = {
   vendor_intended_use: "", purpose: "",
   // Classification
   risk_level: "minimal", status: "active", deployment_date: "",
+  board_approval_date: "", annual_review_date: "",
   decision_domains: "", triggered_state_laws: "", nist_impact_level: "",
   impact_justification: "", sector_regulatory_hooks: "",
   // Persons
@@ -144,6 +145,8 @@ export default function AISystemsRegistry({ companyId }: Props) {
         ...form,
         company_id: companyId,
         deployment_date: form.deployment_date || null,
+        board_approval_date: form.board_approval_date || null,
+        annual_review_date: form.annual_review_date || null,
       };
       if (editId) {
         const { error } = await supabase.from("ai_systems").update(payload).eq("id", editId);
