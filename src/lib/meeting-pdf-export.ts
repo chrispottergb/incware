@@ -1863,7 +1863,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     // Distribution resolution for each member/shareholder with a distribution amount
     if (hasDistribution) {
-      const isSCorpEntity = entityType === "S-Corp";
+      const isSCorpEntity = !!company?.s_election_date;
       const distribMembers = (data.shareholders ?? []).filter(s => s.distribution_amount != null && Number(s.distribution_amount) > 0);
 
       if (distribMembers.length > 0) {
