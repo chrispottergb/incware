@@ -163,7 +163,7 @@ function getEquityCardConfig(entityType: string) {
         description: "Authorized shares, par value, and corporate elections",
         showAuthorizedShares: true,
         showParValue: true,
-        showSElection: false,
+        showSElection: true,
         show1244: true,
         showSeal: true,
         showMembershipUnits: false,
