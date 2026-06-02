@@ -41,7 +41,7 @@ import { cn, maskEin } from "@/lib/utils";
 import { isLLCType } from "@/lib/entity-terminology";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
-const ENTITY_TYPES = ["Corporation", "LLC", "LLC-S", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"];
+const ENTITY_TYPES = ["Corporation", "LLC", "Single Member LLC", "Non-Profit", "Partnership"];
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
   "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
@@ -111,7 +111,6 @@ const DEFAULT_NON_DISTRIBUTION_CLAUSE =
 function getEquityCardConfig(entityType: string) {
   switch (entityType) {
     case "LLC":
-    case "LLC-S":
     case "Single Member LLC":
       return {
         title: "Management & Elections",
@@ -126,21 +125,6 @@ function getEquityCardConfig(entityType: string) {
         showManagementType: true,
         showPartnershipInterest: false,
         authorizedLabel: "",
-      };
-    case "S-Corp":
-      return {
-        title: "Shares & Elections",
-        icon: <Share2 className="h-3.5 w-3.5 text-primary" />,
-        description: "S-Corporation shares, par value, and tax elections",
-        showAuthorizedShares: true,
-        showParValue: true,
-        showSElection: true,
-        show1244: true,
-        showSeal: true,
-        showMembershipUnits: false,
-        showManagementType: false,
-        showPartnershipInterest: false,
-        authorizedLabel: "Authorized Shares",
       };
     case "Partnership":
       return {
@@ -179,7 +163,7 @@ function getEquityCardConfig(entityType: string) {
         description: "Authorized shares, par value, and corporate elections",
         showAuthorizedShares: true,
         showParValue: true,
-        showSElection: false,
+        showSElection: true,
         show1244: true,
         showSeal: true,
         showMembershipUnits: false,
@@ -272,7 +256,7 @@ export default function IncorporationTab({ company }: Props) {
     if (/^https?:\/\//i.test(trimmed)) return trimmed;
     return `https://${trimmed}`;
   };
-  const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(isLLCType(company.entity_type) ? !!company.s_election_date : false);
+  const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(!!company.s_election_date);
 
   // Reset form when company changes (e.g. navigating between entities)
   useEffect(() => {
@@ -326,7 +310,7 @@ export default function IncorporationTab({ company }: Props) {
         (company.entity_type === "Non-Profit" ? DEFAULT_NON_DISTRIBUTION_CLAUSE : ""),
       organizational_structure: (company as any).organizational_structure ?? "",
     });
-    setLlcSElectionEnabled(isLLCType(company.entity_type) ? !!company.s_election_date : false);
+    setLlcSElectionEnabled(!!company.s_election_date);
   }, [company.id]);
 
 
@@ -547,9 +531,10 @@ export default function IncorporationTab({ company }: Props) {
 
   const save = useMutation({
     mutationFn: async () => {
-      // Only validate checkbox-based S-election for LLC/Single Member LLC (not LLC-S where it's implied)
-      if (isLLCType(form.entity_type) && form.entity_type !== "LLC-S" && llcSElectionEnabled && !form.s_election_date) {
-        throw new Error("S Election Effective Date is required when LLC S Corporation tax status is enabled.");
+      // Validate that an effective date is set when the S-election checkbox is enabled
+      const sElectionAvailable = isLLCType(form.entity_type) || form.entity_type === "Corporation";
+      if (sElectionAvailable && llcSElectionEnabled && !form.s_election_date) {
+        throw new Error("S Election Effective Date is required when S Corporation tax status is enabled.");
       }
 
       const { error } = await supabase
@@ -564,7 +549,7 @@ export default function IncorporationTab({ company }: Props) {
           authorized_shares: form.authorized_shares ? parseInt(form.authorized_shares) : null,
           par_value_type: form.par_value_type,
           par_value: form.par_value ? parseFloat(form.par_value) : null,
-          s_election_date: isLLCType(form.entity_type) && form.entity_type !== "LLC-S"
+          s_election_date: sElectionAvailable
             ? (llcSElectionEnabled ? (form.s_election_date || null) : null)
             : (form.s_election_date || null),
           scheduled_annual_meeting: form.scheduled_annual_meeting || null,
@@ -984,12 +969,6 @@ export default function IncorporationTab({ company }: Props) {
               <Label className="field-label">Scheduled Annual Mtg. Date</Label>
               <Input className="h-7 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
             </div>
-            {form.entity_type === "S-Corp" && (
-              <div className="field-group col-span-6 sm:col-span-3">
-                <Label className="field-label">Date of S Election</Label>
-                <DatePickerField value={form.s_election_date || ""} onChange={(v) => updateAndSave("s_election_date", v)} className="h-7" />
-              </div>
-            )}
             <div className="field-group col-span-12 sm:col-span-10">
               <Label className="field-label">Business Purpose</Label>
               <Textarea className="text-sm min-h-[50px]" value={form.business_purpose} onChange={(e) => update("business_purpose", e.target.value)} placeholder="Describe the business purpose..." rows={2} />
@@ -1395,21 +1374,12 @@ export default function IncorporationTab({ company }: Props) {
             )}
 
 
-            {/* S-election controls */}
-            {/* LLC-S: date field only, no checkbox — election is implied by entity type (S-Corp moved to main grid) */}
-            {equityCard.showSElection && form.entity_type === "LLC-S" && (
-              <div className="field-group">
-                <Label className="field-label">Date of S Election</Label>
-                <p className="text-[11px] text-muted-foreground mb-1">Date the S Corporation election was filed with the IRS</p>
-                <DatePickerField value={form.s_election_date || ""} onChange={(v) => updateAndSave("s_election_date", v)} />
-              </div>
-            )}
-            {/* LLC / Single Member LLC: checkbox + date field */}
-            {equityCard.showSElection && isLLCType(form.entity_type) && form.entity_type !== "LLC-S" && (
+            {/* S-election checkbox + date — available on Corporation and LLC variants */}
+            {equityCard.showSElection && (
               <div className="col-span-full mt-1 rounded-md border border-border bg-muted/30 px-3 py-2.5">
                 <div className="flex items-start gap-2.5">
                   <Checkbox
-                    id="s_election_llc_incorp"
+                    id="s_election_incorp"
                     checked={llcSElectionEnabled}
                     onCheckedChange={(checked) => {
                       const enabled = !!checked;
@@ -1418,11 +1388,15 @@ export default function IncorporationTab({ company }: Props) {
                     }}
                   />
                   <div className="flex-1">
-                    <Label htmlFor="s_election_llc_incorp" className="cursor-pointer text-sm font-medium">Is this LLC electing S Corporation tax status?</Label>
+                    <Label htmlFor="s_election_incorp" className="cursor-pointer text-sm font-medium">
+                      {form.entity_type === "Corporation"
+                        ? "Is the corporation electing S Corporation tax status?"
+                        : "Is this LLC electing S Corporation tax status?"}
+                    </Label>
                     <p className="text-[11px] text-muted-foreground">When enabled, set the effective date below.</p>
                     {llcSElectionEnabled && (
                       <div className="mt-2 max-w-xs">
-                        <Label className="field-label">S Election Effective Date</Label>
+                        <Label className="field-label">Date of S Election</Label>
                         <DatePickerField value={form.s_election_date || ""} onChange={(v) => updateAndSave("s_election_date", v)} />
                         {!form.s_election_date && (
                           <p className="mt-1 text-[11px] text-destructive">S Election Effective Date is required when enabled.</p>

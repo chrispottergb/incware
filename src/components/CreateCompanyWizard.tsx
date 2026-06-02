@@ -30,8 +30,8 @@ import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { getNextCertificateNumber, validateIssuanceLimit } from "@/lib/transaction-validation";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 
-const ENTITY_TYPES = ["Corporation", "LLC", "LLC-S", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"];
-const CORP_TYPES = ["Corporation", "S-Corp"];
+const ENTITY_TYPES = ["Corporation", "LLC", "Single Member LLC", "Non-Profit", "Partnership"];
+const CORP_TYPES = ["Corporation"];
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
@@ -191,7 +191,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
     if (!userId) { toast.error("Please log in first"); return; }
 
     const c = extracted.company;
-    const allowedEntityTypes = ["LLC", "LLC-S", "Single Member LLC"];
+    const allowedEntityTypes = ["LLC", "Single Member LLC"];
     const entityType = allowedEntityTypes.includes(c.entity_type || "")
       ? c.entity_type!
       : (extracted.members.length === 1 ? "Single Member LLC" : "LLC");

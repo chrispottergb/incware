@@ -886,9 +886,9 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
 function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData): number {
   const { company, meeting } = data;
   const entityType = company?.entity_type || "Corporation";
-  const isLLC = entityType === "LLC" || entityType === "LLC-S" || entityType === "Single Member LLC";
+  const isLLC = entityType === "LLC" || entityType === "Single Member LLC";
   const isNonprofit = entityType === "Non-Profit";
-  const isSCorp = entityType === "S-Corp";
+  const isSCorp = !!company?.s_election_date;
   const entityLabel = isLLC ? "limited liability company" : isNonprofit ? "nonprofit corporation" : "corporation";
   const governingBody = isLLC ? "members" : "Board of Directors";
   const companyName = company?.name || "the Company";
@@ -1684,7 +1684,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (!isShareholder && !isWrittenConsent && data.officers && (data.officers ?? []).length > 0) {
     y = checkPageBreak(doc, y, 30 + (data.officers ?? []).length * 7);
     y = section("Officers");
-    const isSCorp = entityType === "S-Corp";
+    const isSCorp = !!company?.s_election_date;
 
     const priorOfficerNames = new Set(
       (data.priorYear?.officers || []).map((o: any) => o.name?.toLowerCase())
@@ -1863,7 +1863,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     // Distribution resolution for each member/shareholder with a distribution amount
     if (hasDistribution) {
-      const isSCorpEntity = entityType === "S-Corp";
+      const isSCorpEntity = !!company?.s_election_date;
       const distribMembers = (data.shareholders ?? []).filter(s => s.distribution_amount != null && Number(s.distribution_amount) > 0);
 
       if (distribMembers.length > 0) {
@@ -2872,7 +2872,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (!isShareholder && !isWrittenConsent && data.priorYear) {
     const autoResolutions: { purpose: string; text: string }[] = [];
     const entityType = company?.entity_type || "Corporation";
-    const isLLC = entityType === "LLC" || entityType === "LLC-S" || entityType === "Single Member LLC";
+    const isLLC = entityType === "LLC" || entityType === "Single Member LLC";
     const entityLabel = isLLC ? "LLC" : "corporation";
 
     // Officer changes: new officers, title changes, salary/bonus changes

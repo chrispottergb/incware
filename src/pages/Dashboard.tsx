@@ -36,7 +36,7 @@ import cardExistingClient from "@/assets/card-existing-client.jpg";
 import cardAnnualUpdate from "@/assets/card-annual-update.jpg";
 import cardQuickSearch from "@/assets/card-quick-search.jpg";
 
-const ENTITY_TYPES = ["Corporation", "LLC", "LLC-S", "Single Member LLC", "S-Corp", "Non-Profit", "Partnership"];
+const ENTITY_TYPES = ["Corporation", "LLC", "Single Member LLC", "Non-Profit", "Partnership"];
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
@@ -371,7 +371,19 @@ export default function Dashboard() {
                           {company.name}
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{company.entity_type}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <span>{company.entity_type}</span>
+                          {company.s_election_date && (
+                            <Badge
+                              variant="outline"
+                              className="bg-warning/10 text-warning border-warning/20 text-[9px] px-1.5 py-0 leading-tight"
+                            >
+                              S-Election
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-xs text-muted-foreground">{company.state_of_incorporation || "—"}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {company.incorporation_date

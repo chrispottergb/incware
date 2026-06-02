@@ -88,7 +88,7 @@ export function generateBylawsPDF(data: BylawsData): jsPDF {
   const fiscalYearEnd = company.fiscal_year_end || "December 31";
   const authorizedShares = company.authorized_shares?.toLocaleString() || "_______________";
   const parValue = company.par_value ? `$${Number(company.par_value).toFixed(2)}` : "no par value";
-  const isSCorp = company.entity_type === "S-Corp";
+  const isSCorp = !!company.s_election_date;
   const statuteRef = isSCorp ? "Wis. Stat. Ch. 180 (with IRC § 1362 S-Election)" : "Wis. Stat. Ch. 180";
 
   // ── COVER PAGE ──
