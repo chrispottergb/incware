@@ -256,7 +256,7 @@ export default function IncorporationTab({ company }: Props) {
     if (/^https?:\/\//i.test(trimmed)) return trimmed;
     return `https://${trimmed}`;
   };
-  const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(isLLCType(company.entity_type) ? !!company.s_election_date : false);
+  const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(!!company.s_election_date);
 
   // Reset form when company changes (e.g. navigating between entities)
   useEffect(() => {
