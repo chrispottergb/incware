@@ -1374,21 +1374,12 @@ export default function IncorporationTab({ company }: Props) {
             )}
 
 
-            {/* S-election controls */}
-            {/* LLC-S: date field only, no checkbox — election is implied by entity type (S-Corp moved to main grid) */}
-            {equityCard.showSElection && form.entity_type === "LLC-S" && (
-              <div className="field-group">
-                <Label className="field-label">Date of S Election</Label>
-                <p className="text-[11px] text-muted-foreground mb-1">Date the S Corporation election was filed with the IRS</p>
-                <DatePickerField value={form.s_election_date || ""} onChange={(v) => updateAndSave("s_election_date", v)} />
-              </div>
-            )}
-            {/* LLC / Single Member LLC: checkbox + date field */}
-            {equityCard.showSElection && isLLCType(form.entity_type) && form.entity_type !== "LLC-S" && (
+            {/* S-election checkbox + date — available on Corporation and LLC variants */}
+            {equityCard.showSElection && (
               <div className="col-span-full mt-1 rounded-md border border-border bg-muted/30 px-3 py-2.5">
                 <div className="flex items-start gap-2.5">
                   <Checkbox
-                    id="s_election_llc_incorp"
+                    id="s_election_incorp"
                     checked={llcSElectionEnabled}
                     onCheckedChange={(checked) => {
                       const enabled = !!checked;
@@ -1397,11 +1388,15 @@ export default function IncorporationTab({ company }: Props) {
                     }}
                   />
                   <div className="flex-1">
-                    <Label htmlFor="s_election_llc_incorp" className="cursor-pointer text-sm font-medium">Is this LLC electing S Corporation tax status?</Label>
+                    <Label htmlFor="s_election_incorp" className="cursor-pointer text-sm font-medium">
+                      {form.entity_type === "Corporation"
+                        ? "Is the corporation electing S Corporation tax status?"
+                        : "Is this LLC electing S Corporation tax status?"}
+                    </Label>
                     <p className="text-[11px] text-muted-foreground">When enabled, set the effective date below.</p>
                     {llcSElectionEnabled && (
                       <div className="mt-2 max-w-xs">
-                        <Label className="field-label">S Election Effective Date</Label>
+                        <Label className="field-label">Date of S Election</Label>
                         <DatePickerField value={form.s_election_date || ""} onChange={(v) => updateAndSave("s_election_date", v)} />
                         {!form.s_election_date && (
                           <p className="mt-1 text-[11px] text-destructive">S Election Effective Date is required when enabled.</p>
