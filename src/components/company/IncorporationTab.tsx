@@ -1406,31 +1406,44 @@ export default function IncorporationTab({ company }: Props) {
             </div>
           )}
 
-          {/* S Corporation Tax Status — Corporation only (S-Corp & LLC have it elsewhere) */}
-          {form.entity_type === "Corporation" && (
+          {/* S Corporation Tax Status — Corporation and LLC */}
+          {equityCard.showSElection && (
             <div className="mt-3 flex items-start gap-2.5 rounded-md border border-border bg-muted/30 px-3 py-2.5">
               <Checkbox
                 id="s_election_corp"
-                checked={!!form.s_election_date}
+                checked={llcSElectionEnabled}
                 onCheckedChange={(checked) => {
-                  if (!checked) {
-                    updateAndSave("s_election_date", "");
-                  }
+                  const enabled = !!checked;
+                  setLlcSElectionEnabled(enabled);
+                  if (!enabled) updateAndSave("s_election_date", "");
                 }}
               />
               <div className="flex-1">
                 <Label htmlFor="s_election_corp" className="cursor-pointer text-sm font-medium">Is the corporation electing S Corporation tax status?</Label>
                 <p className="text-[11px] text-muted-foreground">Check if this corporation is making an S Corporation election with the IRS</p>
-                {!!form.s_election_date && (
+                {llcSElectionEnabled && (
                   <div className="mt-2 field-group max-w-xs">
                     <Label className="field-label">Date of S Election</Label>
-                    <DatePickerField value={form.s_election_date} onChange={(v) => updateAndSave("s_election_date", v)} />
-                  </div>
-                )}
-                {!form.s_election_date && (
-                  <div className="mt-2 field-group max-w-xs">
-                    <Label className="field-label">Date of S Election</Label>
-                    <DatePickerField value="" onChange={(v) => updateAndSave("s_election_date", v)} />
+                    <DatePickerField value={form.s_election_date || ""} onChange={(v) => updateAndSave("s_election_date", v)} />
+                    {!form.s_election_date && (
+                      <p className="mt-1 text-[11px] text-destructive">S Election Effective Date is required when enabled.</p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        generateIRSFaxCoverSheet({
+                          companyName: form.name,
+                          ein: company.ein || undefined,
+                          contactName: company.contact_full_name || undefined,
+                          contactPhone: company.contact_phone || undefined,
+                          contactEmail: company.contact_email || undefined,
+                        })
+                      }
+                      className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <span>📄</span>
+                      <span className="underline">Download IRS Fax Cover Sheet (Form 2553)</span>
+                    </button>
                   </div>
                 )}
               </div>
