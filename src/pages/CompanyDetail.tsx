@@ -124,8 +124,8 @@ export default function CompanyDetail() {
     if (isLLC) {
       return [
         { value: "organization", label: "Organizational Info" },
-        { value: "meetings", label: "Meetings" },
         { value: "shareholders", label: "Membership Interest/Units" },
+        { value: "meetings", label: "Meetings" },
         { value: "timeline", label: "Timeline" },
         { value: "leases", label: "Leases" },
         { value: "counsel", label: "Counsel" },
@@ -138,15 +138,17 @@ export default function CompanyDetail() {
         { value: "record-book", label: "Record Book" },
         { value: "documents", label: "Documents" },
       ];
+
     }
     const isCorp = entityType === "Corporation" || entityType === "S-Corp";
     const isNonProfit = entityType === "Non-Profit";
     const tabs = [
       { value: "incorporation", label: "Incorporation Info" },
       ...(!isCorp && !isNonProfit ? [{ value: "organization", label: "Organizational Info" }] : []),
-      { value: "meetings", label: "Meetings" },
       { value: "shareholders", label: isNonProfit ? "Governance" : getTerminology(entityType).shareholdersTab },
+      { value: "meetings", label: "Meetings" },
       ...(isNonProfit ? [{ value: "tax-exemption", label: "Tax Exemption" }] : []),
+
       { value: "timeline", label: "Timeline" },
       { value: "leases", label: "Leases" },
       { value: "counsel", label: "Counsel" },
