@@ -191,7 +191,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
     if (!userId) { toast.error("Please log in first"); return; }
 
     const c = extracted.company;
-    const allowedEntityTypes = ["LLC", "LLC-S", "Single Member LLC"];
+    const allowedEntityTypes = ["LLC", "Single Member LLC"];
     const entityType = allowedEntityTypes.includes(c.entity_type || "")
       ? c.entity_type!
       : (extracted.members.length === 1 ? "Single Member LLC" : "LLC");
