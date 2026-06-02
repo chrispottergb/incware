@@ -61,7 +61,7 @@ export interface EntityTerminology {
   isLLC: boolean;
 }
 
-/** Returns true for LLC variants (e.g., "LLC", "Single Member LLC", "LLC-S"). */
+/** Returns true for LLC variants (e.g., "LLC", "Single Member LLC"). */
 export function isLLCType(entityType?: string): boolean {
   const normalized = (entityType || "")
     .toLowerCase()
@@ -70,7 +70,12 @@ export function isLLCType(entityType?: string): boolean {
     .replace(/\s+/g, " ")
     .trim();
 
-  return normalized === "llc" || normalized === "single member llc" || normalized === "llc s";
+  return normalized === "llc" || normalized === "single member llc";
+}
+
+/** Returns true if the company has an S-Corporation election (date set). */
+export function isSElected(company?: { s_election_date?: string | null } | null): boolean {
+  return !!company?.s_election_date;
 }
 
 export function getTerminology(entityType?: string): EntityTerminology {
