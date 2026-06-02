@@ -886,9 +886,9 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
 function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData): number {
   const { company, meeting } = data;
   const entityType = company?.entity_type || "Corporation";
-  const isLLC = entityType === "LLC" || entityType === "LLC-S" || entityType === "Single Member LLC";
+  const isLLC = entityType === "LLC" || entityType === "Single Member LLC";
   const isNonprofit = entityType === "Non-Profit";
-  const isSCorp = entityType === "S-Corp";
+  const isSCorp = !!company?.s_election_date;
   const entityLabel = isLLC ? "limited liability company" : isNonprofit ? "nonprofit corporation" : "corporation";
   const governingBody = isLLC ? "members" : "Board of Directors";
   const companyName = company?.name || "the Company";
