@@ -111,7 +111,6 @@ const DEFAULT_NON_DISTRIBUTION_CLAUSE =
 function getEquityCardConfig(entityType: string) {
   switch (entityType) {
     case "LLC":
-    case "LLC-S":
     case "Single Member LLC":
       return {
         title: "Management & Elections",
@@ -126,21 +125,6 @@ function getEquityCardConfig(entityType: string) {
         showManagementType: true,
         showPartnershipInterest: false,
         authorizedLabel: "",
-      };
-    case "S-Corp":
-      return {
-        title: "Shares & Elections",
-        icon: <Share2 className="h-3.5 w-3.5 text-primary" />,
-        description: "S-Corporation shares, par value, and tax elections",
-        showAuthorizedShares: true,
-        showParValue: true,
-        showSElection: true,
-        show1244: true,
-        showSeal: true,
-        showMembershipUnits: false,
-        showManagementType: false,
-        showPartnershipInterest: false,
-        authorizedLabel: "Authorized Shares",
       };
     case "Partnership":
       return {
