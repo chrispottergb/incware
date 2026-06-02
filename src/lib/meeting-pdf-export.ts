@@ -2872,7 +2872,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (!isShareholder && !isWrittenConsent && data.priorYear) {
     const autoResolutions: { purpose: string; text: string }[] = [];
     const entityType = company?.entity_type || "Corporation";
-    const isLLC = entityType === "LLC" || entityType === "LLC-S" || entityType === "Single Member LLC";
+    const isLLC = entityType === "LLC" || entityType === "Single Member LLC";
     const entityLabel = isLLC ? "LLC" : "corporation";
 
     // Officer changes: new officers, title changes, salary/bonus changes
