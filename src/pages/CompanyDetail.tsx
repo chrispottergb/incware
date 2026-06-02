@@ -124,8 +124,8 @@ export default function CompanyDetail() {
     if (isLLC) {
       return [
         { value: "organization", label: "Organizational Info" },
-        { value: "meetings", label: "Meetings" },
         { value: "shareholders", label: "Membership Interest/Units" },
+        { value: "meetings", label: "Meetings" },
         { value: "timeline", label: "Timeline" },
         { value: "leases", label: "Leases" },
         { value: "counsel", label: "Counsel" },
@@ -138,6 +138,7 @@ export default function CompanyDetail() {
         { value: "record-book", label: "Record Book" },
         { value: "documents", label: "Documents" },
       ];
+
     }
     const isCorp = entityType === "Corporation" || entityType === "S-Corp";
     const isNonProfit = entityType === "Non-Profit";
