@@ -145,9 +145,10 @@ export default function CompanyDetail() {
     const tabs = [
       { value: "incorporation", label: "Incorporation Info" },
       ...(!isCorp && !isNonProfit ? [{ value: "organization", label: "Organizational Info" }] : []),
-      { value: "meetings", label: "Meetings" },
       { value: "shareholders", label: isNonProfit ? "Governance" : getTerminology(entityType).shareholdersTab },
+      { value: "meetings", label: "Meetings" },
       ...(isNonProfit ? [{ value: "tax-exemption", label: "Tax Exemption" }] : []),
+
       { value: "timeline", label: "Timeline" },
       { value: "leases", label: "Leases" },
       { value: "counsel", label: "Counsel" },
