@@ -663,12 +663,124 @@ export default function OrganizationTab({ companyId, company }: Props) {
     setDirectorNames((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Auto-save for directors
+  // Auto-save for directors (corporation path)
   const directorsAutoSave = useAutoSave({
     data: directorNames,
     onSave: async () => { await saveDirectors.mutateAsync(); },
-    enabled: !!company.id,
+    enabled: !!company.id && !isLLCType(company.entity_type),
   });
+
+  // ============ LLC Authorized Binders (expanded § 183.0301 capture) ============
+  type BinderRow = {
+    name: string;
+    source_of_authority: string;
+    restrictions_notes?: string;
+    scope_of_authority?: string;
+  };
+  const isLLC = isLLCType(company.entity_type);
+  const [mgmtStructure, setMgmtStructure] = useState<"member_managed" | "manager_managed">("member_managed");
+  const [binders, setBinders] = useState<BinderRow[]>([{ name: "", source_of_authority: "", restrictions_notes: "", scope_of_authority: "" }]);
+  const [dfiFiled, setDfiFiled] = useState<boolean>(false);
+  const [dfiReference, setDfiReference] = useState<string>("");
+  const [dfiDate, setDfiDate] = useState<string>("");
+  const llcHydratedRef = useRef(false);
+
+  useEffect(() => {
+    if (!isLLC || llcHydratedRef.current) return;
+    const c: any = company;
+    setMgmtStructure((c.llc_management_structure === "manager_managed") ? "manager_managed" : "member_managed");
+    setDfiFiled(!!c.llc_dfi_statement_filed);
+    setDfiReference(c.llc_dfi_statement_reference || "");
+    setDfiDate(c.llc_dfi_statement_date || "");
+    const existing: BinderRow[] = Array.isArray(c.llc_authorized_binders) ? c.llc_authorized_binders : [];
+    if (existing.length > 0) {
+      setBinders(existing.map((b) => ({
+        name: b?.name || "",
+        source_of_authority: b?.source_of_authority || "",
+        restrictions_notes: b?.restrictions_notes || "",
+        scope_of_authority: b?.scope_of_authority || "",
+      })));
+    } else if (directors.length > 0) {
+      setBinders(directors.map((d) => ({ name: d.name, source_of_authority: "", restrictions_notes: "", scope_of_authority: "" })));
+    }
+    llcHydratedRef.current = true;
+  }, [isLLC, company, directors]);
+
+  const saveLlcBinders = useMutation({
+    mutationFn: async () => {
+      const cleanBinders = binders
+        .filter((b) => (b.name || "").trim() !== "")
+        .map((b) => mgmtStructure === "member_managed"
+          ? { name: b.name.trim(), source_of_authority: b.source_of_authority || "", restrictions_notes: b.restrictions_notes || "" }
+          : { name: b.name.trim(), scope_of_authority: b.scope_of_authority || "", source_of_authority: b.source_of_authority || "" }
+        );
+      const { error: companyErr } = await supabase
+        .from("companies")
+        .update({
+          llc_management_structure: mgmtStructure,
+          llc_authorized_binders: cleanBinders as any,
+          llc_dfi_statement_filed: dfiFiled,
+          llc_dfi_statement_reference: dfiReference || null,
+          llc_dfi_statement_date: dfiDate || null,
+        } as any)
+        .eq("id", companyId);
+      if (companyErr) throw companyErr;
+
+      // Keep directors table in sync with binder names so existing PDFs/exports continue to work
+      const { error: delError } = await supabase.from("directors").delete().eq("company_id", companyId);
+      if (delError) throw delError;
+      if (cleanBinders.length > 0) {
+        const seen = new Set<string>();
+        const uniqueNames = cleanBinders.map((b) => b.name).filter((n) => {
+          const lower = n.toLowerCase();
+          if (seen.has(lower)) return false;
+          seen.add(lower);
+          return true;
+        });
+        if (uniqueNames.length > 0) {
+          const { error: insError } = await supabase.from("directors").insert(
+            uniqueNames.map((name) => ({
+              company_id: companyId,
+              name,
+              added_date: new Date().toISOString().split("T")[0],
+            }))
+          );
+          if (insError) throw insError;
+          uniqueNames.forEach((name) => upsertAddressBook.mutate({ full_name: name, company_id: companyId }));
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["company", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["directors", companyId] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const bindersAutoSave = useAutoSave({
+    data: { mgmtStructure, binders, dfiFiled, dfiReference, dfiDate },
+    onSave: async () => { await saveLlcBinders.mutateAsync(); },
+    enabled: !!company.id && isLLC && llcHydratedRef.current,
+  });
+
+  const addBinderRow = () => setBinders((prev) => [...prev, mgmtStructure === "member_managed"
+    ? { name: "", source_of_authority: "", restrictions_notes: "" }
+    : { name: "", scope_of_authority: "", source_of_authority: "" }]);
+  const removeBinderRow = (index: number) => setBinders((prev) => prev.filter((_, i) => i !== index));
+  const updateBinder = (index: number, patch: Partial<BinderRow>) =>
+    setBinders((prev) => prev.map((b, i) => (i === index ? { ...b, ...patch } : b)));
+
+  const llcWarnings: string[] = [];
+  const namedBinders = binders.filter((b) => (b.name || "").trim() !== "");
+  if (isLLC) {
+    if (namedBinders.length === 0) llcWarnings.push("No binders have been entered.");
+    if (mgmtStructure === "manager_managed" && namedBinders.some((b) => !(b.source_of_authority || "").trim())) {
+      llcWarnings.push("Source of authority is required for each manager.");
+    }
+    if (dfiFiled && !dfiReference.trim()) {
+      llcWarnings.push("DFI filing reference is required when the Statement of Authority box is checked.");
+    }
+  }
 
   return (
     <div className="space-y-5">
