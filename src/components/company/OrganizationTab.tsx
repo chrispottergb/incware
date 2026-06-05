@@ -1357,61 +1357,228 @@ export default function OrganizationTab({ companyId, company }: Props) {
             <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-center justify-between">
                 <CardDescription className="text-[11px] mt-0.5">
-                  {isLLCType(company.entity_type) ? "Enter the names of the authorized binders for this company" : "Enter the names of the initial directors for this company"}
+                  {isLLC ? "Persons with legal authority to bind the company — Wis. Stat. § 183.0301" : "Enter the names of the initial directors for this company"}
                 </CardDescription>
                 <SectionPdfActions config={{
-                  title: isLLCType(company.entity_type) ? "Authorized Binders" : "Initial List of Directors",
+                  title: isLLC ? "Authorized Binders" : "Initial List of Directors",
                   companyName: company.name,
-                  fields: directorNames.filter((n) => n.trim()).map((n, i) => ({
-                    label: isLLCType(company.entity_type) ? `Authorized Binder ${i + 1}` : `Director ${i + 1}`,
-                    value: n.trim(),
-                  })),
+                  fields: isLLC
+                    ? [
+                        { label: "Management Structure", value: mgmtStructure === "manager_managed" ? "Manager-Managed" : "Member-Managed" },
+                        ...namedBinders.flatMap((b, i) => mgmtStructure === "member_managed"
+                          ? [
+                              { label: `Binder ${i + 1} — Name`, value: b.name },
+                              { label: `Binder ${i + 1} — Source of Authority`, value: b.source_of_authority || "" },
+                              { label: `Binder ${i + 1} — Restrictions / Notes`, value: b.restrictions_notes || "" },
+                            ]
+                          : [
+                              { label: `Manager ${i + 1} — Name`, value: b.name },
+                              { label: `Manager ${i + 1} — Scope of Authority`, value: b.scope_of_authority || "" },
+                              { label: `Manager ${i + 1} — Source of Authority`, value: b.source_of_authority || "" },
+                            ]
+                        ),
+                        { label: "DFI Statement of Authority Filed", value: dfiFiled ? "Yes" : "No" },
+                        ...(dfiFiled ? [
+                          { label: "Filing Reference", value: dfiReference },
+                          { label: "Filing Date", value: dfiDate ? new Date(dfiDate + "T00:00:00").toLocaleDateString() : "" },
+                        ] : []),
+                      ]
+                    : directorNames.filter((n) => n.trim()).map((n, i) => ({
+                        label: `Director ${i + 1}`,
+                        value: n.trim(),
+                      })),
                 }} />
               </div>
             </CardHeader>
             <CardContent className="px-4 pb-4">
+              {isLLC ? (
+                <form
+                  onSubmit={(e) => e.preventDefault()}
+                  onBlur={bindersAutoSave.handleBlur}
+                  className="space-y-4"
+                >
+                  {/* Management Structure pill toggle */}
+                  <div className="field-group">
+                    <Label className="field-label">Management Structure</Label>
+                    <div className="inline-flex rounded-md border border-input bg-background p-0.5">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={mgmtStructure === "member_managed" ? "default" : "ghost"}
+                        className="h-7 text-xs"
+                        onClick={() => { setMgmtStructure("member_managed"); bindersAutoSave.triggerSave(); }}
+                      >
+                        Member-Managed
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={mgmtStructure === "manager_managed" ? "default" : "ghost"}
+                        className="h-7 text-xs"
+                        onClick={() => { setMgmtStructure("manager_managed"); bindersAutoSave.triggerSave(); }}
+                      >
+                        Manager-Managed
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Binder rows */}
+                  <div className="space-y-3">
+                    {binders.map((b, index) => (
+                      <div key={index} className="rounded-md border border-input bg-background/40 p-3 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                            {mgmtStructure === "member_managed" ? `Binder ${index + 1}` : `Manager ${index + 1}`}
+                          </span>
+                          {binders.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 shrink-0 text-destructive/60 hover:text-destructive"
+                              onClick={() => removeBinderRow(index)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                        {mgmtStructure === "member_managed" ? (
+                          <div className="grid gap-x-3 gap-y-2 sm:grid-cols-3">
+                            <div className="field-group">
+                              <Label className="field-label">Binder Name</Label>
+                              <Input className="h-8 text-sm" value={b.name} onChange={(e) => updateBinder(index, { name: e.target.value })} placeholder="Full name" />
+                            </div>
+                            <div className="field-group">
+                              <Label className="field-label">Source of Authority</Label>
+                              <Select value={b.source_of_authority || ""} onValueChange={(v) => { updateBinder(index, { source_of_authority: v }); bindersAutoSave.triggerSave(); }}>
+                                <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select source" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Member Default">Member Default</SelectItem>
+                                  <SelectItem value="Operating Agreement">Operating Agreement</SelectItem>
+                                  <SelectItem value="Statement of Authority">Statement of Authority</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="field-group">
+                              <Label className="field-label">Restrictions / Notes</Label>
+                              <Input className="h-8 text-sm" value={b.restrictions_notes || ""} onChange={(e) => updateBinder(index, { restrictions_notes: e.target.value })} placeholder="Optional" />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="grid gap-x-3 gap-y-2 sm:grid-cols-3">
+                            <div className="field-group">
+                              <Label className="field-label">Manager Name</Label>
+                              <Input className="h-8 text-sm" value={b.name} onChange={(e) => updateBinder(index, { name: e.target.value })} placeholder="Full name" />
+                            </div>
+                            <div className="field-group">
+                              <Label className="field-label">Scope of Authority</Label>
+                              <Input className="h-8 text-sm" value={b.scope_of_authority || ""} onChange={(e) => updateBinder(index, { scope_of_authority: e.target.value })} placeholder='e.g. "Full authority" or "Contracts under $50,000"' />
+                            </div>
+                            <div className="field-group">
+                              <Label className="field-label">Source of Authority</Label>
+                              <Select value={b.source_of_authority || ""} onValueChange={(v) => { updateBinder(index, { source_of_authority: v }); bindersAutoSave.triggerSave(); }}>
+                                <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select source" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Operating Agreement">Operating Agreement</SelectItem>
+                                  <SelectItem value="Statement of Authority">Statement of Authority</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {mgmtStructure === "manager_managed" && (
+                    <p className="text-[11px] text-muted-foreground italic">
+                      In a manager-managed LLC, members do not have authority to bind the company unless separately granted.
+                    </p>
+                  )}
+
+                  {/* DFI Statement of Authority block */}
+                  <div className="rounded-md border border-input bg-background/40 p-3 space-y-2">
+                    <label className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={dfiFiled}
+                        onCheckedChange={(v) => { setDfiFiled(!!v); bindersAutoSave.triggerSave(); }}
+                      />
+                      <span>Statement of Authority filed with Wisconsin DFI</span>
+                    </label>
+                    {dfiFiled && (
+                      <div className="grid gap-x-3 gap-y-2 sm:grid-cols-2 pt-1">
+                        <div className="field-group">
+                          <Label className="field-label">Filing Reference</Label>
+                          <Input className="h-8 text-sm" value={dfiReference} onChange={(e) => setDfiReference(e.target.value)} placeholder="DFI filing number / reference" />
+                        </div>
+                        <div className="field-group">
+                          <Label className="field-label">Filing Date</Label>
+                          <DatePickerField value={dfiDate} onChange={(v) => { setDfiDate(v); bindersAutoSave.triggerSave(); }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Warnings */}
+                  {llcWarnings.length > 0 && (
+                    <div className="rounded-md border border-warning/30 bg-warning/10 p-3 space-y-1">
+                      {llcWarnings.map((w, i) => (
+                        <p key={i} className="text-xs text-warning">⚠ {w}</p>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={addBinderRow}>
+                      <Plus className="mr-1 h-3 w-3" /> {mgmtStructure === "manager_managed" ? "Add Another Manager" : "Add Another Binder"}
+                    </Button>
+                    <SaveStatusIndicator status={bindersAutoSave.status} lastSavedAt={bindersAutoSave.lastSavedAt} />
+                  </div>
+                </form>
+              ) : (
                 <form
                   onSubmit={(e) => e.preventDefault()}
                   onBlur={directorsAutoSave.handleBlur}
                   className="space-y-3"
                 >
-                <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
-                  {directorNames.map((name, index) => (
-                    <div key={index} className="field-group">
-                      <Label className="field-label">{isLLCType(company.entity_type) ? `Authorized Binder ${index + 1}` : `Director ${index + 1}`}</Label>
-                      <div className="flex gap-1">
-                        <Input
-                          className="h-8 text-sm"
-                          value={name}
-                          onChange={(e) =>
-                            setDirectorNames((prev) =>
-                              prev.map((n, i) => (i === index ? e.target.value : n))
-                            )
-                          }
-                          placeholder={isLLCType(company.entity_type) ? "Authorized binder name" : "Director name"}
-                        />
-                        {directorNames.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 shrink-0 text-destructive/50 hover:text-destructive"
-                            onClick={() => removeDirectorSlot(index)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
+                  <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
+                    {directorNames.map((name, index) => (
+                      <div key={index} className="field-group">
+                        <Label className="field-label">{`Director ${index + 1}`}</Label>
+                        <div className="flex gap-1">
+                          <Input
+                            className="h-8 text-sm"
+                            value={name}
+                            onChange={(e) =>
+                              setDirectorNames((prev) =>
+                                prev.map((n, i) => (i === index ? e.target.value : n))
+                              )
+                            }
+                            placeholder="Director name"
+                          />
+                          {directorNames.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 shrink-0 text-destructive/50 hover:text-destructive"
+                              onClick={() => removeDirectorSlot(index)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between">
-                  <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={addDirectorSlot}>
-                    <Plus className="mr-1 h-3 w-3" /> {isLLCType(company.entity_type) ? "Add Another Binder" : "Add Another Director"}
-                  </Button>
-                  <SaveStatusIndicator status={directorsAutoSave.status} lastSavedAt={directorsAutoSave.lastSavedAt} />
-                </div>
-              </form>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={addDirectorSlot}>
+                      <Plus className="mr-1 h-3 w-3" /> Add Another Director
+                    </Button>
+                    <SaveStatusIndicator status={directorsAutoSave.status} lastSavedAt={directorsAutoSave.lastSavedAt} />
+                  </div>
+                </form>
+              )}
             </CardContent>
           </Card>
         </CollapsibleContent>
