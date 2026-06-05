@@ -1013,6 +1013,11 @@ export type Database = {
           id: string
           incorporation_date: string | null
           initial_directors_count: number | null
+          llc_authorized_binders: Json | null
+          llc_dfi_statement_date: string | null
+          llc_dfi_statement_filed: boolean | null
+          llc_dfi_statement_reference: string | null
+          llc_management_structure: string | null
           management_type: string | null
           max_directors_allowed: number | null
           max_vps_allowed: number | null
@@ -1081,6 +1086,11 @@ export type Database = {
           id?: string
           incorporation_date?: string | null
           initial_directors_count?: number | null
+          llc_authorized_binders?: Json | null
+          llc_dfi_statement_date?: string | null
+          llc_dfi_statement_filed?: boolean | null
+          llc_dfi_statement_reference?: string | null
+          llc_management_structure?: string | null
           management_type?: string | null
           max_directors_allowed?: number | null
           max_vps_allowed?: number | null
@@ -1149,6 +1159,11 @@ export type Database = {
           id?: string
           incorporation_date?: string | null
           initial_directors_count?: number | null
+          llc_authorized_binders?: Json | null
+          llc_dfi_statement_date?: string | null
+          llc_dfi_statement_filed?: boolean | null
+          llc_dfi_statement_reference?: string | null
+          llc_management_structure?: string | null
           management_type?: string | null
           max_directors_allowed?: number | null
           max_vps_allowed?: number | null
