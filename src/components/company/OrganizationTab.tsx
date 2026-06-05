@@ -677,7 +677,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
     restrictions_notes?: string;
     scope_of_authority?: string;
   };
-  const isLLC = isLLCType(company.entity_type);
+  // isLLC declared at top of component
   const [mgmtStructure, setMgmtStructure] = useState<"member_managed" | "manager_managed">("member_managed");
   const [binders, setBinders] = useState<BinderRow[]>([{ name: "", source_of_authority: "", restrictions_notes: "", scope_of_authority: "" }]);
   const [dfiFiled, setDfiFiled] = useState<boolean>(false);
