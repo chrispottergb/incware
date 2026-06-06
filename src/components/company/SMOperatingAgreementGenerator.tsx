@@ -577,36 +577,15 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
               <Button variant="outline" size="sm" onClick={handlePrint}>
                 <Printer className="h-3.5 w-3.5" /> Print
               </Button>
+              <Button variant="default" size="sm" onClick={handleSaveVersion} disabled={isSavingVersion}>
+                {isSavingVersion ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                Save Version
+              </Button>
             </div>
           )}
 
-          {/* Version History */}
-          {versionHistory.length > 0 && (
-            <Collapsible open={showHistory} onOpenChange={setShowHistory}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground gap-1">
-                  <History className="h-3 w-3" />
-                  Version History ({versionHistory.length})
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-2">
-                <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2">
-                  {versionHistory.map((v: any, i: number) => (
-                    <div key={v.id} className="flex items-center justify-between text-xs py-1.5 border-b border-border last:border-0">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[9px] h-4">v{versionHistory.length - i}</Badge>
-                        <span className="text-muted-foreground">{v.title}</span>
-                      </div>
-                      <span className="text-[10px] text-muted-foreground">
-                        {new Date(v.created_at).toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          )}
+          <DocumentVersionHistory companyId={companyId} documentType="Sole Member Operating Agreement" />
+
         </CardContent>
       </Card>
 
