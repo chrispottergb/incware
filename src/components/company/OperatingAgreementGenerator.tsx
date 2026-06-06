@@ -137,6 +137,8 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
     return doc;
   }, [company, members, officers, managementType, shareholderHoldings, totalIssuedShares]);
 
+  const [isSavingVersion, setIsSavingVersion] = useState(false);
+
   const saveVersion = async (doc: any, isAi: boolean) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -170,6 +172,20 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
       queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId, "Operating Agreement"] });
     } catch (err: any) {
       console.error("Save version error:", err);
+      throw err;
+    }
+  };
+
+  const handleSaveVersion = async () => {
+    if (!pdfDoc) { toast.error("Generate the document first"); return; }
+    setIsSavingVersion(true);
+    try {
+      await saveVersion(pdfDoc, isAiDraft);
+      toast.success("Version saved to history");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save version");
+    } finally {
+      setIsSavingVersion(false);
     }
   };
 
