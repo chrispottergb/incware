@@ -227,7 +227,16 @@ Deno.serve(async (req) => {
         zip: company.zip,
         phone: company.phone,
         incorporation_date: company.incorporation_date,
-        ein_last4: last4(company.ein),
+        ein_last4: await (async () => {
+          const key = Deno.env.get("SSN_ENCRYPTION_KEY");
+          if (!key) return last4(company.ein);
+          try {
+            const { data: dec } = await supabase.rpc("decrypt_company_ein_service", {
+              p_company_id: company.id, p_encryption_key: key,
+            });
+            return last4((dec as string | null) ?? company.ein);
+          } catch { return last4(company.ein); }
+        })(),
         fiscal_year_end: company.fiscal_year_end,
         s_election_date: company.s_election_date,
         contact_webpage: company.contact_webpage,
