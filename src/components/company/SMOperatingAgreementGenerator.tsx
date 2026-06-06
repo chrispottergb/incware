@@ -30,6 +30,8 @@ import {
 import AIProviderSelect from "@/components/company/AIProviderSelect";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import SaveStatusIndicator from "@/components/SaveStatusIndicator";
 
 interface Props {
   companyId: string;
@@ -69,6 +71,8 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   const [formCity, setFormCity] = useState("");
   const [formState, setFormState] = useState("");
   const [formZip, setFormZip] = useState("");
+  const lastServerFilingDateRef = useRef("");
+  const lastServerCompanyIdRef = useRef<string | null>(null);
 
   const { data: members = [] } = useQuery({
     queryKey: ["shareholders", companyId],
@@ -116,6 +120,20 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   }, [company?.id]);
 
   useEffect(() => {
+    const nextCompanyId = company?.id ?? null;
+    const nextServerFilingDate = company?.filing_date || "";
+    const switchedCompany = lastServerCompanyIdRef.current !== nextCompanyId;
+    const localStillMatchesLastServerValue = formFilingDate === lastServerFilingDateRef.current;
+
+    if (switchedCompany || localStillMatchesLastServerValue) {
+      setFormFilingDate(nextServerFilingDate);
+    }
+
+    lastServerCompanyIdRef.current = nextCompanyId;
+    lastServerFilingDateRef.current = nextServerFilingDate;
+  }, [company?.id, company?.filing_date, formFilingDate]);
+
+  useEffect(() => {
     if (members.length > 0) {
       setFormMemberName(members[0].name || "");
     }
@@ -136,6 +154,22 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
     city: formCity,
     state: formState,
     zip: formZip,
+  });
+
+  const filingDateAutoSave = useAutoSave({
+    data: { filing_date: formFilingDate },
+    onSave: async ({ filing_date }) => {
+      const { error } = await supabase
+        .from("companies")
+        .update({ filing_date: filing_date || null })
+        .eq("id", companyId);
+
+      if (error) throw error;
+
+      await queryClient.invalidateQueries({ queryKey: ["company", companyId] });
+      await queryClient.invalidateQueries({ queryKey: ["companies"] });
+    },
+    enabled: !!companyId,
   });
 
   const [isSavingVersion, setIsSavingVersion] = useState(false);
@@ -455,9 +489,20 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
                 <Label className="field-label">Sole Member Name</Label>
                 <Input value={formMemberName} onChange={(e) => setFormMemberName(e.target.value)} placeholder="Full legal name" className="h-8 text-sm" />
               </div>
-              <div className="field-group">
+              <div className="field-group" onBlur={filingDateAutoSave.handleBlur}>
                 <Label className="field-label">Filing / Effective Date</Label>
-                <DatePickerField value={formFilingDate} onChange={(v) => setFormFilingDate(v)} />
+                <DatePickerField
+                  value={formFilingDate}
+                  onChange={(v) => {
+                    setFormFilingDate(v);
+                    filingDateAutoSave.triggerSave();
+                  }}
+                />
+                <SaveStatusIndicator
+                  status={filingDateAutoSave.status}
+                  lastSavedAt={filingDateAutoSave.lastSavedAt}
+                  className="mt-1"
+                />
               </div>
               <div className="field-group">
                 <Label className="field-label">Fiscal Year End Month</Label>
