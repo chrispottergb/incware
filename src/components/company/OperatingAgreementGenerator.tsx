@@ -290,9 +290,8 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
       const data = await response.json();
       setAiDraftSections(data.aiDraftSections);
       setIsAiDraft(true);
-      const doc = buildPdf(data.aiDraftSections);
-      await saveVersion(doc, true);
-      toast.success("AI-drafted Operating Agreement generated!");
+      buildPdf(data.aiDraftSections);
+      toast.success("AI-drafted Operating Agreement generated! Click 'Save Version' to snapshot.");
     } catch (err: any) {
       console.error(err);
       toast.error(err.message);
