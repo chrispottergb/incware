@@ -1004,6 +1004,7 @@ export type Database = {
           created_at: string
           delayed_effective_filing_date: string | null
           ein: string | null
+          ein_encrypted: string | null
           election_1244: boolean | null
           entity_type: string
           filing_date: string | null
@@ -1077,6 +1078,7 @@ export type Database = {
           created_at?: string
           delayed_effective_filing_date?: string | null
           ein?: string | null
+          ein_encrypted?: string | null
           election_1244?: boolean | null
           entity_type?: string
           filing_date?: string | null
@@ -1150,6 +1152,7 @@ export type Database = {
           created_at?: string
           delayed_effective_filing_date?: string | null
           ein?: string | null
+          ein_encrypted?: string | null
           election_1244?: boolean | null
           entity_type?: string
           filing_date?: string | null
@@ -4034,6 +4037,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrypt_companies_ein_batch: {
+        Args: { p_company_ids: string[]; p_encryption_key: string }
+        Returns: {
+          company_id: string
+          ein: string
+        }[]
+      }
+      decrypt_company_ein: {
+        Args: { p_company_id: string; p_encryption_key: string }
+        Returns: string
+      }
+      decrypt_company_ein_service: {
+        Args: { p_company_id: string; p_encryption_key: string }
+        Returns: string
+      }
       decrypt_ssn_ein: {
         Args: { encryption_key: string; shareholder_id: string }
         Returns: string
@@ -4041,6 +4059,10 @@ export type Database = {
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
+      }
+      encrypt_company_ein: {
+        Args: { p_company_id: string; p_ein: string; p_encryption_key: string }
+        Returns: undefined
       }
       encrypt_shareholder_ssn: {
         Args: {
@@ -4065,6 +4087,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      migrate_legacy_company_ein: {
+        Args: { p_encryption_key: string }
+        Returns: Json
       }
       migrate_legacy_ssn: { Args: { p_encryption_key: string }; Returns: Json }
       move_to_dlq: {

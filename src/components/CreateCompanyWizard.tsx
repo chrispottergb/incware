@@ -210,7 +210,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
         city: c.city || null,
         state: c.state || null,
         zip: c.zip || null,
-        ein: c.ein || null,
+        ein: null,
         business_purpose: c.business_purpose || null,
         fiscal_year_end: c.fiscal_year_end || null,
         management_type: c.management_type || null,
@@ -224,6 +224,11 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
       .single();
     if (compErr) throw compErr;
     const companyId = newComp.id;
+    if (c.ein?.trim()) {
+      await supabase.functions.invoke("encrypt-company-ein", {
+        body: { company_id: companyId, ein: c.ein.trim() },
+      });
+    }
 
     // 2. Insert members as shareholders + initial share_transactions
     const initDate = c.formation_date || new Date().toISOString().slice(0, 10);

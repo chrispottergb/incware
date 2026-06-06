@@ -464,7 +464,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
           name: filingForm.name,
           entity_type: filingForm.entity_type,
           state_of_incorporation: filingForm.state_of_incorporation || null,
-          ein: (filingForm as any).ein || null,
+          // EIN persisted separately via encrypt-company-ein after this update
           incorporation_date: filingForm.incorporation_date || null,
           fiscal_year_end: filingForm.fiscal_year_end || null,
           scheduled_annual_meeting: filingForm.scheduled_annual_meeting || null,
@@ -501,6 +501,15 @@ export default function OrganizationTab({ companyId, company }: Props) {
         } as any)
         .eq("id", companyId);
       if (error) throw error;
+
+      // Persist EIN via encrypted RPC (never plaintext at rest)
+      const newEin = ((filingForm as any).ein || "").trim();
+      const prevEin = ((company as any).ein || "").trim();
+      if (newEin !== prevEin) {
+        await supabase.functions.invoke("encrypt-company-ein", {
+          body: { company_id: companyId, ein: newEin || null },
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company", companyId] });
