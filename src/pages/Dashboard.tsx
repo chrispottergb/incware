@@ -49,6 +49,16 @@ export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // One-time auto-migration of any legacy plaintext EIN values (admin only, idempotent).
+  useEffect(() => {
+    if (!user) return;
+    if (sessionStorage.getItem("ein-legacy-migrated")) return;
+    sessionStorage.setItem("ein-legacy-migrated", "1");
+    supabase.functions
+      .invoke("migrate-legacy-company-ein")
+      .catch(() => { /* silent — non-admins get 403, which is fine */ });
+  }, [user]);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("active");
