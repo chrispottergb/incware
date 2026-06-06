@@ -20,8 +20,9 @@ import {
 import { toast } from "sonner";
 import {
   FileText, Download, Eye, Loader2, Sparkles, Printer, Copy, Check, Share2,
-  ChevronDown, History, RotateCcw, FileDown, ChevronLeft, ChevronRight, Upload,
+  ChevronDown, History, RotateCcw, FileDown, ChevronLeft, ChevronRight, Upload, Save,
 } from "lucide-react";
+import DocumentVersionHistory from "@/components/company/DocumentVersionHistory";
 import * as pdfjsLib from "pdfjs-dist";
 import {
   generateOperatingAgreementPDF, type OperatingAgreementData,
