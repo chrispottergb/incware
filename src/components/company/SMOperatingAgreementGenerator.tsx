@@ -108,7 +108,11 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
     setFormCity(company.city || "");
     setFormState(company.state || "");
     setFormZip(company.zip || "");
-  }, [company]);
+    // Only re-initialize when switching to a different company, not on every
+    // refetch of the same company (which would clobber in-progress edits like
+    // the Filing/Effective Date the user is currently typing).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [company?.id]);
 
   useEffect(() => {
     if (members.length > 0) {
