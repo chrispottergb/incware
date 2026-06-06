@@ -101,11 +101,20 @@ export function Form1023EZReferenceView({ companyId }: Props) {
       const { data, error } = await supabase
         .from("companies")
         .select(
-          "name, ein, address, address_2, city, state, zip, fiscal_year_end, state_of_incorporation, incorporation_date, ntee_code, entity_type, organizational_structure, contact_full_name, contact_phone, business_purpose, tax_exempt_purpose"
+          "id, name, ein, ein_encrypted, address, address_2, city, state, zip, fiscal_year_end, state_of_incorporation, incorporation_date, ntee_code, entity_type, organizational_structure, contact_full_name, contact_phone, business_purpose, tax_exempt_purpose"
         )
         .eq("id", companyId)
         .maybeSingle();
       if (error) throw error;
+      if (data && (data as any).ein_encrypted && !(data as any).ein) {
+        try {
+          const { data: dec } = await supabase.functions.invoke("decrypt-company-ein", {
+            body: { company_ids: [data.id] },
+          });
+          const plain = dec?.data?.[data.id];
+          if (plain) (data as any).ein = plain;
+        } catch (e) { console.warn("EIN decrypt failed", e); }
+      }
       return data as Company | null;
     },
   });
