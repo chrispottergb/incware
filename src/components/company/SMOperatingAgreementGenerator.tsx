@@ -320,8 +320,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
       const blob = doc.output("blob");
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(URL.createObjectURL(blob));
-      await saveVersion(doc, true);
-      toast.success("AI-assisted Sole Member Operating Agreement generated!");
+      toast.success("AI-assisted Sole Member Operating Agreement generated! Click 'Save Version' to snapshot.");
     } catch (err: any) {
       console.error(err);
       toast.error(err.message);
