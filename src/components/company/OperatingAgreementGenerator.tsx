@@ -20,8 +20,9 @@ import {
 import { toast } from "sonner";
 import {
   FileText, Download, Eye, Loader2, Sparkles, Printer, Copy, Check, Share2,
-  ChevronDown, History, RotateCcw, FileDown, ChevronLeft, ChevronRight, Upload,
+  ChevronDown, History, RotateCcw, FileDown, ChevronLeft, ChevronRight, Upload, Save,
 } from "lucide-react";
+import DocumentVersionHistory from "@/components/company/DocumentVersionHistory";
 import * as pdfjsLib from "pdfjs-dist";
 import {
   generateOperatingAgreementPDF, type OperatingAgreementData,
@@ -136,6 +137,8 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
     return doc;
   }, [company, members, officers, managementType, shareholderHoldings, totalIssuedShares]);
 
+  const [isSavingVersion, setIsSavingVersion] = useState(false);
+
   const saveVersion = async (doc: any, isAi: boolean) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -169,6 +172,20 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
       queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId, "Operating Agreement"] });
     } catch (err: any) {
       console.error("Save version error:", err);
+      throw err;
+    }
+  };
+
+  const handleSaveVersion = async () => {
+    if (!pdfDoc) { toast.error("Generate the document first"); return; }
+    setIsSavingVersion(true);
+    try {
+      await saveVersion(pdfDoc, isAiDraft);
+      toast.success("Version saved to history");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save version");
+    } finally {
+      setIsSavingVersion(false);
     }
   };
 
@@ -237,8 +254,7 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
       setAiDraftSections(null);
       setIsAiDraft(false);
       const doc = buildPdf(null);
-      await saveVersion(doc, false);
-      toast.success("Operating Agreement generated!");
+      toast.success("Operating Agreement generated! Click 'Save Version' to snapshot.");
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -274,9 +290,8 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
       const data = await response.json();
       setAiDraftSections(data.aiDraftSections);
       setIsAiDraft(true);
-      const doc = buildPdf(data.aiDraftSections);
-      await saveVersion(doc, true);
-      toast.success("AI-drafted Operating Agreement generated!");
+      buildPdf(data.aiDraftSections);
+      toast.success("AI-drafted Operating Agreement generated! Click 'Save Version' to snapshot.");
     } catch (err: any) {
       console.error(err);
       toast.error(err.message);
@@ -622,36 +637,15 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
               <Button variant="outline" size="sm" onClick={handlePrint}>
                 <Printer className="h-3.5 w-3.5" /> Print
               </Button>
+              <Button variant="default" size="sm" onClick={handleSaveVersion} disabled={isSavingVersion}>
+                {isSavingVersion ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                Save Version
+              </Button>
             </div>
           )}
 
-          {/* Version History */}
-          {versionHistory.length > 0 && (
-            <Collapsible open={showHistory} onOpenChange={setShowHistory}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground gap-1">
-                  <History className="h-3 w-3" />
-                  Version History ({versionHistory.length})
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-2">
-                <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2">
-                  {versionHistory.map((v: any, i: number) => (
-                    <div key={v.id} className="flex items-center justify-between text-xs py-1.5 border-b border-border last:border-0">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[9px] h-4">v{versionHistory.length - i}</Badge>
-                        <span className="text-muted-foreground">{v.title}</span>
-                      </div>
-                      <span className="text-[10px] text-muted-foreground">
-                        {new Date(v.created_at).toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          )}
+          <DocumentVersionHistory companyId={companyId} documentType="Operating Agreement" />
+
         </CardContent>
       </Card>
 
