@@ -145,17 +145,15 @@ Deno.serve(async (req) => {
     if (!response.ok) {
       console.error('Firecrawl error:', data);
       return new Response(
-        JSON.stringify({ success: false, error: data.error || `Firecrawl request failed (${response.status})` }),
+        JSON.stringify({ success: false, error: 'Lookup service is temporarily unavailable. Please try again.' }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const markdown = data.data?.markdown || data.markdown || '';
     console.log('Scraped markdown length:', markdown.length);
-    console.log('Markdown preview:', markdown.substring(0, 500));
 
     const results = parseResults(markdown);
-    console.log('Parsed results:', JSON.stringify(results));
 
     if (results.length === 0) {
       return new Response(
@@ -163,7 +161,6 @@ Deno.serve(async (req) => {
           success: true,
           results: [],
           message: 'No matching entities found on WDFI. The company may not be registered in Wisconsin.',
-          rawMarkdown: markdown.substring(0, 2000),
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -180,7 +177,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error verifying WDFI status:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ success: false, error: 'An internal error occurred. Please try again.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
