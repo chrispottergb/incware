@@ -593,6 +593,15 @@ export default function IncorporationTab({ company }: Props) {
         } as any)
         .eq("id", company.id);
       if (error) throw error;
+
+      // Persist EIN via encrypted RPC (never plaintext at rest)
+      const newEin = ((form as any).ein || "").trim();
+      const prevEin = ((company as any).ein || "").trim();
+      if (newEin !== prevEin) {
+        await supabase.functions.invoke("encrypt-company-ein", {
+          body: { company_id: company.id, ein: newEin || null },
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company", company.id] });

@@ -501,6 +501,15 @@ export default function OrganizationTab({ companyId, company }: Props) {
         } as any)
         .eq("id", companyId);
       if (error) throw error;
+
+      // Persist EIN via encrypted RPC (never plaintext at rest)
+      const newEin = ((filingForm as any).ein || "").trim();
+      const prevEin = ((company as any).ein || "").trim();
+      if (newEin !== prevEin) {
+        await supabase.functions.invoke("encrypt-company-ein", {
+          body: { company_id: companyId, ein: newEin || null },
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company", companyId] });
