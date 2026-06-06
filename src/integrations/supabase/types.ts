@@ -4048,6 +4048,10 @@ export type Database = {
         Args: { p_company_id: string; p_encryption_key: string }
         Returns: string
       }
+      decrypt_company_ein_service: {
+        Args: { p_company_id: string; p_encryption_key: string }
+        Returns: string
+      }
       decrypt_ssn_ein: {
         Args: { encryption_key: string; shareholder_id: string }
         Returns: string
