@@ -74,7 +74,10 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
   const { company, members } = data;
   const cx = pw(doc) / 2;
 
-  const companyName = company.name || "_______________";
+  const rawName = company.name || "_______________";
+  // Strip a trailing ", LLC" / "LLC" / "L.L.C." so we can append a single ", LLC" suffix
+  const companyBase = rawName.replace(/[,\s]+L\.?\s*L\.?\s*C\.?\s*$/i, "").trim() || rawName;
+  const companyName = companyBase;
   const memberName = members.length > 0 ? members[0].name : "_______________";
   const filingDate = company.filing_date
     ? new Date(company.filing_date + "T00:00:00").toLocaleDateString()
