@@ -464,7 +464,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
           name: filingForm.name,
           entity_type: filingForm.entity_type,
           state_of_incorporation: filingForm.state_of_incorporation || null,
-          ein: (filingForm as any).ein || null,
+          // EIN persisted separately via encrypt-company-ein after this update
           incorporation_date: filingForm.incorporation_date || null,
           fiscal_year_end: filingForm.fiscal_year_end || null,
           scheduled_annual_meeting: filingForm.scheduled_annual_meeting || null,
