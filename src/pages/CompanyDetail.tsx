@@ -97,6 +97,17 @@ export default function CompanyDetail() {
         .eq("id", id!)
         .maybeSingle();
       if (error) throw error;
+      if (data && (data as any).ein_encrypted && !(data as any).ein) {
+        try {
+          const { data: dec } = await supabase.functions.invoke("decrypt-company-ein", {
+            body: { company_ids: [data.id] },
+          });
+          const plain = dec?.data?.[data.id];
+          if (plain) (data as any).ein = plain;
+        } catch (e) {
+          console.warn("EIN decrypt failed", e);
+        }
+      }
       return data;
     },
     enabled: !!id,
