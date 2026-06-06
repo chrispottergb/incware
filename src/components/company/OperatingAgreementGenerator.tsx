@@ -254,8 +254,7 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
       setAiDraftSections(null);
       setIsAiDraft(false);
       const doc = buildPdf(null);
-      await saveVersion(doc, false);
-      toast.success("Operating Agreement generated!");
+      toast.success("Operating Agreement generated! Click 'Save Version' to snapshot.");
     } catch (err: any) {
       toast.error(err.message);
     } finally {
