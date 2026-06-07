@@ -8,6 +8,7 @@ import { Tables } from "@/integrations/supabase/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import DbAddressAutocomplete from "@/components/ui/db-address-autocomplete";
+import { ScheduledMeetingPicker, formatScheduledMeeting } from "@/components/company/ScheduledMeetingPicker";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -319,7 +320,9 @@ export default function OrganizationTab({ companyId, company }: Props) {
     ein: (company as any).ein ?? "",
     incorporation_date: company.incorporation_date ?? "",
     fiscal_year_end: company.fiscal_year_end ?? "",
-    scheduled_annual_meeting: company.scheduled_annual_meeting ?? "",
+    scheduled_meeting_ordinal: (company as any).scheduled_meeting_ordinal ?? "",
+    scheduled_meeting_day_of_week: (company as any).scheduled_meeting_day_of_week ?? "",
+    scheduled_meeting_month: (company as any).scheduled_meeting_month ?? "",
     corporate_status: company.corporate_status ?? "current",
     verification_date: (company as any).verification_date ?? "",
     annual_report_year: (company as any).annual_report_year?.toString() ?? "",
@@ -467,7 +470,9 @@ export default function OrganizationTab({ companyId, company }: Props) {
           // EIN persisted separately via encrypt-company-ein after this update
           incorporation_date: filingForm.incorporation_date || null,
           fiscal_year_end: filingForm.fiscal_year_end || null,
-          scheduled_annual_meeting: filingForm.scheduled_annual_meeting || null,
+          scheduled_meeting_ordinal: filingForm.scheduled_meeting_ordinal || null,
+          scheduled_meeting_day_of_week: filingForm.scheduled_meeting_day_of_week || null,
+          scheduled_meeting_month: filingForm.scheduled_meeting_month || null,
           corporate_status: filingForm.corporate_status,
           verification_date: filingForm.verification_date || null,
           annual_report_year: filingForm.annual_report_year ? parseInt(filingForm.annual_report_year) : null,
@@ -892,7 +897,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 { label: "EIN", value: (filingForm as any).ein || "" },
                 { label: "Organization Date", value: filingForm.incorporation_date ? new Date(filingForm.incorporation_date + "T00:00:00").toLocaleDateString() : "" },
                 { label: "Fiscal Year End", value: filingForm.fiscal_year_end },
-                { label: "Scheduled Annual Meeting", value: filingForm.scheduled_annual_meeting },
+                { label: "Scheduled Annual Meeting", value: formatScheduledMeeting(filingForm.scheduled_meeting_ordinal, filingForm.scheduled_meeting_day_of_week, filingForm.scheduled_meeting_month) },
                 { label: "Contact Name", value: filingForm.contact_full_name },
                 { label: "Salutation", value: filingForm.salutation_name },
                 { label: "Email", value: filingForm.contact_email },
@@ -973,7 +978,12 @@ export default function OrganizationTab({ companyId, company }: Props) {
               </div>
               <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label">Sched. Annual Mtg Date</Label>
-                <Input className="h-7 text-sm" value={filingForm.scheduled_annual_meeting} onChange={(e) => setFilingForm((p) => ({ ...p, scheduled_annual_meeting: e.target.value }))} placeholder="1st Monday in April" />
+                <ScheduledMeetingPicker
+                  ordinal={filingForm.scheduled_meeting_ordinal}
+                  dayOfWeek={filingForm.scheduled_meeting_day_of_week}
+                  month={filingForm.scheduled_meeting_month}
+                  onChange={(next) => setFilingForm((p) => ({ ...p, scheduled_meeting_ordinal: next.ordinal, scheduled_meeting_day_of_week: next.dayOfWeek, scheduled_meeting_month: next.month }))}
+                />
               </div>
               <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label">Accounting Method</Label>

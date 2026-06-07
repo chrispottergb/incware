@@ -7,6 +7,7 @@ import { useZipLookup } from "@/hooks/useZipLookup";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import NameAutocomplete from "@/components/NameAutocomplete";
 import DbAddressAutocomplete from "@/components/ui/db-address-autocomplete";
+import { ScheduledMeetingPicker, formatScheduledMeeting } from "@/components/company/ScheduledMeetingPicker";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -198,7 +199,9 @@ export default function IncorporationTab({ company }: Props) {
     par_value_type: company.par_value_type ?? "par",
     par_value: company.par_value?.toString() ?? "",
     s_election_date: company.s_election_date ?? "",
-    scheduled_annual_meeting: company.scheduled_annual_meeting ?? "",
+    scheduled_meeting_ordinal: (company as any).scheduled_meeting_ordinal ?? "",
+    scheduled_meeting_day_of_week: (company as any).scheduled_meeting_day_of_week ?? "",
+    scheduled_meeting_month: (company as any).scheduled_meeting_month ?? "",
     election_1244: company.election_1244 ?? false,
     has_preferred_shares: company.has_preferred_shares ?? false,
     preferred_class_name: (company as any).preferred_class_name ?? "Class B",
@@ -271,7 +274,9 @@ export default function IncorporationTab({ company }: Props) {
       par_value_type: company.par_value_type ?? "par",
       par_value: company.par_value?.toString() ?? "",
       s_election_date: company.s_election_date ?? "",
-      scheduled_annual_meeting: company.scheduled_annual_meeting ?? "",
+      scheduled_meeting_ordinal: (company as any).scheduled_meeting_ordinal ?? "",
+      scheduled_meeting_day_of_week: (company as any).scheduled_meeting_day_of_week ?? "",
+      scheduled_meeting_month: (company as any).scheduled_meeting_month ?? "",
     election_1244: company.election_1244 ?? false,
     has_preferred_shares: company.has_preferred_shares ?? false,
     preferred_class_name: (company as any).preferred_class_name ?? "Class B",
@@ -552,7 +557,9 @@ export default function IncorporationTab({ company }: Props) {
           s_election_date: sElectionAvailable
             ? (llcSElectionEnabled ? (form.s_election_date || null) : null)
             : (form.s_election_date || null),
-          scheduled_annual_meeting: form.scheduled_annual_meeting || null,
+          scheduled_meeting_ordinal: form.scheduled_meeting_ordinal || null,
+          scheduled_meeting_day_of_week: form.scheduled_meeting_day_of_week || null,
+          scheduled_meeting_month: form.scheduled_meeting_month || null,
           election_1244: form.election_1244,
           has_preferred_shares: form.has_preferred_shares,
           preferred_class_name: form.has_preferred_shares ? (form.preferred_class_name || "Class B") : null,
@@ -738,7 +745,7 @@ export default function IncorporationTab({ company }: Props) {
                 { label: "EIN", value: (form as any).ein || "" },
                 { label: "Incorporation Date", value: form.incorporation_date ? new Date(form.incorporation_date + "T00:00:00").toLocaleDateString() : "" },
                 { label: "Fiscal Year End", value: form.fiscal_year_end },
-                { label: "Scheduled Annual Meeting", value: form.scheduled_annual_meeting },
+                { label: "Scheduled Annual Meeting", value: formatScheduledMeeting(form.scheduled_meeting_ordinal, form.scheduled_meeting_day_of_week, form.scheduled_meeting_month) },
                 { label: "Contact Name", value: form.contact_full_name },
                 { label: "Salutation", value: form.salutation_name },
                 { label: "Email", value: form.contact_email },
@@ -863,7 +870,12 @@ export default function IncorporationTab({ company }: Props) {
                   </div>
                   <div className="field-group col-span-3">
                     <Label className="field-label">Scheduled Annual Mtg. Date</Label>
-                    <Input className="h-7 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
+                    <ScheduledMeetingPicker
+                      ordinal={form.scheduled_meeting_ordinal}
+                      dayOfWeek={form.scheduled_meeting_day_of_week}
+                      month={form.scheduled_meeting_month}
+                      onChange={(next) => setForm((p) => ({ ...p, scheduled_meeting_ordinal: next.ordinal, scheduled_meeting_day_of_week: next.dayOfWeek, scheduled_meeting_month: next.month }))}
+                    />
                   </div>
                 </div>
               </div>
@@ -976,7 +988,12 @@ export default function IncorporationTab({ company }: Props) {
             </div>
             <div className="field-group col-span-6 sm:col-span-5">
               <Label className="field-label">Scheduled Annual Mtg. Date</Label>
-              <Input className="h-7 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
+              <ScheduledMeetingPicker
+                ordinal={form.scheduled_meeting_ordinal}
+                dayOfWeek={form.scheduled_meeting_day_of_week}
+                month={form.scheduled_meeting_month}
+                onChange={(next) => setForm((p) => ({ ...p, scheduled_meeting_ordinal: next.ordinal, scheduled_meeting_day_of_week: next.dayOfWeek, scheduled_meeting_month: next.month }))}
+              />
             </div>
             <div className="field-group col-span-12 sm:col-span-10">
               <Label className="field-label">Business Purpose</Label>
