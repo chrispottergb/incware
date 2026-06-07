@@ -1047,6 +1047,9 @@ export type Database = {
           s_election_date: string | null
           salutation_name: string | null
           scheduled_annual_meeting: string | null
+          scheduled_meeting_day_of_week: string | null
+          scheduled_meeting_month: string | null
+          scheduled_meeting_ordinal: string | null
           seal_type: string | null
           second_name_choice: string | null
           state: string | null
@@ -1121,6 +1124,9 @@ export type Database = {
           s_election_date?: string | null
           salutation_name?: string | null
           scheduled_annual_meeting?: string | null
+          scheduled_meeting_day_of_week?: string | null
+          scheduled_meeting_month?: string | null
+          scheduled_meeting_ordinal?: string | null
           seal_type?: string | null
           second_name_choice?: string | null
           state?: string | null
@@ -1195,6 +1201,9 @@ export type Database = {
           s_election_date?: string | null
           salutation_name?: string | null
           scheduled_annual_meeting?: string | null
+          scheduled_meeting_day_of_week?: string | null
+          scheduled_meeting_month?: string | null
+          scheduled_meeting_ordinal?: string | null
           seal_type?: string | null
           second_name_choice?: string | null
           state?: string | null
