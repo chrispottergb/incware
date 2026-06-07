@@ -306,7 +306,7 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
 
   y = addSectionTitle(doc, y, "8.1 — Death of Member");
   y = addParagraph(doc, y,
-    `Upon the death of the Member, the Company shall be dissolved. By separate written documentation, the Member shall designate and appoint the individual who will wind down the Company's business and transfer or distribute the Member's Interests and Capital Account as designated by the Member or as may otherwise be required by law.`
+    "Upon the death of the Member, the Member's interest shall pass to the Member's heirs or estate, and the Company shall not be dissolved unless required by law."
   );
 
   y = addSectionTitle(doc, y, "8.2 — Disability of Member");
