@@ -8,6 +8,7 @@ import { Tables } from "@/integrations/supabase/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import DbAddressAutocomplete from "@/components/ui/db-address-autocomplete";
+import { ScheduledMeetingPicker, formatScheduledMeeting } from "@/components/company/ScheduledMeetingPicker";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
