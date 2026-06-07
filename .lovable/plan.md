@@ -1,81 +1,88 @@
 ## Goal
 
-Expand the LLC **Authorized Binders** card in `src/components/company/OrganizationTab.tsx` into a richer § 183.0301 capture form: a Management Structure toggle, structured per-row fields (with authority source), a DFI Statement of Authority checkbox/filing reference, and inline warnings — while preserving the existing dark card styling, auto-save, PDF/print actions, and trash-icon row UX. Corporation behavior (Initial List of Directors) is unchanged.
+Add a new plain-English Organizational Meeting Minutes PDF for single-member LLCs. The existing multi-member generator stays as-is; SMLLCs are routed to the new template automatically based on entity type and member count.
 
-## Scope
+## New file: `src/lib/smllc-org-meeting-pdf.ts`
 
-Only the LLC branch of the Authorized Binders card (`isLLCType(company.entity_type) === true`). Directors UI for corporations stays as-is.
+Signature: `export function generateSmllcOrgMeetingPDF(data: OrgMeetingData): jsPDF` — reuses the existing `OrgMeetingData` interface re-exported from `org-meeting-pdf.ts` (no wizard or interface changes).
 
-## Database (one migration)
+### Implementation approach
 
-New columns on `public.companies` (all nullable, additive — existing rows stay valid):
+The helpers in `org-meeting-pdf.ts` (`heading`, `para`, `resolvedPara`, `checkPage`, footer logic) are local closures, not exports. Rather than refactoring that file, the new SMLLC generator will **define its own equivalents inline** (same exact styling rules) so the change is fully additive and the multi-member path is untouched. Shared imports:
 
-- `llc_management_structure text` — `"member_managed"` | `"manager_managed"` (default `"member_managed"` for LLC entities going forward; existing rows null, treated as `member_managed` in UI).
-- `llc_authorized_binders jsonb` — array of binder objects, replaces today's plain `director_names` array for LLCs. Shape:
-  - Member-Managed: `{ name, source_of_authority, restrictions_notes }`
-  - Manager-Managed: `{ name, scope_of_authority, source_of_authority }`
-- `llc_dfi_statement_filed boolean` (default false)
-- `llc_dfi_statement_reference text`
-- `llc_dfi_statement_date date`
+- `jsPDF` from `jspdf`
+- `autoTable` from `jspdf-autotable`
+- `registerArialFont` from `@/lib/arial-font`
+- `format` from `date-fns`
+- `type OrgMeetingData` from `@/lib/org-meeting-pdf`
 
-`director_names` is kept untouched so corporations and historical PDFs/exports continue to work. On first save under the new UI, LLCs migrate any existing `director_names` entries into `llc_authorized_binders` as Member-Managed rows with empty authority fields (one-time, client-side, only when `llc_authorized_binders` is null/empty).
+Styling identical to `org-meeting-pdf.ts`: Arial via `registerArialFont`, 1.15 line height, 90pt left / 54pt right margins, BLUE `#1F4E79` headers with light-blue (`#D6E4F0`) underline rule, page footer with company name + page numbers, `RESOLVED, ` prefix bolded and indented 36pt.
 
-No new tables, no RLS changes needed (existing companies RLS covers these columns).
+### Input resolution from existing `OrgMeetingData` fields
 
-## UI — `OrganizationTab.tsx` (LLC branch only)
+Mapping uses the **actual** field names in the project:
 
-Replace the current name-only grid (lines ~1260–1302) with:
+- `llcName = data.companyName + ", LLC"` (matches existing generator)
+- `member = data.members?.[0]` — uses `name`, `address`, `membershipUnits`, `membershipInterestPct`
+- `managingMember = data.managers?.[0] ?? { name: member?.name ?? "", title: "Managing Member" }`
+- `chairperson = data.chairperson || member?.name`
+- `secretary = data.secretary || member?.name`
+- `stateOfFormation`, `stateAgency`, `filingDate`, `registeredAgentName`, `registeredAgentAddress`
+- `fiscalYearEnd`, `firstFiscalYearEnd`, `accountingMethod`
+- `bankName`, `bankCity` — banking section gated by `data.includeBanking`
+- `authorizedBinders` — uses `name`, `title`, `scopeOfAuthority` (not `scope`)
+- `businessPurpose`, `operatingAgreementAdopted`
 
-1. **Header row** — keep existing `CardDescription`, `SectionPdfActions` (eye/download/print), and `SaveStatusIndicator` ("Saved just now") exactly where they are.
+Dates formatted with `format(new Date(value + "T12:00:00"), "MMMM d, yyyy")` to match the existing generator's pattern.
 
-2. **Management Structure pill toggle** (top of card body)
-   - Uppercase label `MANAGEMENT STRUCTURE` using existing `field-label` class.
-   - Two-button pill group: `Member-Managed` | `Manager-Managed`, built with existing `Button` (`variant="outline"`/`"default"` for selected) + `cn`. Selection drives row schema.
+### Document sections (exact order)
 
-3. **Binder rows** — list rendered from `llc_authorized_binders` state, using the same dark card row layout, uppercase `field-label` headings, and a trash button per row (matches current styling).
-   - **Member-Managed row fields:**
-     - `BINDER NAME` — `Input`
-     - `SOURCE OF AUTHORITY` — `Select` with options: `Member Default`, `Operating Agreement`, `Statement of Authority`
-     - `RESTRICTIONS / NOTES` — `Input`
-   - **Manager-Managed row fields:**
-     - `MANAGER NAME` — `Input`
-     - `SCOPE OF AUTHORITY` — `Input` (placeholder examples: "Full authority", "Contracts under $50,000")
-     - `SOURCE OF AUTHORITY` — `Select` with options: `Operating Agreement`, `Statement of Authority`
-   - Trash icon button per row (mirrors existing `Trash2` button styling); first row always retained.
-   - Switching the toggle keeps name values but clears the other-structure-only fields after a `ConfirmDeleteDialog`-style inline confirm only when those fields have data; otherwise switch silently.
+1. **Title** — `ORGANIZATIONAL MEETING MINUTES` / `OF {llcName}` (centered, blue, bold).
+2. **Meeting Overview** — single plain-English paragraph: date/time/location, sole Member present, Chairperson + Secretary, purpose.
+3. **Confirmation of Formation** — RESOLVED ratifying the Articles of Organization filing with `{stateAgency}` on `{filingDate}`.
+4. **Registered Agent** — RESOLVED confirming `{registeredAgentName}` at `{registeredAgentAddress}`.
+5. **Fiscal Year & Accounting Method** — RESOLVED with `{fiscalYearEnd}`, `{firstFiscalYearEnd}`, `{accountingMethod}`.
+6. **Management** — RESOLVED appointing `{member.name}` as Managing Member with full authority to manage the Company.
+7. **Initial Member & Capital Contribution** — RESOLVED + `autoTable` with columns Name / Address / Units / % (single row from `members[0]`, percentage suffixed with `%`).
+8. **Adoption of Operating Agreement** — RESOLVED when `operatingAgreementAdopted` is true; otherwise one sentence noting future adoption. No WHEREAS.
+9. **Banking Resolutions** — single section, rendered only when `includeBanking && bankName`; designates `{member.name}` as the authorized signer at `{bankName}, {bankCity}`.
+10. **Business Purpose** — RESOLVED with `{businessPurpose}`.
+11. **General Authorization** — RESOLVED combining authorization to execute documents **and ratification of prior actions** taken by the Member in connection with formation (ratification merged here per spec).
+12. **Authorized Binder** — RESOLVED designating `{member.name}` under Wis. Stat. § 183.0301; if `authorizedBinders` has explicit entries, render a Name / Title / Scope `autoTable` (sourced from `scopeOfAuthority`) instead.
+13. **Adjournment** — one sentence.
+14. **Signature block** — two signature lines only: **Managing Member** (`{managingMember.name}`) + Date, and **Secretary** (`{secretary}`) + Date. No officers, no board, no member roster signatures.
 
-4. **Add button** — keeps current outline `Plus` style. Label is `+ Add Another Binder` when Member-Managed, `+ Add Another Manager` when Manager-Managed.
+### Content rules enforced
 
-5. **Manager-managed inline note** — small muted-foreground line under the list when Manager-Managed:
-   > *"In a manager-managed LLC, members do not have authority to bind the company unless separately granted."*
+- "Member" / "Managing Member" only — no "Board," no "officers," no compensation language.
+- No WHEREAS clauses anywhere.
+- All resolutions use the bold `RESOLVED, ` prefix.
+- S-Corp election, multi-member roster, multi-signer banking, and multi-manager tables from the current generator are intentionally omitted.
 
-6. **DFI Statement of Authority block** (under the rows, both modes)
-   - `Checkbox` row: `Statement of Authority filed with Wisconsin DFI`
-   - When checked, reveal two side-by-side fields:
-     - `FILING REFERENCE` — `Input`
-     - `FILING DATE` — `DatePickerField`
+## Routing change
 
-7. **Warnings panel** — amber banner section (uses existing warning tokens, e.g. `bg-warning/10 text-warning border-warning/30`) shown above the auto-save row. Displays any of:
-   - "No binders have been entered." — when list is empty or all names blank.
-   - "Source of authority is required for each manager." — Manager-Managed + any row missing `source_of_authority`.
-   - "DFI filing reference is required when the Statement of Authority box is checked." — checkbox on, reference empty.
+`src/components/OrgMeetingWizard.tsx` is the sole caller of `generateOrgMeetingPDF`. At the existing PDF generation call site, branch:
 
-8. **Footer row** — unchanged layout: `Add Another …` button on the left, `SaveStatusIndicator` on the right.
+```ts
+import { generateOrgMeetingPDF } from "@/lib/org-meeting-pdf";
+import { generateSmllcOrgMeetingPDF } from "@/lib/smllc-org-meeting-pdf";
+import { isLLCType } from "@/lib/entity-terminology";
 
-## State / save flow
+const isSmllc =
+  isLLCType(company.entity_type) && (data.members?.length ?? 0) <= 1;
+const doc = isSmllc
+  ? generateSmllcOrgMeetingPDF(data)
+  : generateOrgMeetingPDF(data);
+```
 
-- New local state: `managementStructure`, `binders[]`, `dfiFiled`, `dfiReference`, `dfiDate`, all hydrated from `company` on load (with the one-time migration from `director_names` described above).
-- Extend the existing `directorsAutoSave` (rename internally to `bindersAutoSave` for LLC, but keep the corp directors save untouched) so the LLC branch persists the new columns. Reuse `useAutoSave` pattern already in the file — same 2s debounce, same blur trigger, same `SaveStatusIndicator`.
-- `SectionPdfActions` config for LLC updated to print: Management Structure, each binder with its authority fields, and DFI filing info when present. Corporation PDF path unchanged.
+Branch replaces only the single line that currently calls `generateOrgMeetingPDF`. The download/preview pipeline that consumes `doc` is unchanged. No UI/wizard changes.
 
 ## Out of scope
 
-- Corporation (Initial List of Directors) UI and data — untouched.
-- Org meeting / annual meeting / record-book PDF generators — not changed in this pass (they continue to read `director_names`; we can wire them to the new structure in a follow-up if you want).
-- LLC member equity, officers, or any other section of the page.
+- No DB migration, no `OrgMeetingData` interface changes, no new wizard step.
+- Multi-member LLC and corporate org meeting paths untouched.
+- No changes to operating agreement generators or version history.
 
-## Files touched
+## QA
 
-- `supabase/migrations/<new>.sql` — add the 5 columns above to `public.companies`.
-- `src/components/company/OrganizationTab.tsx` — LLC branch of the Authorized Binders card only.
-- `src/integrations/supabase/types.ts` — auto-regenerated after migration.
+After build, generate one SMLLC org meeting PDF from the wizard, save the file to `/tmp`, render pages to images with `pdftoppm`, and verify: section order matches spec, no clipping/overflow, single banking section, no WHEREAS, signature block shows only Managing Member + Secretary.
