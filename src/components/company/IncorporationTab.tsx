@@ -987,7 +987,12 @@ export default function IncorporationTab({ company }: Props) {
             </div>
             <div className="field-group col-span-6 sm:col-span-5">
               <Label className="field-label">Scheduled Annual Mtg. Date</Label>
-              <Input className="h-7 text-sm" value={form.scheduled_annual_meeting} onChange={(e) => update("scheduled_annual_meeting", e.target.value)} placeholder="1st Monday in April" />
+              <ScheduledMeetingPicker
+                ordinal={form.scheduled_meeting_ordinal}
+                dayOfWeek={form.scheduled_meeting_day_of_week}
+                month={form.scheduled_meeting_month}
+                onChange={(next) => setForm((p) => ({ ...p, scheduled_meeting_ordinal: next.ordinal, scheduled_meeting_day_of_week: next.dayOfWeek, scheduled_meeting_month: next.month }))}
+              />
             </div>
             <div className="field-group col-span-12 sm:col-span-10">
               <Label className="field-label">Business Purpose</Label>
