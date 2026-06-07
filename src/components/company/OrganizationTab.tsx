@@ -977,7 +977,12 @@ export default function OrganizationTab({ companyId, company }: Props) {
               </div>
               <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label">Sched. Annual Mtg Date</Label>
-                <Input className="h-7 text-sm" value={filingForm.scheduled_annual_meeting} onChange={(e) => setFilingForm((p) => ({ ...p, scheduled_annual_meeting: e.target.value }))} placeholder="1st Monday in April" />
+                <ScheduledMeetingPicker
+                  ordinal={filingForm.scheduled_meeting_ordinal}
+                  dayOfWeek={filingForm.scheduled_meeting_day_of_week}
+                  month={filingForm.scheduled_meeting_month}
+                  onChange={(next) => setFilingForm((p) => ({ ...p, scheduled_meeting_ordinal: next.ordinal, scheduled_meeting_day_of_week: next.dayOfWeek, scheduled_meeting_month: next.month }))}
+                />
               </div>
               <div className="field-group col-span-6 sm:col-span-3">
                 <Label className="field-label">Accounting Method</Label>
