@@ -7,6 +7,7 @@ import { useZipLookup } from "@/hooks/useZipLookup";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import NameAutocomplete from "@/components/NameAutocomplete";
 import DbAddressAutocomplete from "@/components/ui/db-address-autocomplete";
+import { ScheduledMeetingPicker, formatScheduledMeeting } from "@/components/company/ScheduledMeetingPicker";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
