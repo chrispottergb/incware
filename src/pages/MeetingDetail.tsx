@@ -42,7 +42,9 @@ import {
   exportResolutionsPDF,
   exportFinancialsPDF,
 } from "@/lib/meeting-pdf-export";
-import { getTerminology } from "@/lib/entity-terminology";
+import { getTerminology, isLLCType } from "@/lib/entity-terminology";
+import { generateSmllcOrgMeetingPDF } from "@/lib/smllc-org-meeting-pdf";
+import type { OrgMeetingData } from "@/lib/org-meeting-pdf";
 import { useShareCalculations } from "@/hooks/useShareCalculations";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
