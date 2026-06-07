@@ -13,6 +13,8 @@ import { Progress } from "@/components/ui/progress";
 import { Plus, Trash2, Download, ChevronLeft, ChevronRight, FileText, Info } from "lucide-react";
 import { toast } from "sonner";
 import { generateOrgMeetingPDF, OrgMeetingData } from "@/lib/org-meeting-pdf";
+import { generateSmllcOrgMeetingPDF } from "@/lib/smllc-org-meeting-pdf";
+import { isLLCType } from "@/lib/entity-terminology";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
