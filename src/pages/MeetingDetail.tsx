@@ -743,8 +743,10 @@ export default function MeetingDetail() {
           members: [{
             name: member.name || "",
             address: memberFullAddr,
-            membershipUnits: member.num_shares != null ? String(member.num_shares) : "",
-            membershipInterestPct: member.ownership_percentage != null ? String(member.ownership_percentage) : "100",
+            membershipUnits: String(shareholderHoldings[member.id] ?? 0),
+            membershipInterestPct: totalIssuedShares > 0
+              ? (((shareholderHoldings[member.id] ?? 0) / totalIssuedShares) * 100).toFixed(2)
+              : "100",
           }],
           businessPurpose: (company as any)?.business_purpose || "",
           operatingAgreementAdopted: true,
