@@ -27,7 +27,8 @@ export function generateSmllcOrgMeetingPDF(data: OrgMeetingData): jsPDF {
     const contentWidth = pw - margin - rMargin;
     let y = margin;
 
-    const llcName = `${data.companyName}, LLC`;
+    const baseName = (data.companyName || "").replace(/,?\s*LLC\.?$/i, "").trim();
+    const llcName = `${baseName}, LLC`;
     const member = (data.members ?? [])[0];
     const managingMember =
       (data.managers ?? [])[0] ?? { name: member?.name ?? "", title: "Managing Member" };
