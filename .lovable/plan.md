@@ -1,88 +1,65 @@
-## Goal
+> **GUARDRAIL — read first.** This is the entityIQ gap analysis. **Do NOT create new tables for entities, members, or capital contributions.** Only implement the three deliverables listed in Section 5. The existing schema (`companies`, `shareholders`, `officers`, `share_transactions`, `registered_agent_history`) is the source of truth and must not be forked.
 
-Add a new plain-English Organizational Meeting Minutes PDF for single-member LLCs. The existing multi-member generator stays as-is; SMLLCs are routed to the new template automatically based on entity type and member count.
+# LLC Data Model — Mapping to entityIQ + Gap Migration
 
-## New file: `src/lib/smllc-org-meeting-pdf.ts`
+The spec overlaps ~90% with the existing schema. Multi-entity-per-user, RLS, and timestamps are already project-wide. This plan documents the mapping and adds only the missing pieces.
 
-Signature: `export function generateSmllcOrgMeetingPDF(data: OrgMeetingData): jsPDF` — reuses the existing `OrgMeetingData` interface re-exported from `org-meeting-pdf.ts` (no wizard or interface changes).
+## 1. Mapping spec → existing tables
 
-### Implementation approach
+| Spec entity | Existing table / column | Notes |
+|---|---|---|
+| `Entity` | `companies` | `entity_type` already supports `LLC`, `Single Member LLC`, `LLC-S`, `Corporation`. `name`, `state_of_incorporation`, `incorporation_date`, `user_id` cover the spec. |
+| `isSingleMember` (derived) | Computed via `isLLCType()` + member count. Never stored. |
+| `RegisteredAgent` | `companies.registered_agent_*` + `registered_agent_history` | Name + full address already covered. |
+| `Governance.managementType` | `companies.management_type` / `llc_management_structure` | Already exists. |
+| `Governance.scheduledAnnualMeetingDate` | `companies.scheduled_annual_meeting` (text) | **GAP** — needs structured ordinal/dayOfWeek/month. See §2. |
+| `Member` | `shareholders` (terminology mapped via `entity-terminology.ts`) | name, address, `ownership_percentage` all present. |
+| `Member.membershipUnits` / `membershipInterest` | Derived from `share_transactions` (single source of truth). `ownership_percentage` recalculated by `recalculate_ownership_percentages()`. |
+| `Officer` (Managing Member, Manager, Secretary, Treasurer) | `officers` + `llc_authorized_binders` jsonb | Existing roles are extensible across entity types via `entity-terminology.ts`. |
+| `CapitalContribution` | `share_transactions` with `transaction_type` in `Capital Contribution`, `Initial Contribution`, `additional_contribution` | `consideration_type` + `consideration_description` cover Cash/Property/Services/Other. |
+| `createdAt`/`updatedAt` | Present on every table. |
+| RLS / multi-tenant | All tables scoped via `companies.user_id`. |
 
-The helpers in `org-meeting-pdf.ts` (`heading`, `para`, `resolvedPara`, `checkPage`, footer logic) are local closures, not exports. Rather than refactoring that file, the new SMLLC generator will **define its own equivalents inline** (same exact styling rules) so the change is fully additive and the multi-member path is untouched. Shared imports:
+## 2. Gap migration — structured scheduled meeting date
 
-- `jsPDF` from `jspdf`
-- `autoTable` from `jspdf-autotable`
-- `registerArialFont` from `@/lib/arial-font`
-- `format` from `date-fns`
-- `type OrgMeetingData` from `@/lib/org-meeting-pdf`
+Add to `companies`:
+- `scheduled_meeting_ordinal` text — `1st | 2nd | 3rd | 4th | Last`
+- `scheduled_meeting_day_of_week` text — `Monday`…`Sunday`
+- `scheduled_meeting_month` text — `January`…`December`
+- `scheduled_annual_meeting` **becomes a generated column** (`GENERATED ALWAYS AS ... STORED`) that concatenates the three structured fields into the display string (e.g., `"2nd Tuesday in May"`) when all three are present, otherwise falls back to NULL. This eliminates drift between structured data and display string — UI never writes the text column directly.
 
-Styling identical to `org-meeting-pdf.ts`: Arial via `registerArialFont`, 1.15 line height, 90pt left / 54pt right margins, BLUE `#1F4E79` headers with light-blue (`#D6E4F0`) underline rule, page footer with company name + page numbers, `RESOLVED, ` prefix bolded and indented 36pt.
+Migration steps:
+1. Add the three new columns (nullable, CHECK constraints on each enum).
+2. Backfill the three columns by parsing existing `scheduled_annual_meeting` text where possible (best-effort; unparseable rows left null).
+3. `DROP` the existing `scheduled_annual_meeting` column, then re-add it as `GENERATED ALWAYS AS (...) STORED`.
+4. No RLS change (inherits from `companies`).
 
-### Input resolution from existing `OrgMeetingData` fields
+## 3. Validation (code, not schema)
 
-Mapping uses the **actual** field names in the project:
+Add to `src/lib/transaction-validation.ts`:
+- `validateMembershipInterestSum(memberInterestsDecimal: number[]): ValidationResult` — sums must equal 1.0 ±0.0001.
 
-- `llcName = data.companyName + ", LLC"` (matches existing generator)
-- `member = data.members?.[0]` — uses `name`, `address`, `membershipUnits`, `membershipInterestPct`
-- `managingMember = data.managers?.[0] ?? { name: member?.name ?? "", title: "Managing Member" }`
-- `chairperson = data.chairperson || member?.name`
-- `secretary = data.secretary || member?.name`
-- `stateOfFormation`, `stateAgency`, `filingDate`, `registeredAgentName`, `registeredAgentAddress`
-- `fiscalYearEnd`, `firstFiscalYearEnd`, `accountingMethod`
-- `bankName`, `bankCity` — banking section gated by `data.includeBanking`
-- `authorizedBinders` — uses `name`, `title`, `scopeOfAuthority` (not `scope`)
-- `businessPurpose`, `operatingAgreementAdopted`
+**Before refactoring `validateLLCTotalInterest`:** read its current signature to confirm whether it is percent-based (0–100) or decimal-based (0–1). The plan keeps both functions temporarily:
+- New function: decimal-based, for the spec's `membershipInterest` field.
+- Existing function: leave as-is with a `/** @deprecated — prefer validateMembershipInterestSum (decimal). Remove once all call sites migrate. */` JSDoc tag so the next developer sees the migration path.
 
-Dates formatted with `format(new Date(value + "T12:00:00"), "MMMM d, yyyy")` to match the existing generator's pattern.
+Display layer converts decimal → percent (`× 100`) — never store the percent.
 
-### Document sections (exact order)
+## 4. Officer role extensibility
 
-1. **Title** — `ORGANIZATIONAL MEETING MINUTES` / `OF {llcName}` (centered, blue, bold).
-2. **Meeting Overview** — single plain-English paragraph: date/time/location, sole Member present, Chairperson + Secretary, purpose.
-3. **Confirmation of Formation** — RESOLVED ratifying the Articles of Organization filing with `{stateAgency}` on `{filingDate}`.
-4. **Registered Agent** — RESOLVED confirming `{registeredAgentName}` at `{registeredAgentAddress}`.
-5. **Fiscal Year & Accounting Method** — RESOLVED with `{fiscalYearEnd}`, `{firstFiscalYearEnd}`, `{accountingMethod}`.
-6. **Management** — RESOLVED appointing `{member.name}` as Managing Member with full authority to manage the Company.
-7. **Initial Member & Capital Contribution** — RESOLVED + `autoTable` with columns Name / Address / Units / % (single row from `members[0]`, percentage suffixed with `%`).
-8. **Adoption of Operating Agreement** — RESOLVED when `operatingAgreementAdopted` is true; otherwise one sentence noting future adoption. No WHEREAS.
-9. **Banking Resolutions** — single section, rendered only when `includeBanking && bankName`; designates `{member.name}` as the authorized signer at `{bankName}, {bankCity}`.
-10. **Business Purpose** — RESOLVED with `{businessPurpose}`.
-11. **General Authorization** — RESOLVED combining authorization to execute documents **and ratification of prior actions** taken by the Member in connection with formation (ratification merged here per spec).
-12. **Authorized Binder** — RESOLVED designating `{member.name}` under Wis. Stat. § 183.0301; if `authorizedBinders` has explicit entries, render a Name / Title / Scope `autoTable` (sourced from `scopeOfAuthority`) instead.
-13. **Adjournment** — one sentence.
-14. **Signature block** — two signature lines only: **Managing Member** (`{managingMember.name}`) + Date, and **Secretary** (`{secretary}`) + Date. No officers, no board, no member roster signatures.
+No schema change. Document the convention in the new markdown file: LLC roles surface via `entity-terminology.ts` and are stored in existing `officers` columns / `llc_authorized_binders`. A `company_officer_roles` lookup table is **future work**, not in scope here.
 
-### Content rules enforced
+## 5. Deliverables (the only things to build)
 
-- "Member" / "Managing Member" only — no "Board," no "officers," no compensation language.
-- No WHEREAS clauses anywhere.
-- All resolutions use the bold `RESOLVED, ` prefix.
-- S-Corp election, multi-member roster, multi-signer banking, and multi-manager tables from the current generator are intentionally omitted.
+1. **Migration**: add 3 `scheduled_meeting_*` columns + convert `scheduled_annual_meeting` to a generated column.
+2. **Code**: add `validateMembershipInterestSum` to `src/lib/transaction-validation.ts`; mark `validateLLCTotalInterest` `@deprecated` with a one-line migration note.
+3. **Doc**: create `src/lib/llc-data-model.md` with the mapping table above. Add this banner at the very top of the file:
 
-## Routing change
+   > ⚠️ **Do not build a parallel schema.** The entityIQ tables (`companies`, `shareholders`, `officers`, `share_transactions`, `registered_agent_history`) ARE the LLC/SMLLC data model. Any new "entities", "members", or "capital_contributions" tables will fork the app and break the share-transactions source-of-truth invariant. If a field appears missing, extend the existing table.
 
-`src/components/OrgMeetingWizard.tsx` is the sole caller of `generateOrgMeetingPDF`. At the existing PDF generation call site, branch:
-
-```ts
-import { generateOrgMeetingPDF } from "@/lib/org-meeting-pdf";
-import { generateSmllcOrgMeetingPDF } from "@/lib/smllc-org-meeting-pdf";
-import { isLLCType } from "@/lib/entity-terminology";
-
-const isSmllc =
-  isLLCType(company.entity_type) && (data.members?.length ?? 0) <= 1;
-const doc = isSmllc
-  ? generateSmllcOrgMeetingPDF(data)
-  : generateOrgMeetingPDF(data);
-```
-
-Branch replaces only the single line that currently calls `generateOrgMeetingPDF`. The download/preview pipeline that consumes `doc` is unchanged. No UI/wizard changes.
+No UI wiring in this pass — surfacing the structured meeting-date fields in the company form is a follow-up.
 
 ## Out of scope
-
-- No DB migration, no `OrgMeetingData` interface changes, no new wizard step.
-- Multi-member LLC and corporate org meeting paths untouched.
-- No changes to operating agreement generators or version history.
-
-## QA
-
-After build, generate one SMLLC org meeting PDF from the wizard, save the file to `/tmp`, render pages to images with `pdftoppm`, and verify: section order matches spec, no clipping/overflow, single banking section, no WHEREAS, signature block shows only Managing Member + Secretary.
+- New `entities` / `members` / `capital_contributions` tables.
+- Changing `share_transactions` as the source of truth.
+- Refactoring `officers` into a roles lookup table.
