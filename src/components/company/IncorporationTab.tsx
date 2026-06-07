@@ -744,7 +744,7 @@ export default function IncorporationTab({ company }: Props) {
                 { label: "EIN", value: (form as any).ein || "" },
                 { label: "Incorporation Date", value: form.incorporation_date ? new Date(form.incorporation_date + "T00:00:00").toLocaleDateString() : "" },
                 { label: "Fiscal Year End", value: form.fiscal_year_end },
-                { label: "Scheduled Annual Meeting", value: form.scheduled_annual_meeting },
+                { label: "Scheduled Annual Meeting", value: formatScheduledMeeting(form.scheduled_meeting_ordinal, form.scheduled_meeting_day_of_week, form.scheduled_meeting_month) },
                 { label: "Contact Name", value: form.contact_full_name },
                 { label: "Salutation", value: form.salutation_name },
                 { label: "Email", value: form.contact_email },
