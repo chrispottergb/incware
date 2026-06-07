@@ -42,7 +42,9 @@ import {
   exportResolutionsPDF,
   exportFinancialsPDF,
 } from "@/lib/meeting-pdf-export";
-import { getTerminology } from "@/lib/entity-terminology";
+import { getTerminology, isLLCType } from "@/lib/entity-terminology";
+import { generateSmllcOrgMeetingPDF } from "@/lib/smllc-org-meeting-pdf";
+import type { OrgMeetingData } from "@/lib/org-meeting-pdf";
 import { useShareCalculations } from "@/hooks/useShareCalculations";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 
@@ -682,6 +684,86 @@ export default function MeetingDetail() {
       return null as any;
     }
     try {
+      // SMLLC Organizational Meeting → use dedicated single-member LLC template
+      const isOrgMeeting = meeting?.meeting_type === "Organizational Meeting";
+      const isSmllc =
+        isOrgMeeting &&
+        isLLCType(company?.entity_type) &&
+        (companyShareholders?.length ?? 0) <= 1;
+
+      if (isSmllc) {
+        const member: any = (companyShareholders as any[])[0] || {};
+        const memberAddr = [member.address, member.address_2].filter(Boolean).join(", ");
+        const memberFullAddr = [
+          memberAddr,
+          [member.city, member.state].filter(Boolean).join(", "),
+          member.zip,
+        ].filter(Boolean).join(" ").trim();
+
+        const principalAddr = [
+          (company as any)?.address,
+          (company as any)?.address_2,
+        ].filter(Boolean).join(", ");
+        const principalFullAddr = [
+          principalAddr,
+          [(company as any)?.city, (company as any)?.state].filter(Boolean).join(", "),
+          (company as any)?.zip,
+        ].filter(Boolean).join(" ").trim();
+
+        const raAddr = [
+          (company as any)?.registered_agent_address,
+          (company as any)?.registered_agent_address_2,
+        ].filter(Boolean).join(", ");
+        const raFullAddr = [
+          raAddr,
+          [(company as any)?.registered_agent_city, (company as any)?.registered_agent_state].filter(Boolean).join(", "),
+          (company as any)?.registered_agent_zip,
+        ].filter(Boolean).join(" ").trim();
+
+        const bank: any = (companyBanks as any[])?.[0] || {};
+        const includeBanking = !!bank?.bank_name;
+
+        const orgData: OrgMeetingData = {
+          companyName: (meeting as any).company_name_at_meeting || company?.name || "",
+          stateOfFormation: (company as any)?.state_of_incorporation || "Wisconsin",
+          meetingDate: meeting.meeting_date,
+          meetingTime: meeting.meeting_time || "10:00 AM",
+          meetingLocation: meeting.meeting_location || principalFullAddr,
+          chairperson: meeting.chairperson || member.name || "",
+          secretary: (meeting as any).mtg_secretary || member.name || "",
+          taxYear: meeting.tax_year ? String(meeting.tax_year) : "",
+          filingDate: (company as any)?.filing_date || (company as any)?.incorporation_date || "",
+          stateAgency: "WI Department of Financial Institutions",
+          registeredAgentName: (company as any)?.registered_agent_name || "",
+          registeredAgentAddress: raFullAddr,
+          principalOfficeAddress: principalFullAddr,
+          einAuthorizedName: member.name || "",
+          einAuthorizedTitle: "Managing Member",
+          managers: [{ name: member.name || "", title: "Managing Member" }],
+          members: [{
+            name: member.name || "",
+            address: memberFullAddr,
+            membershipUnits: member.num_shares != null ? String(member.num_shares) : "",
+            membershipInterestPct: member.ownership_percentage != null ? String(member.ownership_percentage) : "100",
+          }],
+          businessPurpose: (company as any)?.business_purpose || "",
+          operatingAgreementAdopted: true,
+          fiscalYearEnd: (company as any)?.fiscal_year_end || "December 31",
+          firstFiscalYearEnd: `December 31, ${new Date(meeting.meeting_date + "T00:00:00").getFullYear()}`,
+          accountingMethod: (company as any)?.accounting_method || "cash",
+          authorizedBinders: [{ name: member.name || "", title: "Managing Member", scopeOfAuthority: "Full authority" }],
+          includeScorp: false,
+          scorpEffectiveDate: "",
+          includeBanking,
+          bankName: bank?.bank_name || "",
+          bankCity: bank?.city || "",
+          bankSignatories: includeBanking ? [{ name: member.name || "", title: "Managing Member" }] : [],
+          memberSignatures: [{ name: member.name || "" }],
+        };
+
+        return generateSmllcOrgMeetingPDF(orgData);
+      }
+
       // For Written Consents, hydrate consent_body/recitals from meeting_other JSON metadata
       let meetingForPdf: any = meeting;
       if (meeting?.meeting_type === "Written Consent") {
