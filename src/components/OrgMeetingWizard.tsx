@@ -182,7 +182,8 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
       toast.error("Please fill in all required fields first.");
       return;
     }
-    const doc = generateOrgMeetingPDF(data);
+    const isSmllc = isLLCType(company?.entity_type) && (data.members?.length ?? 0) <= 1;
+    const doc = isSmllc ? generateSmllcOrgMeetingPDF(data) : generateOrgMeetingPDF(data);
     const arrayBuffer = doc.output("arraybuffer");
     const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     setPdfDocRef(pdfDoc);
