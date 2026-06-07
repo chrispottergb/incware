@@ -469,7 +469,9 @@ export default function OrganizationTab({ companyId, company }: Props) {
           // EIN persisted separately via encrypt-company-ein after this update
           incorporation_date: filingForm.incorporation_date || null,
           fiscal_year_end: filingForm.fiscal_year_end || null,
-          scheduled_annual_meeting: filingForm.scheduled_annual_meeting || null,
+          scheduled_meeting_ordinal: filingForm.scheduled_meeting_ordinal || null,
+          scheduled_meeting_day_of_week: filingForm.scheduled_meeting_day_of_week || null,
+          scheduled_meeting_month: filingForm.scheduled_meeting_month || null,
           corporate_status: filingForm.corporate_status,
           verification_date: filingForm.verification_date || null,
           annual_report_year: filingForm.annual_report_year ? parseInt(filingForm.annual_report_year) : null,
