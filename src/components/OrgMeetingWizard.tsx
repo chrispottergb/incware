@@ -13,6 +13,8 @@ import { Progress } from "@/components/ui/progress";
 import { Plus, Trash2, Download, ChevronLeft, ChevronRight, FileText, Info } from "lucide-react";
 import { toast } from "sonner";
 import { generateOrgMeetingPDF, OrgMeetingData } from "@/lib/org-meeting-pdf";
+import { generateSmllcOrgMeetingPDF } from "@/lib/smllc-org-meeting-pdf";
+import { isLLCType } from "@/lib/entity-terminology";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -167,7 +169,8 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
       upsertAddressBook.mutate({ full_name: name.trim(), company_id: company?.id });
     });
 
-    const doc = generateOrgMeetingPDF(data);
+    const isSmllc = isLLCType(company?.entity_type) && (data.members?.length ?? 0) <= 1;
+    const doc = isSmllc ? generateSmllcOrgMeetingPDF(data) : generateOrgMeetingPDF(data);
     const dateStr = data.meetingDate ? format(new Date(data.meetingDate + "T12:00:00"), "yyyy-MM-dd") : "draft";
     const { savePdfReliably } = await import("@/lib/pdf-save");
     await savePdfReliably(doc, `${data.companyName}_Org_Meeting_Minutes_${dateStr}.pdf`);
@@ -179,7 +182,8 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
       toast.error("Please fill in all required fields first.");
       return;
     }
-    const doc = generateOrgMeetingPDF(data);
+    const isSmllc = isLLCType(company?.entity_type) && (data.members?.length ?? 0) <= 1;
+    const doc = isSmllc ? generateSmllcOrgMeetingPDF(data) : generateOrgMeetingPDF(data);
     const arrayBuffer = doc.output("arraybuffer");
     const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     setPdfDocRef(pdfDoc);
