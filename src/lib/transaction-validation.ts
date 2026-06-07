@@ -52,6 +52,10 @@ export function validateSellerHoldings(
 }
 
 /**
+ * @deprecated Prefer `validateMembershipInterestSum` (decimal 0–1) for new code.
+ * This function is percent-based (0–100) and remains for legacy LLC member forms.
+ * Remove once all call sites migrate to the decimal API.
+ *
  * Validates that adding numUnits to the current totalUnits does not exceed 100
  * (percentage-based membership interest tracking for LLCs).
  */
@@ -63,6 +67,24 @@ export function validateLLCTotalInterest(
     return {
       valid: false,
       message: `Total membership interest cannot exceed 100%. Current total: ${totalUnits}%, attempting to add ${numUnits}%.`,
+    };
+  }
+  return { valid: true };
+}
+
+/**
+ * Validates that a set of LLC member interests (stored as decimals, e.g. 0.50 = 50%)
+ * sums to exactly 1.0, within a ±0.0001 floating-point tolerance.
+ */
+export function validateMembershipInterestSum(
+  memberInterestsDecimal: number[]
+): ValidationResult {
+  const sum = memberInterestsDecimal.reduce((acc, v) => acc + (Number(v) || 0), 0);
+  if (Math.abs(sum - 1) > 0.0001) {
+    const pct = (sum * 100).toFixed(2);
+    return {
+      valid: false,
+      message: `Member interests must total 100%. Current total: ${pct}%.`,
     };
   }
   return { valid: true };
