@@ -896,7 +896,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 { label: "EIN", value: (filingForm as any).ein || "" },
                 { label: "Organization Date", value: filingForm.incorporation_date ? new Date(filingForm.incorporation_date + "T00:00:00").toLocaleDateString() : "" },
                 { label: "Fiscal Year End", value: filingForm.fiscal_year_end },
-                { label: "Scheduled Annual Meeting", value: filingForm.scheduled_annual_meeting },
+                { label: "Scheduled Annual Meeting", value: formatScheduledMeeting(filingForm.scheduled_meeting_ordinal, filingForm.scheduled_meeting_day_of_week, filingForm.scheduled_meeting_month) },
                 { label: "Contact Name", value: filingForm.contact_full_name },
                 { label: "Salutation", value: filingForm.salutation_name },
                 { label: "Email", value: filingForm.contact_email },
