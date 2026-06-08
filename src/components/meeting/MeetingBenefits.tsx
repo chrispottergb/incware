@@ -93,6 +93,11 @@ const BENEFIT_CATALOG: Record<string, BenefitItem[]> = {
     { label: "Commuting Benefits", tooltip: "Transportation support." },
     { label: "Other", tooltip: "Additional benefits." },
   ],
+  "Business Insurance": [
+    { label: "Worker's Compensation", tooltip: "State-mandated insurance covering employee injuries or illness arising from employment." },
+    { label: "Property Insurance", tooltip: "Covers damage to or loss of business property, equipment, and physical assets." },
+    { label: "Other", tooltip: "Additional business insurance coverage." },
+  ],
   "Owner/Executive Only": [
     { label: "Deferred Compensation Plan", tooltip: "Income paid later for tax planning." },
     { label: "Executive Bonus Plan", tooltip: "Employer-funded executive benefit." },
