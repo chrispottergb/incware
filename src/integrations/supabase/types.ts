@@ -3628,7 +3628,6 @@ export type Database = {
           num_shares: number | null
           ownership_percentage: number | null
           share_class: string | null
-          ssn_ein: string | null
           ssn_ein_encrypted: string | null
           state: string | null
           status: string | null
@@ -3652,7 +3651,6 @@ export type Database = {
           num_shares?: number | null
           ownership_percentage?: number | null
           share_class?: string | null
-          ssn_ein?: string | null
           ssn_ein_encrypted?: string | null
           state?: string | null
           status?: string | null
@@ -3676,7 +3674,6 @@ export type Database = {
           num_shares?: number | null
           ownership_percentage?: number | null
           share_class?: string | null
-          ssn_ein?: string | null
           ssn_ein_encrypted?: string | null
           state?: string | null
           status?: string | null
@@ -3692,6 +3689,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shareholders_legacy_ssn_archive: {
+        Row: {
+          archived_at: string
+          company_id: string | null
+          id: string
+          shareholder_id: string
+          ssn_ein_plaintext: string
+        }
+        Insert: {
+          archived_at?: string
+          company_id?: string | null
+          id?: string
+          shareholder_id: string
+          ssn_ein_plaintext: string
+        }
+        Update: {
+          archived_at?: string
+          company_id?: string | null
+          id?: string
+          shareholder_id?: string
+          ssn_ein_plaintext?: string
+        }
+        Relationships: []
       }
       shortcode_expansions: {
         Row: {
@@ -4101,7 +4122,6 @@ export type Database = {
         Args: { p_encryption_key: string }
         Returns: Json
       }
-      migrate_legacy_ssn: { Args: { p_encryption_key: string }; Returns: Json }
       move_to_dlq: {
         Args: {
           dlq_name: string
