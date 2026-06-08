@@ -639,15 +639,29 @@ export default function ImportAccess() {
               const shRows = shNameMapping.sourceTable === mainTable.name ? [row] : shTable.data;
               for (const shRow of shRows) {
                 const shRecord: Record<string, unknown> = { company_id: companyId };
+                let ssnPlaintext: string | null = null;
                 for (const m of shareholderMappings) {
                   const field = m.targetField.replace("shareholder.", "");
                   const val = shRow[m.sourceColumn];
                   if (val !== null && val !== undefined && val !== "") {
-                    shRecord[field] = String(val);
+                    if (field === "ssn_ein") {
+                      ssnPlaintext = String(val);
+                    } else {
+                      shRecord[field] = String(val);
+                    }
                   }
                 }
                 if (shRecord.name) {
-                  await supabase.from("shareholders").insert(shRecord as any);
+                  const { data: insertedSh } = await supabase
+                    .from("shareholders")
+                    .insert(shRecord as any)
+                    .select("id")
+                    .single();
+                  if (insertedSh?.id && ssnPlaintext) {
+                    await supabase.functions.invoke("encrypt-ssn", {
+                      body: { shareholder_id: insertedSh.id, ssn_ein: ssnPlaintext },
+                    });
+                  }
                 }
               }
             }
