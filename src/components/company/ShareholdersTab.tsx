@@ -333,10 +333,6 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
     if ((s as any).ssn_ein_encrypted) {
       return "••••••••";
     }
-    // Legacy plaintext fallback
-    if (s.ssn_ein) {
-      return "••••" + s.ssn_ein.slice(-4);
-    }
     return "—";
   };
 
