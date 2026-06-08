@@ -290,7 +290,7 @@ export function generateRecordBookPDF(data: RecordBookData): jsPDF {
     [isLLC ? "Member" : "Shareholder", "Address", "City", "State", "SSN/EIN", "Status", "Date Added"],
     shareholders.map((s: any) => [
       s.name, s.address || "—", s.city || "—", s.state || "—",
-      s.ssn_ein ? `***-**-${s.ssn_ein.slice(-4)}` : "—",
+      (s as any).ssn_ein_encrypted ? "••••••••" : "—",
       s.status || "—",
       s.date_added ? new Date(s.date_added + "T00:00:00").toLocaleDateString() : "—",
     ])
