@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -214,9 +214,14 @@ export default function MeetingFinancials({ meetingId }: Props) {
 
   const [nrItems, setNrItems] = useState<NonRecurringItem[]>([]);
   const [excludeNrFromYoy, setExcludeNrFromYoy] = useState(false);
-  const [financialsLoadedId, setFinancialsLoadedId] = useState<string | null>(null);
   const [autoFillApplied, setAutoFillApplied] = useState(false);
   const [nrInitialized, setNrInitialized] = useState(false);
+
+  // Signature of the last server row hydrated into the form (id + updated_at).
+  const hydratedSigRef = useRef<string | null>(null);
+  // When true, the next form/nrItems change came from hydration (not the user)
+  // and must re-baseline auto-save instead of triggering a save.
+  const baselinePendingRef = useRef(false);
 
   // Sync NR items from DB
   useEffect(() => {
@@ -227,30 +232,9 @@ export default function MeetingFinancials({ meetingId }: Props) {
         amount: item.amount?.toString() || "",
       })));
       setNrInitialized(true);
+      baselinePendingRef.current = true;
     }
   }, [nonRecurringItems, nrInitialized]);
-
-  // Hydrate form from saved financials ONCE per row.
-  // Re-syncing on every refetch (e.g., after auto-save) clobbers digits the
-  // user is still typing, which caused leading/trailing digits to be dropped
-  // in Cost of Goods and other fields.
-  useEffect(() => {
-    if (financials && financials.id && financials.id !== financialsLoadedId) {
-      setForm({
-        current_total_sales: financials.current_total_sales?.toString() ?? "",
-        current_gross_profit: financials.current_gross_profit?.toString() ?? "",
-        current_cog: financials.current_cog?.toString() ?? "",
-        current_cog_ratio: financials.current_cog_ratio?.toString() ?? "",
-        current_net_income: financials.current_net_income?.toString() ?? "",
-        previous_total_sales: financials.previous_total_sales?.toString() ?? "",
-        previous_gross_profit: financials.previous_gross_profit?.toString() ?? "",
-        previous_cog: financials.previous_cog?.toString() ?? "",
-        previous_cog_ratio: financials.previous_cog_ratio?.toString() ?? "",
-        previous_net_income: financials.previous_net_income?.toString() ?? "",
-      });
-      setFinancialsLoadedId(financials.id);
-    }
-  }, [financials, financialsLoadedId]);
 
   useEffect(() => {
     if (
@@ -357,6 +341,51 @@ export default function MeetingFinancials({ meetingId }: Props) {
     onSave: async () => { await save.mutateAsync(); },
     enabled: !!meetingId,
   });
+
+  const { hasPendingChanges: autoSaveHasPendingChanges, resetBaseline: autoSaveResetBaseline } = financialsAutoSave;
+
+  // Hydrate the form whenever FRESH server data arrives (id or updated_at
+  // changed), so corrected values and YoY percentages always reflect the
+  // database. Guarded so it never clobbers a field the user is actively
+  // editing or local changes that haven't been saved yet.
+  useEffect(() => {
+    if (!financials?.id) return;
+    const sig = `${financials.id}:${(financials as any).updated_at ?? ""}`;
+    if (sig === hydratedSigRef.current) return;
+    // After the initial hydration, skip while the user is typing or has
+    // unsaved edits — the post-save refetch will hydrate once things settle.
+    if (hydratedSigRef.current !== null) {
+      if (focusedFields.size > 0) return;
+      if (autoSaveHasPendingChanges()) return;
+    }
+    hydratedSigRef.current = sig;
+    setForm({
+      current_total_sales: financials.current_total_sales?.toString() ?? "",
+      current_gross_profit: financials.current_gross_profit?.toString() ?? "",
+      current_cog: financials.current_cog?.toString() ?? "",
+      current_cog_ratio: financials.current_cog_ratio?.toString() ?? "",
+      current_net_income: financials.current_net_income?.toString() ?? "",
+      previous_total_sales: financials.previous_total_sales?.toString() ?? "",
+      previous_gross_profit: financials.previous_gross_profit?.toString() ?? "",
+      previous_cog: financials.previous_cog?.toString() ?? "",
+      previous_cog_ratio: financials.previous_cog_ratio?.toString() ?? "",
+      previous_net_income: financials.previous_net_income?.toString() ?? "",
+    });
+    baselinePendingRef.current = true;
+  }, [financials, focusedFields, autoSaveHasPendingChanges]);
+
+  // After a hydration-driven state change commits, re-baseline auto-save so
+  // hydrated server data is never echoed back as a "user edit" save. This
+  // also prevents stale cached data from overwriting newer DB values when
+  // the tab is remounted. Depends only on form/nrItems so it runs in the
+  // same commit where the hydrated state actually lands.
+  useEffect(() => {
+    if (baselinePendingRef.current) {
+      baselinePendingRef.current = false;
+      autoSaveResetBaseline();
+    }
+  }, [form, nrItems, autoSaveResetBaseline]);
+
 
   const yoyChange = (currentKey: string, previousKey: string) => {
     const cur = toNum((form as any)[currentKey]);
