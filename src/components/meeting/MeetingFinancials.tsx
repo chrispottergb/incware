@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -214,9 +214,14 @@ export default function MeetingFinancials({ meetingId }: Props) {
 
   const [nrItems, setNrItems] = useState<NonRecurringItem[]>([]);
   const [excludeNrFromYoy, setExcludeNrFromYoy] = useState(false);
-  const [financialsLoadedId, setFinancialsLoadedId] = useState<string | null>(null);
   const [autoFillApplied, setAutoFillApplied] = useState(false);
   const [nrInitialized, setNrInitialized] = useState(false);
+
+  // Signature of the last server row hydrated into the form (id + updated_at).
+  const hydratedSigRef = useRef<string | null>(null);
+  // When true, the next form/nrItems change came from hydration (not the user)
+  // and must re-baseline auto-save instead of triggering a save.
+  const baselinePendingRef = useRef(false);
 
   // Sync NR items from DB
   useEffect(() => {
@@ -227,30 +232,9 @@ export default function MeetingFinancials({ meetingId }: Props) {
         amount: item.amount?.toString() || "",
       })));
       setNrInitialized(true);
+      baselinePendingRef.current = true;
     }
   }, [nonRecurringItems, nrInitialized]);
-
-  // Hydrate form from saved financials ONCE per row.
-  // Re-syncing on every refetch (e.g., after auto-save) clobbers digits the
-  // user is still typing, which caused leading/trailing digits to be dropped
-  // in Cost of Goods and other fields.
-  useEffect(() => {
-    if (financials && financials.id && financials.id !== financialsLoadedId) {
-      setForm({
-        current_total_sales: financials.current_total_sales?.toString() ?? "",
-        current_gross_profit: financials.current_gross_profit?.toString() ?? "",
-        current_cog: financials.current_cog?.toString() ?? "",
-        current_cog_ratio: financials.current_cog_ratio?.toString() ?? "",
-        current_net_income: financials.current_net_income?.toString() ?? "",
-        previous_total_sales: financials.previous_total_sales?.toString() ?? "",
-        previous_gross_profit: financials.previous_gross_profit?.toString() ?? "",
-        previous_cog: financials.previous_cog?.toString() ?? "",
-        previous_cog_ratio: financials.previous_cog_ratio?.toString() ?? "",
-        previous_net_income: financials.previous_net_income?.toString() ?? "",
-      });
-      setFinancialsLoadedId(financials.id);
-    }
-  }, [financials, financialsLoadedId]);
 
   useEffect(() => {
     if (
