@@ -23,6 +23,14 @@ interface UseAutoSaveReturn {
   handleBlur: (e: React.FocusEvent) => void;
   /** Call when a Select/Checkbox/DatePicker changes (immediate save) */
   triggerSave: () => void;
+  /** True when the current data differs from the last saved/baselined snapshot */
+  hasPendingChanges: () => boolean;
+  /**
+   * Re-baseline the auto-save snapshot to the CURRENT data without saving.
+   * Call after hydrating form state from the server so the hydration itself
+   * is not treated as a user edit (which would echo server data back as a save).
+   */
+  resetBaseline: () => void;
 }
 
 /**
@@ -149,5 +157,19 @@ export function useAutoSave<T>({
     timerRef.current = setTimeout(doSave, 200);
   }, [doSave]);
 
-  return { status, lastSavedAt, saveNow, handleBlur, triggerSave };
+  const hasPendingChanges = useCallback(
+    () => JSON.stringify(dataRef.current) !== lastSavedSnapshotRef.current,
+    []
+  );
+
+  const resetBaseline = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    lastSavedSnapshotRef.current = JSON.stringify(dataRef.current);
+    initializedRef.current = true;
+  }, []);
+
+  return { status, lastSavedAt, saveNow, handleBlur, triggerSave, hasPendingChanges, resetBaseline };
 }
