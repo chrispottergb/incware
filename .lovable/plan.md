@@ -1,65 +1,46 @@
-> **GUARDRAIL — read first.** This is the entityIQ gap analysis. **Do NOT create new tables for entities, members, or capital contributions.** Only implement the three deliverables listed in Section 5. The existing schema (`companies`, `shareholders`, `officers`, `share_transactions`, `registered_agent_history`) is the source of truth and must not be forked.
+# Assets & Lease Transactions Module
 
-# LLC Data Model — Mapping to entityIQ + Gap Migration
+Replace the meeting page's "Vehicles & Equipment" sub-tab with a new entity-scoped **Asset & Lease Transaction Log** — a clean legal recordkeeping module backed by a single unified table, with existing data migrated in.
 
-The spec overlaps ~90% with the existing schema. Multi-entity-per-user, RLS, and timestamps are already project-wide. This plan documents the mapping and adds only the missing pieces.
+## 1. Database
 
-## 1. Mapping spec → existing tables
+**New table `asset_transactions`** (single table for all four entry types):
+- `id`, `entity_id` (references companies, cascade delete), `type` (purchase / lease / vehicle_sale / lease_termination), `description`, `date`, `amount`, `monthly_payment`, `vendor`, `lessor`, `buyer`, `financing`, `term`, `end_date`, `reason`, `resolution`, `created_at`, `updated_at`
+- GRANTs for authenticated + service_role, RLS scoped to the company owner (same pattern as other company sub-tables), `updated_at` trigger
+- Validation trigger ensuring `type` is one of the four allowed values
 
-| Spec entity | Existing table / column | Notes |
-|---|---|---|
-| `Entity` | `companies` | `entity_type` already supports `LLC`, `Single Member LLC`, `LLC-S`, `Corporation`. `name`, `state_of_incorporation`, `incorporation_date`, `user_id` cover the spec. |
-| `isSingleMember` (derived) | Computed via `isLLCType()` + member count. Never stored. |
-| `RegisteredAgent` | `companies.registered_agent_*` + `registered_agent_history` | Name + full address already covered. |
-| `Governance.managementType` | `companies.management_type` / `llc_management_structure` | Already exists. |
-| `Governance.scheduledAnnualMeetingDate` | `companies.scheduled_annual_meeting` (text) | **GAP** — needs structured ordinal/dayOfWeek/month. See §2. |
-| `Member` | `shareholders` (terminology mapped via `entity-terminology.ts`) | name, address, `ownership_percentage` all present. |
-| `Member.membershipUnits` / `membershipInterest` | Derived from `share_transactions` (single source of truth). `ownership_percentage` recalculated by `recalculate_ownership_percentages()`. |
-| `Officer` (Managing Member, Manager, Secretary, Treasurer) | `officers` + `llc_authorized_binders` jsonb | Existing roles are extensible across entity types via `entity-terminology.ts`. |
-| `CapitalContribution` | `share_transactions` with `transaction_type` in `Capital Contribution`, `Initial Contribution`, `additional_contribution` | `consideration_type` + `consideration_description` cover Cash/Property/Services/Other. |
-| `createdAt`/`updatedAt` | Present on every table. |
-| RLS / multi-tenant | All tables scoped via `companies.user_id`. |
+**Data migration** — copy existing rows into the new table (joined through meetings to get the company):
+- `meeting_vehicle_purchases` → purchase (seller → vendor)
+- `meeting_vehicle_leases` → lease (lessor, monthly payment, start/end dates)
+- `meeting_vehicle_sales` → vehicle_sale (buyer, sale price)
+- `meeting_lease_terminations` → lease_termination (landlord → lessor, reason + notes)
 
-## 2. Gap migration — structured scheduled meeting date
+Legacy tables stay in place (the Annual Review snapshot and wizard still reference them) — they just stop being the live source for this tab.
 
-Add to `companies`:
-- `scheduled_meeting_ordinal` text — `1st | 2nd | 3rd | 4th | Last`
-- `scheduled_meeting_day_of_week` text — `Monday`…`Sunday`
-- `scheduled_meeting_month` text — `January`…`December`
-- `scheduled_annual_meeting` **becomes a generated column** (`GENERATED ALWAYS AS ... STORED`) that concatenates the three structured fields into the display string (e.g., `"2nd Tuesday in May"`) when all three are present, otherwise falls back to NULL. This eliminates drift between structured data and display string — UI never writes the text column directly.
+## 2. New component — `AssetLeaseTransactionLog.tsx`
 
-Migration steps:
-1. Add the three new columns (nullable, CHECK constraints on each enum).
-2. Backfill the three columns by parsing existing `scheduled_annual_meeting` text where possible (best-effort; unparseable rows left null).
-3. `DROP` the existing `scheduled_annual_meeting` column, then re-add it as `GENERATED ALWAYS AS (...) STORED`.
-4. No RLS change (inherits from `companies`).
+Props: `entityId`. Features:
+- **Unified list, newest first** — one card per entry: description, color-coded type pill (Purchase / Lease / Vehicle sale / Lease ended), date, type-specific key fields (vendor & financing, lessor & term, buyer, reason), dollar amount or "$X/mo" right-aligned, resolution number in muted text below the amount
+- **Filter bar**: All / Purchases / Leases / Vehicle sales / Lease terminations
+- **"Add entry" modal** (min 600px wide per house style) with four tabs, each showing only that type's fields; edit and delete (via the standard ConfirmDeleteDialog) on each card
+- Flat, professional styling: subtle borders, no shadows, muted metadata, soft-opacity colored badges, existing currency formatting and date picker components — all via semantic design tokens
 
-## 3. Validation (code, not schema)
+## 3. Wire into navigation
 
-Add to `src/lib/transaction-validation.ts`:
-- `validateMembershipInterestSum(memberInterestsDecimal: number[]): ValidationResult` — sums must equal 1.0 ±0.0001.
+In `MeetingDetail.tsx`:
+- Rename the sub-tab to **"Assets & Lease Transactions"**
+- Render the new component with the meeting's company id (entity-scoped, so it shows the full company log; available on all standard meetings, no longer limited to Annual/Organizational)
 
-**Before refactoring `validateLLCTotalInterest`:** read its current signature to confirm whether it is percent-based (0–100) or decimal-based (0–1). The plan keeps both functions temporarily:
-- New function: decimal-based, for the spec's `membershipInterest` field.
-- Existing function: leave as-is with a `/** @deprecated — prefer validateMembershipInterestSum (decimal). Remove once all call sites migrate. */` JSDoc tag so the next developer sees the migration path.
+## 4. Minutes PDF update
 
-Display layer converts decimal → percent (`× 100`) — never store the percent.
-
-## 4. Officer role extensibility
-
-No schema change. Document the convention in the new markdown file: LLC roles surface via `entity-terminology.ts` and are stored in existing `officers` columns / `llc_authorized_binders`. A `company_officer_roles` lookup table is **future work**, not in scope here.
-
-## 5. Deliverables (the only things to build)
-
-1. **Migration**: add 3 `scheduled_meeting_*` columns + convert `scheduled_annual_meeting` to a generated column.
-2. **Code**: add `validateMembershipInterestSum` to `src/lib/transaction-validation.ts`; mark `validateLLCTotalInterest` `@deprecated` with a one-line migration note.
-3. **Doc**: create `src/lib/llc-data-model.md` with the mapping table above. Add this banner at the very top of the file:
-
-   > ⚠️ **Do not build a parallel schema.** The entityIQ tables (`companies`, `shareholders`, `officers`, `share_transactions`, `registered_agent_history`) ARE the LLC/SMLLC data model. Any new "entities", "members", or "capital_contributions" tables will fork the app and break the share-transactions source-of-truth invariant. If a field appears missing, extend the existing table.
-
-No UI wiring in this pass — surfacing the structured meeting-date fields in the company form is a follow-up.
+The Annual/LLC minutes PDF currently reads the four legacy per-meeting tables. Update the PDF data assembly to pull from `asset_transactions`:
+- Entries dated between the prior meeting date (exclusive) and this meeting's date (inclusive); if no prior meeting, entries in the meeting's calendar year
+- Mapped into the existing PDF sections (capital asset additions, leases, dispositions, terminations) so the minutes layout is unchanged
 
 ## Out of scope
-- New `entities` / `members` / `capital_contributions` tables.
-- Changing `share_transactions` as the source of truth.
-- Refactoring `officers` into a roles lookup table.
+- The Annual Meeting Wizard's "Vehicles & Equipment" step and the public Annual Review snapshot keep their current behavior (can be aligned in a follow-up)
+- No depreciation, VINs, serial numbers, or document uploads — strictly corporate-records fields
+
+## Technical notes
+- Two-step build: migration first (table + grants + RLS + data copy), then UI/PDF code after types regenerate
+- Dates handled with the project's `T00:00:00` convention; numeric columns handled as strings and cast explicitly

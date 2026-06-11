@@ -20,7 +20,7 @@ import MeetingAgreements from "@/components/meeting/MeetingAgreements";
 import PrintPreviewButton from "@/components/meeting/PrintPreviewButton";
 import DirectorReElection from "@/components/meeting/DirectorReElection";
 import MeetingAttendanceSelector from "@/components/meeting/MeetingAttendanceSelector";
-import MeetingVehicles from "@/components/meeting/MeetingVehicles";
+import AssetLeaseTransactionLog from "@/components/company/AssetLeaseTransactionLog";
 import MeetingBanking from "@/components/meeting/MeetingBanking";
 import MeetingOfficersTable from "@/components/meeting/MeetingOfficersTable";
 import { OFFICER_TITLE_OPTIONS } from "@/components/company/OrganizationTab";
@@ -492,35 +492,78 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
-  const { data: capitalAssets = [] } = useQuery({
-    queryKey: ["meeting_vehicle_purchases", meetingId],
+  // Entity-wide Asset & Lease Transaction Log (replaces legacy per-meeting vehicle tables)
+  const { data: assetTransactions = [] } = useQuery({
+    queryKey: ["asset_transactions", meeting?.company_id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("meeting_vehicle_purchases").select("*").eq("meeting_id", meetingId!).order("created_at");
+      const { data, error } = await supabase
+        .from("asset_transactions")
+        .select("*")
+        .eq("entity_id", meeting!.company_id)
+        .order("date", { ascending: false, nullsFirst: false });
       if (error) throw error;
-      return data;
+      return data as any[];
     },
-    enabled: !!meetingId,
+    enabled: !!meeting?.company_id,
   });
 
-  const { data: vehicleLeases = [] } = useQuery({
-    queryKey: ["meeting_vehicle_leases", meetingId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("meeting_vehicle_leases").select("*").eq("meeting_id", meetingId!).order("created_at");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!meetingId,
-  });
+  // Filter log entries to the period covered by this meeting:
+  // after the prior meeting (exclusive) through this meeting's date (inclusive);
+  // if no prior meeting exists, the meeting's calendar year.
+  const periodAssetTransactions = useMemo(() => {
+    if (!meeting?.meeting_date) return [] as any[];
+    const end = meeting.meeting_date;
+    const priorDate = priorMeeting?.meeting_date || null;
+    const yearStart = `${end.slice(0, 4)}-01-01`;
+    return (assetTransactions as any[]).filter((t) => {
+      if (!t.date) return false;
+      if (t.date > end) return false;
+      return priorDate ? t.date > priorDate : t.date >= yearStart;
+    });
+  }, [assetTransactions, meeting?.meeting_date, priorMeeting?.meeting_date]);
 
-  const { data: vehiclesSold = [] } = useQuery({
-    queryKey: ["meeting_vehicle_sales", meetingId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("meeting_vehicle_sales" as any).select("*").eq("meeting_id", meetingId!).order("created_at");
-      if (error) throw error;
-      return (data as any[]) || [];
-    },
-    enabled: !!meetingId,
-  });
+  // Adapt unified log rows into the legacy shapes expected by the minutes PDF
+  const capitalAssets = useMemo(() => periodAssetTransactions
+    .filter((t) => t.type === "purchase")
+    .map((t) => ({
+      year_make_model: t.description,
+      transaction_type: "Purchased",
+      date: t.date,
+      amount: t.amount != null ? Number(t.amount) : null,
+      seller: t.vendor || undefined,
+    })), [periodAssetTransactions]);
+
+  const vehicleLeases = useMemo(() => periodAssetTransactions
+    .filter((t) => t.type === "lease")
+    .map((t) => ({
+      year_make_model: t.description,
+      lessor_name: t.lessor || undefined,
+      lease_start_date: t.date,
+      lease_end_date: t.end_date,
+      monthly_lease_payment: t.monthly_payment != null ? Number(t.monthly_payment) : null,
+      total_lease_value: null,
+    })), [periodAssetTransactions]);
+
+  const vehiclesSold = useMemo(() => periodAssetTransactions
+    .filter((t) => t.type === "vehicle_sale")
+    .map((t) => ({
+      year_make_model: t.description,
+      sale_date: t.date,
+      sale_price: t.amount != null ? Number(t.amount) : null,
+      buyer_name: t.buyer || undefined,
+      reason_for_sale: t.reason || undefined,
+    })), [periodAssetTransactions]);
+
+  const leaseTerminations = useMemo(() => periodAssetTransactions
+    .filter((t) => t.type === "lease_termination")
+    .map((t) => ({
+      property_description: t.description,
+      landlord_name: t.lessor || undefined,
+      lease_end_date: t.date,
+      termination_reason: t.reason || undefined,
+      early_termination: false,
+      penalty_amount: null,
+    })), [periodAssetTransactions]);
 
   const { data: authorizedSigners = [] } = useQuery({
     queryKey: ["meeting_authorized_signers", meetingId],
@@ -552,16 +595,6 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
-
-  const { data: leaseTerminations = [] } = useQuery({
-    queryKey: ["meeting_lease_terminations", meetingId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("meeting_lease_terminations" as any).select("*").eq("meeting_id", meetingId!).order("created_at");
-      if (error) throw error;
-      return data as any[];
-    },
-    enabled: !!meetingId,
-  });
 
   const { data: balanceEntries = [] } = useQuery({
     queryKey: ["meeting-balance-entries-pdf", meetingId],
@@ -843,7 +876,7 @@ export default function MeetingDetail() {
     { value: "counsel", label: "Counsel" },
     { value: "banking", label: "Banking" },
     { value: "leases", label: "Leases" },
-    { value: "vehicles", label: "Vehicles & Equipment" },
+    { value: "vehicles", label: "Assets & Lease Transactions" },
     { value: "amendments", label: "Amendments" },
     { value: "resolutions", label: "Resolutions" },
     { value: "benefits", label: "Benefits/Insurance" },
@@ -1221,11 +1254,7 @@ export default function MeetingDetail() {
           )}
         </TabsContent>
         <TabsContent value="vehicles" className="mt-5">
-          {showCompanyLevelCounselAndLeases ? (
-            <MeetingVehicles meetingId={meeting.id} />
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-10">Vehicles & Equipment are available on Annual and Organizational meetings.</p>
-          )}
+          <AssetLeaseTransactionLog entityId={meeting.company_id} />
         </TabsContent>
         
         <TabsContent value="amendments" className="mt-5">

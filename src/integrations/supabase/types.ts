@@ -675,6 +675,74 @@ export type Database = {
         }
         Relationships: []
       }
+      asset_transactions: {
+        Row: {
+          amount: number | null
+          buyer: string | null
+          created_at: string
+          date: string | null
+          description: string
+          end_date: string | null
+          entity_id: string
+          financing: string | null
+          id: string
+          lessor: string | null
+          monthly_payment: number | null
+          reason: string | null
+          resolution: string | null
+          term: string | null
+          type: string
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          amount?: number | null
+          buyer?: string | null
+          created_at?: string
+          date?: string | null
+          description: string
+          end_date?: string | null
+          entity_id: string
+          financing?: string | null
+          id?: string
+          lessor?: string | null
+          monthly_payment?: number | null
+          reason?: string | null
+          resolution?: string | null
+          term?: string | null
+          type: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number | null
+          buyer?: string | null
+          created_at?: string
+          date?: string | null
+          description?: string
+          end_date?: string | null
+          entity_id?: string
+          financing?: string | null
+          id?: string
+          lessor?: string | null
+          monthly_payment?: number | null
+          reason?: string | null
+          resolution?: string | null
+          term?: string | null
+          type?: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_transactions_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attorney_firms: {
         Row: {
           address: string | null
