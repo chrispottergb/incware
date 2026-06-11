@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Loader2, Landmark } from "lucide-react";
 import { toast } from "sonner";
+import { sanitizeCurrencyInput, formatCurrencyDisplay } from "@/lib/currency-format";
 
 interface Props {
   meetingId: string;
@@ -36,7 +37,7 @@ export default function MeetingBanking({ meetingId }: Props) {
   useEffect(() => {
     if (row) {
       setBankName(row.bank_name || "");
-      setLocAmount(row.loc_amount != null ? String(row.loc_amount) : "");
+      setLocAmount(row.loc_amount != null ? formatCurrencyDisplay(row.loc_amount) : "");
       setLocRate(row.loc_interest_rate || "");
     }
   }, [row]);
@@ -97,12 +98,17 @@ export default function MeetingBanking({ meetingId }: Props) {
             <Label className="text-xs font-medium text-muted-foreground">LOC Amount</Label>
             <Input
               className="h-7 text-sm"
-              type="number"
-              step="0.01"
-              min="0"
+              type="text"
+              inputMode="decimal"
               value={locAmount}
-              onChange={(e) => setLocAmount(e.target.value)}
-              onBlur={() => handleBlur("loc_amount", locAmount ? parseFloat(locAmount) : null)}
+              onFocus={() => setLocAmount((v) => sanitizeCurrencyInput(v))}
+              onChange={(e) => setLocAmount(sanitizeCurrencyInput(e.target.value))}
+              onBlur={() => {
+                const raw = sanitizeCurrencyInput(locAmount);
+                const num = raw ? parseFloat(raw) : null;
+                setLocAmount(num != null && isFinite(num) ? formatCurrencyDisplay(num) : "");
+                handleBlur("loc_amount", num != null && isFinite(num) ? num : null);
+              }}
               placeholder="$0.00"
             />
           </div>
