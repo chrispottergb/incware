@@ -102,7 +102,7 @@ describe("MeetingFinancials YoY", () => {
     state.financials = { ...state.financials, current_net_income: 561942, updated_at: "t2" };
     await qc.invalidateQueries({ queryKey: ["meeting_financials", "m1"] });
     await screen.findByDisplayValue("$561,942.00");
-    expect(screen.getByText(/459\.1%/)).toBeTruthy(); // (561942-100499)/100499
+    expect(screen.getByText(/459\.2%/)).toBeTruthy(); // (561942-100499)/100499 = 459.15%
 
     // 4) Live typing updates YoY immediately
     const input = screen.getByDisplayValue("$561,942.00");
