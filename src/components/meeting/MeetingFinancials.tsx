@@ -342,6 +342,47 @@ export default function MeetingFinancials({ meetingId }: Props) {
     enabled: !!meetingId,
   });
 
+  // Hydrate the form whenever FRESH server data arrives (id or updated_at
+  // changed), so corrected values and YoY percentages always reflect the
+  // database. Guarded so it never clobbers a field the user is actively
+  // editing or local changes that haven't been saved yet.
+  useEffect(() => {
+    if (!financials?.id) return;
+    const sig = `${financials.id}:${(financials as any).updated_at ?? ""}`;
+    if (sig === hydratedSigRef.current) return;
+    // After the initial hydration, skip while the user is typing or has
+    // unsaved edits — the post-save refetch will hydrate once things settle.
+    if (hydratedSigRef.current !== null) {
+      if (focusedFields.size > 0) return;
+      if (financialsAutoSave.hasPendingChanges()) return;
+    }
+    hydratedSigRef.current = sig;
+    setForm({
+      current_total_sales: financials.current_total_sales?.toString() ?? "",
+      current_gross_profit: financials.current_gross_profit?.toString() ?? "",
+      current_cog: financials.current_cog?.toString() ?? "",
+      current_cog_ratio: financials.current_cog_ratio?.toString() ?? "",
+      current_net_income: financials.current_net_income?.toString() ?? "",
+      previous_total_sales: financials.previous_total_sales?.toString() ?? "",
+      previous_gross_profit: financials.previous_gross_profit?.toString() ?? "",
+      previous_cog: financials.previous_cog?.toString() ?? "",
+      previous_cog_ratio: financials.previous_cog_ratio?.toString() ?? "",
+      previous_net_income: financials.previous_net_income?.toString() ?? "",
+    });
+    baselinePendingRef.current = true;
+  }, [financials, focusedFields, financialsAutoSave]);
+
+  // After a hydration-driven state change commits, re-baseline auto-save so
+  // hydrated server data is never echoed back as a "user edit" save. This
+  // also prevents stale cached data from overwriting newer DB values when
+  // the tab is remounted.
+  useEffect(() => {
+    if (baselinePendingRef.current) {
+      baselinePendingRef.current = false;
+      financialsAutoSave.resetBaseline();
+    }
+  }, [form, nrItems, financialsAutoSave]);
+
   const yoyChange = (currentKey: string, previousKey: string) => {
     const cur = toNum((form as any)[currentKey]);
     const prev = toNum((form as any)[previousKey]);
