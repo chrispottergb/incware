@@ -342,6 +342,8 @@ export default function MeetingFinancials({ meetingId }: Props) {
     enabled: !!meetingId,
   });
 
+  const { hasPendingChanges: autoSaveHasPendingChanges, resetBaseline: autoSaveResetBaseline } = financialsAutoSave;
+
   // Hydrate the form whenever FRESH server data arrives (id or updated_at
   // changed), so corrected values and YoY percentages always reflect the
   // database. Guarded so it never clobbers a field the user is actively
@@ -354,7 +356,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
     // unsaved edits — the post-save refetch will hydrate once things settle.
     if (hydratedSigRef.current !== null) {
       if (focusedFields.size > 0) return;
-      if (financialsAutoSave.hasPendingChanges()) return;
+      if (autoSaveHasPendingChanges()) return;
     }
     hydratedSigRef.current = sig;
     setForm({
@@ -370,18 +372,20 @@ export default function MeetingFinancials({ meetingId }: Props) {
       previous_net_income: financials.previous_net_income?.toString() ?? "",
     });
     baselinePendingRef.current = true;
-  }, [financials, focusedFields, financialsAutoSave]);
+  }, [financials, focusedFields, autoSaveHasPendingChanges]);
 
   // After a hydration-driven state change commits, re-baseline auto-save so
   // hydrated server data is never echoed back as a "user edit" save. This
   // also prevents stale cached data from overwriting newer DB values when
-  // the tab is remounted.
+  // the tab is remounted. Depends only on form/nrItems so it runs in the
+  // same commit where the hydrated state actually lands.
   useEffect(() => {
     if (baselinePendingRef.current) {
       baselinePendingRef.current = false;
-      financialsAutoSave.resetBaseline();
+      autoSaveResetBaseline();
     }
-  }, [form, nrItems, financialsAutoSave]);
+  }, [form, nrItems, autoSaveResetBaseline]);
+
 
   const yoyChange = (currentKey: string, previousKey: string) => {
     const cur = toNum((form as any)[currentKey]);
