@@ -45,6 +45,7 @@ export default function Settings() {
   const [editing, setEditing] = useState<Shortcode | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState({ shortcode: "", expansion_text: "", category: "general" });
+  const [viewAllOpen, setViewAllOpen] = useState(false);
 
   const { data: shortcodes = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["shortcode_expansions"],
@@ -139,9 +140,14 @@ export default function Settings() {
               Type a shortcode in any text field and press <kbd className="rounded border border-border bg-muted px-1 py-0.5 text-xs">Space</kbd> or <kbd className="rounded border border-border bg-muted px-1 py-0.5 text-xs">Tab</kbd> to expand it.
             </CardDescription>
           </div>
-          <Button onClick={openNew} size="sm" className="gap-1.5">
-            <Plus className="h-4 w-4" /> Add Shortcode
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setViewAllOpen(true)} size="sm" variant="outline" className="gap-1.5">
+              <Search className="h-4 w-4" /> View All Shortcodes
+            </Button>
+            <Button onClick={openNew} size="sm" className="gap-1.5">
+              <Plus className="h-4 w-4" /> Add Shortcode
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-3">
