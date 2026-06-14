@@ -45,6 +45,7 @@ export default function Settings() {
   const [editing, setEditing] = useState<Shortcode | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState({ shortcode: "", expansion_text: "", category: "general" });
+  const [viewAllOpen, setViewAllOpen] = useState(false);
 
   const { data: shortcodes = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["shortcode_expansions"],
@@ -139,9 +140,14 @@ export default function Settings() {
               Type a shortcode in any text field and press <kbd className="rounded border border-border bg-muted px-1 py-0.5 text-xs">Space</kbd> or <kbd className="rounded border border-border bg-muted px-1 py-0.5 text-xs">Tab</kbd> to expand it.
             </CardDescription>
           </div>
-          <Button onClick={openNew} size="sm" className="gap-1.5">
-            <Plus className="h-4 w-4" /> Add Shortcode
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setViewAllOpen(true)} size="sm" variant="outline" className="gap-1.5">
+              <Search className="h-4 w-4" /> View All Shortcodes
+            </Button>
+            <Button onClick={openNew} size="sm" className="gap-1.5">
+              <Plus className="h-4 w-4" /> Add Shortcode
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-3">
@@ -289,6 +295,36 @@ export default function Settings() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={viewAllOpen} onOpenChange={setViewAllOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>All Shortcodes ({shortcodes.length})</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1 -mx-6 px-6">
+            {shortcodes.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-8 text-center">No shortcodes created yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {shortcodes.map((sc) => (
+                  <div key={sc.id} className="rounded-md border border-border p-3">
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span className="font-mono text-sm font-semibold text-primary">{sc.shortcode}</span>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] capitalize text-muted-foreground">
+                        {sc.category}
+                      </span>
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap text-foreground/90">{sc.expansion_text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewAllOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
