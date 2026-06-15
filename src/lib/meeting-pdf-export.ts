@@ -3383,24 +3383,18 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         if (s.ownership && s.ownership > 0) label += `  —  Ownership: ${Number(s.ownership).toFixed(2)}%`;
       }
       doc.text(label, MARGIN, y);
-      // "Date: ____" on the right
-      const pw2 = doc.internal.pageSize.getWidth();
-      const dateLineX = pw2 - R_MARGIN - 50;
-      doc.line(dateLineX, y - 4, pw2 - R_MARGIN, y - 4);
-      doc.text("Date", dateLineX, y);
       y += 10;
+
     });
 
     // If no signers, render blank line
     if (wcSigners.length === 0) {
       const pw = doc.internal.pageSize.getWidth();
-      const sigLineW = (pw - MARGIN - R_MARGIN - 20) / 2;
+      const sigLineW = pw - MARGIN - R_MARGIN;
       doc.line(MARGIN, y, MARGIN + sigLineW, y);
       doc.text(signerRoleLabel, MARGIN, y + 5);
-      const rightX = MARGIN + sigLineW + 20;
-      doc.line(rightX, y, rightX + sigLineW, y);
-      doc.text("Date", rightX, y + 5);
     }
+
   } else {
     // Regular meetings: adjournment + Chairperson/Secretary signatures
     doc.text("There being no further business, the meeting was adjourned.", MARGIN, y);
