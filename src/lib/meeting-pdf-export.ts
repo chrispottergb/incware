@@ -3390,13 +3390,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     // If no signers, render blank line
     if (wcSigners.length === 0) {
       const pw = doc.internal.pageSize.getWidth();
-      const sigLineW = (pw - MARGIN - R_MARGIN - 20) / 2;
+      const sigLineW = pw - MARGIN - R_MARGIN;
       doc.line(MARGIN, y, MARGIN + sigLineW, y);
       doc.text(signerRoleLabel, MARGIN, y + 5);
-      const rightX = MARGIN + sigLineW + 20;
-      doc.line(rightX, y, rightX + sigLineW, y);
-      doc.text("Date", rightX, y + 5);
     }
+
   } else {
     // Regular meetings: adjournment + Chairperson/Secretary signatures
     doc.text("There being no further business, the meeting was adjourned.", MARGIN, y);
