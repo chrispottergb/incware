@@ -1,31 +1,36 @@
 import { useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
-const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
-const ACTIVITY_EVENTS = ["mousedown", "keydown", "touchstart", "scroll", "mousemove"] as const;
-const THROTTLE_MS = 60_000; // Only update lastActivity once per minute
+const IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000; // 2 hours
+const WARNING_BEFORE_MS = 2 * 60 * 1000; // Warn 2 minutes before sign-out
+const ACTIVITY_EVENTS = ["mousedown", "keydown", "touchstart", "scroll", "mousemove", "input", "focus"] as const;
+const THROTTLE_MS = 30_000; // Update lastActivity at most every 30s
 
 /**
- * Monitors user activity and signs out after 30 minutes of inactivity.
- * Only active when user is authenticated.
+ * Monitors user activity and signs out after extended inactivity.
+ * Shows a warning toast before sign-out so users filling out long forms
+ * can keep their session alive and avoid losing in-progress work.
  */
 export function useSessionIdleTimeout(isAuthenticated: boolean) {
   const lastActivityRef = useRef(Date.now());
+  const warnedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleActivity = useCallback(() => {
     const now = Date.now();
     if (now - lastActivityRef.current >= THROTTLE_MS) {
       lastActivityRef.current = now;
+      warnedRef.current = false;
     }
   }, []);
 
-  // Ensure the very first user interaction after mount is always recorded
   const firstEventRef = useRef(true);
   const wrappedHandleActivity = useCallback(() => {
     if (firstEventRef.current) {
       lastActivityRef.current = Date.now();
       firstEventRef.current = false;
+      warnedRef.current = false;
     } else {
       handleActivity();
     }
@@ -40,21 +45,37 @@ export function useSessionIdleTimeout(isAuthenticated: boolean) {
       return;
     }
 
-    // Reset activity timestamp when auth state changes
     lastActivityRef.current = Date.now();
+    warnedRef.current = false;
 
-    // Attach activity listeners
     for (const event of ACTIVITY_EVENTS) {
-      window.addEventListener(event, wrappedHandleActivity, { passive: true });
+      window.addEventListener(event, wrappedHandleActivity, { passive: true, capture: true } as AddEventListenerOptions);
     }
 
-    // Check every 60 seconds if idle timeout exceeded
     timerRef.current = setInterval(async () => {
       const elapsed = Date.now() - lastActivityRef.current;
+
+      // Warning window: alert the user so they can move the mouse / type to keep session
+      if (
+        !warnedRef.current &&
+        elapsed >= IDLE_TIMEOUT_MS - WARNING_BEFORE_MS &&
+        elapsed < IDLE_TIMEOUT_MS
+      ) {
+        warnedRef.current = true;
+        try {
+          toast({
+            title: "Session expiring soon",
+            description:
+              "You'll be signed out in about 2 minutes due to inactivity. Move the mouse or press a key to stay signed in.",
+            duration: 60_000,
+          });
+        } catch {}
+        return;
+      }
+
       if (elapsed >= IDLE_TIMEOUT_MS) {
         console.info("[Session] Idle timeout reached, signing out");
         await supabase.auth.signOut();
-        // Clear any residual storage
         try {
           Object.keys(localStorage).forEach((key) => {
             if (key.startsWith("sb-") || key.startsWith("supabase.auth")) {
@@ -69,11 +90,11 @@ export function useSessionIdleTimeout(isAuthenticated: boolean) {
         } catch {}
         window.location.href = "/auth";
       }
-    }, 60_000);
+    }, 30_000);
 
     return () => {
       for (const event of ACTIVITY_EVENTS) {
-        window.removeEventListener(event, wrappedHandleActivity);
+        window.removeEventListener(event, wrappedHandleActivity, { capture: true } as AddEventListenerOptions);
       }
       if (timerRef.current) {
         clearInterval(timerRef.current);
