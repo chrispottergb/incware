@@ -3383,12 +3383,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         if (s.ownership && s.ownership > 0) label += `  —  Ownership: ${Number(s.ownership).toFixed(2)}%`;
       }
       doc.text(label, MARGIN, y);
-      // "Date: ____" on the right
-      const pw2 = doc.internal.pageSize.getWidth();
-      const dateLineX = pw2 - R_MARGIN - 50;
-      doc.line(dateLineX, y - 4, pw2 - R_MARGIN, y - 4);
-      doc.text("Date", dateLineX, y);
       y += 10;
+
     });
 
     // If no signers, render blank line
