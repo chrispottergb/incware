@@ -2977,79 +2977,127 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bt
     );
 
+    const pw = doc.internal.pageSize.getWidth();
+    const cardW = pw - MARGIN - R_MARGIN;
+    const cardBorder: [number, number, number] = [191, 219, 254]; // light blue
+    const headerBg: [number, number, number] = [248, 246, 232];   // soft cream
+    const badgeBg: [number, number, number] = [220, 240, 220];    // pale green
+    const badgeText: [number, number, number] = [46, 125, 50];
+    const labelGray: [number, number, number] = [115, 115, 115];
+    const valueColor: [number, number, number] = [30, 30, 30];
+    const dividerColor: [number, number, number] = [225, 225, 225];
+
     (data.benefits ?? []).forEach((b, index) => {
-      const isLast = index === (data.benefits ?? []).length - 1;
-      const cardBorder = [191, 219, 254] as [number, number, number];
+      const title = b.benefit_type || b.benefit_description || "Benefit";
+      const provider = b.provider || "Not specified";
+      const agent = b.agent_administrator || "Not assigned";
+      const agency = (b as any).insurance_agency || "Not specified";
+      const planYear = b.plan_year ? String(b.plan_year) : "";
+      const contribution = b.retirement_contribution != null ? fmt(b.retirement_contribution) : "Not specified";
+      const comments = b.eligibility_comments || "No comments added";
 
-      // Table 1 — shaded header row (benefit type, provider, agent, agency)
-      autoTable(doc, {
-        startY: y,
-        theme: "grid",
-        head: [[
-          { content: "Benefit Type", styles: { fontStyle: "bold" } },
-          "Provider",
-          "Agent / Admin",
-          "Insurance Agency",
-        ]],
-        body: [[
-          b.benefit_type || b.benefit_description || "—",
-          b.provider || "—",
-          b.agent_administrator || "—",
-          (b as any).insurance_agency || "—",
-        ]],
-        headStyles: { ...tableHeadStyles },
-        bodyStyles: { fontSize: 10, overflow: "linebreak" },
-        styles: { overflow: "linebreak" },
-        columnStyles: {
-          0: { cellWidth: 45 },
-          1: { cellWidth: 50 },
-          2: { cellWidth: 40 },
-          3: { cellWidth: 45 },
-        },
-        tableLineColor: cardBorder,
-        tableLineWidth: 0.2,
-        margin: { left: MARGIN, right: R_MARGIN },
-      });
+      // Measure comments to size the card
+      doc.setFontSize(10);
+      doc.setFont("Arial", "normal");
+      const commentLines = doc.splitTextToSize(comments, cardW - 10);
+      const commentsH = commentLines.length * 4.5;
 
-      const midY = (doc as any).lastAutoTable.finalY;
+      const headerH = 14;
+      const fieldsH = 26; // two rows of label/value
+      const commentsBlockH = 6 + 4 + commentsH + 4; // label + gap + lines + pad
+      const totalH = headerH + fieldsH + commentsBlockH + 2;
 
-      // Table 2 — detail row (plan year, contribution, eligibility/comments)
-      autoTable(doc, {
-        startY: midY,
-        theme: "grid",
-        head: [["Plan Year", "Contribution", "Eligibility / Comments"]],
-        body: [[
-          b.plan_year?.toString() || "—",
-          b.retirement_contribution != null ? fmt(b.retirement_contribution) : "—",
-          b.eligibility_comments || "—",
-        ]],
-        headStyles: {
-          fillColor: [255, 255, 255],
-          textColor: [BLUE.r, BLUE.g, BLUE.b] as [number, number, number],
-          lineColor: cardBorder,
-          lineWidth: 0.2,
-          fontStyle: "bold",
-          fontSize: 8,
-        },
-        bodyStyles: {
-          fontSize: 10,
-          lineColor: cardBorder,
-          lineWidth: 0.2,
-          overflow: "linebreak",
-        },
-        styles: { overflow: "linebreak" },
-        columnStyles: {
-          0: { cellWidth: 25 },
-          1: { cellWidth: 35 },
-          2: { cellWidth: 120 },
-        },
-        tableLineColor: cardBorder,
-        tableLineWidth: 0.2,
-        margin: { left: MARGIN, right: R_MARGIN },
-      });
+      y = checkPageBreak(doc, y, totalH + 6);
 
-      y = (doc as any).lastAutoTable.finalY + (isLast ? 10 : 5);
+      const x = MARGIN;
+      const cardTop = y;
+
+      // Outer card border
+      doc.setDrawColor(cardBorder[0], cardBorder[1], cardBorder[2]);
+      doc.setLineWidth(0.3);
+
+      // Header band background
+      doc.setFillColor(headerBg[0], headerBg[1], headerBg[2]);
+      doc.rect(x, cardTop, cardW, headerH, "F");
+
+      // Title
+      doc.setFont("Arial", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(20, 20, 20);
+      doc.text(title, x + 5, cardTop + 6);
+
+      // Subtitle "Benefit type"
+      doc.setFont("Arial", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(120, 120, 120);
+      doc.text("Benefit type", x + 5, cardTop + 11);
+
+      // Badge (if plan year)
+      if (planYear) {
+        const badgeLabel = `Active · ${planYear}`;
+        doc.setFontSize(8);
+        doc.setFont("Arial", "normal");
+        const bw = doc.getTextWidth(badgeLabel) + 6;
+        const bh = 5;
+        const bx = x + cardW - bw - 5;
+        const by = cardTop + (headerH - bh) / 2;
+        doc.setFillColor(badgeBg[0], badgeBg[1], badgeBg[2]);
+        doc.setDrawColor(badgeBg[0], badgeBg[1], badgeBg[2]);
+        doc.roundedRect(bx, by, bw, bh, 1.2, 1.2, "F");
+        doc.setTextColor(badgeText[0], badgeText[1], badgeText[2]);
+        doc.text(badgeLabel, bx + bw / 2, by + 3.5, { align: "center" });
+      }
+
+      // Divider below header
+      doc.setDrawColor(cardBorder[0], cardBorder[1], cardBorder[2]);
+      doc.line(x, cardTop + headerH, x + cardW, cardTop + headerH);
+
+      // Field grid — 3 columns
+      const colW = cardW / 3;
+      const fieldsTop = cardTop + headerH + 6;
+      const drawField = (label: string, value: string, col: number, row: number) => {
+        const fx = x + 5 + col * colW;
+        const fy = fieldsTop + row * 11;
+        doc.setFont("Arial", "bold");
+        doc.setFontSize(7.5);
+        doc.setTextColor(labelGray[0], labelGray[1], labelGray[2]);
+        doc.text(label.toUpperCase(), fx, fy);
+        doc.setFont("Arial", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(valueColor[0], valueColor[1], valueColor[2]);
+        const valLines = doc.splitTextToSize(value, colW - 6);
+        doc.text(valLines[0] || "", fx, fy + 4.5);
+      };
+
+      drawField("Provider", provider, 0, 0);
+      drawField("Agent / Admin", agent, 1, 0);
+      drawField("Plan Year", planYear || "Not specified", 2, 0);
+      drawField("Insurance Agency", agency, 0, 1);
+      drawField("Contribution", contribution, 1, 1);
+
+      // Divider before comments
+      const commentsTop = cardTop + headerH + fieldsH;
+      doc.setDrawColor(dividerColor[0], dividerColor[1], dividerColor[2]);
+      doc.line(x + 4, commentsTop, x + cardW - 4, commentsTop);
+
+      // Comments block
+      doc.setFont("Arial", "bold");
+      doc.setFontSize(7.5);
+      doc.setTextColor(labelGray[0], labelGray[1], labelGray[2]);
+      doc.text("ELIGIBILITY / COMMENTS", x + 5, commentsTop + 5);
+      doc.setFont("Arial", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(valueColor[0], valueColor[1], valueColor[2]);
+      doc.text(commentLines, x + 5, commentsTop + 10);
+
+      // Outer card border on top (stroke)
+      doc.setDrawColor(cardBorder[0], cardBorder[1], cardBorder[2]);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(x, cardTop, cardW, totalH, 1.5, 1.5, "S");
+
+      y = cardTop + totalH + 5;
     });
+
   }
 
   // Agreements — skip for shareholder meetings and written consents
