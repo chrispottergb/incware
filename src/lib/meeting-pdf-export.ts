@@ -952,7 +952,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
       head: [["Title", "Name"]],
       body: officerSource.map((o: any) => [o.title, o.name]),
       theme: "grid",
-      headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 10, fontStyle: "bold" },
+      headStyles: { fillColor: [250, 248, 242], textColor: [30, 30, 30], fontSize: 10, fontStyle: "bold" },
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
     });
@@ -1025,7 +1025,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
       head: [tableHeaders],
       body: tableBody,
       theme: "grid",
-      headStyles: { fillColor: [200, 215, 235] as [number, number, number], textColor: [30, 30, 30] as [number, number, number], fontSize: 10, fontStyle: "bold" as const },
+      headStyles: { fillColor: [250, 248, 242] as [number, number, number], textColor: [30, 30, 30] as [number, number, number], fontSize: 10, fontStyle: "bold" as const },
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
       columnStyles: isLLC
@@ -1143,9 +1143,12 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   let sectionNum = 0;
 
   // Helper to get table head styles based on theme
-  const tableHeadStyles = bt
-    ? { fillColor: LIGHT_BLUE_BG as [number, number, number], textColor: [BLUE.r, BLUE.g, BLUE.b] as [number, number, number], fontStyle: "bold" as const, fontSize: 10 }
-    : { fillColor: [200, 215, 235] as [number, number, number], textColor: [30, 30, 30] as [number, number, number], fontSize: 10, fontStyle: "bold" as const };
+  const tableHeadStyles = {
+    fillColor: [250, 248, 242] as [number, number, number],
+    textColor: [30, 30, 30] as [number, number, number],
+    fontStyle: "bold" as const,
+    fontSize: 9,
+  };
 
   // Helper for numbered section titles in blue theme
   const section = (title: string) => {
@@ -2403,8 +2406,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       "Insurance Totaled": { bg: [253, 220, 220], text: [120, 20, 20] }, // #fddcdc / #781414
     };
 
-    const headerBg: [number, number, number] = [220, 232, 243];       // #dce8f3
-    const headerText: [number, number, number] = [26, 63, 92];        // #1a3f5c
+    const headerBg: [number, number, number] = [250, 248, 242];       // cream
+    const headerText: [number, number, number] = [30, 30, 30];
     const headerBorder: [number, number, number] = [176, 200, 222];   // #b0c8de
     const cellBorder: [number, number, number] = [205, 218, 234];     // #cddaea
     const altRowBg: [number, number, number] = [245, 248, 252];
@@ -2493,8 +2496,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bt
     );
 
-    const leaseHeaderBg: [number, number, number] = [220, 232, 243];
-    const leaseHeaderText: [number, number, number] = [26, 63, 92];
+    const leaseHeaderBg: [number, number, number] = [250, 248, 242];
+    const leaseHeaderText: [number, number, number] = [30, 30, 30];
     const leaseHeaderBorder: [number, number, number] = [176, 200, 222];
     const leaseCellBorder: [number, number, number] = [205, 218, 234];
     const leaseAltRowBg: [number, number, number] = [245, 248, 252];
@@ -2584,8 +2587,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bt
     );
 
-    const soldHeaderBg: [number, number, number] = [220, 232, 243];
-    const soldHeaderText: [number, number, number] = [26, 63, 92];
+    const soldHeaderBg: [number, number, number] = [250, 248, 242];
+    const soldHeaderText: [number, number, number] = [30, 30, 30];
     const soldHeaderBorder: [number, number, number] = [176, 200, 222];
     const soldCellBorder: [number, number, number] = [205, 218, 234];
     const soldAltRowBg: [number, number, number] = [245, 248, 252];
@@ -2734,8 +2737,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bt
     );
 
-    const clHeaderBg: [number, number, number] = [220, 232, 243];
-    const clHeaderText: [number, number, number] = [26, 63, 92];
+    const clHeaderBg: [number, number, number] = [250, 248, 242];
+    const clHeaderText: [number, number, number] = [30, 30, 30];
     const clHeaderBorder: [number, number, number] = [176, 200, 222];
     const clCellBorder: [number, number, number] = [205, 218, 234];
     const clAltRowBg: [number, number, number] = [245, 248, 252];
@@ -3515,7 +3518,7 @@ export function exportSectionPDF(
       body: tableBody,
       theme: "grid",
       headStyles: {
-        fillColor: [200, 215, 235],
+        fillColor: [250, 248, 242],
         textColor: [30, 30, 30],
         fontSize: isShareholdersTable ? 8 : 10,
         fontStyle: "bold",
@@ -3615,7 +3618,7 @@ export function exportFinancialsPDF(company: any, meeting: any, financials: any,
       head: [["", "Current Year", "Previous Year", "YoY Change"]],
       body: tableBody,
       theme: "grid",
-      headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 10, fontStyle: "bold" },
+      headStyles: { fillColor: [250, 248, 242], textColor: [30, 30, 30], fontSize: 10, fontStyle: "bold" },
       bodyStyles: { fontSize: 10 },
       columnStyles: { 1: { halign: "right", fontStyle: "bold" }, 2: { halign: "right" }, 3: { halign: "center", fontSize: 9 } },
       margin: { left: MARGIN, right: R_MARGIN },
