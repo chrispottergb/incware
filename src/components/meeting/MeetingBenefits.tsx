@@ -515,57 +515,52 @@ export default function MeetingBenefits({ meetingId, entityType }: Props) {
             <p className="text-sm text-muted-foreground">No benefits recorded</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div>
             {rows.map((row: any) => {
               const title = row.benefit_type || row.benefit_description || "Benefit";
-              const contribution =
+              const contributionValue =
                 isRetirementType(row.benefit_type) && row.retirement_contribution != null
                   ? `$${Number(row.retirement_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                  : "Not specified";
-              const fields: { label: string; value: string }[] = [
-                { label: "Provider", value: row.provider || "Not assigned" },
-                { label: "Agent / Admin", value: row.agent_administrator || "Not assigned" },
-                { label: "Insurance Agency", value: row.insurance_agency || "Not assigned" },
-                { label: "Plan Year", value: row.plan_year ? String(row.plan_year) : "Not specified" },
-                { label: "Contribution", value: contribution },
+                  : null;
+              const fields: { label: string; value: any }[] = [
+                { label: "Provider", value: row.provider },
+                { label: "Agent / Admin", value: row.agent_administrator },
+                { label: "Insurance Agency", value: row.insurance_agency },
+                { label: "Plan Year", value: row.plan_year },
+                { label: "Contribution", value: contributionValue },
               ];
               return (
-                <div key={row.id} className="rounded-lg border border-border bg-card overflow-hidden">
-                  <div className="flex items-center justify-between gap-2 bg-muted/30 border-b border-border px-3 py-2">
-                    <div className="font-medium text-sm">{title}</div>
+                <div key={row.id} className="border border-border rounded-lg overflow-hidden mb-3">
+                  {/* Header bar */}
+                  <div className="flex items-center justify-between bg-muted/30 px-3 py-2 border-b border-border">
+                    <span className="font-medium text-sm">{title}</span>
                     <div className="flex items-center gap-2">
                       {row.plan_year && (
-                        <Badge variant="secondary" className="text-xs">Active · {row.plan_year}</Badge>
+                        <Badge variant="secondary">Active · {row.plan_year}</Badge>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(row)}
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(row)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteRow.mutate(row.id)}
-                        className="h-8 w-8 text-destructive/60 hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
+                      <Button variant="ghost" size="icon" onClick={() => deleteRow.mutate(row.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
                   </div>
+
+                  {/* Field grid */}
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-3">
-                    {fields.map((f) => (
-                      <div key={f.label} className="space-y-0.5">
-                        <div className="text-xs text-muted-foreground">{f.label}</div>
-                        <div className="text-sm">{f.value}</div>
+                    {fields.map(({ label, value }) => (
+                      <div key={label}>
+                        <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
+                        <p className="text-sm">{value ?? "Not specified"}</p>
                       </div>
                     ))}
                   </div>
+
+                  {/* Footer — Eligibility / Comments */}
                   <div className="border-t border-border px-3 py-2">
-                    <div className="text-xs text-muted-foreground">Eligibility / Comments</div>
-                    <div className="text-sm whitespace-pre-wrap">{row.eligibility_comments || "No comments"}</div>
+                    <p className="text-xs text-muted-foreground mb-0.5">Eligibility / Comments</p>
+                    <p className="text-sm whitespace-pre-wrap">{row.eligibility_comments ?? "No comments"}</p>
                   </div>
                 </div>
               );
