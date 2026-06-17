@@ -247,10 +247,7 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
   const metaFields = (e: AssetTransaction): { label: string; value: string }[] => {
     switch (e.type) {
       case "purchase":
-        return [
-          { label: "Vendor/Seller", value: e.vendor || "—" },
-          { label: "Financing", value: e.financing || "—" },
-        ];
+        return [];
       case "lease":
         return [
           { label: "Lessor", value: e.lessor || "—" },
