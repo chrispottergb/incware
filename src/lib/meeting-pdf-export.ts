@@ -2978,74 +2978,68 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     );
 
     (data.benefits ?? []).forEach((b, index) => {
+      const isLast = index === (data.benefits ?? []).length - 1;
       const cardBorder = [191, 219, 254] as [number, number, number];
 
-      // Card header row: Benefit Type | Provider | Agent / Admin | Insurance Agency
+      // Table 1 — shaded header row (benefit type, provider, agent, agency)
       autoTable(doc, {
         startY: y,
-        head: [["Benefit Type", "Provider", "Agent / Admin", "Insurance Agency"]],
+        theme: "grid",
+        head: [[
+          { content: "Benefit Type", styles: { fontStyle: "bold" } },
+          "Provider",
+          "Agent / Admin",
+          "Insurance Agency",
+        ]],
         body: [[
           b.benefit_type || b.benefit_description || "—",
           b.provider || "—",
           b.agent_administrator || "—",
           (b as any).insurance_agency || "—",
         ]],
-        theme: "grid",
-        headStyles: tableHeadStyles,
-        bodyStyles: {
-          fontSize: 10,
-          fontStyle: "bold",
-          lineColor: cardBorder,
-          lineWidth: 0.2,
-        },
-        margin: { left: MARGIN, right: R_MARGIN },
+        headStyles: { ...tableHeadStyles },
+        bodyStyles: { fontSize: 10 },
         tableLineColor: cardBorder,
         tableLineWidth: 0.2,
-        columnStyles: {
-          0: { cellWidth: 50, fontStyle: "bold" },
-          1: { cellWidth: 45 },
-          2: { cellWidth: 45 },
-          3: { cellWidth: 'auto' },
-        },
+        margin: { left: MARGIN, right: R_MARGIN },
       });
 
-      y = (doc as any).lastAutoTable.finalY;
+      const midY = (doc as any).lastAutoTable.finalY;
 
-      // Card detail row: Plan Year | Contribution | Eligibility / Comments
+      // Table 2 — detail row (plan year, contribution, eligibility/comments)
       autoTable(doc, {
-        startY: y,
+        startY: midY,
+        theme: "grid",
         head: [["Plan Year", "Contribution", "Eligibility / Comments"]],
         body: [[
           b.plan_year?.toString() || "—",
           b.retirement_contribution != null ? fmt(b.retirement_contribution) : "—",
           b.eligibility_comments || "—",
         ]],
-        theme: "grid",
         headStyles: {
-          ...tableHeadStyles,
           fillColor: [255, 255, 255],
           textColor: [BLUE.r, BLUE.g, BLUE.b] as [number, number, number],
-          fontStyle: "normal",
-          fontSize: 9,
           lineColor: cardBorder,
           lineWidth: 0.2,
+          fontStyle: "bold",
+          fontSize: 8,
         },
         bodyStyles: {
           fontSize: 10,
           lineColor: cardBorder,
           lineWidth: 0.2,
         },
-        margin: { left: MARGIN, right: R_MARGIN },
-        tableLineColor: cardBorder,
-        tableLineWidth: 0.2,
         columnStyles: {
           0: { cellWidth: 25 },
           1: { cellWidth: 35 },
-          2: { cellWidth: 'auto' },
+          2: { cellWidth: "auto" },
         },
+        tableLineColor: cardBorder,
+        tableLineWidth: 0.2,
+        margin: { left: MARGIN, right: R_MARGIN },
       });
 
-      y = (doc as any).lastAutoTable.finalY + (index < (data.benefits ?? []).length - 1 ? 5 : 10);
+      y = (doc as any).lastAutoTable.finalY + (isLast ? 10 : 5);
     });
   }
 
