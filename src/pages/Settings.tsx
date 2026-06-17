@@ -299,10 +299,10 @@ export default function Settings() {
       <Dialog open={viewAllOpen} onOpenChange={setViewAllOpen}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>All Shortcodes ({shortcodes.length})</DialogTitle>
+            <DialogTitle>All Shortcodes ({Array.isArray(shortcodes) ? shortcodes.length : 0})</DialogTitle>
           </DialogHeader>
           <div className="overflow-y-auto flex-1 -mx-6 px-6">
-            {shortcodes.length === 0 ? (
+            {!Array.isArray(shortcodes) || shortcodes.length === 0 ? (
               <p className="text-sm text-muted-foreground py-8 text-center">No shortcodes created yet.</p>
             ) : (
               <div className="space-y-3">
