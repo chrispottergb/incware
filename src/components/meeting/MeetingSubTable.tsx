@@ -595,7 +595,7 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
                 {renderedRows.map((row: any) => (
                   <TableRow key={row.id}>
                     {columns.map((col) => (
-                      <TableCell key={col.key} className={`whitespace-nowrap ${col.type === "number" ? "text-right font-mono text-sm" : ""}`} style={col.width ? { width: col.width, minWidth: col.width } : undefined}>
+                      <TableCell key={col.key} className={`${col.wide ? "whitespace-pre-wrap break-words align-top" : "whitespace-nowrap"} ${col.type === "number" ? "text-right font-mono text-sm" : ""}`} style={col.width ? { width: col.width, minWidth: col.width } : undefined}>
                         {col.type === "number" && row[col.key] != null
                           ? Number(row[col.key]).toLocaleString("en-US", { minimumFractionDigits: 2 })
                           : row[col.key] ?? "—"}
