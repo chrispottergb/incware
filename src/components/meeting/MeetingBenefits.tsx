@@ -31,14 +31,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Plus, Trash2, Loader2, Pencil, Info, X } from "lucide-react";
 import { toast } from "sonner";
 import NonProfitDirectorBenefits from "./NonProfitDirectorBenefits";
