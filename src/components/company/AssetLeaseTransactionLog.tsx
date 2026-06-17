@@ -449,24 +449,6 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
                   {currencyInput("amount", "0.00")}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Vendor / Seller</Label>
-                  <Input
-                    value={form.vendor}
-                    onChange={(ev) => set("vendor")(ev.target.value)}
-                    placeholder="Seller name"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Financing Method</Label>
-                  <Input
-                    value={form.financing}
-                    onChange={(ev) => set("financing")(ev.target.value)}
-                    placeholder="Cash, or lender name"
-                  />
-                </div>
-              </div>
               {ResolutionField}
             </TabsContent>
 
