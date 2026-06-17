@@ -2414,16 +2414,20 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     autoTable(doc, {
       startY: y,
-      head: [["Year / Make / Model", "Type", "Transaction", "VIN / Serial No.", "Date", "Amount", "Seller / Buyer"]],
-      body: (data.capitalAssets ?? []).map((v: any) => [
-        v.year_make_model || "—",
-        v.asset_type || "Vehicle",
-        v.transaction_type || "Purchased",
-        v.vin || "—",
-        v.date ? new Date(v.date + "T00:00:00").toLocaleDateString() : "—",
-        v.amount != null ? fmt(v.amount) : "—",
-        v.seller || "—",
-      ]),
+      head: [["Year / Make / Model", "Type", "Transaction", "VIN / Serial No.\nComments", "Date", "Amount"]],
+      body: (data.capitalAssets ?? []).map((v: any) => {
+        const vin = v.vin || "—";
+        const notes = v.notes || "";
+        const vinCell = notes ? `${vin}\n${notes}` : vin;
+        return [
+          v.year_make_model || "—",
+          v.asset_type || "Vehicle",
+          v.transaction_type || "Purchased",
+          vinCell,
+          v.date ? new Date(v.date + "T00:00:00").toLocaleDateString() : "—",
+          v.amount != null ? fmt(v.amount) : "—",
+        ];
+      }),
       theme: "grid",
       headStyles: {
         fillColor: headerBg,
@@ -2439,10 +2443,20 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         lineColor: cellBorder,
         cellPadding: 2.5,
       },
+      columnStyles: {
+        3: { cellWidth: 50 },
+        4: { halign: "right" },
+        5: { halign: "right" },
+      },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
       pageBreak: "avoid",
       didParseCell: (hookData: any) => {
+        if (hookData.section === "head") {
+          if (hookData.column.index === 4 || hookData.column.index === 5) {
+            hookData.cell.styles.halign = "right";
+          }
+        }
         if (hookData.section === "body") {
           // Alternating row shading
           if (hookData.row.index % 2 === 1) {
@@ -2469,6 +2483,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         }
       },
     });
+
     y = (doc as any).lastAutoTable.finalY + 4;
 
     // Closing paragraph
