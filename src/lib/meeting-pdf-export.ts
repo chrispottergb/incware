@@ -2964,37 +2964,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       });
     }
 
-    // Print auto-generated resolutions
-    if (autoResolutions.length > 0) {
-      y += 3;
-      y = checkPageBreak(doc, y, 20 + autoResolutions.length * 20);
-      y = section("Resolutions — Changes from Prior Year");
+    // Auto-generated "Resolutions — Changes from Prior Year" section intentionally removed.
 
-      doc.setFontSize(9);
-      doc.setFont("Arial", "italic");
-      doc.setTextColor(120, 120, 120);
-      doc.text("The following resolutions were auto-generated based on changes from the prior year meeting record.", MARGIN, y);
-      y += 7;
-
-      autoResolutions.forEach((r) => {
-        y = checkPageBreak(doc, y, 30);
-        doc.setFontSize(11);
-        doc.setFont("Arial", "bold");
-        doc.setTextColor(bt ? BLUE.r : 30, bt ? BLUE.g : 30, bt ? BLUE.b : 30);
-        doc.text(r.purpose, MARGIN, y);
-        y += 6;
-        doc.setFont("Arial", "normal");
-        doc.setFontSize(11);
-        doc.setTextColor(bt ? BODY_COLOR[0] : 30, bt ? BODY_COLOR[1] : 30, bt ? BODY_COLOR[2] : 30);
-        const lines = doc.splitTextToSize(r.text, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-        for (const line of lines) {
-          y = checkPageBreak(doc, y, 6);
-          doc.text(line, MARGIN, y);
-          y += 5;
-        }
-        y += 5;
-      });
-    }
   }
 
   if (!isShareholder && !isWrittenConsent && data.benefits && (data.benefits ?? []).length > 0) {
