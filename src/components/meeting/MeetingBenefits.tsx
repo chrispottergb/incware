@@ -515,66 +515,61 @@ export default function MeetingBenefits({ meetingId, entityType }: Props) {
             <p className="text-sm text-muted-foreground">No benefits recorded</p>
           </div>
         ) : (
-          <div className="rounded-lg border border-border overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="whitespace-nowrap">Benefit Type</TableHead>
-                  <TableHead className="whitespace-nowrap">Provider</TableHead>
-                  <TableHead className="whitespace-nowrap">Agent / Admin</TableHead>
-                  <TableHead className="whitespace-nowrap">Insurance Agency</TableHead>
-                  <TableHead className="w-20" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row: any) => (
-                  <>
-                    <TableRow key={row.id} className="border-b border-border">
-                      <TableCell className="font-medium text-sm whitespace-nowrap">{row.benefit_type || row.benefit_description || "—"}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{row.provider || "—"}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{row.agent_administrator || "—"}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{row.insurance_agency || "—"}</TableCell>
-                      <TableCell rowSpan={3}>
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => deleteRow.mutate(row.id)} className="h-8 w-8 text-destructive/60 hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                    {/* Sub-header row */}
-                    <TableRow key={`${row.id}-subhead`} className="border-b border-border bg-muted/30">
-                      <TableCell className="py-1 text-xs font-medium text-muted-foreground border-r border-border">
-                        Plan Year
-                      </TableCell>
-                      <TableCell className="py-1 text-xs font-medium text-muted-foreground border-r border-border">
-                        Contribution
-                      </TableCell>
-                      <TableCell className="py-1 text-xs font-medium text-muted-foreground" colSpan={2}>
-                        Eligibility / Comments
-                      </TableCell>
-                    </TableRow>
-                    {/* Sub-data row */}
-                    <TableRow key={`${row.id}-subdata`} className="border-b border-border">
-                      <TableCell className="py-1.5 text-xs border-r border-border">
-                        {row.plan_year || "—"}
-                      </TableCell>
-                      <TableCell className="py-1.5 text-xs border-r border-border">
-                        {isRetirementType(row.benefit_type) && row.retirement_contribution != null
-                          ? `$${Number(row.retirement_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                          : "—"}
-                      </TableCell>
-                      <TableCell className="py-1.5 text-xs" colSpan={2}>
-                        {row.eligibility_comments || "—"}
-                      </TableCell>
-                    </TableRow>
-                  </>
-                ))}
-              </TableBody>
-            </Table>
+          <div className="space-y-3">
+            {rows.map((row: any) => {
+              const title = row.benefit_type || row.benefit_description || "Benefit";
+              const contribution =
+                isRetirementType(row.benefit_type) && row.retirement_contribution != null
+                  ? `$${Number(row.retirement_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                  : "Not specified";
+              const fields: { label: string; value: string }[] = [
+                { label: "Provider", value: row.provider || "Not assigned" },
+                { label: "Agent / Admin", value: row.agent_administrator || "Not assigned" },
+                { label: "Insurance Agency", value: row.insurance_agency || "Not assigned" },
+                { label: "Plan Year", value: row.plan_year ? String(row.plan_year) : "Not specified" },
+                { label: "Contribution", value: contribution },
+              ];
+              return (
+                <div key={row.id} className="rounded-lg border border-border bg-card overflow-hidden">
+                  <div className="flex items-center justify-between gap-2 bg-muted/30 border-b border-border px-3 py-2">
+                    <div className="font-medium text-sm">{title}</div>
+                    <div className="flex items-center gap-2">
+                      {row.plan_year && (
+                        <Badge variant="secondary" className="text-xs">Active · {row.plan_year}</Badge>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEdit(row)}
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteRow.mutate(row.id)}
+                        className="h-8 w-8 text-destructive/60 hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-3">
+                    {fields.map((f) => (
+                      <div key={f.label} className="space-y-0.5">
+                        <div className="text-xs text-muted-foreground">{f.label}</div>
+                        <div className="text-sm">{f.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t border-border px-3 py-2">
+                    <div className="text-xs text-muted-foreground">Eligibility / Comments</div>
+                    <div className="text-sm whitespace-pre-wrap">{row.eligibility_comments || "No comments"}</div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </CardContent>

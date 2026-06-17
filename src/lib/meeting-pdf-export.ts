@@ -2978,37 +2978,47 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     );
 
     (data.benefits ?? []).forEach((b, index) => {
-      // Row 1: Benefit Type / Provider / Agent/Admin — blue header with grid borders on body
+      const cardBorder = [191, 219, 254] as [number, number, number];
+
+      // Card header row: Benefit Type | Provider | Agent / Admin | Insurance Agency
       autoTable(doc, {
         startY: y,
-        head: [["Benefit Type", "Provider", "Agent / Admin"]],
+        head: [["Benefit Type", "Provider", "Agent / Admin", "Insurance Agency"]],
         body: [[
-          b.benefit_type || b.benefit_description || "--",
-          b.provider || "--",
-          b.agent_administrator || "--",
+          b.benefit_type || b.benefit_description || "—",
+          b.provider || "—",
+          b.agent_administrator || "—",
+          (b as any).insurance_agency || "—",
         ]],
         theme: "grid",
         headStyles: tableHeadStyles,
-        bodyStyles: { fontSize: 10 },
+        bodyStyles: {
+          fontSize: 10,
+          fontStyle: "bold",
+          lineColor: cardBorder,
+          lineWidth: 0.2,
+        },
         margin: { left: MARGIN, right: R_MARGIN },
+        tableLineColor: cardBorder,
+        tableLineWidth: 0.2,
         columnStyles: {
-          0: { cellWidth: 55 },
-          1: { cellWidth: 55 },
-          2: { cellWidth: 'auto' },
+          0: { cellWidth: 50, fontStyle: "bold" },
+          1: { cellWidth: 45 },
+          2: { cellWidth: 45 },
+          3: { cellWidth: 'auto' },
         },
       });
 
       y = (doc as any).lastAutoTable.finalY;
 
-
-      // Row 2: Plan Year / Contribution / Eligibility-Comments
+      // Card detail row: Plan Year | Contribution | Eligibility / Comments
       autoTable(doc, {
         startY: y,
         head: [["Plan Year", "Contribution", "Eligibility / Comments"]],
         body: [[
-          b.plan_year?.toString() || "--",
-          b.retirement_contribution != null ? fmt(b.retirement_contribution) : "--",
-          b.eligibility_comments || "--",
+          b.plan_year?.toString() || "—",
+          b.retirement_contribution != null ? fmt(b.retirement_contribution) : "—",
+          b.eligibility_comments || "—",
         ]],
         theme: "grid",
         headStyles: {
@@ -3017,19 +3027,19 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
           textColor: [BLUE.r, BLUE.g, BLUE.b] as [number, number, number],
           fontStyle: "normal",
           fontSize: 9,
-          lineColor: [191, 219, 254] as [number, number, number],
+          lineColor: cardBorder,
           lineWidth: 0.2,
         },
         bodyStyles: {
           fontSize: 10,
-          lineColor: [191, 219, 254] as [number, number, number],
+          lineColor: cardBorder,
           lineWidth: 0.2,
         },
         margin: { left: MARGIN, right: R_MARGIN },
-        tableLineColor: [191, 219, 254] as [number, number, number],
+        tableLineColor: cardBorder,
         tableLineWidth: 0.2,
         columnStyles: {
-          0: { cellWidth: 30 },
+          0: { cellWidth: 25 },
           1: { cellWidth: 35 },
           2: { cellWidth: 'auto' },
         },

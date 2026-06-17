@@ -1,46 +1,48 @@
-# Assets & Lease Transactions Module
+# Redesign Benefits Section — App UI + PDF
 
-Replace the meeting page's "Vehicles & Equipment" sub-tab with a new entity-scoped **Asset & Lease Transaction Log** — a clean legal recordkeeping module backed by a single unified table, with existing data migrated in.
+Replace the nested sub-table pattern with a card layout in both the in-app Benefits component and the generated meeting PDF.
 
-## 1. Database
+## 1. In-app UI — `src/components/meeting/MeetingBenefits.tsx`
 
-**New table `asset_transactions`** (single table for all four entry types):
-- `id`, `entity_id` (references companies, cascade delete), `type` (purchase / lease / vehicle_sale / lease_termination), `description`, `date`, `amount`, `monthly_payment`, `vendor`, `lessor`, `buyer`, `financing`, `term`, `end_date`, `reason`, `resolution`, `created_at`, `updated_at`
-- GRANTs for authenticated + service_role, RLS scoped to the company owner (same pattern as other company sub-tables), `updated_at` trigger
-- Validation trigger ensuring `type` is one of the four allowed values
+Replace the entire `<Table>` block (lines ~518–578) inside `<CardContent>` with a vertical stack of benefit cards. Keep all data loading, mutations, dialog, and the "+ Add" header button unchanged.
 
-**Data migration** — copy existing rows into the new table (joined through meetings to get the company):
-- `meeting_vehicle_purchases` → purchase (seller → vendor)
-- `meeting_vehicle_leases` → lease (lessor, monthly payment, start/end dates)
-- `meeting_vehicle_sales` → vehicle_sale (buyer, sale price)
-- `meeting_lease_terminations` → lease_termination (landlord → lessor, reason + notes)
+For each benefit row, render a bordered card using existing semantic tokens (`border-border`, `bg-card`, `bg-muted/30`, `text-muted-foreground`) so dark theme is preserved:
 
-Legacy tables stay in place (the Annual Review snapshot and wizard still reference them) — they just stop being the live source for this tab.
+- **Header bar** (`flex items-center justify-between`, subtle bottom border, `bg-muted/30` padding):
+  - Left: benefit type name as title (`font-medium text-sm`)
+  - Right: active year `Badge` (variant `secondary`) showing `Active · {plan_year}` when `plan_year` exists; otherwise omit the badge
+- **Field grid** (`grid grid-cols-2 md:grid-cols-3 gap-3 p-3`):
+  - Provider — fallback "Not assigned"
+  - Agent / Admin — fallback "Not assigned"
+  - Insurance Agency — fallback "Not assigned"
+  - Plan Year — fallback "Not specified"
+  - Contribution — formatted currency when `isRetirementType(row.benefit_type)` and a value exists; otherwise "Not specified"
+  - Each field: small `text-xs text-muted-foreground` label above, `text-sm` value below
+- **Full-width footer row** (`border-t border-border px-3 py-2`):
+  - Label "Eligibility / Comments" + value, fallback "No comments"
+- **Action icons** (top-right of header, next to the badge): existing Pencil (edit) and Trash2 (delete) ghost icon buttons, same handlers (`openEdit(row)`, `deleteRow.mutate(row.id)`)
 
-## 2. New component — `AssetLeaseTransactionLog.tsx`
+Empty state (no rows) stays as-is.
 
-Props: `entityId`. Features:
-- **Unified list, newest first** — one card per entry: description, color-coded type pill (Purchase / Lease / Vehicle sale / Lease ended), date, type-specific key fields (vendor & financing, lessor & term, buyer, reason), dollar amount or "$X/mo" right-aligned, resolution number in muted text below the amount
-- **Filter bar**: All / Purchases / Leases / Vehicle sales / Lease terminations
-- **"Add entry" modal** (min 600px wide per house style) with four tabs, each showing only that type's fields; edit and delete (via the standard ConfirmDeleteDialog) on each card
-- Flat, professional styling: subtle borders, no shadows, muted metadata, soft-opacity colored badges, existing currency formatting and date picker components — all via semantic design tokens
+## 2. PDF export — `src/lib/meeting-pdf-export.ts` (lines ~2980–3039)
 
-## 3. Wire into navigation
+Replace the two `autoTable` calls inside the `data.benefits.forEach(...)` loop with a single card-style block per benefit (still using `autoTable` so pagination/`lastAutoTable.finalY` behavior is preserved):
 
-In `MeetingDetail.tsx`:
-- Rename the sub-tab to **"Assets & Lease Transactions"**
-- Render the new component with the meeting's company id (entity-scoped, so it shows the full company log; available on all standard meetings, no longer limited to Annual/Organizational)
+- **Shaded header row** (one `autoTable` with `theme: "grid"`, existing `tableHeadStyles` steel-blue fill):
+  - Columns: Benefit Type (bold) | Provider | Agent / Admin | Insurance Agency
+  - Body row contains the values, with `"—"` only when the field is empty
+- **Detail row** (second `autoTable` immediately below, light header style matching current secondary header — white fill, blue text, `[191,219,254]` borders):
+  - Columns: Plan Year | Contribution | Eligibility / Comments
+  - Values use `"—"` only when empty; contribution uses `fmt()` when present, else `"—"`
+  - `columnStyles`: Plan Year ~25mm, Contribution ~35mm, Eligibility/Comments `auto`
+- Wrap both tables with the same outer border color (`[191,219,254]`, `lineWidth: 0.2`) so the pair visually reads as one bordered card
+- Preserve current spacing between benefits: `y = lastAutoTable.finalY + (index < last ? 5 : 10)`
 
-## 4. Minutes PDF update
-
-The Annual/LLC minutes PDF currently reads the four legacy per-meeting tables. Update the PDF data assembly to pull from `asset_transactions`:
-- Entries dated between the prior meeting date (exclusive) and this meeting's date (inclusive); if no prior meeting, entries in the meeting's calendar year
-- Mapped into the existing PDF sections (capital asset additions, leases, dispositions, terminations) so the minutes layout is unchanged
+WHEREAS/RESOLVED intro paragraph above the benefits list stays unchanged.
 
 ## Out of scope
-- The Annual Meeting Wizard's "Vehicles & Equipment" step and the public Annual Review snapshot keep their current behavior (can be aligned in a follow-up)
-- No depreciation, VINs, serial numbers, or document uploads — strictly corporate-records fields
 
-## Technical notes
-- Two-step build: migration first (table + grants + RLS + data copy), then UI/PDF code after types regenerate
-- Dates handled with the project's `T00:00:00` convention; numeric columns handled as strings and cast explicitly
+- Add/Edit dialog form (unchanged)
+- NonProfitDirectorBenefits component (unchanged)
+- Data model, mutations, query keys (unchanged)
+- Other PDF sections
