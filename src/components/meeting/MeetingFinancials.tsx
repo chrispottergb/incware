@@ -262,14 +262,24 @@ export default function MeetingFinancials({ meetingId }: Props) {
   const handleFieldChange = (prefix: "current" | "previous", key: string, value: string) => {
     const clean = sanitizeCurrencyInput(value);
     setForm((prev) => {
-      const updated = { ...prev, [`${prefix}_${key}`]: clean };
+      const updated = { ...prev, [`${prefix}_${key}`]: clean } as any;
 
       const sales = toNum(key === "total_sales" ? clean : updated[`${prefix}_total_sales`]);
       const cog = toNum(key === "cog" ? clean : updated[`${prefix}_cog`]);
+      const expenses = toNum(key === "expenses" ? clean : updated[`${prefix}_expenses`]);
 
-      if (sales != null && cog != null) {
-        updated[`${prefix}_gross_profit`] = (sales - cog).toFixed(2);
-        updated[`${prefix}_cog_ratio`] = sales > 0 ? ((cog / sales) * 100).toFixed(2) : "0";
+      // Per-column conditional calculation: COGS path wins when COGS > 0
+      if (sales != null) {
+        if (cog != null && cog > 0) {
+          updated[`${prefix}_gross_profit`] = (sales - cog).toFixed(2);
+          updated[`${prefix}_cog_ratio`] = sales > 0 ? ((cog / sales) * 100).toFixed(2) : "0";
+          updated[`${prefix}_net_income`] = (sales - cog - (expenses ?? 0)).toFixed(2);
+        } else {
+          const exp = expenses ?? 0;
+          updated[`${prefix}_gross_profit`] = (sales - exp).toFixed(2);
+          updated[`${prefix}_cog_ratio`] = "0";
+          updated[`${prefix}_net_income`] = (sales - exp).toFixed(2);
+        }
       }
 
       return updated;
