@@ -536,14 +536,27 @@ export default function MeetingFinancials({ meetingId }: Props) {
               );
               const resyncField = () => {
                 setForm((prev) => {
-                  const updated = { ...prev, [`previous_${f.key}`]: srcVal != null ? srcVal.toString() : "" };
-                  // Recompute derived prev fields if total_sales or cog changes
-                  if (f.key === "total_sales" || f.key === "cog") {
+                  const updated: any = { ...prev, [`previous_${f.key}`]: srcVal != null ? srcVal.toString() : "" };
+                  // Recompute derived prev fields when any input changes
+                  if (f.key === "total_sales" || f.key === "cog" || f.key === "expenses") {
                     const sales = toNum(f.key === "total_sales" ? (srcVal?.toString() ?? "") : updated.previous_total_sales);
                     const cog = toNum(f.key === "cog" ? (srcVal?.toString() ?? "") : updated.previous_cog);
-                    if (sales != null && cog != null) {
-                      updated.previous_gross_profit = (sales - cog).toFixed(2);
-                      updated.previous_cog_ratio = sales > 0 ? ((cog / sales) * 100).toFixed(2) : "0";
+                    const expenses = toNum(f.key === "expenses" ? (srcVal?.toString() ?? "") : updated.previous_expenses);
+                    if (sales != null) {
+                      if (cog != null && cog > 0) {
+                        updated.previous_gross_profit = (sales - cog).toFixed(2);
+                        updated.previous_cog_ratio = sales > 0 ? ((cog / sales) * 100).toFixed(2) : "0";
+                        updated.previous_net_income = (sales - cog - (expenses ?? 0)).toFixed(2);
+                      } else {
+                        const exp = expenses ?? 0;
+                        updated.previous_gross_profit = (sales - exp).toFixed(2);
+                        updated.previous_cog_ratio = "0";
+                        updated.previous_net_income = (sales - exp).toFixed(2);
+                      }
+                    }
+                  }
+                  return updated;
+                });
                     }
                   }
                   return updated;
