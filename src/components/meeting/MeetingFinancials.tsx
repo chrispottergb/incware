@@ -159,12 +159,14 @@ export default function MeetingFinancials({ meetingId }: Props) {
     current_cog: "",
     current_expenses: "",
     current_cog_ratio: "",
+    current_expense_ratio: "",
     current_net_income: "",
     previous_total_sales: "",
     previous_gross_profit: "",
     previous_cog: "",
     previous_expenses: "",
     previous_cog_ratio: "",
+    previous_expense_ratio: "",
     previous_net_income: "",
   });
 
