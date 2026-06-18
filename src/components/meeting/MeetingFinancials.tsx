@@ -470,11 +470,18 @@ export default function MeetingFinancials({ meetingId }: Props) {
     return `${sign}$${abs.toLocaleString()}`;
   };
 
-  // Chart data
+  // Chart data — second bar dynamically switches between COG and Expenses.
+  // Per-year: use that year's COGS if > 0, otherwise fall back to that year's Expenses.
+  const currentExpensesNum = toNum(form.current_expenses) ?? 0;
+  const previousExpensesNum = toNum(form.previous_expenses) ?? 0;
+  const currentSecondBar = currentCogNum && currentCogNum > 0 ? currentCogNum : currentExpensesNum;
+  const previousSecondBar = previousCogNum && previousCogNum > 0 ? previousCogNum : previousExpensesNum;
+  const secondBarLabel = hasCogs ? "COG" : "Expenses";
+
   const chartData = [
-    { name: "Total Sales", "Current Year": toNum(form.current_total_sales) ?? 0, "Previous Year": toNum(form.previous_total_sales) ?? 0 },
+    { name: "Sales", "Current Year": toNum(form.current_total_sales) ?? 0, "Previous Year": toNum(form.previous_total_sales) ?? 0 },
+    { name: secondBarLabel, "Current Year": currentSecondBar, "Previous Year": previousSecondBar },
     { name: "Gross Profit", "Current Year": toNum(form.current_gross_profit) ?? 0, "Previous Year": toNum(form.previous_gross_profit) ?? 0 },
-    { name: "COG", "Current Year": toNum(form.current_cog) ?? 0, "Previous Year": toNum(form.previous_cog) ?? 0 },
     { name: "Net Income", "Current Year": toNum(form.current_net_income) ?? 0, "Previous Year": toNum(form.previous_net_income) ?? 0 },
   ];
 
