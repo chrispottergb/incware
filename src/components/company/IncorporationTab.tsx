@@ -708,18 +708,10 @@ export default function IncorporationTab({ company }: Props) {
                       variant="ghost"
                       size="sm"
                       className="text-xs"
-                      onClick={async () => {
+                      onClick={() => {
                         let url = sosInfo.url;
-                        if (isWI) {
-                          url = "https://apps.dfi.wi.gov/apps/CorpSearch/Search.aspx";
-                          if (form.name) {
-                            try {
-                              await navigator.clipboard.writeText(form.name);
-                              toast.success("Company name copied — paste into the WI DFI search box");
-                            } catch {
-                              // ignore clipboard errors
-                            }
-                          }
+                        if (isWI && form.name) {
+                          url = `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?Type=Simple&Search=${encodeURIComponent(form.name)}`;
                         }
                         window.open(url, "_blank");
                       }}
