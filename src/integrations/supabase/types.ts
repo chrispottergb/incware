@@ -2433,6 +2433,7 @@ export type Database = {
           created_at: string
           current_cog: number | null
           current_cog_ratio: number | null
+          current_expenses: number | null
           current_gross_profit: number | null
           current_net_income: number | null
           current_total_sales: number | null
@@ -2440,6 +2441,7 @@ export type Database = {
           meeting_id: string
           previous_cog: number | null
           previous_cog_ratio: number | null
+          previous_expenses: number | null
           previous_gross_profit: number | null
           previous_net_income: number | null
           previous_total_sales: number | null
@@ -2449,6 +2451,7 @@ export type Database = {
           created_at?: string
           current_cog?: number | null
           current_cog_ratio?: number | null
+          current_expenses?: number | null
           current_gross_profit?: number | null
           current_net_income?: number | null
           current_total_sales?: number | null
@@ -2456,6 +2459,7 @@ export type Database = {
           meeting_id: string
           previous_cog?: number | null
           previous_cog_ratio?: number | null
+          previous_expenses?: number | null
           previous_gross_profit?: number | null
           previous_net_income?: number | null
           previous_total_sales?: number | null
@@ -2465,6 +2469,7 @@ export type Database = {
           created_at?: string
           current_cog?: number | null
           current_cog_ratio?: number | null
+          current_expenses?: number | null
           current_gross_profit?: number | null
           current_net_income?: number | null
           current_total_sales?: number | null
@@ -2472,6 +2477,7 @@ export type Database = {
           meeting_id?: string
           previous_cog?: number | null
           previous_cog_ratio?: number | null
+          previous_expenses?: number | null
           previous_gross_profit?: number | null
           previous_net_income?: number | null
           previous_total_sales?: number | null
