@@ -159,12 +159,14 @@ export default function MeetingFinancials({ meetingId }: Props) {
     current_cog: "",
     current_expenses: "",
     current_cog_ratio: "",
+    current_expense_ratio: "",
     current_net_income: "",
     previous_total_sales: "",
     previous_gross_profit: "",
     previous_cog: "",
     previous_expenses: "",
     previous_cog_ratio: "",
+    previous_expense_ratio: "",
     previous_net_income: "",
   });
 
@@ -196,7 +198,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
     if (focusedFields.has(fieldId)) return raw;
     if (computed) {
       // computed fields: gross_profit shown as currency, cog_ratio as percent
-      if (fieldId.endsWith("cog_ratio")) {
+      if (fieldId.endsWith("cog_ratio") || fieldId.endsWith("expense_ratio")) {
         if (raw === "" || raw == null) return "";
         const n = parseFloat(raw);
         return isFinite(n) ? `${n.toFixed(2)}%` : raw;
@@ -266,21 +268,24 @@ export default function MeetingFinancials({ meetingId }: Props) {
     setForm((prev) => {
       const updated = { ...prev, [`${prefix}_${key}`]: clean } as any;
 
+      // Net income is manually entered — do not auto-calculate it.
+      if (key === "net_income") return updated;
+
       const sales = toNum(key === "total_sales" ? clean : updated[`${prefix}_total_sales`]);
       const cog = toNum(key === "cog" ? clean : updated[`${prefix}_cog`]);
       const expenses = toNum(key === "expenses" ? clean : updated[`${prefix}_expenses`]);
 
-      // Per-column conditional calculation: COGS path wins when COGS > 0
+      // Per-column conditional calculation: COGS path wins when COGS > 0.
       if (sales != null) {
         if (cog != null && cog > 0) {
           updated[`${prefix}_gross_profit`] = (sales - cog).toFixed(2);
           updated[`${prefix}_cog_ratio`] = sales > 0 ? ((cog / sales) * 100).toFixed(2) : "0";
-          updated[`${prefix}_net_income`] = (sales - cog - (expenses ?? 0)).toFixed(2);
+          updated[`${prefix}_expense_ratio`] = "";
         } else {
           const exp = expenses ?? 0;
           updated[`${prefix}_gross_profit`] = (sales - exp).toFixed(2);
-          updated[`${prefix}_cog_ratio`] = "0";
-          updated[`${prefix}_net_income`] = (sales - exp).toFixed(2);
+          updated[`${prefix}_cog_ratio`] = "";
+          updated[`${prefix}_expense_ratio`] = sales > 0 ? ((exp / sales) * 100).toFixed(2) : "0";
         }
       }
 
@@ -375,18 +380,30 @@ export default function MeetingFinancials({ meetingId }: Props) {
       if (autoSaveHasPendingChanges()) return;
     }
     hydratedSigRef.current = sig;
+    const computeRatio = (sales: any, cog: any, expenses: any) => {
+      const s = sales != null ? Number(sales) : null;
+      const c = cog != null ? Number(cog) : null;
+      const e = expenses != null ? Number(expenses) : null;
+      if (s == null || s <= 0) return { cog_ratio: "", expense_ratio: "" };
+      if (c != null && c > 0) return { cog_ratio: ((c / s) * 100).toFixed(2), expense_ratio: "" };
+      return { cog_ratio: "", expense_ratio: e != null ? ((e / s) * 100).toFixed(2) : "" };
+    };
+    const cur = computeRatio(financials.current_total_sales, financials.current_cog, (financials as any).current_expenses);
+    const prv = computeRatio(financials.previous_total_sales, financials.previous_cog, (financials as any).previous_expenses);
     setForm({
       current_total_sales: financials.current_total_sales?.toString() ?? "",
       current_gross_profit: financials.current_gross_profit?.toString() ?? "",
       current_cog: financials.current_cog?.toString() ?? "",
       current_expenses: (financials as any).current_expenses?.toString() ?? "",
-      current_cog_ratio: financials.current_cog_ratio?.toString() ?? "",
+      current_cog_ratio: cur.cog_ratio || (financials.current_cog_ratio?.toString() ?? ""),
+      current_expense_ratio: cur.expense_ratio,
       current_net_income: financials.current_net_income?.toString() ?? "",
       previous_total_sales: financials.previous_total_sales?.toString() ?? "",
       previous_gross_profit: financials.previous_gross_profit?.toString() ?? "",
       previous_cog: financials.previous_cog?.toString() ?? "",
       previous_expenses: (financials as any).previous_expenses?.toString() ?? "",
-      previous_cog_ratio: financials.previous_cog_ratio?.toString() ?? "",
+      previous_cog_ratio: prv.cog_ratio || (financials.previous_cog_ratio?.toString() ?? ""),
+      previous_expense_ratio: prv.expense_ratio,
       previous_net_income: financials.previous_net_income?.toString() ?? "",
     });
     baselinePendingRef.current = true;
@@ -430,14 +447,16 @@ export default function MeetingFinancials({ meetingId }: Props) {
   const previousCogNum = toNum(form.previous_cog);
   const hasCogs = (currentCogNum != null && currentCogNum > 0) || (previousCogNum != null && previousCogNum > 0);
 
-  const fields: { key: string; label: string; computed?: boolean }[] = [
+  const fields: { key: string; label: string; computed?: boolean; manual?: boolean }[] = [
     { key: "total_sales", label: "Total Sales" },
     hasCogs
       ? { key: "cog", label: "Cost of Goods" }
       : { key: "expenses", label: "Expenses" },
     { key: "gross_profit", label: "Gross Profit", computed: true },
-    { key: "cog_ratio", label: "COG Ratio (%)", computed: true },
-    { key: "net_income", label: "Net Income", computed: true },
+    hasCogs
+      ? { key: "cog_ratio", label: "COG Ratio (%)", computed: true }
+      : { key: "expense_ratio", label: "Expense Ratio (%)", computed: true },
+    { key: "net_income", label: "Net Income", manual: true },
   ];
 
   const noPriorData = !priorMeetingFinancials?.financials && !hasSavedPreviousData;
@@ -546,12 +565,12 @@ export default function MeetingFinancials({ meetingId }: Props) {
                       if (cog != null && cog > 0) {
                         updated.previous_gross_profit = (sales - cog).toFixed(2);
                         updated.previous_cog_ratio = sales > 0 ? ((cog / sales) * 100).toFixed(2) : "0";
-                        updated.previous_net_income = (sales - cog - (expenses ?? 0)).toFixed(2);
+                        updated.previous_expense_ratio = "";
                       } else {
                         const exp = expenses ?? 0;
                         updated.previous_gross_profit = (sales - exp).toFixed(2);
-                        updated.previous_cog_ratio = "0";
-                        updated.previous_net_income = (sales - exp).toFixed(2);
+                        updated.previous_cog_ratio = "";
+                        updated.previous_expense_ratio = sales > 0 ? ((exp / sales) * 100).toFixed(2) : "0";
                       }
                     }
                   }
