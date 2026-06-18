@@ -711,7 +711,7 @@ export default function IncorporationTab({ company }: Props) {
                       onClick={() => {
                         let url = sosInfo.url;
                         if (isWI && form.name) {
-                          url = `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?Type=Simple&Search=${encodeURIComponent(form.name)}`;
+                          url = `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?q=${encodeURIComponent(form.name)}&type=Simple`;
                         }
                         window.open(url, "_blank");
                       }}

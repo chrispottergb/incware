@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const searchUrl = `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?Type=Simple&Search=${encodeURIComponent(company_name)}`;
+    const searchUrl = `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?q=${encodeURIComponent(company_name)}&type=Simple`;
     console.log('Scraping WDFI:', searchUrl);
 
     const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
