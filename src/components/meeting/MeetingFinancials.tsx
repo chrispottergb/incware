@@ -133,6 +133,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
     const map: Record<string, any> = {
       total_sales: sourceFin.current_total_sales,
       cog: sourceFin.current_cog,
+      expenses: (sourceFin as any).current_expenses,
       gross_profit: sourceFin.current_gross_profit,
       cog_ratio: sourceFin.current_cog_ratio,
       net_income: sourceFin.current_net_income,
