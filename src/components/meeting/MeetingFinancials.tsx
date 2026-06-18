@@ -422,12 +422,20 @@ export default function MeetingFinancials({ meetingId }: Props) {
     return yoyChange("current_net_income", "previous_net_income");
   };
 
+  // Determine mode: if either column has a positive COGS value, show COGS row.
+  // Otherwise show Expenses row (service business).
+  const currentCogNum = toNum(form.current_cog);
+  const previousCogNum = toNum(form.previous_cog);
+  const hasCogs = (currentCogNum != null && currentCogNum > 0) || (previousCogNum != null && previousCogNum > 0);
+
   const fields: { key: string; label: string; computed?: boolean }[] = [
     { key: "total_sales", label: "Total Sales" },
-    { key: "cog", label: "Cost of Goods" },
+    hasCogs
+      ? { key: "cog", label: "Cost of Goods" }
+      : { key: "expenses", label: "Expenses" },
     { key: "gross_profit", label: "Gross Profit", computed: true },
     { key: "cog_ratio", label: "COG Ratio (%)", computed: true },
-    { key: "net_income", label: "Net Income" },
+    { key: "net_income", label: "Net Income", computed: true },
   ];
 
   const noPriorData = !priorMeetingFinancials?.financials && !hasSavedPreviousData;
