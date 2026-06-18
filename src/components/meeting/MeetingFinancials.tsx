@@ -557,10 +557,6 @@ export default function MeetingFinancials({ meetingId }: Props) {
                   }
                   return updated;
                 });
-                    }
-                  }
-                  return updated;
-                });
                 financialsAutoSave.triggerSave();
               };
               return (
