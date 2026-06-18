@@ -386,12 +386,14 @@ export default function MeetingFinancials({ meetingId }: Props) {
       current_cog: financials.current_cog?.toString() ?? "",
       current_expenses: (financials as any).current_expenses?.toString() ?? "",
       current_cog_ratio: financials.current_cog_ratio?.toString() ?? "",
+      current_expense_ratio: "",
       current_net_income: financials.current_net_income?.toString() ?? "",
       previous_total_sales: financials.previous_total_sales?.toString() ?? "",
       previous_gross_profit: financials.previous_gross_profit?.toString() ?? "",
       previous_cog: financials.previous_cog?.toString() ?? "",
       previous_expenses: (financials as any).previous_expenses?.toString() ?? "",
       previous_cog_ratio: financials.previous_cog_ratio?.toString() ?? "",
+      previous_expense_ratio: "",
       previous_net_income: financials.previous_net_income?.toString() ?? "",
     });
     baselinePendingRef.current = true;
