@@ -28,8 +28,11 @@ import { generateIRSFaxCoverSheet } from "@/lib/irs-fax-cover-pdf";
 
 const DFI_FILING_URL =
   "https://dfi.wi.gov/Pages/BusinessServices/BusinessEntities/FileOnline.aspx";
-const DFI_SEARCH_URL =
-  "https://apps.dfi.wi.gov/apps/corpsearch/search.aspx";
+
+function getDfiSearchUrl(companyName?: string | null): string {
+  if (!companyName?.trim()) return "https://apps.dfi.wi.gov/apps/corpsearch/search.aspx";
+  return `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?q=${encodeURIComponent(companyName.trim())}&type=Simple`;
+}
 
 type ChecklistItem = {
   id: string;
@@ -273,7 +276,7 @@ export default function FilingComplianceTab({ companyId, entityType, company }: 
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" className="h-7 text-xs" asChild>
-            <a href={DFI_SEARCH_URL} target="_blank" rel="noopener noreferrer">
+            <a href={getDfiSearchUrl(company?.name)} target="_blank" rel="noopener noreferrer">
               <Search className="h-3 w-3 mr-1.5" />
               WI DFI Name Search
               <ExternalLink className="h-3 w-3 ml-1.5 opacity-50" />
