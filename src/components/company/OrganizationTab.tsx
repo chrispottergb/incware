@@ -861,7 +861,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
                       onClick={() => {
                         let url = sosInfo.url;
                         if (isWI && filingForm.name) {
-                          url = `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?Type=Simple&Search=${encodeURIComponent(filingForm.name)}`;
+                          url = `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?q=${encodeURIComponent(filingForm.name)}&type=Simple`;
                         }
                         window.open(url, "_blank");
                       }}
