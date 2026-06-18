@@ -306,11 +306,13 @@ export default function MeetingFinancials({ meetingId }: Props) {
         current_total_sales: toNum(form.current_total_sales),
         current_gross_profit: toNum(form.current_gross_profit),
         current_cog: toNum(form.current_cog),
+        current_expenses: toNum(form.current_expenses),
         current_cog_ratio: toNum(form.current_cog_ratio),
         current_net_income: toNum(form.current_net_income),
         previous_total_sales: toNum(form.previous_total_sales),
         previous_gross_profit: toNum(form.previous_gross_profit),
         previous_cog: toNum(form.previous_cog),
+        previous_expenses: toNum(form.previous_expenses),
         previous_cog_ratio: toNum(form.previous_cog_ratio),
         previous_net_income: toNum(form.previous_net_income),
       };
