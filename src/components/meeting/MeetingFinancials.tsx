@@ -429,6 +429,18 @@ export default function MeetingFinancials({ meetingId }: Props) {
     return ((cur - prev) / Math.abs(prev)) * 100;
   };
 
+  const adjustedYoyNetIncome = () => {
+    if (adjustedPreviousNetIncome === 0) return null;
+    return ((adjustedCurrentNetIncome - adjustedPreviousNetIncome) / Math.abs(adjustedPreviousNetIncome)) * 100;
+  };
+
+  const getDisplayedYoyNetIncome = () => {
+    if (excludeNrFromYoy && totalNrCurrent !== 0) {
+      return adjustedYoyNetIncome();
+    }
+    return yoyChange("current_net_income", "previous_net_income");
+  };
+
   // Determine mode: if either column has a positive COGS value, show COGS row.
   // Otherwise show Expenses row (service business).
   const currentCogNum = toNum(form.current_cog);
@@ -445,16 +457,6 @@ export default function MeetingFinancials({ meetingId }: Props) {
       ? { key: "cog_ratio", label: "COG Ratio (%)", computed: true }
       : { key: "expense_ratio", label: "Expense Ratio (%)", computed: true },
     { key: "net_income", label: "Net Income", manual: true },
-  ];
-
-  const fields: { key: string; label: string; computed?: boolean }[] = [
-    { key: "total_sales", label: "Total Sales" },
-    hasCogs
-      ? { key: "cog", label: "Cost of Goods" }
-      : { key: "expenses", label: "Expenses" },
-    { key: "gross_profit", label: "Gross Profit", computed: true },
-    { key: "cog_ratio", label: "COG Ratio (%)", computed: true },
-    { key: "net_income", label: "Net Income", computed: true },
   ];
 
   const noPriorData = !priorMeetingFinancials?.financials && !hasSavedPreviousData;
