@@ -380,20 +380,30 @@ export default function MeetingFinancials({ meetingId }: Props) {
       if (autoSaveHasPendingChanges()) return;
     }
     hydratedSigRef.current = sig;
+    const computeRatio = (sales: any, cog: any, expenses: any) => {
+      const s = sales != null ? Number(sales) : null;
+      const c = cog != null ? Number(cog) : null;
+      const e = expenses != null ? Number(expenses) : null;
+      if (s == null || s <= 0) return { cog_ratio: "", expense_ratio: "" };
+      if (c != null && c > 0) return { cog_ratio: ((c / s) * 100).toFixed(2), expense_ratio: "" };
+      return { cog_ratio: "", expense_ratio: e != null ? ((e / s) * 100).toFixed(2) : "" };
+    };
+    const cur = computeRatio(financials.current_total_sales, financials.current_cog, (financials as any).current_expenses);
+    const prv = computeRatio(financials.previous_total_sales, financials.previous_cog, (financials as any).previous_expenses);
     setForm({
       current_total_sales: financials.current_total_sales?.toString() ?? "",
       current_gross_profit: financials.current_gross_profit?.toString() ?? "",
       current_cog: financials.current_cog?.toString() ?? "",
       current_expenses: (financials as any).current_expenses?.toString() ?? "",
-      current_cog_ratio: financials.current_cog_ratio?.toString() ?? "",
-      current_expense_ratio: "",
+      current_cog_ratio: cur.cog_ratio || (financials.current_cog_ratio?.toString() ?? ""),
+      current_expense_ratio: cur.expense_ratio,
       current_net_income: financials.current_net_income?.toString() ?? "",
       previous_total_sales: financials.previous_total_sales?.toString() ?? "",
       previous_gross_profit: financials.previous_gross_profit?.toString() ?? "",
       previous_cog: financials.previous_cog?.toString() ?? "",
       previous_expenses: (financials as any).previous_expenses?.toString() ?? "",
-      previous_cog_ratio: financials.previous_cog_ratio?.toString() ?? "",
-      previous_expense_ratio: "",
+      previous_cog_ratio: prv.cog_ratio || (financials.previous_cog_ratio?.toString() ?? ""),
+      previous_expense_ratio: prv.expense_ratio,
       previous_net_income: financials.previous_net_income?.toString() ?? "",
     });
     baselinePendingRef.current = true;
