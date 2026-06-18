@@ -858,18 +858,10 @@ export default function OrganizationTab({ companyId, company }: Props) {
                       variant="ghost"
                       size="sm"
                       className="text-xs"
-                      onClick={async () => {
+                      onClick={() => {
                         let url = sosInfo.url;
-                        if (isWI) {
-                          url = "https://apps.dfi.wi.gov/apps/CorpSearch/Search.aspx";
-                          if (filingForm.name) {
-                            try {
-                              await navigator.clipboard.writeText(filingForm.name);
-                              toast.success("Company name copied — paste into the WI DFI search box");
-                            } catch {
-                              // ignore clipboard errors
-                            }
-                          }
+                        if (isWI && filingForm.name) {
+                          url = `https://apps.dfi.wi.gov/apps/CorpSearch/Results.aspx?Type=Simple&Search=${encodeURIComponent(filingForm.name)}`;
                         }
                         window.open(url, "_blank");
                       }}
