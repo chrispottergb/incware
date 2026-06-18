@@ -198,7 +198,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
     if (focusedFields.has(fieldId)) return raw;
     if (computed) {
       // computed fields: gross_profit shown as currency, cog_ratio as percent
-      if (fieldId.endsWith("cog_ratio")) {
+      if (fieldId.endsWith("cog_ratio") || fieldId.endsWith("expense_ratio")) {
         if (raw === "" || raw == null) return "";
         const n = parseFloat(raw);
         return isFinite(n) ? `${n.toFixed(2)}%` : raw;
