@@ -497,6 +497,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
                       ...prev,
                       previous_total_sales: sourceFin.current_total_sales?.toString() ?? "",
                       previous_cog: sourceFin.current_cog?.toString() ?? "",
+                      previous_expenses: (sourceFin as any).current_expenses?.toString() ?? "",
                       previous_gross_profit: sourceFin.current_gross_profit?.toString() ?? "",
                       previous_cog_ratio: sourceFin.current_cog_ratio?.toString() ?? "",
                       previous_net_income: sourceFin.current_net_income?.toString() ?? "",
