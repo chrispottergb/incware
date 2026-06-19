@@ -290,16 +290,7 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
     </div>
   );
 
-  const ResolutionField = (
-    <div className="space-y-1.5">
-      <Label className="text-xs">Authorizing Board Resolution No.</Label>
-      <Input
-        value={form.resolution}
-        onChange={(ev) => set("resolution")(ev.target.value)}
-        placeholder="e.g. 2026-04"
-      />
-    </div>
-  );
+  const ResolutionField = null;
 
   const currencyInput = (field: "amount" | "monthly_payment", placeholder: string) => (
     <Input
