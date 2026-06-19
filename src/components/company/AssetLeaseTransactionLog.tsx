@@ -486,15 +486,10 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
                   {currencyInput("amount", "0.00")}
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Buyer Name</Label>
-                  <Input
-                    value={form.buyer}
-                    onChange={(ev) => set("buyer")(ev.target.value)}
-                    placeholder="Buyer name"
-                  />
+                  <Label className="text-xs">Date Originally Acquired</Label>
+                  <DatePickerField value={form.end_date} onChange={set("end_date")} />
                 </div>
               </div>
-              {ResolutionField}
             </TabsContent>
 
             <TabsContent value="lease_termination" className="mt-4 space-y-3">
