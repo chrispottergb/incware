@@ -470,7 +470,6 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
                   <DatePickerField value={form.end_date} onChange={set("end_date")} />
                 </div>
               </div>
-              {ResolutionField}
             </TabsContent>
 
             <TabsContent value="vehicle_sale" className="mt-4 space-y-3">
