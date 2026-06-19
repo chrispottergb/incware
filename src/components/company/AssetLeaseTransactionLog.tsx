@@ -409,7 +409,12 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
 
       {/* Add / Edit modal */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="min-w-[640px] max-w-[680px]">
+        <DialogContent
+          className="min-w-[640px] max-w-[680px]"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit Entry" : "Add Entry"}</DialogTitle>
             <DialogDescription>
