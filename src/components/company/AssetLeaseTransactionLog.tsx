@@ -434,7 +434,6 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
                   {currencyInput("amount", "0.00")}
                 </div>
               </div>
-              {ResolutionField}
             </TabsContent>
 
             <TabsContent value="lease" className="mt-4 space-y-3">
