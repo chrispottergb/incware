@@ -203,8 +203,11 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
         base.monthly_payment = toNumeric(form.monthly_payment);
         base.end_date = form.end_date || null;
       } else if (activeType === "vehicle_sale") {
+        if (!form.financing.trim()) throw new Error("Disposition Type is required.");
         base.amount = toNumeric(form.amount);
         base.end_date = form.end_date || null;
+        base.financing = form.financing.trim() || null;
+        base.reason = form.reason.trim() || null;
       } else if (activeType === "lease_termination") {
         base.lessor = form.lessor.trim() || null;
         base.reason = form.reason.trim() || null;
