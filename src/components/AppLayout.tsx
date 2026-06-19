@@ -34,6 +34,7 @@ import {
   PenTool,
   Lightbulb,
   ShieldCheck,
+  Target,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
@@ -106,6 +107,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const currentCompany = companyId ? companies.find((c) => c.id === companyId) : null;
   const currentCompanyIsLLC = isLLCType(currentCompany?.entity_type);
 
+  const { isAdmin } = useUserRole();
   const mainNav = [
     { label: "Dashboard", href: "/", icon: LayoutDashboard },
     { label: "Pending Reviews", href: "/pending-reviews", icon: ClipboardList },
@@ -113,9 +115,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     { label: "Reports", href: "/reports", icon: ClipboardList },
     { label: "Org Chart", href: "/org-chart", icon: GitBranch },
     { label: "Promissory Note", href: "/promissory-note", icon: FileText },
+    ...(isAdmin ? [{ label: "Strategy", href: "/strategy", icon: Target }] : []),
   ];
 
-  const { isAdmin } = useUserRole();
+
+
   const [settingsOpen, setSettingsOpen] = useState(
     location.pathname.startsWith("/settings")
   );
