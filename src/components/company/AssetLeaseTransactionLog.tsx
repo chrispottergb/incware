@@ -69,7 +69,7 @@ const FILTERS: { value: "all" | EntryType; label: string }[] = [
   { value: "all", label: "All" },
   { value: "purchase", label: "Purchases" },
   { value: "lease", label: "Leases" },
-  { value: "vehicle_sale", label: "Vehicle sales" },
+  { value: "vehicle_sale", label: "Vehicle dispositions" },
   { value: "lease_termination", label: "Lease terminations" },
 ];
 
