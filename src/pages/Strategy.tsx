@@ -60,11 +60,29 @@ export default function Strategy() {
               and DIY SMB owners — national US.
             </p>
           </div>
-          <Button asChild variant="default" className="shrink-0">
-            <a href={PDF_PATH} download>
-              <Download className="h-4 w-4 mr-2" />
-              Download full PDF playbook
-            </a>
+          <Button
+            variant="default"
+            className="shrink-0"
+            onClick={async () => {
+              try {
+                const res = await fetch(PDF_PATH);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "entityIQ-GTM-Playbook.pdf";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+              } catch (e) {
+                window.open(PDF_PATH, "_blank", "noopener,noreferrer");
+              }
+            }}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download full PDF playbook
           </Button>
         </div>
 
