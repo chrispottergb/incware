@@ -1674,6 +1674,110 @@ export type Database = {
           },
         ]
       }
+      competitor_pricing_entries: {
+        Row: {
+          billing_cycle: string
+          competitor_name: string
+          created_at: string
+          created_by: string | null
+          features: string[]
+          id: string
+          is_active: boolean
+          notes: string | null
+          our_positioning: string | null
+          plan_name: string
+          price_amount: number | null
+          price_display: string
+          screenshot_path: string | null
+          source_url: string | null
+          updated_at: string
+          verified_date: string
+        }
+        Insert: {
+          billing_cycle?: string
+          competitor_name: string
+          created_at?: string
+          created_by?: string | null
+          features?: string[]
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          our_positioning?: string | null
+          plan_name: string
+          price_amount?: number | null
+          price_display: string
+          screenshot_path?: string | null
+          source_url?: string | null
+          updated_at?: string
+          verified_date?: string
+        }
+        Update: {
+          billing_cycle?: string
+          competitor_name?: string
+          created_at?: string
+          created_by?: string | null
+          features?: string[]
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          our_positioning?: string | null
+          plan_name?: string
+          price_amount?: number | null
+          price_display?: string
+          screenshot_path?: string | null
+          source_url?: string | null
+          updated_at?: string
+          verified_date?: string
+        }
+        Relationships: []
+      }
+      competitor_pricing_history: {
+        Row: {
+          change_type: string
+          changed_at: string
+          changed_by: string | null
+          diff: Json | null
+          entry_id: string
+          id: string
+          new_price_amount: number | null
+          new_price_display: string | null
+          previous_price_amount: number | null
+          previous_price_display: string | null
+        }
+        Insert: {
+          change_type: string
+          changed_at?: string
+          changed_by?: string | null
+          diff?: Json | null
+          entry_id: string
+          id?: string
+          new_price_amount?: number | null
+          new_price_display?: string | null
+          previous_price_amount?: number | null
+          previous_price_display?: string | null
+        }
+        Update: {
+          change_type?: string
+          changed_at?: string
+          changed_by?: string | null
+          diff?: Json | null
+          entry_id?: string
+          id?: string
+          new_price_amount?: number | null
+          new_price_display?: string | null
+          previous_price_amount?: number | null
+          previous_price_display?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_pricing_history_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "competitor_pricing_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       directors: {
         Row: {
           added_date: string | null
