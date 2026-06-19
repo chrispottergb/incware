@@ -255,7 +255,7 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
           { label: "Ends", value: fmtDate(e.end_date) },
         ];
       case "vehicle_sale":
-        return [{ label: "Buyer", value: e.buyer || "—" }];
+        return [{ label: "Acquired", value: fmtDate(e.end_date) }];
       case "lease_termination":
         return [
           { label: "Lessor", value: e.lessor || "—" },
