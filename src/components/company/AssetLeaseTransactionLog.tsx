@@ -515,7 +515,7 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
                   rows={3}
                 />
               </div>
-              {ResolutionField}
+              
             </TabsContent>
           </Tabs>
 
