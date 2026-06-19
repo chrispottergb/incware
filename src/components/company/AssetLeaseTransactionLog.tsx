@@ -56,7 +56,7 @@ const TYPE_CONFIG: Record<EntryType, { label: string; badge: string }> = {
     badge: "bg-blue-500/10 text-blue-700 border-blue-500/25",
   },
   vehicle_sale: {
-    label: "Vehicle sale",
+    label: "Vehicle Disposition",
     badge: "bg-amber-500/10 text-amber-700 border-amber-500/25",
   },
   lease_termination: {
