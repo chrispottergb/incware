@@ -180,7 +180,7 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
         type: activeType,
         description: form.description.trim(),
         date: form.date || null,
-        resolution: form.resolution.trim() || null,
+        resolution: null,
         amount: null,
         monthly_payment: null,
         vendor: null,
@@ -203,7 +203,7 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
         base.end_date = form.end_date || null;
       } else if (activeType === "vehicle_sale") {
         base.amount = toNumeric(form.amount);
-        base.buyer = form.buyer.trim() || null;
+        base.end_date = form.end_date || null;
       } else if (activeType === "lease_termination") {
         base.lessor = form.lessor.trim() || null;
         base.reason = form.reason.trim() || null;
@@ -255,7 +255,7 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
           { label: "Ends", value: fmtDate(e.end_date) },
         ];
       case "vehicle_sale":
-        return [{ label: "Buyer", value: e.buyer || "—" }];
+        return [{ label: "Acquired", value: fmtDate(e.end_date) }];
       case "lease_termination":
         return [
           { label: "Lessor", value: e.lessor || "—" },
@@ -290,16 +290,7 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
     </div>
   );
 
-  const ResolutionField = (
-    <div className="space-y-1.5">
-      <Label className="text-xs">Authorizing Board Resolution No.</Label>
-      <Input
-        value={form.resolution}
-        onChange={(ev) => set("resolution")(ev.target.value)}
-        placeholder="e.g. 2026-04"
-      />
-    </div>
-  );
+  
 
   const currencyInput = (field: "amount" | "monthly_payment", placeholder: string) => (
     <Input
@@ -385,9 +376,6 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
                       {amt}
                     </div>
                   )}
-                  <div className="text-[11px] text-muted-foreground mt-0.5">
-                    {e.resolution ? `Resolution ${e.resolution}` : "No resolution ref."}
-                  </div>
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
@@ -446,7 +434,6 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
                   {currencyInput("amount", "0.00")}
                 </div>
               </div>
-              {ResolutionField}
             </TabsContent>
 
             <TabsContent value="lease" className="mt-4 space-y-3">
@@ -483,7 +470,6 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
                   <DatePickerField value={form.end_date} onChange={set("end_date")} />
                 </div>
               </div>
-              {ResolutionField}
             </TabsContent>
 
             <TabsContent value="vehicle_sale" className="mt-4 space-y-3">
@@ -498,15 +484,10 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
                   {currencyInput("amount", "0.00")}
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Buyer Name</Label>
-                  <Input
-                    value={form.buyer}
-                    onChange={(ev) => set("buyer")(ev.target.value)}
-                    placeholder="Buyer name"
-                  />
+                  <Label className="text-xs">Date Originally Acquired</Label>
+                  <DatePickerField value={form.end_date} onChange={set("end_date")} />
                 </div>
               </div>
-              {ResolutionField}
             </TabsContent>
 
             <TabsContent value="lease_termination" className="mt-4 space-y-3">
@@ -534,7 +515,7 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
                   rows={3}
                 />
               </div>
-              {ResolutionField}
+              
             </TabsContent>
           </Tabs>
 
