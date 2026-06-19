@@ -32,6 +32,7 @@ const PromissoryNote = lazy(() => import("@/pages/PromissoryNote"));
 const V2Layout = lazy(() => import("@/pages/v2/V2Layout"));
 const DashboardV2 = lazy(() => import("@/pages/v2/DashboardV2"));
 const ClientsV2 = lazy(() => import("@/pages/v2/ClientsV2"));
+const Strategy = lazy(() => import("@/pages/Strategy"));
 
 const queryClient = new QueryClient();
 
