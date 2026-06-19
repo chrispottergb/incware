@@ -290,7 +290,7 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
     </div>
   );
 
-  const ResolutionField = null;
+  
 
   const currencyInput = (field: "amount" | "monthly_payment", placeholder: string) => (
     <Input
