@@ -34,6 +34,7 @@ import {
   PenTool,
   Lightbulb,
   ShieldCheck,
+  Target,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";

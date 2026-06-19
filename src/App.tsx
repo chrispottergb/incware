@@ -179,6 +179,16 @@ const App = () => (
               }
             />
             <Route path="/annual-review/:token" element={<AnnualReviewPublic />} />
+            <Route
+              path="/strategy"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Strategy />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
             <Route path="/v2" element={<V2Layout />}>
               <Route index element={<DashboardV2 />} />
               <Route path="clients" element={<ClientsV2 />} />
