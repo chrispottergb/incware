@@ -180,7 +180,7 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
         type: activeType,
         description: form.description.trim(),
         date: form.date || null,
-        resolution: form.resolution.trim() || null,
+        resolution: null,
         amount: null,
         monthly_payment: null,
         vendor: null,
@@ -203,7 +203,7 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
         base.end_date = form.end_date || null;
       } else if (activeType === "vehicle_sale") {
         base.amount = toNumeric(form.amount);
-        base.buyer = form.buyer.trim() || null;
+        base.end_date = form.end_date || null;
       } else if (activeType === "lease_termination") {
         base.lessor = form.lessor.trim() || null;
         base.reason = form.reason.trim() || null;
