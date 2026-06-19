@@ -376,9 +376,6 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
                       {amt}
                     </div>
                   )}
-                  <div className="text-[11px] text-muted-foreground mt-0.5">
-                    {e.resolution ? `Resolution ${e.resolution}` : "No resolution ref."}
-                  </div>
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
