@@ -69,6 +69,7 @@ export type Competitor = {
   strengths: string[];
   weaknesses: string[];
   threat: "Low" | "Medium" | "High";
+  threatNote?: string;
 };
 
 export const competitors: Competitor[] = [
@@ -124,7 +125,8 @@ export const competitors: Competitor[] = [
     pricing: "$0–$2,800+/yr",
     strengths: ["Best-in-class cap table", "409A valuations", "Stakeholder portal"],
     weaknesses: ["C-Corp only", "No LLC, no Non-Profit", "No minute book", "No statute-cited compliance"],
-    threat: "Low (different market)",
+    threat: "Low",
+    threatNote: "different market",
   },
   {
     name: "Clerky / Stripe Atlas",
@@ -142,7 +144,8 @@ export const competitors: Competitor[] = [
     pricing: "$0–$300/yr + add-ons",
     strengths: ["Top-of-funnel volume", "Brand SEO dominance"],
     weaknesses: ["Records is an upsell, not a product", "No statute citation", "Customer hand-holding required for actual minutes"],
-    threat: "High (channel partner > competitor)",
+    threat: "High",
+    threatNote: "channel partner > competitor",
   },
   {
     name: "FileForms / Mosey / Corpora",
