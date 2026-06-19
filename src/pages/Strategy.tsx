@@ -20,6 +20,7 @@ import {
   seoKeywords,
 } from "@/data/strategy";
 import { Download, TrendingUp, Target, Users, DollarSign, Map, AlertTriangle, Search } from "lucide-react";
+import { CompetitorPricingTracker } from "@/components/strategy/CompetitorPricingTracker";
 
 const PDF_PATH = "/strategy/entityIQ-GTM-Playbook.pdf";
 
@@ -249,26 +250,30 @@ export default function Strategy() {
           </TabsContent>
 
           {/* PRICING */}
-          <TabsContent value="pricing">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {pricing.map((tier) => (
-                <Card key={tier.tier} className={tier.highlight ? "border-primary border-2" : ""}>
-                  <CardHeader>
-                    {tier.highlight && <Badge className="mb-2 w-fit">Recommended wedge</Badge>}
-                    <CardTitle>{tier.tier}</CardTitle>
-                    <div className="text-2xl font-semibold text-primary mt-2">{tier.price}</div>
-                    <p className="text-xs text-muted-foreground mt-1">{tier.audience}</p>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="text-[12px] space-y-1.5">
-                      {tier.entitlements.map((e) => (
-                        <li key={e} className="flex gap-2"><span className="text-primary">✓</span><span>{e}</span></li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              ))}
+          <TabsContent value="pricing" className="space-y-6">
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-3">entityIQ proposed tiers</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {pricing.map((tier) => (
+                  <Card key={tier.tier} className={tier.highlight ? "border-primary border-2" : ""}>
+                    <CardHeader>
+                      {tier.highlight && <Badge className="mb-2 w-fit">Recommended wedge</Badge>}
+                      <CardTitle>{tier.tier}</CardTitle>
+                      <div className="text-2xl font-semibold text-primary mt-2">{tier.price}</div>
+                      <p className="text-xs text-muted-foreground mt-1">{tier.audience}</p>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="text-[12px] space-y-1.5">
+                        {tier.entitlements.map((e) => (
+                          <li key={e} className="flex gap-2"><span className="text-primary">✓</span><span>{e}</span></li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
+            <CompetitorPricingTracker />
           </TabsContent>
 
           {/* PLAYS */}
