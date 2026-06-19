@@ -478,13 +478,28 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
 
             <TabsContent value="vehicle_sale" className="mt-4 space-y-3">
               {DescriptionField}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Disposition Type *</Label>
+                <Select value={form.financing} onValueChange={set("financing")}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select disposition type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Sold">Sold</SelectItem>
+                    <SelectItem value="Totaled (Insurance Payout)">Totaled (Insurance Payout)</SelectItem>
+                    <SelectItem value="Trade-In">Trade-In</SelectItem>
+                    <SelectItem value="Donated">Donated</SelectItem>
+                    <SelectItem value="Stolen">Stolen</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Date of Sale</Label>
                   <DatePickerField value={form.date} onChange={set("date")} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Sale Price</Label>
+                  <Label className="text-xs">Proceeds Received</Label>
                   {currencyInput("amount", "0.00")}
                 </div>
                 <div className="space-y-1.5">
@@ -492,7 +507,17 @@ export default function AssetLeaseTransactionLog({ entityId }: Props) {
                   <DatePickerField value={form.end_date} onChange={set("end_date")} />
                 </div>
               </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Notes</Label>
+                <Textarea
+                  value={form.reason}
+                  onChange={(ev) => set("reason")(ev.target.value)}
+                  placeholder="e.g. Insurance claim no. 12345, or buyer information."
+                  rows={3}
+                />
+              </div>
             </TabsContent>
+
 
             <TabsContent value="lease_termination" className="mt-4 space-y-3">
               {DescriptionField}
