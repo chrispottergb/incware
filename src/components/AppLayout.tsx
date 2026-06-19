@@ -120,7 +120,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
 
 
-  const { isAdmin } = useUserRole();
   const [settingsOpen, setSettingsOpen] = useState(
     location.pathname.startsWith("/settings")
   );
