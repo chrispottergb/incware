@@ -891,10 +891,11 @@ export default function MeetingDetail() {
   // Shareholder meetings only need a focused subset of tabs
   const shareholderTabs = new Set(["info", "shareholders", "directors", "resolutions", "other"]);
   const isNonProfit = company?.entity_type === "Non-Profit";
-  const subTabs = (isShareholderMeeting
+  const subTabs = (isShareholderMeeting && !isStatutoryCloseShareholderMeeting
     ? allSubTabs.filter(t => shareholderTabs.has(t.value))
     : allSubTabs
   ).filter(t => !(isNonProfit && t.value === "shareholders"));
+
 
   const meetingFileName = `${company?.name || "meeting"}-${meeting.meeting_type}-${meeting.meeting_date}.pdf`.replace(/\s+/g, "-").toLowerCase();
 
