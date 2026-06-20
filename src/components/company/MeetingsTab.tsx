@@ -624,7 +624,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
                 {hasSubTypes && (
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">Sub Type</Label>
-                    <Select value={form.sub_type} onValueChange={(v) => setForm((p) => ({ ...p, sub_type: v }))}>
+                    <Select value={form.sub_type} onValueChange={handleSubTypeChange}>
                       <SelectTrigger><SelectValue placeholder="Select sub type" /></SelectTrigger>
                       <SelectContent>
                         {SUB_TYPES[form.meeting_type].map((s) => (
