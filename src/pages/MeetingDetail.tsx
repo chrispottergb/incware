@@ -88,7 +88,9 @@ export default function MeetingDetail() {
   const isOrganizational = meeting?.meeting_type === "Organizational Meeting";
   const isAnnualMeeting = meeting?.meeting_type === "Annual Meeting";
   const isShareholderMeeting = meeting?.meeting_type === "Shareholder Meeting";
-  const showCompanyLevelCounselAndLeases = isAnnualMeeting || isOrganizational;
+  const isStatutoryCloseShareholderMeeting = isShareholderMeeting && meeting?.sub_type === "Statutory Close Corporation";
+  const showCompanyLevelCounselAndLeases = isAnnualMeeting || isOrganizational || isStatutoryCloseShareholderMeeting;
+
 
   // Fetch company-level data for organizational meeting boilerplate
   const { data: companyOfficers } = useQuery({
@@ -183,7 +185,8 @@ export default function MeetingDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!isAnnualMeeting,
+    enabled: !!id && !!(isAnnualMeeting || isStatutoryCloseShareholderMeeting),
+
   });
 
   const { data: companyAccountants = [] } = useQuery({
@@ -193,7 +196,7 @@ export default function MeetingDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!isAnnualMeeting,
+    enabled: !!id && !!(isAnnualMeeting || isStatutoryCloseShareholderMeeting),
   });
 
   const { data: companyBanks = [] } = useQuery({
@@ -223,7 +226,7 @@ export default function MeetingDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!(isAnnualMeeting || isOrganizational),
+    enabled: !!id && !!(isAnnualMeeting || isOrganizational || isStatutoryCloseShareholderMeeting),
   });
 
   // Fetch prior year meeting for comparison (most recent meeting before this one for same company)
@@ -888,10 +891,11 @@ export default function MeetingDetail() {
   // Shareholder meetings only need a focused subset of tabs
   const shareholderTabs = new Set(["info", "shareholders", "directors", "resolutions", "other"]);
   const isNonProfit = company?.entity_type === "Non-Profit";
-  const subTabs = (isShareholderMeeting
+  const subTabs = (isShareholderMeeting && !isStatutoryCloseShareholderMeeting
     ? allSubTabs.filter(t => shareholderTabs.has(t.value))
     : allSubTabs
   ).filter(t => !(isNonProfit && t.value === "shareholders"));
+
 
   const meetingFileName = `${company?.name || "meeting"}-${meeting.meeting_type}-${meeting.meeting_date}.pdf`.replace(/\s+/g, "-").toLowerCase();
 
