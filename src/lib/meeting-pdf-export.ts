@@ -1139,7 +1139,11 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   const isLLC = entityType?.toLowerCase().includes("llc") || entityType?.toLowerCase().includes("limited liability");
   const isAnnual = (meeting.meeting_type || "").toLowerCase().includes("annual");
   const isShareholder = (meeting.meeting_type || "").toLowerCase().includes("shareholder");
+  const isStatutoryClose = isShareholder && (meeting.sub_type || "") === "Statutory Close Corporation";
+  // For section gating: a statutory close shareholder meeting includes the full directors-style section set.
+  const isShareholderOnly = isShareholder && !isStatutoryClose;
   const bt = isAnnual || isShareholder; // blue theme flag for both annual and shareholder meetings
+
   let sectionNum = 0;
 
   // Helper to get table head styles based on theme
