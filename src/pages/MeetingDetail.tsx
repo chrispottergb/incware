@@ -88,7 +88,9 @@ export default function MeetingDetail() {
   const isOrganizational = meeting?.meeting_type === "Organizational Meeting";
   const isAnnualMeeting = meeting?.meeting_type === "Annual Meeting";
   const isShareholderMeeting = meeting?.meeting_type === "Shareholder Meeting";
-  const showCompanyLevelCounselAndLeases = isAnnualMeeting || isOrganizational;
+  const isStatutoryCloseShareholderMeeting = isShareholderMeeting && meeting?.sub_type === "Statutory Close Corporation";
+  const showCompanyLevelCounselAndLeases = isAnnualMeeting || isOrganizational || isStatutoryCloseShareholderMeeting;
+
 
   // Fetch company-level data for organizational meeting boilerplate
   const { data: companyOfficers } = useQuery({
