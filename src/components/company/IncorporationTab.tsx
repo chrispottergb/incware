@@ -203,6 +203,7 @@ export default function IncorporationTab({ company }: Props) {
     scheduled_meeting_day_of_week: (company as any).scheduled_meeting_day_of_week ?? "",
     scheduled_meeting_month: (company as any).scheduled_meeting_month ?? "",
     election_1244: company.election_1244 ?? false,
+    statutory_close_corporation: (company as any).statutory_close_corporation ?? false,
     has_preferred_shares: company.has_preferred_shares ?? false,
     preferred_class_name: (company as any).preferred_class_name ?? "Class B",
     preferred_authorized_shares: (company as any).preferred_authorized_shares?.toString() ?? "",
@@ -278,6 +279,7 @@ export default function IncorporationTab({ company }: Props) {
       scheduled_meeting_day_of_week: (company as any).scheduled_meeting_day_of_week ?? "",
       scheduled_meeting_month: (company as any).scheduled_meeting_month ?? "",
     election_1244: company.election_1244 ?? false,
+    statutory_close_corporation: (company as any).statutory_close_corporation ?? false,
     has_preferred_shares: company.has_preferred_shares ?? false,
     preferred_class_name: (company as any).preferred_class_name ?? "Class B",
     preferred_authorized_shares: (company as any).preferred_authorized_shares?.toString() ?? "",
@@ -561,6 +563,7 @@ export default function IncorporationTab({ company }: Props) {
           scheduled_meeting_day_of_week: form.scheduled_meeting_day_of_week || null,
           scheduled_meeting_month: form.scheduled_meeting_month || null,
           election_1244: form.election_1244,
+          statutory_close_corporation: form.statutory_close_corporation,
           has_preferred_shares: form.has_preferred_shares,
           preferred_class_name: form.has_preferred_shares ? (form.preferred_class_name || "Class B") : null,
           preferred_authorized_shares: form.has_preferred_shares && form.preferred_authorized_shares
@@ -1416,6 +1419,29 @@ export default function IncorporationTab({ company }: Props) {
             )}
 
           </div>
+
+          {/* Corporate Elections group */}
+          {(equityCard.show1244 || equityCard.showSElection) && (
+            <div className="mt-4 mb-1 field-label">Corporate Elections</div>
+          )}
+
+          {/* Statutory Close Corporation — Corporation & S-Corp only */}
+          {equityCard.show1244 && (
+            <div
+              className="mt-2 flex items-start gap-2.5 rounded-md border bg-muted/30 px-3 py-2.5"
+              style={{ borderColor: "#3B5BDB" }}
+            >
+              <Checkbox
+                id="statutory_close_corp"
+                checked={form.statutory_close_corporation}
+                onCheckedChange={(v) => updateAndSave("statutory_close_corporation", !!v)}
+              />
+              <div className="flex-1">
+                <Label htmlFor="statutory_close_corp" className="cursor-pointer text-sm font-medium">Statutory Close Corporation</Label>
+                <p className="text-[11px] text-muted-foreground">This corporation elects to operate without a board of directors under close corporation statutes. Shareholders exercise all governance powers directly.</p>
+              </div>
+            </div>
+          )}
 
           {/* Section 1244 — Corporation & S-Corp only */}
           {equityCard.show1244 && (
