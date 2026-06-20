@@ -187,6 +187,40 @@ export default function MeetingsTab({ companyId, company }: Props) {
     }
   };
 
+  // Prefill from the last Statutory Close Corporation shareholder meeting only.
+  const prefillFromLastStatutoryClose = async () => {
+    const { data: last } = await supabase
+      .from("meetings")
+      .select("*")
+      .eq("company_id", companyId)
+      .eq("meeting_type", "Shareholder Meeting")
+      .eq("sub_type", "Statutory Close Corporation")
+      .order("meeting_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (last) {
+      setForm(prev => ({
+        ...prev,
+        meeting_time: last.meeting_time || prev.meeting_time,
+        meeting_location: last.meeting_location || prev.meeting_location,
+        chairperson: last.chairperson || "",
+        mtg_secretary: last.mtg_secretary || "",
+        others_present: last.others_present || "",
+        prior_mtg_date: last.meeting_date || "",
+        next_annual_mtg: "",
+        company_name_at_meeting: last.company_name_at_meeting || company.name,
+        company_address_at_meeting: last.company_address_at_meeting || company.address || "",
+        company_city_at_meeting: last.company_city_at_meeting || company.city || "",
+        company_state_at_meeting: last.company_state_at_meeting || company.state || "",
+        company_zip_at_meeting: last.company_zip_at_meeting || company.zip || "",
+      }));
+      setPrefilled(true);
+    } else {
+      setPrefilled(false);
+    }
+  };
+
   const handleStartFresh = () => {
     setForm(prev => ({
       ...defaultForm(),
@@ -216,6 +250,14 @@ export default function MeetingsTab({ companyId, company }: Props) {
       prefillFromLastAnnual();
     }
   };
+
+  const handleSubTypeChange = (v: string) => {
+    setForm(p => ({ ...p, sub_type: v }));
+    if (form.meeting_type === "Shareholder Meeting" && v === "Statutory Close Corporation") {
+      prefillFromLastStatutoryClose();
+    }
+  };
+
 
   // Clone sub-table data from prior annual meeting (excluding vehicles/equipment)
   const cloneSubTables = async (newMeetingId: string, priorMeetingId: string) => {
