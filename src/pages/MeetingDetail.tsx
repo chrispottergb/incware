@@ -185,7 +185,8 @@ export default function MeetingDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!isAnnualMeeting,
+    enabled: !!id && !!(isAnnualMeeting || isStatutoryCloseShareholderMeeting),
+
   });
 
   const { data: companyAccountants = [] } = useQuery({
