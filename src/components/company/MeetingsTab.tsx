@@ -69,12 +69,14 @@ const LLC_MEETING_TYPES = [
 
 const SUB_TYPES: Record<string, string[]> = {
   "Shareholder Meeting": [
+    "Statutory Close Corporation",
     "Election of Board of Directors",
     "Approve Officer Compensation",
     "Approve Amendments to Articles/Bylaws",
     "Approve Merger or Dissolution",
     "Other",
   ],
+
   "Special Meeting of Board of Directors": [
     "Approve Officer Bonuses",
     "Approve Issuance, Transfer, Sale of Shares",
