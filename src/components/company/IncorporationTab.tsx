@@ -203,6 +203,7 @@ export default function IncorporationTab({ company }: Props) {
     scheduled_meeting_day_of_week: (company as any).scheduled_meeting_day_of_week ?? "",
     scheduled_meeting_month: (company as any).scheduled_meeting_month ?? "",
     election_1244: company.election_1244 ?? false,
+    statutory_close_corporation: (company as any).statutory_close_corporation ?? false,
     has_preferred_shares: company.has_preferred_shares ?? false,
     preferred_class_name: (company as any).preferred_class_name ?? "Class B",
     preferred_authorized_shares: (company as any).preferred_authorized_shares?.toString() ?? "",
