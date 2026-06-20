@@ -1420,6 +1420,29 @@ export default function IncorporationTab({ company }: Props) {
 
           </div>
 
+          {/* Corporate Elections group */}
+          {(equityCard.show1244 || equityCard.showSElection) && (
+            <div className="mt-4 mb-1 field-label">Corporate Elections</div>
+          )}
+
+          {/* Statutory Close Corporation — Corporation & S-Corp only */}
+          {equityCard.show1244 && (
+            <div
+              className="mt-2 flex items-start gap-2.5 rounded-md border bg-muted/30 px-3 py-2.5"
+              style={{ borderColor: "#3B5BDB" }}
+            >
+              <Checkbox
+                id="statutory_close_corp"
+                checked={form.statutory_close_corporation}
+                onCheckedChange={(v) => updateAndSave("statutory_close_corporation", !!v)}
+              />
+              <div className="flex-1">
+                <Label htmlFor="statutory_close_corp" className="cursor-pointer text-sm font-medium">Statutory Close Corporation</Label>
+                <p className="text-[11px] text-muted-foreground">This corporation elects to operate without a board of directors under close corporation statutes. Shareholders exercise all governance powers directly.</p>
+              </div>
+            </div>
+          )}
+
           {/* Section 1244 — Corporation & S-Corp only */}
           {equityCard.show1244 && (
             <div className="mt-3 flex items-center gap-2.5 rounded-md border border-border bg-muted/30 px-3 py-2.5">
