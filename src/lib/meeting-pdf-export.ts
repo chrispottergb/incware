@@ -3236,7 +3236,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // General Authorization (Annual Meeting blue theme)
-  if (bt && !isShareholder) {
+  if (bt && !isShareholderOnly) {
     y = checkPageBreak(doc, y, 40);
     y = section("General Authorization");
     y = addWhereasResolved(doc, y,
