@@ -1124,6 +1124,7 @@ export type Database = {
           state_filing_number: string | null
           state_of_incorporation: string | null
           status: string | null
+          statutory_close_corporation: boolean
           tax_exempt_purpose: string | null
           updated_at: string
           user_id: string
@@ -1201,6 +1202,7 @@ export type Database = {
           state_filing_number?: string | null
           state_of_incorporation?: string | null
           status?: string | null
+          statutory_close_corporation?: boolean
           tax_exempt_purpose?: string | null
           updated_at?: string
           user_id: string
@@ -1278,6 +1280,7 @@ export type Database = {
           state_filing_number?: string | null
           state_of_incorporation?: string | null
           status?: string | null
+          statutory_close_corporation?: boolean
           tax_exempt_purpose?: string | null
           updated_at?: string
           user_id?: string
