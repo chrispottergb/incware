@@ -1577,7 +1577,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Old Business (skip for shareholder meetings and written consents - already handled above)
-  if (!isShareholder && !isWrittenConsent && meeting.old_business?.trim()) {
+  if (!isShareholderOnly && !isWrittenConsent && meeting.old_business?.trim()) {
     y += 3;
     y = checkPageBreak(doc, y, 30);
     y = section("Old Business");
@@ -1671,7 +1671,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Non-shareholder corp: Directors Present (before officers) — skip for written consents
-  if (data.directors && (data.directors ?? []).length > 0 && !isShareholder && !isWrittenConsent && !isLLC) {
+  if (data.directors && (data.directors ?? []).length > 0 && !isShareholderOnly && !isWrittenConsent && !isLLC) {
     y += 3;
     y = checkPageBreak(doc, y, 30 + (data.directors ?? []).length * 7);
     y = section("Directors Present");
@@ -1688,7 +1688,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Officers (with salary/bonus) — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.officers && (data.officers ?? []).length > 0) {
+  if (!isShareholderOnly && !isWrittenConsent && data.officers && (data.officers ?? []).length > 0) {
     y = checkPageBreak(doc, y, 30 + (data.officers ?? []).length * 7);
     y = section("Officers");
     const isSCorp = !!company?.s_election_date;
@@ -1792,7 +1792,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Authorized Binders (LLC only, non-shareholder) — AFTER officers — skip for written consents
-  if (data.directors && (data.directors ?? []).length > 0 && !isShareholder && !isWrittenConsent && isLLC) {
+  if (data.directors && (data.directors ?? []).length > 0 && !isShareholderOnly && !isWrittenConsent && isLLC) {
     y += 3;
     y = checkPageBreak(doc, y, 30 + (data.directors ?? []).length * 7);
     y = section("Authorized Binders");
@@ -1816,7 +1816,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Shareholders — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.shareholders && (data.shareholders ?? []).length > 0) {
+  if (!isShareholderOnly && !isWrittenConsent && data.shareholders && (data.shareholders ?? []).length > 0) {
     y = checkPageBreak(doc, y, 30 + (data.shareholders ?? []).length * 7);
     const memberLabel = isLLC ? "Members" : "Shareholders";
     y = section(memberLabel);
@@ -1909,7 +1909,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Financials — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.financials) {
+  if (!isShareholderOnly && !isWrittenConsent && data.financials) {
     const f = data.financials;
     y = checkPageBreak(doc, y, 80);
     y = section("Financial Comparison — Year to Year");
@@ -2076,7 +2076,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Counsel / Professional Advisors — skip for shareholder meetings and written consents
-  const shouldRenderCounselSection = !isShareholder && !isWrittenConsent && (bt || (data.counsel && (data.counsel ?? []).length > 0));
+  const shouldRenderCounselSection = !isShareholderOnly && !isWrittenConsent && (bt || (data.counsel && (data.counsel ?? []).length > 0));
   const counselRows = data.counsel && (data.counsel ?? []).length > 0 ? data.counsel : [{} as any];
 
   if (shouldRenderCounselSection) {
@@ -2211,7 +2211,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Banking Section (separate from counsel) — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent) {
+  if (!isShareholderOnly && !isWrittenConsent) {
     const counselRec = counselRows[0] || {} as any;
     let bankNameForTable = counselRec.bank_name?.trim() || "";
     if (!bankNameForTable && data.companyBanks && (data.companyBanks ?? []).length > 0) {
@@ -2310,7 +2310,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Loans — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.loans && (data.loans ?? []).length > 0) {
+  if (!isShareholderOnly && !isWrittenConsent && data.loans && (data.loans ?? []).length > 0) {
     y = checkPageBreak(doc, y, 20 + (data.loans ?? []).length * 7);
     y = section("Loans");
     y = addWhereasResolved(doc, y,
@@ -2337,7 +2337,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Annual Balance Reporting — two stacked tables from meeting_balance_entries
-  if (!isShareholder && !isWrittenConsent) {
+  if (!isShareholderOnly && !isWrittenConsent) {
     const toRows = (data.balanceEntries || []).filter((e: any) => e.direction === "to");
     const fromRows = (data.balanceEntries || []).filter((e: any) => e.direction === "from");
     
@@ -2366,7 +2366,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   const vehiclePolicyText = meeting?.vehicle_policy_text?.trim();
-  const hasVehicleActivity = !isShareholder && !isWrittenConsent && data.capitalAssets && (data.capitalAssets ?? []).length > 0;
+  const hasVehicleActivity = !isShareholderOnly && !isWrittenConsent && data.capitalAssets && (data.capitalAssets ?? []).length > 0;
 
   if (bt && vehiclePolicyText && hasVehicleActivity) {
     y = checkPageBreak(doc, y, 30);
@@ -2384,7 +2384,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Capital Asset Additions and Disposals — unified table
-  if (!isShareholder && !isWrittenConsent && data.capitalAssets && (data.capitalAssets ?? []).length > 0) {
+  if (!isShareholderOnly && !isWrittenConsent && data.capitalAssets && (data.capitalAssets ?? []).length > 0) {
     // Estimate total height: header ~10 + rows ~8 each + whereas/resolved ~30 + closing ~15
     const estimatedHeight = 60 + (data.capitalAssets ?? []).length * 8;
     y = checkPageBreak(doc, y, estimatedHeight);
@@ -2505,7 +2505,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Vehicle and Equipment Leases section
-  if (!isShareholder && !isWrittenConsent && data.vehicleLeases && (data.vehicleLeases ?? []).length > 0) {
+  if (!isShareholderOnly && !isWrittenConsent && data.vehicleLeases && (data.vehicleLeases ?? []).length > 0) {
     const leaseEstHeight = 60 + (data.vehicleLeases ?? []).length * 8;
     y = checkPageBreak(doc, y, leaseEstHeight);
     y = section("Vehicle and Equipment Leases Entered Into During the Year");
@@ -2596,7 +2596,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     vehiclesSoldLength: data.vehiclesSold?.length ?? 0,
     vehiclesSoldSample: data.vehiclesSold?.[0],
   });
-  if (!isShareholder && !isWrittenConsent && data.vehiclesSold && (data.vehiclesSold ?? []).length > 0) {
+  if (!isShareholderOnly && !isWrittenConsent && data.vehiclesSold && (data.vehiclesSold ?? []).length > 0) {
     const soldEstHeight = 60 + (data.vehiclesSold ?? []).length * 8;
     y = checkPageBreak(doc, y, soldEstHeight);
     y = section("Vehicles Sold During the Year");
@@ -2662,7 +2662,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 6;
   }
 
-  if (!isShareholder && !isWrittenConsent && data.assets && (data.assets ?? []).length > 0) {
+  if (!isShareholderOnly && !isWrittenConsent && data.assets && (data.assets ?? []).length > 0) {
     y = checkPageBreak(doc, y, 20 + (data.assets ?? []).length * 7);
     y = section("Equipment Transactions");
     doc.setFontSize(11);
@@ -2717,7 +2717,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Lease Terminations — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.leaseTerminations && (data.leaseTerminations ?? []).length > 0) {
+  if (!isShareholderOnly && !isWrittenConsent && data.leaseTerminations && (data.leaseTerminations ?? []).length > 0) {
     y = checkPageBreak(doc, y, 20 + (data.leaseTerminations ?? []).length * 7);
     y = section("Leases Ended During the Year");
     y = addWhereasResolved(doc, y,
@@ -2746,7 +2746,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Company-Level Leases (from company_assets table)
-  if (!isShareholder && !isWrittenConsent && data.companyLeases && (data.companyLeases ?? []).length > 0) {
+  if (!isShareholderOnly && !isWrittenConsent && data.companyLeases && (data.companyLeases ?? []).length > 0) {
     const clEstHeight = 60 + (data.companyLeases ?? []).length * 8;
     y = checkPageBreak(doc, y, clEstHeight);
     y = section("Real Property and Facility Leases");
@@ -2853,7 +2853,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Amendments — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.amendments && (data.amendments ?? []).length > 0) {
+  if (!isShareholderOnly && !isWrittenConsent && data.amendments && (data.amendments ?? []).length > 0) {
     y = checkPageBreak(doc, y, 20 + (data.amendments ?? []).length * 12);
     y = section("Amendments");
     y = addWhereasResolved(doc, y,
@@ -2891,7 +2891,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Auto-generated resolutions from prior year comparison — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.priorYear) {
+  if (!isShareholderOnly && !isWrittenConsent && data.priorYear) {
     const autoResolutions: { purpose: string; text: string }[] = [];
     const entityType = company?.entity_type || "Corporation";
     const isLLC = entityType === "LLC" || entityType === "Single Member LLC";
@@ -2990,7 +2990,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
   }
 
-  if (!isShareholder && !isWrittenConsent && data.benefits && (data.benefits ?? []).length > 0) {
+  if (!isShareholderOnly && !isWrittenConsent && data.benefits && (data.benefits ?? []).length > 0) {
     y = checkPageBreak(doc, y, 20 + (data.benefits ?? []).length * 18);
     y = section("Benefits");
     y = addWhereasResolved(doc, y,
@@ -3123,7 +3123,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Agreements — skip for shareholder meetings and written consents
-  if (!isShareholder && !isWrittenConsent && data.agreements && (data.agreements ?? []).length > 0) {
+  if (!isShareholderOnly && !isWrittenConsent && data.agreements && (data.agreements ?? []).length > 0) {
     const newOrUpdated = (data.agreements ?? []).filter((a: any) => !a.is_carried_forward);
     const carriedForward = (data.agreements ?? []).filter((a: any) => a.is_carried_forward && (a.status === "Active" || !a.status));
 
@@ -3224,7 +3224,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Registered Agent Confirmation (Annual Meeting blue theme)
-  if (bt && !isShareholder && company?.registered_agent_name) {
+  if (bt && !isShareholderOnly && company?.registered_agent_name) {
     y = checkPageBreak(doc, y, 40);
     y = section("Registered Agent Confirmation");
     const agentAddr = [company.registered_agent_address, company.registered_agent_city, company.registered_agent_state, company.registered_agent_zip].filter(Boolean).join(", ");
@@ -3247,7 +3247,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Tax Return Filing Acknowledgment (Annual Meeting)
-  if (bt && !isShareholder && meeting?.tax_year) {
+  if (bt && !isShareholderOnly && meeting?.tax_year) {
     y = checkPageBreak(doc, y, 30);
     const counselRec = (data.counsel && (data.counsel ?? []).length > 0) ? data.counsel[0] : null;
     const acctName = counselRec?.accountant_name?.trim() || "";
@@ -3270,7 +3270,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Charitable Contributions (Annual Meeting)
-  if (bt && !isShareholder && meeting?.charitable_contribution_amount != null && Number(meeting.charitable_contribution_amount) > 0) {
+  if (bt && !isShareholderOnly && meeting?.charitable_contribution_amount != null && Number(meeting.charitable_contribution_amount) > 0) {
     y = checkPageBreak(doc, y, 30);
     const contribAmt = fmt(meeting.charitable_contribution_amount);
     const contribOrg = meeting.charitable_contribution_org?.trim() || "a recognized charitable organization";
@@ -3284,7 +3284,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // Other Business / Vehicle Policy / Profit Improvement Plan (last section before adjournment)
   const hasOtherBiz = meeting.other_business?.trim();
   const hasProfitPlan = meeting.profit_improvement_plan?.trim();
-  if (!isShareholder && !isWrittenConsent && (hasOtherBiz || hasProfitPlan)) {
+  if (!isShareholderOnly && !isWrittenConsent && (hasOtherBiz || hasProfitPlan)) {
     y += 3;
     y = checkPageBreak(doc, y, 30);
     y = section("Other Business");
