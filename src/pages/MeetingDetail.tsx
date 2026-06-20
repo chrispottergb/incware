@@ -226,7 +226,7 @@ export default function MeetingDetail() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id && !!(isAnnualMeeting || isOrganizational),
+    enabled: !!id && !!(isAnnualMeeting || isOrganizational || isStatutoryCloseShareholderMeeting),
   });
 
   // Fetch prior year meeting for comparison (most recent meeting before this one for same company)
