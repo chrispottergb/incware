@@ -17,6 +17,30 @@ const BODY_COLOR: [number, number, number] = [40, 40, 40];
 const WHEREAS_INDENT = 0; // Flush left
 const RESOLVED_INDENT = 12.7; // 0.5 inch
 
+// State-specific statute citations for Statutory Close Corporation governance notice.
+// Used ONLY in the Statutory Close Corporation governance notice block.
+const getStatutoryCloseStatute = (state?: string | null): string => {
+  const statutes: Record<string, string> = {
+    AZ: "Ariz. Rev. Stat. § 10-1801 et seq.",
+    CA: "Cal. Corp. Code § 158 et seq.",
+    DE: "Del. Code Ann. tit. 8, § 342 et seq.",
+    FL: "Fla. Stat. § 607.0902 et seq.",
+    IL: "805 Ill. Comp. Stat. 5/2A.05 et seq.",
+    MD: "Md. Code Ann., Corps. & Ass'ns § 4-101 et seq.",
+    MI: "Mich. Comp. Laws § 450.1489 et seq.",
+    MN: "Minn. Stat. § 302A.671 et seq.",
+    MO: "Mo. Rev. Stat. § 351.755 et seq.",
+    NJ: "N.J. Stat. Ann. § 14A:5-21 et seq.",
+    NY: "N.Y. Bus. Corp. Law § 620 et seq.",
+    OH: "Ohio Rev. Code Ann. § 1701.591 et seq.",
+    PA: "15 Pa. Cons. Stat. § 1571 et seq.",
+    SC: "S.C. Code Ann. § 33-17-101 et seq.",
+    TX: "Tex. Bus. Orgs. Code § 21.701 et seq.",
+    WI: "Wis. Stat. § 180.1801 et seq.",
+  };
+  return statutes[(state ?? "").toUpperCase()] ?? "applicable state close corporation statutes";
+};
+
 interface MeetingData {
   meeting: any;
   company: any;
