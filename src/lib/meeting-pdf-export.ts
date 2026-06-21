@@ -17,6 +17,30 @@ const BODY_COLOR: [number, number, number] = [40, 40, 40];
 const WHEREAS_INDENT = 0; // Flush left
 const RESOLVED_INDENT = 12.7; // 0.5 inch
 
+// State-specific statute citations for Statutory Close Corporation governance notice.
+// Used ONLY in the Statutory Close Corporation governance notice block.
+const getStatutoryCloseStatute = (state?: string | null): string => {
+  const statutes: Record<string, string> = {
+    AZ: "Ariz. Rev. Stat. § 10-1801 et seq.",
+    CA: "Cal. Corp. Code § 158 et seq.",
+    DE: "Del. Code Ann. tit. 8, § 342 et seq.",
+    FL: "Fla. Stat. § 607.0902 et seq.",
+    IL: "805 Ill. Comp. Stat. 5/2A.05 et seq.",
+    MD: "Md. Code Ann., Corps. & Ass'ns § 4-101 et seq.",
+    MI: "Mich. Comp. Laws § 450.1489 et seq.",
+    MN: "Minn. Stat. § 302A.671 et seq.",
+    MO: "Mo. Rev. Stat. § 351.755 et seq.",
+    NJ: "N.J. Stat. Ann. § 14A:5-21 et seq.",
+    NY: "N.Y. Bus. Corp. Law § 620 et seq.",
+    OH: "Ohio Rev. Code Ann. § 1701.591 et seq.",
+    PA: "15 Pa. Cons. Stat. § 1571 et seq.",
+    SC: "S.C. Code Ann. § 33-17-101 et seq.",
+    TX: "Tex. Bus. Orgs. Code § 21.701 et seq.",
+    WI: "Wis. Stat. § 180.1801 et seq.",
+  };
+  return statutes[(state ?? "").toUpperCase()] ?? "applicable state close corporation statutes";
+};
+
 interface MeetingData {
   meeting: any;
   company: any;
@@ -765,9 +789,10 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
     (data.officers || []).forEach(o => { if (o.name) addUnique(o.name); });
   }
 
+  const isStatutoryCloseWaiver = isShareholderMeeting && (meeting?.sub_type || "") === "Statutory Close Corporation";
   const purposes = isShareholderMeeting
     ? [
-        "elect a new board of directors",
+        isStatutoryCloseWaiver ? "elect officers of the corporation" : "elect a new board of directors",
         "conduct any other business that properly may be brought before the meeting",
       ]
     : [
@@ -1144,6 +1169,13 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   const isShareholderOnly = isShareholder && !isStatutoryClose;
   const bt = isAnnual || isShareholder; // blue theme flag for both annual and shareholder meetings
 
+  // Statutory Close Corporation gated helpers — when isStatutoryClose is false these
+  // return the original strings, preserving byte-identical output for other meetings.
+  const boardLabel = () =>
+    isLLC ? "members" : (isStatutoryClose ? "shareholders" : "Board of Directors");
+  const boardVerb = (corpSingular: "has" | "have") =>
+    isLLC ? "have" : (isStatutoryClose ? "have" : corpSingular);
+
   let sectionNum = 0;
 
   // Helper to get table head styles based on theme
@@ -1210,6 +1242,30 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   // Skip the "Meeting Information" section entirely for Written Consents
   // (no meeting occurred — date/location/chairperson are not applicable).
   if (!isWrittenConsent) {
+
+  // Statutory Close Corporation Governance Notice — rendered before Section 1.
+  // Not numbered, so "Meeting Information" remains Section 1.
+  if (isStatutoryClose) {
+    const pw = doc.internal.pageSize.getWidth();
+    y = checkPageBreak(doc, y, 40);
+    doc.setFontSize(11);
+    doc.setFont("Arial", "bold");
+    doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
+    doc.text("STATUTORY CLOSE CORPORATION GOVERNANCE NOTICE", MARGIN, y);
+    y += 6;
+    doc.setFont("Arial", "normal");
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
+    const statuteCitation = getStatutoryCloseStatute(company?.state);
+    const noticeText = `${companyName} is organized as a Statutory Close Corporation pursuant to ${statuteCitation}. This corporation operates without a board of directors. All governance powers vested by statute in a board of directors are exercised directly by the shareholders of the corporation. The actions taken at this meeting are made in that capacity.`;
+    const noticeLines = doc.splitTextToSize(noticeText, pw - MARGIN - R_MARGIN);
+    for (const line of noticeLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5.5;
+    }
+    y += 4;
+  }
+
   y = section("Meeting Information");
 
 
@@ -1445,9 +1501,9 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setFontSize(11);
     doc.setFont("Arial", "normal");
     doc.setTextColor(30, 30, 30);
-    const section1244Text = `WHEREAS, the Board of Directors deems it to be in the best interest of the corporation and its shareholders to qualify the stock of the corporation as "Section 1244 Stock" as defined in Section 1244 of the Internal Revenue Code of 1986, as amended; and
+    const section1244Text = `WHEREAS, the ${isStatutoryClose ? "shareholders deem" : "Board of Directors deems"} it to be in the best interest of the corporation and its shareholders to qualify the stock of the corporation as "Section 1244 Stock" as defined in Section 1244 of the Internal Revenue Code of 1986, as amended; and
 
-WHEREAS, the Board of Directors desires to adopt a plan to offer and issue shares of the corporation's common stock pursuant to Section 1244 of the Internal Revenue Code;
+WHEREAS, the ${isStatutoryClose ? "shareholders desire" : "Board of Directors desires"} to adopt a plan to offer and issue shares of the corporation's common stock pursuant to Section 1244 of the Internal Revenue Code;
 
 NOW, THEREFORE, BE IT RESOLVED, that the corporation hereby adopts the following Section 1244 Stock Plan:
 
@@ -1531,7 +1587,9 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y += 3;
       const items = [
         "the stock ledger and transfer books of the corporation",
-        `minutes of the board of directors, covering all purchases, contracts, contributions, compensations, acts, authorizations, decisions, proceedings, elections, and appointments by the board of directors since the last annual meeting${meeting.prior_mtg_date ? ` which was held on ${new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}` : ""}.`,
+        isStatutoryClose
+          ? `minutes of the shareholders, covering all purchases, contracts, contributions, compensations, acts, authorizations, decisions, proceedings, elections, and appointments by the shareholders since the last annual meeting${meeting.prior_mtg_date ? ` which was held on ${new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}` : ""}.`
+          : `minutes of the board of directors, covering all purchases, contracts, contributions, compensations, acts, authorizations, decisions, proceedings, elections, and appointments by the board of directors since the last annual meeting${meeting.prior_mtg_date ? ` which was held on ${new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}` : ""}.`,
       ];
       items.forEach((item, i) => {
         y = checkPageBreak(doc, y, 10);
@@ -1553,14 +1611,14 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y += 8;
       y = addWhereasResolved(doc, y,
         "",
-        `NOW, THEREFORE, BE IT RESOLVED, that all purchases, contracts, contributions, compensations, acts, decisions, proceedings, elections and appointments by the board of directors since the last annual meeting of the corporation${meeting.tax_year ? `, and all matters referred to in the report to shareholders for the year ending December 31, ${meeting.tax_year}` : ""}, be and the same hereby are approved and ratified.`,
+        `NOW, THEREFORE, BE IT RESOLVED, that all purchases, contracts, contributions, compensations, acts, decisions, proceedings, elections and appointments by the ${isStatutoryClose ? "shareholders" : "board of directors"} since the last annual meeting of the corporation${meeting.tax_year ? `, and all matters referred to in the report to shareholders for the year ending December 31, ${meeting.tax_year}` : ""}, be and the same hereby are approved and ratified.`,
         bt
       );
     } else {
       // Annual meeting ratification
       y = section("Call to Order & Approval of Prior Meeting Minutes");
       y = addWhereasResolved(doc, y,
-        `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} and ${isLLC ? "members" : "shareholders"} of ${companyName} have taken various actions and made certain decisions during the prior fiscal year in the ordinary course of business; and`,
+        `WHEREAS, the ${boardLabel()} and ${isLLC ? "members" : "shareholders"} of ${companyName} have taken various actions and made certain decisions during the prior fiscal year in the ordinary course of business; and`,
         `NOW, THEREFORE, BE IT RESOLVED, that all acts and decisions of the ${isLLC ? "members" : "directors"} and ${isLLC ? "officers" : "officers"} of ${companyName} taken or made since the last annual meeting are hereby ratified, confirmed, and approved in all respects.`,
         bt
       );
@@ -1700,14 +1758,14 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const electionVerb = hasNewOfficers ? (isLLC ? "appointed" : "elected") : (isLLC ? "appointed" : "re-elected");
 
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} ${isLLC ? "have" : "has"} reviewed the current ${isLLC ? "management" : "officer"} positions and compensation of ${companyName}${isSCorp ? ", and recognizing the requirement under IRC \u00A7 1366 that officer-shareholders receive reasonable compensation" : ""}; and`,
+      `WHEREAS, the ${boardLabel()} ${boardVerb("has")} reviewed the current ${isLLC ? "management" : "officer"} positions and compensation of ${companyName}${isSCorp ? ", and recognizing the requirement under IRC \u00A7 1366 that officer-shareholders receive reasonable compensation" : ""}; and`,
       "",
       bt
     );
 
     if (hasNewOfficers) {
       y = addWhereasResolved(doc, y,
-        `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} ${isLLC ? "have" : "has"} determined it is in the best interests of the ${isLLC ? "LLC" : "corporation"} to elect the following persons as ${isLLC ? "managers/officers" : "officers"}; now therefore be it`,
+        `WHEREAS, the ${boardLabel()} ${boardVerb("has")} determined it is in the best interests of the ${isLLC ? "LLC" : "corporation"} to elect the following persons as ${isLLC ? "managers/officers" : "officers"}; now therefore be it`,
         "",
         bt
       );
@@ -1715,7 +1773,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     y = addWhereasResolved(doc, y,
       "",
-      `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby ${electionVerb} as ${isLLC ? "managers/officers" : "officers"} of ${companyName}, at the compensation levels set forth below, which the Board has determined to be reasonable compensation for the services performed, and to serve until their successors are duly ${isLLC ? "appointed" : "elected"} and qualified:`,
+      `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby ${electionVerb} as ${isLLC ? "managers/officers" : "officers"} of ${companyName}, at the compensation levels set forth below, which the ${isStatutoryClose ? "shareholders have" : "Board has"} determined to be reasonable compensation for the services performed, and to serve until their successors are duly ${isLLC ? "appointed" : "elected"} and qualified:`,
       bt
     );
 
@@ -1766,7 +1824,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       doc.setFontSize(11);
       doc.setFont("Arial", "normal");
       doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
-      const introText = `The ${isLLC ? "members" : "Board of Directors"} made the following compensation determinations with respect to the ${isLLC ? "managers/officers" : "officers"} of the ${isLLC ? "LLC" : "corporation"}:`;
+      const introText = `The ${boardLabel()} made the following compensation determinations with respect to the ${isLLC ? "managers/officers" : "officers"} of the ${isLLC ? "LLC" : "corporation"}:`;
       const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
       for (const line of introLines) {
         y = checkPageBreak(doc, y, 6);
@@ -1881,7 +1939,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         // Single WHEREAS statement for all distributions
         y = checkPageBreak(doc, y, 50);
         y = addWhereasResolved(doc, y,
-          `WHEREAS, a resolution was presented to approve a distribution to the ${isLLC ? "members" : "shareholders"} in accordance with each ${isLLC ? "member's" : "shareholder's"} ownership interest in the Company${sCorpClause}. The ${isLLC ? "Managing Member" : "Board of Directors"} confirmed that the Company has sufficient cash flow and working capital to support the distribution without impairing the Company's operations or ability to meet its financial obligations. Upon motion duly made and seconded, the following resolutions were unanimously adopted:`,
+          `WHEREAS, a resolution was presented to approve a distribution to the ${isLLC ? "members" : "shareholders"} in accordance with each ${isLLC ? "member's" : "shareholder's"} ownership interest in the Company${sCorpClause}. The ${isLLC ? "Managing Member" : (isStatutoryClose ? "shareholders" : "Board of Directors")} confirmed that the Company has sufficient cash flow and working capital to support the distribution without impairing the Company's operations or ability to meet its financial obligations. Upon motion duly made and seconded, the following resolutions were unanimously adopted:`,
           "",
           bt
         );
@@ -1914,7 +1972,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 80);
     y = section("Financial Comparison — Year to Year");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the financial statements of ${companyName} for the current and prior fiscal years; and`,
+      `WHEREAS, the ${boardLabel()} have reviewed the financial statements of ${companyName} for the current and prior fiscal years; and`,
       `NOW, THEREFORE, BE IT RESOLVED, that the financial statements as presented are hereby accepted and approved:`,
       bt
     );
@@ -2118,7 +2176,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       }
       y += 2;
       y = addWhereasResolved(doc, y,
-        `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the legal counsel needs of ${companyName}; and`,
+        `WHEREAS, the ${boardLabel()} have reviewed the legal counsel needs of ${companyName}; and`,
         `NOW, THEREFORE, BE IT RESOLVED, that ${attorneyName}${firmPart} is hereby approved and retained as legal counsel for ${companyName} for the ensuing year.`,
         bt
       );
@@ -2172,7 +2230,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       }
       y += 2;
       y = addWhereasResolved(doc, y,
-        `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the accounting needs of ${companyName}; and`,
+        `WHEREAS, the ${boardLabel()} have reviewed the accounting needs of ${companyName}; and`,
         `NOW, THEREFORE, BE IT RESOLVED, that ${accountantName}${firmPart} is hereby approved and retained as accountant for ${companyName} for the ensuing year.`,
         bt
       );
@@ -2275,7 +2333,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
           }
           const signerStr = bankSignerList.map((s: any) => `${s.signer_name}${s.title ? `, ${s.title}` : ""}`).join("; ");
           y = addWhereasResolved(doc, y,
-            `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the banking relationship with ${bank.bank_name}; and`,
+            `WHEREAS, the ${boardLabel()} have reviewed the banking relationship with ${bank.bank_name}; and`,
             `NOW, THEREFORE, BE IT RESOLVED, that ${bank.bank_name} is hereby approved and confirmed as a depository for the funds of ${companyName}${signerStr ? `, and that the following persons are hereby authorized as signers on said account: ${signerStr}` : ""}.`,
             bt
           );
@@ -2314,7 +2372,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + (data.loans ?? []).length * 7);
     y = section("Loans");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the borrowing needs and existing loan obligations of ${companyName}; and`,
+      `WHEREAS, the ${boardLabel()} have reviewed the borrowing needs and existing loan obligations of ${companyName}; and`,
       `NOW, THEREFORE, BE IT RESOLVED, that the following loans are hereby approved and the proper officers are authorized to execute all necessary documents:`,
       bt
     );
@@ -2721,7 +2779,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + (data.leaseTerminations ?? []).length * 7);
     y = section("Leases Ended During the Year");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the leases that have expired or been terminated by ${companyName} during the year; and`,
+      `WHEREAS, the ${boardLabel()} have reviewed the leases that have expired or been terminated by ${companyName} during the year; and`,
       `NOW, THEREFORE, BE IT RESOLVED, that the termination or expiration of the following leases is hereby acknowledged and ratified:`,
       bt
     );
@@ -2751,7 +2809,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, clEstHeight);
     y = section("Real Property and Facility Leases");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the real property and facility lease obligations of ${companyName}; and`,
+      `WHEREAS, the ${boardLabel()} have reviewed the real property and facility lease obligations of ${companyName}; and`,
       `RESOLVED, that the following lease arrangements are hereby acknowledged and ratified:`,
       bt
     );
@@ -2857,7 +2915,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + (data.amendments ?? []).length * 12);
     y = section("Amendments");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have determined that certain amendments to the governing documents of ${companyName} are in the best interests of the ${isLLC ? "company" : "corporation"}; and`,
+      `WHEREAS, the ${boardLabel()} have determined that certain amendments to the governing documents of ${companyName} are in the best interests of the ${isLLC ? "company" : "corporation"}; and`,
       `NOW, THEREFORE, BE IT RESOLVED, that the following amendments are hereby adopted:`,
       bt
     );
@@ -2912,13 +2970,13 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
           if (o.salary != null && prior.salary != null && Number(o.salary) !== Number(prior.salary)) {
             autoResolutions.push({
               purpose: `Adjust ${o.title} Salary`,
-              text: `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the compensation of ${o.name}, ${o.title}, and after discussion, it was\n\nRESOLVED, that the annual salary of ${o.name}, ${o.title}, is hereby adjusted from ${fmt(prior.salary)} to ${fmt(o.salary)}, effective immediately.`,
+              text: `WHEREAS, the ${boardLabel()} have reviewed the compensation of ${o.name}, ${o.title}, and after discussion, it was\n\nRESOLVED, that the annual salary of ${o.name}, ${o.title}, is hereby adjusted from ${fmt(prior.salary)} to ${fmt(o.salary)}, effective immediately.`,
             });
           }
           if (o.bonus != null && prior.bonus != null && Number(o.bonus) !== Number(prior.bonus)) {
             autoResolutions.push({
               purpose: `Adjust ${o.title} Bonus`,
-              text: `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the bonus compensation of ${o.name}, ${o.title}, and after discussion, it was\n\nRESOLVED, that a bonus of ${fmt(o.bonus)} is hereby authorized for ${o.name}, ${o.title} (prior year bonus: ${fmt(prior.bonus)}).`,
+              text: `WHEREAS, the ${boardLabel()} have reviewed the bonus compensation of ${o.name}, ${o.title}, and after discussion, it was\n\nRESOLVED, that a bonus of ${fmt(o.bonus)} is hereby authorized for ${o.name}, ${o.title} (prior year bonus: ${fmt(prior.bonus)}).`,
             });
           }
           if (o.title !== prior.title) {
@@ -2941,7 +2999,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         if (!priorTypes.has(bType.toLowerCase())) {
           autoResolutions.push({
             purpose: `Approve ${bType}`,
-            text: `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the proposed ${bType} plan${b.provider ? ` with ${b.provider}` : ""}, and after discussion, it was\n\nRESOLVED, that the ${entityLabel} is hereby authorized to establish the ${bType} plan${b.provider ? ` through ${b.provider}` : ""}${b.retirement_contribution != null ? `, with a contribution of ${fmt(b.retirement_contribution)}` : ""}${b.plan_year ? `, effective for plan year ${b.plan_year}` : ""}.`,
+            text: `WHEREAS, the ${boardLabel()} have reviewed the proposed ${bType} plan${b.provider ? ` with ${b.provider}` : ""}, and after discussion, it was\n\nRESOLVED, that the ${entityLabel} is hereby authorized to establish the ${bType} plan${b.provider ? ` through ${b.provider}` : ""}${b.retirement_contribution != null ? `, with a contribution of ${fmt(b.retirement_contribution)}` : ""}${b.plan_year ? `, effective for plan year ${b.plan_year}` : ""}.`,
           });
         } else {
           const priorMatch = priorBenefits.find((pb: any) => (pb.benefit_type || pb.benefit_description || "").toLowerCase() === bType.toLowerCase());
@@ -2965,7 +3023,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         if (!priorLoanTypes.has(key)) {
           autoResolutions.push({
             purpose: `Authorize ${l.loan_type || "Loan"}`,
-            text: `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have determined it is in the best interests of the ${entityLabel} to obtain financing, and after discussion, it was\n\nRESOLVED, that the proper officers are hereby authorized to execute any documents necessary to establish a ${l.loan_type || "loan"}${l.loan_amount != null ? ` in the amount of ${fmt(l.loan_amount)}` : ""}${l.loan_rate != null ? ` at a rate of ${Number(l.loan_rate).toFixed(2)}%` : ""}.`,
+            text: `WHEREAS, the ${boardLabel()} have determined it is in the best interests of the ${entityLabel} to obtain financing, and after discussion, it was\n\nRESOLVED, that the proper officers are hereby authorized to execute any documents necessary to establish a ${l.loan_type || "loan"}${l.loan_amount != null ? ` in the amount of ${fmt(l.loan_amount)}` : ""}${l.loan_rate != null ? ` at a rate of ${Number(l.loan_rate).toFixed(2)}%` : ""}.`,
           });
         }
       });
@@ -2980,7 +3038,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         if (!priorNames.has(s.signer_name?.toLowerCase())) {
           autoResolutions.push({
             purpose: `Authorize Bank Signer`,
-            text: `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have determined it is necessary to update the authorized signers, and after discussion, it was\n\nRESOLVED, that ${s.signer_name}${s.title ? `, ${s.title},` : ""} is hereby authorized as a signer${s.bank_name ? ` on the accounts at ${s.bank_name}` : ""}.`,
+            text: `WHEREAS, the ${boardLabel()} have determined it is necessary to update the authorized signers, and after discussion, it was\n\nRESOLVED, that ${s.signer_name}${s.title ? `, ${s.title},` : ""} is hereby authorized as a signer${s.bank_name ? ` on the accounts at ${s.bank_name}` : ""}.`,
           });
         }
       });
@@ -2994,7 +3052,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + (data.benefits ?? []).length * 18);
     y = section("Benefits");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the employee benefit plans of ${companyName} for the current plan year; and`,
+      `WHEREAS, the ${boardLabel()} have reviewed the employee benefit plans of ${companyName} for the current plan year; and`,
       `NOW, THEREFORE, BE IT RESOLVED, that the following benefit plans are hereby approved and adopted for the ensuing year:`,
       bt
     );
@@ -3137,7 +3195,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         const dateStr = a.agreement_date ? ` on ${new Date(a.agreement_date + "T00:00:00").toLocaleDateString()}` : "";
         y = addWhereasResolved(doc, y,
           `WHEREAS, ${companyName} has entered into a ${a.agreement_type} with ${a.agreement_with || "the counterparty"}${dateStr}${amountStr}; and`,
-          `NOW, THEREFORE, BE IT RESOLVED, that the ${a.agreement_type} entered into between ${companyName} and ${a.agreement_with || "the counterparty"}${dateStr}${amountStr} is hereby reviewed, ratified, and approved by the ${isLLC ? "members" : "Board of Directors"}.`,
+          `NOW, THEREFORE, BE IT RESOLVED, that the ${a.agreement_type} entered into between ${companyName} and ${a.agreement_with || "the counterparty"}${dateStr}${amountStr} is hereby reviewed, ratified, and approved by the ${boardLabel()}.`,
           bt
         );
       }
@@ -3207,7 +3265,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + (data.authorizedSigners ?? []).length * 7);
     y = section("Authorized Signers");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} have reviewed the authorized signers on the banking accounts of ${companyName}; and`,
+      `WHEREAS, the ${boardLabel()} have reviewed the authorized signers on the banking accounts of ${companyName}; and`,
       `NOW, THEREFORE, BE IT RESOLVED, that the following persons are hereby authorized as signers on the designated accounts:`,
       bt
     );
@@ -3240,7 +3298,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 40);
     y = section("General Authorization");
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "members" : "Board of Directors"} recognizes that actions may need to be taken to implement the resolutions adopted at this meeting;`,
+      `WHEREAS, the ${boardLabel()} ${isLLC || isStatutoryClose ? "recognize" : "recognizes"} that actions may need to be taken to implement the resolutions adopted at this meeting;`,
       `NOW, THEREFORE, BE IT RESOLVED, that the officers of the company are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.`,
       bt
     );
