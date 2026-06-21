@@ -1242,6 +1242,30 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   // Skip the "Meeting Information" section entirely for Written Consents
   // (no meeting occurred — date/location/chairperson are not applicable).
   if (!isWrittenConsent) {
+
+  // Statutory Close Corporation Governance Notice — rendered before Section 1.
+  // Not numbered, so "Meeting Information" remains Section 1.
+  if (isStatutoryClose) {
+    const pw = doc.internal.pageSize.getWidth();
+    y = checkPageBreak(doc, y, 40);
+    doc.setFontSize(11);
+    doc.setFont("Arial", "bold");
+    doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
+    doc.text("STATUTORY CLOSE CORPORATION GOVERNANCE NOTICE", MARGIN, y);
+    y += 6;
+    doc.setFont("Arial", "normal");
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
+    const statuteCitation = getStatutoryCloseStatute(company?.state);
+    const noticeText = `${companyName} is organized as a Statutory Close Corporation pursuant to ${statuteCitation}. This corporation operates without a board of directors. All governance powers vested by statute in a board of directors are exercised directly by the shareholders of the corporation. The actions taken at this meeting are made in that capacity.`;
+    const noticeLines = doc.splitTextToSize(noticeText, pw - MARGIN - R_MARGIN);
+    for (const line of noticeLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5.5;
+    }
+    y += 4;
+  }
+
   y = section("Meeting Information");
 
 
