@@ -1611,7 +1611,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y += 8;
       y = addWhereasResolved(doc, y,
         "",
-        `NOW, THEREFORE, BE IT RESOLVED, that all purchases, contracts, contributions, compensations, acts, decisions, proceedings, elections and appointments by the board of directors since the last annual meeting of the corporation${meeting.tax_year ? `, and all matters referred to in the report to shareholders for the year ending December 31, ${meeting.tax_year}` : ""}, be and the same hereby are approved and ratified.`,
+        `NOW, THEREFORE, BE IT RESOLVED, that all purchases, contracts, contributions, compensations, acts, decisions, proceedings, elections and appointments by the ${isStatutoryClose ? "shareholders" : "board of directors"} since the last annual meeting of the corporation${meeting.tax_year ? `, and all matters referred to in the report to shareholders for the year ending December 31, ${meeting.tax_year}` : ""}, be and the same hereby are approved and ratified.`,
         bt
       );
     } else {
