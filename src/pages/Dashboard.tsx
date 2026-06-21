@@ -392,6 +392,15 @@ export default function Dashboard() {
                               S-Election
                             </Badge>
                           )}
+                          {company.statutory_close_corporation && (
+                            <Badge
+                              variant="outline"
+                              className="text-[9px] px-1.5 py-0 leading-tight"
+                              style={{ backgroundColor: "rgba(59, 91, 219, 0.1)", color: "#3B5BDB", borderColor: "rgba(59, 91, 219, 0.3)" }}
+                            >
+                              Statutory Close Corp
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">{company.state_of_incorporation || "—"}</TableCell>
