@@ -1169,6 +1169,13 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   const isShareholderOnly = isShareholder && !isStatutoryClose;
   const bt = isAnnual || isShareholder; // blue theme flag for both annual and shareholder meetings
 
+  // Statutory Close Corporation gated helpers — when isStatutoryClose is false these
+  // return the original strings, preserving byte-identical output for other meetings.
+  const boardLabel = () =>
+    isLLC ? "members" : (isStatutoryClose ? "shareholders" : "Board of Directors");
+  const boardVerb = (corpSingular: "has" | "have") =>
+    isLLC ? "have" : (isStatutoryClose ? "have" : corpSingular);
+
   let sectionNum = 0;
 
   // Helper to get table head styles based on theme
