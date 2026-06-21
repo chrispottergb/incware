@@ -1587,7 +1587,9 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y += 3;
       const items = [
         "the stock ledger and transfer books of the corporation",
-        `minutes of the board of directors, covering all purchases, contracts, contributions, compensations, acts, authorizations, decisions, proceedings, elections, and appointments by the board of directors since the last annual meeting${meeting.prior_mtg_date ? ` which was held on ${new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}` : ""}.`,
+        isStatutoryClose
+          ? `minutes of the shareholders, covering all purchases, contracts, contributions, compensations, acts, authorizations, decisions, proceedings, elections, and appointments by the shareholders since the last annual meeting${meeting.prior_mtg_date ? ` which was held on ${new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}` : ""}.`
+          : `minutes of the board of directors, covering all purchases, contracts, contributions, compensations, acts, authorizations, decisions, proceedings, elections, and appointments by the board of directors since the last annual meeting${meeting.prior_mtg_date ? ` which was held on ${new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}` : ""}.`,
       ];
       items.forEach((item, i) => {
         y = checkPageBreak(doc, y, 10);
