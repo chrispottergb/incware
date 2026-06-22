@@ -2,10 +2,24 @@ import { useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-const IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000; // 2 hours
-const WARNING_BEFORE_MS = 2 * 60 * 1000; // Warn 2 minutes before sign-out
-const ACTIVITY_EVENTS = ["mousedown", "keydown", "touchstart", "scroll", "mousemove", "input", "focus"] as const;
+const IDLE_TIMEOUT_MS = 8 * 60 * 60 * 1000; // 8 hours
+const WARNING_BEFORE_MS = 10 * 60 * 1000; // Warn 10 minutes before sign-out
+const ACTIVITY_EVENTS = ["mousedown", "pointerdown", "keydown", "touchstart", "scroll", "mousemove", "input", "change", "focus"] as const;
 const THROTTLE_MS = 30_000; // Update lastActivity at most every 30s
+
+const isEditingFormField = () => {
+  const active = document.activeElement as HTMLElement | null;
+  if (!active) return false;
+  const tag = active.tagName;
+  return (
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    tag === "SELECT" ||
+    active.isContentEditable ||
+    active.getAttribute("role") === "combobox" ||
+    active.getAttribute("role") === "checkbox"
+  );
+};
 
 /**
  * Monitors user activity and signs out after extended inactivity.
@@ -48,11 +62,22 @@ export function useSessionIdleTimeout(isAuthenticated: boolean) {
     lastActivityRef.current = Date.now();
     warnedRef.current = false;
 
+    const handleVisibilityChange = () => {
+      if (!document.hidden) wrappedHandleActivity();
+    };
+
     for (const event of ACTIVITY_EVENTS) {
       window.addEventListener(event, wrappedHandleActivity, { passive: true, capture: true } as AddEventListenerOptions);
     }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     timerRef.current = setInterval(async () => {
+      if (document.hidden || isEditingFormField()) {
+        lastActivityRef.current = Date.now();
+        warnedRef.current = false;
+        return;
+      }
+
       const elapsed = Date.now() - lastActivityRef.current;
 
       // Warning window: alert the user so they can move the mouse / type to keep session
@@ -82,11 +107,6 @@ export function useSessionIdleTimeout(isAuthenticated: boolean) {
               localStorage.removeItem(key);
             }
           });
-          Object.keys(sessionStorage).forEach((key) => {
-            if (key.startsWith("annual_meeting_draft_")) {
-              sessionStorage.removeItem(key);
-            }
-          });
         } catch {}
         window.location.href = "/auth";
       }
@@ -96,6 +116,7 @@ export function useSessionIdleTimeout(isAuthenticated: boolean) {
       for (const event of ACTIVITY_EVENTS) {
         window.removeEventListener(event, wrappedHandleActivity, { capture: true } as AddEventListenerOptions);
       }
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
