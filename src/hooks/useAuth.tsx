@@ -22,11 +22,6 @@ function clearResidualStorage() {
         localStorage.removeItem(key);
       }
     });
-    Object.keys(sessionStorage).forEach((key) => {
-      if (key.startsWith("annual_meeting_draft_")) {
-        sessionStorage.removeItem(key);
-      }
-    });
   } catch {}
 }
 
@@ -35,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Idle timeout: auto sign-out after 30 min inactivity
+  // Idle timeout: auto sign-out after extended inactivity
   useSessionIdleTimeout(!!session);
 
   useEffect(() => {
