@@ -616,7 +616,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
         .eq("company_id", companyId)
         .order("display_order", { ascending: true });
       if (error) throw error;
-      return (data || []) as Array<{ id: string; title: string; name: string; display_order: number }>;
+      return (data || []) as unknown as Array<{ id: string; title: string; name: string; display_order: number }>;
     },
     enabled: !!companyId && isLLC,
   });
