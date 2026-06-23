@@ -627,7 +627,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       setData(buildDefaultData());
       setInitialized(true);
     }
-  }, [companyShareholders, companyOfficers, companyBanks, priorMeeting, attorneys, accountants, companyAssets, companyLeases, priorOfficers, activeCertificates]);
+  }, [companyShareholders, companyOfficers, companyLlcManagers, companyBanks, priorMeeting, attorneys, accountants, companyAssets, companyLeases, priorOfficers, activeCertificates]);
 
   // Always refresh members from DB data when certificates/shareholders load, even with a draft
   useEffect(() => {
