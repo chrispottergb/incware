@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 import { isLLCType } from "@/lib/entity-terminology";
+import { LLC_DYNAMIC_TITLE_OPTIONS, buildOfficerSnapshot, type LlcManager } from "@/lib/llc-officer-mapping";
 import { maskEin } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
