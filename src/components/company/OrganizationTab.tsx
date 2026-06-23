@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 import { isLLCType } from "@/lib/entity-terminology";
+import { LLC_DYNAMIC_TITLE_OPTIONS, buildOfficerSnapshot, type LlcManager } from "@/lib/llc-officer-mapping";
 import { maskEin } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -598,12 +599,114 @@ export default function OrganizationTab({ companyId, company }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  // Auto-save for officers
+  // Auto-save for officers (non-LLC entity types)
   const officersAutoSave = useAutoSave({
     data: officerForm,
     onSave: async () => { await saveOfficers.mutateAsync(); },
-    enabled: !!company.id,
+    enabled: !!company.id && !isLLC,
   });
+
+  // --- LLC dynamic manager list ---
+  const { data: llcManagersData = [] } = useQuery({
+    queryKey: ["llc_managers", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("llc_managers" as any)
+        .select("id,title,name,display_order")
+        .eq("company_id", companyId)
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return (data || []) as unknown as Array<{ id: string; title: string; name: string; display_order: number }>;
+    },
+    enabled: !!companyId && isLLC,
+  });
+
+  const [llcManagers, setLlcManagers] = useState<LlcManager[]>([]);
+
+  useEffect(() => {
+    if (!isLLC) return;
+    if (llcManagersData.length > 0) {
+      setLlcManagers(llcManagersData.map((m) => ({ title: m.title, name: m.name })));
+    } else if (officers) {
+      // Fallback for legacy LLCs not yet backfilled: seed from existing officers row
+      const seeded: LlcManager[] = [];
+      if (officers.president) seeded.push({ title: "Managing Member", name: officers.president });
+      if (officers.vice_president) seeded.push({ title: "Assistant Manager", name: officers.vice_president });
+      if (officers.secretary) seeded.push({ title: "Secretary", name: officers.secretary });
+      if (officers.treasurer) seeded.push({ title: "Treasurer", name: officers.treasurer });
+      setLlcManagers(seeded);
+    } else {
+      setLlcManagers([]);
+    }
+  }, [llcManagersData, officers, isLLC]);
+
+  const saveLlcManagers = useMutation({
+    mutationFn: async () => {
+      // 1. Replace all llc_managers rows for this company
+      const { error: delError } = await supabase
+        .from("llc_managers" as any)
+        .delete()
+        .eq("company_id", companyId);
+      if (delError) throw delError;
+
+      const cleaned = llcManagers
+        .map((m, idx) => ({ ...m, display_order: idx }))
+        .filter((m) => m.name.trim() && m.title.trim());
+
+      if (cleaned.length > 0) {
+        const { error: insError } = await supabase.from("llc_managers" as any).insert(
+          cleaned.map((m) => ({
+            company_id: companyId,
+            title: m.title.trim(),
+            name: m.name.trim(),
+            display_order: m.display_order,
+          }))
+        );
+        if (insError) throw insError;
+      }
+
+      // 2. Dual-write canonical snapshot to officers table
+      const snap = buildOfficerSnapshot(cleaned);
+      if (officers) {
+        const { error } = await supabase
+          .from("officers")
+          .update({
+            president: snap.president,
+            vice_president: snap.vice_president,
+            secretary: snap.secretary,
+            treasurer: snap.treasurer,
+          })
+          .eq("id", officers.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("officers").insert({
+          company_id: companyId,
+          president: snap.president,
+          vice_president: snap.vice_president,
+          secretary: snap.secretary,
+          treasurer: snap.treasurer,
+        });
+        if (error) throw error;
+      }
+
+      // 3. Address book sync
+      cleaned.forEach((m) =>
+        upsertAddressBook.mutate({ full_name: m.name.trim(), company_id: companyId })
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["llc_managers", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["officers", companyId] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const llcManagersAutoSave = useAutoSave({
+    data: llcManagers,
+    onSave: async () => { await saveLlcManagers.mutateAsync(); },
+    enabled: !!company.id && isLLC,
+  });
+
 
   // Directors - simple name fields like officers
   const { data: directors = [] } = useQuery({
@@ -1628,36 +1731,114 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <SectionPdfActions config={{
                   title: isLLCType(company.entity_type) ? "Managers / Officers" : "Officers",
                   companyName: company.name,
-                  fields: getOfficerFields(company.entity_type).map((f) => ({
-                    label: f.label,
-                    value: (officerForm as any)[f.key] || "",
-                  })),
+                  fields: isLLC
+                    ? llcManagers
+                        .filter((m) => m.name.trim() || m.title.trim())
+                        .map((m, i) => ({ label: m.title || `Manager ${i + 1}`, value: m.name }))
+                    : getOfficerFields(company.entity_type).map((f) => ({
+                        label: f.label,
+                        value: (officerForm as any)[f.key] || "",
+                      })),
                 }} />
               </div>
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <form
-                onSubmit={(e) => e.preventDefault()}
-                onBlur={officersAutoSave.handleBlur}
-                className="space-y-3"
-              >
-                <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
-                  {getOfficerFields(company.entity_type).map((field) => (
-                    <div key={field.key} className="field-group">
-                      <Label className="field-label">{field.label}</Label>
-                      <Input
-                        className="h-8 text-sm"
-                        value={(officerForm as any)[field.key] || ""}
-                        onChange={(e) => setOfficerForm((p) => ({ ...p, [field.key]: e.target.value }))}
-                        placeholder={field.placeholder}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-end">
-                  <SaveStatusIndicator status={officersAutoSave.status} lastSavedAt={officersAutoSave.lastSavedAt} />
-                </div>
-              </form>
+              {isLLC ? (
+                <form
+                  onSubmit={(e) => e.preventDefault()}
+                  onBlur={llcManagersAutoSave.handleBlur}
+                  className="space-y-3"
+                >
+                  {llcManagers.length === 0 && (
+                    <p className="text-xs text-muted-foreground">No managers yet. Add the first manager below.</p>
+                  )}
+                  <div className="space-y-2">
+                    {llcManagers.map((m, idx) => (
+                      <div key={idx} className="grid grid-cols-[200px_1fr_auto] gap-2 items-end">
+                        <div className="field-group">
+                          {idx === 0 && <Label className="field-label">Title</Label>}
+                          <Select
+                            value={m.title}
+                            onValueChange={(v) =>
+                              setLlcManagers((prev) => prev.map((x, i) => (i === idx ? { ...x, title: v } : x)))
+                            }
+                          >
+                            <SelectTrigger className="h-8 text-sm">
+                              <SelectValue placeholder="Select title" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {LLC_DYNAMIC_TITLE_OPTIONS.map((t) => (
+                                <SelectItem key={t} value={t}>{t}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="field-group">
+                          {idx === 0 && <Label className="field-label">Name</Label>}
+                          <Input
+                            className="h-8 text-sm"
+                            value={m.name}
+                            onChange={(e) =>
+                              setLlcManagers((prev) => prev.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)))
+                            }
+                            placeholder="Full name"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => setLlcManagers((prev) => prev.filter((_, i) => i !== idx))}
+                          aria-label="Remove manager"
+                        >
+                          <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() =>
+                        setLlcManagers((prev) => [...prev, { title: "Managing Member", name: "" }])
+                      }
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Add Manager
+                    </Button>
+                    <SaveStatusIndicator status={llcManagersAutoSave.status} lastSavedAt={llcManagersAutoSave.lastSavedAt} />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Documents and reports continue to show the first Managing Member, Assistant Manager, Secretary, and Treasurer until other documents are migrated.
+                  </p>
+                </form>
+              ) : (
+                <form
+                  onSubmit={(e) => e.preventDefault()}
+                  onBlur={officersAutoSave.handleBlur}
+                  className="space-y-3"
+                >
+                  <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
+                    {getOfficerFields(company.entity_type).map((field) => (
+                      <div key={field.key} className="field-group">
+                        <Label className="field-label">{field.label}</Label>
+                        <Input
+                          className="h-8 text-sm"
+                          value={(officerForm as any)[field.key] || ""}
+                          onChange={(e) => setOfficerForm((p) => ({ ...p, [field.key]: e.target.value }))}
+                          placeholder={field.placeholder}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-end">
+                    <SaveStatusIndicator status={officersAutoSave.status} lastSavedAt={officersAutoSave.lastSavedAt} />
+                  </div>
+                </form>
+              )}
             </CardContent>
           </Card>
         </CollapsibleContent>

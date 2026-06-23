@@ -1,113 +1,231 @@
+# LLC Dynamic Officer List — Revised Plan (Details for Approval)
 
-# Statutory Close Corporation PDF Customization
+## 1. Full migration SQL
 
-All edits live in **`src/lib/meeting-pdf-export.ts`** only. Every change is gated on `isStatutoryClose === true` (where `isStatutoryClose = isShareholder && meeting.sub_type === "Statutory Close Corporation"`). Standard shareholder, LLC, and Annual Meeting of Directors PDFs are untouched.
+```sql
+-- Table
+CREATE TABLE public.llc_managers (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id    uuid NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  title         text NOT NULL,
+  name          text NOT NULL,
+  display_order integer NOT NULL DEFAULT 0,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  updated_at    timestamptz NOT NULL DEFAULT now()
+);
 
-## Changes
+-- Index for ordered fetch per company
+CREATE INDEX llc_managers_company_order_idx
+  ON public.llc_managers (company_id, display_order);
 
-### 1. State-aware statute citation helper
-Add a module-level helper:
+-- Grants (no anon — owner-only via auth.uid())
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.llc_managers TO authenticated;
+GRANT ALL ON public.llc_managers TO service_role;
+
+-- RLS
+ALTER TABLE public.llc_managers ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Owners select their llc_managers"
+ON public.llc_managers FOR SELECT TO authenticated
+USING (EXISTS (
+  SELECT 1 FROM public.companies c
+  WHERE c.id = llc_managers.company_id AND c.user_id = auth.uid()
+));
+
+CREATE POLICY "Owners insert their llc_managers"
+ON public.llc_managers FOR INSERT TO authenticated
+WITH CHECK (EXISTS (
+  SELECT 1 FROM public.companies c
+  WHERE c.id = llc_managers.company_id AND c.user_id = auth.uid()
+));
+
+CREATE POLICY "Owners update their llc_managers"
+ON public.llc_managers FOR UPDATE TO authenticated
+USING (EXISTS (
+  SELECT 1 FROM public.companies c
+  WHERE c.id = llc_managers.company_id AND c.user_id = auth.uid()
+))
+WITH CHECK (EXISTS (
+  SELECT 1 FROM public.companies c
+  WHERE c.id = llc_managers.company_id AND c.user_id = auth.uid()
+));
+
+CREATE POLICY "Owners delete their llc_managers"
+ON public.llc_managers FOR DELETE TO authenticated
+USING (EXISTS (
+  SELECT 1 FROM public.companies c
+  WHERE c.id = llc_managers.company_id AND c.user_id = auth.uid()
+));
+
+-- updated_at trigger (reuses existing function)
+CREATE TRIGGER llc_managers_set_updated_at
+BEFORE UPDATE ON public.llc_managers
+FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- One-time backfill (idempotent guard)
+INSERT INTO public.llc_managers (company_id, title, name, display_order)
+SELECT c.id, v.title, v.nm, v.ord
+FROM public.companies c
+CROSS JOIN LATERAL (VALUES
+  ('Managing Member',   c.president,      0),
+  ('Assistant Manager', c.vice_president, 1),
+  ('Secretary',         c.secretary,      2),
+  ('Treasurer',         c.treasurer,      3)
+) AS v(title, nm, ord)
+WHERE c.entity_type IN ('LLC','LLC-S','Single Member LLC')
+  AND COALESCE(v.nm, '') <> ''
+  AND NOT EXISTS (SELECT 1 FROM public.llc_managers m WHERE m.company_id = c.id);
+```
+
+No CHECK constraints on `title` (per Postgres convention here — UI enforces the dropdown; trigger-based validation is overkill for a free-text label).
+
+## 2. Dual-write mapping helper
+
+New file `src/lib/llc-officer-mapping.ts` (pure TS, unit-testable):
 
 ```ts
-const getStatutoryCloseStatute = (state?: string | null): string => {
-  const statutes: Record<string, string> = {
-    AZ: "Ariz. Rev. Stat. § 10-1801 et seq.",
-    CA: "Cal. Corp. Code § 158 et seq.",
-    DE: "Del. Code Ann. tit. 8, § 342 et seq.",
-    FL: "Fla. Stat. § 607.0902 et seq.",
-    IL: "805 Ill. Comp. Stat. 5/2A.05 et seq.",
-    MD: "Md. Code Ann., Corps. & Ass'ns § 4-101 et seq.",
-    MI: "Mich. Comp. Laws § 450.1489 et seq.",
-    MN: "Minn. Stat. § 302A.671 et seq.",
-    MO: "Mo. Rev. Stat. § 351.755 et seq.",
-    NJ: "N.J. Stat. Ann. § 14A:5-21 et seq.",
-    NY: "N.Y. Bus. Corp. Law § 620 et seq.",
-    OH: "Ohio Rev. Code Ann. § 1701.591 et seq.",
-    PA: "15 Pa. Cons. Stat. § 1571 et seq.",
-    SC: "S.C. Code Ann. § 33-17-101 et seq.",
-    TX: "Tex. Bus. Orgs. Code § 21.701 et seq.",
-    WI: "Wis. Stat. § 180.1801 et seq.",
-  };
-  return statutes[(state ?? "").toUpperCase()] ?? "applicable state close corporation statutes";
+export type LlcManager = { title: string; name: string };
+
+export type CompanyOfficerSnapshot = {
+  president: string | null;
+  vice_president: string | null;
+  secretary: string | null;
+  treasurer: string | null;
 };
+
+const norm = (s: string) => s.trim().toLowerCase();
+
+// Title -> canonical role. First non-empty match wins per role.
+const ROLE_MATCHERS: Array<{
+  role: keyof CompanyOfficerSnapshot;
+  titles: string[];
+}> = [
+  { role: "president",      titles: ["managing member", "manager", "member-manager", "chief manager", "operations manager", "president", "ceo"] },
+  { role: "vice_president", titles: ["assistant manager", "vice president"] },
+  { role: "secretary",      titles: ["secretary", "organizer", "secretary/treasurer", "assistant secretary"] },
+  { role: "treasurer",      titles: ["treasurer", "financial manager", "cfo", "assistant treasurer"] },
+];
+
+export function buildOfficerSnapshot(managers: LlcManager[]): CompanyOfficerSnapshot {
+  const snap: CompanyOfficerSnapshot = {
+    president: null, vice_president: null, secretary: null, treasurer: null,
+  };
+  const usedIds = new Set<number>();
+
+  for (const { role, titles } of ROLE_MATCHERS) {
+    for (let i = 0; i < managers.length; i++) {
+      if (usedIds.has(i)) continue;
+      const m = managers[i];
+      if (!m?.name?.trim()) continue;
+      if (titles.includes(norm(m.title))) {
+        snap[role] = m.name.trim();
+        usedIds.add(i);          // a row can fill only one slot
+        break;                   // first match wins for this role
+      }
+    }
+  }
+  return snap;
+}
 ```
 
-Used only in the governance notice block (Change 2). Null/undefined/unknown state falls back to the generic string — never throws, never renders blank.
+Behaviour answers to your two questions:
 
-### 2. Waiver of Notice purposes (around line 768)
-Inside `addWaiverOfNoticePages`, compute `const isStatutoryClose = isShareholderMeeting && (meeting?.sub_type || "") === "Statutory Close Corporation";`. When true, replace shareholder `purposes[0]`:
-- `"elect a new board of directors"` → `"elect officers of the corporation"`
+- **Two Managing Members in the list?** The first one in `display_order` is written to `companies.president`. The second remains a row in `llc_managers` but does not overwrite anything (its index is marked used only if it actually wins a slot — here it doesn't, so it stays available for another role if its title matched one, which it doesn't). It will still appear in the Annual Meeting roster (step 4) because that path reads `llc_managers` directly.
+- **Manager deleted and no remaining entry for that role?** `buildOfficerSnapshot` returns `null` for that role. The Org tab save runs:
 
-Second purpose unchanged. Standard shareholder waiver untouched.
+  ```ts
+  await supabase.from("companies").update({
+    president:      snap.president,
+    vice_president: snap.vice_president,
+    secretary:      snap.secretary,
+    treasurer:      snap.treasurer,
+  }).eq("id", companyId);
+  ```
 
-### 3. Governance Notice block (in `exportMeetingPdf`, just before line 1213 `y = section("Meeting Information")`)
-When `isStatutoryClose`, render a bold heading + paragraph (not numbered, so "Meeting Information" stays as Section 1):
+  So the stale value is **explicitly nulled** — never left in place. This is the safer default: the snapshot always reflects current state. The trade-off (an "empty LLC officers" state can fail the compliance "has officers" check) is mitigated by requiring at least one row before save in the UI.
 
-```
-STATUTORY CLOSE CORPORATION GOVERNANCE NOTICE
+## 3. `AnnualMeetingWizard.tsx` — confirmed in scope
 
-[Company Name] is organized as a Statutory Close Corporation pursuant to
-${getStatutoryCloseStatute(company?.state)}. This corporation operates without a
-board of directors. All governance powers vested by statute in a board of
-directors are exercised directly by the shareholders of the corporation. The
-actions taken at this meeting are made in that capacity.
-```
+Yes, this file is in the modified-files list. Lines 383–386 are inside the LLC branch of the officer pre-fill.
 
-Page-break check before render; blue-theme color for the heading to match surrounding sections.
-
-### 4. Section 3 — Presentation of Corporate Records (lines 1520–1556)
-This block executes for statutory close meetings. Gate the wording:
-- Line 1534: when `isStatutoryClose`, replace `"minutes of the board of directors, … by the board of directors since the last annual meeting…"` with `"minutes of the shareholders, covering all purchases, contracts, contributions, compensations, acts, authorizations, decisions, proceedings, elections, and appointments by the shareholders since the last annual meeting"` (date suffix preserved when present).
-- Line 1556 ratification: replace `"by the board of directors since the last annual meeting"` with `"by the shareholders since the last annual meeting"`.
-
-### 5. Officers section (lines 1690–1720)
-Statutory close shareholder meetings render this section (since `isShareholderOnly = isShareholder && !isStatutoryClose`). When `isStatutoryClose`, swap:
-- Line 1703 WHEREAS → `"the shareholders have reviewed"`
-- Line 1710 WHEREAS → `"the shareholders have determined"`
-- Line 1718 RESOLVED → `"which the shareholders have determined to be reasonable compensation"`
-
-### 6. All remaining "Board of Directors" / "the Board" sites
-For each site below, when `isStatutoryClose`, substitute "the shareholders" / "The Shareholders" with correct verb agreement ("have"). Localized ternary swaps only — no structural change:
-
-- Lines 1448, 1450 — Section 1244 WHEREAS clauses
-- Line 1563 — Call to Order WHEREAS
-- Line 1769 — officer compensation intro
-- Line 1884 — distribution: `"The Board of Directors confirmed"` → `"The shareholders confirmed"`
-- Line 1917 — financial statements review
-- Line 2121 — legal counsel
-- Line 2175 — accounting needs
-- Line 2278 — banking relationship review
-- Line 2317 — borrowing/loans
-- Line 2724 — lease terminations
-- Line 2754 — lease obligations
-- Line 2860 — governing document amendments
-- Lines 2915, 2921 — compensation/bonus reviews
-- Line 2944 — benefit plan review
-- Line 2968 — financing determination
-- Line 2983 — authorized signer update
-- Line 2997 — employee benefits review
-- Line 3140 — agreement ratification ("by the Board of Directors" → "by the shareholders")
-- Line 3210 — authorized signers review
-
-### 7. General Authorization WHEREAS (line 3243)
-When `isStatutoryClose`: `"WHEREAS, the Board of Directors recognizes"` → `"WHEREAS, the shareholders recognize"`. The Registered Agent Confirmation block at line 3231 uses only a Wis. Stat. § 183.0113 WHEREAS and is left unchanged.
-
-### 8. Implementation pattern
-Inside `exportMeetingPdf`, two small helpers keep call sites tidy and preserve byte-identical output when `isStatutoryClose === false`:
-
+**Before (lines 383–386):**
 ```ts
-const boardLabel = () =>
-  isLLC ? "members" : (isStatutoryClose ? "shareholders" : "Board of Directors");
-const boardVerb = (corpSingular: "has" | "have") =>
-  isLLC ? "have" : (isStatutoryClose ? "have" : corpSingular);
+if (companyOfficers.president)      officerList.push({ name: companyOfficers.president,      title: "Managing Member", salary: "", bonus: "" });
+if (companyOfficers.vice_president) officerList.push({ name: companyOfficers.vice_president, title: "Member",           salary: "", bonus: "" });
+if (companyOfficers.secretary)      officerList.push({ name: companyOfficers.secretary,      title: "Secretary",        salary: "", bonus: "" });
+if (companyOfficers.treasurer)      officerList.push({ name: companyOfficers.treasurer,      title: "Treasurer",        salary: "", bonus: "" });
 ```
 
-### Not changed
-- Document title / "Meeting of Shareholders" / "Minutes of the Annual Meeting of Shareholders" headers
-- Standard Annual Meeting of Shareholders rendering
-- Annual Meeting of Directors PDF
-- LLC member rendering
-- Database, tabs, forms, any other file
+**After:**
+```ts
+// Prefer the dynamic LLC manager list; fall back to the legacy four columns
+// for companies that have not yet been edited through the new Org tab UI.
+const { data: llcManagers } = await supabase
+  .from("llc_managers")
+  .select("title,name,display_order")
+  .eq("company_id", companyId)
+  .order("display_order", { ascending: true });
 
-## Verification
-Generate a PDF for a Statutory Close Corp shareholder meeting (WI and a non-WI state, and a company with null state) and confirm: governance notice appears before Section 1 with the correct state-specific citation (or the generic fallback); waiver purposes show "elect officers"; corporate records, officers, financials, banking, agreements, and General Authorization sections read "shareholders". Generate a non–statutory-close shareholder meeting PDF and confirm output is byte-identical to current.
+if (llcManagers && llcManagers.length > 0) {
+  for (const m of llcManagers) {
+    if (m.name?.trim()) {
+      officerList.push({ name: m.name, title: m.title, salary: "", bonus: "" });
+    }
+  }
+} else {
+  if (companyOfficers.president)      officerList.push({ name: companyOfficers.president,      title: "Managing Member", salary: "", bonus: "" });
+  if (companyOfficers.vice_president) officerList.push({ name: companyOfficers.vice_president, title: "Member",           salary: "", bonus: "" });
+  if (companyOfficers.secretary)      officerList.push({ name: companyOfficers.secretary,      title: "Secretary",        salary: "", bonus: "" });
+  if (companyOfficers.treasurer)      officerList.push({ name: companyOfficers.treasurer,      title: "Treasurer",        salary: "", bonus: "" });
+}
+```
+
+(Exact fetch call will be adjusted to match the surrounding async pattern in the file; semantics above are the contract.)
+
+## 4. Title dropdown — exact list
+
+Used in both the Org tab dynamic list and accepted by `buildOfficerSnapshot`. Combined LLC + corporate-style titles, in display order:
+
+```
+Managing Member
+Manager
+Member-Manager
+Chief Manager
+Operations Manager
+Assistant Manager
+President
+Vice President
+Secretary
+Assistant Secretary
+Secretary/Treasurer
+Treasurer
+Assistant Treasurer
+Financial Manager
+Organizer
+CEO
+CFO
+```
+
+This will be exported as a new constant `LLC_DYNAMIC_TITLE_OPTIONS` from `src/components/company/OrganizationTab.tsx` (or co-located with the mapping helper) and is a strict superset of the existing `OFFICER_TITLE_OPTIONS.LLC`. The existing `OFFICER_TITLE_OPTIONS` map used by `MeetingOfficersTable.tsx` is **not** modified.
+
+## 5. Files confirmed NOT modified
+
+Zero changes in this pass to:
+
+- `src/lib/meeting-pdf-export.ts`
+- `src/lib/record-book-pdf.ts`
+- `src/lib/operating-agreement-pdf.ts`
+- `src/lib/bylaws-pdf.ts`
+- `src/lib/annual-update-pdf.ts`
+- `src/components/company/WIComplianceChecklist.tsx`
+- `src/pages/Reports.tsx`
+
+These all continue reading `companies.president / vice_president / secretary / treasurer`, which the dual-write keeps current on every Org-tab save.
+
+## 6. Final modified-files list
+
+- `supabase/migrations/<timestamp>_llc_managers.sql` (new — SQL above)
+- `src/lib/llc-officer-mapping.ts` (new)
+- `src/components/company/OrganizationTab.tsx` (LLC branch: dynamic list UI + dual-write on save)
+- `src/components/AnnualMeetingWizard.tsx` (LLC pre-fill: read `llc_managers` with column fallback)
+- `src/integrations/supabase/types.ts` (auto-regenerated post-migration)

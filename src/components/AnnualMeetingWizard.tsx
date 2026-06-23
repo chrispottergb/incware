@@ -216,6 +216,19 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     enabled: !!company?.id,
   });
 
+  const { data: companyLlcManagers = [] } = useQuery({
+    queryKey: ["llc_managers", company?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("llc_managers" as any)
+        .select("title,name,display_order")
+        .eq("company_id", company.id)
+        .order("display_order", { ascending: true });
+      return (data || []) as unknown as Array<{ title: string; name: string; display_order: number }>;
+    },
+    enabled: !!company?.id,
+  });
+
   const { data: companyDirectors = [] } = useQuery({
     queryKey: ["directors", company?.id],
     queryFn: async () => {
@@ -378,6 +391,13 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     if (priorOfficers.length > 0) {
       priorOfficers.forEach((o: any) => {
         officerList.push({ name: o.name, title: o.title, salary: o.salary?.toString() || "", bonus: o.bonus?.toString() || "" });
+      });
+    } else if (companyLlcManagers && companyLlcManagers.length > 0) {
+      // LLC dynamic manager list — preferred when present (all managers, not just four)
+      companyLlcManagers.forEach((m) => {
+        if (m.name?.trim()) {
+          officerList.push({ name: m.name, title: m.title, salary: "", bonus: "" });
+        }
       });
     } else if (companyOfficers) {
       if (companyOfficers.president) officerList.push({ name: companyOfficers.president, title: "Managing Member", salary: "", bonus: "" });
@@ -607,7 +627,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       setData(buildDefaultData());
       setInitialized(true);
     }
-  }, [companyShareholders, companyOfficers, companyBanks, priorMeeting, attorneys, accountants, companyAssets, companyLeases, priorOfficers, activeCertificates]);
+  }, [companyShareholders, companyOfficers, companyLlcManagers, companyBanks, priorMeeting, attorneys, accountants, companyAssets, companyLeases, priorOfficers, activeCertificates]);
 
   // Always refresh members from DB data when certificates/shareholders load, even with a draft
   useEffect(() => {
