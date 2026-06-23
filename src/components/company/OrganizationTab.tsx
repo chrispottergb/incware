@@ -599,12 +599,114 @@ export default function OrganizationTab({ companyId, company }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  // Auto-save for officers
+  // Auto-save for officers (non-LLC entity types)
   const officersAutoSave = useAutoSave({
     data: officerForm,
     onSave: async () => { await saveOfficers.mutateAsync(); },
-    enabled: !!company.id,
+    enabled: !!company.id && !isLLC,
   });
+
+  // --- LLC dynamic manager list ---
+  const { data: llcManagersData = [] } = useQuery({
+    queryKey: ["llc_managers", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("llc_managers" as any)
+        .select("id,title,name,display_order")
+        .eq("company_id", companyId)
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return (data || []) as Array<{ id: string; title: string; name: string; display_order: number }>;
+    },
+    enabled: !!companyId && isLLC,
+  });
+
+  const [llcManagers, setLlcManagers] = useState<LlcManager[]>([]);
+
+  useEffect(() => {
+    if (!isLLC) return;
+    if (llcManagersData.length > 0) {
+      setLlcManagers(llcManagersData.map((m) => ({ title: m.title, name: m.name })));
+    } else if (officers) {
+      // Fallback for legacy LLCs not yet backfilled: seed from existing officers row
+      const seeded: LlcManager[] = [];
+      if (officers.president) seeded.push({ title: "Managing Member", name: officers.president });
+      if (officers.vice_president) seeded.push({ title: "Assistant Manager", name: officers.vice_president });
+      if (officers.secretary) seeded.push({ title: "Secretary", name: officers.secretary });
+      if (officers.treasurer) seeded.push({ title: "Treasurer", name: officers.treasurer });
+      setLlcManagers(seeded);
+    } else {
+      setLlcManagers([]);
+    }
+  }, [llcManagersData, officers, isLLC]);
+
+  const saveLlcManagers = useMutation({
+    mutationFn: async () => {
+      // 1. Replace all llc_managers rows for this company
+      const { error: delError } = await supabase
+        .from("llc_managers" as any)
+        .delete()
+        .eq("company_id", companyId);
+      if (delError) throw delError;
+
+      const cleaned = llcManagers
+        .map((m, idx) => ({ ...m, display_order: idx }))
+        .filter((m) => m.name.trim() && m.title.trim());
+
+      if (cleaned.length > 0) {
+        const { error: insError } = await supabase.from("llc_managers" as any).insert(
+          cleaned.map((m) => ({
+            company_id: companyId,
+            title: m.title.trim(),
+            name: m.name.trim(),
+            display_order: m.display_order,
+          }))
+        );
+        if (insError) throw insError;
+      }
+
+      // 2. Dual-write canonical snapshot to officers table
+      const snap = buildOfficerSnapshot(cleaned);
+      if (officers) {
+        const { error } = await supabase
+          .from("officers")
+          .update({
+            president: snap.president,
+            vice_president: snap.vice_president,
+            secretary: snap.secretary,
+            treasurer: snap.treasurer,
+          })
+          .eq("id", officers.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("officers").insert({
+          company_id: companyId,
+          president: snap.president,
+          vice_president: snap.vice_president,
+          secretary: snap.secretary,
+          treasurer: snap.treasurer,
+        });
+        if (error) throw error;
+      }
+
+      // 3. Address book sync
+      cleaned.forEach((m) =>
+        upsertAddressBook.mutate({ full_name: m.name.trim(), company_id: companyId })
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["llc_managers", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["officers", companyId] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const llcManagersAutoSave = useAutoSave({
+    data: llcManagers,
+    onSave: async () => { await saveLlcManagers.mutateAsync(); },
+    enabled: !!company.id && isLLC,
+  });
+
 
   // Directors - simple name fields like officers
   const { data: directors = [] } = useQuery({
