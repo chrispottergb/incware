@@ -2113,6 +2113,44 @@ export type Database = {
           },
         ]
       }
+      llc_managers: {
+        Row: {
+          company_id: string
+          created_at: string
+          display_order: number
+          id: string
+          name: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          name: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          name?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "llc_managers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       master_contacts: {
         Row: {
           bar_number: string | null
