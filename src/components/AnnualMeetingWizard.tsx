@@ -216,6 +216,19 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     enabled: !!company?.id,
   });
 
+  const { data: companyLlcManagers = [] } = useQuery({
+    queryKey: ["llc_managers", company?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("llc_managers" as any)
+        .select("title,name,display_order")
+        .eq("company_id", company.id)
+        .order("display_order", { ascending: true });
+      return (data || []) as unknown as Array<{ title: string; name: string; display_order: number }>;
+    },
+    enabled: !!company?.id,
+  });
+
   const { data: companyDirectors = [] } = useQuery({
     queryKey: ["directors", company?.id],
     queryFn: async () => {
