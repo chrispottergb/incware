@@ -392,6 +392,13 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       priorOfficers.forEach((o: any) => {
         officerList.push({ name: o.name, title: o.title, salary: o.salary?.toString() || "", bonus: o.bonus?.toString() || "" });
       });
+    } else if (companyLlcManagers && companyLlcManagers.length > 0) {
+      // LLC dynamic manager list — preferred when present (all managers, not just four)
+      companyLlcManagers.forEach((m) => {
+        if (m.name?.trim()) {
+          officerList.push({ name: m.name, title: m.title, salary: "", bonus: "" });
+        }
+      });
     } else if (companyOfficers) {
       if (companyOfficers.president) officerList.push({ name: companyOfficers.president, title: "Managing Member", salary: "", bonus: "" });
       if (companyOfficers.vice_president) officerList.push({ name: companyOfficers.vice_president, title: "Member", salary: "", bonus: "" });
