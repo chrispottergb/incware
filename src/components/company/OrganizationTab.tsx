@@ -1731,36 +1731,114 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <SectionPdfActions config={{
                   title: isLLCType(company.entity_type) ? "Managers / Officers" : "Officers",
                   companyName: company.name,
-                  fields: getOfficerFields(company.entity_type).map((f) => ({
-                    label: f.label,
-                    value: (officerForm as any)[f.key] || "",
-                  })),
+                  fields: isLLC
+                    ? llcManagers
+                        .filter((m) => m.name.trim() || m.title.trim())
+                        .map((m, i) => ({ label: m.title || `Manager ${i + 1}`, value: m.name }))
+                    : getOfficerFields(company.entity_type).map((f) => ({
+                        label: f.label,
+                        value: (officerForm as any)[f.key] || "",
+                      })),
                 }} />
               </div>
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <form
-                onSubmit={(e) => e.preventDefault()}
-                onBlur={officersAutoSave.handleBlur}
-                className="space-y-3"
-              >
-                <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
-                  {getOfficerFields(company.entity_type).map((field) => (
-                    <div key={field.key} className="field-group">
-                      <Label className="field-label">{field.label}</Label>
-                      <Input
-                        className="h-8 text-sm"
-                        value={(officerForm as any)[field.key] || ""}
-                        onChange={(e) => setOfficerForm((p) => ({ ...p, [field.key]: e.target.value }))}
-                        placeholder={field.placeholder}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-end">
-                  <SaveStatusIndicator status={officersAutoSave.status} lastSavedAt={officersAutoSave.lastSavedAt} />
-                </div>
-              </form>
+              {isLLC ? (
+                <form
+                  onSubmit={(e) => e.preventDefault()}
+                  onBlur={llcManagersAutoSave.handleBlur}
+                  className="space-y-3"
+                >
+                  {llcManagers.length === 0 && (
+                    <p className="text-xs text-muted-foreground">No managers yet. Add the first manager below.</p>
+                  )}
+                  <div className="space-y-2">
+                    {llcManagers.map((m, idx) => (
+                      <div key={idx} className="grid grid-cols-[200px_1fr_auto] gap-2 items-end">
+                        <div className="field-group">
+                          {idx === 0 && <Label className="field-label">Title</Label>}
+                          <Select
+                            value={m.title}
+                            onValueChange={(v) =>
+                              setLlcManagers((prev) => prev.map((x, i) => (i === idx ? { ...x, title: v } : x)))
+                            }
+                          >
+                            <SelectTrigger className="h-8 text-sm">
+                              <SelectValue placeholder="Select title" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {LLC_DYNAMIC_TITLE_OPTIONS.map((t) => (
+                                <SelectItem key={t} value={t}>{t}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="field-group">
+                          {idx === 0 && <Label className="field-label">Name</Label>}
+                          <Input
+                            className="h-8 text-sm"
+                            value={m.name}
+                            onChange={(e) =>
+                              setLlcManagers((prev) => prev.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)))
+                            }
+                            placeholder="Full name"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => setLlcManagers((prev) => prev.filter((_, i) => i !== idx))}
+                          aria-label="Remove manager"
+                        >
+                          <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() =>
+                        setLlcManagers((prev) => [...prev, { title: "Managing Member", name: "" }])
+                      }
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Add Manager
+                    </Button>
+                    <SaveStatusIndicator status={llcManagersAutoSave.status} lastSavedAt={llcManagersAutoSave.lastSavedAt} />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Documents and reports continue to show the first Managing Member, Assistant Manager, Secretary, and Treasurer until other documents are migrated.
+                  </p>
+                </form>
+              ) : (
+                <form
+                  onSubmit={(e) => e.preventDefault()}
+                  onBlur={officersAutoSave.handleBlur}
+                  className="space-y-3"
+                >
+                  <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
+                    {getOfficerFields(company.entity_type).map((field) => (
+                      <div key={field.key} className="field-group">
+                        <Label className="field-label">{field.label}</Label>
+                        <Input
+                          className="h-8 text-sm"
+                          value={(officerForm as any)[field.key] || ""}
+                          onChange={(e) => setOfficerForm((p) => ({ ...p, [field.key]: e.target.value }))}
+                          placeholder={field.placeholder}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-end">
+                    <SaveStatusIndicator status={officersAutoSave.status} lastSavedAt={officersAutoSave.lastSavedAt} />
+                  </div>
+                </form>
+              )}
             </CardContent>
           </Card>
         </CollapsibleContent>
