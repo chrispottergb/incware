@@ -481,10 +481,7 @@ function AttorneySection({ companyId }: { companyId: string }) {
               <Label className="text-xs">Scope of Engagement</Label>
               <ScopeCombobox value={contactForm.specialty} onChange={v => setContactForm(p => ({ ...p, specialty: v }))} options={LEGAL_SERVICES} placeholder="Select or type legal service" />
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Cell Phone</Label><Input type="tel" value={contactForm.phone} onChange={e => setContactForm(p => ({ ...p, phone: formatPhone(e.target.value) }))} placeholder="(555) 555-5555" /></div>
-              <div><Label className="text-xs">Email</Label><Input value={contactForm.email} onChange={e => setContactForm(p => ({ ...p, email: e.target.value }))} /></div>
-            </div>
+            <div><Label className="text-xs">Email</Label><Input value={contactForm.email} onChange={e => setContactForm(p => ({ ...p, email: e.target.value }))} /></div>
             <div><Label className="text-xs">Notes</Label><Textarea value={contactForm.notes} onChange={e => setContactForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
           </div>
           <DialogFooter className="gap-2">
