@@ -30,7 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Pencil, CheckCircle2, AlertTriangle, Flag, Minus, Link2, Users, Clock } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil, CheckCircle2, AlertTriangle, Flag, Minus, Link2, Users, Clock, Info } from "lucide-react";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -102,9 +102,11 @@ interface DualRoleGroup {
 interface Props {
   meetingId: string;
   titleOptions: string[];
+  showSalary?: boolean;
+  showLLCNoSalaryBanner?: boolean;
 }
 
-export default function MeetingOfficersTable({ meetingId, titleOptions }: Props) {
+export default function MeetingOfficersTable({ meetingId, titleOptions, showSalary = true, showLLCNoSalaryBanner = false }: Props) {
   const queryClient = useQueryClient();
   const { upsert: upsertAddressBook } = useAddressBookContext();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -466,10 +468,12 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
                   <Label className="text-xs font-medium text-muted-foreground">Name</Label>
                   <Input value={form.name ?? ""} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Salary</Label>
-                  <Input type="number" step="0.01" value={form.salary ?? ""} onChange={(e) => setForm((p) => ({ ...p, salary: e.target.value }))} />
-                </div>
+                {showSalary && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Salary</Label>
+                    <Input type="number" step="0.01" value={form.salary ?? ""} onChange={(e) => setForm((p) => ({ ...p, salary: e.target.value }))} />
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Bonus</Label>
                   <Input type="number" step="0.01" value={form.bonus ?? ""} onChange={(e) => setForm((p) => ({ ...p, bonus: e.target.value }))} />
@@ -483,6 +487,14 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
           </Dialog>
         </CardHeader>
         <CardContent>
+          {showLLCNoSalaryBanner && (
+            <Alert className="mb-3 border-blue-500/20 bg-blue-500/5 text-foreground">
+              <Info className="h-4 w-4 text-blue-500" />
+              <AlertDescription className="text-xs">
+                Officers of a standard LLC do not receive a salary. Distributions are managed under the Members section.
+              </AlertDescription>
+            </Alert>
+          )}
           {rows.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border py-8 text-center">
               <p className="text-sm text-muted-foreground">No entries yet</p>
@@ -494,7 +506,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
                   <TableRow className="bg-muted/50">
                     <TableHead>Title</TableHead>
                     <TableHead>Name</TableHead>
-                    <TableHead className="text-right">Salary</TableHead>
+                    {showSalary && <TableHead className="text-right">Salary</TableHead>}
                     <TableHead className="text-right">Bonus</TableHead>
                     <TableHead className="text-center">Status</TableHead>
                     <TableHead className="w-24" />
@@ -531,9 +543,11 @@ export default function MeetingOfficersTable({ meetingId, titleOptions }: Props)
                           </div>
                         </TableCell>
                         <TableCell>{row.name ?? "—"}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          {row.salary != null ? `$${Number(row.salary).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
-                        </TableCell>
+                        {showSalary && (
+                          <TableCell className="text-right font-mono text-sm">
+                            {row.salary != null ? `$${Number(row.salary).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                          </TableCell>
+                        )}
                         <TableCell className="text-right font-mono text-sm">
                           {row.bonus != null ? `$${Number(row.bonus).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
                         </TableCell>
