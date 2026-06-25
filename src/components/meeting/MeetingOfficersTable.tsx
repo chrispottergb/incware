@@ -543,9 +543,11 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
                           </div>
                         </TableCell>
                         <TableCell>{row.name ?? "—"}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          {row.salary != null ? `$${Number(row.salary).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
-                        </TableCell>
+                        {showSalary && (
+                          <TableCell className="text-right font-mono text-sm">
+                            {row.salary != null ? `$${Number(row.salary).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                          </TableCell>
+                        )}
                         <TableCell className="text-right font-mono text-sm">
                           {row.bonus != null ? `$${Number(row.bonus).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
                         </TableCell>
