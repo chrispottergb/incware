@@ -102,9 +102,11 @@ interface DualRoleGroup {
 interface Props {
   meetingId: string;
   titleOptions: string[];
+  showSalary?: boolean;
+  showLLCNoSalaryBanner?: boolean;
 }
 
-export default function MeetingOfficersTable({ meetingId, titleOptions }: Props) {
+export default function MeetingOfficersTable({ meetingId, titleOptions, showSalary = true, showLLCNoSalaryBanner = false }: Props) {
   const queryClient = useQueryClient();
   const { upsert: upsertAddressBook } = useAddressBookContext();
   const [dialogOpen, setDialogOpen] = useState(false);
