@@ -1193,27 +1193,42 @@ export default function MeetingDetail() {
           </div>
         </TabsContent>
         <TabsContent value="officers" className="mt-5">
-          <div className="space-y-4">
-            <div className="flex justify-end">
-              <PrintPreviewButton
-                label="Print"
-                generatePDF={() => exportSectionPDF("Officers", company, meeting,
-                  ["Title", "Name", "Salary", "Bonus"],
-                  officers.map((o: any) => [
-                    o.title,
-                    o.name,
-                    o.salary != null ? `$${Number(o.salary).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
-                    o.bonus != null ? `$${Number(o.bonus).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
-                  ])
-                )}
-                fileName={`officers-${meetingFileName}`}
-              />
-            </div>
-            <MeetingOfficersTable
-              meetingId={meeting.id}
-              titleOptions={OFFICER_TITLE_OPTIONS[company?.entity_type || "Corporation"] || OFFICER_TITLE_OPTIONS["Corporation"]}
-            />
-          </div>
+          {(() => {
+            const isLLCNonSCorp =
+              isLLCType(company?.entity_type) &&
+              company?.entity_type !== "LLC-S" &&
+              !company?.s_election_date;
+            const showSalary = !isLLCNonSCorp;
+            return (
+              <div className="space-y-4">
+                <div className="flex justify-end">
+                  <PrintPreviewButton
+                    label="Print"
+                    generatePDF={() => exportSectionPDF("Officers", company, meeting,
+                      showSalary ? ["Title", "Name", "Salary", "Bonus"] : ["Title", "Name", "Bonus"],
+                      officers.map((o: any) => showSalary ? [
+                        o.title,
+                        o.name,
+                        o.salary != null ? `$${Number(o.salary).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
+                        o.bonus != null ? `$${Number(o.bonus).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
+                      ] : [
+                        o.title,
+                        o.name,
+                        o.bonus != null ? `$${Number(o.bonus).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
+                      ])
+                    )}
+                    fileName={`officers-${meetingFileName}`}
+                  />
+                </div>
+                <MeetingOfficersTable
+                  meetingId={meeting.id}
+                  titleOptions={OFFICER_TITLE_OPTIONS[company?.entity_type || "Corporation"] || OFFICER_TITLE_OPTIONS["Corporation"]}
+                  showSalary={showSalary}
+                  showLLCNoSalaryBanner={isLLCNonSCorp}
+                />
+              </div>
+            );
+          })()}
         </TabsContent>
         <TabsContent value="counsel" className="mt-5">
           {showCompanyLevelCounselAndLeases ? (
