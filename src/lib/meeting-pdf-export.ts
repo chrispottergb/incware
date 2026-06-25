@@ -1777,14 +1777,27 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bt
     );
 
-    const hasSalaryData = (data.officers ?? []).some(o => o.salary != null || o.bonus != null);
+    // Hide Salary column for standard LLCs (no S-Corp election) — officers of a
+    // standard LLC don't draw a salary; distributions are handled via Members.
+    const entityTypeRaw = (company?.entity_type || "").toString();
+    const isLLCS = entityTypeRaw === "LLC-S";
+    const showSalary = !isLLC || isLLCS || isSCorp;
+    const hasSalaryData = showSalary && (data.officers ?? []).some(o => o.salary != null || o.bonus != null);
+    const hasBonusData = (data.officers ?? []).some(o => o.bonus != null);
+
+    const headRow: string[] = ["Title", "Name"];
+    if (hasSalaryData) headRow.push("Salary");
+    if (hasSalaryData || hasBonusData) headRow.push("Bonus");
+
     autoTable(doc, {
       startY: y,
-      head: [hasSalaryData ? ["Title", "Name", "Salary", "Bonus"] : ["Title", "Name"]],
-      body: (data.officers ?? []).map(o => hasSalaryData
-        ? [o.title, o.name, o.salary != null ? fmt(o.salary) : "\u2014", o.bonus != null ? fmt(o.bonus) : "\u2014"]
-        : [o.title, o.name]
-      ),
+      head: [headRow],
+      body: (data.officers ?? []).map(o => {
+        const row: string[] = [o.title, o.name];
+        if (hasSalaryData) row.push(o.salary != null ? fmt(o.salary) : "\u2014");
+        if (hasSalaryData || hasBonusData) row.push(o.bonus != null ? fmt(o.bonus) : "\u2014");
+        return row;
+      }),
       theme: "grid",
       headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
