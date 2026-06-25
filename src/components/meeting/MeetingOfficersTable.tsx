@@ -487,6 +487,14 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
           </Dialog>
         </CardHeader>
         <CardContent>
+          {showLLCNoSalaryBanner && (
+            <Alert className="mb-3 border-blue-500/20 bg-blue-500/5 text-foreground">
+              <Info className="h-4 w-4 text-blue-500" />
+              <AlertDescription className="text-xs">
+                Officers of a standard LLC do not receive a salary. Distributions are managed under the Members section.
+              </AlertDescription>
+            </Alert>
+          )}
           {rows.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border py-8 text-center">
               <p className="text-sm text-muted-foreground">No entries yet</p>
@@ -498,7 +506,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
                   <TableRow className="bg-muted/50">
                     <TableHead>Title</TableHead>
                     <TableHead>Name</TableHead>
-                    <TableHead className="text-right">Salary</TableHead>
+                    {showSalary && <TableHead className="text-right">Salary</TableHead>}
                     <TableHead className="text-right">Bonus</TableHead>
                     <TableHead className="text-center">Status</TableHead>
                     <TableHead className="w-24" />
