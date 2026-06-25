@@ -30,7 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Pencil, CheckCircle2, AlertTriangle, Flag, Minus, Link2, Users, Clock } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil, CheckCircle2, AlertTriangle, Flag, Minus, Link2, Users, Clock, Info } from "lucide-react";
 import { toast } from "sonner";
 import {
   Tooltip,
