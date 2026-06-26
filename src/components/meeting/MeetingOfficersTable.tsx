@@ -509,8 +509,26 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
                     <TableHead>Title</TableHead>
                     <TableHead>Name</TableHead>
                     {showSalary && <TableHead className="text-right">Salary</TableHead>}
-                    <TableHead className="text-right">Bonus</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-right">
+                      {showLLCNoSalaryBanner ? (
+                        <div className="inline-flex items-center gap-1">
+                          <span>Additional Distribution</span>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs text-xs">
+                                In a standard LLC, bonuses are treated as additional distributions of profit rather than W-2 wages. These flow through to members on a K-1.
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      ) : (
+                        "Bonus"
+                      )}
+                    </TableHead>
+                    {!showLLCNoSalaryBanner && <TableHead className="text-center">Status</TableHead>}
                     <TableHead className="w-24" />
                   </TableRow>
                 </TableHeader>
@@ -553,36 +571,38 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
                         <TableCell className="text-right font-mono text-sm">
                           {row.bonus != null ? `$${Number(row.bonus).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
                         </TableCell>
-                        <TableCell className="text-center">
-                          {cfg && StatusIcon ? (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Badge
-                                    variant="outline"
-                                    className={`cursor-pointer text-[10px] gap-1 px-2 py-0.5 ${cfg.badgeVariant}`}
-                                    onClick={() => openCompDialog(row)}
-                                  >
-                                    <StatusIcon className="h-3 w-3" />
-                                    {cfg.label}
-                                  </Badge>
-                                </TooltipTrigger>
-                                <TooltipContent className="max-w-xs text-xs">
-                                  {row.compensation_note ? row.compensation_note.substring(0, 120) + (row.compensation_note.length > 120 ? "…" : "") : "Click to edit"}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-[10px] text-muted-foreground/60 hover:text-foreground border border-dashed border-border"
-                              onClick={() => openCompDialog(row)}
-                            >
-                              Set Status
-                            </Button>
-                          )}
-                        </TableCell>
+                        {!showLLCNoSalaryBanner && (
+                          <TableCell className="text-center">
+                            {cfg && StatusIcon ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge
+                                      variant="outline"
+                                      className={`cursor-pointer text-[10px] gap-1 px-2 py-0.5 ${cfg.badgeVariant}`}
+                                      onClick={() => openCompDialog(row)}
+                                    >
+                                      <StatusIcon className="h-3 w-3" />
+                                      {cfg.label}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-xs text-xs">
+                                    {row.compensation_note ? row.compensation_note.substring(0, 120) + (row.compensation_note.length > 120 ? "…" : "") : "Click to edit"}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-[10px] text-muted-foreground/60 hover:text-foreground border border-dashed border-border"
+                                onClick={() => openCompDialog(row)}
+                              >
+                                Set Status
+                              </Button>
+                            )}
+                          </TableCell>
+                        )}
                         <TableCell>
                           <div className="flex items-center gap-1">
                             {dual && group?.needsDesignation && (
