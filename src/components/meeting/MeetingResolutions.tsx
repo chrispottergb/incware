@@ -310,6 +310,18 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                     </p>
                   )}
                 </div>
+                {purpose === "Other" && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Resolution Name</Label>
+                    <Input
+                      value={customPurpose}
+                      onChange={(e) => setCustomPurpose(e.target.value)}
+                      placeholder="Enter custom resolution name..."
+                      className="bg-background"
+                      required
+                    />
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Resolution</Label>
                   <Textarea
