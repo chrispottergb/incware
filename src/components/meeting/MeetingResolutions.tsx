@@ -152,10 +152,11 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const effectivePurpose = purpose === "Other" ? (customPurpose.trim() || "Other") : purpose;
     if (editingId) {
-      updateResolution.mutate();
+      updateResolution.mutate(effectivePurpose);
     } else {
-      addResolution.mutate();
+      addResolution.mutate(effectivePurpose);
     }
   };
 
