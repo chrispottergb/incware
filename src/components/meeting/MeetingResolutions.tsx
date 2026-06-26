@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -48,11 +49,11 @@ interface Props {
 }
 
 export default function MeetingResolutions({ meetingId, entityType, meetingType, companyId, companyName, availableShares, meetingDate, excludeResolutionIds }: Props) {
-  const isSpecialMeeting = meetingType === "Special Meeting of Board of Directors";
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [purpose, setPurpose] = useState("");
+  const [customPurpose, setCustomPurpose] = useState("");
   const [resolutionText, setResolutionText] = useState("");
 
   // Transfer workflow state
@@ -66,7 +67,15 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
   const [leaseOpen, setLeaseOpen] = useState(false);
   const [leaseResolutionId, setLeaseResolutionId] = useState<string | null>(null);
 
-  const resolutionOptions = RESOLUTION_TYPES[entityType] || RESOLUTION_TYPES["Corporation"];
+  const resolutionOptions = useMemo(() => {
+    const opts = RESOLUTION_TYPES[entityType] || RESOLUTION_TYPES["Corporation"];
+    const seen = new Set<string>();
+    return opts.filter((o) => {
+      if (seen.has(o.label)) return false;
+      seen.add(o.label);
+      return true;
+    });
+  }, [entityType]);
 
   const { data: resolutions = [] } = useQuery({
     queryKey: ["meeting_resolutions", meetingId],
@@ -82,10 +91,10 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
   });
 
   const addResolution = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (effectivePurpose: string) => {
       const { error } = await supabase.from("meeting_resolutions").insert({
         meeting_id: meetingId,
-        purpose,
+        purpose: effectivePurpose,
         resolution_text: resolutionText,
       });
       if (error) throw error;
@@ -99,9 +108,9 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
   });
 
   const updateResolution = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (effectivePurpose: string) => {
       const { error } = await supabase.from("meeting_resolutions").update({
-        purpose,
+        purpose: effectivePurpose,
         resolution_text: resolutionText,
       }).eq("id", editingId!);
       if (error) throw error;
@@ -130,27 +139,39 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
     setDialogOpen(false);
     setEditingId(null);
     setPurpose("");
+    setCustomPurpose("");
     setResolutionText("");
   };
 
   const openEdit = (r: any) => {
+    const matchedOption = resolutionOptions.find((o) => o.label === r.purpose);
+    if (matchedOption) {
+      setPurpose(r.purpose || "");
+      setCustomPurpose("");
+    } else {
+      setPurpose("Other");
+      setCustomPurpose(r.purpose || "");
+    }
     setEditingId(r.id);
-    setPurpose(r.purpose || "");
     setResolutionText(r.resolution_text || "");
     setDialogOpen(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const effectivePurpose = purpose === "Other" ? (customPurpose.trim() || "Other") : purpose;
     if (editingId) {
-      updateResolution.mutate();
+      updateResolution.mutate(effectivePurpose);
     } else {
-      addResolution.mutate();
+      addResolution.mutate(effectivePurpose);
     }
   };
 
   const handlePurposeChange = (value: string) => {
     setPurpose(value);
+    if (value !== "Other") {
+      setCustomPurpose("");
+    }
     if (!editingId) {
       const selected = resolutionOptions.find((o) => o.label === value);
       if (selected?.template) {
@@ -296,6 +317,18 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                     </p>
                   )}
                 </div>
+                {purpose === "Other" && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Resolution Name</Label>
+                    <Input
+                      value={customPurpose}
+                      onChange={(e) => setCustomPurpose(e.target.value)}
+                      placeholder="Enter custom resolution name..."
+                      className="bg-background"
+                      required
+                    />
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Resolution</Label>
                   <Textarea
@@ -309,7 +342,7 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                 <p className="text-xs text-muted-foreground italic">
                   If resolutions involve complex issues, it is advised to have your final documentation reviewed by your attorney or tax advisor.
                 </p>
-                <Button type="submit" className="w-full" disabled={isPending || !purpose}>
+                <Button type="submit" className="w-full" disabled={isPending || !purpose || (purpose === "Other" && !customPurpose.trim())}>
                   {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {editingId ? "Save Changes" : "Add Resolution"}
                 </Button>
@@ -338,11 +371,9 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                   <div key={r.id} className="rounded-lg border border-border p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        {isSpecialMeeting && (
-                          <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">
-                            {r.purpose}
-                          </p>
-                        )}
+                        <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">
+                          {r.purpose}
+                        </p>
                         {match?.statute && (
                           <p className="text-[10px] text-muted-foreground mb-2">{match.statute}</p>
                         )}
