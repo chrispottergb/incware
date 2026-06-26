@@ -68,7 +68,15 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
   const [leaseOpen, setLeaseOpen] = useState(false);
   const [leaseResolutionId, setLeaseResolutionId] = useState<string | null>(null);
 
-  const resolutionOptions = RESOLUTION_TYPES[entityType] || RESOLUTION_TYPES["Corporation"];
+  const resolutionOptions = useMemo(() => {
+    const opts = RESOLUTION_TYPES[entityType] || RESOLUTION_TYPES["Corporation"];
+    const seen = new Set<string>();
+    return opts.filter((o) => {
+      if (seen.has(o.label)) return false;
+      seen.add(o.label);
+      return true;
+    });
+  }, [entityType]);
 
   const { data: resolutions = [] } = useQuery({
     queryKey: ["meeting_resolutions", meetingId],
