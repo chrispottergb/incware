@@ -1204,19 +1204,24 @@ export default function MeetingDetail() {
                 <div className="flex justify-end">
                   <PrintPreviewButton
                     label="Print"
-                    generatePDF={() => exportSectionPDF("Officers", company, meeting,
-                      showSalary ? ["Title", "Name", "Salary", "Bonus"] : ["Title", "Name", "Bonus"],
-                      officers.map((o: any) => showSalary ? [
-                        o.title,
-                        o.name,
-                        o.salary != null ? `$${Number(o.salary).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
-                        o.bonus != null ? `$${Number(o.bonus).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
-                      ] : [
-                        o.title,
-                        o.name,
-                        o.bonus != null ? `$${Number(o.bonus).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
-                      ])
-                    )}
+                    generatePDF={() => {
+                      const headers = showLLCNoSalaryBanner
+                        ? ["Title", "Name", "Additional Distribution"]
+                        : ["Title", "Name", "Salary", "Bonus"];
+                      const rows = officers.map((o: any) => showLLCNoSalaryBanner
+                        ? [
+                            o.title,
+                            o.name,
+                            o.bonus != null ? `$${Number(o.bonus).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
+                          ]
+                        : [
+                            o.title,
+                            o.name,
+                            o.salary != null ? `$${Number(o.salary).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
+                            o.bonus != null ? `$${Number(o.bonus).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
+                          ]);
+                      return exportSectionPDF("Officers", company, meeting, headers, rows);
+                    }}
                     fileName={`officers-${meetingFileName}`}
                   />
                 </div>
