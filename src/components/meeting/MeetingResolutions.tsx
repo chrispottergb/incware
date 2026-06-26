@@ -132,12 +132,20 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
     setDialogOpen(false);
     setEditingId(null);
     setPurpose("");
+    setCustomPurpose("");
     setResolutionText("");
   };
 
   const openEdit = (r: any) => {
+    const matchedOption = resolutionOptions.find((o) => o.label === r.purpose);
+    if (matchedOption) {
+      setPurpose(r.purpose || "");
+      setCustomPurpose("");
+    } else {
+      setPurpose("Other");
+      setCustomPurpose(r.purpose || "");
+    }
     setEditingId(r.id);
-    setPurpose(r.purpose || "");
     setResolutionText(r.resolution_text || "");
     setDialogOpen(true);
   };
