@@ -161,6 +161,9 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
 
   const handlePurposeChange = (value: string) => {
     setPurpose(value);
+    if (value !== "Other") {
+      setCustomPurpose("");
+    }
     if (!editingId) {
       const selected = resolutionOptions.find((o) => o.label === value);
       if (selected?.template) {
