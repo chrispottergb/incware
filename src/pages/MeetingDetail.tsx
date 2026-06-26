@@ -1205,10 +1205,10 @@ export default function MeetingDetail() {
                   <PrintPreviewButton
                     label="Print"
                     generatePDF={() => {
-                      const headers = showLLCNoSalaryBanner
+                      const headers = isLLCNonSCorp
                         ? ["Title", "Name", "Additional Distribution"]
                         : ["Title", "Name", "Salary", "Bonus"];
-                      const rows = officers.map((o: any) => showLLCNoSalaryBanner
+                      const rows = officers.map((o: any) => isLLCNonSCorp
                         ? [
                             o.title,
                             o.name,
