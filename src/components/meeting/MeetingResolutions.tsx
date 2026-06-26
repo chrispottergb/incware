@@ -49,7 +49,6 @@ interface Props {
 }
 
 export default function MeetingResolutions({ meetingId, entityType, meetingType, companyId, companyName, availableShares, meetingDate, excludeResolutionIds }: Props) {
-  const isSpecialMeeting = meetingType === "Special Meeting of Board of Directors";
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
