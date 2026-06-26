@@ -84,10 +84,10 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
   });
 
   const addResolution = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (effectivePurpose: string) => {
       const { error } = await supabase.from("meeting_resolutions").insert({
         meeting_id: meetingId,
-        purpose,
+        purpose: effectivePurpose,
         resolution_text: resolutionText,
       });
       if (error) throw error;
@@ -101,9 +101,9 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
   });
 
   const updateResolution = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (effectivePurpose: string) => {
       const { error } = await supabase.from("meeting_resolutions").update({
-        purpose,
+        purpose: effectivePurpose,
         resolution_text: resolutionText,
       }).eq("id", editingId!);
       if (error) throw error;
