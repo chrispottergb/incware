@@ -372,11 +372,9 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                   <div key={r.id} className="rounded-lg border border-border p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        {isSpecialMeeting && (
-                          <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">
-                            {r.purpose}
-                          </p>
-                        )}
+                        <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">
+                          {r.purpose}
+                        </p>
                         {match?.statute && (
                           <p className="text-[10px] text-muted-foreground mb-2">{match.statute}</p>
                         )}
