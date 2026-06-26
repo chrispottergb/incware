@@ -475,7 +475,9 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
                   </div>
                 )}
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Bonus</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    {showLLCNoSalaryBanner ? "Additional Distribution" : "Bonus"}
+                  </Label>
                   <Input type="number" step="0.01" value={form.bonus ?? ""} onChange={(e) => setForm((p) => ({ ...p, bonus: e.target.value }))} />
                 </div>
                 <Button type="submit" className="w-full" disabled={isPending}>
