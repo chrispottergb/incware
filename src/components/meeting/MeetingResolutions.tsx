@@ -54,6 +54,7 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [purpose, setPurpose] = useState("");
+  const [customPurpose, setCustomPurpose] = useState("");
   const [resolutionText, setResolutionText] = useState("");
 
   // Transfer workflow state
