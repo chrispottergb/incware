@@ -19,7 +19,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff, ArrowRightLeft } from "lucide-react";
+import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff, ArrowRightLeft, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
