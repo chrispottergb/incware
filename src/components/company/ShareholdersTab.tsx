@@ -63,6 +63,8 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active",
+    owner_kind: "individual" as "individual" | "entity",
+    representative_name: "", representative_title: "",
   });
   const [decryptedSsns, setDecryptedSsns] = useState<Record<string, string | null>>({});
   const [showSsns, setShowSsns] = useState(false);
