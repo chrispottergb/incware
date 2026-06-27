@@ -542,7 +542,22 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                     const pct = getInterestPct(s);
                     return (
                       <TableRow key={s.id}>
-                        <TableCell className="text-xs font-medium">{s.name}</TableCell>
+                        <TableCell className="text-xs font-medium">
+                          <div className="flex items-center gap-1.5">
+                            <span>{s.name}</span>
+                            {(s as any).owner_kind === "entity" && (
+                              <Badge variant="outline" className="text-[9px] px-1 py-0 gap-1 bg-primary/5 text-primary border-primary/20">
+                                <Building2 className="h-2.5 w-2.5" /> Entity
+                              </Badge>
+                            )}
+                          </div>
+                          {(s as any).owner_kind === "entity" && (s as any).representative_name && (
+                            <div className="text-[10px] text-muted-foreground font-normal mt-0.5">
+                              rep. by {(s as any).representative_name}
+                              {(s as any).representative_title ? `, ${(s as any).representative_title}` : ""}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="text-xs">
                           {s.address ? (
                             <>
