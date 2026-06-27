@@ -203,26 +203,50 @@ export default function BanksTab({ companyId }: BanksTabProps) {
       state: b.state || p.state,
       zip: b.zip || p.zip,
       phone: b.phone || p.phone,
-      account_number: b.account_number || p.account_number,
-      routing_number: b.routing_number || p.routing_number,
       account_type: b.account_type || p.account_type,
       contact_name: b.contact_name || p.contact_name,
       contact_title: b.contact_title || p.contact_title,
     }));
+    // Bank numbers stay blank; user re-enters or reveals on the target record.
+    setAcctRevealed(false);
+    setRtRevealed(false);
     setShowBankDropdown(false);
     setBankNameSearch("");
   };
 
-  const openNew = () => { setEditing(null); setForm(emptyForm); setBankNameSearch(""); setOpen(true); };
+  const openNew = () => { setEditing(null); setForm(emptyForm); setBankNameSearch(""); setAcctRevealed(true); setRtRevealed(true); setOpen(true); };
   const openEdit = (b: any) => {
     setEditing(b);
     setForm({
-      bank_name: b.bank_name, account_type: b.account_type || "checking", account_number: b.account_number || "",
-      routing_number: b.routing_number || "", contact_name: b.contact_name || "", contact_title: b.contact_title || "",
+      bank_name: b.bank_name, account_type: b.account_type || "checking", account_number: "",
+      routing_number: "", contact_name: b.contact_name || "", contact_title: b.contact_title || "",
       phone: b.phone || "", address: b.address || "", address_2: (b as any).address_2 || "", city: b.city || "", state: b.state || "", zip: b.zip || "", notes: b.notes || "",
     });
+    setAcctRevealed(false);
+    setRtRevealed(false);
     setBankNameSearch("");
     setOpen(true);
+  };
+
+  const revealField = async (field: "account" | "routing") => {
+    if (!editing) return;
+    setRevealing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("decrypt-company-bank", { body: { bank_id: editing.id } });
+      if (error) throw error;
+      const d = data as { account_number: string | null; routing_number: string | null };
+      setForm(p => ({
+        ...p,
+        account_number: d.account_number || "",
+        routing_number: d.routing_number || "",
+      }));
+      if (field === "account") setAcctRevealed(true);
+      else setRtRevealed(true);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to reveal");
+    } finally {
+      setRevealing(false);
+    }
   };
 
   const openNewSigner = (bankId: string) => {
