@@ -322,22 +322,35 @@ export default function MeetingDetail() {
       if (hasAnyAddr(r)) priorIndex.set(key, r);
     }
 
-    const updates: Array<{ id: string; address: string | null; city: string | null; state: string | null; zip: string | null }> = [];
+    const updates: Array<{ id: string; address: string | null; city: string | null; state: string | null; zip: string | null; owner_kind?: string; representative_name?: string | null; representative_title?: string | null }> = [];
     shareholders.forEach((sh: any) => {
-      if (hasAnyAddr(sh)) return;
+      const needsAddr = !hasAnyAddr(sh);
+      const needsEntity = (sh.owner_kind == null);
+      if (!needsAddr && !needsEntity) return;
       const key = normalizeName(sh.shareholder_name);
       let match: any = companyShareholders.find(
-        (c: any) => normalizeName(c.name) === key && hasAnyAddr(c)
+        (c: any) => normalizeName(c.name) === key && (hasAnyAddr(c) || c.owner_kind != null)
       );
       if (!match) match = priorIndex.get(key);
       if (!match) return;
-      updates.push({
-        id: sh.id,
-        address: match.address || null,
-        city: match.city || null,
-        state: match.state || null,
-        zip: match.zip || null,
-      });
+      const update: any = { id: sh.id };
+      if (needsAddr) {
+        update.address = match.address || null;
+        update.city = match.city || null;
+        update.state = match.state || null;
+        update.zip = match.zip || null;
+      } else {
+        update.address = sh.address;
+        update.city = sh.city;
+        update.state = sh.state;
+        update.zip = sh.zip;
+      }
+      if (needsEntity && match.owner_kind != null) {
+        update.owner_kind = match.owner_kind || "individual";
+        update.representative_name = match.representative_name || null;
+        update.representative_title = match.representative_title || null;
+      }
+      updates.push(update);
     });
 
     if (updates.length === 0) {
@@ -349,12 +362,15 @@ export default function MeetingDetail() {
     (async () => {
       try {
         await Promise.all(
-          updates.map((u) =>
-            supabase
-              .from("meeting_shareholders")
-              .update({ address: u.address, city: u.city, state: u.state, zip: u.zip })
-              .eq("id", u.id)
-          )
+          updates.map((u) => {
+            const payload: any = { address: u.address, city: u.city, state: u.state, zip: u.zip };
+            if (u.owner_kind !== undefined) {
+              payload.owner_kind = u.owner_kind;
+              payload.representative_name = u.representative_name;
+              payload.representative_title = u.representative_title;
+            }
+            return supabase.from("meeting_shareholders").update(payload).eq("id", u.id);
+          })
         );
         queryClient.invalidateQueries({ queryKey: ["meeting_shareholders", meetingId] });
       } catch (err) {
