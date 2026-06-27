@@ -226,14 +226,20 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
         const { error } = await supabase.from("shareholders").update({
           name: form.name, address: form.address || null, address_2: form.address_2 || null, city: form.city || null,
           state: form.state || null, zip: form.zip || null, status: form.status,
-        }).eq("id", editId);
+          owner_kind: form.owner_kind,
+          representative_name: form.owner_kind === "entity" ? (form.representative_name?.trim() || null) : null,
+          representative_title: form.owner_kind === "entity" ? (form.representative_title?.trim() || null) : null,
+        } as any).eq("id", editId);
         if (error) throw error;
       } else {
         const { data: inserted, error } = await supabase.from("shareholders").insert({
           company_id: companyId, name: form.name, address: form.address || null, address_2: form.address_2 || null,
           city: form.city || null, state: form.state || null, zip: form.zip || null, status: form.status,
           capital_account_balance: 0,
-        }).select("id").single();
+          owner_kind: form.owner_kind,
+          representative_name: form.owner_kind === "entity" ? (form.representative_name?.trim() || null) : null,
+          representative_title: form.owner_kind === "entity" ? (form.representative_title?.trim() || null) : null,
+        } as any).select("id").single();
         if (error) throw error;
         shareholderId = inserted.id;
       }
