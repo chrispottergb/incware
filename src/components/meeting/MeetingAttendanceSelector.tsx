@@ -124,6 +124,9 @@ export default function MeetingAttendanceSelector({
           zip: p.zip || null,
           common_shares: p.commonShares != null && p.commonShares !== "" ? Number(p.commonShares) : 0,
           preferred_shares: p.preferredShares != null && p.preferredShares !== "" ? Number(p.preferredShares) : 0,
+          owner_kind: p.ownerKind || "individual",
+          representative_name: p.representativeName || null,
+          representative_title: p.representativeTitle || null,
         } : {}),
       }));
 
