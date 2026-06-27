@@ -326,7 +326,7 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
 
       if (subType.includes("shareholder") || subType.includes("member")) {
         (meetingData.shareholders || []).forEach(s => {
-          if (s.shareholder_name) participants.push(s.shareholder_name);
+          if (s.shareholder_name) participants.push(formatShareholderDisplay(s, "inline"));
         });
       }
       if (subType.includes("director") || subType.includes("board")) {
