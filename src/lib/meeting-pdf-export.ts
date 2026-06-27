@@ -1042,7 +1042,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
         const line1 = [addr, addr2].filter(Boolean).join(", ");
         const line2 = [city, state].filter(Boolean).join(", ");
         const address = [line1, line2, zip].filter(Boolean).join(" ");
-        return { name: s.shareholder_name, shares: s.common_shares, address };
+        return { name: formatShareholderDisplay(s, "twoLine"), shares: s.common_shares, address };
       })
     : (data.companyShareholders || []).map((s: any) => {
         const addr = s.address || "";
