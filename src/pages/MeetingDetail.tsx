@@ -1076,6 +1076,9 @@ export default function MeetingDetail() {
                   isTreasury: s.is_treasury,
                   commonShares: holdings,
                   preferredShares: ownershipPct,
+                  ownerKind: (s as any).owner_kind || "individual",
+                  representativeName: (s as any).representative_name || null,
+                  representativeTitle: (s as any).representative_title || null,
                 };
               })}
               existingNames={shareholders.map((s) => s.shareholder_name)}
