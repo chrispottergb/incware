@@ -133,6 +133,9 @@ export default function MeetingDetail() {
         zip: s.zip,
         common_shares: String(holdings),
         preferred_shares: ownershipPct.toFixed(2),
+        owner_kind: (s as any).owner_kind || "individual",
+        representative_name: (s as any).representative_name || "",
+        representative_title: (s as any).representative_title || "",
       };
     });
   }, [companyShareholders, shareholderHoldings, totalIssuedShares]);
