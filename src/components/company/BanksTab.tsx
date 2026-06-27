@@ -50,6 +50,20 @@ export default function BanksTab({ companyId }: BanksTabProps) {
   // Track which bank rows are expanded
   const [expandedBanks, setExpandedBanks] = useState<Record<string, boolean>>({});
 
+  // Per-row inline reveal of decrypted account/routing numbers
+  const [rowReveal, setRowReveal] = useState<Record<string, { account?: string; routing?: string }>>({});
+  const [rowLoading, setRowLoading] = useState<Record<string, boolean>>({});
+  // Per-row inline edit state for account/routing
+  const [rowEdit, setRowEdit] = useState<{ bankId: string; field: "account" | "routing"; value: string } | null>(null);
+  const [rowSaving, setRowSaving] = useState(false);
+
+  // Auto-clear any revealed numbers after 60s for safety
+  useEffect(() => {
+    if (Object.keys(rowReveal).length === 0) return;
+    const t = setTimeout(() => setRowReveal({}), 60_000);
+    return () => clearTimeout(t);
+  }, [rowReveal]);
+
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
   }, []);
