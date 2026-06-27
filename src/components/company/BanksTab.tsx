@@ -395,16 +395,52 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                         </Button>
                       </CollapsibleTrigger>
                       <CollapsibleTrigger asChild>
-                        <button className="flex-1 text-left flex items-center gap-3 min-w-0">
+                        <button className="text-left flex items-center gap-3 min-w-0">
                           <span className="font-medium text-xs truncate">{b.bank_name}</span>
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">{formatType(b.account_type || "")}</Badge>
-                          {b.account_number_last4 && <span className="text-[10px] text-muted-foreground font-mono">••••{b.account_number_last4}</span>}
-                          {b.routing_number_last4 && <span className="text-[10px] text-muted-foreground font-mono">RT ••••{b.routing_number_last4}</span>}
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0 ml-auto mr-2">
-                            <PenTool className="h-2.5 w-2.5 mr-1" />{bankSigners.length}
-                          </Badge>
                         </button>
                       </CollapsibleTrigger>
+                      <div className="flex items-center gap-3 ml-3 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+                        {(["account", "routing"] as const).map((field) => {
+                          const last4 = field === "account" ? b.account_number_last4 : b.routing_number_last4;
+                          const prefix = field === "routing" ? "RT " : "";
+                          const revealed = rowReveal[b.id]?.[field];
+                          const isEditing = rowEdit?.bankId === b.id && rowEdit.field === field;
+                          if (!last4 && !revealed && !isEditing) return null;
+                          if (isEditing) {
+                            return (
+                              <div key={field} className="flex items-center gap-1">
+                                <span className="text-[10px] text-muted-foreground font-mono">{prefix}</span>
+                                <Input
+                                  autoFocus
+                                  className="h-6 text-[11px] font-mono w-32 px-1"
+                                  value={rowEdit.value}
+                                  onChange={(e) => setRowEdit({ ...rowEdit, value: e.target.value })}
+                                  onKeyDown={(e) => { if (e.key === "Enter") saveRowEdit(); if (e.key === "Escape") setRowEdit(null); }}
+                                />
+                                <Button variant="ghost" size="icon" className="h-5 w-5" disabled={rowSaving} onClick={saveRowEdit}><Check className="h-3 w-3" /></Button>
+                                <Button variant="ghost" size="icon" className="h-5 w-5" disabled={rowSaving} onClick={() => setRowEdit(null)}><X className="h-3 w-3" /></Button>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div key={field} className="flex items-center gap-0.5">
+                              <span className="text-[10px] text-muted-foreground font-mono">
+                                {revealed ? `${prefix}${revealed}` : `${prefix}••••${last4}`}
+                              </span>
+                              <Button variant="ghost" size="icon" className="h-5 w-5" disabled={rowLoading[b.id]} onClick={() => revealRow(b.id, field)} title={revealed ? "Hide" : "Reveal"}>
+                                {revealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-5 w-5" disabled={rowLoading[b.id]} onClick={() => startRowEdit(b.id, field)} title="Edit">
+                                <Pencil className="h-2.5 w-2.5" />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0 ml-auto mr-2">
+                          <PenTool className="h-2.5 w-2.5 mr-1" />{bankSigners.length}
+                        </Badge>
+                      </div>
                       <div className="flex gap-1 shrink-0">
                         <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={(e) => { e.stopPropagation(); openNewSigner(b.id); }}>
                           <Plus className="h-3.5 w-3.5 mr-1" />Add Signer
