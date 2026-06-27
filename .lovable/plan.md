@@ -1,81 +1,61 @@
-# Security Audit — entityIQ
+# Bank Account / Routing Number Encryption
 
-Sensitive data in scope: SSN/EIN (encrypted), bank account/routing numbers (plaintext), shareholder PII, financial statements, tax returns, signed agreements. Scan returned **42 findings** (3 critical/high, 39 hardening warnings).
+Mirror the SSN/EIN pattern already used by the app: pgcrypto encryption at rest, SECURITY DEFINER functions that enforce ownership, edge functions that broker writes/reads, and UI that shows masked values (`••••1234`) by default with an optional reveal.
 
-## Critical (fix first)
+Scope: `public.company_banks` and `public.master_firms` — 39 + 18 existing rows of plaintext to migrate.
 
-### 1. Plaintext bank account & routing numbers
-- **Where:** `company_banks.account_number`, `company_banks.routing_number`, `master_firms.account_number`, `master_firms.routing_number`.
-- **Risk:** RLS scopes by owner, but a single compromised JWT or stolen DB backup exposes all bank credentials in cleartext.
-- **Fix:** Apply the same pgcrypto pattern already used for SSN/EIN. Add `account_number_encrypted bytea`, `routing_number_encrypted bytea`, route writes/reads through SECURITY DEFINER functions + edge functions (`encrypt-bank-account`, `decrypt-bank-account`), backfill from plaintext, then drop the plaintext columns. Mask in UI (last 4 only) except on explicit reveal.
+## 1. Database migration
 
-### 2. Privilege-escalation risk on `user_roles`
-- **Where:** `public.user_roles` INSERT policy set.
-- **Risk:** If a non-admin INSERT path exists, a signed-in user could grant themselves `admin`.
-- **Fix:** Add explicit restrictive policies: `INSERT/UPDATE/DELETE` allowed only when `has_role(auth.uid(),'admin')`; ensure no permissive policy applies to `authenticated`. Add a trigger that blocks self-promotion (`NEW.user_id = auth.uid()` → reject unless caller is admin AND target ≠ self for first admin bootstrap).
+```text
+company_banks
+  + account_number_encrypted   bytea
+  + routing_number_encrypted   bytea
+  + account_number_last4       text   (server-derived, safe to read)
+  + routing_number_last4       text
 
-### 3. Public storage bucket allows listing
-- **Where:** `resource-images` bucket has broad SELECT on `storage.objects`.
-- **Risk:** Anonymous users can enumerate every uploaded file. Confirm no sensitive uploads ever land here.
-- **Fix:** Restrict SELECT policy to specific path prefix or signed URLs; or make the bucket private and serve via signed URLs. Audit existing contents.
+master_firms
+  + account_number_encrypted   bytea
+  + routing_number_encrypted   bytea
+  + account_number_last4       text
+  + routing_number_last4       text
+```
 
-## High
+- Add SECURITY DEFINER SQL functions (search_path locked, EXECUTE granted only to `authenticated` + `service_role`):
+  - `encrypt_company_bank(p_bank_id uuid, p_account text, p_routing text, p_key text)` — verifies caller owns the parent company; writes encrypted columns + last4; clears plaintext.
+  - `decrypt_company_bank(p_bank_id uuid, p_key text)` returns `(account text, routing text)` — verifies ownership.
+  - `encrypt_master_firm_bank(p_firm_id uuid, …)` / `decrypt_master_firm_bank(p_firm_id uuid, p_key text)` — verifies `user_id = auth.uid()`.
+- Backfill function `migrate_legacy_bank_numbers(p_key text)` (service_role only) that loops both tables, encrypts existing plaintext, populates last4, then nulls plaintext columns.
+- Trigger that blocks direct writes to plaintext `account_number` / `routing_number` from PostgREST in the future (`BEFORE INSERT OR UPDATE`: raise if non-null on either table).
+- Do NOT drop plaintext columns yet — keep them nullable for one release for rollback safety; the trigger prevents new plaintext writes.
 
-### 4. SECURITY DEFINER functions executable by anon/authenticated (36 findings)
-- **Risk:** Functions like `decrypt_ssn_ein`, `decrypt_company_ein`, `encrypt_*`, `migrate_legacy_*`, `recalculate_ownership_percentages`, queue helpers, etc. are EXECUTE-grantable to `anon`/`authenticated`. Most check `auth.uid()` internally, but the attack surface should be minimized.
-- **Fix (batch migration):**
-  - `REVOKE EXECUTE ... FROM anon, authenticated, public` on every SECURITY DEFINER function in `public`.
-  - `GRANT EXECUTE` only to the role that needs it (`service_role` for edge-function-only helpers; `authenticated` only for the few that are intentionally user-callable like `decrypt_ssn_ein`, `decrypt_company_ein`, `encrypt_company_ein`, `encrypt_shareholder_ssn`, `has_role`).
-  - `migrate_legacy_*`, queue helpers (`enqueue_email`, `read_email_batch`, `delete_email`, `move_to_dlq`, `decrypt_company_ein_service`, `decrypt_companies_ein_batch`, `log_competitor_pricing_change`) → `service_role` only.
+## 2. Edge functions (mirror `encrypt-company-ein` / `decrypt-ssn`)
 
-### 5. Function `search_path` mutable (4 findings)
-- **Risk:** Function hijack via search_path manipulation when extensions/schemas overlap.
-- **Fix:** Add `SET search_path = public, extensions` (or `''`) to every SECURITY DEFINER function missing it. Most existing functions already do this — the 4 flagged need updating.
+- `encrypt-company-bank` — POST `{ bank_id, account_number, routing_number }` → calls `encrypt_company_bank` RPC.
+- `decrypt-company-bank` — POST `{ bank_id }` → returns `{ account_number, routing_number }`.
+- `encrypt-master-firm-bank` — POST `{ firm_id, account_number, routing_number }`.
+- `decrypt-master-firm-bank` — POST `{ firm_id }`.
+- All four: `verify_jwt = false` in `supabase/config.toml`, validate via `getClaims()` in code (existing pattern).
 
-### 6. RLS enabled, no policy (1 finding)
-- Identify the table (likely `shareholders_legacy_ssn_archive`) and either drop it if no longer needed, or add an admin-only SELECT policy + `service_role` GRANT.
+## 3. Backfill
 
-## Medium (auth / app hardening)
+Run `migrate_legacy_bank_numbers` once via a tiny admin-only edge function (`migrate-legacy-bank-numbers`, admin role check, like `migrate-legacy-company-ein`). User triggers it from a button on the Settings page, or I can call it once on their behalf after the migration ships.
 
-### 7. Auth configuration
-- Enable **HIBP leaked-password check** (`configure_auth password_hibp_enabled=true`).
-- Confirm MFA is offered for admin accounts (TOTP via Supabase Auth).
-- Idle timeout already 2h with warning — good. Keep `persistSession: true` but ensure tokens are not logged.
+## 4. UI changes
 
-### 8. Edge function authorization
-- Functions with `verify_jwt = false` (`encrypt-ssn`, `decrypt-ssn`, `execute-share-transfer`, `generate-*`, `parse-tax-return`, `poll-tax-return-job`, `verify-wdfi-status`) all validate JWT in code via `getClaims()` — verify each path returns 401 before any DB work. Add Zod input validation where missing (file uploads, IDs).
-- Rate-limit `decrypt-ssn` and `decrypt-company-ein` per user (e.g., 30/min) to slow bulk extraction.
-- Add audit logging table (`sensitive_access_log`) capturing `user_id, action, target_id, ip, ua, at` for every SSN/EIN/bank decrypt call.
+`src/components/company/BanksTab.tsx`:
+- Save flow: after `company_banks` insert/update succeeds, call `encrypt-company-bank` edge function with the plaintext, and do NOT write account_number/routing_number plaintext to the row (send empty strings). The encrypt function fills encrypted + last4.
+- List row: replace `b.account_number.slice(-4)` with `b.account_number_last4`. Routing number badge becomes `b.routing_number_last4 ? '••••' + last4 : ''` — never show full routing number in the list.
+- Edit dialog account/routing inputs: render as masked placeholders (`••••${last4}`) until user clicks "Reveal" (eye icon). Reveal triggers `decrypt-company-bank` and populates the input for editing. Re-saving re-encrypts.
+- Mirror the same pattern in `useMasterDirectory.upsertMasterFirm` for bank-type firms: call `encrypt-master-firm-bank` after upsert, omit plaintext from the row insert.
+- `AnnualReviewPublic.tsx` line 527 already uses `account_number_last4` — works as soon as the column exists.
 
-### 9. PII handling in UI / PDF exports
-- Confirm SSN/EIN remain masked on screen and only unmasked in generated PDFs that the owner explicitly downloads.
-- Strip console.log of any decrypted values (search `console.log` near decrypt calls).
+## 5. Cleanup (separate later migration, not in this PR)
 
-### 10. Frontend hardening
-- Add a strict **Content-Security-Policy** meta tag (script-src 'self', connect-src self + supabase URL, no `unsafe-inline` where possible).
-- Set `Referrer-Policy: strict-origin-when-cross-origin`, `X-Content-Type-Options: nosniff`, `Permissions-Policy` minimal.
-- Confirm no third-party scripts run before auth.
+Once the user confirms everything works in production for ~1 release, drop the plaintext `account_number` / `routing_number` columns from both tables.
 
-### 11. Operational
-- Document backup/restore + key-rotation runbook for `SSN_ENCRYPTION_KEY` (re-encrypt path).
-- Schedule quarterly re-run of `security--run_security_scan` and `supabase--linter`.
-- Define data-retention policy for `tax-returns` and `competitor-pricing-screenshots` buckets.
+## What I will NOT do without approval
+- Drop plaintext columns (kept nullable for rollback).
+- Touch the `ImportAccess.tsx` flow beyond what's needed; that page maps imported field names and doesn't actually write to the DB until the user runs the import — happy to follow up.
+- Add rate limiting (no primitive exists per platform guidance).
 
-## Implementation order (proposed migrations)
-
-1. **Migration A — user_roles lockdown** (Critical #2): restrictive policies + trigger.
-2. **Migration B — REVOKE/GRANT sweep** on all SECURITY DEFINER functions (#4) and add missing `search_path` (#5).
-3. **Migration C — Storage bucket policy fix** for `resource-images` (#3).
-4. **Migration D + edge functions — bank account encryption** (#1): add encrypted columns, edge functions, backfill, swap UI, drop plaintext.
-5. **Migration E — sensitive_access_log table + decrypt-function instrumentation** (#8).
-6. **Auth config** — enable HIBP, document MFA enrollment (#7).
-7. **Frontend CSP / headers + console.log audit** (#9, #10).
-
-Each migration is reversible and ships independently. No data loss; bank-number swap uses dual-write before dropping plaintext.
-
-## What I will NOT do without your approval
-- Drop any existing column (only after backfill verified).
-- Change behavior of existing edge functions beyond auth/rate-limit hardening.
-- Touch the `auth`, `storage`, `vault` schemas directly.
-
-Reply with which items you want me to implement, or "all critical+high" to start with steps 1–3.
+Reply "go" to implement.
