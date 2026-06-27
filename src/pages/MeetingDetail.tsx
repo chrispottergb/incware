@@ -704,7 +704,10 @@ export default function MeetingDetail() {
       unresolvedDualRoles.push(group[0].name);
     }
   });
-  const officerValidationFailed = officers.length > 0 && (
+  // Standard LLC (no S-election) officers receive distributions only — skip compensation validation
+  const isStandardLLCForValidation =
+    isLLCType(company?.entity_type) && !company?.s_election_date;
+  const officerValidationFailed = !isStandardLLCForValidation && officers.length > 0 && (
     officersMissingStatus.length > 0 ||
     officersHaveReasonIssue ||
     unresolvedDualRoles.length > 0
