@@ -1953,7 +1953,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         const line2 = [city, state].filter(Boolean).join(", ");
         const address = [line1, line2, zip].filter(Boolean).join(" ");
         return [
-          s.shareholder_name,
+          formatShareholderDisplay(s, "twoLine"),
           address || "---",
           s.common_shares?.toLocaleString() ?? "---",
           isLLC && s.preferred_shares != null ? `${s.preferred_shares}%` : (s.preferred_shares?.toLocaleString() ?? "---"),
