@@ -59,6 +59,16 @@ export default function Dashboard() {
       .invoke("migrate-legacy-company-ein")
       .catch(() => { /* silent — non-admins get 403, which is fine */ });
   }, [user]);
+
+  // One-time auto-migration of legacy plaintext bank account / routing numbers (admin only).
+  useEffect(() => {
+    if (!user) return;
+    if (sessionStorage.getItem("bank-legacy-migrated")) return;
+    sessionStorage.setItem("bank-legacy-migrated", "1");
+    supabase.functions
+      .invoke("migrate-legacy-bank-numbers")
+      .catch(() => { /* silent — non-admins get 403, which is fine */ });
+  }, [user]);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("active");
