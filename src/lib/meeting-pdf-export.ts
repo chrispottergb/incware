@@ -811,7 +811,7 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
 
   // For Corps: use shareholders for shareholder meetings, directors otherwise; for LLCs use members
   if (isLLC || isShareholderMeeting) {
-    (data.shareholders || []).forEach(s => { if (s.shareholder_name) addUnique(s.shareholder_name); });
+    (data.shareholders || []).forEach(s => { if (s.shareholder_name) addUnique(formatShareholderDisplay(s, "signer")); });
   } else {
     (data.directors || []).forEach(d => { if (d.director_name) addUnique(d.director_name); });
   }
