@@ -1455,13 +1455,15 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         return [line1, line2, zip].filter(Boolean).join(" ");
       };
 
-      const addAttendee = (name: string | null | undefined) => {
+      const addAttendee = (name: string | null | undefined, displayOverride?: string) => {
         if (!name) return;
         const key = normKey(name);
         if (!key || attendeeMap.has(key)) return;
-        attendeeMap.set(key, { name: name.trim(), address: buildAddress(name) });
+        attendeeMap.set(key, { name: (displayOverride || name).trim(), address: buildAddress(name) });
       };
-      (data.shareholders || []).forEach(s => addAttendee(s.shareholder_name));
+      (data.shareholders || []).forEach(s =>
+        addAttendee(s.shareholder_name, formatShareholderDisplay(s, "inline"))
+      );
       (data.directors || []).forEach(d => addAttendee(d.director_name));
       (data.officers || []).forEach(o => addAttendee(o.name));
       const attendeeEntries = Array.from(attendeeMap.values());
