@@ -3341,15 +3341,32 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Charitable Contributions (Annual Meeting)
-  if (bt && !isShareholderOnly && meeting?.charitable_contribution_amount != null && Number(meeting.charitable_contribution_amount) > 0) {
-    y = checkPageBreak(doc, y, 30);
-    const contribAmt = fmt(meeting.charitable_contribution_amount);
-    const contribOrg = meeting.charitable_contribution_org?.trim() || "a recognized charitable organization";
-    y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${isLLC ? "company" : "corporation"} is committed to supporting community initiatives and charitable causes that align with its values and mission;`,
-      `NOW, THEREFORE, BE IT RESOLVED, that the ${isLLC ? "company" : "corporation"} approved the contribution of ${contribAmt} to ${contribOrg} as allowed by IRS Code Section 170(c)(2), payment of which is made during this taxable year.`,
-      bt
-    );
+  // Skip if a Special Resolution covering charitable contributions was already rendered above,
+  // to avoid duplicate WHEREAS/RESOLVED clauses on the same topic.
+  {
+    const hasCharitableResolution = Array.isArray(data.resolutions) && (data.resolutions ?? []).some((r: any) => {
+      const p = (r?.purpose || "").toLowerCase();
+      const t = (r?.resolution_text || "").toLowerCase();
+      return p.includes("charitable") || t.includes("charitable contribution");
+    });
+    if (
+      bt &&
+      !isShareholderOnly &&
+      !hasCharitableResolution &&
+      meeting?.charitable_contribution_amount != null &&
+      Number(meeting.charitable_contribution_amount) > 0
+    ) {
+      y = checkPageBreak(doc, y, 30);
+      const contribAmt = fmt(meeting.charitable_contribution_amount);
+      const contribOrg = meeting.charitable_contribution_org?.trim() || "a qualified charitable organization";
+      const taxYearLabel = meeting?.tax_year || meeting?.fiscal_year || new Date().getFullYear();
+      const entityNoun = isLLC ? "company" : "corporation";
+      y = addWhereasResolved(doc, y,
+        `WHEREAS, the ${entityNoun} made a charitable contribution in the amount of ${contribAmt} during the tax year ending ${taxYearLabel}, to ${contribOrg}, consistent with the ${entityNoun}'s charitable giving practices;`,
+        `NOW, THEREFORE, BE IT RESOLVED, that the ${isShareholder ? (isLLC ? "Members" : "Shareholders") : boardLabel()} hereby confirm, approve, and ratify the charitable contribution as an expenditure made in the best interests of the ${entityNoun}, as allowed by IRS Code Section 170(c)(2).`,
+        bt
+      );
+    }
   }
 
   // Other Business / Vehicle Policy / Profit Improvement Plan (last section before adjournment)
