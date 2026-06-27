@@ -41,6 +41,37 @@ const getStatutoryCloseStatute = (state?: string | null): string => {
   return statutes[(state ?? "").toUpperCase()] ?? "applicable state close corporation statutes";
 };
 
+// Format a shareholder/member name for output, handling entity owners with a representative.
+// Individual owners (or entity rows without a representative_name) return the bare name —
+// preserves byte-for-byte parity with prior PDFs.
+function formatShareholderDisplay(
+  s: {
+    shareholder_name?: string | null;
+    name?: string | null;
+    owner_kind?: string | null;
+    representative_name?: string | null;
+    representative_title?: string | null;
+  },
+  mode: "inline" | "twoLine" | "signer"
+): string {
+  const base = (s.shareholder_name || s.name || "").toString();
+  const rep = (s.representative_name || "").toString().trim();
+  if ((s.owner_kind || "individual") !== "entity" || !rep) return base;
+  const title = (s.representative_title || "").toString().trim();
+  if (mode === "signer") {
+    return title
+      ? `${rep}, as ${title} of ${base}`
+      : `${rep}, as Authorized Representative of ${base}`;
+  }
+  if (mode === "twoLine") {
+    return title ? `${base}\nrep. by ${rep}, ${title}` : `${base}\nrep. by ${rep}`;
+  }
+  // inline
+  return title
+    ? `${base}, represented by ${rep}, its ${title}`
+    : `${base}, represented by ${rep}`;
+}
+
 interface MeetingData {
   meeting: any;
   company: any;
