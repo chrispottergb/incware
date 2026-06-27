@@ -304,8 +304,8 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                         <button className="flex-1 text-left flex items-center gap-3 min-w-0">
                           <span className="font-medium text-xs truncate">{b.bank_name}</span>
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">{formatType(b.account_type || "")}</Badge>
-                          {b.account_number && <span className="text-[10px] text-muted-foreground font-mono">••••{b.account_number.slice(-4)}</span>}
-                          <span className="text-[10px] text-muted-foreground">{b.routing_number}</span>
+                          {b.account_number_last4 && <span className="text-[10px] text-muted-foreground font-mono">••••{b.account_number_last4}</span>}
+                          {b.routing_number_last4 && <span className="text-[10px] text-muted-foreground font-mono">RT ••••{b.routing_number_last4}</span>}
                           <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0 ml-auto mr-2">
                             <PenTool className="h-2.5 w-2.5 mr-1" />{bankSigners.length}
                           </Badge>
@@ -412,6 +412,45 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                       {ACCOUNT_TYPES.map(t => <SelectItem key={t} value={t}>{formatType(t)}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+              {/* Row 2: Account # | Routing # (encrypted at rest, masked by default) */}
+              <div className="grid grid-cols-20 gap-2">
+                <div className="col-span-10">
+                  <Label className="text-xs">Account Number</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      className="h-7 text-sm font-mono"
+                      type={acctRevealed ? "text" : "password"}
+                      value={acctRevealed ? form.account_number : (editing?.account_number_last4 ? `••••••${editing.account_number_last4}` : "")}
+                      onChange={e => { setForm(p => ({ ...p, account_number: e.target.value })); setAcctRevealed(true); }}
+                      placeholder={editing ? "Hidden — click eye to reveal" : "Enter account number"}
+                      readOnly={!acctRevealed && !!editing}
+                    />
+                    {editing && (
+                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={revealing} onClick={() => acctRevealed ? setAcctRevealed(false) : revealField("account")}>
+                        {acctRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <div className="col-span-10">
+                  <Label className="text-xs">Routing Number</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      className="h-7 text-sm font-mono"
+                      type={rtRevealed ? "text" : "password"}
+                      value={rtRevealed ? form.routing_number : (editing?.routing_number_last4 ? `••••••${editing.routing_number_last4}` : "")}
+                      onChange={e => { setForm(p => ({ ...p, routing_number: e.target.value })); setRtRevealed(true); }}
+                      placeholder={editing ? "Hidden — click eye to reveal" : "Enter routing number"}
+                      readOnly={!rtRevealed && !!editing}
+                    />
+                    {editing && (
+                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={revealing} onClick={() => rtRevealed ? setRtRevealed(false) : revealField("routing")}>
+                        {rtRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
               {/* Row 3: Address (65%) | Row 4: Address 2 (35%) */}
