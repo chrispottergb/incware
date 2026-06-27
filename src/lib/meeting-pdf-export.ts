@@ -350,7 +350,7 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
           participants.push(normalized);
         };
         (meetingData.shareholders || []).forEach(s => {
-          if (s.shareholder_name) addUnique(s.shareholder_name);
+          if (s.shareholder_name) addUnique(formatShareholderDisplay(s, "inline"));
         });
         (meetingData.directors || []).forEach(d => {
           if (d.director_name) addUnique(d.director_name);
