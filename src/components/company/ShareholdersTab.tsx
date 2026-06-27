@@ -294,7 +294,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
     resetZip();
     // When editing, the SSN field starts empty since it's encrypted in DB
     // User can enter a new value or leave blank to keep existing
-    setForm({ name: s.name, address: s.address ?? "", address_2: (s as any).address_2 ?? "", city: s.city ?? "", state: s.state ?? "", zip: s.zip ?? "", ssn_ein: decryptedSsns[s.id] ?? "", status: s.status ?? "active" });
+    setForm({ name: s.name, address: s.address ?? "", address_2: (s as any).address_2 ?? "", city: s.city ?? "", state: s.state ?? "", zip: s.zip ?? "", ssn_ein: decryptedSsns[s.id] ?? "", status: s.status ?? "active", owner_kind: ((s as any).owner_kind === "entity" ? "entity" : "individual"), representative_name: (s as any).representative_name ?? "", representative_title: (s as any).representative_title ?? "" });
     setDialog(true);
   };
 
