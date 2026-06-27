@@ -210,7 +210,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
 
   const showHoldingsColumn = Boolean(shareholderHoldings) || transactions.length > 0 || t.isLLC;
 
-  const defaultForm = { name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active" };
+  const defaultForm = { name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active", owner_kind: "individual" as "individual" | "entity", representative_name: "", representative_title: "" };
   const resetForm = () => {
     setForm(defaultForm);
     setEditId(null);
