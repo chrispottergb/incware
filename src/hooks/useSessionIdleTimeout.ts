@@ -91,7 +91,7 @@ export function useSessionIdleTimeout(isAuthenticated: boolean) {
           toast({
             title: "Session expiring soon",
             description:
-              "You'll be signed out in about 2 minutes due to inactivity. Move the mouse or press a key to stay signed in.",
+              "You'll be signed out in about 10 minutes due to inactivity. Move the mouse or press a key to stay signed in.",
             duration: 60_000,
           });
         } catch {}

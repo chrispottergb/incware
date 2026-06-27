@@ -79,7 +79,20 @@ export function buildOfficerSnapshot(managers: LlcManager[]): CompanyOfficerSnap
   };
   const used = new Set<number>();
 
+  // First pass: combined "Secretary/Treasurer" fills BOTH slots from a single row.
+  for (let i = 0; i < managers.length; i++) {
+    const m = managers[i];
+    if (!m?.name?.trim()) continue;
+    if (norm(m.title || "") === "secretary/treasurer") {
+      snap.secretary = m.name.trim();
+      snap.treasurer = m.name.trim();
+      used.add(i);
+      break;
+    }
+  }
+
   for (const { role, titles } of ROLE_MATCHERS) {
+    if (snap[role]) continue;
     for (let i = 0; i < managers.length; i++) {
       if (used.has(i)) continue;
       const m = managers[i];

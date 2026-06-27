@@ -642,30 +642,41 @@ export default function OrganizationTab({ companyId, company }: Props) {
 
   const saveLlcManagers = useMutation({
     mutationFn: async () => {
-      // 1. Replace all llc_managers rows for this company
-      const { error: delError } = await supabase
-        .from("llc_managers" as any)
-        .delete()
-        .eq("company_id", companyId);
-      if (delError) throw delError;
-
       const cleaned = llcManagers
         .map((m, idx) => ({ ...m, display_order: idx }))
         .filter((m) => m.name.trim() && m.title.trim());
 
+      // 1. Insert new rows FIRST so a failure leaves existing data intact.
+      let insertedIds: string[] = [];
       if (cleaned.length > 0) {
-        const { error: insError } = await supabase.from("llc_managers" as any).insert(
-          cleaned.map((m) => ({
-            company_id: companyId,
-            title: m.title.trim(),
-            name: m.name.trim(),
-            display_order: m.display_order,
-          }))
-        );
+        const { data: inserted, error: insError } = await supabase
+          .from("llc_managers" as any)
+          .insert(
+            cleaned.map((m) => ({
+              company_id: companyId,
+              title: m.title.trim(),
+              name: m.name.trim(),
+              display_order: m.display_order,
+            }))
+          )
+          .select("id");
         if (insError) throw insError;
+        insertedIds = ((inserted as any[]) || []).map((r) => r.id);
       }
 
-      // 2. Dual-write canonical snapshot to officers table
+      // 2. Only after the insert succeeds, remove the previous rows by id.
+      const oldIds = (llcManagersData || [])
+        .map((r) => r.id)
+        .filter((id) => !insertedIds.includes(id));
+      if (oldIds.length > 0) {
+        const { error: delError } = await supabase
+          .from("llc_managers" as any)
+          .delete()
+          .in("id", oldIds);
+        if (delError) throw delError;
+      }
+
+      // 3. Dual-write canonical snapshot to officers table
       const snap = buildOfficerSnapshot(cleaned);
       if (officers) {
         const { error } = await supabase
@@ -689,7 +700,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
         if (error) throw error;
       }
 
-      // 3. Address book sync
+      // 4. Address book sync
       cleaned.forEach((m) =>
         upsertAddressBook.mutate({ full_name: m.name.trim(), company_id: companyId })
       );
