@@ -21,6 +21,9 @@ interface PersonRecord {
   zip?: string | null;
   commonShares?: number | string | null;
   preferredShares?: number | string | null;
+  ownerKind?: string | null;
+  representativeName?: string | null;
+  representativeTitle?: string | null;
 }
 
 interface Props {
