@@ -114,13 +114,13 @@ export default function BanksTab({ companyId }: BanksTabProps) {
         });
         if (encErr) throw encErr;
       }
-      // Sync to master directory (no bank numbers in this call — encrypted via separate edge fn)
+      // Sync to master directory; the hook encrypts bank numbers via edge function.
       upsertMasterBank.mutate({
         firm_name: form.bank_name, address: form.address, address_2: form.address_2,
         city: form.city, state: form.state, zip: form.zip, phone: form.phone,
         account_type: form.account_type, contact_name: form.contact_name, contact_title: form.contact_title,
-        ...(acctRevealed || rtRevealed || !editing ? { _bankNumbers: { account_number, routing_number } } : {}),
-      } as any);
+        ...((acctRevealed || rtRevealed || !editing) ? { account_number, routing_number } : {}),
+      });
       if (form.contact_name?.trim()) {
         upsertAddressBook.mutate({
           full_name: form.contact_name.trim(),
