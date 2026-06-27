@@ -37,6 +37,11 @@ export default function BanksTab({ companyId }: BanksTabProps) {
   const emptyForm = { bank_name: "", account_type: "checking", account_number: "", routing_number: "", contact_name: "", contact_title: "", phone: "", address: "", address_2: "", city: "", state: "", zip: "", notes: "" };
   const [form, setForm] = useState(emptyForm);
 
+  // Reveal state: true once the user has typed into or decrypted the field this session
+  const [acctRevealed, setAcctRevealed] = useState(false);
+  const [rtRevealed, setRtRevealed] = useState(false);
+  const [revealing, setRevealing] = useState(false);
+
   // Signer dialog state
   const [signerOpen, setSignerOpen] = useState(false);
   const [signerEditingId, setSignerEditingId] = useState<string | null>(null);
