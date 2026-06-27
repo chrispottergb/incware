@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import DbAddressAutocomplete from "@/components/ui/db-address-autocomplete";
 import NameAutocomplete from "@/components/NameAutocomplete";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Plus, Pencil, Trash2, Landmark, PenTool, ChevronRight, Loader2, Eye, EyeOff } from "lucide-react";
+import { Plus, Pencil, Trash2, Landmark, PenTool, ChevronRight, Loader2, Eye, EyeOff, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { cn } from "@/lib/utils";
@@ -49,6 +49,20 @@ export default function BanksTab({ companyId }: BanksTabProps) {
 
   // Track which bank rows are expanded
   const [expandedBanks, setExpandedBanks] = useState<Record<string, boolean>>({});
+
+  // Per-row inline reveal of decrypted account/routing numbers
+  const [rowReveal, setRowReveal] = useState<Record<string, { account?: string; routing?: string }>>({});
+  const [rowLoading, setRowLoading] = useState<Record<string, boolean>>({});
+  // Per-row inline edit state for account/routing
+  const [rowEdit, setRowEdit] = useState<{ bankId: string; field: "account" | "routing"; value: string } | null>(null);
+  const [rowSaving, setRowSaving] = useState(false);
+
+  // Auto-clear any revealed numbers after 60s for safety
+  useEffect(() => {
+    if (Object.keys(rowReveal).length === 0) return;
+    const t = setTimeout(() => setRowReveal({}), 60_000);
+    return () => clearTimeout(t);
+  }, [rowReveal]);
 
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
@@ -274,6 +288,86 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     setExpandedBanks(prev => ({ ...prev, [bankId]: !prev[bankId] }));
   };
 
+  const revealRow = async (bankId: string, field: "account" | "routing") => {
+    // If already revealed, toggle off
+    if (rowReveal[bankId]?.[field] !== undefined) {
+      setRowReveal(prev => {
+        const next = { ...prev };
+        if (next[bankId]) {
+          const { [field]: _, ...rest } = next[bankId];
+          if (Object.keys(rest).length === 0) delete next[bankId];
+          else next[bankId] = rest;
+        }
+        return next;
+      });
+      return;
+    }
+    setRowLoading(prev => ({ ...prev, [bankId]: true }));
+    try {
+      const { data, error } = await supabase.functions.invoke("decrypt-company-bank", { body: { bank_id: bankId } });
+      if (error) throw error;
+      const d = data as { account_number: string | null; routing_number: string | null };
+      const val = field === "account" ? d.account_number : d.routing_number;
+      if (!val) { toast.info("No value to reveal"); return; }
+      setRowReveal(prev => ({ ...prev, [bankId]: { ...prev[bankId], [field]: val } }));
+    } catch (e: any) {
+      toast.error(e.message || "Failed to reveal");
+    } finally {
+      setRowLoading(prev => ({ ...prev, [bankId]: false }));
+    }
+  };
+
+  const startRowEdit = async (bankId: string, field: "account" | "routing") => {
+    // Pre-fill with revealed value if available, else fetch first
+    let current = rowReveal[bankId]?.[field];
+    if (current === undefined) {
+      setRowLoading(prev => ({ ...prev, [bankId]: true }));
+      try {
+        const { data, error } = await supabase.functions.invoke("decrypt-company-bank", { body: { bank_id: bankId } });
+        if (error) throw error;
+        const d = data as { account_number: string | null; routing_number: string | null };
+        current = (field === "account" ? d.account_number : d.routing_number) || "";
+      } catch (e: any) {
+        toast.error(e.message || "Failed to load");
+        setRowLoading(prev => ({ ...prev, [bankId]: false }));
+        return;
+      } finally {
+        setRowLoading(prev => ({ ...prev, [bankId]: false }));
+      }
+    }
+    setRowEdit({ bankId, field, value: current || "" });
+  };
+
+  const saveRowEdit = async () => {
+    if (!rowEdit) return;
+    setRowSaving(true);
+    try {
+      const body: any = { bank_id: rowEdit.bankId };
+      if (rowEdit.field === "account") body.account_number = rowEdit.value;
+      else body.routing_number = rowEdit.value;
+      const { error } = await supabase.functions.invoke("encrypt-company-bank", { body });
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["company_banks", companyId] });
+      // Clear reveal for that field so it re-masks
+      setRowReveal(prev => {
+        const next = { ...prev };
+        if (next[rowEdit.bankId]) {
+          const { [rowEdit.field]: _, ...rest } = next[rowEdit.bankId];
+          if (Object.keys(rest).length === 0) delete next[rowEdit.bankId];
+          else next[rowEdit.bankId] = rest;
+        }
+        return next;
+      });
+      setRowEdit(null);
+      toast.success(`${rowEdit.field === "account" ? "Account" : "Routing"} number updated`);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save");
+    } finally {
+      setRowSaving(false);
+    }
+  };
+
+
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
   if (isError) return <QueryErrorBanner message="Failed to load banks." onRetry={refetch} />;
 
@@ -301,16 +395,52 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                         </Button>
                       </CollapsibleTrigger>
                       <CollapsibleTrigger asChild>
-                        <button className="flex-1 text-left flex items-center gap-3 min-w-0">
+                        <button className="text-left flex items-center gap-3 min-w-0">
                           <span className="font-medium text-xs truncate">{b.bank_name}</span>
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">{formatType(b.account_type || "")}</Badge>
-                          {b.account_number_last4 && <span className="text-[10px] text-muted-foreground font-mono">••••{b.account_number_last4}</span>}
-                          {b.routing_number_last4 && <span className="text-[10px] text-muted-foreground font-mono">RT ••••{b.routing_number_last4}</span>}
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0 ml-auto mr-2">
-                            <PenTool className="h-2.5 w-2.5 mr-1" />{bankSigners.length}
-                          </Badge>
                         </button>
                       </CollapsibleTrigger>
+                      <div className="flex items-center gap-3 ml-3 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+                        {(["account", "routing"] as const).map((field) => {
+                          const last4 = field === "account" ? b.account_number_last4 : b.routing_number_last4;
+                          const prefix = field === "routing" ? "RT " : "";
+                          const revealed = rowReveal[b.id]?.[field];
+                          const isEditing = rowEdit?.bankId === b.id && rowEdit.field === field;
+                          if (!last4 && !revealed && !isEditing) return null;
+                          if (isEditing) {
+                            return (
+                              <div key={field} className="flex items-center gap-1">
+                                <span className="text-[10px] text-muted-foreground font-mono">{prefix}</span>
+                                <Input
+                                  autoFocus
+                                  className="h-6 text-[11px] font-mono w-32 px-1"
+                                  value={rowEdit.value}
+                                  onChange={(e) => setRowEdit({ ...rowEdit, value: e.target.value })}
+                                  onKeyDown={(e) => { if (e.key === "Enter") saveRowEdit(); if (e.key === "Escape") setRowEdit(null); }}
+                                />
+                                <Button variant="ghost" size="icon" className="h-5 w-5" disabled={rowSaving} onClick={saveRowEdit}><Check className="h-3 w-3" /></Button>
+                                <Button variant="ghost" size="icon" className="h-5 w-5" disabled={rowSaving} onClick={() => setRowEdit(null)}><X className="h-3 w-3" /></Button>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div key={field} className="flex items-center gap-0.5">
+                              <span className="text-[10px] text-muted-foreground font-mono">
+                                {revealed ? `${prefix}${revealed}` : `${prefix}••••${last4}`}
+                              </span>
+                              <Button variant="ghost" size="icon" className="h-5 w-5" disabled={rowLoading[b.id]} onClick={() => revealRow(b.id, field)} title={revealed ? "Hide" : "Reveal"}>
+                                {revealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-5 w-5" disabled={rowLoading[b.id]} onClick={() => startRowEdit(b.id, field)} title="Edit">
+                                <Pencil className="h-2.5 w-2.5" />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0 ml-auto mr-2">
+                          <PenTool className="h-2.5 w-2.5 mr-1" />{bankSigners.length}
+                        </Badge>
+                      </div>
                       <div className="flex gap-1 shrink-0">
                         <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={(e) => { e.stopPropagation(); openNewSigner(b.id); }}>
                           <Plus className="h-3.5 w-3.5 mr-1" />Add Signer
