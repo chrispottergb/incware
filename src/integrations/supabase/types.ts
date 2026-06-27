@@ -1505,6 +1505,8 @@ export type Database = {
       company_banks: {
         Row: {
           account_number: string | null
+          account_number_encrypted: string | null
+          account_number_last4: string | null
           account_type: string | null
           address: string | null
           address_2: string | null
@@ -1518,12 +1520,16 @@ export type Database = {
           notes: string | null
           phone: string | null
           routing_number: string | null
+          routing_number_encrypted: string | null
+          routing_number_last4: string | null
           state: string | null
           updated_at: string
           zip: string | null
         }
         Insert: {
           account_number?: string | null
+          account_number_encrypted?: string | null
+          account_number_last4?: string | null
           account_type?: string | null
           address?: string | null
           address_2?: string | null
@@ -1537,12 +1543,16 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           routing_number?: string | null
+          routing_number_encrypted?: string | null
+          routing_number_last4?: string | null
           state?: string | null
           updated_at?: string
           zip?: string | null
         }
         Update: {
           account_number?: string | null
+          account_number_encrypted?: string | null
+          account_number_last4?: string | null
           account_type?: string | null
           address?: string | null
           address_2?: string | null
@@ -1556,6 +1566,8 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           routing_number?: string | null
+          routing_number_encrypted?: string | null
+          routing_number_last4?: string | null
           state?: string | null
           updated_at?: string
           zip?: string | null
@@ -2213,6 +2225,8 @@ export type Database = {
       master_firms: {
         Row: {
           account_number: string | null
+          account_number_encrypted: string | null
+          account_number_last4: string | null
           account_type: string | null
           address: string | null
           address_2: string | null
@@ -2226,6 +2240,8 @@ export type Database = {
           id: string
           phone: string | null
           routing_number: string | null
+          routing_number_encrypted: string | null
+          routing_number_last4: string | null
           state: string | null
           updated_at: string
           user_id: string
@@ -2234,6 +2250,8 @@ export type Database = {
         }
         Insert: {
           account_number?: string | null
+          account_number_encrypted?: string | null
+          account_number_last4?: string | null
           account_type?: string | null
           address?: string | null
           address_2?: string | null
@@ -2247,6 +2265,8 @@ export type Database = {
           id?: string
           phone?: string | null
           routing_number?: string | null
+          routing_number_encrypted?: string | null
+          routing_number_last4?: string | null
           state?: string | null
           updated_at?: string
           user_id: string
@@ -2255,6 +2275,8 @@ export type Database = {
         }
         Update: {
           account_number?: string | null
+          account_number_encrypted?: string | null
+          account_number_last4?: string | null
           account_type?: string | null
           address?: string | null
           address_2?: string | null
@@ -2268,6 +2290,8 @@ export type Database = {
           id?: string
           phone?: string | null
           routing_number?: string | null
+          routing_number_encrypted?: string | null
+          routing_number_last4?: string | null
           state?: string | null
           updated_at?: string
           user_id?: string
@@ -4293,6 +4317,13 @@ export type Database = {
           ein: string
         }[]
       }
+      decrypt_company_bank: {
+        Args: { p_bank_id: string; p_encryption_key: string }
+        Returns: {
+          account_number: string
+          routing_number: string
+        }[]
+      }
       decrypt_company_ein: {
         Args: { p_company_id: string; p_encryption_key: string }
         Returns: string
@@ -4300,6 +4331,13 @@ export type Database = {
       decrypt_company_ein_service: {
         Args: { p_company_id: string; p_encryption_key: string }
         Returns: string
+      }
+      decrypt_master_firm_bank: {
+        Args: { p_encryption_key: string; p_firm_id: string }
+        Returns: {
+          account_number: string
+          routing_number: string
+        }[]
       }
       decrypt_ssn_ein: {
         Args: { encryption_key: string; shareholder_id: string }
@@ -4309,8 +4347,26 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      encrypt_company_bank: {
+        Args: {
+          p_account: string
+          p_bank_id: string
+          p_encryption_key: string
+          p_routing: string
+        }
+        Returns: undefined
+      }
       encrypt_company_ein: {
         Args: { p_company_id: string; p_ein: string; p_encryption_key: string }
+        Returns: undefined
+      }
+      encrypt_master_firm_bank: {
+        Args: {
+          p_account: string
+          p_encryption_key: string
+          p_firm_id: string
+          p_routing: string
+        }
         Returns: undefined
       }
       encrypt_shareholder_ssn: {
@@ -4336,6 +4392,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      migrate_legacy_bank_numbers: {
+        Args: { p_encryption_key: string }
+        Returns: Json
       }
       migrate_legacy_company_ein: {
         Args: { p_encryption_key: string }
