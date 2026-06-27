@@ -1124,6 +1124,9 @@ export default function MeetingDetail() {
               companyId={id}
               columns={[
                 { key: "shareholder_name", label: `${term.shareholder} Name`, required: true, width: "160px" },
+                { key: "owner_kind", label: "Owner Type", type: "select", options: ["individual", "entity"], width: "100px" },
+                { key: "representative_name", label: "Representative Name", width: "140px" },
+                { key: "representative_title", label: "Representative Title", width: "120px" },
                 { key: "address", label: "Street Address" },
                 { key: "city", label: "City", width: "120px" },
                 { key: "state", label: "State", width: "60px" },
@@ -1135,7 +1138,12 @@ export default function MeetingDetail() {
                   { key: "additional_capital_contribution", label: "Add'l Capital", type: "number" as const, width: "100px" },
                 ]),
               ]}
-              displayRows={hydratedMeetingShareholders}
+              displayRows={hydratedMeetingShareholders.map((s: any) => ({
+                ...s,
+                shareholder_name: (s.owner_kind === "entity" && s.representative_name)
+                  ? `${s.shareholder_name} — rep. ${s.representative_name}${s.representative_title ? `, ${s.representative_title}` : ""}`
+                  : s.shareholder_name,
+              }))}
               roster={enrichedShareholderRoster}
               rosterFieldMap={{
                 name: "shareholder_name",
@@ -1145,10 +1153,14 @@ export default function MeetingDetail() {
                 zip: "zip",
                 common_shares: "common_shares",
                 preferred_shares: "preferred_shares",
+                owner_kind: "owner_kind",
+                representative_name: "representative_name",
+                representative_title: "representative_title",
               }}
               onCreateNewRosterEntry={async (formData) => {
                 const name = formData.shareholder_name?.trim();
                 if (!name) { toast.error("Name is required"); return null; }
+                const ownerKind = formData.owner_kind === "entity" ? "entity" : "individual";
                 const { data, error } = await supabase.from("shareholders").insert({
                   company_id: id!,
                   name,
@@ -1157,7 +1169,10 @@ export default function MeetingDetail() {
                   state: formData.state || null,
                   zip: formData.zip || null,
                   share_class: "Common",
-                }).select("id, name, address, city, state, zip").single();
+                  owner_kind: ownerKind,
+                  representative_name: ownerKind === "entity" ? (formData.representative_name?.trim() || null) : null,
+                  representative_title: ownerKind === "entity" ? (formData.representative_title?.trim() || null) : null,
+                } as any).select("id, name, address, city, state, zip").single();
                 if (error) { toast.error(error.message); return null; }
                 queryClient.invalidateQueries({ queryKey: ["shareholders", id] });
                 return { id: data.id, name: data.name, address: data.address, city: data.city, state: data.state, zip: data.zip };
