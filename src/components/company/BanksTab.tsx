@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Plus, Pencil, Trash2, Landmark, PenTool, ChevronRight, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Landmark, PenTool, ChevronRight, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { cn } from "@/lib/utils";
@@ -87,24 +87,35 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     "Limited Authority (Specify)",
   ];
 
-  // Bank CRUD
+  // Bank CRUD — never writes plaintext account/routing through PostgREST;
+  // encrypts via secure edge function after row save.
   const save = useMutation({
     mutationFn: async () => {
+      const { account_number, routing_number, ...rest } = form;
+      let bankId: string;
       if (editing) {
-        const { error } = await supabase.from("company_banks").update({ ...form }).eq("id", editing.id);
+        const { error } = await supabase.from("company_banks").update({ ...rest }).eq("id", editing.id);
         if (error) throw error;
+        bankId = editing.id;
       } else {
-        const { error } = await supabase.from("company_banks").insert({ ...form, company_id: companyId });
+        const { data, error } = await supabase.from("company_banks").insert({ ...rest, company_id: companyId }).select("id").single();
         if (error) throw error;
+        bankId = data.id;
       }
-      // Sync to master directory
+      // Encrypt sensitive fields server-side (only if user touched them in this session)
+      if (acctRevealed || rtRevealed || !editing) {
+        const { error: encErr } = await supabase.functions.invoke("encrypt-company-bank", {
+          body: { bank_id: bankId, account_number, routing_number },
+        });
+        if (encErr) throw encErr;
+      }
+      // Sync to master directory (no bank numbers in this call — encrypted via separate edge fn)
       upsertMasterBank.mutate({
         firm_name: form.bank_name, address: form.address, address_2: form.address_2,
         city: form.city, state: form.state, zip: form.zip, phone: form.phone,
-        account_number: form.account_number, routing_number: form.routing_number,
         account_type: form.account_type, contact_name: form.contact_name, contact_title: form.contact_title,
-      });
-      // Save bank contact person to address book
+        ...(acctRevealed || rtRevealed || !editing ? { _bankNumbers: { account_number, routing_number } } : {}),
+      } as any);
       if (form.contact_name?.trim()) {
         upsertAddressBook.mutate({
           full_name: form.contact_name.trim(),
