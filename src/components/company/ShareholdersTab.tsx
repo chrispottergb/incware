@@ -19,7 +19,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff, ArrowRightLeft } from "lucide-react";
+import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff, ArrowRightLeft, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
@@ -63,6 +63,8 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active",
+    owner_kind: "individual" as "individual" | "entity",
+    representative_name: "", representative_title: "",
   });
   const [decryptedSsns, setDecryptedSsns] = useState<Record<string, string | null>>({});
   const [showSsns, setShowSsns] = useState(false);
@@ -208,7 +210,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
 
   const showHoldingsColumn = Boolean(shareholderHoldings) || transactions.length > 0 || t.isLLC;
 
-  const defaultForm = { name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active" };
+  const defaultForm = { name: "", address: "", address_2: "", city: "", state: "", zip: "", ssn_ein: "", status: "active", owner_kind: "individual" as "individual" | "entity", representative_name: "", representative_title: "" };
   const resetForm = () => {
     setForm(defaultForm);
     setEditId(null);
@@ -224,14 +226,20 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
         const { error } = await supabase.from("shareholders").update({
           name: form.name, address: form.address || null, address_2: form.address_2 || null, city: form.city || null,
           state: form.state || null, zip: form.zip || null, status: form.status,
-        }).eq("id", editId);
+          owner_kind: form.owner_kind,
+          representative_name: form.owner_kind === "entity" ? (form.representative_name?.trim() || null) : null,
+          representative_title: form.owner_kind === "entity" ? (form.representative_title?.trim() || null) : null,
+        } as any).eq("id", editId);
         if (error) throw error;
       } else {
         const { data: inserted, error } = await supabase.from("shareholders").insert({
           company_id: companyId, name: form.name, address: form.address || null, address_2: form.address_2 || null,
           city: form.city || null, state: form.state || null, zip: form.zip || null, status: form.status,
           capital_account_balance: 0,
-        }).select("id").single();
+          owner_kind: form.owner_kind,
+          representative_name: form.owner_kind === "entity" ? (form.representative_name?.trim() || null) : null,
+          representative_title: form.owner_kind === "entity" ? (form.representative_title?.trim() || null) : null,
+        } as any).select("id").single();
         if (error) throw error;
         shareholderId = inserted.id;
       }
@@ -292,7 +300,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
     resetZip();
     // When editing, the SSN field starts empty since it's encrypted in DB
     // User can enter a new value or leave blank to keep existing
-    setForm({ name: s.name, address: s.address ?? "", address_2: (s as any).address_2 ?? "", city: s.city ?? "", state: s.state ?? "", zip: s.zip ?? "", ssn_ein: decryptedSsns[s.id] ?? "", status: s.status ?? "active" });
+    setForm({ name: s.name, address: s.address ?? "", address_2: (s as any).address_2 ?? "", city: s.city ?? "", state: s.state ?? "", zip: s.zip ?? "", ssn_ein: decryptedSsns[s.id] ?? "", status: s.status ?? "active", owner_kind: ((s as any).owner_kind === "entity" ? "entity" : "individual"), representative_name: (s as any).representative_name ?? "", representative_title: (s as any).representative_title ?? "" });
     setDialog(true);
   };
 
@@ -393,17 +401,51 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-2">
-                <div className="field-group">
-                  <Label className="field-label">{t.shareholder} Name</Label>
-                  <NameAutocomplete
-                    value={form.name}
-                    onChange={(v) => setForm(p => ({ ...p, name: v }))}
-                    onSelect={handleAddressSelect}
-                    search={searchAddressBook}
-                    getCompanySplitIndex={getCompanySplitIndex}
-                    className="h-7 text-sm"
-                    placeholder="Start typing a name..."
-                  />
+                <div className="grid grid-cols-12 gap-x-2 gap-y-2">
+                  <div className="field-group col-span-4">
+                    <Label className="field-label">Owner Type</Label>
+                    <Select value={form.owner_kind} onValueChange={(v) => setForm(p => ({ ...p, owner_kind: v as "individual" | "entity" }))}>
+                      <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="individual">Individual</SelectItem>
+                        <SelectItem value="entity">Entity (LLC, Corp, Trust)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="field-group col-span-8">
+                    <Label className="field-label">{t.shareholder} Name{form.owner_kind === "entity" ? " (Entity)" : ""}</Label>
+                    <NameAutocomplete
+                      value={form.name}
+                      onChange={(v) => setForm(p => ({ ...p, name: v }))}
+                      onSelect={handleAddressSelect}
+                      search={searchAddressBook}
+                      getCompanySplitIndex={getCompanySplitIndex}
+                      className="h-7 text-sm"
+                      placeholder={form.owner_kind === "entity" ? "Entity legal name..." : "Start typing a name..."}
+                    />
+                  </div>
+                  {form.owner_kind === "entity" && (
+                    <>
+                      <div className="field-group col-span-7">
+                        <Label className="field-label">Representative Name</Label>
+                        <Input
+                          className="h-7 text-sm"
+                          value={form.representative_name}
+                          onChange={(e) => setForm(p => ({ ...p, representative_name: e.target.value }))}
+                          placeholder="e.g. Jane Doe"
+                        />
+                      </div>
+                      <div className="field-group col-span-5">
+                        <Label className="field-label">Representative Title</Label>
+                        <Input
+                          className="h-7 text-sm"
+                          value={form.representative_title}
+                          onChange={(e) => setForm(p => ({ ...p, representative_title: e.target.value }))}
+                          placeholder="e.g. Trustee, Manager"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                   <div className="field-group col-span-7">
@@ -500,7 +542,22 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                     const pct = getInterestPct(s);
                     return (
                       <TableRow key={s.id}>
-                        <TableCell className="text-xs font-medium">{s.name}</TableCell>
+                        <TableCell className="text-xs font-medium">
+                          <div className="flex items-center gap-1.5">
+                            <span>{s.name}</span>
+                            {(s as any).owner_kind === "entity" && (
+                              <Badge variant="outline" className="text-[9px] px-1 py-0 gap-1 bg-primary/5 text-primary border-primary/20">
+                                <Building2 className="h-2.5 w-2.5" /> Entity
+                              </Badge>
+                            )}
+                          </div>
+                          {(s as any).owner_kind === "entity" && (s as any).representative_name && (
+                            <div className="text-[10px] text-muted-foreground font-normal mt-0.5">
+                              rep. by {(s as any).representative_name}
+                              {(s as any).representative_title ? `, ${(s as any).representative_title}` : ""}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="text-xs">
                           {s.address ? (
                             <>

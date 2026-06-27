@@ -2958,7 +2958,10 @@ export type Database = {
           distribution_amount: number | null
           id: string
           meeting_id: string
+          owner_kind: string
           preferred_shares: number | null
+          representative_name: string | null
+          representative_title: string | null
           shareholder_name: string
           state: string | null
           zip: string | null
@@ -2974,7 +2977,10 @@ export type Database = {
           distribution_amount?: number | null
           id?: string
           meeting_id: string
+          owner_kind?: string
           preferred_shares?: number | null
+          representative_name?: string | null
+          representative_title?: string | null
           shareholder_name: string
           state?: string | null
           zip?: string | null
@@ -2990,7 +2996,10 @@ export type Database = {
           distribution_amount?: number | null
           id?: string
           meeting_id?: string
+          owner_kind?: string
           preferred_shares?: number | null
+          representative_name?: string | null
+          representative_title?: string | null
           shareholder_name?: string
           state?: string | null
           zip?: string | null
@@ -3869,7 +3878,10 @@ export type Database = {
           is_treasury: boolean
           name: string
           num_shares: number | null
+          owner_kind: string
           ownership_percentage: number | null
+          representative_name: string | null
+          representative_title: string | null
           share_class: string | null
           ssn_ein_encrypted: string | null
           state: string | null
@@ -3892,7 +3904,10 @@ export type Database = {
           is_treasury?: boolean
           name: string
           num_shares?: number | null
+          owner_kind?: string
           ownership_percentage?: number | null
+          representative_name?: string | null
+          representative_title?: string | null
           share_class?: string | null
           ssn_ein_encrypted?: string | null
           state?: string | null
@@ -3915,7 +3930,10 @@ export type Database = {
           is_treasury?: boolean
           name?: string
           num_shares?: number | null
+          owner_kind?: string
           ownership_percentage?: number | null
+          representative_name?: string | null
+          representative_title?: string | null
           share_class?: string | null
           ssn_ein_encrypted?: string | null
           state?: string | null

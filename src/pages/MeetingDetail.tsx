@@ -133,6 +133,9 @@ export default function MeetingDetail() {
         zip: s.zip,
         common_shares: String(holdings),
         preferred_shares: ownershipPct.toFixed(2),
+        owner_kind: (s as any).owner_kind || "individual",
+        representative_name: (s as any).representative_name || "",
+        representative_title: (s as any).representative_title || "",
       };
     });
   }, [companyShareholders, shareholderHoldings, totalIssuedShares]);
@@ -319,22 +322,35 @@ export default function MeetingDetail() {
       if (hasAnyAddr(r)) priorIndex.set(key, r);
     }
 
-    const updates: Array<{ id: string; address: string | null; city: string | null; state: string | null; zip: string | null }> = [];
+    const updates: Array<{ id: string; address: string | null; city: string | null; state: string | null; zip: string | null; owner_kind?: string; representative_name?: string | null; representative_title?: string | null }> = [];
     shareholders.forEach((sh: any) => {
-      if (hasAnyAddr(sh)) return;
+      const needsAddr = !hasAnyAddr(sh);
+      const needsEntity = (sh.owner_kind == null);
+      if (!needsAddr && !needsEntity) return;
       const key = normalizeName(sh.shareholder_name);
       let match: any = companyShareholders.find(
-        (c: any) => normalizeName(c.name) === key && hasAnyAddr(c)
+        (c: any) => normalizeName(c.name) === key && (hasAnyAddr(c) || c.owner_kind != null)
       );
       if (!match) match = priorIndex.get(key);
       if (!match) return;
-      updates.push({
-        id: sh.id,
-        address: match.address || null,
-        city: match.city || null,
-        state: match.state || null,
-        zip: match.zip || null,
-      });
+      const update: any = { id: sh.id };
+      if (needsAddr) {
+        update.address = match.address || null;
+        update.city = match.city || null;
+        update.state = match.state || null;
+        update.zip = match.zip || null;
+      } else {
+        update.address = sh.address;
+        update.city = sh.city;
+        update.state = sh.state;
+        update.zip = sh.zip;
+      }
+      if (needsEntity && match.owner_kind != null) {
+        update.owner_kind = match.owner_kind || "individual";
+        update.representative_name = match.representative_name || null;
+        update.representative_title = match.representative_title || null;
+      }
+      updates.push(update);
     });
 
     if (updates.length === 0) {
@@ -346,12 +362,15 @@ export default function MeetingDetail() {
     (async () => {
       try {
         await Promise.all(
-          updates.map((u) =>
-            supabase
-              .from("meeting_shareholders")
-              .update({ address: u.address, city: u.city, state: u.state, zip: u.zip })
-              .eq("id", u.id)
-          )
+          updates.map((u) => {
+            const payload: any = { address: u.address, city: u.city, state: u.state, zip: u.zip };
+            if (u.owner_kind !== undefined) {
+              payload.owner_kind = u.owner_kind;
+              payload.representative_name = u.representative_name;
+              payload.representative_title = u.representative_title;
+            }
+            return supabase.from("meeting_shareholders").update(payload).eq("id", u.id);
+          })
         );
         queryClient.invalidateQueries({ queryKey: ["meeting_shareholders", meetingId] });
       } catch (err) {
@@ -1076,6 +1095,9 @@ export default function MeetingDetail() {
                   isTreasury: s.is_treasury,
                   commonShares: holdings,
                   preferredShares: ownershipPct,
+                  ownerKind: (s as any).owner_kind || "individual",
+                  representativeName: (s as any).representative_name || null,
+                  representativeTitle: (s as any).representative_title || null,
                 };
               })}
               existingNames={shareholders.map((s) => s.shareholder_name)}
@@ -1118,6 +1140,9 @@ export default function MeetingDetail() {
               companyId={id}
               columns={[
                 { key: "shareholder_name", label: `${term.shareholder} Name`, required: true, width: "160px" },
+                { key: "owner_kind", label: "Owner Type", type: "select", options: ["individual", "entity"], width: "100px" },
+                { key: "representative_name", label: "Representative Name", width: "140px" },
+                { key: "representative_title", label: "Representative Title", width: "120px" },
                 { key: "address", label: "Street Address" },
                 { key: "city", label: "City", width: "120px" },
                 { key: "state", label: "State", width: "60px" },
@@ -1129,7 +1154,12 @@ export default function MeetingDetail() {
                   { key: "additional_capital_contribution", label: "Add'l Capital", type: "number" as const, width: "100px" },
                 ]),
               ]}
-              displayRows={hydratedMeetingShareholders}
+              displayRows={hydratedMeetingShareholders.map((s: any) => ({
+                ...s,
+                shareholder_name: (s.owner_kind === "entity" && s.representative_name)
+                  ? `${s.shareholder_name} — rep. ${s.representative_name}${s.representative_title ? `, ${s.representative_title}` : ""}`
+                  : s.shareholder_name,
+              }))}
               roster={enrichedShareholderRoster}
               rosterFieldMap={{
                 name: "shareholder_name",
@@ -1139,10 +1169,14 @@ export default function MeetingDetail() {
                 zip: "zip",
                 common_shares: "common_shares",
                 preferred_shares: "preferred_shares",
+                owner_kind: "owner_kind",
+                representative_name: "representative_name",
+                representative_title: "representative_title",
               }}
               onCreateNewRosterEntry={async (formData) => {
                 const name = formData.shareholder_name?.trim();
                 if (!name) { toast.error("Name is required"); return null; }
+                const ownerKind = formData.owner_kind === "entity" ? "entity" : "individual";
                 const { data, error } = await supabase.from("shareholders").insert({
                   company_id: id!,
                   name,
@@ -1151,7 +1185,10 @@ export default function MeetingDetail() {
                   state: formData.state || null,
                   zip: formData.zip || null,
                   share_class: "Common",
-                }).select("id, name, address, city, state, zip").single();
+                  owner_kind: ownerKind,
+                  representative_name: ownerKind === "entity" ? (formData.representative_name?.trim() || null) : null,
+                  representative_title: ownerKind === "entity" ? (formData.representative_title?.trim() || null) : null,
+                } as any).select("id, name, address, city, state, zip").single();
                 if (error) { toast.error(error.message); return null; }
                 queryClient.invalidateQueries({ queryKey: ["shareholders", id] });
                 return { id: data.id, name: data.name, address: data.address, city: data.city, state: data.state, zip: data.zip };

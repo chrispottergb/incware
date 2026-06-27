@@ -41,6 +41,37 @@ const getStatutoryCloseStatute = (state?: string | null): string => {
   return statutes[(state ?? "").toUpperCase()] ?? "applicable state close corporation statutes";
 };
 
+// Format a shareholder/member name for output, handling entity owners with a representative.
+// Individual owners (or entity rows without a representative_name) return the bare name —
+// preserves byte-for-byte parity with prior PDFs.
+function formatShareholderDisplay(
+  s: {
+    shareholder_name?: string | null;
+    name?: string | null;
+    owner_kind?: string | null;
+    representative_name?: string | null;
+    representative_title?: string | null;
+  },
+  mode: "inline" | "twoLine" | "signer"
+): string {
+  const base = (s.shareholder_name || s.name || "").toString();
+  const rep = (s.representative_name || "").toString().trim();
+  if ((s.owner_kind || "individual") !== "entity" || !rep) return base;
+  const title = (s.representative_title || "").toString().trim();
+  if (mode === "signer") {
+    return title
+      ? `${rep}, as ${title} of ${base}`
+      : `${rep}, as Authorized Representative of ${base}`;
+  }
+  if (mode === "twoLine") {
+    return title ? `${base}\nrep. by ${rep}, ${title}` : `${base}\nrep. by ${rep}`;
+  }
+  // inline
+  return title
+    ? `${base}, represented by ${rep}, its ${title}`
+    : `${base}, represented by ${rep}`;
+}
+
 interface MeetingData {
   meeting: any;
   company: any;
@@ -295,7 +326,7 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
 
       if (subType.includes("shareholder") || subType.includes("member")) {
         (meetingData.shareholders || []).forEach(s => {
-          if (s.shareholder_name) participants.push(s.shareholder_name);
+          if (s.shareholder_name) participants.push(formatShareholderDisplay(s, "inline"));
         });
       }
       if (subType.includes("director") || subType.includes("board")) {
@@ -319,7 +350,7 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
           participants.push(normalized);
         };
         (meetingData.shareholders || []).forEach(s => {
-          if (s.shareholder_name) addUnique(s.shareholder_name);
+          if (s.shareholder_name) addUnique(formatShareholderDisplay(s, "inline"));
         });
         (meetingData.directors || []).forEach(d => {
           if (d.director_name) addUnique(d.director_name);
@@ -780,7 +811,7 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
 
   // For Corps: use shareholders for shareholder meetings, directors otherwise; for LLCs use members
   if (isLLC || isShareholderMeeting) {
-    (data.shareholders || []).forEach(s => { if (s.shareholder_name) addUnique(s.shareholder_name); });
+    (data.shareholders || []).forEach(s => { if (s.shareholder_name) addUnique(formatShareholderDisplay(s, "signer")); });
   } else {
     (data.directors || []).forEach(d => { if (d.director_name) addUnique(d.director_name); });
   }
@@ -1011,7 +1042,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
         const line1 = [addr, addr2].filter(Boolean).join(", ");
         const line2 = [city, state].filter(Boolean).join(", ");
         const address = [line1, line2, zip].filter(Boolean).join(" ");
-        return { name: s.shareholder_name, shares: s.common_shares, address };
+        return { name: formatShareholderDisplay(s, "twoLine"), shares: s.common_shares, address };
       })
     : (data.companyShareholders || []).map((s: any) => {
         const addr = s.address || "";
@@ -1379,7 +1410,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
           const line2 = [city, state].filter(Boolean).join(", ");
           const address = [line1, line2, zip].filter(Boolean).join(" ");
           return [
-            s.shareholder_name,
+            formatShareholderDisplay(s, "twoLine"),
             address || "—",
             s.common_shares?.toLocaleString() ?? "—",
           ];
@@ -1424,13 +1455,15 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         return [line1, line2, zip].filter(Boolean).join(" ");
       };
 
-      const addAttendee = (name: string | null | undefined) => {
+      const addAttendee = (name: string | null | undefined, displayOverride?: string) => {
         if (!name) return;
         const key = normKey(name);
         if (!key || attendeeMap.has(key)) return;
-        attendeeMap.set(key, { name: name.trim(), address: buildAddress(name) });
+        attendeeMap.set(key, { name: (displayOverride || name).trim(), address: buildAddress(name) });
       };
-      (data.shareholders || []).forEach(s => addAttendee(s.shareholder_name));
+      (data.shareholders || []).forEach(s =>
+        addAttendee(s.shareholder_name, formatShareholderDisplay(s, "inline"))
+      );
       (data.directors || []).forEach(d => addAttendee(d.director_name));
       (data.officers || []).forEach(o => addAttendee(o.name));
       const attendeeEntries = Array.from(attendeeMap.values());
@@ -1920,7 +1953,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         const line2 = [city, state].filter(Boolean).join(", ");
         const address = [line1, line2, zip].filter(Boolean).join(" ");
         return [
-          s.shareholder_name,
+          formatShareholderDisplay(s, "twoLine"),
           address || "---",
           s.common_shares?.toLocaleString() ?? "---",
           isLLC && s.preferred_shares != null ? `${s.preferred_shares}%` : (s.preferred_shares?.toLocaleString() ?? "---"),
@@ -1971,7 +2004,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
           y = checkPageBreak(doc, y, 30);
           y = addWhereasResolved(doc, y,
             "",
-            `RESOLVED, that the Company is hereby authorized and directed to distribute the sum of ${distAmount} to ${s.shareholder_name}, consistent with the ${isLLC ? "member's" : "shareholder's"} ${ownershipPct} ownership interest${sCorpResolvedClause}, said distribution to be made on or before ${meetingDateStr}.`,
+            `RESOLVED, that the Company is hereby authorized and directed to distribute the sum of ${distAmount} to ${formatShareholderDisplay(s, "inline")}, consistent with the ${isLLC ? "member's" : "shareholder's"} ${ownershipPct} ownership interest${sCorpResolvedClause}, said distribution to be made on or before ${meetingDateStr}.`,
             bt
           );
         }
@@ -3485,7 +3518,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       (data.shareholders || []).forEach(s => {
         if (!s.shareholder_name) return;
         wcAddUnique({
-          name: s.shareholder_name,
+          name: formatShareholderDisplay(s, "signer"),
           shares: Number(s.common_shares ?? 0) || 0,
           ownership: Number(s.preferred_shares ?? 0) || 0,
         });
