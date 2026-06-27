@@ -1255,7 +1255,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     y += 6;
     doc.setFont("Arial", "normal");
     doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
-    const statuteCitation = getStatutoryCloseStatute(company?.state);
+    const statuteCitation = getStatutoryCloseStatute(company?.state_of_incorporation || company?.state);
     const noticeText = `${companyName} is organized as a Statutory Close Corporation pursuant to ${statuteCitation}. This corporation operates without a board of directors. All governance powers vested by statute in a board of directors are exercised directly by the shareholders of the corporation. The actions taken at this meeting are made in that capacity.`;
     const noticeLines = doc.splitTextToSize(noticeText, pw - MARGIN - R_MARGIN);
     for (const line of noticeLines) {
