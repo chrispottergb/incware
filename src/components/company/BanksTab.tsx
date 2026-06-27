@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Plus, Pencil, Trash2, Landmark, PenTool, ChevronRight, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Landmark, PenTool, ChevronRight, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,11 @@ export default function BanksTab({ companyId }: BanksTabProps) {
   const [editing, setEditing] = useState<any>(null);
   const emptyForm = { bank_name: "", account_type: "checking", account_number: "", routing_number: "", contact_name: "", contact_title: "", phone: "", address: "", address_2: "", city: "", state: "", zip: "", notes: "" };
   const [form, setForm] = useState(emptyForm);
+
+  // Reveal state: true once the user has typed into or decrypted the field this session
+  const [acctRevealed, setAcctRevealed] = useState(false);
+  const [rtRevealed, setRtRevealed] = useState(false);
+  const [revealing, setRevealing] = useState(false);
 
   // Signer dialog state
   const [signerOpen, setSignerOpen] = useState(false);
@@ -87,24 +92,35 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     "Limited Authority (Specify)",
   ];
 
-  // Bank CRUD
+  // Bank CRUD — never writes plaintext account/routing through PostgREST;
+  // encrypts via secure edge function after row save.
   const save = useMutation({
     mutationFn: async () => {
+      const { account_number, routing_number, ...rest } = form;
+      let bankId: string;
       if (editing) {
-        const { error } = await supabase.from("company_banks").update({ ...form }).eq("id", editing.id);
+        const { error } = await supabase.from("company_banks").update({ ...rest }).eq("id", editing.id);
         if (error) throw error;
+        bankId = editing.id;
       } else {
-        const { error } = await supabase.from("company_banks").insert({ ...form, company_id: companyId });
+        const { data, error } = await supabase.from("company_banks").insert({ ...rest, company_id: companyId }).select("id").single();
         if (error) throw error;
+        bankId = data.id;
       }
-      // Sync to master directory
+      // Encrypt sensitive fields server-side (only if user touched them in this session)
+      if (acctRevealed || rtRevealed || !editing) {
+        const { error: encErr } = await supabase.functions.invoke("encrypt-company-bank", {
+          body: { bank_id: bankId, account_number, routing_number },
+        });
+        if (encErr) throw encErr;
+      }
+      // Sync to master directory; the hook encrypts bank numbers via edge function.
       upsertMasterBank.mutate({
         firm_name: form.bank_name, address: form.address, address_2: form.address_2,
         city: form.city, state: form.state, zip: form.zip, phone: form.phone,
-        account_number: form.account_number, routing_number: form.routing_number,
         account_type: form.account_type, contact_name: form.contact_name, contact_title: form.contact_title,
+        ...((acctRevealed || rtRevealed || !editing) ? { account_number, routing_number } : {}),
       });
-      // Save bank contact person to address book
       if (form.contact_name?.trim()) {
         upsertAddressBook.mutate({
           full_name: form.contact_name.trim(),
@@ -187,26 +203,50 @@ export default function BanksTab({ companyId }: BanksTabProps) {
       state: b.state || p.state,
       zip: b.zip || p.zip,
       phone: b.phone || p.phone,
-      account_number: b.account_number || p.account_number,
-      routing_number: b.routing_number || p.routing_number,
       account_type: b.account_type || p.account_type,
       contact_name: b.contact_name || p.contact_name,
       contact_title: b.contact_title || p.contact_title,
     }));
+    // Bank numbers stay blank; user re-enters or reveals on the target record.
+    setAcctRevealed(false);
+    setRtRevealed(false);
     setShowBankDropdown(false);
     setBankNameSearch("");
   };
 
-  const openNew = () => { setEditing(null); setForm(emptyForm); setBankNameSearch(""); setOpen(true); };
+  const openNew = () => { setEditing(null); setForm(emptyForm); setBankNameSearch(""); setAcctRevealed(true); setRtRevealed(true); setOpen(true); };
   const openEdit = (b: any) => {
     setEditing(b);
     setForm({
-      bank_name: b.bank_name, account_type: b.account_type || "checking", account_number: b.account_number || "",
-      routing_number: b.routing_number || "", contact_name: b.contact_name || "", contact_title: b.contact_title || "",
+      bank_name: b.bank_name, account_type: b.account_type || "checking", account_number: "",
+      routing_number: "", contact_name: b.contact_name || "", contact_title: b.contact_title || "",
       phone: b.phone || "", address: b.address || "", address_2: (b as any).address_2 || "", city: b.city || "", state: b.state || "", zip: b.zip || "", notes: b.notes || "",
     });
+    setAcctRevealed(false);
+    setRtRevealed(false);
     setBankNameSearch("");
     setOpen(true);
+  };
+
+  const revealField = async (field: "account" | "routing") => {
+    if (!editing) return;
+    setRevealing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("decrypt-company-bank", { body: { bank_id: editing.id } });
+      if (error) throw error;
+      const d = data as { account_number: string | null; routing_number: string | null };
+      setForm(p => ({
+        ...p,
+        account_number: d.account_number || "",
+        routing_number: d.routing_number || "",
+      }));
+      if (field === "account") setAcctRevealed(true);
+      else setRtRevealed(true);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to reveal");
+    } finally {
+      setRevealing(false);
+    }
   };
 
   const openNewSigner = (bankId: string) => {
@@ -264,8 +304,8 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                         <button className="flex-1 text-left flex items-center gap-3 min-w-0">
                           <span className="font-medium text-xs truncate">{b.bank_name}</span>
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">{formatType(b.account_type || "")}</Badge>
-                          {b.account_number && <span className="text-[10px] text-muted-foreground font-mono">••••{b.account_number.slice(-4)}</span>}
-                          <span className="text-[10px] text-muted-foreground">{b.routing_number}</span>
+                          {b.account_number_last4 && <span className="text-[10px] text-muted-foreground font-mono">••••{b.account_number_last4}</span>}
+                          {b.routing_number_last4 && <span className="text-[10px] text-muted-foreground font-mono">RT ••••{b.routing_number_last4}</span>}
                           <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0 ml-auto mr-2">
                             <PenTool className="h-2.5 w-2.5 mr-1" />{bankSigners.length}
                           </Badge>
@@ -372,6 +412,45 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                       {ACCOUNT_TYPES.map(t => <SelectItem key={t} value={t}>{formatType(t)}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+              {/* Row 2: Account # | Routing # (encrypted at rest, masked by default) */}
+              <div className="grid grid-cols-20 gap-2">
+                <div className="col-span-10">
+                  <Label className="text-xs">Account Number</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      className="h-7 text-sm font-mono"
+                      type={acctRevealed ? "text" : "password"}
+                      value={acctRevealed ? form.account_number : (editing?.account_number_last4 ? `••••••${editing.account_number_last4}` : "")}
+                      onChange={e => { setForm(p => ({ ...p, account_number: e.target.value })); setAcctRevealed(true); }}
+                      placeholder={editing ? "Hidden — click eye to reveal" : "Enter account number"}
+                      readOnly={!acctRevealed && !!editing}
+                    />
+                    {editing && (
+                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={revealing} onClick={() => acctRevealed ? setAcctRevealed(false) : revealField("account")}>
+                        {acctRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <div className="col-span-10">
+                  <Label className="text-xs">Routing Number</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      className="h-7 text-sm font-mono"
+                      type={rtRevealed ? "text" : "password"}
+                      value={rtRevealed ? form.routing_number : (editing?.routing_number_last4 ? `••••••${editing.routing_number_last4}` : "")}
+                      onChange={e => { setForm(p => ({ ...p, routing_number: e.target.value })); setRtRevealed(true); }}
+                      placeholder={editing ? "Hidden — click eye to reveal" : "Enter routing number"}
+                      readOnly={!rtRevealed && !!editing}
+                    />
+                    {editing && (
+                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={revealing} onClick={() => rtRevealed ? setRtRevealed(false) : revealField("routing")}>
+                        {rtRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
               {/* Row 3: Address (65%) | Row 4: Address 2 (35%) */}

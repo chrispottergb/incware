@@ -32,7 +32,8 @@ export function useMasterFirms(firmType: FirmType) {
       contact_name?: string; contact_title?: string;
     }) => {
       if (!user) return;
-      // Check if firm already exists in master by name
+      // Bank numbers are encrypted via edge function; never write plaintext to row.
+      const { account_number, routing_number, ...rowFields } = firm;
       const { data: existing } = await supabase
         .from("master_firms" as any)
         .select("id")
@@ -41,14 +42,23 @@ export function useMasterFirms(firmType: FirmType) {
         .ilike("firm_name", firm.firm_name.trim())
         .maybeSingle();
 
+      let firmId: string;
       if (existing) {
         await supabase.from("master_firms" as any).update({
-          ...firm, updated_at: new Date().toISOString(),
+          ...rowFields, updated_at: new Date().toISOString(),
         } as any).eq("id", (existing as any).id);
+        firmId = (existing as any).id;
       } else {
-        await supabase.from("master_firms" as any).insert({
-          ...firm, firm_type: firmType, user_id: user.id,
-        } as any);
+        const { data: inserted } = await supabase.from("master_firms" as any).insert({
+          ...rowFields, firm_type: firmType, user_id: user.id,
+        } as any).select("id").single();
+        firmId = (inserted as any).id;
+      }
+
+      if (firmType === "bank" && firmId && (account_number !== undefined || routing_number !== undefined)) {
+        await supabase.functions.invoke("encrypt-master-firm-bank", {
+          body: { firm_id: firmId, account_number: account_number ?? null, routing_number: routing_number ?? null },
+        });
       }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["master_firms", firmType] }),
