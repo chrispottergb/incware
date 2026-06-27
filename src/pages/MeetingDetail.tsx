@@ -1101,7 +1101,7 @@ export default function MeetingDetail() {
                     (s as any).zip ?? "—",
                     s.common_shares?.toLocaleString() ?? "—",
                     term.isLLC && s.preferred_shares != null ? `${s.preferred_shares}%` : (s.preferred_shares?.toLocaleString() ?? "—"),
-                    ...(isShareholderMeeting ? [] : [
+                    ...(isShareholderMeeting && !isStatutoryCloseShareholderMeeting ? [] : [
                       s.distribution_amount != null ? `$${Number(s.distribution_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
                       s.additional_capital_contribution != null ? `$${Number(s.additional_capital_contribution).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—",
                     ]),
@@ -1121,7 +1121,7 @@ export default function MeetingDetail() {
                 { key: "zip", label: "ZIP", width: "80px" },
                 { key: "common_shares", label: term.isLLC ? "Units" : "Common", type: "number", width: "80px" },
                 { key: "preferred_shares", label: term.isLLC ? "Interest %" : "Ownership %", type: "number", width: "80px" },
-                ...(isShareholderMeeting ? [] : [
+                ...(isShareholderMeeting && !isStatutoryCloseShareholderMeeting ? [] : [
                   { key: "distribution_amount", label: "Distribution", type: "number" as const, width: "100px" },
                   { key: "additional_capital_contribution", label: "Add'l Capital", type: "number" as const, width: "100px" },
                 ]),
