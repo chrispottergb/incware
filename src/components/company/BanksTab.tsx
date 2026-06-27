@@ -288,6 +288,86 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     setExpandedBanks(prev => ({ ...prev, [bankId]: !prev[bankId] }));
   };
 
+  const revealRow = async (bankId: string, field: "account" | "routing") => {
+    // If already revealed, toggle off
+    if (rowReveal[bankId]?.[field] !== undefined) {
+      setRowReveal(prev => {
+        const next = { ...prev };
+        if (next[bankId]) {
+          const { [field]: _, ...rest } = next[bankId];
+          if (Object.keys(rest).length === 0) delete next[bankId];
+          else next[bankId] = rest;
+        }
+        return next;
+      });
+      return;
+    }
+    setRowLoading(prev => ({ ...prev, [bankId]: true }));
+    try {
+      const { data, error } = await supabase.functions.invoke("decrypt-company-bank", { body: { bank_id: bankId } });
+      if (error) throw error;
+      const d = data as { account_number: string | null; routing_number: string | null };
+      const val = field === "account" ? d.account_number : d.routing_number;
+      if (!val) { toast.info("No value to reveal"); return; }
+      setRowReveal(prev => ({ ...prev, [bankId]: { ...prev[bankId], [field]: val } }));
+    } catch (e: any) {
+      toast.error(e.message || "Failed to reveal");
+    } finally {
+      setRowLoading(prev => ({ ...prev, [bankId]: false }));
+    }
+  };
+
+  const startRowEdit = async (bankId: string, field: "account" | "routing") => {
+    // Pre-fill with revealed value if available, else fetch first
+    let current = rowReveal[bankId]?.[field];
+    if (current === undefined) {
+      setRowLoading(prev => ({ ...prev, [bankId]: true }));
+      try {
+        const { data, error } = await supabase.functions.invoke("decrypt-company-bank", { body: { bank_id: bankId } });
+        if (error) throw error;
+        const d = data as { account_number: string | null; routing_number: string | null };
+        current = (field === "account" ? d.account_number : d.routing_number) || "";
+      } catch (e: any) {
+        toast.error(e.message || "Failed to load");
+        setRowLoading(prev => ({ ...prev, [bankId]: false }));
+        return;
+      } finally {
+        setRowLoading(prev => ({ ...prev, [bankId]: false }));
+      }
+    }
+    setRowEdit({ bankId, field, value: current || "" });
+  };
+
+  const saveRowEdit = async () => {
+    if (!rowEdit) return;
+    setRowSaving(true);
+    try {
+      const body: any = { bank_id: rowEdit.bankId };
+      if (rowEdit.field === "account") body.account_number = rowEdit.value;
+      else body.routing_number = rowEdit.value;
+      const { error } = await supabase.functions.invoke("encrypt-company-bank", { body });
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["company_banks", companyId] });
+      // Clear reveal for that field so it re-masks
+      setRowReveal(prev => {
+        const next = { ...prev };
+        if (next[rowEdit.bankId]) {
+          const { [rowEdit.field]: _, ...rest } = next[rowEdit.bankId];
+          if (Object.keys(rest).length === 0) delete next[rowEdit.bankId];
+          else next[rowEdit.bankId] = rest;
+        }
+        return next;
+      });
+      setRowEdit(null);
+      toast.success(`${rowEdit.field === "account" ? "Account" : "Routing"} number updated`);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save");
+    } finally {
+      setRowSaving(false);
+    }
+  };
+
+
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
   if (isError) return <QueryErrorBanner message="Failed to load banks." onRetry={refetch} />;
 
