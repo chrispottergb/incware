@@ -3518,7 +3518,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       (data.shareholders || []).forEach(s => {
         if (!s.shareholder_name) return;
         wcAddUnique({
-          name: s.shareholder_name,
+          name: formatShareholderDisplay(s, "signer"),
           shares: Number(s.common_shares ?? 0) || 0,
           ownership: Number(s.preferred_shares ?? 0) || 0,
         });
