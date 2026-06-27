@@ -414,7 +414,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
   return (
     <>
       {/* Validation warnings */}
-      {rows.length > 0 && (missingStatus.length > 0 || hasReasonIssue || unresolvedDualRoles.length > 0) && (
+      {rows.length > 0 && ((missingStatus.length > 0 && !showLLCNoSalaryBanner) || hasReasonIssue || unresolvedDualRoles.length > 0) && (
         <Alert variant="destructive" className="border-amber-500/20 bg-amber-500/10 text-amber-500 [&>svg]:text-amber-500">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="text-xs space-y-1">
@@ -423,7 +423,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
                 {unresolvedDualRoles.map(g => g.name).join(", ")} hold{unresolvedDualRoles.length === 1 ? "s" : ""} multiple titles. Please designate a Primary Role before generating minutes.
               </p>
             )}
-            {missingStatus.length > 0 && (
+            {missingStatus.length > 0 && !showLLCNoSalaryBanner && (
               <p>
                 {missingStatus.length} officer{missingStatus.length > 1 ? "s" : ""} missing a Compensation Status.
               </p>
@@ -431,10 +431,13 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
             {hasReasonIssue && (
               <p>Some officers have an unresolved [REASON] placeholder in their justification text.</p>
             )}
-            <p className="font-medium">All statuses must be set before minutes can be generated.</p>
+            {!showLLCNoSalaryBanner && (
+              <p className="font-medium">All statuses must be set before minutes can be generated.</p>
+            )}
           </AlertDescription>
         </Alert>
       )}
+
 
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
