@@ -401,17 +401,51 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-2">
-                <div className="field-group">
-                  <Label className="field-label">{t.shareholder} Name</Label>
-                  <NameAutocomplete
-                    value={form.name}
-                    onChange={(v) => setForm(p => ({ ...p, name: v }))}
-                    onSelect={handleAddressSelect}
-                    search={searchAddressBook}
-                    getCompanySplitIndex={getCompanySplitIndex}
-                    className="h-7 text-sm"
-                    placeholder="Start typing a name..."
-                  />
+                <div className="grid grid-cols-12 gap-x-2 gap-y-2">
+                  <div className="field-group col-span-4">
+                    <Label className="field-label">Owner Type</Label>
+                    <Select value={form.owner_kind} onValueChange={(v) => setForm(p => ({ ...p, owner_kind: v as "individual" | "entity" }))}>
+                      <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="individual">Individual</SelectItem>
+                        <SelectItem value="entity">Entity (LLC, Corp, Trust)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="field-group col-span-8">
+                    <Label className="field-label">{t.shareholder} Name{form.owner_kind === "entity" ? " (Entity)" : ""}</Label>
+                    <NameAutocomplete
+                      value={form.name}
+                      onChange={(v) => setForm(p => ({ ...p, name: v }))}
+                      onSelect={handleAddressSelect}
+                      search={searchAddressBook}
+                      getCompanySplitIndex={getCompanySplitIndex}
+                      className="h-7 text-sm"
+                      placeholder={form.owner_kind === "entity" ? "Entity legal name..." : "Start typing a name..."}
+                    />
+                  </div>
+                  {form.owner_kind === "entity" && (
+                    <>
+                      <div className="field-group col-span-7">
+                        <Label className="field-label">Representative Name</Label>
+                        <Input
+                          className="h-7 text-sm"
+                          value={form.representative_name}
+                          onChange={(e) => setForm(p => ({ ...p, representative_name: e.target.value }))}
+                          placeholder="e.g. Jane Doe"
+                        />
+                      </div>
+                      <div className="field-group col-span-5">
+                        <Label className="field-label">Representative Title</Label>
+                        <Input
+                          className="h-7 text-sm"
+                          value={form.representative_title}
+                          onChange={(e) => setForm(p => ({ ...p, representative_title: e.target.value }))}
+                          placeholder="e.g. Trustee, Manager"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div className="grid grid-cols-12 gap-x-2 gap-y-2">
                   <div className="field-group col-span-7">
