@@ -1091,7 +1091,7 @@ export default function MeetingDetail() {
                     "Name", "Address", "City", "St", "ZIP",
                     term.isLLC ? "Units" : "Common",
                     term.isLLC ? "Interest %" : "Ownership %",
-                    ...(isShareholderMeeting ? [] : ["Dist. Amount", "Add'l Capital"]),
+                    ...(isShareholderMeeting && !isStatutoryCloseShareholderMeeting ? [] : ["Dist. Amount", "Add'l Capital"]),
                   ],
                   hydratedMeetingShareholders.map(s => [
                     s.shareholder_name,
