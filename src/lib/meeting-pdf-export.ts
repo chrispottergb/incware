@@ -2004,7 +2004,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
           y = checkPageBreak(doc, y, 30);
           y = addWhereasResolved(doc, y,
             "",
-            `RESOLVED, that the Company is hereby authorized and directed to distribute the sum of ${distAmount} to ${s.shareholder_name}, consistent with the ${isLLC ? "member's" : "shareholder's"} ${ownershipPct} ownership interest${sCorpResolvedClause}, said distribution to be made on or before ${meetingDateStr}.`,
+            `RESOLVED, that the Company is hereby authorized and directed to distribute the sum of ${distAmount} to ${formatShareholderDisplay(s, "inline")}, consistent with the ${isLLC ? "member's" : "shareholder's"} ${ownershipPct} ownership interest${sCorpResolvedClause}, said distribution to be made on or before ${meetingDateStr}.`,
             bt
           );
         }
