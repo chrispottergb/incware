@@ -606,7 +606,7 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => openEdit(row)}
+                          onClick={() => openEdit(rows.find((r: any) => r.id === row.id) ?? row)}
                           className="h-8 w-8 text-muted-foreground hover:text-foreground"
                         >
                           <Pencil className="h-4 w-4" />
