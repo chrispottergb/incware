@@ -622,21 +622,24 @@ export default function OrganizationTab({ companyId, company }: Props) {
   });
 
   const [llcManagers, setLlcManagers] = useState<LlcManager[]>([]);
+  const llcManagersHydratedRef = useRef(false);
 
   useEffect(() => {
     if (!isLLC) return;
+    // Only hydrate once on initial load. Subsequent refetches must not clobber
+    // in-progress edits (e.g. a newly-added blank row that hasn't been named yet).
+    if (llcManagersHydratedRef.current) return;
     if (llcManagersData.length > 0) {
       setLlcManagers(llcManagersData.map((m) => ({ title: m.title, name: m.name })));
+      llcManagersHydratedRef.current = true;
     } else if (officers) {
-      // Fallback for legacy LLCs not yet backfilled: seed from existing officers row
       const seeded: LlcManager[] = [];
       if (officers.president) seeded.push({ title: "Managing Member", name: officers.president });
       if (officers.vice_president) seeded.push({ title: "Assistant Manager", name: officers.vice_president });
       if (officers.secretary) seeded.push({ title: "Secretary", name: officers.secretary });
       if (officers.treasurer) seeded.push({ title: "Treasurer", name: officers.treasurer });
       setLlcManagers(seeded);
-    } else {
-      setLlcManagers([]);
+      llcManagersHydratedRef.current = true;
     }
   }, [llcManagersData, officers, isLLC]);
 
