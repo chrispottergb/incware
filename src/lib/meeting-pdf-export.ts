@@ -2034,11 +2034,19 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const adjCurrentNetIncome = totalNr !== 0 ? (Number(f.current_net_income) || 0) - totalNr : null;
     const adjPreviousNetIncome = totalNr !== 0 ? (Number(f.previous_net_income) || 0) : null;
 
+    const hasCog = (Number(f.current_cog) || 0) > 0 || (Number(f.previous_cog) || 0) > 0;
+    const costLabel = hasCog ? "Cost of Goods" : "Expenses";
+    const ratioLabel = hasCog ? "COG Ratio (%)" : "Expense Ratio (%)";
+    const curCost = hasCog ? f.current_cog : (f as any).current_expenses;
+    const prevCost = hasCog ? f.previous_cog : (f as any).previous_expenses;
+    const curRatio = hasCog ? f.current_cog_ratio : (f as any).current_expense_ratio;
+    const prevRatio = hasCog ? f.previous_cog_ratio : (f as any).previous_expense_ratio;
+
     const tableBody: any[][] = [
       ["Total Sales", fmt(f.current_total_sales), fmt(f.previous_total_sales), yoy(f.current_total_sales, f.previous_total_sales)],
-      ["Cost of Goods", fmt(f.current_cog), fmt(f.previous_cog), yoy(f.current_cog, f.previous_cog)],
+      [costLabel, fmt(curCost), fmt(prevCost), yoy(curCost, prevCost)],
       ["Gross Profit", fmt(f.current_gross_profit), fmt(f.previous_gross_profit), yoy(f.current_gross_profit, f.previous_gross_profit)],
-      ["COG Ratio (%)", f.current_cog_ratio != null ? `${Number(f.current_cog_ratio).toFixed(2)}%` : "—", f.previous_cog_ratio != null ? `${Number(f.previous_cog_ratio).toFixed(2)}%` : "—", yoy(f.current_cog_ratio, f.previous_cog_ratio)],
+      [ratioLabel, curRatio != null ? `${Number(curRatio).toFixed(2)}%` : "—", prevRatio != null ? `${Number(prevRatio).toFixed(2)}%` : "—", yoy(curRatio, prevRatio)],
       ["Net Income", fmt(f.current_net_income), fmt(f.previous_net_income), yoy(f.current_net_income, f.previous_net_income)],
     ];
 
