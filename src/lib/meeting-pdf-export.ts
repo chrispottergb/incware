@@ -2050,8 +2050,16 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const ratioLabel = hasCog ? "COG Ratio (%)" : "Expense Ratio (%)";
     const curCost = hasCog ? f.current_cog : (f as any).current_expenses;
     const prevCost = hasCog ? f.previous_cog : (f as any).previous_expenses;
-    const curRatio = hasCog ? f.current_cog_ratio : (f as any).current_expense_ratio;
-    const prevRatio = hasCog ? f.previous_cog_ratio : (f as any).previous_expense_ratio;
+    const computeRatio = (cost: any, sales: any) => {
+      const c = Number(cost);
+      const s = Number(sales);
+      if (!isFinite(c) || !isFinite(s) || s <= 0) return null;
+      return (c / s) * 100;
+    };
+    const curRatioRaw = hasCog ? f.current_cog_ratio : (f as any).current_expense_ratio;
+    const prevRatioRaw = hasCog ? f.previous_cog_ratio : (f as any).previous_expense_ratio;
+    const curRatio = curRatioRaw != null && curRatioRaw !== "" ? curRatioRaw : computeRatio(curCost, f.current_total_sales);
+    const prevRatio = prevRatioRaw != null && prevRatioRaw !== "" ? prevRatioRaw : computeRatio(prevCost, f.previous_total_sales);
 
     const tableBody: any[][] = [
       ["Total Sales", fmt(f.current_total_sales), fmt(f.previous_total_sales), yoy(f.current_total_sales, f.previous_total_sales)],
