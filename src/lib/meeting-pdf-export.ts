@@ -1221,6 +1221,8 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     textColor: [30, 30, 30] as [number, number, number],
     fontStyle: "bold" as const,
     fontSize: 9,
+    lineWidth: 0.1,
+    lineColor: [0, 0, 0] as [number, number, number],
   };
 
   // Helper for numbered section titles in blue theme
