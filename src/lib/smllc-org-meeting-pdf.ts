@@ -181,6 +181,8 @@ export function generateSmllcOrgMeetingPDF(data: OrgMeetingData): jsPDF {
           textColor: [BLUE.r, BLUE.g, BLUE.b],
           fontStyle: "normal",
           fontSize: 9,
+          lineWidth: 0.1,
+          lineColor: [0, 0, 0],
         },
         theme: "grid",
         columnStyles: {
@@ -245,6 +247,8 @@ export function generateSmllcOrgMeetingPDF(data: OrgMeetingData): jsPDF {
           textColor: [BLUE.r, BLUE.g, BLUE.b],
           fontStyle: "bold",
           fontSize: 10,
+          lineWidth: 0.1,
+          lineColor: [0, 0, 0],
         },
         theme: "grid",
       });

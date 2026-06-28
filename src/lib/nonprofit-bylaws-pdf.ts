@@ -237,7 +237,10 @@ export function generateNonprofitBylawsPDF(data: NonprofitBylawsData): jsPDF {
         d.added_date ? new Date(d.added_date + "T00:00:00").toLocaleDateString() : "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 11, fontStyle: "bold" },
+      headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 11, fontStyle: "bold",
+        lineWidth: 0.1,
+        lineColor: [0, 0, 0],
+      },
       bodyStyles: { fontSize: 11 },
       margin: { left: MARGIN, right: R_MARGIN },
     });

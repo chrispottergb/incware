@@ -247,6 +247,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
         textColor: [BLUE.r, BLUE.g, BLUE.b] as [number, number, number],
         fontStyle: "bold",
         fontSize: 10,
+        lineWidth: 0.1,
+        lineColor: [0, 0, 0],
       },
       theme: "grid",
     });
@@ -323,6 +325,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
         textColor: [BLUE.r, BLUE.g, BLUE.b] as [number, number, number],
         fontStyle: "normal",
         fontSize: 9,
+        lineWidth: 0.1,
+        lineColor: [0, 0, 0],
       },
       theme: "grid",
       columnStyles: {
