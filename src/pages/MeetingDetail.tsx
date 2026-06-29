@@ -1141,8 +1141,10 @@ export default function MeetingDetail() {
               columns={[
                 { key: "shareholder_name", label: `${term.shareholder} Name`, required: true, width: "160px" },
                 { key: "owner_kind", label: "Owner Type", type: "select", options: ["individual", "entity"], width: "100px" },
-                { key: "representative_name", label: "Representative Name", width: "140px" },
-                { key: "representative_title", label: "Representative Title", width: "120px" },
+                ...(hydratedMeetingShareholders.some((s: any) => s.owner_kind === "entity") ? [
+                  { key: "representative_name", label: "Representative Name", width: "140px" as const },
+                  { key: "representative_title", label: "Representative Title", width: "120px" as const },
+                ] : []),
                 { key: "address", label: "Street Address" },
                 { key: "city", label: "City", width: "120px" },
                 { key: "state", label: "State", width: "60px" },
