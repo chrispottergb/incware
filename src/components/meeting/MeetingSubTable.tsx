@@ -145,11 +145,26 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
         payload[col.key] = val || null;
       }
     });
+    // Clear representative fields when the owner is not an entity
+    if (form.owner_kind !== "entity") {
+      payload.representative_name = null;
+      payload.representative_title = null;
+    }
     return payload;
   };
 
-  const syncDirectorToCompany = async (directorName: string) => {
-    if (tableName !== "meeting_directors" || !companyId || !directorName) return;
+  // Clear representative fields when owner type switches away from entity
+  useEffect(() => {
+    if (form.owner_kind != null && form.owner_kind !== "entity") {
+      setForm((p) => ({ ...p, representative_name: "", representative_title: "" }));
+    }
+  }, [form.owner_kind]);
+
+  const isFormColumnVisible = (col: Column) => {
+    if (col.key !== "representative_name" && col.key !== "representative_title") return true;
+    return form.owner_kind === "entity";
+  };
+    const syncDirectorToCompany = async (directorName: string) => {
     const { data: existing } = await supabase
       .from("directors")
       .select("id")
@@ -460,7 +475,7 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
               )}
 
               {/* Show all fields when creating new (with autocomplete/zip on name/zip fields) */}
-              {creatingNew && columns.map((col) => {
+              {creatingNew && columns.filter(isFormColumnVisible).map((col) => {
                 const nameKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "name")?.[1] : undefined;
                 const zipKey = rosterFieldMap ? Object.entries(rosterFieldMap).find(([k]) => k === "zip")?.[1] : undefined;
 
@@ -520,7 +535,7 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
               })}
 
               {/* Show remaining editable fields (non-roster-auto-filled when in roster mode, or all fields when editing) */}
-              {!creatingNew && columns.map((col) => {
+              {!creatingNew && columns.filter(isFormColumnVisible).map((col) => {
                 // In roster picker mode, hide auto-filled fields but show them as read-only summary
                 if (useRosterPicker && rosterAutoFilledKeys.has(col.key)) {
                   return null;
@@ -556,7 +571,7 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
               {useRosterPicker && selectedRosterId && (
                 <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1">
                   <p className="text-[10px] uppercase font-medium text-muted-foreground">Auto-populated from roster</p>
-                  {columns.filter(c => rosterAutoFilledKeys.has(c.key) && form[c.key]).map(col => (
+                  {columns.filter(c => rosterAutoFilledKeys.has(c.key) && form[c.key] && isFormColumnVisible(c)).map(col => (
                     <div key={col.key} className="flex justify-between text-xs">
                       <span className="text-muted-foreground">{col.label}:</span>
                       <span className="font-medium">{form[col.key]}</span>
