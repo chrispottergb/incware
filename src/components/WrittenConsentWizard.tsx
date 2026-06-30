@@ -1065,22 +1065,13 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
           </div>
 
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">Effective Date *</Label>
-              <DatePickerField
-                value={effectiveDate}
-                onChange={setEffectiveDate}
-                placeholder="Pick effective date"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">Date Drafted</Label>
-              <div className="flex items-center gap-2">
-                <Input value={format(new Date(), "MM/dd/yyyy")} disabled className="bg-muted/50" />
-                <Badge variant="secondary" className="text-[10px] shrink-0">Today</Badge>
-              </div>
-            </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Effective Date *</Label>
+            <DatePickerField
+              value={effectiveDate}
+              onChange={setEffectiveDate}
+              placeholder="Pick effective date"
+            />
           </div>
 
           <div className="space-y-1.5">
