@@ -1975,10 +1975,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bodyStyles: { fontSize: 9, cellPadding: { top: 1.4, bottom: 1.4, left: 2, right: 2 } },
       margin: { left: MARGIN, right: R_MARGIN },
       columnStyles: {
-        0: { cellWidth: usableW * 0.25 },
-        1: { cellWidth: usableW * 0.40 },
-        2: { cellWidth: usableW * 0.15 },
-        3: { cellWidth: usableW * 0.20 },
+        0: { cellWidth: (usableW - 50.8) * 0.30 },
+        1: { cellWidth: (usableW - 50.8) * 0.70 },
+        2: { cellWidth: 25.4 },
+        3: { cellWidth: 25.4 },
       },
     });
     y = (doc as any).lastAutoTable.finalY + 6;
