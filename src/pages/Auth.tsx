@@ -104,9 +104,10 @@ const Auth = () => {
       toast({ title: "Error", description: safeMessage, variant: "destructive" });
     } else if (isSignUp) {
       toast({ title: "Check your email", description: "We sent you a confirmation link." });
-    } else {
-      navigate("/");
     }
+    // On successful sign-in, the AuthProvider's onAuthStateChange updates
+    // `session`, which triggers the <Navigate to="/" /> redirect above.
+    // Navigating manually here races the session update and forces a refresh.
 
     setLoading(false);
   };

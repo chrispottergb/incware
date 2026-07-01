@@ -4365,6 +4365,7 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      email_queue_dispatch: { Args: never; Returns: undefined }
       encrypt_company_bank: {
         Args: {
           p_account: string
