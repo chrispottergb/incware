@@ -2353,7 +2353,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const locAmount = counselRec.loc_amount;
     const locRate = counselRec.loc_interest_rate;
 
-    const hasBankingContent = bt || bankNameForTable || hasLOC || (data.companyBanks && (data.companyBanks ?? []).length > 0) || (data.authorizedSigners && (data.authorizedSigners ?? []).length > 0);
+    const hasBankingContent = bt || bankNameForTable || hasLOC || locAmount != null || locRate || (data.companyBanks && (data.companyBanks ?? []).length > 0) || (data.authorizedSigners && (data.authorizedSigners ?? []).length > 0);
 
     if (hasBankingContent) {
       y = checkPageBreak(doc, y, 40);
