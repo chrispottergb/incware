@@ -2368,7 +2368,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         bankNameForTable || "—",
       ]);
 
-      const usableBankW = 216 - MARGIN - R_MARGIN;
+      const usableBankW = doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN;
       autoTable(doc, {
         startY: y,
         head: [bankTableHead],
