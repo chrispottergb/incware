@@ -503,21 +503,48 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   };
 
   const handlePreview = () => {
-    if (previewUrl) {
-      const win = window.open("", "_blank");
-      if (win) win.location.href = previewUrl;
+    if (!pdfDoc) {
+      toast.error("Generate a draft first");
+      return;
+    }
+    try {
+      const blob = new Blob([pdfDoc.output("arraybuffer")], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, "_blank");
+      if (!win) {
+        toast.error("Popup blocked — allow popups to preview the PDF");
+        URL.revokeObjectURL(url);
+        return;
+      }
+      // Revoke after the new tab has had time to load the blob.
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (err: any) {
+      console.error("Preview error:", err);
+      toast.error("Failed to open preview: " + (err?.message || "unknown error"));
     }
   };
 
   const handlePrint = () => {
-    if (pdfDoc) {
-      const win = window.open("", "_blank");
-      const blob = pdfDoc.output("blob");
+    if (!pdfDoc) {
+      toast.error("Generate a draft first");
+      return;
+    }
+    try {
+      const blob = new Blob([pdfDoc.output("arraybuffer")], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
-      if (win) {
-        win.location.href = url;
-        win.addEventListener("load", () => win.print());
+      const win = window.open(url, "_blank");
+      if (!win) {
+        toast.error("Popup blocked — allow popups to print the PDF");
+        URL.revokeObjectURL(url);
+        return;
       }
+      win.addEventListener("load", () => {
+        try { win.print(); } catch { /* ignore */ }
+      });
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (err: any) {
+      console.error("Print error:", err);
+      toast.error("Failed to open print view: " + (err?.message || "unknown error"));
     }
   };
 
