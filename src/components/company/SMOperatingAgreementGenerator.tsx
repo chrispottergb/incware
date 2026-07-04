@@ -64,6 +64,15 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   const [isImporting, setIsImporting] = useState(false);
   const [savedThisSession, setSavedThisSession] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
+  // pdf.js in-app preview (avoids nested-iframe blocking + browser download-on-open behavior)
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [pdfData, setPdfData] = useState<Uint8Array | null>(null);
+  const [pageCount, setPageCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rendering, setRendering] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const pdfDocRef = useRef<any>(null);
 
   // Editable form fields
   const [formCompanyName, setFormCompanyName] = useState("");
