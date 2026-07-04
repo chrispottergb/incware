@@ -119,30 +119,48 @@ export default function DocumentVersionHistory({ companyId, documentType }: Prop
         </div>
         <CollapsibleContent className="mt-2">
           <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2">
-            {versions.map((v: any, i: number) => (
-              <div key={v.id} className="flex items-center justify-between text-xs py-1.5 border-b border-border last:border-0 gap-2">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <Badge variant="outline" className="text-[9px] h-4">v{versions.length - i}</Badge>
-                  {i === 0 && <Badge className="text-[9px] h-4 bg-primary">Current</Badge>}
-                  <span className="text-muted-foreground truncate">{v.title}</span>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[10px] text-muted-foreground">
-                    {new Date(v.created_at).toLocaleString()}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                    onClick={() => setDeleteTarget(v)}
-                    aria-label="Delete version"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+            {(() => {
+              const currentIdx = versions.findIndex((v: any) => v.status !== "superseded");
+              return versions.map((v: any, i: number) => {
+                const isSuperseded = v.status === "superseded";
+                const isCurrent = i === currentIdx;
+                return (
+                  <div key={v.id} className="flex items-center justify-between text-xs py-1.5 border-b border-border last:border-0 gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <Badge variant="outline" className="text-[9px] h-4">v{versions.length - i}</Badge>
+                      {isCurrent && <Badge className="text-[9px] h-4 bg-primary">Current</Badge>}
+                      {isSuperseded && (
+                        <Badge variant="secondary" className="text-[9px] h-4 text-muted-foreground">
+                          Superseded
+                        </Badge>
+                      )}
+                      <span className="text-muted-foreground truncate">{v.title}</span>
+                      {isSuperseded && v.superseded_reason && (
+                        <span className="text-[10px] text-muted-foreground/80 italic truncate">
+                          — {v.superseded_reason}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] text-muted-foreground">
+                        {new Date(v.created_at).toLocaleString()}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                        onClick={() => setDeleteTarget(v)}
+                        aria-label="Delete version"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              });
+            })()}
           </div>
+
         </CollapsibleContent>
       </Collapsible>
 
