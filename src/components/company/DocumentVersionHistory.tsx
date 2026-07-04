@@ -16,11 +16,12 @@ import { toast } from "sonner";
 interface Props {
   companyId: string;
   documentType: string | string[];
+  defaultOpen?: boolean;
 }
 
-export default function DocumentVersionHistory({ companyId, documentType }: Props) {
+export default function DocumentVersionHistory({ companyId, documentType, defaultOpen = false }: Props) {
   const queryClient = useQueryClient();
-  const [showHistory, setShowHistory] = useState(false);
+  const [showHistory, setShowHistory] = useState(defaultOpen);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
   const [confirmAll, setConfirmAll] = useState(false);
   const [busy, setBusy] = useState(false);

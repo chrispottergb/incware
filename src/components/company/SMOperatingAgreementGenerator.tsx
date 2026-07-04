@@ -17,6 +17,7 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import {
   FileText, Download, Eye, Loader2, Printer, Copy, Check, Share2,
@@ -57,6 +58,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   const [showHistory, setShowHistory] = useState(false);
   const [isAiDraft, setIsAiDraft] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [savedThisSession, setSavedThisSession] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
   // Editable form fields
@@ -265,6 +267,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
     setIsSavingVersion(true);
     try {
       await saveVersion(pdfDoc, isAiDraft);
+      setSavedThisSession(true);
       toast.success("Version saved to history");
     } catch (err: any) {
       toast.error(err.message || "Failed to save version");
@@ -343,6 +346,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
         ? generateSMScorpOperatingAgreementPDF(data)
         : generateSMOperatingAgreementPDF(data);
       setPdfDoc(doc);
+      setSavedThisSession(false);
       setIsAiDraft(false);
       const blob = doc.output("blob");
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -408,6 +412,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
         ? generateSMScorpOperatingAgreementPDF(data)
         : generateSMOperatingAgreementPDF(data);
       setPdfDoc(doc);
+      setSavedThisSession(false);
       const blob = doc.output("blob");
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(URL.createObjectURL(blob));
@@ -645,62 +650,113 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
 
           <AIProviderSelect value={aiProvider} onChange={setAiProvider} />
 
-          {/* Generate Buttons */}
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={handleGenerate} disabled={isGenerating || isAiGenerating || isImporting} variant="outline">
-              {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-              Generate Standard
-            </Button>
-            <Button onClick={handleAiGenerate} disabled={isGenerating || isAiGenerating || isImporting}>
-              {isAiGenerating ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Drafting with AI…</>
-              ) : (
-                <><Sparkles className="h-4 w-4" /> AI-Assisted Draft</>
-              )}
-            </Button>
-            <input
-              ref={importInputRef}
-              type="file"
-              accept=".pdf,.doc,.docx"
-              className="hidden"
-              onChange={handleImportFile}
-            />
-            <Button
-              variant="outline"
-              onClick={() => importInputRef.current?.click()}
-              disabled={isGenerating || isAiGenerating || isImporting}
-            >
-              {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              {isImporting ? "Importing…" : "Import Existing"}
-            </Button>
+          {/* Status Strip */}
+          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+            <span className="uppercase tracking-wider text-muted-foreground text-[10px]">Template:</span>
+            {isScorpElected ? (
+              <Badge className="bg-amber-600 text-[10px]">S-Corp Election</Badge>
+            ) : (
+              <Badge variant="outline" className="text-[10px]">Standard</Badge>
+            )}
+            <span className="mx-1 text-muted-foreground/50">·</span>
+            <span className="uppercase tracking-wider text-muted-foreground text-[10px]">Draft:</span>
+            {!pdfDoc && (
+              <Badge variant="secondary" className="text-[10px] text-muted-foreground">No draft generated</Badge>
+            )}
+            {pdfDoc && !savedThisSession && (
+              <Badge className="bg-amber-600 text-[10px]">Draft generated — not saved</Badge>
+            )}
+            {pdfDoc && savedThisSession && (
+              <Badge className="bg-success text-[10px]">Saved as current version</Badge>
+            )}
           </div>
 
-          {/* Action Buttons */}
-          {pdfDoc && (
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={() => initiateDownload("pdf")}>
-                <Download className="h-3.5 w-3.5" /> Download PDF
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => initiateDownload("docx")}>
-                <FileDown className="h-3.5 w-3.5" /> Download Word
-              </Button>
-              <Button variant="outline" size="sm" onClick={handlePreview}>
-                <Eye className="h-3.5 w-3.5" /> Preview
-              </Button>
-              <Button variant="outline" size="sm" onClick={handlePrint}>
-                <Printer className="h-3.5 w-3.5" /> Print
-              </Button>
-              <Button variant="default" size="sm" onClick={handleSaveVersion} disabled={isSavingVersion}>
-                {isSavingVersion ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                Save Version
-              </Button>
-            </div>
-          )}
+          {/* Grouped Toolbar */}
+          <TooltipProvider delayDuration={200}>
+            <div className="flex flex-wrap items-start gap-4 rounded-md border border-border bg-muted/20 p-3">
+              {/* GENERATE group */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Generate</span>
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={handleGenerate} disabled={isGenerating || isAiGenerating || isImporting} variant="outline" size="sm">
+                    {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+                    Generate Standard
+                  </Button>
+                  <Button onClick={handleAiGenerate} disabled={isGenerating || isAiGenerating || isImporting} variant="outline" size="sm">
+                    {isAiGenerating ? (
+                      <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Drafting with AI…</>
+                    ) : (
+                      <><Sparkles className="h-3.5 w-3.5" /> AI-Assisted Draft</>
+                    )}
+                  </Button>
+                  <input
+                    ref={importInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    className="hidden"
+                    onChange={handleImportFile}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => importInputRef.current?.click()}
+                    disabled={isGenerating || isAiGenerating || isImporting}
+                  >
+                    {isImporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                    {isImporting ? "Importing…" : "Import Existing"}
+                  </Button>
+                </div>
+              </div>
 
-          <DocumentVersionHistory
-            companyId={companyId}
-            documentType={["Sole Member Operating Agreement", "Operating Agreement (S-Corp Election)"]}
-          />
+              <Separator orientation="vertical" className="hidden md:block h-16 self-center" />
+
+              {/* EXPORT & SAVE group */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Export & Save</span>
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    { key: "pdf", icon: <Download className="h-3.5 w-3.5" />, label: "Download PDF", onClick: () => initiateDownload("pdf") },
+                    { key: "docx", icon: <FileDown className="h-3.5 w-3.5" />, label: "Download Word", onClick: () => initiateDownload("docx") },
+                    { key: "prev", icon: <Eye className="h-3.5 w-3.5" />, label: "Preview", onClick: handlePreview },
+                    { key: "print", icon: <Printer className="h-3.5 w-3.5" />, label: "Print", onClick: handlePrint },
+                  ] as const).map((b) => {
+                    const btn = (
+                      <Button
+                        key={b.key}
+                        variant="outline"
+                        size="sm"
+                        onClick={b.onClick}
+                        disabled={!pdfDoc}
+                      >
+                        {b.icon} {b.label}
+                      </Button>
+                    );
+                    if (pdfDoc) return btn;
+                    return (
+                      <Tooltip key={b.key}>
+                        <TooltipTrigger asChild><span tabIndex={0}>{btn}</span></TooltipTrigger>
+                        <TooltipContent>Generate a draft first</TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                  <Button variant="default" size="sm" onClick={handleSaveVersion} disabled={!pdfDoc || isSavingVersion}>
+                    {isSavingVersion ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                    Save Version
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </TooltipProvider>
+
+          {/* Version History — persistent panel directly below toolbar */}
+          <div className="rounded-md border border-border bg-muted/10 px-3 py-2">
+            <DocumentVersionHistory
+              companyId={companyId}
+              documentType={["Sole Member Operating Agreement", "Operating Agreement (S-Corp Election)"]}
+              defaultOpen={versionHistory.length > 1}
+            />
+          </div>
+
 
         </CardContent>
       </Card>
