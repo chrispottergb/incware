@@ -184,6 +184,22 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
 
   const [isSavingVersion, setIsSavingVersion] = useState(false);
 
+  // Marks every prior OA row (non-superseded) as superseded because a new S-corp
+  // version is being saved. Runs immediately before insert so failures abort cleanly.
+  const supersedePriorOARows = async () => {
+    const { error } = await supabase
+      .from("document_registry")
+      .update({
+        status: "superseded",
+        superseded_reason: "Superseded — S-corp election",
+        superseded_at: new Date().toISOString(),
+      } as any)
+      .eq("company_id", companyId)
+      .in("document_type", OA_DOC_TYPES as unknown as string[])
+      .neq("status", "superseded");
+    if (error) throw error;
+  };
+
   const saveVersion = async (doc: any, isAi: boolean) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -193,7 +209,8 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
       const blob = doc.output("blob");
       const safeName = formCompanyName.replace(/[^a-zA-Z0-9]/g, "_") || "SMLLC";
       const versionNum = versionHistory.length + 1;
-      const fileName = `${userId}/${safeName}_SM_Operating_Agreement_v${versionNum}_${Date.now()}.pdf`;
+      const suffix = isScorpElected ? "SCorp_Operating_Agreement" : "SM_Operating_Agreement";
+      const fileName = `${userId}/${safeName}_${suffix}_v${versionNum}_${Date.now()}.pdf`;
 
       await supabase.storage
         .from("generated-documents")
@@ -203,18 +220,40 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
         .from("generated-documents")
         .createSignedUrl(fileName, 60 * 60 * 24 * 365);
 
-      await supabase.from("document_registry").insert({
+      if (isScorpElected) {
+        // Supersede prior OA rows first — abort if update fails so we don't create
+        // a "current" S-corp row alongside a still-current standard version.
+        await supersedePriorOARows();
+      }
+
+      const titlePrefix = isScorpElected
+        ? "Operating Agreement (S-Corp Election)"
+        : "SM Operating Agreement";
+      const insertPayload: any = {
         company_id: companyId,
-        title: `SM Operating Agreement v${versionNum}${isAi ? " — AI Assisted" : ""} — ${new Date().toLocaleDateString()}`,
+        title: `${titlePrefix} v${versionNum}${isAi ? " — AI Assisted" : ""} — ${new Date().toLocaleDateString()}`,
         document_category: "corporate",
-        document_type: "Sole Member Operating Agreement",
-        status: "final",
+        document_type: isScorpElected
+          ? "Operating Agreement (S-Corp Election)"
+          : "Sole Member Operating Agreement",
+        status: isScorpElected ? "current" : "final",
         file_name: fileName,
         file_url: signedData?.signedUrl || null,
-        statute_reference: "Wis. Stat. Ch. 183",
-      });
+        statute_reference: isScorpElected
+          ? "IRC § 1362; IRC § 1361"
+          : "Wis. Stat. Ch. 183",
+      };
+      if (isScorpElected) {
+        insertPayload.description =
+          "Regenerated to reflect S corporation tax election — includes reasonable compensation, transfer restriction, and single-class-of-stock provisions.";
+      }
 
-      queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId, "Sole Member Operating Agreement"] });
+      const { error: insertErr } = await supabase
+        .from("document_registry")
+        .insert(insertPayload);
+      if (insertErr) throw insertErr;
+
+      queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId, "OperatingAgreement-combined"] });
     } catch (err: any) {
       console.error("Save version error:", err);
       throw err;
