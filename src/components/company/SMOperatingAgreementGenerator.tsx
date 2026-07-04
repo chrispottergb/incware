@@ -788,20 +788,10 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
         </CardContent>
       </Card>
 
-      {/* Inline Preview */}
-      {previewUrl && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-display flex items-center gap-2">
-              <Eye className="h-4 w-4" /> Document Preview
-              {isAiDraft && <Badge className="bg-purple-600 text-[9px]">AI Assisted</Badge>}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <iframe src={previewUrl} className="w-full h-[600px] rounded border border-border" title="Sole Member Operating Agreement Preview" />
-          </CardContent>
-        </Card>
-      )}
+      {/* Inline preview removed — the editor's iframe blocks nested blob: iframes
+          ("This content is blocked"). Use the Preview button in the toolbar to
+          open the PDF in a new tab. */}
+
 
       {/* Legal Disclaimer Dialog */}
       <Dialog open={showDisclaimer} onOpenChange={setShowDisclaimer}>
