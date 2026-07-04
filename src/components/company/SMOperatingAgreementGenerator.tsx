@@ -879,6 +879,44 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* PDF Preview Dialog (pdf.js canvas — avoids blob-iframe blocking) */}
+      <Dialog open={previewOpen} onOpenChange={(o) => (o ? setPreviewOpen(true) : handleClosePreview())}>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-5 pb-3 border-b border-border">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="font-display text-base">Document Preview</DialogTitle>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => initiateDownload("pdf")}>
+                  <Download className="mr-1.5 h-3.5 w-3.5" /> Download PDF
+                </Button>
+                <Button size="sm" onClick={handlePrint}>
+                  <Printer className="mr-1.5 h-3.5 w-3.5" /> Print
+                </Button>
+              </div>
+            </div>
+          </DialogHeader>
+          <div ref={previewContainerRef} className="flex-1 overflow-auto flex justify-center p-4 bg-muted/30 relative">
+            {rendering && (
+              <div className="absolute inset-0 flex items-center justify-center z-10">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            <canvas ref={canvasRef} className="shadow-lg rounded" />
+          </div>
+          {pageCount > 1 && (
+            <div className="flex items-center justify-center gap-3 px-6 py-3 border-t border-border bg-background">
+              <Button size="sm" variant="ghost" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage <= 1}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground">Page {currentPage} of {pageCount}</span>
+              <Button size="sm" variant="ghost" onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))} disabled={currentPage >= pageCount}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
