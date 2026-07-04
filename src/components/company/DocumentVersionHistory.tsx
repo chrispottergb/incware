@@ -15,7 +15,7 @@ import { toast } from "sonner";
 
 interface Props {
   companyId: string;
-  documentType: string;
+  documentType: string | string[];
 }
 
 export default function DocumentVersionHistory({ companyId, documentType }: Props) {
@@ -25,17 +25,20 @@ export default function DocumentVersionHistory({ companyId, documentType }: Prop
   const [confirmAll, setConfirmAll] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const queryKey = ["doc-versions", companyId, documentType];
+  const docTypeList = Array.isArray(documentType) ? documentType : [documentType];
+  const queryKey = ["doc-versions", companyId, docTypeList.join("|")];
 
   const { data: versions = [] } = useQuery({
     queryKey,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const base = supabase
         .from("document_registry")
         .select("*")
-        .eq("company_id", companyId)
-        .eq("document_type", documentType)
-        .order("created_at", { ascending: false });
+        .eq("company_id", companyId);
+      const filtered = docTypeList.length > 1
+        ? base.in("document_type", docTypeList)
+        : base.eq("document_type", docTypeList[0]);
+      const { data, error } = await filtered.order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
