@@ -1,17 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import {
   BookOpen, Download, Share2, Loader2, FileText, Copy, Check, Eye,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import {
   generateRecordBookPDF, downloadRecordBookPDF, getRecordBookBlob,
-  getRecordBookPreviewUrl, type RecordBookData,
+  type RecordBookData,
 } from "@/lib/record-book-pdf";
 import AIProviderSelect from "@/components/company/AIProviderSelect";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
 interface RecordBookGeneratorProps {
   companyId: string;
@@ -23,16 +30,24 @@ export default function RecordBookGenerator({ companyId, companyName, entityType
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState("");
   const [pdfDoc, setPdfDoc] = useState<any>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [aiProvider, setAiProvider] = useState(() => localStorage.getItem("ai_provider") || "lovable");
+
+  // pdf.js in-app preview
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [pdfData, setPdfData] = useState<Uint8Array | null>(null);
+  const [pageCount, setPageCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rendering, setRendering] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const pdfDocRef = useRef<any>(null);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
     setProgress("Fetching company data & generating AI narrative…");
     setPdfDoc(null);
-    setPreviewUrl(null);
     setShareUrl(null);
 
     try {
@@ -60,7 +75,6 @@ export default function RecordBookGenerator({ companyId, companyName, entityType
         const err = await response.json().catch(() => ({}));
         if (response.status === 402 || response.status === 429) {
           toast({ title: response.status === 402 ? "AI credits exhausted" : "AI rate limited", description: "Generating record book with placeholder narratives instead.", variant: "destructive" });
-          // Fallback: fetch company data without AI
           const fallbackRes = await fetch(
             `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-record-book`,
             {
@@ -69,7 +83,6 @@ export default function RecordBookGenerator({ companyId, companyName, entityType
               body: JSON.stringify({ company_id: companyId, ai_provider: "none" }),
             }
           );
-          // If fallback also fails, use minimal data
           if (!fallbackRes.ok) {
             data = { companyData: { company: { name: companyName, entity_type: "Corporation" } }, aiContent: null } as any;
           } else {
@@ -86,9 +99,6 @@ export default function RecordBookGenerator({ companyId, companyName, entityType
       const doc = generateRecordBookPDF(data);
       setPdfDoc(doc);
 
-      const url = getRecordBookPreviewUrl(doc);
-      setPreviewUrl(url);
-
       toast({ title: "Record book generated successfully!" });
     } catch (err: any) {
       console.error(err);
@@ -102,6 +112,77 @@ export default function RecordBookGenerator({ companyId, companyName, entityType
   const handleDownload = () => {
     if (pdfDoc) downloadRecordBookPDF(pdfDoc, companyName);
   };
+
+  const handlePreview = () => {
+    if (!pdfDoc) return;
+    try {
+      const arrayBuf = pdfDoc.output("arraybuffer");
+      if (!arrayBuf || arrayBuf.byteLength === 0) {
+        toast({ title: "PDF generation produced an empty document", variant: "destructive" });
+        return;
+      }
+      setPdfData(new Uint8Array(arrayBuf));
+      setCurrentPage(1);
+      setPreviewOpen(true);
+    } catch (err: any) {
+      console.error("Preview error:", err);
+      toast({ title: "Failed to open preview", description: err?.message, variant: "destructive" });
+    }
+  };
+
+  const handleClosePreview = () => {
+    setPreviewOpen(false);
+    setPdfData(null);
+    pdfDocRef.current = null;
+    setPageCount(0);
+  };
+
+  useEffect(() => {
+    if (!pdfData) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const doc = await pdfjsLib.getDocument({ data: pdfData }).promise;
+        if (cancelled) return;
+        pdfDocRef.current = doc;
+        setPageCount(doc.numPages);
+      } catch (err) {
+        console.error("PDF.js load error:", err);
+        toast({ title: "Failed to load preview", variant: "destructive" });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [pdfData]);
+
+  useEffect(() => {
+    if (!pdfDocRef.current || !canvasRef.current || !containerRef.current || pageCount === 0) return;
+    let cancelled = false;
+    (async () => {
+      setRendering(true);
+      try {
+        const page = await pdfDocRef.current.getPage(currentPage);
+        if (cancelled) return;
+        const container = containerRef.current!;
+        const containerWidth = container.clientWidth - 32;
+        const unscaled = page.getViewport({ scale: 1 });
+        const scale = containerWidth / unscaled.width;
+        const viewport = page.getViewport({ scale });
+        const canvas = canvasRef.current!;
+        const ctx = canvas.getContext("2d")!;
+        canvas.width = viewport.width * 2;
+        canvas.height = viewport.height * 2;
+        canvas.style.width = `${viewport.width}px`;
+        canvas.style.height = `${viewport.height}px`;
+        ctx.scale(2, 2);
+        await page.render({ canvasContext: ctx, viewport }).promise;
+      } catch (err) {
+        console.error("PDF render error:", err);
+      } finally {
+        if (!cancelled) setRendering(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [currentPage, pageCount, previewOpen]);
 
   const handleShare = async () => {
     if (!pdfDoc) return;
@@ -186,7 +267,7 @@ export default function RecordBookGenerator({ companyId, companyName, entityType
               <Button variant="outline" size="sm" onClick={handleDownload}>
                 <Download className="h-3.5 w-3.5" /> Download PDF
               </Button>
-              <Button variant="outline" size="sm" onClick={() => previewUrl && window.open(previewUrl, "_blank")}>
+              <Button variant="outline" size="sm" onClick={handlePreview}>
                 <Eye className="h-3.5 w-3.5" /> Preview
               </Button>
               <Button variant="secondary" size="sm" onClick={handleShare} disabled={!!progress}>
@@ -214,18 +295,37 @@ export default function RecordBookGenerator({ companyId, companyName, entityType
         </CardContent>
       </Card>
 
-      {previewUrl && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-display flex items-center gap-2">
-              <Eye className="h-4 w-4" /> Preview
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <iframe src={previewUrl} className="w-full h-[600px] rounded border border-border" title="Record Book Preview" />
-          </CardContent>
-        </Card>
-      )}
+      <Dialog open={previewOpen} onOpenChange={(o) => (o ? setPreviewOpen(true) : handleClosePreview())}>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-5 pb-3 border-b border-border">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="font-display text-base">Record Book Preview</DialogTitle>
+              <Button size="sm" variant="outline" onClick={handleDownload}>
+                <Download className="mr-1.5 h-3.5 w-3.5" /> Download PDF
+              </Button>
+            </div>
+          </DialogHeader>
+          <div ref={containerRef} className="flex-1 overflow-auto flex justify-center p-4 bg-muted/30 relative">
+            {rendering && (
+              <div className="absolute inset-0 flex items-center justify-center z-10">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            <canvas ref={canvasRef} className="shadow-lg rounded" />
+          </div>
+          {pageCount > 1 && (
+            <div className="flex items-center justify-center gap-3 px-6 py-3 border-t border-border bg-background">
+              <Button size="sm" variant="ghost" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage <= 1}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground">Page {currentPage} of {pageCount}</span>
+              <Button size="sm" variant="ghost" onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))} disabled={currentPage >= pageCount}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
