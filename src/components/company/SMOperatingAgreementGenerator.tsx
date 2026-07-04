@@ -697,7 +697,10 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
             </div>
           )}
 
-          <DocumentVersionHistory companyId={companyId} documentType="Sole Member Operating Agreement" />
+          <DocumentVersionHistory
+            companyId={companyId}
+            documentType={["Sole Member Operating Agreement", "Operating Agreement (S-Corp Election)"]}
+          />
 
         </CardContent>
       </Card>
