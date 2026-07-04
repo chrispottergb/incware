@@ -74,11 +74,14 @@ export default function DocumentVersionHistory({ companyId, documentType }: Prop
     setBusy(true);
     try {
       await removeStorage(versions);
-      const { error } = await supabase
+      const baseDel = supabase
         .from("document_registry")
         .delete()
-        .eq("company_id", companyId)
-        .eq("document_type", documentType);
+        .eq("company_id", companyId);
+      const delQ = docTypeList.length > 1
+        ? baseDel.in("document_type", docTypeList)
+        : baseDel.eq("document_type", docTypeList[0]);
+      const { error } = await delQ;
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey });
       toast.success("All versions deleted");
