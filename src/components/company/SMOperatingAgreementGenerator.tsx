@@ -22,7 +22,11 @@ import { toast } from "sonner";
 import {
   FileText, Download, Eye, Loader2, Printer, Copy, Check, Share2,
   Sparkles, ChevronDown, History, RotateCcw, FileDown, Upload, Save,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 import DocumentVersionHistory from "@/components/company/DocumentVersionHistory";
 import {
   generateSMOperatingAgreementPDF,
