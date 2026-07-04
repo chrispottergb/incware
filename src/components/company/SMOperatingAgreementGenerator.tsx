@@ -27,6 +27,9 @@ import {
   generateSMOperatingAgreementPDF,
   type SMOperatingAgreementData,
 } from "@/lib/smllc-operating-agreement-pdf";
+import {
+  generateSMScorpOperatingAgreementPDF,
+} from "@/lib/smllc-scorp-operating-agreement-pdf";
 import AIProviderSelect from "@/components/company/AIProviderSelect";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
