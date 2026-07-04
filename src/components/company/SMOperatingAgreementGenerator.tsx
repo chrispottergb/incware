@@ -524,12 +524,19 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
             <div className="flex items-center gap-2.5">
               <FileText className="h-5 w-5 text-primary" />
               <CardTitle className="text-base font-display">
-                Sole Member Operating Agreement
+                {isScorpElected
+                  ? "Sole Member Operating Agreement (S-Corp Election)"
+                  : "Sole Member Operating Agreement"}
               </CardTitle>
             </div>
             <div className="flex items-center gap-2">
               {isAiDraft && <Badge className="bg-purple-600 text-[10px]">AI Assisted</Badge>}
-              <Badge variant="outline" className="text-[10px]">Wis. Stat. Ch. 183</Badge>
+              {isScorpElected && (
+                <Badge className="bg-amber-600 text-[10px]">S-Corp Election</Badge>
+              )}
+              <Badge variant="outline" className="text-[10px]">
+                {isScorpElected ? "IRC § 1362 · Wis. Stat. Ch. 183" : "Wis. Stat. Ch. 183"}
+              </Badge>
             </div>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
