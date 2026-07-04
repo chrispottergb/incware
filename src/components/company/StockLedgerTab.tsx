@@ -826,6 +826,7 @@ export default function StockLedgerTab({
                       }));
                     }}
                   />
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="field-group">
                     <Label className="field-label">Effective Date</Label>
