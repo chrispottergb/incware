@@ -57,6 +57,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   const [showHistory, setShowHistory] = useState(false);
   const [isAiDraft, setIsAiDraft] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [savedThisSession, setSavedThisSession] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
   // Editable form fields
