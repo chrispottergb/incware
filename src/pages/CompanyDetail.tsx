@@ -34,6 +34,7 @@ import BylawsGenerator from "@/components/company/BylawsGenerator";
 import NonprofitBylawsGenerator from "@/components/company/NonprofitBylawsGenerator";
 import ConflictOfInterestGenerator from "@/components/company/ConflictOfInterestGenerator";
 import SMOperatingAgreementGenerator from "@/components/company/SMOperatingAgreementGenerator";
+import SCorpOAWarningBanner from "@/components/company/SCorpOAWarningBanner";
 import CounselTab from "@/components/company/CounselTab";
 import BanksTab from "@/components/company/BanksTab";
 import RelationshipsTab from "@/components/company/RelationshipsTab";
