@@ -22,7 +22,11 @@ import { toast } from "sonner";
 import {
   FileText, Download, Eye, Loader2, Printer, Copy, Check, Share2,
   Sparkles, ChevronDown, History, RotateCcw, FileDown, Upload, Save,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 import DocumentVersionHistory from "@/components/company/DocumentVersionHistory";
 import {
   generateSMOperatingAgreementPDF,
@@ -60,6 +64,15 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   const [isImporting, setIsImporting] = useState(false);
   const [savedThisSession, setSavedThisSession] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
+  // pdf.js in-app preview (avoids nested-iframe blocking + browser download-on-open behavior)
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [pdfData, setPdfData] = useState<Uint8Array | null>(null);
+  const [pageCount, setPageCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rendering, setRendering] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const pdfDocRef = useRef<any>(null);
 
   // Editable form fields
   const [formCompanyName, setFormCompanyName] = useState("");
@@ -503,50 +516,94 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   };
 
   const handlePreview = () => {
-    if (!pdfDoc) {
-      toast.error("Generate a draft first");
-      return;
-    }
+    if (!pdfDoc) { toast.error("Generate a draft first"); return; }
     try {
-      const blob = new Blob([pdfDoc.output("arraybuffer")], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const win = window.open(url, "_blank");
-      if (!win) {
-        toast.error("Popup blocked — allow popups to preview the PDF");
-        URL.revokeObjectURL(url);
+      const arrayBuf = pdfDoc.output("arraybuffer");
+      if (!arrayBuf || arrayBuf.byteLength === 0) {
+        toast.error("PDF generation produced an empty document");
         return;
       }
-      // Revoke after the new tab has had time to load the blob.
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setPdfData(new Uint8Array(arrayBuf));
+      setCurrentPage(1);
+      setPreviewOpen(true);
     } catch (err: any) {
       console.error("Preview error:", err);
       toast.error("Failed to open preview: " + (err?.message || "unknown error"));
     }
   };
 
-  const handlePrint = () => {
-    if (!pdfDoc) {
-      toast.error("Generate a draft first");
-      return;
-    }
-    try {
-      const blob = new Blob([pdfDoc.output("arraybuffer")], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const win = window.open(url, "_blank");
-      if (!win) {
-        toast.error("Popup blocked — allow popups to print the PDF");
-        URL.revokeObjectURL(url);
-        return;
+  const handleClosePreview = () => {
+    setPreviewOpen(false);
+    setPdfData(null);
+    pdfDocRef.current = null;
+    setPageCount(0);
+  };
+
+  // Load PDF document when preview data changes
+  useEffect(() => {
+    if (!pdfData) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const doc = await pdfjsLib.getDocument({ data: pdfData }).promise;
+        if (cancelled) return;
+        pdfDocRef.current = doc;
+        setPageCount(doc.numPages);
+      } catch (err) {
+        console.error("PDF.js load error:", err);
+        toast.error("Failed to load preview");
       }
-      win.addEventListener("load", () => {
-        try { win.print(); } catch { /* ignore */ }
-      });
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    })();
+    return () => { cancelled = true; };
+  }, [pdfData]);
+
+  // Render current page
+  useEffect(() => {
+    if (!pdfDocRef.current || !canvasRef.current || !previewContainerRef.current || pageCount === 0) return;
+    let cancelled = false;
+    (async () => {
+      setRendering(true);
+      try {
+        const page = await pdfDocRef.current.getPage(currentPage);
+        if (cancelled) return;
+        const container = previewContainerRef.current!;
+        const containerWidth = container.clientWidth - 32;
+        const unscaled = page.getViewport({ scale: 1 });
+        const scale = containerWidth / unscaled.width;
+        const viewport = page.getViewport({ scale });
+        const canvas = canvasRef.current!;
+        const ctx = canvas.getContext("2d")!;
+        canvas.width = viewport.width * 2;
+        canvas.height = viewport.height * 2;
+        canvas.style.width = `${viewport.width}px`;
+        canvas.style.height = `${viewport.height}px`;
+        ctx.scale(2, 2);
+        await page.render({ canvasContext: ctx, viewport }).promise;
+      } catch (err) {
+        console.error("PDF render error:", err);
+      } finally {
+        if (!cancelled) setRendering(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [currentPage, pageCount, previewOpen]);
+
+  const handlePrint = async () => {
+    if (!pdfDoc) { toast.error("Generate a draft first"); return; }
+    try {
+      const { printPdfInIframe } = await import("@/lib/pdf-save");
+      const ok = await printPdfInIframe(pdfDoc);
+      if (!ok) {
+        const safeName = formCompanyName.replace(/[^a-zA-Z0-9]/g, "_") || "SMLLC";
+        const { savePdfReliably } = await import("@/lib/pdf-save");
+        await savePdfReliably(pdfDoc, `${safeName}_SM_Operating_Agreement.pdf`);
+      }
     } catch (err: any) {
       console.error("Print error:", err);
-      toast.error("Failed to open print view: " + (err?.message || "unknown error"));
+      toast.error("Failed to print: " + (err?.message || "unknown error"));
     }
   };
+
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -820,6 +877,44 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
             <Button variant="outline" size="sm" onClick={() => setShowDisclaimer(false)}>Cancel</Button>
             <Button size="sm" disabled={!disclaimerAccepted} onClick={handleDisclaimerAccept}>Accept & Download</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PDF Preview Dialog (pdf.js canvas — avoids blob-iframe blocking) */}
+      <Dialog open={previewOpen} onOpenChange={(o) => (o ? setPreviewOpen(true) : handleClosePreview())}>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-5 pb-3 border-b border-border">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="font-display text-base">Document Preview</DialogTitle>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => initiateDownload("pdf")}>
+                  <Download className="mr-1.5 h-3.5 w-3.5" /> Download PDF
+                </Button>
+                <Button size="sm" onClick={handlePrint}>
+                  <Printer className="mr-1.5 h-3.5 w-3.5" /> Print
+                </Button>
+              </div>
+            </div>
+          </DialogHeader>
+          <div ref={previewContainerRef} className="flex-1 overflow-auto flex justify-center p-4 bg-muted/30 relative">
+            {rendering && (
+              <div className="absolute inset-0 flex items-center justify-center z-10">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            <canvas ref={canvasRef} className="shadow-lg rounded" />
+          </div>
+          {pageCount > 1 && (
+            <div className="flex items-center justify-center gap-3 px-6 py-3 border-t border-border bg-background">
+              <Button size="sm" variant="ghost" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage <= 1}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground">Page {currentPage} of {pageCount}</span>
+              <Button size="sm" variant="ghost" onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))} disabled={currentPage >= pageCount}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
