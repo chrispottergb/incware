@@ -404,12 +404,18 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
       const mergedCompany = getMergedCompany();
       const mergedMembers = [{ name: formMemberName }];
       const data: SMOperatingAgreementData = { company: mergedCompany, members: mergedMembers };
-      const doc = generateSMOperatingAgreementPDF(data);
+      const doc = isScorpElected
+        ? generateSMScorpOperatingAgreementPDF(data)
+        : generateSMOperatingAgreementPDF(data);
       setPdfDoc(doc);
       const blob = doc.output("blob");
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(URL.createObjectURL(blob));
-      toast.success("AI-assisted Sole Member Operating Agreement generated! Click 'Save Version' to snapshot.");
+      toast.success(
+        isScorpElected
+          ? "AI-assisted S-Corp Sole Member Operating Agreement generated! Click 'Save Version' to snapshot."
+          : "AI-assisted Sole Member Operating Agreement generated! Click 'Save Version' to snapshot."
+      );
     } catch (err: any) {
       console.error(err);
       toast.error(err.message);
