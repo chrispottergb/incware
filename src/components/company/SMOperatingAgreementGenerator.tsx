@@ -411,6 +411,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
         ? generateSMScorpOperatingAgreementPDF(data)
         : generateSMOperatingAgreementPDF(data);
       setPdfDoc(doc);
+      setSavedThisSession(false);
       const blob = doc.output("blob");
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(URL.createObjectURL(blob));
