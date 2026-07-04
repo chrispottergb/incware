@@ -34,6 +34,7 @@ import BylawsGenerator from "@/components/company/BylawsGenerator";
 import NonprofitBylawsGenerator from "@/components/company/NonprofitBylawsGenerator";
 import ConflictOfInterestGenerator from "@/components/company/ConflictOfInterestGenerator";
 import SMOperatingAgreementGenerator from "@/components/company/SMOperatingAgreementGenerator";
+import SCorpOAWarningBanner from "@/components/company/SCorpOAWarningBanner";
 import CounselTab from "@/components/company/CounselTab";
 import BanksTab from "@/components/company/BanksTab";
 import RelationshipsTab from "@/components/company/RelationshipsTab";
@@ -417,7 +418,18 @@ export default function CompanyDetail() {
         {isLLC && (
           <TabsContent value="operating-agreement" className="mt-5">
             {company.entity_type === "Single Member LLC" ? (
-              <SMOperatingAgreementGenerator companyId={company.id} companyName={company.name} company={company} />
+              <>
+                <SCorpOAWarningBanner
+                  company={company}
+                  onRegenerate={() => {
+                    const el = document.getElementById("sm-oa-generator-root");
+                    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                />
+                <div id="sm-oa-generator-root">
+                  <SMOperatingAgreementGenerator companyId={company.id} companyName={company.name} company={company} />
+                </div>
+              </>
             ) : (
               <OperatingAgreementGenerator companyId={company.id} companyName={company.name} company={company} />
             )}

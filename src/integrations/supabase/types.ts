@@ -1856,6 +1856,8 @@ export type Database = {
           meeting_id: string | null
           status: string
           statute_reference: string | null
+          superseded_at: string | null
+          superseded_reason: string | null
           title: string
           updated_at: string
         }
@@ -1871,6 +1873,8 @@ export type Database = {
           meeting_id?: string | null
           status?: string
           statute_reference?: string | null
+          superseded_at?: string | null
+          superseded_reason?: string | null
           title: string
           updated_at?: string
         }
@@ -1886,6 +1890,8 @@ export type Database = {
           meeting_id?: string | null
           status?: string
           statute_reference?: string | null
+          superseded_at?: string | null
+          superseded_reason?: string | null
           title?: string
           updated_at?: string
         }

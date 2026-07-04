@@ -27,6 +27,9 @@ import {
   generateSMOperatingAgreementPDF,
   type SMOperatingAgreementData,
 } from "@/lib/smllc-operating-agreement-pdf";
+import {
+  generateSMScorpOperatingAgreementPDF,
+} from "@/lib/smllc-scorp-operating-agreement-pdf";
 import AIProviderSelect from "@/components/company/AIProviderSelect";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
@@ -84,14 +87,21 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
     },
   });
 
+  // S-corp election controls which template is generated and how versions are saved.
+  const isScorpElected = !!company?.s_election_date;
+  const OA_DOC_TYPES = [
+    "Sole Member Operating Agreement",
+    "Operating Agreement (S-Corp Election)",
+  ] as const;
+
   const { data: versionHistory = [] } = useQuery({
-    queryKey: ["doc-versions", companyId, "Sole Member Operating Agreement"],
+    queryKey: ["doc-versions", companyId, "OperatingAgreement-combined"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("document_registry")
         .select("*")
         .eq("company_id", companyId)
-        .eq("document_type", "Sole Member Operating Agreement")
+        .in("document_type", OA_DOC_TYPES as unknown as string[])
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -174,6 +184,22 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
 
   const [isSavingVersion, setIsSavingVersion] = useState(false);
 
+  // Marks every prior OA row (non-superseded) as superseded because a new S-corp
+  // version is being saved. Runs immediately before insert so failures abort cleanly.
+  const supersedePriorOARows = async () => {
+    const { error } = await supabase
+      .from("document_registry")
+      .update({
+        status: "superseded",
+        superseded_reason: "Superseded — S-corp election",
+        superseded_at: new Date().toISOString(),
+      } as any)
+      .eq("company_id", companyId)
+      .in("document_type", OA_DOC_TYPES as unknown as string[])
+      .neq("status", "superseded");
+    if (error) throw error;
+  };
+
   const saveVersion = async (doc: any, isAi: boolean) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -183,7 +209,8 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
       const blob = doc.output("blob");
       const safeName = formCompanyName.replace(/[^a-zA-Z0-9]/g, "_") || "SMLLC";
       const versionNum = versionHistory.length + 1;
-      const fileName = `${userId}/${safeName}_SM_Operating_Agreement_v${versionNum}_${Date.now()}.pdf`;
+      const suffix = isScorpElected ? "SCorp_Operating_Agreement" : "SM_Operating_Agreement";
+      const fileName = `${userId}/${safeName}_${suffix}_v${versionNum}_${Date.now()}.pdf`;
 
       await supabase.storage
         .from("generated-documents")
@@ -193,18 +220,40 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
         .from("generated-documents")
         .createSignedUrl(fileName, 60 * 60 * 24 * 365);
 
-      await supabase.from("document_registry").insert({
+      if (isScorpElected) {
+        // Supersede prior OA rows first — abort if update fails so we don't create
+        // a "current" S-corp row alongside a still-current standard version.
+        await supersedePriorOARows();
+      }
+
+      const titlePrefix = isScorpElected
+        ? "Operating Agreement (S-Corp Election)"
+        : "SM Operating Agreement";
+      const insertPayload: any = {
         company_id: companyId,
-        title: `SM Operating Agreement v${versionNum}${isAi ? " — AI Assisted" : ""} — ${new Date().toLocaleDateString()}`,
+        title: `${titlePrefix} v${versionNum}${isAi ? " — AI Assisted" : ""} — ${new Date().toLocaleDateString()}`,
         document_category: "corporate",
-        document_type: "Sole Member Operating Agreement",
-        status: "final",
+        document_type: isScorpElected
+          ? "Operating Agreement (S-Corp Election)"
+          : "Sole Member Operating Agreement",
+        status: isScorpElected ? "current" : "final",
         file_name: fileName,
         file_url: signedData?.signedUrl || null,
-        statute_reference: "Wis. Stat. Ch. 183",
-      });
+        statute_reference: isScorpElected
+          ? "IRC § 1362; IRC § 1361"
+          : "Wis. Stat. Ch. 183",
+      };
+      if (isScorpElected) {
+        insertPayload.description =
+          "Regenerated to reflect S corporation tax election — includes reasonable compensation, transfer restriction, and single-class-of-stock provisions.";
+      }
 
-      queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId, "Sole Member Operating Agreement"] });
+      const { error: insertErr } = await supabase
+        .from("document_registry")
+        .insert(insertPayload);
+      if (insertErr) throw insertErr;
+
+      queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId, "OperatingAgreement-combined"] });
     } catch (err: any) {
       console.error("Save version error:", err);
       throw err;
@@ -274,7 +323,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
       });
       if (regErr) throw regErr;
 
-      queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId, "Sole Member Operating Agreement"] });
+      queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId, "OperatingAgreement-combined"] });
       toast.success("Operating Agreement imported successfully");
     } catch (err: any) {
       toast.error(err.message || "Import failed");
@@ -290,13 +339,19 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
       const mergedMembers = [{ name: formMemberName }];
 
       const data: SMOperatingAgreementData = { company: mergedCompany, members: mergedMembers };
-      const doc = generateSMOperatingAgreementPDF(data);
+      const doc = isScorpElected
+        ? generateSMScorpOperatingAgreementPDF(data)
+        : generateSMOperatingAgreementPDF(data);
       setPdfDoc(doc);
       setIsAiDraft(false);
       const blob = doc.output("blob");
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(URL.createObjectURL(blob));
-      toast.success("Sole Member Operating Agreement generated! Click 'Save Version' to snapshot.");
+      toast.success(
+        isScorpElected
+          ? "S-Corp Sole Member Operating Agreement generated! Click 'Save Version' to snapshot."
+          : "Sole Member Operating Agreement generated! Click 'Save Version' to snapshot."
+      );
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -349,12 +404,18 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
       const mergedCompany = getMergedCompany();
       const mergedMembers = [{ name: formMemberName }];
       const data: SMOperatingAgreementData = { company: mergedCompany, members: mergedMembers };
-      const doc = generateSMOperatingAgreementPDF(data);
+      const doc = isScorpElected
+        ? generateSMScorpOperatingAgreementPDF(data)
+        : generateSMOperatingAgreementPDF(data);
       setPdfDoc(doc);
       const blob = doc.output("blob");
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(URL.createObjectURL(blob));
-      toast.success("AI-assisted Sole Member Operating Agreement generated! Click 'Save Version' to snapshot.");
+      toast.success(
+        isScorpElected
+          ? "AI-assisted S-Corp Sole Member Operating Agreement generated! Click 'Save Version' to snapshot."
+          : "AI-assisted Sole Member Operating Agreement generated! Click 'Save Version' to snapshot."
+      );
     } catch (err: any) {
       console.error(err);
       toast.error(err.message);
@@ -463,12 +524,19 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
             <div className="flex items-center gap-2.5">
               <FileText className="h-5 w-5 text-primary" />
               <CardTitle className="text-base font-display">
-                Sole Member Operating Agreement
+                {isScorpElected
+                  ? "Sole Member Operating Agreement (S-Corp Election)"
+                  : "Sole Member Operating Agreement"}
               </CardTitle>
             </div>
             <div className="flex items-center gap-2">
               {isAiDraft && <Badge className="bg-purple-600 text-[10px]">AI Assisted</Badge>}
-              <Badge variant="outline" className="text-[10px]">Wis. Stat. Ch. 183</Badge>
+              {isScorpElected && (
+                <Badge className="bg-amber-600 text-[10px]">S-Corp Election</Badge>
+              )}
+              <Badge variant="outline" className="text-[10px]">
+                {isScorpElected ? "IRC § 1362 · Wis. Stat. Ch. 183" : "Wis. Stat. Ch. 183"}
+              </Badge>
             </div>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
@@ -629,7 +697,10 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
             </div>
           )}
 
-          <DocumentVersionHistory companyId={companyId} documentType="Sole Member Operating Agreement" />
+          <DocumentVersionHistory
+            companyId={companyId}
+            documentType={["Sole Member Operating Agreement", "Operating Agreement (S-Corp Election)"]}
+          />
 
         </CardContent>
       </Card>
