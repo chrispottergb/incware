@@ -266,6 +266,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
     setIsSavingVersion(true);
     try {
       await saveVersion(pdfDoc, isAiDraft);
+      setSavedThisSession(true);
       toast.success("Version saved to history");
     } catch (err: any) {
       toast.error(err.message || "Failed to save version");
