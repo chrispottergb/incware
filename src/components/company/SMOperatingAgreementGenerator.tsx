@@ -516,50 +516,94 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   };
 
   const handlePreview = () => {
-    if (!pdfDoc) {
-      toast.error("Generate a draft first");
-      return;
-    }
+    if (!pdfDoc) { toast.error("Generate a draft first"); return; }
     try {
-      const blob = new Blob([pdfDoc.output("arraybuffer")], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const win = window.open(url, "_blank");
-      if (!win) {
-        toast.error("Popup blocked — allow popups to preview the PDF");
-        URL.revokeObjectURL(url);
+      const arrayBuf = pdfDoc.output("arraybuffer");
+      if (!arrayBuf || arrayBuf.byteLength === 0) {
+        toast.error("PDF generation produced an empty document");
         return;
       }
-      // Revoke after the new tab has had time to load the blob.
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setPdfData(new Uint8Array(arrayBuf));
+      setCurrentPage(1);
+      setPreviewOpen(true);
     } catch (err: any) {
       console.error("Preview error:", err);
       toast.error("Failed to open preview: " + (err?.message || "unknown error"));
     }
   };
 
-  const handlePrint = () => {
-    if (!pdfDoc) {
-      toast.error("Generate a draft first");
-      return;
-    }
-    try {
-      const blob = new Blob([pdfDoc.output("arraybuffer")], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const win = window.open(url, "_blank");
-      if (!win) {
-        toast.error("Popup blocked — allow popups to print the PDF");
-        URL.revokeObjectURL(url);
-        return;
+  const handleClosePreview = () => {
+    setPreviewOpen(false);
+    setPdfData(null);
+    pdfDocRef.current = null;
+    setPageCount(0);
+  };
+
+  // Load PDF document when preview data changes
+  useEffect(() => {
+    if (!pdfData) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const doc = await pdfjsLib.getDocument({ data: pdfData }).promise;
+        if (cancelled) return;
+        pdfDocRef.current = doc;
+        setPageCount(doc.numPages);
+      } catch (err) {
+        console.error("PDF.js load error:", err);
+        toast.error("Failed to load preview");
       }
-      win.addEventListener("load", () => {
-        try { win.print(); } catch { /* ignore */ }
-      });
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    })();
+    return () => { cancelled = true; };
+  }, [pdfData]);
+
+  // Render current page
+  useEffect(() => {
+    if (!pdfDocRef.current || !canvasRef.current || !previewContainerRef.current || pageCount === 0) return;
+    let cancelled = false;
+    (async () => {
+      setRendering(true);
+      try {
+        const page = await pdfDocRef.current.getPage(currentPage);
+        if (cancelled) return;
+        const container = previewContainerRef.current!;
+        const containerWidth = container.clientWidth - 32;
+        const unscaled = page.getViewport({ scale: 1 });
+        const scale = containerWidth / unscaled.width;
+        const viewport = page.getViewport({ scale });
+        const canvas = canvasRef.current!;
+        const ctx = canvas.getContext("2d")!;
+        canvas.width = viewport.width * 2;
+        canvas.height = viewport.height * 2;
+        canvas.style.width = `${viewport.width}px`;
+        canvas.style.height = `${viewport.height}px`;
+        ctx.scale(2, 2);
+        await page.render({ canvasContext: ctx, viewport }).promise;
+      } catch (err) {
+        console.error("PDF render error:", err);
+      } finally {
+        if (!cancelled) setRendering(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [currentPage, pageCount, previewOpen]);
+
+  const handlePrint = async () => {
+    if (!pdfDoc) { toast.error("Generate a draft first"); return; }
+    try {
+      const { printPdfInIframe } = await import("@/lib/pdf-save");
+      const ok = await printPdfInIframe(pdfDoc);
+      if (!ok) {
+        const safeName = formCompanyName.replace(/[^a-zA-Z0-9]/g, "_") || "SMLLC";
+        const { savePdfReliably } = await import("@/lib/pdf-save");
+        await savePdfReliably(pdfDoc, `${safeName}_SM_Operating_Agreement.pdf`);
+      }
     } catch (err: any) {
       console.error("Print error:", err);
-      toast.error("Failed to open print view: " + (err?.message || "unknown error"));
+      toast.error("Failed to print: " + (err?.message || "unknown error"));
     }
   };
+
 
   return (
     <div className="space-y-5 animate-fade-in">
