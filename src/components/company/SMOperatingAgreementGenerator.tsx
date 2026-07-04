@@ -87,14 +87,21 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
     },
   });
 
+  // S-corp election controls which template is generated and how versions are saved.
+  const isScorpElected = !!company?.s_election_date;
+  const OA_DOC_TYPES = [
+    "Sole Member Operating Agreement",
+    "Operating Agreement (S-Corp Election)",
+  ] as const;
+
   const { data: versionHistory = [] } = useQuery({
-    queryKey: ["doc-versions", companyId, "Sole Member Operating Agreement"],
+    queryKey: ["doc-versions", companyId, "OperatingAgreement-combined"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("document_registry")
         .select("*")
         .eq("company_id", companyId)
-        .eq("document_type", "Sole Member Operating Agreement")
+        .in("document_type", OA_DOC_TYPES as unknown as string[])
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
