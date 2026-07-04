@@ -64,7 +64,6 @@ export default function CompanyDetail() {
   const [buySellOpen, setBuySellOpen] = useState(false);
   const [initialSeller, setInitialSeller] = useState<{ id: string; name: string } | undefined>();
   const [recordTxOpen, setRecordTxOpen] = useState(false);
-  const [historicalTxOpen, setHistoricalTxOpen] = useState(false);
   const [establishOwnershipOpen, setEstablishOwnershipOpen] = useState(false);
 
   const handleTabChange = (value: string) => {
@@ -321,7 +320,6 @@ export default function CompanyDetail() {
             <ShareholderWorkflowCards
               entityType={company.entity_type}
               onRecordTransaction={() => setRecordTxOpen(true)}
-              onAddHistorical={() => setHistoricalTxOpen(true)}
               onEstablishOwnership={() => setEstablishOwnershipOpen(true)}
             />
 
@@ -356,7 +354,7 @@ export default function CompanyDetail() {
             <ShareholdersTab companyId={company.id} entityType={company.entity_type} shareholderHoldings={shareCalc.shareholderHoldings} onBuySell={(sellerId, sellerName) => { setInitialSeller({ id: sellerId, name: sellerName }); setBuySellOpen(true); }} />
             {isLLCType(company.entity_type) ? (
               <>
-                <StockLedgerTab companyId={company.id} entityType={company.entity_type} externalOpenRecord={recordTxOpen} onExternalOpenRecordChange={setRecordTxOpen} externalOpenHistorical={historicalTxOpen} onExternalOpenHistoricalChange={setHistoricalTxOpen} />
+                <StockLedgerTab companyId={company.id} entityType={company.entity_type} externalOpenRecord={recordTxOpen} onExternalOpenRecordChange={setRecordTxOpen} />
                 <UnifiedLedgerTab companyId={company.id} entityType={company.entity_type} authorizedShares={shareCalc.authorizedShares} />
                 <div data-section="certificates">
                   <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
@@ -365,7 +363,7 @@ export default function CompanyDetail() {
               </>
             ) : (
               <>
-                <StockLedgerTab companyId={company.id} entityType={company.entity_type} externalOpenRecord={recordTxOpen} onExternalOpenRecordChange={setRecordTxOpen} externalOpenHistorical={historicalTxOpen} onExternalOpenHistoricalChange={setHistoricalTxOpen} />
+                <StockLedgerTab companyId={company.id} entityType={company.entity_type} externalOpenRecord={recordTxOpen} onExternalOpenRecordChange={setRecordTxOpen} />
                 <div data-section="certificates">
                   <StockCertificatesTab companyId={company.id} entityType={company.entity_type} />
                 </div>
