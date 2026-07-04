@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, BookOpen, Link2, Lock, Trash2, FileText, Award, RotateCcw, History, Pencil } from "lucide-react";
+import { Plus, Loader2, BookOpen, Link2, Lock, Trash2, FileText, Award, RotateCcw, Pencil } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import CorrectionModal from "./CorrectionModal";
 import EditTransactionModal from "./EditTransactionModal";
@@ -133,8 +134,6 @@ interface Props {
   entityType?: string;
   externalOpenRecord?: boolean;
   onExternalOpenRecordChange?: (open: boolean) => void;
-  externalOpenHistorical?: boolean;
-  onExternalOpenHistoricalChange?: (open: boolean) => void;
 }
 
 export default function StockLedgerTab({
@@ -142,21 +141,14 @@ export default function StockLedgerTab({
   entityType = "Corporation",
   externalOpenRecord,
   onExternalOpenRecordChange,
-  externalOpenHistorical,
-  onExternalOpenHistoricalChange,
 }: Props) {
   const queryClient = useQueryClient();
   const [dialogInternal, setDialogInternal] = useState(false);
-  const [historicalDialogInternal, setHistoricalDialogInternal] = useState(false);
 
   // Support both internal and external dialog control
   const dialog = externalOpenRecord ?? dialogInternal;
   const setDialog = (open: boolean) => {
     onExternalOpenRecordChange ? onExternalOpenRecordChange(open) : setDialogInternal(open);
-  };
-  const historicalDialog = externalOpenHistorical ?? historicalDialogInternal;
-  const setHistoricalDialog = (open: boolean) => {
-    onExternalOpenHistoricalChange ? onExternalOpenHistoricalChange(open) : setHistoricalDialogInternal(open);
   };
   const [newShareholderName, setNewShareholderName] = useState("");
   const [correctionTarget, setCorrectionTarget] = useState<any>(null);
@@ -241,6 +233,7 @@ export default function StockLedgerTab({
     par_value: "",
     issued_certificate_number: "",
     surrendered_certificate_number: "",
+    entry_type_override: null as "historical" | "current" | null,
   });
 
   // Auto-calculate total consideration when shares or price changes
@@ -388,9 +381,10 @@ export default function StockLedgerTab({
         }
       }
 
-      // Auto-create shareholder for historical entries if new name provided
+      // Auto-create shareholder if a new name was provided and no existing one selected.
+      // Available in every transaction (previously gated to the historical dialog only).
       let resolvedShareholderId = form.shareholder_id || null;
-      if (historicalDialog && newShareholderName.trim() && !form.shareholder_id) {
+      if (newShareholderName.trim() && !form.shareholder_id) {
         const trimmedName = newShareholderName.trim();
         const { data: existing } = await supabase
           .from("shareholders")
@@ -433,7 +427,7 @@ export default function StockLedgerTab({
           issued_certificate_number: issuedCertNum,
           surrendered_certificate_number: surrenderedCertNum,
           certificate_id: null,
-          ...(historicalDialog ? { entry_type: "historical" } : {}),
+          entry_type: effectiveEntryType,
         } as any)
         .select("id")
         .single();
@@ -527,7 +521,6 @@ export default function StockLedgerTab({
         await supabase.rpc("recalculate_ownership_percentages", { p_company_id: companyId }).then(null, console.error);
       }
       setDialog(false);
-      setHistoricalDialog(false);
       resetForm();
       toast.success("Transaction recorded!");
     },
@@ -551,47 +544,40 @@ export default function StockLedgerTab({
       par_value: "",
       issued_certificate_number: "",
       surrendered_certificate_number: "",
+      entry_type_override: null,
     });
     setAssets([]);
     setNewShareholderName("");
   };
 
-  const resetHistoricalForm = () => {
-    setForm({
-      transaction_type: defaultTxType,
-      shareholder_id: "",
-      share_class: "Common",
-      num_shares: "",
-      price_per_share: "",
-      total_consideration: "",
-      consideration_type: "cash",
-      transaction_date: "",
-      effective_date: "",
-      from_shareholder: "",
-      to_shareholder: "",
-      notes: "",
-      par_value: "",
-      issued_certificate_number: "",
-      surrendered_certificate_number: "",
-    });
-    setAssets([]);
-    setNewShareholderName("");
-  };
-
-  // Reset forms when external dialogs are opened
+  // Reset form when the Record Transaction dialog is opened externally
   const prevRecordRef = useRef(false);
-  const prevHistoricalRef = useRef(false);
   useEffect(() => {
     if (dialog && !prevRecordRef.current) resetForm();
     prevRecordRef.current = dialog;
   }, [dialog]);
-  useEffect(() => {
-    if (historicalDialog && !prevHistoricalRef.current) resetHistoricalForm();
-    prevHistoricalRef.current = historicalDialog;
-  }, [historicalDialog]);
 
   const todayStr = new Date().toISOString().split("T")[0];
+  const todayISODate = todayStr;
   const effectiveDateIsFuture = form.effective_date > todayStr;
+
+  // entry_type_override is "sticky by design": once a user manually overrides
+  // the auto-computed historical/current value, that override persists even if
+  // form.transaction_date is edited afterward. We do NOT reset the override on
+  // date change — explicit user intent takes precedence over the date-based
+  // default. If a user wants the value to go back to auto-computed, they must
+  // toggle the switch again until it matches the auto value (which resets
+  // entry_type_override to null per the onCheckedChange logic below).
+  const autoHistorical = !!form.transaction_date && form.transaction_date < todayISODate;
+  const effectiveEntryType: "historical" | null =
+    form.entry_type_override === "historical"
+      ? "historical"
+      : form.entry_type_override === "current"
+        ? null
+        : autoHistorical
+          ? "historical"
+          : null;
+  const isMarkedHistorical = effectiveEntryType === "historical";
 
   const isTransfer = ["transfer", "interest_transfer", "interest_assignment", "share_exchange"].includes(
     form.transaction_type,
