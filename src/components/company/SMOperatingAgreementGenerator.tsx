@@ -323,7 +323,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
       });
       if (regErr) throw regErr;
 
-      queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId, "Sole Member Operating Agreement"] });
+      queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId, "OperatingAgreement-combined"] });
       toast.success("Operating Agreement imported successfully");
     } catch (err: any) {
       toast.error(err.message || "Import failed");
