@@ -388,7 +388,13 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
       const mergedCompany = getMergedCompany();
       const mergedMembers = [{ name: formMemberName }];
 
-      const data: SMOperatingAgreementData = { company: mergedCompany, members: mergedMembers };
+      const soleMemberPct = Number(members[0]?.ownership_percentage);
+      const data: SMOperatingAgreementData = {
+        company: mergedCompany,
+        members: mergedMembers,
+        issuedUnits,
+        ownershipPercentage: Number.isFinite(soleMemberPct) \const data: SMOperatingAgreementData = { company: mergedCompany, members: mergedMembers };\const data: SMOperatingAgreementData = { company: mergedCompany, members: mergedMembers }; soleMemberPct > 0 ? soleMemberPct : 100,
+      };
       const doc = isScorpElected
         ? generateSMScorpOperatingAgreementPDF(data)
         : generateSMOperatingAgreementPDF(data);
@@ -454,7 +460,13 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
 
       const mergedCompany = getMergedCompany();
       const mergedMembers = [{ name: formMemberName }];
-      const data: SMOperatingAgreementData = { company: mergedCompany, members: mergedMembers };
+      const soleMemberPct = Number(members[0]?.ownership_percentage);
+      const data: SMOperatingAgreementData = {
+        company: mergedCompany,
+        members: mergedMembers,
+        issuedUnits,
+        ownershipPercentage: Number.isFinite(soleMemberPct) \const data: SMOperatingAgreementData = { company: mergedCompany, members: mergedMembers };\const data: SMOperatingAgreementData = { company: mergedCompany, members: mergedMembers }; soleMemberPct > 0 ? soleMemberPct : 100,
+      };
       const doc = isScorpElected
         ? generateSMScorpOperatingAgreementPDF(data)
         : generateSMOperatingAgreementPDF(data);
