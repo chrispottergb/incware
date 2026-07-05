@@ -1,57 +1,85 @@
-## Toolbar reorganization — SMOperatingAgreementGenerator
+# Authorized Units for LLCs — with verification guards folded in
 
-Scope: edits to `src/components/company/SMOperatingAgreementGenerator.tsx` only. No changes to PDF generators, DB, or `DocumentVersionHistory.tsx` (already supports Current/Superseded badges). Existing dark theme + button sizes preserved.
+## Step 0 — Column reuse (decided)
 
-### 1. Status strip (new, above toolbar)
+Reuse `companies.authorized_shares` (nullable integer, no stock-only constraints). Already the storage for LLC membership units and partnership units. Only the display label swaps via `getTerminology()` / `isLLCType()`. No new value column.
 
-New row rendered above the buttons with two chips:
+One schema add: nullable boolean `authorized_units_backfill_dismissed` on `companies` for Step 3 banner dismissal.
 
-- **Template chip** — driven by `isScorpElected` (`!!company?.s_election_date`), same logic as the S-corp banner:
-  - `s_election_date IS NOT NULL` → amber "S-Corp Election" badge
-  - else → neutral "Standard" badge
-- **Draft state chip** — derived from local state:
-  - `!pdfDoc` → muted "No draft generated"
-  - `pdfDoc && !savedThisSession` → amber "Draft generated — not saved"
-  - `pdfDoc && savedThisSession` → success "Saved as current version"
+## Step 1 — Editable "Authorized Units" input for LLCs (with diff-based dismissal)
 
-Add a `savedThisSession` boolean state; set `true` at the end of `handleSaveVersion`, reset to `false` whenever a new draft is produced (in `handleGenerate` / `handleAiGenerate`).
+`src/components/company/IncorporationTab.tsx` equity card:
+- Add an LLC branch gated on `equityCard.showMembershipUnits` rendering an input identical to the corp "Authorized Shares" one, labeled **"Authorized Units"**, bound to `form.authorized_shares`.
 
-### 2. Two-group toolbar with divider
+**Diff-based auto-dismiss (folded from addendum):**
+- In the save handler for this form, capture the previous `authorized_shares` value from the loaded `company` prop (source of truth for "prior state"), and compare against the submitted value.
+- Only when `submitted.authorized_shares !== prior.authorized_shares` (real value change, including null→number) also write `authorized_units_backfill_dismissed = true` in the same update.
+- Saving any other field on the tab (registered agent, address, seal, S-election, etc.) must leave `authorized_units_backfill_dismissed` untouched — the flag write is inside the diff branch, not the general save path.
+- No onChange-time flip; dismissal only occurs on persisted save with an actual value change.
 
-Replace the current two flex rows (Generate row + conditional Action row) with a single toolbar containing two labeled groups separated by a vertical `Separator`:
+## Step 2 — Shared cap table status bar
 
-```text
-GENERATE                          │  EXPORT & SAVE
-[Generate Standard] [AI-Assisted  │  [Download PDF] [Download Word]
-Draft] [Import Existing]          │  [Preview] [Print] [Save Version]
-```
+New `src/components/company/CapTableStatusBar.tsx` — takes `{ term, authorized, issued }`, renders Authorized / Issued / Available to Issue.
 
-- Each group has a small uppercase muted label (`text-[10px] uppercase tracking-wider text-muted-foreground`) above its buttons.
-- Vertical `Separator` between groups on desktop; groups stack on narrower widths.
-- The Export & Save group is always rendered (no longer conditional on `pdfDoc`) so users can see the actions they'll unlock.
+`src/pages/CompanyDetail.tsx` (lines 326–353): replace both inline blocks with this component.
+- Corp: unchanged wording.
+- LLC: same three-cell bar, using `term.shareUnit` ("Units"). Renders only when `authorized_shares != null`. The existing "Total Units Outstanding / Active Members" bar stays as-is beneath it.
 
-### 3. Color semantics
+## Step 3 — Backfill migration + dismissible banner
 
-- All three GENERATE buttons → `variant="outline"` (neutral peers). Remove the filled/accent style + Sparkles emphasis from **AI-Assisted Draft** — keep the Sparkles icon, drop the primary fill.
-- Export & Save group: Download PDF, Download Word, Preview, Print → `variant="outline"`.
-- **Save Version** is the only `variant="default"` (primary/accent) button in the whole toolbar.
+Migration (single migration):
+- `ALTER TABLE companies ADD COLUMN authorized_units_backfill_dismissed boolean NOT NULL DEFAULT false;`
+- For every LLC / SMLLC / LLC-S row where `authorized_shares IS NULL`, set `authorized_shares` = summed active issued units from `share_transactions` (same arithmetic as `recalculate_ownership_percentages()`). If issued total = 0, leave `authorized_shares` NULL and skip the banner.
 
-### 4. Disabled export actions until a draft exists
+Banner (rendered in `CompanyDetail.tsx` near the new status bar):
+- Shows when `isLLCType(entity_type) && authorized_shares != null && !authorized_units_backfill_dismissed`.
+- Copy: *"Authorized units were set to match currently issued units. Update this in Organizational Info if you'd like room to issue more in the future."*
+- Manual "Dismiss" button writes `authorized_units_backfill_dismissed = true`.
+- Auto-dismissal path from Step 1 fires only on a real `authorized_shares` value change.
 
-Download PDF, Download Word, Preview, Print get `disabled={!pdfDoc}`. Wrap each in a shadcn `Tooltip` (only shown while disabled) with content "Generate a draft first". Save Version continues to use its own disabled state (needs `pdfDoc`, respects `isSavingVersion`).
+## Step 4 — Ceiling enforcement (verify + copy)
 
-### 5. Version History placement
+Already generic via `validateIssuanceLimit(numShares, available, term)` in `StockLedgerTab.tsx`.
+- Verify the same guard runs in the Establish Current Ownership submit path; add it there if missing.
+- Update `src/lib/transaction-validation.ts` error message to use `term.shareUnit` and reference "Organizational Info": *"This would exceed the {authorized} {units} authorized for this entity. Increase authorized units in Organizational Info first, or reduce the amount being issued."*
+- No parallel validator, no changes to `useShareCalculations`.
 
-- Remove the current bottom-of-card `DocumentVersionHistory` render and its collapsed footer treatment.
-- Render it inside a small persistent panel directly below the toolbar (still inside the same `CardContent`, above the inline preview).
-- Wrap it so it defaults to expanded when `versionHistory.length > 1`. `DocumentVersionHistory` already manages its own `Collapsible`; the simplest approach is to add a `defaultOpen` prop to that component and pass `versionHistory.length > 1`. This is a one-line addition to `DocumentVersionHistory.tsx` (new optional prop threaded into `useState`) — no visual change to how it renders rows, badges, or actions.
+## Step 5 — Operating agreement PDF generators (with zero-issued guard)
 
-### Files touched
+`src/lib/smllc-operating-agreement-pdf.ts` and `src/lib/smllc-scorp-operating-agreement-pdf.ts`:
 
-- `src/components/company/SMOperatingAgreementGenerator.tsx` — status strip, regrouped toolbar, color/variant changes, disabled+tooltip on export buttons, `savedThisSession` state, relocated version history.
-- `src/components/company/DocumentVersionHistory.tsx` — add optional `defaultOpen?: boolean` prop feeding the existing `showHistory` `useState` initial value. No other behavior changes.
+Dynamic clause when `issued_units > 0`:
+- `authorized_units` ← `company.authorized_shares` (fallback to `issued_units` if null — Step 5 fallback, unchanged).
+- `issued_units` ← summed active issued units.
+- `ownership_percentage` ← the sole member's stored `ownership_percentage`.
+- Clause: *"The Company is authorized to issue {authorized_units} membership units, all of which constitute a single class of membership interest within the meaning of IRC §1361(b)(1)(D). The Member is hereby issued {issued_units} membership units and owns {ownership_percentage}% of the Company."*
 
-### Out of scope
+**Zero-issued guard (folded from addendum):**
+- **Primary (calling component)** — locate the SM operating agreement generator UI (SMOperatingAgreementGenerator or the equivalent action bar that invokes these PDFs) and disable the Generate Standard / AI-Assisted Draft buttons when `issued_units === 0`, using the same disabled+tooltip pattern already used for export buttons elsewhere in the generator UI. Tooltip: *"Record an initial contribution before generating an operating agreement."*
+- **Secondary (inside both PDF files)** — if the generator function is invoked with `issued_units === 0` anyway (programmatic caller, guard bypass), do not interpolate zeros. Substitute placeholder language: *"No membership units have been issued as of the date of this Agreement."* Never emit "issued 0 membership units and owns 0% of the Company."
+- This guard is independent of the `authorized_shares` null fallback — the fallback only applies when `issued_units > 0`.
 
-- No changes to PDF generation, save/supersede logic, S-corp trigger, import flow, disclaimer dialog, or inline preview card.
-- No changes to the S-corp warning banner on `CompanyDetail`.
+Multi-member OA generators (if a separate file exists): out of scope for the SMLLC files; they stay single-member.
+
+## Files touched
+
+- `supabase/migrations/*` — add column + LLC backfill.
+- `src/components/company/IncorporationTab.tsx` — LLC "Authorized Units" input; diff-based flag write in save handler.
+- `src/components/company/CapTableStatusBar.tsx` — new shared component.
+- `src/pages/CompanyDetail.tsx` — swap inline bars for shared component; render backfill banner + manual dismiss.
+- `src/lib/transaction-validation.ts` — error copy via `term.shareUnit` + Organizational Info wording.
+- `src/components/company/StockLedgerTab.tsx` — verify (and add if missing) `validateIssuanceLimit` in Establish Current Ownership path.
+- `src/lib/smllc-operating-agreement-pdf.ts`, `src/lib/smllc-scorp-operating-agreement-pdf.ts` — dynamic clause + zero-issued defensive substitution.
+- Calling generator component — disable Generate actions when `issued_units === 0` with tooltip.
+
+## Verification after build
+
+- Zero-issued SMLLC: Generate buttons disabled with tooltip; direct PDF call substitutes placeholder text; no "0 units / 0%" ever printed.
+- Backfilled LLC with visible banner: edit registered-agent (or any other field) on Organizational Info tab and save → banner remains visible, `authorized_units_backfill_dismissed` stays false. Then edit Authorized Units to a new value and save → banner disappears, flag flips to true.
+- `tsgo` typecheck clean; ceiling error message reads naturally under both LLC and corp terminology.
+
+## Out of scope
+
+- Corp Authorized/Issued/Available behavior.
+- Multi-member OA generator changes beyond the two SMLLC files noted.
+- Any automatic bump of `authorized_shares` when issuance is attempted.
