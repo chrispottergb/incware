@@ -101,34 +101,22 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     "Limited Authority (Specify)",
   ];
 
-  // Bank CRUD — never writes plaintext account/routing through PostgREST;
-  // encrypts via secure edge function after row save.
+  // Bank CRUD — account/routing numbers are managed separately via inline row actions, not the add/edit dialog.
   const save = useMutation({
     mutationFn: async () => {
-      const { account_number, routing_number, ...rest } = form;
-      let bankId: string;
+      const rest = form;
       if (editing) {
         const { error } = await supabase.from("company_banks").update({ ...rest }).eq("id", editing.id);
         if (error) throw error;
-        bankId = editing.id;
       } else {
-        const { data, error } = await supabase.from("company_banks").insert({ ...rest, company_id: companyId }).select("id").single();
+        const { error } = await supabase.from("company_banks").insert({ ...rest, company_id: companyId });
         if (error) throw error;
-        bankId = data.id;
       }
-      // Encrypt sensitive fields server-side (only if user touched them in this session)
-      if (acctRevealed || rtRevealed || !editing) {
-        const { error: encErr } = await supabase.functions.invoke("encrypt-company-bank", {
-          body: { bank_id: bankId, account_number, routing_number },
-        });
-        if (encErr) throw encErr;
-      }
-      // Sync to master directory; the hook encrypts bank numbers via edge function.
+      // Sync to master directory (bank numbers are not collected in this dialog).
       upsertMasterBank.mutate({
         firm_name: form.bank_name, address: form.address, address_2: form.address_2,
         city: form.city, state: form.state, zip: form.zip, phone: form.phone,
         account_type: form.account_type, contact_name: form.contact_name, contact_title: form.contact_title,
-        ...((acctRevealed || rtRevealed || !editing) ? { account_number, routing_number } : {}),
       });
       if (form.contact_name?.trim()) {
         upsertAddressBook.mutate({
