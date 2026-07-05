@@ -393,7 +393,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
         company: mergedCompany,
         members: mergedMembers,
         issuedUnits,
-        ownershipPercentage: Number.isFinite(soleMemberPct) \const data: SMOperatingAgreementData = { company: mergedCompany, members: mergedMembers };\const data: SMOperatingAgreementData = { company: mergedCompany, members: mergedMembers }; soleMemberPct > 0 ? soleMemberPct : 100,
+        ownershipPercentage: Number.isFinite(soleMemberPct) && soleMemberPct > 0 ? soleMemberPct : 100,
       };
       const doc = isScorpElected
         ? generateSMScorpOperatingAgreementPDF(data)
