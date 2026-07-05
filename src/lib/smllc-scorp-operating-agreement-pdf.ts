@@ -74,6 +74,10 @@ function addFooters(doc: jsPDF, companyName: string) {
 export interface SMScorpOperatingAgreementData {
   company: any;
   members: any[];
+  /** Total issued membership units across all members. */
+  issuedUnits?: number;
+  /** Sole member's ownership percentage (0-100). Defaults to 100 for SMLLC. */
+  ownershipPercentage?: number;
 }
 
 export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgreementData): jsPDF {
@@ -81,6 +85,11 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
   registerArialFont(doc);
   doc.setLineHeightFactor(1.15);
   const { company, members } = data;
+  const issuedUnits = Math.max(0, Math.floor(Number(data.issuedUnits ?? 0)));
+  const authorizedUnits = company?.authorized_shares != null
+    ? Math.max(0, Math.floor(Number(company.authorized_shares)))
+    : (issuedUnits > 0 ? issuedUnits : null);
+  const ownershipPct = Number.isFinite(data.ownershipPercentage) ? Number(data.ownershipPercentage) : 100;
   const cx = pw(doc) / 2;
 
   const rawName = company.name || "_______________";
