@@ -102,6 +102,40 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
     },
   });
 
+  // Live issued-units total from share_transactions (single source of truth).
+  // Drives both the units clause in the generated PDFs and the "disable Generate
+  // when zero" primary guard so we never emit "0 units / 0%" as a real fact.
+  const { data: issuedUnits = 0 } = useQuery({
+    queryKey: ["oa-issued-units", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("share_transactions")
+        .select("transaction_type, num_shares, status")
+        .eq("company_id", companyId);
+      if (error) throw error;
+      const ISSUE = new Set([
+        "Issuance", "initial_issuance", "authorized_issuance", "subscription_issuance",
+        "consideration_issuance", "share_dividend", "fractional_shares", "preemptive_rights",
+        "treasury_reissue", "Reissuance", "reissuance",
+        "Capital Contribution", "Initial Contribution", "initial_contribution",
+        "additional_contribution", "membership_issuance", "opening_balance",
+      ]);
+      const REDUCE = new Set([
+        "Redemption", "redemption", "Cancellation", "cancellation", "Return of Capital",
+        "reacquisition", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout",
+      ]);
+      return (data || [])
+        .filter((t: any) => t.status !== "corrected")
+        .reduce((sum: number, t: any) => {
+          const n = Number(t.num_shares) || 0;
+          if (ISSUE.has(t.transaction_type)) return sum + n;
+          if (REDUCE.has(t.transaction_type)) return sum - n;
+          return sum;
+        }, 0);
+    },
+  });
+  const hasIssuedUnits = issuedUnits > 0;
+
   // S-corp election controls which template is generated and how versions are saved.
   const isScorpElected = !!company?.s_election_date;
   const OA_DOC_TYPES = [
