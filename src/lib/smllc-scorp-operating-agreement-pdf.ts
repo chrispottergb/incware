@@ -4,7 +4,9 @@ import { registerArialFont } from "@/lib/arial-font";
 // S-Corp Sole Member Operating Agreement — fork of smllc-operating-agreement-pdf.ts.
 // Shares layout, margins, fonts, article/section helpers. Differences:
 //   - Article 5 (Tax Treatment) — S-corp election under IRC § 1362, controls over default LLC treatment
-//   - Article 2 (Distributions) — pro rata to ownership %, single class of membership interest
+//   - Article 2 (Distributions) — pro rata to ownership %, single class of membership interest;
+//     2.2 is Initial Capital Contribution (dynamic from ledger), pushing Capital Contributions to 2.3,
+//     Single Class of Membership Interest to 2.4, and Distributions Pro Rata to 2.5.
 //   - Article 6.6 (Officer / Compensation) — reasonable W-2 compensation before distributions
 //   - Article 7 (Transfer Restrictions) — S-corp-eligible holders only (renumbers subsequent articles)
 //   - Amendment savings clause — no amendment jeopardizing S-election
@@ -78,6 +80,10 @@ export interface SMScorpOperatingAgreementData {
   issuedUnits?: number;
   /** Sole member's ownership percentage (0-100). Defaults to 100 for SMLLC. */
   ownershipPercentage?: number;
+  /** Dollar amount of the earliest "Initial Contribution" row in share_transactions, if any. */
+  initialContributionAmount?: number | null;
+  /** ISO yyyy-mm-dd date of that same row (effective_date preferred, else transaction_date). */
+  initialContributionDate?: string | null;
 }
 
 export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgreementData): jsPDF {
@@ -256,17 +262,35 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
     );
   }
 
-  y = addSectionTitle(doc, y, "2.2 — Capital Contributions");
+  // 2.2 — Initial Capital Contribution (dynamic from share_transactions)
+  y = addSectionTitle(doc, y, "2.2 — Initial Capital Contribution");
+  const icAmt = Number(data.initialContributionAmount);
+  const icDateRaw = data.initialContributionDate;
+  const icAmtValid = Number.isFinite(icAmt) && icAmt > 0;
+  const icDateValid = typeof icDateRaw === "string" && icDateRaw.length > 0;
+  if (icAmtValid && icDateValid) {
+    const icAmtStr = `$${icAmt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const icDateStr = new Date(icDateRaw + "T00:00:00").toLocaleDateString();
+    y = addParagraph(doc, y,
+      `The Member has contributed initial capital to the Company in the amount of ${icAmtStr}, as reflected in the Company's Transactions ledger dated ${icDateStr}, which shall be credited to the Member's Capital Account and reflected in the Company's books and records.`
+    );
+  } else {
+    y = addParagraph(doc, y,
+      `No initial capital contribution has been recorded in the Company's Transactions ledger as of the date of this Agreement.`
+    );
+  }
+
+  y = addSectionTitle(doc, y, "2.3 — Capital Contributions");
   y = addParagraph(doc, y,
     `The Member may make such capital contributions (each a "Capital Contribution") in such amounts and at such times as the Member shall determine. The Member shall not be obligated to make any Capital Contributions.`
   );
 
-  y = addSectionTitle(doc, y, "2.3 — Single Class of Membership Interest");
+  y = addSectionTitle(doc, y, "2.4 — Single Class of Membership Interest");
   y = addParagraph(doc, y,
     `The Company shall at all times have only one class of membership interest outstanding, conferring identical rights to distributions and liquidation proceeds, as required to maintain the Company's S corporation election under IRC § 1361(b)(1)(D). The Company shall not create, issue, or authorize any interest, security, agreement, or arrangement that would result in the Company being treated as having more than one class of stock for purposes of Subchapter S of the Internal Revenue Code.`
   );
 
-  y = addSectionTitle(doc, y, "2.4 — Distributions Pro Rata");
+  y = addSectionTitle(doc, y, "2.5 — Distributions Pro Rata");
   y = addParagraph(doc, y,
     `All distributions of cash or other property by the Company shall be made strictly pro rata in proportion to each member's ownership percentage of the Company's membership interest as of the date of distribution. So long as the Member is the sole member, all distributions shall be made to the Member. If additional members are ever admitted, no distribution, allocation, redemption, or other economic right shall be made or granted on a non-pro-rata basis or in a manner that would create a second class of stock under IRC § 1361 and the Treasury Regulations thereunder. Distributions shall be subject to the limitations imposed by the Statutes and Section 6.6 below (Reasonable Compensation Priority).`
   );
@@ -310,7 +334,7 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
 
   y = addSectionTitle(doc, y, "5.3 — Cooperation");
   y = addParagraph(doc, y,
-    `The Member shall take all commercially reasonable actions, and shall refrain from taking any action, that is necessary to preserve the Company's S corporation status, including (i) not admitting any ineligible shareholder (see Article 7), (ii) not creating any second class of stock (see Section 2.2), and (iii) timely filing all required consents, elections, and returns.`
+    `The Member shall take all commercially reasonable actions, and shall refrain from taking any action, that is necessary to preserve the Company's S corporation status, including (i) not admitting any ineligible shareholder (see Article 7), (ii) not creating any second class of stock (see Section 2.4), and (iii) timely filing all required consents, elections, and returns.`
   );
 
   // ── ARTICLE 6: RIGHTS, POWERS AND OBLIGATIONS ──
@@ -346,7 +370,7 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
     `The Member is hereby authorized to serve as an officer and employee of the Company, including as its President, Treasurer, and Secretary. To the extent the Member performs services for the Company that are more than minor, the Company shall pay the Member reasonable compensation for such services, reported on IRS Form W-2 and subject to applicable employment taxes (FICA and FUTA), consistent with the reasonable compensation requirement applicable to S corporation shareholder-employees under IRC §§ 3121, 3306, 3401 and the authorities interpreting them (including Rev. Rul. 74-44 and its progeny).`
   );
   y = addParagraph(doc, y,
-    `Reasonable compensation shall be determined by reference to what would be paid for comparable services by comparable enterprises under similar circumstances, taking into account the Member's duties, time devoted, skills, and industry norms. Reasonable W-2 compensation to the Member for services rendered shall be paid, accrued, and reported before any profit distributions are made to the Member under Section 2.3.`
+    `Reasonable compensation shall be determined by reference to what would be paid for comparable services by comparable enterprises under similar circumstances, taking into account the Member's duties, time devoted, skills, and industry norms. Reasonable W-2 compensation to the Member for services rendered shall be paid, accrued, and reported before any profit distributions are made to the Member under Section 2.5.`
   );
 
   // ── ARTICLE 7: TRANSFER RESTRICTIONS ──
