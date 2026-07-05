@@ -428,6 +428,8 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
         members: mergedMembers,
         issuedUnits,
         ownershipPercentage: 100,
+        initialContributionAmount: initialContribution?.amount ?? null,
+        initialContributionDate: initialContribution?.date ?? null,
       };
       const doc = isScorpElected
         ? generateSMScorpOperatingAgreementPDF(data)
