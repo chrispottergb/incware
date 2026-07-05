@@ -249,7 +249,27 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
     );
   }
 
-  y = addSectionTitle(doc, y, "2.2 — Capital Contributions");
+  // 2.2 — Initial Capital Contribution (dynamic from share_transactions)
+  // Defensive guard: if no valid initial contribution row exists, substitute
+  // placeholder language rather than interpolating $0 / blank date as a fact.
+  y = addSectionTitle(doc, y, "2.2 — Initial Capital Contribution");
+  const icAmt = Number(data.initialContributionAmount);
+  const icDateRaw = data.initialContributionDate;
+  const icAmtValid = Number.isFinite(icAmt) && icAmt > 0;
+  const icDateValid = typeof icDateRaw === "string" && icDateRaw.length > 0;
+  if (icAmtValid && icDateValid) {
+    const icAmtStr = `$${icAmt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const icDateStr = new Date(icDateRaw + "T00:00:00").toLocaleDateString();
+    y = addParagraph(doc, y,
+      `The Member has contributed initial capital to the Company in the amount of ${icAmtStr}, as reflected in the Company's Transactions ledger dated ${icDateStr}, which shall be credited to the Member's Capital Account and reflected in the Company's books and records.`
+    );
+  } else {
+    y = addParagraph(doc, y,
+      `No initial capital contribution has been recorded in the Company's Transactions ledger as of the date of this Agreement.`
+    );
+  }
+
+  y = addSectionTitle(doc, y, "2.3 — Capital Contributions");
   y = addParagraph(doc, y,
     `The Member may make such capital contributions (each a "Capital Contribution") in such amounts and at such times as the Member shall determine. The Member shall not be obligated to make any Capital Contributions. The Member may take distributions of the capital from time to time in accordance with the limitations imposed by the Statutes.`
   );
