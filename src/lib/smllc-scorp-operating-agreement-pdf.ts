@@ -4,7 +4,9 @@ import { registerArialFont } from "@/lib/arial-font";
 // S-Corp Sole Member Operating Agreement — fork of smllc-operating-agreement-pdf.ts.
 // Shares layout, margins, fonts, article/section helpers. Differences:
 //   - Article 5 (Tax Treatment) — S-corp election under IRC § 1362, controls over default LLC treatment
-//   - Article 2 (Distributions) — pro rata to ownership %, single class of membership interest
+//   - Article 2 (Distributions) — pro rata to ownership %, single class of membership interest;
+//     2.2 is Initial Capital Contribution (dynamic from ledger), pushing Capital Contributions to 2.3,
+//     Single Class of Membership Interest to 2.4, and Distributions Pro Rata to 2.5.
 //   - Article 6.6 (Officer / Compensation) — reasonable W-2 compensation before distributions
 //   - Article 7 (Transfer Restrictions) — S-corp-eligible holders only (renumbers subsequent articles)
 //   - Amendment savings clause — no amendment jeopardizing S-election
