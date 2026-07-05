@@ -136,6 +136,39 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   });
   const hasIssuedUnits = issuedUnits > 0;
 
+  // Earliest "Initial Contribution" row for this entity — drives the dynamic
+  // Section 2.2 clause in the OA PDFs. Documents formation only; later
+  // contributions / capital calls are intentionally ignored.
+  const { data: initialContribution } = useQuery({
+    queryKey: ["oa-initial-contribution", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("share_transactions")
+        .select("transaction_type, entry_type, total_consideration, effective_date, transaction_date, created_at, status")
+        .eq("company_id", companyId);
+      if (error) throw error;
+      const rows = (data || []).filter((r: any) =>
+        r.status !== "corrected" && (
+          r.entry_type === "initial_contribution" ||
+          r.transaction_type === "Initial Contribution" ||
+          r.transaction_type === "initial_contribution"
+        )
+      );
+      rows.sort((a: any, b: any) => {
+        const ad = a.effective_date || a.transaction_date || "";
+        const bd = b.effective_date || b.transaction_date || "";
+        if (ad !== bd) return ad < bd ? -1 : 1;
+        return (a.created_at || "") < (b.created_at || "") ? -1 : 1;
+      });
+      const first = rows[0];
+      if (!first) return null;
+      return {
+        amount: first.total_consideration != null ? Number(first.total_consideration) : null,
+        date: (first.effective_date || first.transaction_date) as string | null,
+      };
+    },
+  });
+
   // S-corp election controls which template is generated and how versions are saved.
   const isScorpElected = !!company?.s_election_date;
   const OA_DOC_TYPES = [
