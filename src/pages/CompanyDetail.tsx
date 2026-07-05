@@ -50,7 +50,10 @@ import { useShareCalculations } from "@/hooks/useShareCalculations";
 import EntityDeleteGuard from "@/components/company/EntityDeleteGuard";
 import ShareholderWorkflowCards from "@/components/company/ShareholderWorkflowCards";
 import EstablishOwnershipDialog from "@/components/company/EstablishOwnershipDialog";
+import CapTableStatusBar from "@/components/company/CapTableStatusBar";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { X } from "lucide-react";
 
 export default function CompanyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -323,22 +326,41 @@ export default function CompanyDetail() {
               onEstablishOwnership={() => setEstablishOwnershipOpen(true)}
             />
 
-            {isCorp && shareCalc.authorizedShares != null && (
-              <div className="rounded-lg border border-border bg-muted/30 p-3 flex items-center gap-6 text-xs">
-                <div>
-                  <span className="text-muted-foreground">Authorized:</span>{" "}
-                  <span className="font-semibold">{shareCalc.authorizedShares.toLocaleString()}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Issued:</span>{" "}
-                  <span className="font-semibold">{shareCalc.totalIssuedShares.toLocaleString()}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Available to Issue:</span>{" "}
-                  <span className="font-semibold text-primary">{(shareCalc.availableShares ?? 0).toLocaleString()}</span>
-                </div>
-              </div>
+            {(isCorp || isLLCType(company.entity_type)) && (
+              <CapTableStatusBar
+                term={getTerminology(company.entity_type)}
+                authorized={shareCalc.authorizedShares}
+                issued={shareCalc.totalIssuedShares}
+              />
             )}
+            {isLLCType(company.entity_type) &&
+              shareCalc.authorizedShares != null &&
+              !(company as any).authorized_units_backfill_dismissed && (
+                <Alert className="flex items-start justify-between gap-3 border-amber-400/40 bg-amber-50 dark:bg-amber-950/20">
+                  <AlertDescription className="text-xs text-amber-900 dark:text-amber-200">
+                    Authorized units were set to match currently issued units. Update this in Organizational Info if you'd like room to issue more in the future.
+                  </AlertDescription>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 shrink-0"
+                    onClick={async () => {
+                      const { error } = await supabase
+                        .from("companies")
+                        .update({ authorized_units_backfill_dismissed: true } as any)
+                        .eq("id", company.id);
+                      if (error) {
+                        toast.error("Failed to dismiss notice");
+                      } else {
+                        queryClient.invalidateQueries({ queryKey: ["company", company.id] });
+                      }
+                    }}
+                    aria-label="Dismiss"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </Alert>
+              )}
             {isLLCType(company.entity_type) && shareCalc.totalIssuedShares > 0 && (
               <div className="rounded-lg border border-border bg-muted/30 p-3 flex items-center gap-6 text-xs">
                 <div>
