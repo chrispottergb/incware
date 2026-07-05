@@ -388,12 +388,13 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
       const mergedCompany = getMergedCompany();
       const mergedMembers = [{ name: formMemberName }];
 
-      const soleMemberPct = Number(members[0]?.ownership_percentage);
+      // Sole Member LLC: by definition the sole member owns 100% of the Company,
+      // regardless of any stale ownership_percentage stored on the member row.
       const data: SMOperatingAgreementData = {
         company: mergedCompany,
         members: mergedMembers,
         issuedUnits,
-        ownershipPercentage: Number.isFinite(soleMemberPct) && soleMemberPct > 0 ? soleMemberPct : 100,
+        ownershipPercentage: 100,
       };
       const doc = isScorpElected
         ? generateSMScorpOperatingAgreementPDF(data)
@@ -460,12 +461,12 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
 
       const mergedCompany = getMergedCompany();
       const mergedMembers = [{ name: formMemberName }];
-      const soleMemberPct = Number(members[0]?.ownership_percentage);
+      // Sole Member LLC: sole member always owns 100% by definition.
       const data: SMOperatingAgreementData = {
         company: mergedCompany,
         members: mergedMembers,
         issuedUnits,
-        ownershipPercentage: Number.isFinite(soleMemberPct) && soleMemberPct > 0 ? soleMemberPct : 100,
+        ownershipPercentage: 100,
       };
       const doc = isScorpElected
         ? generateSMScorpOperatingAgreementPDF(data)
