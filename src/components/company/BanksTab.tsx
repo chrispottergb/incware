@@ -204,14 +204,11 @@ export default function BanksTab({ companyId }: BanksTabProps) {
       contact_name: b.contact_name || p.contact_name,
       contact_title: b.contact_title || p.contact_title,
     }));
-    // Bank numbers stay blank; user re-enters or reveals on the target record.
-    setAcctRevealed(false);
-    setRtRevealed(false);
     setShowBankDropdown(false);
     setBankNameSearch("");
   };
 
-  const openNew = () => { setEditing(null); setForm(emptyForm); setBankNameSearch(""); setAcctRevealed(true); setRtRevealed(true); setOpen(true); };
+  const openNew = () => { setEditing(null); setForm(emptyForm); setBankNameSearch(""); setOpen(true); };
   const openEdit = (b: any) => {
     setEditing(b);
     setForm({
