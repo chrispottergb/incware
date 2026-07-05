@@ -334,7 +334,7 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
 
   y = addSectionTitle(doc, y, "5.3 — Cooperation");
   y = addParagraph(doc, y,
-    `The Member shall take all commercially reasonable actions, and shall refrain from taking any action, that is necessary to preserve the Company's S corporation status, including (i) not admitting any ineligible shareholder (see Article 7), (ii) not creating any second class of stock (see Section 2.2), and (iii) timely filing all required consents, elections, and returns.`
+    `The Member shall take all commercially reasonable actions, and shall refrain from taking any action, that is necessary to preserve the Company's S corporation status, including (i) not admitting any ineligible shareholder (see Article 7), (ii) not creating any second class of stock (see Section 2.4), and (iii) timely filing all required consents, elections, and returns.`
   );
 
   // ── ARTICLE 6: RIGHTS, POWERS AND OBLIGATIONS ──
