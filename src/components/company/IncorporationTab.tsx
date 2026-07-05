@@ -544,6 +544,14 @@ export default function IncorporationTab({ company }: Props) {
         throw new Error("S Election Effective Date is required when S Corporation tax status is enabled.");
       }
 
+      // Diff-based auto-dismiss of the LLC "Authorized Units" backfill banner.
+      // We flip the flag ONLY when the submitted authorized_shares differs from
+      // the prior server value on `company`. Any other field save on this form
+      // (registered agent, address, etc.) leaves the flag untouched.
+      const prevAuthorized: number | null = (company as any).authorized_shares ?? null;
+      const nextAuthorized: number | null = form.authorized_shares ? parseInt(form.authorized_shares) : null;
+      const authorizedChanged = nextAuthorized !== prevAuthorized;
+
       const { error } = await supabase
         .from("companies")
         .update({
@@ -553,7 +561,8 @@ export default function IncorporationTab({ company }: Props) {
           // EIN persisted separately via encrypt-company-ein after this update
           incorporation_date: form.incorporation_date || null,
           fiscal_year_end: form.fiscal_year_end || null,
-          authorized_shares: form.authorized_shares ? parseInt(form.authorized_shares) : null,
+          authorized_shares: nextAuthorized,
+          ...(authorizedChanged ? { authorized_units_backfill_dismissed: true } : {}),
           par_value_type: form.par_value_type,
           par_value: form.par_value ? parseFloat(form.par_value) : null,
           s_election_date: sElectionAvailable
