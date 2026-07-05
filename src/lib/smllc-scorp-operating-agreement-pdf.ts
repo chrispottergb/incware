@@ -370,7 +370,7 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
     `The Member is hereby authorized to serve as an officer and employee of the Company, including as its President, Treasurer, and Secretary. To the extent the Member performs services for the Company that are more than minor, the Company shall pay the Member reasonable compensation for such services, reported on IRS Form W-2 and subject to applicable employment taxes (FICA and FUTA), consistent with the reasonable compensation requirement applicable to S corporation shareholder-employees under IRC §§ 3121, 3306, 3401 and the authorities interpreting them (including Rev. Rul. 74-44 and its progeny).`
   );
   y = addParagraph(doc, y,
-    `Reasonable compensation shall be determined by reference to what would be paid for comparable services by comparable enterprises under similar circumstances, taking into account the Member's duties, time devoted, skills, and industry norms. Reasonable W-2 compensation to the Member for services rendered shall be paid, accrued, and reported before any profit distributions are made to the Member under Section 2.3.`
+    `Reasonable compensation shall be determined by reference to what would be paid for comparable services by comparable enterprises under similar circumstances, taking into account the Member's duties, time devoted, skills, and industry norms. Reasonable W-2 compensation to the Member for services rendered shall be paid, accrued, and reported before any profit distributions are made to the Member under Section 2.5.`
   );
 
   // ── ARTICLE 7: TRANSFER RESTRICTIONS ──
