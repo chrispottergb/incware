@@ -34,13 +34,8 @@ export default function BanksTab({ companyId }: BanksTabProps) {
   const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const emptyForm = { bank_name: "", account_type: "checking", account_number: "", routing_number: "", contact_name: "", contact_title: "", phone: "", address: "", address_2: "", city: "", state: "", zip: "", notes: "" };
+  const emptyForm = { bank_name: "", account_type: "checking", contact_name: "", contact_title: "", phone: "", address: "", address_2: "", city: "", state: "", zip: "", notes: "" };
   const [form, setForm] = useState(emptyForm);
-
-  // Reveal state: true once the user has typed into or decrypted the field this session
-  const [acctRevealed, setAcctRevealed] = useState(false);
-  const [rtRevealed, setRtRevealed] = useState(false);
-  const [revealing, setRevealing] = useState(false);
 
   // Signer dialog state
   const [signerOpen, setSignerOpen] = useState(false);
@@ -106,34 +101,22 @@ export default function BanksTab({ companyId }: BanksTabProps) {
     "Limited Authority (Specify)",
   ];
 
-  // Bank CRUD — never writes plaintext account/routing through PostgREST;
-  // encrypts via secure edge function after row save.
+  // Bank CRUD — account/routing numbers are managed separately via inline row actions, not the add/edit dialog.
   const save = useMutation({
     mutationFn: async () => {
-      const { account_number, routing_number, ...rest } = form;
-      let bankId: string;
+      const rest = form;
       if (editing) {
         const { error } = await supabase.from("company_banks").update({ ...rest }).eq("id", editing.id);
         if (error) throw error;
-        bankId = editing.id;
       } else {
-        const { data, error } = await supabase.from("company_banks").insert({ ...rest, company_id: companyId }).select("id").single();
+        const { error } = await supabase.from("company_banks").insert({ ...rest, company_id: companyId });
         if (error) throw error;
-        bankId = data.id;
       }
-      // Encrypt sensitive fields server-side (only if user touched them in this session)
-      if (acctRevealed || rtRevealed || !editing) {
-        const { error: encErr } = await supabase.functions.invoke("encrypt-company-bank", {
-          body: { bank_id: bankId, account_number, routing_number },
-        });
-        if (encErr) throw encErr;
-      }
-      // Sync to master directory; the hook encrypts bank numbers via edge function.
+      // Sync to master directory (bank numbers are not collected in this dialog).
       upsertMasterBank.mutate({
         firm_name: form.bank_name, address: form.address, address_2: form.address_2,
         city: form.city, state: form.state, zip: form.zip, phone: form.phone,
         account_type: form.account_type, contact_name: form.contact_name, contact_title: form.contact_title,
-        ...((acctRevealed || rtRevealed || !editing) ? { account_number, routing_number } : {}),
       });
       if (form.contact_name?.trim()) {
         upsertAddressBook.mutate({
@@ -221,46 +204,19 @@ export default function BanksTab({ companyId }: BanksTabProps) {
       contact_name: b.contact_name || p.contact_name,
       contact_title: b.contact_title || p.contact_title,
     }));
-    // Bank numbers stay blank; user re-enters or reveals on the target record.
-    setAcctRevealed(false);
-    setRtRevealed(false);
     setShowBankDropdown(false);
     setBankNameSearch("");
   };
 
-  const openNew = () => { setEditing(null); setForm(emptyForm); setBankNameSearch(""); setAcctRevealed(true); setRtRevealed(true); setOpen(true); };
+  const openNew = () => { setEditing(null); setForm(emptyForm); setBankNameSearch(""); setOpen(true); };
   const openEdit = (b: any) => {
     setEditing(b);
     setForm({
-      bank_name: b.bank_name, account_type: b.account_type || "checking", account_number: "",
-      routing_number: "", contact_name: b.contact_name || "", contact_title: b.contact_title || "",
+      bank_name: b.bank_name, account_type: b.account_type || "checking", contact_name: b.contact_name || "", contact_title: b.contact_title || "",
       phone: b.phone || "", address: b.address || "", address_2: (b as any).address_2 || "", city: b.city || "", state: b.state || "", zip: b.zip || "", notes: b.notes || "",
     });
-    setAcctRevealed(false);
-    setRtRevealed(false);
     setBankNameSearch("");
     setOpen(true);
-  };
-
-  const revealField = async (field: "account" | "routing") => {
-    if (!editing) return;
-    setRevealing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("decrypt-company-bank", { body: { bank_id: editing.id } });
-      if (error) throw error;
-      const d = data as { account_number: string | null; routing_number: string | null };
-      setForm(p => ({
-        ...p,
-        account_number: d.account_number || "",
-        routing_number: d.routing_number || "",
-      }));
-      if (field === "account") setAcctRevealed(true);
-      else setRtRevealed(true);
-    } catch (e: any) {
-      toast.error(e.message || "Failed to reveal");
-    } finally {
-      setRevealing(false);
-    }
   };
 
   const openNewSigner = (bankId: string) => {
@@ -544,57 +500,18 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                   </Select>
                 </div>
               </div>
-              {/* Row 2: Account # | Routing # (encrypted at rest, masked by default) */}
-              <div className="grid grid-cols-20 gap-2">
-                <div className="col-span-10">
-                  <Label className="text-xs">Account Number</Label>
-                  <div className="flex gap-1">
-                    <Input
-                      className="h-7 text-sm font-mono"
-                      type={acctRevealed ? "text" : "password"}
-                      value={acctRevealed ? form.account_number : (editing?.account_number_last4 ? `••••••${editing.account_number_last4}` : "")}
-                      onChange={e => { setForm(p => ({ ...p, account_number: e.target.value })); setAcctRevealed(true); }}
-                      placeholder={editing ? "Hidden — click eye to reveal" : "Enter account number"}
-                      readOnly={!acctRevealed && !!editing}
-                    />
-                    {editing && (
-                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={revealing} onClick={() => acctRevealed ? setAcctRevealed(false) : revealField("account")}>
-                        {acctRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                <div className="col-span-10">
-                  <Label className="text-xs">Routing Number</Label>
-                  <div className="flex gap-1">
-                    <Input
-                      className="h-7 text-sm font-mono"
-                      type={rtRevealed ? "text" : "password"}
-                      value={rtRevealed ? form.routing_number : (editing?.routing_number_last4 ? `••••••${editing.routing_number_last4}` : "")}
-                      onChange={e => { setForm(p => ({ ...p, routing_number: e.target.value })); setRtRevealed(true); }}
-                      placeholder={editing ? "Hidden — click eye to reveal" : "Enter routing number"}
-                      readOnly={!rtRevealed && !!editing}
-                    />
-                    {editing && (
-                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={revealing} onClick={() => rtRevealed ? setRtRevealed(false) : revealField("routing")}>
-                        {rtRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-              {/* Row 3: Address (65%) | Row 4: Address 2 (35%) */}
+              {/* Row 2: Address (65%) | Address 2 (35%) */}
               <div className="grid grid-cols-20 gap-2">
                 <div className="col-span-13"><Label className="text-xs">Address</Label><DbAddressAutocomplete className="h-7 text-sm" value={form.address} onChange={(v) => setForm(p => ({ ...p, address: v }))} onSelect={(addr) => { setForm(p => ({ ...p, address: addr.line1, address_2: addr.line2, city: addr.city, state: addr.state, zip: addr.zip })); }} source="companies" /></div>
                 <div className="col-span-7"><Label className="text-xs">Address 2</Label><Input className="h-7 text-sm" value={form.address_2} onChange={e => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit" /></div>
               </div>
-              {/* Row 5: City (50%) | State (15%) | Zip (30%) — using ~20-col approximation */}
+              {/* Row 3: City (50%) | State (15%) | Zip (30%) — using ~20-col approximation */}
               <div className="grid grid-cols-20 gap-2">
                 <div className="col-span-10"><Label className="text-xs">City</Label><Input className="h-7 text-sm" value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} placeholder={zipLoading ? "Loading..." : ""} /></div>
                 <div className="col-span-4"><Label className="text-xs">State</Label><Input className="h-7 text-sm min-w-[60px]" value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} placeholder={zipLoading ? "..." : ""} /></div>
                 <div className="col-span-6"><Label className="text-xs">Zip</Label><Input className="h-7 text-sm" value={form.zip} onChange={e => { setForm(p => ({ ...p, zip: e.target.value })); handleZipChange(e.target.value); }} />{zipError && <p className="text-[10px] text-destructive mt-0.5">{zipError}</p>}</div>
               </div>
-              {/* Row 6: Notes — full width */}
+              {/* Row 4: Notes — full width */}
               <div><Label className="text-xs">Notes</Label><Textarea className="text-sm min-h-[50px]" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
 
               {/* Authorized Signatories section (only when editing) */}
