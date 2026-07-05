@@ -125,7 +125,7 @@ function getEquityCardConfig(entityType: string) {
         showMembershipUnits: true,
         showManagementType: true,
         showPartnershipInterest: false,
-        authorizedLabel: "",
+        authorizedLabel: "Authorized Units",
       };
     case "Partnership":
       return {
@@ -1322,6 +1322,22 @@ export default function IncorporationTab({ company }: Props) {
                   </Select>
                 </div>
               </>
+            )}
+
+            {/* LLC: Authorized Units — mirrors corp "Authorized Shares".
+                Reuses companies.authorized_shares (generic integer column). */}
+            {equityCard.showMembershipUnits && (
+              <div className="field-group">
+                <Label className="field-label">Authorized Units</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  className="h-8 text-sm"
+                  value={form.authorized_shares}
+                  onChange={(e) => update("authorized_shares", e.target.value.replace(/[^\d]/g, ""))}
+                  placeholder="e.g. 100"
+                />
+              </div>
             )}
 
             {/* Corporation / S-Corp: Authorized Shares */}
