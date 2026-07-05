@@ -1150,6 +1150,22 @@ export default function OrganizationTab({ companyId, company }: Props) {
                   />
                 </div>
               )}
+              {/* LLC ONLY: Authorized Units — reuses companies.authorized_shares (generic integer column).
+                  Editing this field auto-dismisses the Members-section backfill banner via the
+                  diff check in saveFiling.mutationFn. DO NOT introduce for Corp/S-Corp. */}
+              {isLLCType(filingForm.entity_type) && (
+                <div className="field-group col-span-6 sm:col-span-3">
+                  <Label className="field-label">Authorized Units</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    className="h-7 text-sm"
+                    value={filingForm.authorized_shares}
+                    onChange={(e) => setFilingForm((p) => ({ ...p, authorized_shares: e.target.value.replace(/[^\d]/g, "") }))}
+                    placeholder="e.g. 100"
+                  />
+                </div>
+              )}
               <div className="field-group col-span-12 sm:col-span-7">
                 <Label className="field-label">Business Purpose</Label>
                 <Textarea className="text-sm min-h-[50px]" value={filingForm.business_purpose} onChange={(e) => setFilingForm((p) => ({ ...p, business_purpose: e.target.value }))} rows={2} placeholder="Describe the business purpose..." />
