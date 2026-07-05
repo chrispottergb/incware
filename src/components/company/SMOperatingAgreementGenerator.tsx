@@ -808,17 +808,45 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
               <div className="flex flex-col gap-1.5">
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Generate</span>
                 <div className="flex flex-wrap gap-2">
-                  <Button onClick={handleGenerate} disabled={isGenerating || isAiGenerating || isImporting} variant="outline" size="sm">
-                    {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
-                    Generate Standard
-                  </Button>
-                  <Button onClick={handleAiGenerate} disabled={isGenerating || isAiGenerating || isImporting} variant="outline" size="sm">
-                    {isAiGenerating ? (
-                      <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Drafting with AI…</>
-                    ) : (
-                      <><Sparkles className="h-3.5 w-3.5" /> AI-Assisted Draft</>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span tabIndex={hasIssuedUnits ? -1 : 0}>
+                        <Button
+                          onClick={handleGenerate}
+                          disabled={isGenerating || isAiGenerating || isImporting || !hasIssuedUnits}
+                          variant="outline"
+                          size="sm"
+                        >
+                          {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+                          Generate Standard
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {!hasIssuedUnits && (
+                      <TooltipContent>Record an initial contribution before generating an operating agreement.</TooltipContent>
                     )}
-                  </Button>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span tabIndex={hasIssuedUnits ? -1 : 0}>
+                        <Button
+                          onClick={handleAiGenerate}
+                          disabled={isGenerating || isAiGenerating || isImporting || !hasIssuedUnits}
+                          variant="outline"
+                          size="sm"
+                        >
+                          {isAiGenerating ? (
+                            <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Drafting with AI…</>
+                          ) : (
+                            <><Sparkles className="h-3.5 w-3.5" /> AI-Assisted Draft</>
+                          )}
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {!hasIssuedUnits && (
+                      <TooltipContent>Record an initial contribution before generating an operating agreement.</TooltipContent>
+                    )}
+                  </Tooltip>
                   <input
                     ref={importInputRef}
                     type="file"
