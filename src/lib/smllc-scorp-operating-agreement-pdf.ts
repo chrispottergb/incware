@@ -262,17 +262,35 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
     );
   }
 
-  y = addSectionTitle(doc, y, "2.2 — Capital Contributions");
+  // 2.2 — Initial Capital Contribution (dynamic from share_transactions)
+  y = addSectionTitle(doc, y, "2.2 — Initial Capital Contribution");
+  const icAmt = Number(data.initialContributionAmount);
+  const icDateRaw = data.initialContributionDate;
+  const icAmtValid = Number.isFinite(icAmt) && icAmt > 0;
+  const icDateValid = typeof icDateRaw === "string" && icDateRaw.length > 0;
+  if (icAmtValid && icDateValid) {
+    const icAmtStr = `$${icAmt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const icDateStr = new Date(icDateRaw + "T00:00:00").toLocaleDateString();
+    y = addParagraph(doc, y,
+      `The Member has contributed initial capital to the Company in the amount of ${icAmtStr}, as reflected in the Company's Transactions ledger dated ${icDateStr}, which shall be credited to the Member's Capital Account and reflected in the Company's books and records.`
+    );
+  } else {
+    y = addParagraph(doc, y,
+      `No initial capital contribution has been recorded in the Company's Transactions ledger as of the date of this Agreement.`
+    );
+  }
+
+  y = addSectionTitle(doc, y, "2.3 — Capital Contributions");
   y = addParagraph(doc, y,
     `The Member may make such capital contributions (each a "Capital Contribution") in such amounts and at such times as the Member shall determine. The Member shall not be obligated to make any Capital Contributions.`
   );
 
-  y = addSectionTitle(doc, y, "2.3 — Single Class of Membership Interest");
+  y = addSectionTitle(doc, y, "2.4 — Single Class of Membership Interest");
   y = addParagraph(doc, y,
     `The Company shall at all times have only one class of membership interest outstanding, conferring identical rights to distributions and liquidation proceeds, as required to maintain the Company's S corporation election under IRC § 1361(b)(1)(D). The Company shall not create, issue, or authorize any interest, security, agreement, or arrangement that would result in the Company being treated as having more than one class of stock for purposes of Subchapter S of the Internal Revenue Code.`
   );
 
-  y = addSectionTitle(doc, y, "2.4 — Distributions Pro Rata");
+  y = addSectionTitle(doc, y, "2.5 — Distributions Pro Rata");
   y = addParagraph(doc, y,
     `All distributions of cash or other property by the Company shall be made strictly pro rata in proportion to each member's ownership percentage of the Company's membership interest as of the date of distribution. So long as the Member is the sole member, all distributions shall be made to the Member. If additional members are ever admitted, no distribution, allocation, redemption, or other economic right shall be made or granted on a non-pro-rata basis or in a manner that would create a second class of stock under IRC § 1361 and the Treasury Regulations thereunder. Distributions shall be subject to the limitations imposed by the Statutes and Section 6.6 below (Reasonable Compensation Priority).`
   );
