@@ -500,46 +500,7 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                   </Select>
                 </div>
               </div>
-              {/* Row 2: Account # | Routing # (encrypted at rest, masked by default) */}
-              <div className="grid grid-cols-20 gap-2">
-                <div className="col-span-10">
-                  <Label className="text-xs">Account Number</Label>
-                  <div className="flex gap-1">
-                    <Input
-                      className="h-7 text-sm font-mono"
-                      type={acctRevealed ? "text" : "password"}
-                      value={acctRevealed ? form.account_number : (editing?.account_number_last4 ? `••••••${editing.account_number_last4}` : "")}
-                      onChange={e => { setForm(p => ({ ...p, account_number: e.target.value })); setAcctRevealed(true); }}
-                      placeholder={editing ? "Hidden — click eye to reveal" : "Enter account number"}
-                      readOnly={!acctRevealed && !!editing}
-                    />
-                    {editing && (
-                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={revealing} onClick={() => acctRevealed ? setAcctRevealed(false) : revealField("account")}>
-                        {acctRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                <div className="col-span-10">
-                  <Label className="text-xs">Routing Number</Label>
-                  <div className="flex gap-1">
-                    <Input
-                      className="h-7 text-sm font-mono"
-                      type={rtRevealed ? "text" : "password"}
-                      value={rtRevealed ? form.routing_number : (editing?.routing_number_last4 ? `••••••${editing.routing_number_last4}` : "")}
-                      onChange={e => { setForm(p => ({ ...p, routing_number: e.target.value })); setRtRevealed(true); }}
-                      placeholder={editing ? "Hidden — click eye to reveal" : "Enter routing number"}
-                      readOnly={!rtRevealed && !!editing}
-                    />
-                    {editing && (
-                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={revealing} onClick={() => rtRevealed ? setRtRevealed(false) : revealField("routing")}>
-                        {rtRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-              {/* Row 3: Address (65%) | Row 4: Address 2 (35%) */}
+              {/* Row 2: Address (65%) | Address 2 (35%) */}
               <div className="grid grid-cols-20 gap-2">
                 <div className="col-span-13"><Label className="text-xs">Address</Label><DbAddressAutocomplete className="h-7 text-sm" value={form.address} onChange={(v) => setForm(p => ({ ...p, address: v }))} onSelect={(addr) => { setForm(p => ({ ...p, address: addr.line1, address_2: addr.line2, city: addr.city, state: addr.state, zip: addr.zip })); }} source="companies" /></div>
                 <div className="col-span-7"><Label className="text-xs">Address 2</Label><Input className="h-7 text-sm" value={form.address_2} onChange={e => setForm(p => ({ ...p, address_2: e.target.value }))} placeholder="Suite, Unit" /></div>
