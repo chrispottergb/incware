@@ -69,6 +69,10 @@ export interface SMOperatingAgreementData {
   issuedUnits?: number;
   /** Sole member's ownership percentage (0-100). Defaults to 100 for SMLLC. */
   ownershipPercentage?: number;
+  /** Dollar amount of the earliest "Initial Contribution" row in share_transactions, if any. */
+  initialContributionAmount?: number | null;
+  /** ISO yyyy-mm-dd date of that same row (effective_date preferred, else transaction_date). */
+  initialContributionDate?: string | null;
 }
 
 export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData): jsPDF {
