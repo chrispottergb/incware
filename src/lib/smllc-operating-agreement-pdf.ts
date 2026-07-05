@@ -65,6 +65,10 @@ function addFooters(doc: jsPDF, companyName: string) {
 export interface SMOperatingAgreementData {
   company: any;
   members: any[];
+  /** Total issued membership units across all members (single source of truth = share_transactions). */
+  issuedUnits?: number;
+  /** Sole member's ownership percentage (0-100). Defaults to 100 for SMLLC. */
+  ownershipPercentage?: number;
 }
 
 export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData): jsPDF {
@@ -72,6 +76,13 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
   registerArialFont(doc);
   doc.setLineHeightFactor(1.15);
   const { company, members } = data;
+  const issuedUnits = Math.max(0, Math.floor(Number(data.issuedUnits ?? 0)));
+  // Step 5 fallback: when authorized_shares is null but units have been issued,
+  // fall back to issuedUnits so the clause still reads coherently.
+  const authorizedUnits = company?.authorized_shares != null
+    ? Math.max(0, Math.floor(Number(company.authorized_shares)))
+    : (issuedUnits > 0 ? issuedUnits : null);
+  const ownershipPct = Number.isFinite(data.ownershipPercentage) ? Number(data.ownershipPercentage) : 100;
   const cx = pw(doc) / 2;
 
   const rawName = company.name || "_______________";
@@ -219,6 +230,22 @@ export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData):
 
   // ── ARTICLE 2: CAPITAL CONTRIBUTIONS AND DISTRIBUTIONS ──
   y = addArticleTitle(doc, y, "2", "Capital Contributions and Distributions");
+
+  // 2.1 — Authorized and Issued Membership Units (dynamic from live data)
+  // Defensive guard: if issuedUnits === 0, substitute placeholder language
+  // rather than printing literal zeros as if they were a real ownership fact.
+  y = addSectionTitle(doc, y, "2.1 — Authorized and Issued Membership Units");
+  if (issuedUnits > 0 && authorizedUnits != null) {
+    y = addParagraph(doc, y,
+      `The Company is authorized to issue ${authorizedUnits.toLocaleString()} membership units, all of which constitute a single class of membership interest within the meaning of IRC §1361(b)(1)(D). The Member is hereby issued ${issuedUnits.toLocaleString()} membership units and owns ${ownershipPct}% of the Company.`
+    );
+  } else {
+    y = addParagraph(doc, y,
+      `No membership units have been issued as of the date of this Agreement. All membership interests in the Company, when issued, shall constitute a single class of membership interest within the meaning of IRC §1361(b)(1)(D).`
+    );
+  }
+
+  y = addSectionTitle(doc, y, "2.2 — Capital Contributions");
   y = addParagraph(doc, y,
     `The Member may make such capital contributions (each a "Capital Contribution") in such amounts and at such times as the Member shall determine. The Member shall not be obligated to make any Capital Contributions. The Member may take distributions of the capital from time to time in accordance with the limitations imposed by the Statutes.`
   );

@@ -22,9 +22,12 @@ export function validateIssuanceLimit(
 ): ValidationResult {
   if (availableShares == null) return { valid: true };
   if (numShares > availableShares) {
+    const unit = term.shareUnit.toLowerCase();
+    // LLC copy references "Organizational Info"; corp copy references "Incorporation Info".
+    const settingsLocation = term.isLLC ? "Organizational Info" : "Incorporation Info";
     return {
       valid: false,
-      message: `Only ${availableShares.toLocaleString()} ${term.shareUnit.toLowerCase()} available to issue.`,
+      message: `This would exceed the ${availableShares.toLocaleString()} ${unit} still available to issue for this entity. Increase authorized ${unit} in ${settingsLocation} first, or reduce the amount being issued.`,
     };
   }
   return { valid: true };

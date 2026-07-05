@@ -352,6 +352,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
     contact_cell: (company as any).contact_cell ?? "",
     contact_webpage: (company as any).contact_webpage ?? "",
     management_type: (company as any).management_type ?? "",
+    authorized_shares: (company as any).authorized_shares != null ? String((company as any).authorized_shares) : "",
   });
 
   const { handleZipChange: handleFilingZipChange, zipError: filingZipError } = useZipLookup(({ city, state }) => {
@@ -462,12 +463,26 @@ export default function OrganizationTab({ companyId, company }: Props) {
         throw new Error("S Election Effective Date is required when LLC S Corporation tax status is enabled.");
       }
 
+      // Diff-based auto-dismiss of the LLC "Authorized Units" backfill banner.
+      // Only flip the flag when this specific field's value actually changed;
+      // any other field save leaves the flag untouched.
+      const prevAuthorized: number | null = (company as any).authorized_shares ?? null;
+      const nextAuthorized: number | null = filingForm.authorized_shares
+        ? parseInt(filingForm.authorized_shares)
+        : null;
+      const authorizedChanged = nextAuthorized !== prevAuthorized;
+
       const { error } = await supabase
         .from("companies")
         .update({
           name: filingForm.name,
           entity_type: filingForm.entity_type,
           state_of_incorporation: filingForm.state_of_incorporation || null,
+          // Reused generic column: for LLC family this holds "Authorized Units".
+          ...(isLLCType(filingForm.entity_type) ? { authorized_shares: nextAuthorized } : {}),
+          ...(isLLCType(filingForm.entity_type) && authorizedChanged
+            ? { authorized_units_backfill_dismissed: true }
+            : {}),
           // EIN persisted separately via encrypt-company-ein after this update
           incorporation_date: filingForm.incorporation_date || null,
           fiscal_year_end: filingForm.fiscal_year_end || null,
@@ -1132,6 +1147,22 @@ export default function OrganizationTab({ companyId, company }: Props) {
                     value={filingForm.s_election_date}
                     onChange={(v) => setFilingForm((p) => ({ ...p, s_election_date: v || "" }))}
                     placeholder="Select date"
+                  />
+                </div>
+              )}
+              {/* LLC ONLY: Authorized Units — reuses companies.authorized_shares (generic integer column).
+                  Editing this field auto-dismisses the Members-section backfill banner via the
+                  diff check in saveFiling.mutationFn. DO NOT introduce for Corp/S-Corp. */}
+              {isLLCType(filingForm.entity_type) && (
+                <div className="field-group col-span-6 sm:col-span-3">
+                  <Label className="field-label">Authorized Units</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    className="h-7 text-sm"
+                    value={filingForm.authorized_shares}
+                    onChange={(e) => setFilingForm((p) => ({ ...p, authorized_shares: e.target.value.replace(/[^\d]/g, "") }))}
+                    placeholder="e.g. 100"
                   />
                 </div>
               )}

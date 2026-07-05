@@ -1061,6 +1061,7 @@ export type Database = {
           annual_report_year: number | null
           authorized_binders: string | null
           authorized_shares: number | null
+          authorized_units_backfill_dismissed: boolean
           business_purpose: string | null
           city: string | null
           contact_cell: string | null
@@ -1139,6 +1140,7 @@ export type Database = {
           annual_report_year?: number | null
           authorized_binders?: string | null
           authorized_shares?: number | null
+          authorized_units_backfill_dismissed?: boolean
           business_purpose?: string | null
           city?: string | null
           contact_cell?: string | null
@@ -1217,6 +1219,7 @@ export type Database = {
           annual_report_year?: number | null
           authorized_binders?: string | null
           authorized_shares?: number | null
+          authorized_units_backfill_dismissed?: boolean
           business_purpose?: string | null
           city?: string | null
           contact_cell?: string | null
