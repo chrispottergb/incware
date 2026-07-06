@@ -455,6 +455,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
         ownershipPercentage: 100,
         initialContributionAmount: initialContribution?.amount ?? null,
         initialContributionDate: initialContribution?.date ?? null,
+        draftingStyle,
       };
       const doc = isScorpElected
         ? generateSMScorpOperatingAgreementPDF(data)
