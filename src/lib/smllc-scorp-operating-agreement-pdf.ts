@@ -328,6 +328,11 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
     `The Company shall maintain payroll records and file all employment tax returns (including Forms W-2, 941, and 940) required for compensation paid to the Member in the Member's capacity as an officer or employee of the Company under Section 6.6.`
   );
 
+  y = addSectionTitle(doc, y, "3.4 — Membership Ledger");
+  y = addParagraph(doc, y,
+    `The Company shall maintain a Membership Ledger reflecting ownership of the Company. The Membership Ledger shall constitute the official record of ownership unless amended by the Member.`
+  );
+
   // ── ARTICLE 4: MEMBER'S CAPITAL ACCOUNTS ──
   y = addArticleTitle(doc, y, "4", "Member's Capital Accounts");
   y = addParagraph(doc, y,
