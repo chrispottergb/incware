@@ -398,7 +398,7 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
 
   y = addSectionTitle(doc, y, "7.2 — Eligible S Corporation Shareholders");
   y = addParagraph(doc, y,
-    `"Eligible S Corporation Shareholder" means only those persons and entities permitted to hold shares in an S corporation under IRC § 1361(b), including: (i) individuals who are U.S. citizens or U.S. tax residents; (ii) estates of deceased Members and estates of bankrupt Members, for the period permitted under IRC § 1361; (iii) qualifying trusts, including grantor trusts (during the grantor's life and for the two-year post-death period), qualified subchapter S trusts (QSSTs) that have made a valid election under IRC § 1361(d), and electing small business trusts (ESBTs) that have made a valid election under IRC § 1361(e); and (iv) tax-exempt organizations described in IRC § 401(a) or § 501(c)(3). "Eligible S Corporation Shareholder" expressly excludes (A) corporations (other than qualified subchapter S subsidiaries), (B) partnerships, (C) limited liability companies treated as partnerships for federal tax purposes, and (D) non-resident aliens.`
+    `Membership interests may only be transferred to persons or entities eligible to own stock in an S corporation under IRC §1361.`
   );
 
   y = addSectionTitle(doc, y, "7.3 — Death or Incapacity");
