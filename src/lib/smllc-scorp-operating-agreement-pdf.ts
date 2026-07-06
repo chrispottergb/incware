@@ -403,12 +403,12 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
 
   y = addSectionTitle(doc, y, "7.3 — Death or Incapacity");
   y = addParagraph(doc, y,
-    `Upon the death or incapacity of the Member, the Member's membership interest shall pass only to a person or entity that qualifies as an Eligible S Corporation Shareholder. If the estate, heirs, personal representative, guardian, or conservator of the Member is not an Eligible S Corporation Shareholder, the Company shall have the right (but not the obligation) to redeem the Member's interest at fair market value in order to preserve the Company's S election, and the successor holder shall be prohibited from exercising any rights of ownership other than to receive the redemption proceeds.`
+    `Upon the death or incapacity of the Member, the Member's membership interest shall pass only to a person or entity that is eligible to own stock in an S corporation under IRC §1361. If the estate, heirs, personal representative, guardian, or conservator of the Member is not eligible to own stock in an S corporation under IRC §1361, the Company shall have the right (but not the obligation) to redeem the Member's interest at fair market value in order to preserve the Company's S election, and the successor holder shall be prohibited from exercising any rights of ownership other than to receive the redemption proceeds.`
   );
 
   y = addSectionTitle(doc, y, "7.4 — Cap Table Legend");
   y = addParagraph(doc, y,
-    `Any certificate, statement of interest, or other instrument evidencing membership in the Company shall bear a legend substantially in the following form: "THE MEMBERSHIP INTERESTS EVIDENCED HEREBY ARE SUBJECT TO TRANSFER RESTRICTIONS SET FORTH IN THE COMPANY'S OPERATING AGREEMENT INTENDED TO PRESERVE THE COMPANY'S S CORPORATION ELECTION UNDER IRC § 1362. TRANSFER TO ANY PERSON OR ENTITY THAT IS NOT AN 'ELIGIBLE S CORPORATION SHAREHOLDER' IS VOID."`
+    `Any certificate, statement of interest, or other instrument evidencing membership in the Company shall bear a legend substantially in the following form: "THE MEMBERSHIP INTERESTS EVIDENCED HEREBY ARE SUBJECT TO TRANSFER RESTRICTIONS SET FORTH IN THE COMPANY'S OPERATING AGREEMENT INTENDED TO PRESERVE THE COMPANY'S S CORPORATION ELECTION UNDER IRC § 1362. TRANSFER TO ANY PERSON OR ENTITY THAT IS NOT ELIGIBLE TO OWN STOCK IN AN S CORPORATION UNDER IRC §1361 IS VOID."`
   );
 
   // ── ARTICLE 8: LIMITATION OF LIABILITY; INDEMNIFICATION ──
