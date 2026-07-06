@@ -516,6 +516,29 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
   const isLLC = company.entity_type === "LLC" || company.entity_type === "LLC-S" || company.entity_type === "Single Member LLC";
   if (!isLLC) return null;
 
+  const activeMembers = members.filter((m) => m.status !== "inactive" && m.status !== "terminated");
+  const missingPctMembers = activeMembers
+    .filter((m) => m.ownership_percentage == null)
+    .map((m) => m.name || "Unnamed Member");
+  const percentageSum = activeMembers.reduce(
+    (sum, m) => sum + (typeof m.ownership_percentage === "number" ? m.ownership_percentage : 0),
+    0
+  );
+  const percentageInvalid = Math.abs(percentageSum - 100) > 0.01;
+  const draftingStyle = (company?.oa_drafting_style as "units" | "percentage_only" | null) ?? "percentage_only";
+  const unitsBlocked = draftingStyle === "units" && totalIssuedShares === 0;
+  const generateBlocked = percentageInvalid || unitsBlocked;
+
+  const missingMembersClause = missingPctMembers.length > 0
+    ? `${formatMemberList(missingPctMembers)} ${missingPctMembers.length === 1 ? "has" : "have"} no ownership percentage recorded.`
+    : "";
+
+  const generateTooltip = percentageInvalid
+    ? `Member ownership percentages sum to ${percentageSum.toFixed(2)}%, not 100%. ${missingMembersClause}Correct the ownership records before generating an operating agreement.`
+    : unitsBlocked
+    ? "Record an initial issuance before generating an operating agreement."
+    : "";
+
   return (
     <div className="space-y-5 animate-fade-in">
       <Card className="border-l-4 border-l-primary">
