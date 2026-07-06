@@ -413,27 +413,8 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
 
   // ── ARTICLE 8: LIMITATION OF LIABILITY; INDEMNIFICATION ──
   y = addArticleTitle(doc, y, "8", "Limitation of Liability; Indemnification");
-
-  y = addSectionTitle(doc, y, "8.1 — Limitation of Liability and Indemnification of Member");
-
   y = addParagraph(doc, y,
-    `(i) The Member (including, for purposes of this Section, any estate, heir, personal representative, receiver, trustee, successor, assignee and/or transferee of the Member) shall not be liable, responsible or accountable, in damages or otherwise, to the Company or any other person for: (i) any act performed, or the omission to perform any act, within the scope of the power and authority conferred on the Member by this Agreement and/or by the Statutes except by reason of acts or omissions found by a court of competent jurisdiction upon entry of a final judgment rendered and un-appealable or not timely appealed ("Judicially Determined") to constitute fraud, gross negligence, recklessness or intentional misconduct; (ii) the termination of the Company and this Agreement pursuant to the terms hereof; (iii) the performance by the Member of, or the omission by the Member to perform, any act which the Member reasonably believed to be consistent with the advice of attorneys, accountants or other professional advisers to the Company with respect to matters relating to the Company, including actions or omissions determined to constitute violations of law but which were not undertaken in bad faith; or (iv) the conduct of any person selected or engaged by the Member.`
-  );
-
-  y = addParagraph(doc, y,
-    `(ii) The Company, its receivers, trustees, successors, assignees and/or transferees shall indemnify, defend and hold the Member harmless from and against any and all liabilities, damages, losses, costs and expenses of any nature whatsoever, known or unknown, liquidated or unliquidated, that are incurred by the Member (including amounts paid in satisfaction of judgments, in settlement of any action, suit, demand, investigation, claim or proceeding ("Claim"), as fines or penalties) and from and against all legal or other such costs as well as the expenses of investigating or defending against any Claim or threatened or anticipated Claim arising out of, connected with or relating to this Agreement, the Company or its business affairs in any way; provided, that the conduct of the Member which gave rise to the action against the Member is indemnifiable under the standards set forth in Section 8.1(i).`
-  );
-
-  y = addParagraph(doc, y,
-    `(iii) Upon application, the Member shall be entitled to receive advances to cover the costs of defending or settling any Claim or any threatened or anticipated Claim against the Member that may be subject to indemnification hereunder upon receipt by the Company of any undertaking by or on behalf of the Member to repay such advances to the Company, without interest, if the Member is Judicially Determined not to be entitled to indemnification.`
-  );
-
-  y = addParagraph(doc, y,
-    `(iv) All rights of the Member to indemnification under this Section 8.1 shall (i) be cumulative of, and in addition to, any right to which the Member may be entitled to by contract or as a matter of law or equity, and (ii) survive the dissolution, liquidation or termination of the Company as well as the death, removal, incompetency or insolvency of the Member.`
-  );
-
-  y = addParagraph(doc, y,
-    `(v) The termination of any Claim or threatened Claim against the Member by judgment, order, settlement or upon a plea of nolo contendere or its equivalent shall not, of itself, cause the Member not to be entitled to indemnification as provided herein unless and until Judicially Determined to not be so entitled.`
+    `The Company shall indemnify the Member to the fullest extent permitted under Wisconsin law except for fraud, intentional misconduct, or knowing violations of law.`
   );
 
   // ── ARTICLE 9: DEATH, DISABILITY, DISSOLUTION ──
