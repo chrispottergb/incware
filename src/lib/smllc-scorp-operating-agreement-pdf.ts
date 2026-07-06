@@ -251,16 +251,23 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
   // ── ARTICLE 2: CAPITAL CONTRIBUTIONS AND DISTRIBUTIONS (S-CORP) ──
   y = addArticleTitle(doc, y, "2", "Capital Contributions and Distributions");
 
-  // 2.1 — Authorized and Issued Membership Units (dynamic from live data)
-  // Defensive guard: never emit "0 units / 0%" as if it were a real fact.
-  y = addSectionTitle(doc, y, "2.1 — Authorized and Issued Membership Units");
-  if (issuedUnits > 0 && authorizedUnits != null) {
-    y = addParagraph(doc, y,
-      `The Company is authorized to issue ${authorizedUnits.toLocaleString()} membership units, all of which constitute a single class of membership interest within the meaning of IRC §1361(b)(1)(D). The Member is hereby issued ${issuedUnits.toLocaleString()} membership units and owns ${ownershipPct}% of the Company.`
-    );
+  // 2.1 — Ownership clause branches on drafting style (see standard SM file).
+  const draftingStyle = data.draftingStyle === 'units' ? 'units' : 'percentage_only';
+  if (draftingStyle === 'units') {
+    y = addSectionTitle(doc, y, "2.1 — Authorized and Issued Membership Units");
+    if (issuedUnits > 0 && authorizedUnits != null) {
+      y = addParagraph(doc, y,
+        `The Company is authorized to issue ${authorizedUnits.toLocaleString()} membership units, all of which constitute a single class of membership interest within the meaning of IRC §1361(b)(1)(D). The Member is hereby issued ${issuedUnits.toLocaleString()} membership units and owns ${ownershipPct}% of the Company.`
+      );
+    } else {
+      y = addParagraph(doc, y,
+        `No membership units have been issued as of the date of this Agreement. All membership interests in the Company, when issued, shall constitute a single class of membership interest within the meaning of IRC §1361(b)(1)(D).`
+      );
+    }
   } else {
+    y = addSectionTitle(doc, y, "2.1 — Membership Interest");
     y = addParagraph(doc, y,
-      `No membership units have been issued as of the date of this Agreement. All membership interests in the Company, when issued, shall constitute a single class of membership interest within the meaning of IRC §1361(b)(1)(D).`
+      `The Member owns ${ownershipPct}% of the membership interest in the Company. Ownership is recorded and tracked as a percentage interest.`
     );
   }
 
