@@ -524,8 +524,11 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
     (sum, m) => sum + (typeof m.ownership_percentage === "number" ? m.ownership_percentage : 0),
     0
   );
-  const percentageInvalid = Math.abs(percentageSum - 100) > 0.01;
   const draftingStyle = (company?.oa_drafting_style as "units" | "percentage_only" | null) ?? "percentage_only";
+  // In "units" mode, ownership is derived from share_transactions (unit holdings ÷ total issued),
+  // so the shareholders.ownership_percentage column is not required. Only validate the percentage
+  // sum in "percentage_only" mode, where that column is the source of truth.
+  const percentageInvalid = draftingStyle === "percentage_only" && Math.abs(percentageSum - 100) > 0.01;
   const unitsBlocked = draftingStyle === "units" && totalIssuedShares === 0;
   const generateBlocked = percentageInvalid || unitsBlocked;
 
