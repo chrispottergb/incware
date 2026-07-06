@@ -295,9 +295,15 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
   );
 
   y = addSectionTitle(doc, y, "2.4 — Single Class of Membership Interest");
-  y = addParagraph(doc, y,
-    `The Company shall at all times have only one class of membership interest outstanding, conferring identical rights to distributions and liquidation proceeds, as required to maintain the Company's S corporation election under IRC § 1361(b)(1)(D). The Company shall not create, issue, or authorize any interest, security, agreement, or arrangement that would result in the Company being treated as having more than one class of stock for purposes of Subchapter S of the Internal Revenue Code.`
-  );
+  if (draftingStyle === 'units') {
+    y = addParagraph(doc, y,
+      `The Company shall at all times have only one class of membership interest outstanding, conferring identical rights to distributions and liquidation proceeds, as required to maintain the Company's S corporation election under IRC § 1361(b)(1)(D). The Company shall not create, issue, or authorize any interest, security, agreement, or arrangement that would result in the Company being treated as having more than one class of stock for purposes of Subchapter S of the Internal Revenue Code.`
+    );
+  } else {
+    y = addParagraph(doc, y,
+      `The Member's entire membership interest, expressed as a percentage ownership rather than through membership units, constitutes a single class of membership interest within the meaning of IRC § 1361(b)(1)(D). The Company shall not create, issue, or authorize any interest, security, agreement, or arrangement that would result in the Company being treated as having more than one class of stock for purposes of Subchapter S of the Internal Revenue Code.`
+    );
+  }
 
   y = addSectionTitle(doc, y, "2.5 — Distributions Pro Rata");
   y = addParagraph(doc, y,
