@@ -17,6 +17,7 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import {
@@ -56,6 +57,27 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [aiProvider, setAiProvider] = useState(() => localStorage.getItem("ai_provider") || "lovable");
+  const draftingStyle: 'units' | 'percentage_only' =
+    company?.oa_drafting_style === 'units' ? 'units' : 'percentage_only';
+  const [savingDraftingStyle, setSavingDraftingStyle] = useState(false);
+  const handleDraftingStyleChange = async (v: 'units' | 'percentage_only') => {
+    if (v === draftingStyle) return;
+    setSavingDraftingStyle(true);
+    try {
+      const { error } = await supabase
+        .from("companies")
+        .update({ oa_drafting_style: v } as any)
+        .eq("id", companyId);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["company", companyId] });
+      await queryClient.invalidateQueries({ queryKey: ["companies"] });
+      toast.success("Ownership structure updated");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update ownership structure");
+    } finally {
+      setSavingDraftingStyle(false);
+    }
+  };
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [pendingDownloadType, setPendingDownloadType] = useState<"pdf" | "docx" | null>(null);
@@ -135,6 +157,9 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
     },
   });
   const hasIssuedUnits = issuedUnits > 0;
+  // In percentage_only mode the generated document doesn't depend on issued
+  // units, so the "must record initial contribution" guard doesn't apply.
+  const generateBlocked = draftingStyle === 'units' && !hasIssuedUnits;
 
   // Earliest "Initial Contribution" row for this entity — drives the dynamic
   // Section 2.2 clause in the OA PDFs. Documents formation only; later
@@ -430,6 +455,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
         ownershipPercentage: 100,
         initialContributionAmount: initialContribution?.amount ?? null,
         initialContributionDate: initialContribution?.date ?? null,
+        draftingStyle,
       };
       const doc = isScorpElected
         ? generateSMScorpOperatingAgreementPDF(data)
@@ -504,6 +530,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
         ownershipPercentage: 100,
         initialContributionAmount: initialContribution?.amount ?? null,
         initialContributionDate: initialContribution?.date ?? null,
+        draftingStyle,
       };
       const doc = isScorpElected
         ? generateSMScorpOperatingAgreementPDF(data)
@@ -816,7 +843,30 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
 
           <Separator />
 
-          <AIProviderSelect value={aiProvider} onChange={setAiProvider} />
+          <div className="flex flex-wrap gap-6 items-start">
+            <AIProviderSelect value={aiProvider} onChange={setAiProvider} />
+            <div className="field-group max-w-xs">
+              <Label className="field-label flex items-center gap-1.5">
+                Ownership Structure
+              </Label>
+              <Select
+                value={draftingStyle}
+                onValueChange={(v) => handleDraftingStyleChange(v as 'units' | 'percentage_only')}
+                disabled={savingDraftingStyle}
+              >
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percentage_only">Percentage Only</SelectItem>
+                  <SelectItem value="units">Membership Units</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
+                Choose how ownership is described in the generated agreement. This does not affect your unit ledger or certificates — only the document wording.
+              </p>
+            </div>
+          </div>
 
           {/* Status Strip */}
           <div className="flex flex-wrap items-center gap-2 text-[11px]">
@@ -848,10 +898,10 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
                 <div className="flex flex-wrap gap-2">
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span tabIndex={hasIssuedUnits ? -1 : 0}>
+                      <span tabIndex={generateBlocked ? 0 : -1}>
                         <Button
                           onClick={handleGenerate}
-                          disabled={isGenerating || isAiGenerating || isImporting || !hasIssuedUnits}
+                          disabled={isGenerating || isAiGenerating || isImporting || generateBlocked}
                           variant="outline"
                           size="sm"
                         >
@@ -860,16 +910,16 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
                         </Button>
                       </span>
                     </TooltipTrigger>
-                    {!hasIssuedUnits && (
+                    {generateBlocked && (
                       <TooltipContent>Record an initial contribution before generating an operating agreement.</TooltipContent>
                     )}
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span tabIndex={hasIssuedUnits ? -1 : 0}>
+                      <span tabIndex={generateBlocked ? 0 : -1}>
                         <Button
                           onClick={handleAiGenerate}
-                          disabled={isGenerating || isAiGenerating || isImporting || !hasIssuedUnits}
+                          disabled={isGenerating || isAiGenerating || isImporting || generateBlocked}
                           variant="outline"
                           size="sm"
                         >
@@ -881,7 +931,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
                         </Button>
                       </span>
                     </TooltipTrigger>
-                    {!hasIssuedUnits && (
+                    {generateBlocked && (
                       <TooltipContent>Record an initial contribution before generating an operating agreement.</TooltipContent>
                     )}
                   </Tooltip>

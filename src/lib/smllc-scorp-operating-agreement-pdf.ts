@@ -84,6 +84,8 @@ export interface SMScorpOperatingAgreementData {
   initialContributionAmount?: number | null;
   /** ISO yyyy-mm-dd date of that same row (effective_date preferred, else transaction_date). */
   initialContributionDate?: string | null;
+  /** Drafting style for ownership clauses. Defaults to 'percentage_only' when null/undefined. */
+  draftingStyle?: 'units' | 'percentage_only' | null;
 }
 
 export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgreementData): jsPDF {
@@ -249,16 +251,23 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
   // ── ARTICLE 2: CAPITAL CONTRIBUTIONS AND DISTRIBUTIONS (S-CORP) ──
   y = addArticleTitle(doc, y, "2", "Capital Contributions and Distributions");
 
-  // 2.1 — Authorized and Issued Membership Units (dynamic from live data)
-  // Defensive guard: never emit "0 units / 0%" as if it were a real fact.
-  y = addSectionTitle(doc, y, "2.1 — Authorized and Issued Membership Units");
-  if (issuedUnits > 0 && authorizedUnits != null) {
-    y = addParagraph(doc, y,
-      `The Company is authorized to issue ${authorizedUnits.toLocaleString()} membership units, all of which constitute a single class of membership interest within the meaning of IRC §1361(b)(1)(D). The Member is hereby issued ${issuedUnits.toLocaleString()} membership units and owns ${ownershipPct}% of the Company.`
-    );
+  // 2.1 — Ownership clause branches on drafting style (see standard SM file).
+  const draftingStyle = data.draftingStyle === 'units' ? 'units' : 'percentage_only';
+  if (draftingStyle === 'units') {
+    y = addSectionTitle(doc, y, "2.1 — Authorized and Issued Membership Units");
+    if (issuedUnits > 0 && authorizedUnits != null) {
+      y = addParagraph(doc, y,
+        `The Company is authorized to issue ${authorizedUnits.toLocaleString()} membership units, all of which constitute a single class of membership interest within the meaning of IRC §1361(b)(1)(D). The Member is hereby issued ${issuedUnits.toLocaleString()} membership units and owns ${ownershipPct}% of the Company.`
+      );
+    } else {
+      y = addParagraph(doc, y,
+        `No membership units have been issued as of the date of this Agreement. All membership interests in the Company, when issued, shall constitute a single class of membership interest within the meaning of IRC §1361(b)(1)(D).`
+      );
+    }
   } else {
+    y = addSectionTitle(doc, y, "2.1 — Membership Interest");
     y = addParagraph(doc, y,
-      `No membership units have been issued as of the date of this Agreement. All membership interests in the Company, when issued, shall constitute a single class of membership interest within the meaning of IRC §1361(b)(1)(D).`
+      `The Member owns ${ownershipPct}% of the membership interest in the Company. Ownership is recorded and tracked as a percentage interest.`
     );
   }
 
@@ -286,9 +295,15 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
   );
 
   y = addSectionTitle(doc, y, "2.4 — Single Class of Membership Interest");
-  y = addParagraph(doc, y,
-    `The Company shall at all times have only one class of membership interest outstanding, conferring identical rights to distributions and liquidation proceeds, as required to maintain the Company's S corporation election under IRC § 1361(b)(1)(D). The Company shall not create, issue, or authorize any interest, security, agreement, or arrangement that would result in the Company being treated as having more than one class of stock for purposes of Subchapter S of the Internal Revenue Code.`
-  );
+  if (draftingStyle === 'units') {
+    y = addParagraph(doc, y,
+      `The Company shall at all times have only one class of membership interest outstanding, conferring identical rights to distributions and liquidation proceeds, as required to maintain the Company's S corporation election under IRC § 1361(b)(1)(D). The Company shall not create, issue, or authorize any interest, security, agreement, or arrangement that would result in the Company being treated as having more than one class of stock for purposes of Subchapter S of the Internal Revenue Code.`
+    );
+  } else {
+    y = addParagraph(doc, y,
+      `The Member's entire membership interest, expressed as a percentage ownership rather than through membership units, constitutes a single class of membership interest within the meaning of IRC § 1361(b)(1)(D). The Company shall not create, issue, or authorize any interest, security, agreement, or arrangement that would result in the Company being treated as having more than one class of stock for purposes of Subchapter S of the Internal Revenue Code.`
+    );
+  }
 
   y = addSectionTitle(doc, y, "2.5 — Distributions Pro Rata");
   y = addParagraph(doc, y,
