@@ -331,7 +331,7 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
   // ── ARTICLE 4: MEMBER'S CAPITAL ACCOUNTS ──
   y = addArticleTitle(doc, y, "4", "Member's Capital Accounts");
   y = addParagraph(doc, y,
-    `A Capital Account for the Member shall be maintained by the Company. The Member's Capital Account shall reflect the Member's capital contributions and increases for any net income or gain of the Company. The Member's Capital Account shall also reflect decreases for distributions made to the Member and the Member's share of any losses and deductions of the Company. The Company shall also maintain an Accumulated Adjustments Account (AAA) and any other tax-basis accounts required or advisable for an S corporation under IRC § 1368 and the Treasury Regulations.`
+    `The Company shall maintain the Member's Capital Account and such additional tax accounts as are required or appropriate under the Internal Revenue Code for an LLC taxed as an S corporation.`
   );
 
   // ── ARTICLE 5: TAX TREATMENT (S CORP) ──
