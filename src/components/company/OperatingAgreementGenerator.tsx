@@ -97,6 +97,26 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const previewPdfRef = useRef<any>(null);
+  const [savingDraftingStyle, setSavingDraftingStyle] = useState(false);
+  const handleDraftingStyleChange = async (v: "units" | "percentage_only") => {
+    const current = (company?.oa_drafting_style as "units" | "percentage_only" | null) ?? "percentage_only";
+    if (v === current) return;
+    setSavingDraftingStyle(true);
+    try {
+      const { error } = await supabase
+        .from("companies")
+        .update({ oa_drafting_style: v } as any)
+        .eq("id", companyId);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["company", companyId] });
+      await queryClient.invalidateQueries({ queryKey: ["companies"] });
+      toast.success("Ownership structure updated");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update ownership structure");
+    } finally {
+      setSavingDraftingStyle(false);
+    }
+  };
 
   const { data: members = [] } = useQuery({
     queryKey: ["shareholders", companyId],
