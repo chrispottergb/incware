@@ -1095,6 +1095,7 @@ export type Database = {
           name: string
           non_distribution_clause: string | null
           ntee_code: string | null
+          oa_drafting_style: string | null
           opening_balance_date: string | null
           organizational_structure: string | null
           par_value: number | null
@@ -1174,6 +1175,7 @@ export type Database = {
           name: string
           non_distribution_clause?: string | null
           ntee_code?: string | null
+          oa_drafting_style?: string | null
           opening_balance_date?: string | null
           organizational_structure?: string | null
           par_value?: number | null
@@ -1253,6 +1255,7 @@ export type Database = {
           name?: string
           non_distribution_clause?: string | null
           ntee_code?: string | null
+          oa_drafting_style?: string | null
           opening_balance_date?: string | null
           organizational_structure?: string | null
           par_value?: number | null

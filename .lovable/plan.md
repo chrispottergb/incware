@@ -1,85 +1,96 @@
-# Authorized Units for LLCs — with verification guards folded in
+# Drafting Style toggle: Membership Units vs. Percentage Only
 
-## Step 0 — Column reuse (decided)
+Per-entity choice of how ownership is described in generated SM Operating Agreements. Underlying ledger, certificates, Members table, Authorized Units, and CapTableStatusBar are unaffected — only the printed clause text changes.
 
-Reuse `companies.authorized_shares` (nullable integer, no stock-only constraints). Already the storage for LLC membership units and partnership units. Only the display label swaps via `getTerminology()` / `isLLCType()`. No new value column.
+## Step 0 — Migration
 
-One schema add: nullable boolean `authorized_units_backfill_dismissed` on `companies` for Step 3 banner dismissal.
+Add nullable column and backfill once:
 
-## Step 1 — Editable "Authorized Units" input for LLCs (with diff-based dismissal)
+```sql
+ALTER TABLE public.companies ADD COLUMN oa_drafting_style text
+  CHECK (oa_drafting_style IN ('units','percentage_only'));
 
-`src/components/company/IncorporationTab.tsx` equity card:
-- Add an LLC branch gated on `equityCard.showMembershipUnits` rendering an input identical to the corp "Authorized Shares" one, labeled **"Authorized Units"**, bound to `form.authorized_shares`.
+UPDATE public.companies c
+   SET oa_drafting_style = 'units'
+ WHERE oa_drafting_style IS NULL
+   AND EXISTS (SELECT 1 FROM public.share_transactions st WHERE st.company_id = c.id);
+-- Rows without transactions and all future rows stay NULL → treated as 'percentage_only'.
+```
 
-**Diff-based auto-dismiss (folded from addendum):**
-- In the save handler for this form, capture the previous `authorized_shares` value from the loaded `company` prop (source of truth for "prior state"), and compare against the submitted value.
-- Only when `submitted.authorized_shares !== prior.authorized_shares` (real value change, including null→number) also write `authorized_units_backfill_dismissed = true` in the same update.
-- Saving any other field on the tab (registered agent, address, seal, S-election, etc.) must leave `authorized_units_backfill_dismissed` untouched — the flag write is inside the diff branch, not the general save path.
-- No onChange-time flip; dismissal only occurs on persisted save with an actual value change.
+Generator code treats `null` as `'percentage_only'`. No forced regeneration of existing PDFs.
 
-## Step 2 — Shared cap table status bar
+## Step 1 — UI toggle (`SMOperatingAgreementGenerator.tsx`)
 
-New `src/components/company/CapTableStatusBar.tsx` — takes `{ term, authorized, issued }`, renders Authorized / Issued / Available to Issue.
+Add a shadcn `Select` next to the `AIProviderSelect`, label **"Ownership Structure"**, options: `Percentage Only` (value `percentage_only`), `Membership Units` (value `units`). Bound to `company.oa_drafting_style`, defaulting the displayed value to `percentage_only` when stored value is `null`. On change, immediately `update` the company row (same pattern used for other sticky per-entity settings) and refetch, so the choice persists per entity.
 
-`src/pages/CompanyDetail.tsx` (lines 326–353): replace both inline blocks with this component.
-- Corp: unchanged wording.
-- LLC: same three-cell bar, using `term.shareUnit` ("Units"). Renders only when `authorized_shares != null`. The existing "Total Units Outstanding / Active Members" bar stays as-is beneath it.
+Helper text: *"Choose how ownership is described in the generated agreement. This does not affect your unit ledger or certificates — only the document wording."*
 
-## Step 3 — Backfill migration + dismissible banner
+## Step 2 — Data plumbing
 
-Migration (single migration):
-- `ALTER TABLE companies ADD COLUMN authorized_units_backfill_dismissed boolean NOT NULL DEFAULT false;`
-- For every LLC / SMLLC / LLC-S row where `authorized_shares IS NULL`, set `authorized_shares` = summed active issued units from `share_transactions` (same arithmetic as `recalculate_ownership_percentages()`). If issued total = 0, leave `authorized_shares` NULL and skip the banner.
+Extend `SMOperatingAgreementData` in both PDF files:
 
-Banner (rendered in `CompanyDetail.tsx` near the new status bar):
-- Shows when `isLLCType(entity_type) && authorized_shares != null && !authorized_units_backfill_dismissed`.
-- Copy: *"Authorized units were set to match currently issued units. Update this in Organizational Info if you'd like room to issue more in the future."*
-- Manual "Dismiss" button writes `authorized_units_backfill_dismissed = true`.
-- Auto-dismissal path from Step 1 fires only on a real `authorized_shares` value change.
+```ts
+draftingStyle: 'units' | 'percentage_only';
+```
 
-## Step 4 — Ceiling enforcement (verify + copy)
+In `handleGenerate` and `handleAiGenerate`, resolve `draftingStyle = company.oa_drafting_style ?? 'percentage_only'` and pass it through. For the AI-assisted path, also include drafting style in the prompt context so the LLM refines the correct clause variant.
 
-Already generic via `validateIssuanceLimit(numShares, available, term)` in `StockLedgerTab.tsx`.
-- Verify the same guard runs in the Establish Current Ownership submit path; add it there if missing.
-- Update `src/lib/transaction-validation.ts` error message to use `term.shareUnit` and reference "Organizational Info": *"This would exceed the {authorized} {units} authorized for this entity. Increase authorized units in Organizational Info first, or reduce the amount being issued."*
-- No parallel validator, no changes to `useShareCalculations`.
+## Step 3 — Clause branching, standard SM (`smllc-operating-agreement-pdf.ts`)
 
-## Step 5 — Operating agreement PDF generators (with zero-issued guard)
+**Section 2.1** branches on `draftingStyle`:
 
-`src/lib/smllc-operating-agreement-pdf.ts` and `src/lib/smllc-scorp-operating-agreement-pdf.ts`:
+- `units` — existing dynamic clause, unchanged (including the zero-issued placeholder fallback).
+- `percentage_only` — new clause:
+  > *"The Member owns {ownership_percentage}% of the membership interest in the Company. Ownership is recorded and tracked as a percentage interest."*
+  Uses `ownershipPct` already computed (fallback to `100` for sole member, consistent with earlier fix).
 
-Dynamic clause when `issued_units > 0`:
-- `authorized_units` ← `company.authorized_shares` (fallback to `issued_units` if null — Step 5 fallback, unchanged).
-- `issued_units` ← summed active issued units.
-- `ownership_percentage` ← the sole member's stored `ownership_percentage`.
-- Clause: *"The Company is authorized to issue {authorized_units} membership units, all of which constitute a single class of membership interest within the meaning of IRC §1361(b)(1)(D). The Member is hereby issued {issued_units} membership units and owns {ownership_percentage}% of the Company."*
+**Section 2.2** (Initial Capital Contribution) — unchanged; already unit-free, and its own missing-data fallback continues to apply in both modes.
 
-**Zero-issued guard (folded from addendum):**
-- **Primary (calling component)** — locate the SM operating agreement generator UI (SMOperatingAgreementGenerator or the equivalent action bar that invokes these PDFs) and disable the Generate Standard / AI-Assisted Draft buttons when `issued_units === 0`, using the same disabled+tooltip pattern already used for export buttons elsewhere in the generator UI. Tooltip: *"Record an initial contribution before generating an operating agreement."*
-- **Secondary (inside both PDF files)** — if the generator function is invoked with `issued_units === 0` anyway (programmatic caller, guard bypass), do not interpolate zeros. Substitute placeholder language: *"No membership units have been issued as of the date of this Agreement."* Never emit "issued 0 membership units and owns 0% of the Company."
-- This guard is independent of the `authorized_shares` null fallback — the fallback only applies when `issued_units > 0`.
+**Section 2.3** (Capital Contributions) — verified unit-free, unchanged.
 
-Multi-member OA generators (if a separate file exists): out of scope for the SMLLC files; they stay single-member.
+## Step 4 — Clause branching, S-Corp SM (`smllc-scorp-operating-agreement-pdf.ts`)
+
+**Section 2.1** — same branch as Step 3.
+
+**Section 2.2 / 2.3** — unchanged (both already agnostic).
+
+**Section 2.4 (Single Class of Membership Interest)** — branch:
+
+- `units` — existing clause, unchanged.
+- `percentage_only`:
+  > *"The Member's entire membership interest, expressed as a percentage ownership rather than through membership units, constitutes a single class of membership interest within the meaning of IRC §1361(b)(1)(D). The Company shall not create, issue, or authorize any interest, security, agreement, or arrangement that would result in the Company being treated as having more than one class of stock for purposes of Subchapter S of the Internal Revenue Code."*
+
+**Section 2.5 (Distributions Pro Rata)** — inspected: existing wording is already structure-agnostic (*"in proportion to each member's ownership percentage of the Company's membership interest"*). Leave as-is in both modes. No branch needed.
+
+Article 5 and Article 6 cross-references to §§ 2.4 / 2.5 remain valid — only interior text changes.
+
+## Step 5 — Guard adjustment
+
+Existing "Generate disabled when `issued_units === 0`" guard on the Generate Standard / AI-Assisted buttons currently applies universally. Change to:
+
+```ts
+disabled = draftingStyle === 'units' && issuedUnits === 0
+```
+
+Tooltip only shown when disabled (unchanged copy). In `percentage_only` mode the document doesn't depend on issued units, so generation is not blocked — the Section 2.2 defensive fallback still handles missing initial-contribution data independently.
 
 ## Files touched
 
-- `supabase/migrations/*` — add column + LLC backfill.
-- `src/components/company/IncorporationTab.tsx` — LLC "Authorized Units" input; diff-based flag write in save handler.
-- `src/components/company/CapTableStatusBar.tsx` — new shared component.
-- `src/pages/CompanyDetail.tsx` — swap inline bars for shared component; render backfill banner + manual dismiss.
-- `src/lib/transaction-validation.ts` — error copy via `term.shareUnit` + Organizational Info wording.
-- `src/components/company/StockLedgerTab.tsx` — verify (and add if missing) `validateIssuanceLimit` in Establish Current Ownership path.
-- `src/lib/smllc-operating-agreement-pdf.ts`, `src/lib/smllc-scorp-operating-agreement-pdf.ts` — dynamic clause + zero-issued defensive substitution.
-- Calling generator component — disable Generate actions when `issued_units === 0` with tooltip.
-
-## Verification after build
-
-- Zero-issued SMLLC: Generate buttons disabled with tooltip; direct PDF call substitutes placeholder text; no "0 units / 0%" ever printed.
-- Backfilled LLC with visible banner: edit registered-agent (or any other field) on Organizational Info tab and save → banner remains visible, `authorized_units_backfill_dismissed` stays false. Then edit Authorized Units to a new value and save → banner disappears, flag flips to true.
-- `tsgo` typecheck clean; ceiling error message reads naturally under both LLC and corp terminology.
+- `supabase/migrations/*` — add `oa_drafting_style` column + one-time backfill.
+- `src/components/company/SMOperatingAgreementGenerator.tsx` — Select control, sticky save, pass `draftingStyle` into both handlers, adjust guard.
+- `src/lib/smllc-operating-agreement-pdf.ts` — extend interface, branch 2.1.
+- `src/lib/smllc-scorp-operating-agreement-pdf.ts` — extend interface, branch 2.1 and 2.4.
 
 ## Out of scope
 
-- Corp Authorized/Issued/Available behavior.
-- Multi-member OA generator changes beyond the two SMLLC files noted.
-- Any automatic bump of `authorized_shares` when issuance is attempted.
+- Members / Transactions / Certificates / Authorized Units UI and validation — untouched.
+- `CapTableStatusBar`, backfill banner, transaction-validation copy — untouched.
+- Multi-member OA generators — untouched.
+- No retroactive regeneration of previously downloaded PDFs.
+
+## Verification after build
+
+1. New SMLLC, no `share_transactions` → toggle shows "Percentage Only"; both Generate buttons enabled; 2.1 prints percentage clause; 2.2 prints the "no initial capital contribution recorded" fallback.
+2. Existing SMLLC with transactions → backfilled to `units`; generated output byte-identical to pre-change (spot-check 2.1, 2.4, 2.5).
+3. Toggle percentage_only → units on same entity and regenerate → 2.1 (and S-corp 2.4) swap to unit-based wording; no leftover placeholders; cross-references in Articles 5/6 still resolve.
+4. `tsgo` clean.
