@@ -73,6 +73,8 @@ export interface SMOperatingAgreementData {
   initialContributionAmount?: number | null;
   /** ISO yyyy-mm-dd date of that same row (effective_date preferred, else transaction_date). */
   initialContributionDate?: string | null;
+  /** Drafting style for ownership clauses. Defaults to 'percentage_only' when null/undefined. */
+  draftingStyle?: 'units' | 'percentage_only' | null;
 }
 
 export function generateSMOperatingAgreementPDF(data: SMOperatingAgreementData): jsPDF {
