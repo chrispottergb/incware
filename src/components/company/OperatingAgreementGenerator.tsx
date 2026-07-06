@@ -595,7 +595,28 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
             </Select>
           </div>
 
-          <AIProviderSelect value={aiProvider} onChange={setAiProvider} />
+          <div className="flex flex-wrap gap-6 items-start">
+            <AIProviderSelect value={aiProvider} onChange={setAiProvider} />
+            <div className="field-group max-w-xs">
+              <Label className="field-label">Ownership Structure</Label>
+              <Select
+                value={draftingStyle}
+                onValueChange={(v) => handleDraftingStyleChange(v as "units" | "percentage_only")}
+                disabled={savingDraftingStyle}
+              >
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percentage_only">Percentage Only</SelectItem>
+                  <SelectItem value="units">Membership Units</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
+                Choose how ownership is described in the generated agreement. This does not affect your unit ledger or certificates — only the document wording.
+              </p>
+            </div>
+          </div>
 
           {/* Generation Buttons */}
           <div className="flex flex-wrap gap-2">
