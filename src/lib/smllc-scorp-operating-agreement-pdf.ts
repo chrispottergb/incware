@@ -441,7 +441,7 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
 
   y = addSectionTitle(doc, y, "9.1 — Death of Member");
   y = addParagraph(doc, y,
-    "Upon the death of the Member, the Member's interest shall pass to the Member's heirs or estate, subject in all respects to the Eligible S Corporation Shareholder requirements set forth in Article 7. The Company shall not be dissolved unless required by law."
+    "Upon the death of the Member, the Member's interest shall pass to the Member's heirs or estate, subject in all respects to the requirement that transferees be eligible to own stock in an S corporation under IRC §1361, as set forth in Article 7. The Company shall not be dissolved unless required by law."
   );
 
   y = addSectionTitle(doc, y, "9.2 — Disability of Member");
