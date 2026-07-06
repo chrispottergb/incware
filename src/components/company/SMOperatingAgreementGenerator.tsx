@@ -57,6 +57,27 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [aiProvider, setAiProvider] = useState(() => localStorage.getItem("ai_provider") || "lovable");
+  const draftingStyle: 'units' | 'percentage_only' =
+    company?.oa_drafting_style === 'units' ? 'units' : 'percentage_only';
+  const [savingDraftingStyle, setSavingDraftingStyle] = useState(false);
+  const handleDraftingStyleChange = async (v: 'units' | 'percentage_only') => {
+    if (v === draftingStyle) return;
+    setSavingDraftingStyle(true);
+    try {
+      const { error } = await supabase
+        .from("companies")
+        .update({ oa_drafting_style: v } as any)
+        .eq("id", companyId);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["company", companyId] });
+      await queryClient.invalidateQueries({ queryKey: ["companies"] });
+      toast.success("Ownership structure updated");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update ownership structure");
+    } finally {
+      setSavingDraftingStyle(false);
+    }
+  };
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [pendingDownloadType, setPendingDownloadType] = useState<"pdf" | "docx" | null>(null);
