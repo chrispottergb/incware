@@ -159,7 +159,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   const hasIssuedUnits = issuedUnits > 0;
   // In percentage_only mode the generated document doesn't depend on issued
   // units, so the "must record initial contribution" guard doesn't apply.
-  const generateBlocked = draftingStyle === 'units' && !hasIssuedUnits;
+  const generateBlocked = draftingStyle === 'units' && generateBlocked;
 
   // Earliest "Initial Contribution" row for this entity — drives the dynamic
   // Section 2.2 clause in the OA PDFs. Documents formation only; later
@@ -898,10 +898,10 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
                 <div className="flex flex-wrap gap-2">
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span tabIndex={hasIssuedUnits ? -1 : 0}>
+                      <span tabIndex={generateBlocked ? 0 : -1}>
                         <Button
                           onClick={handleGenerate}
-                          disabled={isGenerating || isAiGenerating || isImporting || !hasIssuedUnits}
+                          disabled={isGenerating || isAiGenerating || isImporting || generateBlocked}
                           variant="outline"
                           size="sm"
                         >
@@ -910,16 +910,16 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
                         </Button>
                       </span>
                     </TooltipTrigger>
-                    {!hasIssuedUnits && (
+                    {generateBlocked && (
                       <TooltipContent>Record an initial contribution before generating an operating agreement.</TooltipContent>
                     )}
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span tabIndex={hasIssuedUnits ? -1 : 0}>
+                      <span tabIndex={generateBlocked ? 0 : -1}>
                         <Button
                           onClick={handleAiGenerate}
-                          disabled={isGenerating || isAiGenerating || isImporting || !hasIssuedUnits}
+                          disabled={isGenerating || isAiGenerating || isImporting || generateBlocked}
                           variant="outline"
                           size="sm"
                         >
@@ -931,7 +931,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
                         </Button>
                       </span>
                     </TooltipTrigger>
-                    {!hasIssuedUnits && (
+                    {generateBlocked && (
                       <TooltipContent>Record an initial contribution before generating an operating agreement.</TooltipContent>
                     )}
                   </Tooltip>
