@@ -530,7 +530,7 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
   const generateBlocked = percentageInvalid || unitsBlocked;
 
   const missingMembersClause = missingPctMembers.length > 0
-    ? `${formatMemberList(missingPctMembers)} ${missingPctMembers.length === 1 ? "has" : "have"} no ownership percentage recorded.`
+    ? `${formatMemberList(missingPctMembers)} ${missingPctMembers.length === 1 ? "has" : "have"} no ownership percentage recorded. `
     : "";
 
   const generateTooltip = percentageInvalid
