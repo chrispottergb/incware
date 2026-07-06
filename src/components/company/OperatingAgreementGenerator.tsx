@@ -97,6 +97,26 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const previewPdfRef = useRef<any>(null);
+  const [savingDraftingStyle, setSavingDraftingStyle] = useState(false);
+  const handleDraftingStyleChange = async (v: "units" | "percentage_only") => {
+    const current = (company?.oa_drafting_style as "units" | "percentage_only" | null) ?? "percentage_only";
+    if (v === current) return;
+    setSavingDraftingStyle(true);
+    try {
+      const { error } = await supabase
+        .from("companies")
+        .update({ oa_drafting_style: v } as any)
+        .eq("id", companyId);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["company", companyId] });
+      await queryClient.invalidateQueries({ queryKey: ["companies"] });
+      toast.success("Ownership structure updated");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update ownership structure");
+    } finally {
+      setSavingDraftingStyle(false);
+    }
+  };
 
   const { data: members = [] } = useQuery({
     queryKey: ["shareholders", companyId],
@@ -575,7 +595,28 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
             </Select>
           </div>
 
-          <AIProviderSelect value={aiProvider} onChange={setAiProvider} />
+          <div className="flex flex-wrap gap-6 items-start">
+            <AIProviderSelect value={aiProvider} onChange={setAiProvider} />
+            <div className="field-group max-w-xs">
+              <Label className="field-label">Ownership Structure</Label>
+              <Select
+                value={draftingStyle}
+                onValueChange={(v) => handleDraftingStyleChange(v as "units" | "percentage_only")}
+                disabled={savingDraftingStyle}
+              >
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percentage_only">Percentage Only</SelectItem>
+                  <SelectItem value="units">Membership Units</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
+                Choose how ownership is described in the generated agreement. This does not affect your unit ledger or certificates — only the document wording.
+              </p>
+            </div>
+          </div>
 
           {/* Generation Buttons */}
           <div className="flex flex-wrap gap-2">
