@@ -393,7 +393,7 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
 
   y = addSectionTitle(doc, y, "7.1 — Restrictions on Transfer");
   y = addParagraph(doc, y,
-    `Notwithstanding any other provision of this Agreement, no membership interest in the Company (nor any economic, voting, or beneficial interest therein) may be sold, assigned, transferred, pledged, hypothecated, or otherwise disposed of, whether voluntarily, involuntarily, by operation of law, by gift, or upon death, disability, dissolution of marriage, bankruptcy, or incapacity, to any person or entity that is not an "Eligible S Corporation Shareholder" as defined in Section 7.2. Any purported transfer in violation of this Article 7 shall be void ab initio, of no force or effect, and shall not be recognized by the Company.`
+    `Notwithstanding any other provision of this Agreement, no membership interest in the Company (nor any economic, voting, or beneficial interest therein) may be sold, assigned, transferred, pledged, hypothecated, or otherwise disposed of, whether voluntarily, involuntarily, by operation of law, by gift, or upon death, disability, dissolution of marriage, bankruptcy, or incapacity, to any person or entity that is not eligible to own stock in an S corporation under IRC §1361. Any purported transfer in violation of this Article 7 shall be void ab initio, of no force or effect, and shall not be recognized by the Company.`
   );
 
   y = addSectionTitle(doc, y, "7.2 — Eligible S Corporation Shareholders");
