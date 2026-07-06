@@ -159,7 +159,7 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
   const hasIssuedUnits = issuedUnits > 0;
   // In percentage_only mode the generated document doesn't depend on issued
   // units, so the "must record initial contribution" guard doesn't apply.
-  const generateBlocked = draftingStyle === 'units' && generateBlocked;
+  const generateBlocked = draftingStyle === 'units' && !hasIssuedUnits;
 
   // Earliest "Initial Contribution" row for this entity — drives the dynamic
   // Section 2.2 clause in the OA PDFs. Documents formation only; later
