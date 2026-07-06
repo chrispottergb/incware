@@ -393,22 +393,22 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
 
   y = addSectionTitle(doc, y, "7.1 — Restrictions on Transfer");
   y = addParagraph(doc, y,
-    `Notwithstanding any other provision of this Agreement, no membership interest in the Company (nor any economic, voting, or beneficial interest therein) may be sold, assigned, transferred, pledged, hypothecated, or otherwise disposed of, whether voluntarily, involuntarily, by operation of law, by gift, or upon death, disability, dissolution of marriage, bankruptcy, or incapacity, to any person or entity that is not an "Eligible S Corporation Shareholder" as defined in Section 7.2. Any purported transfer in violation of this Article 7 shall be void ab initio, of no force or effect, and shall not be recognized by the Company.`
+    `Notwithstanding any other provision of this Agreement, no membership interest in the Company (nor any economic, voting, or beneficial interest therein) may be sold, assigned, transferred, pledged, hypothecated, or otherwise disposed of, whether voluntarily, involuntarily, by operation of law, by gift, or upon death, disability, dissolution of marriage, bankruptcy, or incapacity, to any person or entity that is not eligible to own stock in an S corporation under IRC §1361. Any purported transfer in violation of this Article 7 shall be void ab initio, of no force or effect, and shall not be recognized by the Company.`
   );
 
   y = addSectionTitle(doc, y, "7.2 — Eligible S Corporation Shareholders");
   y = addParagraph(doc, y,
-    `"Eligible S Corporation Shareholder" means only those persons and entities permitted to hold shares in an S corporation under IRC § 1361(b), including: (i) individuals who are U.S. citizens or U.S. tax residents; (ii) estates of deceased Members and estates of bankrupt Members, for the period permitted under IRC § 1361; (iii) qualifying trusts, including grantor trusts (during the grantor's life and for the two-year post-death period), qualified subchapter S trusts (QSSTs) that have made a valid election under IRC § 1361(d), and electing small business trusts (ESBTs) that have made a valid election under IRC § 1361(e); and (iv) tax-exempt organizations described in IRC § 401(a) or § 501(c)(3). "Eligible S Corporation Shareholder" expressly excludes (A) corporations (other than qualified subchapter S subsidiaries), (B) partnerships, (C) limited liability companies treated as partnerships for federal tax purposes, and (D) non-resident aliens.`
+    `Membership interests may only be transferred to persons or entities eligible to own stock in an S corporation under IRC §1361.`
   );
 
   y = addSectionTitle(doc, y, "7.3 — Death or Incapacity");
   y = addParagraph(doc, y,
-    `Upon the death or incapacity of the Member, the Member's membership interest shall pass only to a person or entity that qualifies as an Eligible S Corporation Shareholder. If the estate, heirs, personal representative, guardian, or conservator of the Member is not an Eligible S Corporation Shareholder, the Company shall have the right (but not the obligation) to redeem the Member's interest at fair market value in order to preserve the Company's S election, and the successor holder shall be prohibited from exercising any rights of ownership other than to receive the redemption proceeds.`
+    `Upon the death or incapacity of the Member, the Member's membership interest shall pass only to a person or entity that is eligible to own stock in an S corporation under IRC §1361. If the estate, heirs, personal representative, guardian, or conservator of the Member is not eligible to own stock in an S corporation under IRC §1361, the Company shall have the right (but not the obligation) to redeem the Member's interest at fair market value in order to preserve the Company's S election, and the successor holder shall be prohibited from exercising any rights of ownership other than to receive the redemption proceeds.`
   );
 
   y = addSectionTitle(doc, y, "7.4 — Cap Table Legend");
   y = addParagraph(doc, y,
-    `Any certificate, statement of interest, or other instrument evidencing membership in the Company shall bear a legend substantially in the following form: "THE MEMBERSHIP INTERESTS EVIDENCED HEREBY ARE SUBJECT TO TRANSFER RESTRICTIONS SET FORTH IN THE COMPANY'S OPERATING AGREEMENT INTENDED TO PRESERVE THE COMPANY'S S CORPORATION ELECTION UNDER IRC § 1362. TRANSFER TO ANY PERSON OR ENTITY THAT IS NOT AN 'ELIGIBLE S CORPORATION SHAREHOLDER' IS VOID."`
+    `Any certificate, statement of interest, or other instrument evidencing membership in the Company shall bear a legend substantially in the following form: "THE MEMBERSHIP INTERESTS EVIDENCED HEREBY ARE SUBJECT TO TRANSFER RESTRICTIONS SET FORTH IN THE COMPANY'S OPERATING AGREEMENT INTENDED TO PRESERVE THE COMPANY'S S CORPORATION ELECTION UNDER IRC § 1362. TRANSFER TO ANY PERSON OR ENTITY THAT IS NOT ELIGIBLE TO OWN STOCK IN AN S CORPORATION UNDER IRC §1361 IS VOID."`
   );
 
   // ── ARTICLE 8: LIMITATION OF LIABILITY; INDEMNIFICATION ──
@@ -441,7 +441,7 @@ export function generateSMScorpOperatingAgreementPDF(data: SMScorpOperatingAgree
 
   y = addSectionTitle(doc, y, "9.1 — Death of Member");
   y = addParagraph(doc, y,
-    "Upon the death of the Member, the Member's interest shall pass to the Member's heirs or estate, subject in all respects to the Eligible S Corporation Shareholder requirements set forth in Article 7. The Company shall not be dissolved unless required by law."
+    "Upon the death of the Member, the Member's interest shall pass to the Member's heirs or estate, subject in all respects to the requirement that transferees be eligible to own stock in an S corporation under IRC §1361, as set forth in Article 7. The Company shall not be dissolved unless required by law."
   );
 
   y = addSectionTitle(doc, y, "9.2 — Disability of Member");
