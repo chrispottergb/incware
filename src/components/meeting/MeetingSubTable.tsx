@@ -145,8 +145,9 @@ export default function MeetingSubTable({ meetingId, tableName, title, columns, 
         payload[col.key] = val || null;
       }
     });
-    // Clear representative fields when the owner is not an entity
-    if (form.owner_kind !== "entity") {
+    // Clear representative fields when the owner is not an entity (only if those columns exist on this table)
+    const hasRepColumns = columns.some((c) => c.key === "representative_name" || c.key === "representative_title");
+    if (hasRepColumns && form.owner_kind !== "entity") {
       payload.representative_name = null;
       payload.representative_title = null;
     }
