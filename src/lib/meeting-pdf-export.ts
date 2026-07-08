@@ -1847,60 +1847,88 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 6;
 
     // Compensation Determinations block
-    const processedNames = new Set<string>();
-    const compParagraphs: string[] = [];
-
-    for (const o of data.officers) {
-      if (!o.compensation_note || !o.compensation_status) continue;
-      const nameKey = (o.name || "").trim().toLowerCase();
-      if (o.compensation_status === "included_in_primary") continue;
-
-      const secondaryRoles = (data.officers ?? []).filter((other: any) =>
-        other.id !== o.id &&
-        (other.name || "").trim().toLowerCase() === nameKey &&
-        other.compensation_status === "included_in_primary" &&
-        other.compensation_note
-      );
-
-      if (secondaryRoles.length > 0 && !processedNames.has(nameKey)) {
-        compParagraphs.push(o.compensation_note);
-        for (const sec of secondaryRoles) {
-          compParagraphs.push(sec.compensation_note);
-        }
-        processedNames.add(nameKey);
-      } else if (!processedNames.has(nameKey + o.id)) {
-        compParagraphs.push(o.compensation_note);
-      }
-    }
-
-    if (compParagraphs.length > 0) {
+    if (isSCorp && (data.officers ?? []).length > 0) {
       y = checkPageBreak(doc, y, 20);
-      doc.setFontSize(11);
-      doc.setFont("Arial", "normal");
-      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
-      const introText = `The ${boardLabel()} made the following compensation determinations with respect to the ${isLLC ? "managers/officers" : "officers"} of the ${isLLC ? "LLC" : "corporation"}:`;
-      const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-      for (const line of introLines) {
+      const rIndent = RESOLVED_INDENT;
+      const resolvedPrefix = "FURTHER RESOLVED, ";
+      const resolvedBody = "that the Board has reviewed the compensation of each officer named above and determined that each salary is reasonable and commensurate with services performed, consistent with the requirements of IRC \u00A7 1366.";
+      const fullResolved = resolvedPrefix + resolvedBody;
+      const rLines = doc.splitTextToSize(fullResolved, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN - rIndent);
+      y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
+
+      for (let i = 0; i < rLines.length; i++) {
         y = checkPageBreak(doc, y, 6);
-        doc.text(line, MARGIN, y);
+        if (i === 0) {
+          doc.setFont("Arial", "bold");
+          const prefixWidth = doc.getTextWidth(resolvedPrefix);
+          doc.text(resolvedPrefix, MARGIN + rIndent, y);
+          doc.setFont("Arial", "normal");
+          const remainder = rLines[0].substring(resolvedPrefix.length);
+          if (remainder) doc.text(remainder, MARGIN + rIndent + prefixWidth, y);
+        } else {
+          doc.setFont("Arial", "normal");
+          doc.text(rLines[i], MARGIN + rIndent, y);
+        }
         y += 5.5;
       }
       y += 3;
+    } else {
+      const processedNames = new Set<string>();
+      const compParagraphs: string[] = [];
 
-      for (const para of compParagraphs) {
+      for (const o of data.officers) {
+        if (!o.compensation_note || !o.compensation_status) continue;
+        const nameKey = (o.name || "").trim().toLowerCase();
+        if (o.compensation_status === "included_in_primary") continue;
+
+        const secondaryRoles = (data.officers ?? []).filter((other: any) =>
+          other.id !== o.id &&
+          (other.name || "").trim().toLowerCase() === nameKey &&
+          other.compensation_status === "included_in_primary" &&
+          other.compensation_note
+        );
+
+        if (secondaryRoles.length > 0 && !processedNames.has(nameKey)) {
+          compParagraphs.push(o.compensation_note);
+          for (const sec of secondaryRoles) {
+            compParagraphs.push(sec.compensation_note);
+          }
+          processedNames.add(nameKey);
+        } else if (!processedNames.has(nameKey + o.id)) {
+          compParagraphs.push(o.compensation_note);
+        }
+      }
+
+      if (compParagraphs.length > 0) {
         y = checkPageBreak(doc, y, 20);
         doc.setFontSize(11);
         doc.setFont("Arial", "normal");
         doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
-        const noteLines = doc.splitTextToSize(para, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-        for (const line of noteLines) {
+        const introText = `The ${boardLabel()} made the following compensation determinations with respect to the ${isLLC ? "managers/officers" : "officers"} of the ${isLLC ? "LLC" : "corporation"}:`;
+        const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+        for (const line of introLines) {
           y = checkPageBreak(doc, y, 6);
           doc.text(line, MARGIN, y);
           y += 5.5;
         }
-        y += 4;
+        y += 3;
+
+        for (const para of compParagraphs) {
+          y = checkPageBreak(doc, y, 20);
+          doc.setFontSize(11);
+          doc.setFont("Arial", "normal");
+          doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
+          const noteLines = doc.splitTextToSize(para, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+          for (const line of noteLines) {
+            y = checkPageBreak(doc, y, 6);
+            doc.text(line, MARGIN, y);
+            y += 5.5;
+          }
+          y += 4;
+        }
       }
     }
+
   }
 
   // Authorized Binders (LLC only, non-shareholder) — AFTER officers — skip for written consents
