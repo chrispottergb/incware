@@ -1851,7 +1851,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y = checkPageBreak(doc, y, 20);
       const rIndent = RESOLVED_INDENT;
       const resolvedPrefix = "FURTHER RESOLVED, ";
-      const resolvedBody = "that the Board has reviewed the compensation of each officer named above and determined that each salary is reasonable and commensurate with the services performed, consistent with the requirements of IRC \u00A7 1366.";
+      const resolvedBody = "that the Board has reviewed the compensation of each officer named above and determined that each salary is reasonable and commensurate with services performed, consistent with the requirements of IRC \u00A7 1366.";
       const fullResolved = resolvedPrefix + resolvedBody;
       const rLines = doc.splitTextToSize(fullResolved, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN - rIndent);
       y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
