@@ -2437,12 +2437,29 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
               s.bank_name && bank.bank_name && s.bank_name.toLowerCase().trim() === bank.bank_name.toLowerCase().trim()
             );
           }
-          const signerStr = bankSignerList.map((s: any) => `${s.signer_name}${s.title ? `, ${s.title}` : ""}`).join("; ");
+          const hasSigners = bankSignerList.length > 0;
+          // Note: addWhereasResolved auto-injects "that " after the RESOLVED prefix,
+          // so the resolved body below must NOT start with "that".
+          const resolvedBody = hasSigners
+            ? `${bank.bank_name} is hereby approved and confirmed as a depository for the funds of ${companyName}, and that the following persons are hereby authorized as signers on said account:`
+            : `${bank.bank_name} is hereby approved and confirmed as a depository for the funds of ${companyName}.`;
           y = addWhereasResolved(doc, y,
             `WHEREAS, the ${boardLabel()} have reviewed the banking relationship with ${bank.bank_name}; and`,
-            `NOW, THEREFORE, BE IT RESOLVED, that ${bank.bank_name} is hereby approved and confirmed as a depository for the funds of ${companyName}${signerStr ? `, and that the following persons are hereby authorized as signers on said account: ${signerStr}` : ""}.`,
+            resolvedBody,
             bt
           );
+          if (hasSigners) {
+            doc.setFontSize(11);
+            doc.setFont("Arial", "normal");
+            doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
+            for (const s of bankSignerList) {
+              const line = `${s.signer_name}${s.title ? `, ${s.title}` : ""}`;
+              y = checkPageBreak(doc, y, 6);
+              doc.text(line, MARGIN + RESOLVED_INDENT, y);
+              y += 5.5;
+            }
+            y += 3;
+          }
         });
       }
       // Also render authorized signers from meeting_authorized_signers if available
