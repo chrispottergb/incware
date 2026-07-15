@@ -45,6 +45,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
 interface Props {
   meetingId: string;
+  companyId?: string;
   companyName?: string;
   entityType?: string;
 }
