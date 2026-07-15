@@ -49,6 +49,15 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
+import {
+  COMPANY_DOCUMENTS_BUCKET,
+  GENERATED_DOCUMENTS_BUCKET,
+  createGeneratedDocumentSignedUrl,
+  downloadGeneratedDocumentBlob,
+  extractStoragePath,
+  isGeneratedDocumentReference,
+  saveBlobAsFile,
+} from "@/lib/document-storage";
 
 const CATEGORIES = [
   "Formation Documents",
@@ -207,7 +216,13 @@ export default function DocumentsTab({ companyId }: Props) {
 
   const handleDownload = async (doc: (typeof documents)[0]) => {
     try {
-      // If file_path is a full URL (public Supabase URL or any https URL), open directly
+      if (isGeneratedDocumentReference(doc.file_path, doc.notes)) {
+        const blob = await downloadGeneratedDocumentBlob(doc.file_path);
+        saveBlobAsFile(blob, doc.file_name);
+        return;
+      }
+
+      // If file_path is a full external URL, open directly
       if (doc.file_path.startsWith("http://") || doc.file_path.startsWith("https://")) {
         window.open(doc.file_path, "_blank");
         return;
@@ -243,7 +258,11 @@ export default function DocumentsTab({ companyId }: Props) {
     mutationFn: async (id: string) => {
       const doc = documents.find((d) => d.id === id);
       if (!doc) return;
-      await supabase.storage.from("company-documents").remove([doc.file_path]);
+      const bucket = isGeneratedDocumentReference(doc.file_path, doc.notes)
+        ? GENERATED_DOCUMENTS_BUCKET
+        : COMPANY_DOCUMENTS_BUCKET;
+      const storagePath = extractStoragePath(doc.file_path, bucket);
+      if (storagePath) await supabase.storage.from(bucket).remove([storagePath]);
       const { error } = await supabase.from("company_documents").delete().eq("id", id);
       if (error) throw error;
     },

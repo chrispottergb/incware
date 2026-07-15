@@ -38,6 +38,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { generatePromissoryNotePDF } from "@/lib/promissory-note-pdf";
 import { useAuth } from "@/hooks/useAuth";
+import { createGeneratedDocumentSignedUrl, downloadGeneratedDocumentBlob, saveBlobAsFile } from "@/lib/document-storage";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
@@ -399,18 +400,11 @@ export default function MeetingLoans({ meetingId, companyId, companyName, entity
         .upload(filePath, blob, { upsert: true, contentType: "application/pdf" });
       if (uploadError) throw uploadError;
 
-      // Get persistent public URL
-      const { data: publicUrlData } = supabase.storage
-        .from("generated-documents")
-        .getPublicUrl(filePath);
-      const publicUrl = publicUrlData?.publicUrl;
-      if (!publicUrl) throw new Error("Failed to generate public URL.");
-
-      // Update DB record with the public URL
+      // Store the private storage path; secure links are created when viewing/downloading.
       const { error: updateError } = await supabase
         .from("meeting_loans" as any)
         .update({
-          promissory_note_file_url: publicUrl,
+          promissory_note_file_url: filePath,
           promissory_note_file_name: filename,
           promissory_note_required: true,
         } as any)
@@ -468,25 +462,21 @@ export default function MeetingLoans({ meetingId, companyId, companyName, entity
 
   const handleDownloadNote = async (row: any) => {
     if (!row.promissory_note_file_url) return;
-    // If it's a full public URL, open directly
     if (row.promissory_note_file_url.startsWith("http://") || row.promissory_note_file_url.startsWith("https://")) {
-      window.open(row.promissory_note_file_url, "_blank");
+      try {
+        const signedUrl = await createGeneratedDocumentSignedUrl(row.promissory_note_file_url);
+        window.open(signedUrl, "_blank", "noopener,noreferrer");
+      } catch {
+        toast.error("Failed to open file");
+      }
       return;
     }
-    // Otherwise download from storage using relative path
-    const { data, error } = await supabase.storage
-      .from("generated-documents")
-      .download(row.promissory_note_file_url);
-    if (error) {
+    try {
+      const data = await downloadGeneratedDocumentBlob(row.promissory_note_file_url);
+      saveBlobAsFile(data, row.promissory_note_file_name || "promissory-note.pdf");
+    } catch {
       toast.error("Failed to download file");
-      return;
     }
-    const url = URL.createObjectURL(data);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = row.promissory_note_file_name || "promissory-note.pdf";
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const isPending = addRow.isPending || updateRow.isPending;

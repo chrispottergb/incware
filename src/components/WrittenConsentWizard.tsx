@@ -48,6 +48,7 @@ import { format } from "date-fns";
 import { generatePromissoryNotePDF } from "@/lib/promissory-note-pdf";
 import { exportMeetingMinutesPDF } from "@/lib/meeting-pdf-export";
 import { savePdfReliably } from "@/lib/pdf-save";
+import { createGeneratedDocumentSignedUrl } from "@/lib/document-storage";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { Download, ArrowLeft } from "lucide-react";
@@ -278,11 +279,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         .upload(filePath, blob, { upsert: true, contentType: "application/pdf" });
       if (uploadError) throw uploadError;
 
-      const { data: publicUrlData } = supabase.storage
-        .from("generated-documents")
-        .getPublicUrl(filePath);
-      const publicUrl = publicUrlData?.publicUrl;
-      if (!publicUrl) throw new Error("Failed to generate public URL for the uploaded file.");
+      const signedUrl = await createGeneratedDocumentSignedUrl(filePath);
 
       const documentMarker = `promissory-note:${meetingId}`;
       const { data: existingDoc, error: existingDocError } = await supabase
@@ -296,7 +293,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       if (existingDoc?.id) {
         const { error: updateDocumentError } = await supabase.from("company_documents").update({
           file_name: filename,
-          file_path: publicUrl,
+          file_path: filePath,
           file_size: blob.size,
           file_type: "application/pdf",
           category: "Meeting Minutes & Resolutions",
@@ -307,7 +304,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
           company_id: company.id,
           user_id: user.id,
           file_name: filename,
-          file_path: publicUrl,
+          file_path: filePath,
           file_size: blob.size,
           file_type: "application/pdf",
           category: "Meeting Minutes & Resolutions",
@@ -317,7 +314,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       }
 
       queryClient.invalidateQueries({ queryKey: ["company_documents", company.id] });
-      window.open(publicUrl, "_blank", "noopener,noreferrer");
+      window.open(signedUrl, "_blank", "noopener,noreferrer");
       setNoteDialogOpen(false);
       setNoteStep("edit");
       toast.success("Promissory note saved.");
@@ -845,19 +842,13 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       const meetingId = await saveDraft();
       const { doc } = buildConsentPdf(meetingId);
       const filename = buildConsentFilename();
-      const filePath = `${user.id}/written-consent/${meetingId}/${filename}`;
+      const filePath = `${company.id}/written-consent/${meetingId}/${filename}`;
       const blob = doc.output("blob");
 
       const { error: uploadError } = await supabase.storage
         .from("generated-documents")
         .upload(filePath, blob, { upsert: true, contentType: "application/pdf" });
       if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from("generated-documents")
-        .getPublicUrl(filePath);
-      const publicUrl = publicUrlData.publicUrl;
-      if (!publicUrl) throw new Error("Unable to build a public file URL.");
 
       const documentMarker = `written-consent:${meetingId}`;
       const { data: existingDocument, error: lookupError } = await supabase
@@ -873,7 +864,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
           .from("company_documents")
           .update({
             file_name: filename,
-            file_path: publicUrl,
+            file_path: filePath,
             file_size: blob.size,
             file_type: "application/pdf",
             category: "Meeting Minutes & Resolutions",
@@ -885,7 +876,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
           company_id: company.id,
           user_id: user.id,
           file_name: filename,
-          file_path: publicUrl,
+          file_path: filePath,
           file_size: blob.size,
           file_type: "application/pdf",
           category: "Meeting Minutes & Resolutions",
