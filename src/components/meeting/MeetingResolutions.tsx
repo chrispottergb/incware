@@ -97,6 +97,22 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
     },
   });
 
+  // Look up any saved promissory note PDF for this meeting
+  const { data: promissoryNoteDoc } = useQuery({
+    queryKey: ["promissory_note_doc", companyId, meetingId],
+    enabled: !!companyId && !!meetingId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("company_documents")
+        .select("id, file_name, file_path")
+        .eq("company_id", companyId!)
+        .eq("notes", `promissory-note:${meetingId}`)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const addResolution = useMutation({
     mutationFn: async (effectivePurpose: string) => {
       const { error } = await supabase.from("meeting_resolutions").insert({
