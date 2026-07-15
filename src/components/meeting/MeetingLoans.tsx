@@ -391,7 +391,7 @@ export default function MeetingLoans({ meetingId, companyId, companyName, entity
     try {
       const filename = `promissory-note-${noteForm.borrowerName || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase();
       const blob = new Blob([currentPdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
-      const filePath = `${user.id}/promissory-notes/${editingNoteRowId}/${Date.now()}-${filename}`;
+      const filePath = `${companyId || user.id}/promissory-notes/${editingNoteRowId}/${Date.now()}-${filename}`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
