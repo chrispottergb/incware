@@ -37,6 +37,13 @@ const TRANSFER_RESOLUTION_PURPOSES = [
 
 const LEASE_RESOLUTION_PURPOSE = "Approve Lease Agreement";
 
+const LOAN_RESOLUTION_LABELS = [
+  "Approve Loan from Related Party",
+  "Approve Loan to Related Party",
+  "Approve Related Party Loan Agreement",
+];
+const isLoanPurpose = (p: string) => LOAN_RESOLUTION_LABELS.includes(p);
+
 interface Props {
   meetingId: string;
   entityType: string;
@@ -85,6 +92,22 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
         .select("*")
         .eq("meeting_id", meetingId)
         .order("created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Look up any saved promissory note PDF for this meeting
+  const { data: promissoryNoteDoc } = useQuery({
+    queryKey: ["promissory_note_doc", companyId, meetingId],
+    enabled: !!companyId && !!meetingId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("company_documents")
+        .select("id, file_name, file_path")
+        .eq("company_id", companyId!)
+        .eq("notes", `promissory-note:${meetingId}`)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -419,6 +442,46 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                             <Building2 className="mr-1.5 h-3 w-3" />
                             Complete Transaction
                           </Button>
+                        )}
+
+                        {/* Promissory Note view/download for loan resolutions */}
+                        {isLoanPurpose(r.purpose || "") && (
+                          <div className="mt-3 pt-3 border-t border-border/60">
+                            {promissoryNoteDoc?.file_path ? (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[11px] font-medium text-muted-foreground">
+                                  Promissory Note:
+                                </span>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs"
+                                  onClick={() =>
+                                    window.open(
+                                      promissoryNoteDoc.file_path,
+                                      "_blank",
+                                      "noopener,noreferrer"
+                                    )
+                                  }
+                                >
+                                  <FileText className="mr-1.5 h-3 w-3" />
+                                  View
+                                </Button>
+                                <a
+                                  href={promissoryNoteDoc.file_path}
+                                  download={promissoryNoteDoc.file_name || "promissory-note.pdf"}
+                                  className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md border border-input bg-background text-xs font-medium hover:bg-accent hover:text-accent-foreground"
+                                >
+                                  <FileText className="h-3 w-3" />
+                                  Download
+                                </a>
+                              </div>
+                            ) : (
+                              <p className="text-[11px] text-muted-foreground italic">
+                                No promissory note attached yet. Click <span className="font-medium">Edit</span> above to create one.
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
