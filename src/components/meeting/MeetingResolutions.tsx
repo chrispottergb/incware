@@ -37,6 +37,13 @@ const TRANSFER_RESOLUTION_PURPOSES = [
 
 const LEASE_RESOLUTION_PURPOSE = "Approve Lease Agreement";
 
+const LOAN_RESOLUTION_LABELS = [
+  "Approve Loan from Related Party",
+  "Approve Loan to Related Party",
+  "Approve Related Party Loan Agreement",
+];
+const isLoanPurpose = (p: string) => LOAN_RESOLUTION_LABELS.includes(p);
+
 interface Props {
   meetingId: string;
   entityType: string;
