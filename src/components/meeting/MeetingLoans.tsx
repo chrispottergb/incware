@@ -441,7 +441,7 @@ export default function MeetingLoans({ meetingId, companyId, companyName, entity
     if (!user?.id) return;
     setUploading(true);
     try {
-      const filePath = `${user.id}/promissory-notes/${rowId}/${file.name}`;
+      const filePath = `${companyId || user.id}/promissory-notes/${rowId}/${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from("generated-documents")
         .upload(filePath, file, { upsert: true });
