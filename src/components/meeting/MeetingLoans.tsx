@@ -105,7 +105,7 @@ const emptyForm: LoanForm = {
   promissory_note_required: false,
 };
 
-export default function MeetingLoans({ meetingId, companyName, entityType }: Props) {
+export default function MeetingLoans({ meetingId, companyId, companyName, entityType }: Props) {
   const isNonProfit = entityType === "Non-Profit";
   const queryClient = useQueryClient();
   const { user } = useAuth();
