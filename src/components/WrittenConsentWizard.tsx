@@ -272,7 +272,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         throw new Error("Generated PDF was empty.");
       }
 
-      const filePath = `${user.id}/promissory-notes/${meetingId}/${Date.now()}-${filename}`;
+      const filePath = `${company.id}/promissory-notes/${meetingId}/${Date.now()}-${filename}`;
       const { error: uploadError } = await supabase.storage
         .from("generated-documents")
         .upload(filePath, blob, { upsert: true, contentType: "application/pdf" });

@@ -1400,6 +1400,7 @@ export default function MeetingDetail() {
             </div>
             <MeetingLoans
               meetingId={meeting.id}
+              companyId={id}
               companyName={company?.name}
               entityType={company?.entity_type}
             />

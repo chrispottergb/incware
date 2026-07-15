@@ -45,6 +45,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
 interface Props {
   meetingId: string;
+  companyId?: string;
   companyName?: string;
   entityType?: string;
 }
@@ -104,7 +105,7 @@ const emptyForm: LoanForm = {
   promissory_note_required: false,
 };
 
-export default function MeetingLoans({ meetingId, companyName, entityType }: Props) {
+export default function MeetingLoans({ meetingId, companyId, companyName, entityType }: Props) {
   const isNonProfit = entityType === "Non-Profit";
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -390,7 +391,7 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
     try {
       const filename = `promissory-note-${noteForm.borrowerName || "loan"}.pdf`.replace(/\s+/g, "-").toLowerCase();
       const blob = new Blob([currentPdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
-      const filePath = `${user.id}/promissory-notes/${editingNoteRowId}/${Date.now()}-${filename}`;
+      const filePath = `${companyId || user.id}/promissory-notes/${editingNoteRowId}/${Date.now()}-${filename}`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
@@ -440,7 +441,7 @@ export default function MeetingLoans({ meetingId, companyName, entityType }: Pro
     if (!user?.id) return;
     setUploading(true);
     try {
-      const filePath = `${user.id}/promissory-notes/${rowId}/${file.name}`;
+      const filePath = `${companyId || user.id}/promissory-notes/${rowId}/${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from("generated-documents")
         .upload(filePath, file, { upsert: true });
