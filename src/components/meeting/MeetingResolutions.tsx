@@ -21,8 +21,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Loader2, FileText, Pencil, Link2, ArrowRightLeft, Layers, Building2 } from "lucide-react";
+import { Plus, Trash2, Loader2, FileText, Pencil, Link2, ArrowRightLeft, Layers, Building2, Download } from "lucide-react";
 import { toast } from "sonner";
+import { createGeneratedDocumentSignedUrl, downloadGeneratedDocumentBlob, saveBlobAsFile } from "@/lib/document-storage";
 
 import { RESOLUTION_TYPES } from "@/lib/resolution-types";
 import { isLLCType } from "@/lib/entity-terminology";
@@ -112,6 +113,28 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
       return data;
     },
   });
+
+  const handleOpenPromissoryNote = async () => {
+    if (!promissoryNoteDoc?.file_path) return;
+    try {
+      const signedUrl = await createGeneratedDocumentSignedUrl(promissoryNoteDoc.file_path);
+      window.open(signedUrl, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      console.error("Promissory note open failed:", err);
+      toast.error("Failed to open promissory note.");
+    }
+  };
+
+  const handleDownloadPromissoryNote = async () => {
+    if (!promissoryNoteDoc?.file_path) return;
+    try {
+      const blob = await downloadGeneratedDocumentBlob(promissoryNoteDoc.file_path);
+      saveBlobAsFile(blob, promissoryNoteDoc.file_name || "promissory-note.pdf");
+    } catch (err) {
+      console.error("Promissory note download failed:", err);
+      toast.error("Failed to download promissory note.");
+    }
+  };
 
   const addResolution = useMutation({
     mutationFn: async (effectivePurpose: string) => {
@@ -456,25 +479,20 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                                   size="sm"
                                   variant="outline"
                                   className="h-7 text-xs"
-                                  onClick={() =>
-                                    window.open(
-                                      promissoryNoteDoc.file_path,
-                                      "_blank",
-                                      "noopener,noreferrer"
-                                    )
-                                  }
+                                  onClick={handleOpenPromissoryNote}
                                 >
                                   <FileText className="mr-1.5 h-3 w-3" />
                                   View
                                 </Button>
-                                <a
-                                  href={promissoryNoteDoc.file_path}
-                                  download={promissoryNoteDoc.file_name || "promissory-note.pdf"}
-                                  className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md border border-input bg-background text-xs font-medium hover:bg-accent hover:text-accent-foreground"
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs"
+                                  onClick={handleDownloadPromissoryNote}
                                 >
-                                  <FileText className="h-3 w-3" />
+                                  <Download className="mr-1.5 h-3 w-3" />
                                   Download
-                                </a>
+                                </Button>
                               </div>
                             ) : (
                               <p className="text-[11px] text-muted-foreground italic">
