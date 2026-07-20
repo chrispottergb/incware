@@ -711,7 +711,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                                 <FileDown className="h-3 w-3" />
                               </Button>
                             )}
-
+                            {onBuySell && s.status === "active" && !s.is_treasury && (
                               <Button variant="ghost" size="icon" className="h-6 w-6" title="Buy/Sell" onClick={() => onBuySell(s.id, s.name)}>
                                 <ArrowRightLeft className="h-3 w-3" />
                               </Button>
