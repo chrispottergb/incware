@@ -39,6 +39,18 @@ export interface CertificateTemplateSpec {
 export const CERTIFICATE_TEMPLATES: Record<CertificateKind, CertificateTemplateSpec> = {
   llc: {
     pdfUrl: "/certificate-templates/llc.pdf",
+    maskColor: { r: 0.925, g: 0.918, b: 0.859 },
+    masks: [
+      { x: 159, y: 471, width: 84,  height: 14 }, // [Certificate_#]
+      { x: 592, y: 472, width: 50,  height: 16 }, // [Unit_#]
+      { x: 345, y: 493, width: 26,  height: 12 }, // [State]
+      { x: 291, y: 446, width: 135, height: 20 }, // [Company-Name]
+      { x: 333, y: 405, width: 85,  height: 14 }, // [Member_Name]
+      { x: 381, y: 373, width: 44,  height: 16 }, // Unit-#]
+      { x: 168, y: 225, width: 63,  height: 14 }, // [Issue_Date]
+      { x: 115, y: 374, width: 91,  height: 15 }, // [Company_Name] line 1
+      { x: 113, y: 350, width: 91,  height: 15 }, // [Company_Name] line 2
+    ],
     fields: {
       certNumber:   { x: 200, y: 476, size: 11, align: "center" },
       unitsHeader:  { x: 617, y: 476, size: 11, align: "center" },
@@ -51,6 +63,7 @@ export const CERTIFICATE_TEMPLATES: Record<CertificateKind, CertificateTemplateS
       issueDate:    { x: 200, y: 230, size: 12, align: "center", bold: true },
     },
   },
+
   corporation: {
     pdfUrl: "/certificate-templates/corporation.pdf",
     fields: {
