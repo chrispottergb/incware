@@ -16,10 +16,18 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, Award, XCircle, Pencil } from "lucide-react";
+import { Plus, Trash2, Loader2, Award, XCircle, Pencil, Download } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology } from "@/lib/entity-terminology";
+import { resolveCertificateKind } from "@/lib/certificate-templates";
+import {
+  generateCertificateFromTemplate,
+  downloadPdfBytes,
+  TemplateNotAvailableError,
+} from "@/lib/certificate-pdf-overlay";
+import { downloadStockCertificatePdf } from "@/lib/stock-certificate-pdf";
+
 
 interface Props {
   companyId: string;
@@ -34,6 +42,89 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
   const [cancelReason, setCancelReason] = useState("");
 
   const t = getTerminology(entityType);
+  const certificateKind = resolveCertificateKind(entityType);
+
+  const { data: companyRow } = useQuery({
+    queryKey: ["company-cert-meta", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("id, name, entity_type, state_of_incorporation, authorized_shares")
+        .eq("id", companyId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!companyId && !!certificateKind,
+  });
+
+  const handleDownloadCertificate = async (c: any) => {
+    if (!certificateKind) return;
+    try {
+      const units = Number(c.num_shares || 0);
+      const certNumber = c.certificate_number ?? 1;
+      const issueDate = c.issue_date || new Date().toISOString().slice(0, 10);
+      const displayDate = new Date(`${issueDate}T00:00:00`).toLocaleDateString("en-US", {
+        year: "numeric", month: "long", day: "numeric",
+      });
+      const numberFmt = units.toLocaleString(undefined, { maximumFractionDigits: 4 });
+      const pct = t.isLLC && totalActiveUnits > 0 ? (units / totalActiveUnits) * 100 : null;
+      const pctStr = pct != null ? `${pct.toFixed(2)}%` : "";
+      const memberName = c.shareholders?.name || "";
+      const safeName = memberName.replace(/[^A-Za-z0-9]+/g, "") || "member";
+      const fileName = `Cert_${String(certNumber).padStart(3, "0")}_${safeName}.pdf`;
+
+      const overlayData: Record<string, string> =
+        certificateKind === "llc"
+          ? {
+              memberName,
+              units: numberFmt,
+              ownershipPct: pctStr,
+              issueDate: displayDate,
+              certNumber: `C-${String(certNumber).padStart(3, "0")}`,
+            }
+          : {
+              shareholderName: memberName,
+              shares: numberFmt,
+              ownershipPct: pctStr,
+              authorizedShares: companyRow?.authorized_shares != null
+                ? Number(companyRow.authorized_shares).toLocaleString()
+                : "",
+              parValue: c.par_value != null ? `$${Number(c.par_value).toFixed(2)}` : "No Par Value",
+              issueDate: displayDate,
+              certNumber: `C-${String(certNumber).padStart(3, "0")}`,
+            };
+
+      try {
+        const bytes = await generateCertificateFromTemplate(certificateKind, overlayData);
+        downloadPdfBytes(bytes, fileName);
+        toast.success("Certificate downloaded");
+      } catch (err) {
+        if (err instanceof TemplateNotAvailableError) {
+          await downloadStockCertificatePdf({
+            companyName: companyRow?.name || "",
+            stateOfIncorporation: companyRow?.state_of_incorporation || undefined,
+            certificateNumber: Number(certNumber) || 1,
+            shareholderName: memberName,
+            numShares: units,
+            shareClass: c.share_class || "Common",
+            parValue: c.par_value ?? null,
+            issueDate,
+            authorizedShares: companyRow?.authorized_shares ?? null,
+            isLLC: certificateKind === "llc",
+            liveOwnershipPercent: pct,
+          });
+          toast.success("Certificate downloaded (fallback template)");
+        } else {
+          throw err;
+        }
+      }
+    } catch (err: any) {
+      console.error("Certificate generation failed", err);
+      toast.error(err?.message || "Failed to generate certificate");
+    }
+  };
+
 
   const { data: shareholders = [] } = useQuery({
     queryKey: ["stock-certificate-shareholders", companyId],
@@ -409,6 +500,11 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                       )}
                       <TableCell>
                         <div className="flex gap-1">
+                          {certificateKind && c.status === "active" && (
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-primary" onClick={() => handleDownloadCertificate(c)} title="Download Certificate">
+                              <Download className="h-3 w-3" />
+                            </Button>
+                          )}
                           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(c)}>
                             <Pencil className="h-3 w-3" />
                           </Button>
@@ -422,6 +518,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                           </Button>
                         </div>
                       </TableCell>
+
                     </TableRow>
                   ))}
                 </TableBody>
