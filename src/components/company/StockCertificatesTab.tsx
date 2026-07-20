@@ -16,10 +16,18 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, Award, XCircle, Pencil } from "lucide-react";
+import { Plus, Trash2, Loader2, Award, XCircle, Pencil, Download } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology } from "@/lib/entity-terminology";
+import { resolveCertificateKind } from "@/lib/certificate-templates";
+import {
+  generateCertificateFromTemplate,
+  downloadPdfBytes,
+  TemplateNotAvailableError,
+} from "@/lib/certificate-pdf-overlay";
+import { downloadStockCertificatePdf } from "@/lib/stock-certificate-pdf";
+
 
 interface Props {
   companyId: string;
