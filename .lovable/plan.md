@@ -1,42 +1,68 @@
-## Change
 
-Update the Annual Meeting PDF banking resolutions so each bank's authorized signers render as an indented list below the RESOLVED paragraph instead of being appended inline.
+# Certificate Generation via PDF Template Overlay
 
-## File
+Add a template-driven certificate pipeline that overlays record data onto static PDF backgrounds using `pdf-lib`. Keeps the existing jsPDF generator as a fallback when no template is present.
 
-Only one template controls this section:
-- `src/lib/meeting-pdf-export.ts` — lines ~2419–2447 (annual meeting Banking Resolutions loop).
+## Non-Profit handling (resolved)
 
-The `addWhereasResolved` helper (line 628) prepends `"that "` to the resolved body, and the current call already passes text starting with `"that {bank}..."`, producing the duplicate **"that that"** you mentioned. Fixing this is part of the change.
+Verified in the database: all 3 `Non-Profit` companies have zero rows in `stock_certificates`, `share_transactions`, and `shareholders`. Wisconsin non-profit corporations (Wis. Stat. Ch. 181) do not issue stock, and this app's non-profit workflow uses `directors` / `nonprofit_initial_directors` — not the equity model. Rather than guess a mapping, non-profits are excluded from certificate generation:
 
-## Data source (confirmed)
-
-- Bank Name → `company_banks.bank_name` (already loaded into `data.companyBanks`).
-- Signer Name → `bank_authorized_signers.signer_name`.
-- Authority designation → `bank_authorized_signers.title` (stored per-signer, populated by the "Authority Type" dropdown in `BanksTab.tsx`, including the expanded "Limited Authority: ..." string). **No manual mapping needed.**
-- Signers are matched to their bank via `bank_id`, with a fallback match by `bank_name` against `meeting_authorized_signers` (existing behavior — kept).
-
-## New rendering
-
-For each bank in `data.companyBanks`:
-
-1. WHEREAS (unchanged wording):
-   `WHEREAS, the Board of Directors have reviewed the banking relationship with {Bank Name}; and`
-2. RESOLVED paragraph — ends at the colon, no inline signers, no duplicate "that":
-   `RESOLVED, that {Bank Name} is hereby approved and confirmed as a depository for the funds of {Company Name}, and that the following persons are hereby authorized as signers on said account:`
-3. Signer list — one per line, indented to match the RESOLVED left indent (`RESOLVED_INDENT`), in insertion order (existing query already orders by `created_at`):
-   `{signer_name}, {title}`
-
-   If a bank has no signers, omit the trailing "and that the following persons..." clause entirely and end the RESOLVED sentence with a period after `{Company Name}` (so we never leave a dangling colon).
-
-For LLC meetings, `boardLabel()` continues to substitute Manager/Member terminology automatically.
-
-## Implementation notes
-
-- Because `addWhereasResolved` auto-injects `"that "`, pass the resolved body **without** a leading "that" (i.e., `"{bank} is hereby approved..."`), which also eliminates the "that that" bug for this section.
-- After the helper returns the new `y`, render each signer line with `doc.text(..., MARGIN + RESOLVED_INDENT, y)` using Arial 11, then advance `y` by ~14pt per line plus a small trailing gap, calling `checkPageBreak` between lines.
-- No changes to `BanksTab.tsx`, database schema, or the fallback signer-table rendering block (lines 2449–2471), which only fires for signers not tied to a listed bank.
+- `resolveCertificateKind(entity_type)` returns `"llc"`, `"corporation"`, or `null`.
+- Non-Profit → `null`. The "Download Certificate" button does not render on non-profit companies.
+- If a non-profit ever legitimately needs membership certificates in the future, we add a `nonprofit` template + field map (two-line addition — that's what the plugin architecture is for) rather than piggybacking on the LLC or Corporation template.
 
 ## Scope
 
-Purely a PDF formatting change in one file. Any Annual Meeting PDF regenerated after this ships will use the new layout — previously downloaded PDFs are static files and won't retroactively change (regenerating from the meeting will).
+- Two static template PDFs bundled in `public/certificate-templates/` (`llc.pdf`, `corporation.pdf`).
+- One overlay engine + one field-map file, keyed by kind (`llc` / `corporation`).
+- A "Download Certificate" button on each shareholder/member row in `ShareholdersTab.tsx`, only when `resolveCertificateKind(company.entity_type)` is non-null.
+- No DB schema changes — every field already exists (`companies.entity_type`, `companies.authorized_shares`, `stock_certificates.par_value`, `share_transactions` for units, `shareholders.ownership_percentage`).
+
+## Files
+
+**New**
+- `public/certificate-templates/llc.pdf` — placeholder blank landscape PDF (792×612).
+- `public/certificate-templates/corporation.pdf` — placeholder blank landscape PDF.
+- `src/lib/certificate-templates.ts` — `CERTIFICATE_TEMPLATES` const:
+  ```ts
+  {
+    llc:         { pdfUrl, fields: { memberName, units, ownershipPct, issueDate, certNumber } },
+    corporation: { pdfUrl, fields: { shareholderName, shares, ownershipPct, issueDate, certNumber, authorizedShares, parValue } }
+  }
+  ```
+  Each field: `{ x, y, size, align }` in pdf-lib coordinates (bottom-left, points). Initial values are best-guess centered positions; tuned once real artwork lands.
+- `src/lib/certificate-pdf-overlay.ts` — `generateCertificateFromTemplate(kind, data)`: `fetch(pdfUrl)` → `PDFDocument.load` → resolve field map → `page.drawText` per field → return `Uint8Array`. Throws `TemplateNotAvailableError` on 404 so the caller can fall back.
+
+**Modified**
+- `src/components/company/ShareholdersTab.tsx` — add a small "Download Certificate" icon button per row (rendered only when `resolveCertificateKind(company.entity_type) !== null`). Handler:
+  1. Resolve `kind` from `company.entity_type`.
+  2. Assemble data from shareholder row + latest active `stock_certificates` row (for cert number) + company (for authorized shares / par value on corp).
+  3. Try `generateCertificateFromTemplate`; on `TemplateNotAvailableError`, fall back to existing `downloadStockCertificatePdf` from `stock-certificate-pdf.ts`.
+  4. Download as `Cert_{padded_number}_{SanitizedName}.pdf`.
+- `package.json` — add `pdf-lib`.
+
+**Untouched**
+- `src/lib/stock-certificate-pdf.ts` — kept as fallback.
+- All DB schema, RLS, migrations.
+
+## Entity-type mapping (`resolveCertificateKind`)
+
+| entity_type value                             | kind             |
+| --------------------------------------------- | ---------------- |
+| `LLC`, `Single Member LLC`, `LLC-S`           | `llc`            |
+| `Corporation`, `S Corporation`                | `corporation`    |
+| `Non-Profit` (and anything unrecognized)      | `null` (no cert) |
+
+## Testing
+
+- No `Tom Thumb` / `Terry Thumb` records exist yet (verified). After you seed them on an LLC company, click Download Certificate and confirm PDF downloads with the expected filename and overlaid values. Position tuning happens after real artwork is dropped in.
+- Verify non-profits show no certificate button.
+- Verify fallback works by temporarily renaming `llc.pdf`.
+
+## Out of scope
+
+- Real certificate artwork (drop into `public/certificate-templates/` later; I'll tune coordinates).
+- Admin upload UI for templates.
+- Non-profit membership certificates (add later if the workflow calls for it).
+- Storing rendered PDFs in Supabase Storage.
+- Statute citations on the certificate itself.
