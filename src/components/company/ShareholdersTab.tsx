@@ -113,7 +113,11 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
     enabled: !!certificateKind,
   });
 
-  const handleDownloadCertificate = useCallback(async (s: any) => {
+  const handleDownloadCertificate = useCallback(async (
+    s: any,
+    unitsHeld: number,
+    pct: number | null,
+  ) => {
     if (!certificateKind) return;
     try {
       // Latest active certificate for this shareholder, if any.
@@ -127,8 +131,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
         .limit(1)
         .maybeSingle();
 
-      const units = Number(resolvedShareholderHoldings[s.id] ?? cert?.num_shares ?? 0);
-      const pct = getInterestPct(s);
+      const units = Number(unitsHeld || cert?.num_shares || 0);
       const certNumber = cert?.certificate_number ?? 1;
       const issueDate = cert?.issue_date || new Date().toISOString().slice(0, 10);
       const displayDate = new Date(`${issueDate}T00:00:00`).toLocaleDateString("en-US", {
