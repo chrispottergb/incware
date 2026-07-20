@@ -74,14 +74,20 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
       const safeName = memberName.replace(/[^A-Za-z0-9]+/g, "") || "member";
       const fileName = `Cert_${String(certNumber).padStart(3, "0")}_${safeName}.pdf`;
 
+      const companyName = companyRow?.name || "";
+      const state = companyRow?.state_of_incorporation || "";
       const overlayData: Record<string, string> =
         certificateKind === "llc"
           ? {
+              certNumber: String(certNumber),
+              unitsHeader: numberFmt,
+              state,
+              companyTitle: companyName,
               memberName,
-              units: numberFmt,
-              ownershipPct: pctStr,
+              unitsBody: numberFmt,
+              companyLine1: companyName,
+              companyLine2: companyName,
               issueDate: displayDate,
-              certNumber: `C-${String(certNumber).padStart(3, "0")}`,
             }
           : {
               shareholderName: memberName,
@@ -94,6 +100,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
               issueDate: displayDate,
               certNumber: `C-${String(certNumber).padStart(3, "0")}`,
             };
+
 
       try {
         const bytes = await generateCertificateFromTemplate(certificateKind, overlayData);
