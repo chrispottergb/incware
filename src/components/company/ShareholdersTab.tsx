@@ -19,12 +19,19 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff, ArrowRightLeft, Building2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff, ArrowRightLeft, Building2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { getTerminology } from "@/lib/entity-terminology";
 import type { ShareholderHoldings } from "@/hooks/useShareCalculations";
+import { resolveCertificateKind } from "@/lib/certificate-templates";
+import {
+  generateCertificateFromTemplate,
+  TemplateNotAvailableError,
+  downloadPdfBytes,
+} from "@/lib/certificate-pdf-overlay";
+import { downloadStockCertificatePdf } from "@/lib/stock-certificate-pdf";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
