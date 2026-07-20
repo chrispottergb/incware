@@ -145,11 +145,15 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
       const overlayData: Record<string, string> =
         certificateKind === "llc"
           ? {
+              certNumber: String(certNumber),
+              unitsHeader: numberFmt,
+              state: companyRow?.state_of_incorporation || "",
+              companyTitle: companyRow?.name || "",
               memberName: s.name || "",
-              units: numberFmt,
-              ownershipPct: pctStr,
+              unitsBody: numberFmt,
+              companyLine1: companyRow?.name || "",
+              companyLine2: companyRow?.name || "",
               issueDate: displayDate,
-              certNumber: `C-${String(certNumber).padStart(3, "0")}`,
             }
           : {
               shareholderName: s.name || "",
@@ -164,6 +168,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
               issueDate: displayDate,
               certNumber: `C-${String(certNumber).padStart(3, "0")}`,
             };
+
 
       try {
         const bytes = await generateCertificateFromTemplate(certificateKind, overlayData);

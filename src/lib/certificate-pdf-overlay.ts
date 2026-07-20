@@ -50,9 +50,27 @@ export async function generateCertificateFromTemplate(
   const pdfDoc = await PDFDocument.load(bytes);
   const [page] = pdfDoc.getPages();
 
+  // Paint mask rectangles to hide any baked-in [placeholder] labels in the
+  // source artwork BEFORE drawing overlay text on top.
+  if (template.masks && template.masks.length) {
+    const mc = template.maskColor ?? { r: 1, g: 1, b: 1 };
+    const maskColor = rgb(mc.r, mc.g, mc.b);
+    for (const m of template.masks) {
+      page.drawRectangle({
+        x: m.x,
+        y: m.y,
+        width: m.width,
+        height: m.height,
+        color: maskColor,
+        borderWidth: 0,
+      });
+    }
+  }
+
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const color = rgb(0.12, 0.16, 0.22);
+
 
   for (const [key, spec] of Object.entries(template.fields) as [
     string,
