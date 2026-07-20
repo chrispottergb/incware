@@ -500,6 +500,11 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                       )}
                       <TableCell>
                         <div className="flex gap-1">
+                          {certificateKind && c.status === "active" && (
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-primary" onClick={() => handleDownloadCertificate(c)} title="Download Certificate">
+                              <Download className="h-3 w-3" />
+                            </Button>
+                          )}
                           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(c)}>
                             <Pencil className="h-3 w-3" />
                           </Button>
@@ -513,6 +518,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                           </Button>
                         </div>
                       </TableCell>
+
                     </TableRow>
                   ))}
                 </TableBody>
