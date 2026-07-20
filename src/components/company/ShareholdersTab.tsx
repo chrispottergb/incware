@@ -700,7 +700,18 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            {onBuySell && s.status === "active" && !s.is_treasury && (
+                            {certificateKind && s.status === "active" && !s.is_treasury && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                title="Download Certificate"
+                                onClick={() => handleDownloadCertificate(s, resolvedShareholderHoldings[s.id] ?? 0, pct)}
+                              >
+                                <FileDown className="h-3 w-3" />
+                              </Button>
+                            )}
+
                               <Button variant="ghost" size="icon" className="h-6 w-6" title="Buy/Sell" onClick={() => onBuySell(s.id, s.name)}>
                                 <ArrowRightLeft className="h-3 w-3" />
                               </Button>
