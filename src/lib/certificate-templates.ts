@@ -14,10 +14,23 @@ export interface CertificateFieldSpec {
   bold?: boolean;
 }
 
+export interface CertificateMaskRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface CertificateTemplateSpec {
   pdfUrl: string;
+  /** Optional cream/parchment background color to paint mask rects with. */
+  maskColor?: { r: number; g: number; b: number };
+  /** Rectangles painted with maskColor before drawing text — used to hide
+   *  baked-in [placeholder] labels in the source artwork. */
+  masks?: CertificateMaskRect[];
   fields: Record<string, CertificateFieldSpec>;
 }
+
 
 // LLC membership certificate fields. Positions tuned to the SC2013 template
 // artwork placeholder rectangles. Data keys used by the overlay:
