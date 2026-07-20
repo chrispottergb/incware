@@ -97,6 +97,101 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   }, []);
 
   const t = getTerminology(entityType);
+  const certificateKind = resolveCertificateKind(entityType);
+
+  const { data: companyRow } = useQuery({
+    queryKey: ["company-cert-meta", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("id, name, entity_type, state_of_incorporation, authorized_shares")
+        .eq("id", companyId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!certificateKind,
+  });
+
+  const handleDownloadCertificate = useCallback(async (s: any) => {
+    if (!certificateKind) return;
+    try {
+      // Latest active certificate for this shareholder, if any.
+      const { data: cert } = await supabase
+        .from("stock_certificates")
+        .select("certificate_number, num_shares, par_value, share_class, issue_date, status")
+        .eq("company_id", companyId)
+        .eq("shareholder_id", s.id)
+        .eq("status", "active")
+        .order("certificate_number", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const units = Number(resolvedShareholderHoldings[s.id] ?? cert?.num_shares ?? 0);
+      const pct = getInterestPct(s);
+      const certNumber = cert?.certificate_number ?? 1;
+      const issueDate = cert?.issue_date || new Date().toISOString().slice(0, 10);
+      const displayDate = new Date(`${issueDate}T00:00:00`).toLocaleDateString("en-US", {
+        year: "numeric", month: "long", day: "numeric",
+      });
+      const numberFmt = units.toLocaleString(undefined, { maximumFractionDigits: 4 });
+      const pctStr = pct != null ? `${pct.toFixed(2)}%` : "";
+      const safeName = String(s.name || "member").replace(/[^A-Za-z0-9]+/g, "");
+      const fileName = `Cert_${String(certNumber).padStart(3, "0")}_${safeName}.pdf`;
+
+      const overlayData: Record<string, string> =
+        certificateKind === "llc"
+          ? {
+              memberName: s.name || "",
+              units: numberFmt,
+              ownershipPct: pctStr,
+              issueDate: displayDate,
+              certNumber: `C-${String(certNumber).padStart(3, "0")}`,
+            }
+          : {
+              shareholderName: s.name || "",
+              shares: numberFmt,
+              ownershipPct: pctStr,
+              authorizedShares: companyRow?.authorized_shares != null
+                ? Number(companyRow.authorized_shares).toLocaleString()
+                : "",
+              parValue: cert?.par_value != null
+                ? `$${Number(cert.par_value).toFixed(2)}`
+                : "No Par Value",
+              issueDate: displayDate,
+              certNumber: `C-${String(certNumber).padStart(3, "0")}`,
+            };
+
+      try {
+        const bytes = await generateCertificateFromTemplate(certificateKind, overlayData);
+        downloadPdfBytes(bytes, fileName);
+        toast.success("Certificate downloaded");
+      } catch (err) {
+        if (err instanceof TemplateNotAvailableError) {
+          await downloadStockCertificatePdf({
+            companyName: companyRow?.name || "",
+            stateOfIncorporation: companyRow?.state_of_incorporation || undefined,
+            certificateNumber: Number(certNumber) || 1,
+            shareholderName: s.name || "",
+            numShares: units,
+            shareClass: cert?.share_class || "Common",
+            parValue: cert?.par_value ?? null,
+            issueDate,
+            authorizedShares: companyRow?.authorized_shares ?? null,
+            isLLC: certificateKind === "llc",
+            liveOwnershipPercent: pct ?? null,
+          });
+          toast.success("Certificate downloaded (fallback template)");
+        } else {
+          throw err;
+        }
+      }
+    } catch (err: any) {
+      console.error("Certificate generation failed", err);
+      toast.error(err?.message || "Failed to generate certificate");
+    }
+  }, [certificateKind, companyId, companyRow]);
+
 
   const { data: shareholders = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["shareholders", companyId],
