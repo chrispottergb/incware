@@ -1,8 +1,6 @@
 // Static PDF template registry for certificate generation.
 // Coordinates are pdf-lib space (origin at bottom-left, points).
-// Templates are landscape US Letter (792 x 612 pt). Initial positions are
-// best-guess centered values against blank placeholders and should be tuned
-// once real certificate artwork is dropped into public/certificate-templates/.
+// Templates are landscape US Letter (792 x 612 pt).
 
 export type CertificateKind = "llc" | "corporation";
 
@@ -21,17 +19,23 @@ export interface CertificateTemplateSpec {
   fields: Record<string, CertificateFieldSpec>;
 }
 
-// LLC membership certificate fields.
-// Data keys: memberName, units, ownershipPct, issueDate, certNumber
+// LLC membership certificate fields. Positions tuned to the SC2013 template
+// artwork placeholder rectangles. Data keys used by the overlay:
+//   certNumber, unitsHeader, state, companyTitle,
+//   memberName, unitsBody, companyLine1, companyLine2, issueDate
 export const CERTIFICATE_TEMPLATES: Record<CertificateKind, CertificateTemplateSpec> = {
   llc: {
     pdfUrl: "/certificate-templates/llc.pdf",
     fields: {
-      certNumber:   { x: 90,  y: 555, size: 12, align: "center" },
-      units:        { x: 702, y: 555, size: 12, align: "center" },
-      memberName:   { x: 396, y: 360, size: 18, align: "center", bold: true },
-      ownershipPct: { x: 396, y: 320, size: 12, align: "center" },
-      issueDate:    { x: 396, y: 130, size: 11, align: "center" },
+      certNumber:   { x: 200, y: 476, size: 11, align: "center" },
+      unitsHeader:  { x: 617, y: 476, size: 11, align: "center" },
+      state:        { x: 396, y: 495, size: 10, align: "center" },
+      companyTitle: { x: 396, y: 450, size: 20, align: "center", bold: true },
+      memberName:   { x: 376, y: 410, size: 12, align: "center", bold: true },
+      unitsBody:    { x: 403, y: 378, size: 12, align: "center", bold: true },
+      companyLine1: { x: 160, y: 378, size: 12, align: "center", bold: true },
+      companyLine2: { x: 160, y: 354, size: 12, align: "center", bold: true },
+      issueDate:    { x: 200, y: 230, size: 12, align: "center", bold: true },
     },
   },
   corporation: {
