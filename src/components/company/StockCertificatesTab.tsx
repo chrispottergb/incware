@@ -16,9 +16,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, Award, XCircle, Pencil, Download } from "lucide-react";
+import { Plus, Trash2, Loader2, Award, XCircle, Pencil, Download, Eye, Printer } from "lucide-react";
 import { toast } from "sonner";
-import SectionPdfActions from "./SectionPdfActions";
 import { getTerminology } from "@/lib/entity-terminology";
 import { resolveCertificateKind } from "@/lib/certificate-templates";
 import {
@@ -27,6 +26,7 @@ import {
   TemplateNotAvailableError,
 } from "@/lib/certificate-pdf-overlay";
 import { downloadStockCertificatePdf } from "@/lib/stock-certificate-pdf";
+import { downloadSectionPdf, previewSectionPdf, printSectionPdf } from "@/lib/section-pdf";
 
 
 interface Props {
@@ -330,6 +330,21 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const certificateListPdfConfig = {
+    title: t.certificates,
+    companyName: "",
+    statuteRef: t.certificateStatute,
+    table: {
+      headers: ["Cert #", t.shareholder, t.classLabel, t.shareUnit, ...(t.isLLC ? [] : [t.parValue]), "Issue Date", "Status", ...(t.isLLC ? ["Ownership %"] : [])],
+      rows: certificates.map((c: any) => [
+        String(c.certificate_number), c.shareholders?.name ?? "—", c.share_class,
+        c.num_shares?.toLocaleString(), ...(t.isLLC ? [] : [c.par_value != null ? `$${Number(c.par_value).toFixed(0)}` : "No Par"]),
+        c.issue_date ? new Date(c.issue_date + "T00:00:00").toLocaleDateString() : "—", c.status ?? "—",
+        ...(t.isLLC ? [c.status === "active" && totalActiveUnits > 0 ? `${((c.num_shares / totalActiveUnits) * 100).toFixed(2)}%` : "—"] : []),
+      ]),
+    },
+  };
+
   return (
     <>
       <Card>
@@ -342,18 +357,48 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
             <CardDescription className="text-[11px] mt-0.5">{t.certificateStatute}</CardDescription>
           </div>
           <div className="flex items-center gap-1">
-            <SectionPdfActions config={{
-              title: t.certificates, companyName: "", statuteRef: t.certificateStatute,
-              table: {
-                headers: ["Cert #", t.shareholder, t.classLabel, t.shareUnit, ...(t.isLLC ? [] : [t.parValue]), "Issue Date", "Status", ...(t.isLLC ? ["Ownership %"] : [])],
-                rows: certificates.map((c: any) => [
-                  String(c.certificate_number), c.shareholders?.name ?? "—", c.share_class,
-                  c.num_shares?.toLocaleString(), ...(t.isLLC ? [] : [c.par_value != null ? `$${Number(c.par_value).toFixed(0)}` : "No Par"]),
-                  c.issue_date ? new Date(c.issue_date + "T00:00:00").toLocaleDateString() : "—", c.status ?? "—",
-                  ...(t.isLLC ? [c.status === "active" && totalActiveUnits > 0 ? `${((c.num_shares / totalActiveUnits) * 100).toFixed(2)}%` : "—"] : []),
-                ]),
-              },
-            }} />
+            <div className="flex items-center gap-1 border-r border-border pr-2 mr-1" aria-label="Certificate list PDF actions">
+              <span className="text-[10px] uppercase text-muted-foreground whitespace-nowrap">List PDF</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                title="Preview certificate list PDF"
+                onClick={(e) => {
+                  e.preventDefault();
+                  previewSectionPdf(certificateListPdfConfig);
+                }}
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                title="Download certificate list PDF"
+                onClick={(e) => {
+                  e.preventDefault();
+                  downloadSectionPdf(certificateListPdfConfig);
+                }}
+              >
+                <Download className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                title="Print certificate list PDF"
+                onClick={(e) => {
+                  e.preventDefault();
+                  printSectionPdf(certificateListPdfConfig);
+                }}
+              >
+                <Printer className="h-3.5 w-3.5" />
+              </Button>
+            </div>
             <Dialog open={dialog} onOpenChange={(o) => { setDialog(o); if (!o) resetForm(); }}>
               <DialogTrigger asChild>
                 <Button size="sm" variant="outline" className="h-7 text-xs">
@@ -481,7 +526,7 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                     <TableHead className="text-[10px] uppercase">Issue Date</TableHead>
                     <TableHead className="text-[10px] uppercase">Status</TableHead>
                     {t.isLLC && <TableHead className="text-[10px] uppercase text-right">Ownership %</TableHead>}
-                    <TableHead className="text-[10px] uppercase w-24">Actions</TableHead>
+                    <TableHead className="text-[10px] uppercase w-40">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -508,8 +553,8 @@ export default function StockCertificatesTab({ companyId, entityType = "Corporat
                       <TableCell>
                         <div className="flex gap-1">
                           {certificateKind && c.status === "active" && (
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-primary" onClick={() => handleDownloadCertificate(c)} title="Download Certificate">
-                              <Download className="h-3 w-3" />
+                            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-primary" onClick={() => handleDownloadCertificate(c)} title="Download official certificate template">
+                              <Download className="mr-1 h-3 w-3" /> Certificate
                             </Button>
                           )}
                           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(c)}>
