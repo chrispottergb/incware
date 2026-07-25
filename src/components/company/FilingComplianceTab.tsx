@@ -378,6 +378,8 @@ export default function FilingComplianceTab({ companyId, entityType, company }: 
                 )}
                 <Input
                   type="date"
+                  min="1900-01-01"
+                  max="2999-12-31"
                   value={item.filed_date || ""}
                   onChange={(e) =>
                     updateItem.mutate({
@@ -385,8 +387,28 @@ export default function FilingComplianceTab({ companyId, entityType, company }: 
                       updates: { filed_date: e.target.value || null },
                     })
                   }
+                  onBlur={(e) => {
+                    const v = e.target.value;
+                    if (!v) return;
+                    const [y, m, d] = v.split("-");
+                    if (!y || y.length !== 4) return;
+                    const yearNum = parseInt(y, 10);
+                    // Normalize 2-digit years the browser padded with leading zeros
+                    // (e.g. user typed "18" → "0018" → assume 2018; "68" → 1968)
+                    if (yearNum < 100) {
+                      const normalized = yearNum < 50 ? 2000 + yearNum : 1900 + yearNum;
+                      const fixed = `${normalized}-${m}-${d}`;
+                      updateItem.mutate({ id: item.id, updates: { filed_date: fixed } });
+                    } else if (yearNum >= 100 && yearNum < 1000) {
+                      // e.g. "0018" typed as "018" → 2018
+                      const twoDigit = yearNum % 100;
+                      const normalized = twoDigit < 50 ? 2000 + twoDigit : 1900 + twoDigit;
+                      const fixed = `${normalized}-${m}-${d}`;
+                      updateItem.mutate({ id: item.id, updates: { filed_date: fixed } });
+                    }
+                  }}
                   className="h-7 w-[130px] text-xs"
-                  title="Date filed"
+                  title="Date filed (enter 4-digit year)"
                 />
 
                 {/* File upload / display */}
