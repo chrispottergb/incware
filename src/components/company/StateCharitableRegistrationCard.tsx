@@ -250,30 +250,25 @@ export function StateCharitableRegistrationCard({
             Upload Registration Certificate
           </Label>
           <div className="flex items-center gap-3">
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="hidden"
-              onChange={async (e) => {
-                const f = e.target.files?.[0];
-                if (f) {
-                  await onUploadFile(f);
-                  setUploadedName(f.name);
-                  setUploadedAt(new Date());
-                }
-                e.target.value = "";
-              }}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-10 rounded-lg gap-1.5"
-              onClick={() => fileInputRef.current?.click()}
-            >
+            <label className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg border border-input bg-background text-sm font-medium cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors shrink-0">
               <Upload className="h-4 w-4" />
               Choose File
-            </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="sr-only"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  if (f) {
+                    await onUploadFile(f);
+                    setUploadedName(f.name);
+                    setUploadedAt(new Date());
+                  }
+                  e.target.value = "";
+                }}
+              />
+            </label>
+
             <span className="text-sm text-muted-foreground flex-1 truncate">
               {derivedName ?? "No file chosen"}
             </span>
