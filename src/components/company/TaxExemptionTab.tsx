@@ -184,12 +184,26 @@ export function TaxExemptionTab({ companyId }: Props) {
   };
 
   const downloadFile = async (path: string) => {
+    // Open window synchronously to avoid popup blockers (post-await window.open is blocked)
+    const win = window.open("about:blank", "_blank");
     const { data, error } = await supabase.storage.from("company-documents").createSignedUrl(path, 300);
     if (error || !data?.signedUrl) {
-      toast({ title: "Download failed", description: error?.message ?? "Unknown error", variant: "destructive" });
+      if (win) win.close();
+      toast({ title: "View failed", description: error?.message ?? "Unknown error", variant: "destructive" });
       return;
     }
-    window.open(data.signedUrl, "_blank");
+    if (win) {
+      win.location.href = data.signedUrl;
+    } else {
+      // Fallback: trigger download via anchor if popup was blocked
+      const a = document.createElement("a");
+      a.href = data.signedUrl;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
   };
 
   const addFiling = async () => {
