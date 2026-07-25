@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Upload, FileText, ExternalLink } from "lucide-react";
+import { StateCharitableRegistrationCard } from "./StateCharitableRegistrationCard";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,6 +90,7 @@ const EMPTY: Exemption = {
   filing_due_date: null,
   state_registration_required: null,
   registration_number: null,
+  pin: null,
   registration_date: null,
   expiration_date: null,
   registration_status: null,
@@ -564,115 +566,24 @@ export function TaxExemptionTab({ companyId }: Props) {
 
       <Separator />
 
-      {/* SECTION 3: State Charitable Registration */}
-      <section className="space-y-4">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold">State Charitable Registration</h2>
-            <p className="text-xs text-muted-foreground">
-              State-level charitable solicitation registration. Wisconsin non-profits must file annually by July 31.
-            </p>
-          </div>
-          <a
-            href="https://dfi.wi.gov/Pages/BusinessServices/CharitableProfessionalOrganizations/UserLogin.aspx"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors whitespace-nowrap"
-          >
-            WDFI Charitable Org Login
-            <ExternalLink className="h-3 w-3" />
-          </a>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <Label>State Registration Required</Label>
-            <Select
-              value={form.state_registration_required ?? ""}
-              onValueChange={(v) => save({ state_registration_required: v })}
-            >
-              <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Yes">Yes</SelectItem>
-                <SelectItem value="No">No</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1">
-            <Label>Credential Number</Label>
-            <Input
-              value={form.registration_number ?? ""}
-              onChange={(e) => setForm({ ...form, registration_number: e.target.value })}
-              onBlur={(e) => save({ registration_number: e.target.value || null })}
-              placeholder="WDFI credential #"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label>Registration Date</Label>
-            <DatePickerField
-              value={form.registration_date ?? ""}
-              onChange={(v) => save({ registration_date: v || null })}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label>Expiration Date</Label>
-            <DatePickerField
-              value={form.expiration_date ?? ""}
-              onChange={(v) => save({ expiration_date: v || null })}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label>Registration Status</Label>
-            <Select
-              value={form.registration_status ?? ""}
-              onValueChange={(v) => save({ registration_status: v })}
-            >
-              <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Expired">Expired</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1">
-            <Label>Annual Renewal Due Date</Label>
-            <DatePickerField
-              value={form.annual_renewal_due_date ?? ""}
-              onChange={(v) => save({ annual_renewal_due_date: v || null })}
-            />
-          </div>
-
-          <div className="space-y-1 md:col-span-2">
-            <Label>Upload Registration Certificate</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="file"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) handleUpload("registration_certificate_path", f);
-                  e.target.value = "";
-                }}
-              />
-              {form.registration_certificate_path && (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => downloadFile(form.registration_certificate_path!)}
-                >
-                  <FileText className="h-3 w-3 mr-1" /> View
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
+      <section>
+        <StateCharitableRegistrationCard
+          values={{
+            state_registration_required: form.state_registration_required,
+            registration_number: form.registration_number,
+            pin: form.pin,
+            registration_date: form.registration_date,
+            expiration_date: form.expiration_date,
+            annual_renewal_due_date: form.annual_renewal_due_date,
+            registration_status: form.registration_status,
+            registration_certificate_path: form.registration_certificate_path,
+          }}
+          onChange={(patch) => save(patch)}
+          onUploadFile={(f) => handleUpload("registration_certificate_path", f)}
+          onViewFile={downloadFile}
+        />
       </section>
+
 
       <ConfirmDeleteDialog
         open={!!deleteFilingId}
