@@ -573,7 +573,7 @@ export function TaxExemptionTab({ companyId }: Props) {
             </p>
           </div>
           <a
-            href="https://www.wdfi.org/apps/CharitableOrganizationOnlineServices/Login.aspx"
+            href="https://dfi.wi.gov/Pages/BusinessServices/CharitableProfessionalOrganizations/UserLogin.aspx"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors whitespace-nowrap"
