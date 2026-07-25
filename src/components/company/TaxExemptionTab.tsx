@@ -565,9 +565,22 @@ export function TaxExemptionTab({ companyId }: Props) {
 
       {/* SECTION 3: State Charitable Registration */}
       <section className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold">State Charitable Registration</h2>
-          <p className="text-xs text-muted-foreground">State-level charitable solicitation registration.</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold">State Charitable Registration</h2>
+            <p className="text-xs text-muted-foreground">
+              State-level charitable solicitation registration. Wisconsin non-profits must file annually by July 31.
+            </p>
+          </div>
+          <a
+            href="https://www.wdfi.org/apps/CharitableOrganizationOnlineServices/Login.aspx"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors whitespace-nowrap"
+          >
+            WDFI Charitable Org Login
+            <ExternalLink className="h-3 w-3" />
+          </a>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -586,11 +599,12 @@ export function TaxExemptionTab({ companyId }: Props) {
           </div>
 
           <div className="space-y-1">
-            <Label>Registration Number</Label>
+            <Label>Credential Number</Label>
             <Input
               value={form.registration_number ?? ""}
               onChange={(e) => setForm({ ...form, registration_number: e.target.value })}
               onBlur={(e) => save({ registration_number: e.target.value || null })}
+              placeholder="WDFI credential #"
             />
           </div>
 
