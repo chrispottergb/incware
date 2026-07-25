@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useId, useState } from "react";
 import { ExternalLink, Eye, EyeOff, FileText, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,7 +88,7 @@ export function StateCharitableRegistrationCard({
   const [credLocal, setCredLocal] = useState(values.registration_number ?? "");
   const [uploadedName, setUploadedName] = useState<string | null>(null);
   const [uploadedAt, setUploadedAt] = useState<Date | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputId = useId();
 
   const status = values.registration_status ?? "";
   const filePath = values.registration_certificate_path;
@@ -250,23 +250,26 @@ export function StateCharitableRegistrationCard({
             Upload Registration Certificate
           </Label>
           <div className="flex items-center gap-3">
-            <label className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg border border-input bg-background text-sm font-medium cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors shrink-0">
+            <input
+              id={fileInputId}
+              type="file"
+              className="sr-only"
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                if (f) {
+                  await onUploadFile(f);
+                  setUploadedName(f.name);
+                  setUploadedAt(new Date());
+                }
+                e.target.value = "";
+              }}
+            />
+            <label
+              htmlFor={fileInputId}
+              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg border border-input bg-background text-sm font-medium cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors shrink-0"
+            >
               <Upload className="h-4 w-4" />
               Choose File
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="sr-only"
-                onChange={async (e) => {
-                  const f = e.target.files?.[0];
-                  if (f) {
-                    await onUploadFile(f);
-                    setUploadedName(f.name);
-                    setUploadedAt(new Date());
-                  }
-                  e.target.value = "";
-                }}
-              />
             </label>
 
             <span className="text-sm text-muted-foreground flex-1 truncate">
