@@ -3441,6 +3441,7 @@ export type Database = {
           id: string
           irs_determination_letter_date: string | null
           method_of_submission: string | null
+          pin: string | null
           public_charity_classification: string | null
           registration_certificate_path: string | null
           registration_date: string | null
@@ -3473,6 +3474,7 @@ export type Database = {
           id?: string
           irs_determination_letter_date?: string | null
           method_of_submission?: string | null
+          pin?: string | null
           public_charity_classification?: string | null
           registration_certificate_path?: string | null
           registration_date?: string | null
@@ -3505,6 +3507,7 @@ export type Database = {
           id?: string
           irs_determination_letter_date?: string | null
           method_of_submission?: string | null
+          pin?: string | null
           public_charity_classification?: string | null
           registration_certificate_path?: string | null
           registration_date?: string | null
