@@ -4,6 +4,31 @@ import "react-datepicker/dist/react-datepicker.css";
 import { format, parse, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
 
+const typedDatePattern = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+
+function parseTypedDate(value: string): Date | null {
+  const trimmed = value.trim();
+  const match = typedDatePattern.exec(trimmed);
+  if (!match) return null;
+
+  const parsed = parse(trimmed, "M/d/yyyy", new Date());
+  if (!isValid(parsed)) return null;
+
+  const month = Number(match[1]);
+  const day = Number(match[2]);
+  const year = Number(match[3]);
+
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() + 1 !== month ||
+    parsed.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return parsed;
+}
+
 interface DatePickerFieldProps {
   value: string;
   onChange: (value: string) => void;
@@ -44,10 +69,11 @@ export function DatePickerField({
     const typed = e?.target?.value ?? "";
     setRawText(typed);
 
-    // Try parsing typed text as MM/dd/yyyy
+    // Try parsing only complete typed dates. date-fns accepts partial years
+    // like "01/01/18" as year 0018, so require a real 4-digit year first.
     if (typed) {
-      const parsed = parse(typed, "MM/dd/yyyy", new Date());
-      if (isValid(parsed) && typed.length >= 8) {
+      const parsed = parseTypedDate(typed);
+      if (parsed) {
         onChange(format(parsed, "yyyy-MM-dd"));
         setRawText(null);
       }
@@ -57,8 +83,8 @@ export function DatePickerField({
   const handleBlur = () => {
     // On blur, try to parse whatever was typed
     if (rawText != null && rawText.trim()) {
-      const parsed = parse(rawText.trim(), "MM/dd/yyyy", new Date());
-      if (isValid(parsed)) {
+      const parsed = parseTypedDate(rawText);
+      if (parsed) {
         onChange(format(parsed, "yyyy-MM-dd"));
       }
       // If invalid, keep current value (don't reset)
