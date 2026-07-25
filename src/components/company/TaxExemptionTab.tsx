@@ -49,6 +49,7 @@ type Exemption = {
   filing_due_date: string | null;
   state_registration_required: string | null;
   registration_number: string | null;
+  pin: string | null;
   registration_date: string | null;
   expiration_date: string | null;
   registration_status: string | null;
