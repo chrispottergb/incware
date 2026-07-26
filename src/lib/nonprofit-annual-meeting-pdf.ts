@@ -24,7 +24,17 @@ export interface NonProfitAnnualMeetingData {
   attendees: { name: string; title?: string }[];
   quorumConfirmed?: boolean;
   governance: NonProfitGovernanceData;
+  /**
+   * "directors" (default) — Annual Meeting of Directors (board-only nonprofits).
+   * "members" — Annual Meeting of Members (membership-based nonprofits): the
+   * membership convenes, confirms member quorum, and elects directors.
+   * Governance content (fund accounting, compensation, COI, 990, etc.) is
+   * identical for both scopes; only title, opening, quorum, and elections
+   * wording change.
+   */
+  meetingScope?: "directors" | "members";
 }
+
 
 const BLUE = { r: 31, g: 78, b: 121 };
 const BODY_COLOR: [number, number, number] = [40, 40, 40];
