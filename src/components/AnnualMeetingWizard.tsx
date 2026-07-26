@@ -720,6 +720,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   };
 
   const [saving, setSaving] = useState(false);
+  const [savedMeetingId, setSavedMeetingId] = useState<string | null>(null);
 
   const handleSaveMeeting = async () => {
     if (!canGenerate()) {
@@ -753,6 +754,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
 
       if (newMeeting) {
         const mid = newMeeting.id;
+        setSavedMeetingId(mid);
 
         // Save officers
         const officerRows = data.officers.filter(o => o.name).map(o => ({
@@ -984,7 +986,14 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       const { savePdfReliably } = await import("@/lib/pdf-save");
       await savePdfReliably(doc, `${data.companyName}_Annual_Meeting_Minutes_${dateStr}.pdf`);
 
-      toast.success("PDF downloaded successfully!");
+      // Auto-persist the meeting record so it appears in the meetings list.
+      // Without this, users who go straight from the wizard to "Download PDF"
+      // end up with a PDF but no saved meeting.
+      if (!savedMeetingId && !saving) {
+        await handleSaveMeeting();
+      } else {
+        toast.success("PDF downloaded successfully!");
+      }
     } catch (err: any) {
       console.error("[Annual Meeting Download] Error:", err);
       toast.error("Failed to generate Annual Meeting PDF: " + (err?.message || "Unknown error"));
