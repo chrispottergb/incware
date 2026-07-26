@@ -722,7 +722,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   const [saving, setSaving] = useState(false);
   const [savedMeetingId, setSavedMeetingId] = useState<string | null>(null);
 
-  const handleSaveMeeting = async () => {
+  const handleSaveMeeting = async (opts?: { keepOpen?: boolean }) => {
     if (!canGenerate()) {
       toast.error("Please fill in all required fields (Company Name, Meeting Date, Chairperson, Secretary).");
       return;
