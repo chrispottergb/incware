@@ -862,12 +862,14 @@ export default function MeetingsTab({ companyId, company }: Props) {
           </DialogHeader>
           <AnnualMeetingWizard
             company={company}
+            meetingType={annualWizardType}
             onClose={() => setAnnualWizardOpen(false)}
             onMeetingCreated={() => {
               queryClient.invalidateQueries({ queryKey: ["meetings", companyId] });
               setAnnualWizardOpen(false);
             }}
           />
+
         </DialogContent>
       </Dialog>
 
