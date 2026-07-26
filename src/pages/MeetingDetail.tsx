@@ -86,7 +86,7 @@ export default function MeetingDetail() {
 
   const isWrittenConsent = meeting?.meeting_type === "Written Consent";
   const isOrganizational = meeting?.meeting_type === "Organizational Meeting";
-  const isAnnualMeeting = meeting?.meeting_type === "Annual Meeting";
+  const isAnnualMeeting = meeting?.meeting_type === "Annual Meeting" || meeting?.meeting_type === "Annual Meeting of Members";
   const isShareholderMeeting = meeting?.meeting_type === "Shareholder Meeting";
   const isStatutoryCloseShareholderMeeting = isShareholderMeeting && meeting?.sub_type === "Statutory Close Corporation";
   const showCompanyLevelCounselAndLeases = isAnnualMeeting || isOrganizational || isStatutoryCloseShareholderMeeting;

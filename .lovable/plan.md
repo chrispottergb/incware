@@ -1,71 +1,36 @@
-## Goal
-
-When `company.entity_type === "Non-Profit"`, the Annual Meeting wizard captures nonprofit-specific structured data and the generated PDF uses a 21-section nonprofit template that never interpolates raw dollar figures. C-Corp, S-Corp, and LLC flows are untouched, and the fund-accounting group is nonprofit-exclusive.
+Section 5 (meeting-type gating) is the only remaining piece — sections 1-4 (conditional fields, structured-vs-rendered data rule, 21-section PDF template, PDF output) are already wired through `NonProfitGovernanceStep`, `AnnualMeetingWizard`, and `nonprofit-annual-meeting-pdf.ts` from the prior pass.
 
 ## Scope (files)
 
-- `src/components/meeting/NonProfitGovernanceStep.tsx` — expand into a multi-section step capturing all new fields.
-- `src/components/AnnualMeetingWizard.tsx` — thread new nonprofit state through the existing session-draft, gate all rendering on `isNonProfit`, pass to PDF; keep non-NP path unchanged.
-- `src/lib/annual-meeting-pdf.ts` — add optional `nonProfit` block on `AnnualMeetingData`; when `entityType === "Non-Profit"` and `nonProfit` is present, render the 21-section nonprofit body instead of the standard body.
-- No DB schema changes — data lives in the wizard's existing `sessionStorage` draft. (Persistence to the meeting record is called out as an open question below.)
+- `src/components/company/MeetingsTab.tsx` — add a nonprofit meeting-type list; hide "Shareholder Meeting" and expose "Annual Meeting of Members" only when `entity_type === "Non-Profit"`.
+- `src/components/AnnualMeetingWizard.tsx` — accept the members variant, thread a `meetingScope: "directors" | "members"` flag into the nonprofit PDF data, and persist `meeting_type` accordingly.
+- `src/lib/nonprofit-annual-meeting-pdf.ts` — branch title, opening paragraph, quorum/attendance language, and elections wording on `meetingScope`.
+- `src/pages/MeetingDetail.tsx` — recognize the new `meeting_type` value for routing/labels (read-only check; only touched if the string isn't already handled).
 
-## Form additions (Non-Profit only)
+No DB schema changes. `meeting_type` remains a free string column.
 
-All new UI is rendered inside the existing "Non-Profit Governance" step, grouped as cards. Nothing below is visible for any other entity type — the fund-accounting group in particular stays completely absent from C-Corp / S-Corp / LLC flows.
+## Behavior
 
-1. **Notice of Meeting** — radio: `given_per_bylaws` | `waived_in_writing`.
-2. **Fund Accounting** (nonprofit-exclusive, FASB net-asset + UPMIFA concepts) — five list fields, each with a "None" checkbox that collapses the list:
-   - Funds established during the year
-   - Donor-restricted funds received during the year
-   - Endowment funds established/modified during the year
-   - Restrictions satisfied/released during the year
-   - Board-designated funds established/modified/terminated during the year
-3. **Treasurer's Report** — `fiscalYearCurrent`, `fiscalYearPrior`, `summary` (textarea).
-4. **Budget Approval** — `fiscalYear`, `approved` (yes/no).
-5. **Compensation Review** (structured, never printed) — repeater rows: `name`, `title`, `amount`, `comparabilityNotes`; plus board flags `reasonableApproved`, `interestedAbstained`.
-6. **Conflict of Interest** — disclosures list (or None); `policyReaffirmed` (yes/no). Rolls up with existing COI toggle.
-7. **Form 990 Review** — `reviewedPriorToFiling` (yes/no), `fiscalYear`.
-8. **Outside Professionals** — `attorneyName`, `accountantName`, `engagementChanged` (yes/no), `changeDetails` list.
-9. **Banking / Signing Authority** — `bankNames` list, `currentSigners` list (name + title), `priorAuthorizationsRevoked` (yes/no).
-10. **Next Meeting** — `date`, `location`.
-11. **Elections** — extend officer editor: add `Chairperson` role and a toggle `chairpersonCombinedWithPresident` so both can be recorded distinctly or combined per org structure.
+1. Meeting-type dropdown source list is chosen by entity type:
+   - Non-Profit → `["Annual Meeting", "Annual Meeting of Members", "Organizational Meeting", "Special Meeting of Board of Directors", "Written Consent"]`. `"Shareholder Meeting"` is removed from the option list entirely (not disabled).
+   - LLC → unchanged (`LLC_MEETING_TYPES`).
+   - C-Corp / S-Corp → unchanged (`CORP_MEETING_TYPES`).
+   The display-label mapping in the `<SelectItem>` render already rewrites `"Annual Meeting"` → `"Annual Meeting of Directors"` for non-LLC entities; that stays and now naturally reads correctly for nonprofits too.
 
-Existing mission-statement, public-inspection, and program-service fields on `NonProfitGovernanceData` are retained and roll into template sections 6 / 11 / 12 as appropriate.
+2. Selecting either `"Annual Meeting"` or `"Annual Meeting of Members"` on a Non-Profit opens the existing `AnnualMeetingWizard`. The wizard passes a `meetingScope` derived from `meeting_type` into `generateNonProfitAnnualMeetingPDF`.
 
-## PDF template (Non-Profit only)
+3. `nonprofit-annual-meeting-pdf.ts` uses `meetingScope`:
+   - `"directors"` (default) → current wording ("Annual Meeting", "directors present", board self-elects).
+   - `"members"` → title becomes "Annual Meeting of Members"; opening paragraph refers to the membership; quorum/attendance section lists members present and confirms member quorum; elections paragraph states that directors were "elected by the members" rather than by the board. All other governance sections (fund accounting, compensation review, COI, 990, professionals, banking) render identically — those don't change based on who's meeting.
 
-Add `generateNonProfitAnnualMeetingBody(doc, data)` used only when `data.entityType === "Non-Profit"` and `data.nonProfit` is set. Renders in this exact order:
-
-1. Title + corporation name
-2. Date / location (or remote communication)
-3. Call to order, chairperson, time, directors present, quorum
-4. Notice given/waived (per toggle)
-5. Prior minutes approved
-6. Activities & operations reviewed; program/finance/compliance reports
-7. Fund review paragraph (general language)
-8. Fund actions — bulleted lists from Fund Accounting group; each empty list renders "None"
-9. Treasurer's report — general language, only fiscal years merged, **no dollar figures**
-10. Budget approval — general language, only fiscal year merged
-11. Compensation review — fixed general paragraph (verbatim wording from spec), **no names or amounts**
-12. Conflict of interest — disclosures (or "None") + policy reaffirmation
-13. Form 990 review — fiscal year only
-14. Outside professionals — attorney, accountant, continued engagement or change
-15. Election of directors and officers — Directors list; Officers list including Chairperson/President as separate or combined per toggle
-16. Banking / signing authority — bank name, current signers, revocation statement when applicable
-17. Next annual meeting date/location
-18. Other business
-19. Adjournment time
-20. Certification line with approval date
-21. Secretary signature line
-
-Compensation amounts and any other financials remain in structured state for future reporting/990 prep and are never interpolated into text.
+4. Guard: the entity-type branch that already routes to the nonprofit PDF is unchanged; the gating change ensures a Non-Profit user can never select "Shareholder Meeting" and slip past the nonprofit branch.
 
 ## Non-goals
 
-- No changes to C-Corp / S-Corp / LLC minutes template or forms.
-- No new DB tables or exhibit/attachment mechanism.
-- Word/DOCX output — not supported by the current annual-meeting pipeline; PDF only, matching existing behavior.
+- No new database columns, no member roster model, no member-voting workflow beyond wording.
+- No changes to C-Corp / S-Corp / LLC meeting-type lists or minutes templates.
+- No new PDF renderer — reuse `generateNonProfitAnnualMeetingPDF` with a scope flag.
 
 ## Open question
 
-Persist the new nonprofit fields to the meeting record (for later 990 prep / reporting), or leave them in the session draft only? Current plan is session-draft only. Say the word and I'll add a follow-up migration + write path in a second pass.
+Should "Annual Meeting of Members" collect a distinct members-present roster (separate from the directors-present list already captured), or is it acceptable in this pass to reuse the existing attendee list and just relabel it "Members Present" in the PDF? Current plan: reuse the attendee list with relabeled wording.

@@ -67,7 +67,14 @@ interface Props {
   company: any;
   onClose?: () => void;
   onMeetingCreated?: () => void;
+  /**
+   * Nonprofit meeting scope. When "Annual Meeting of Members" is chosen for a
+   * Non-Profit entity, the PDF title / opening / quorum / elections wording
+   * refers to the membership. Defaults to "Annual Meeting" (directors).
+   */
+  meetingType?: "Annual Meeting" | "Annual Meeting of Members";
 }
+
 
 // ---- Extracted DynamicTable to prevent re-mount on every keystroke ----
 function DynamicTableStable({
@@ -159,7 +166,7 @@ function RequiredField({ label, value }: { label: string; value: string }) {
 
 const STORAGE_KEY_PREFIX = "annual_meeting_draft_";
 
-export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated }: Props) {
+export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated, meetingType = "Annual Meeting" }: Props) {
   const queryClient = useQueryClient();
   const { upsert: upsertAddressBook } = useAddressBookContext(company?.id);
   const storageKey = `${STORAGE_KEY_PREFIX}${company?.id || "unknown"}`;
@@ -728,7 +735,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         meeting_date: data.meetingDate,
         meeting_time: data.meetingTime || null,
         tax_year: data.taxYear ? parseInt(data.taxYear) : null,
-        meeting_type: "Annual Meeting",
+        meeting_type: meetingType,
         meeting_location: data.meetingLocation || null,
         chairperson: data.chairperson || null,
         mtg_secretary: data.secretary || null,
@@ -951,8 +958,10 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         priorMeetingDate: data.priorMeetingDate,
         attendees: data.attendees,
         governance: npGovernance,
+        meetingScope: meetingType === "Annual Meeting of Members" ? "members" : "directors",
       });
     }
+
     return generateAnnualMeetingPDF(data);
   };
 

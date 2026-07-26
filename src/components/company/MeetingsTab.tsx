@@ -67,6 +67,17 @@ const LLC_MEETING_TYPES = [
   "Written Consent",
 ];
 
+// Nonprofits have no shareholders; "Shareholder Meeting" is intentionally omitted.
+// "Annual Meeting of Members" supports membership-based nonprofits.
+const NONPROFIT_MEETING_TYPES = [
+  "Annual Meeting",
+  "Annual Meeting of Members",
+  "Organizational Meeting",
+  "Special Meeting of Board of Directors",
+  "Written Consent",
+];
+
+
 const SUB_TYPES: Record<string, string[]> = {
   "Shareholder Meeting": [
     "Statutory Close Corporation",
@@ -108,6 +119,8 @@ export default function MeetingsTab({ companyId, company }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [orgWizardOpen, setOrgWizardOpen] = useState(false);
   const [annualWizardOpen, setAnnualWizardOpen] = useState(false);
+  const [annualWizardType, setAnnualWizardType] = useState<"Annual Meeting" | "Annual Meeting of Members">("Annual Meeting");
+
   const [consentWizardOpen, setConsentWizardOpen] = useState(false);
   const [editingConsentId, setEditingConsentId] = useState<string | null>(null);
 
@@ -615,8 +628,11 @@ export default function MeetingsTab({ companyId, company }: Props) {
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {(isLLCType(company.entity_type) ? LLC_MEETING_TYPES : CORP_MEETING_TYPES).map((t) => (
+                      {(company.entity_type === "Non-Profit"
+                        ? NONPROFIT_MEETING_TYPES
+                        : isLLCType(company.entity_type) ? LLC_MEETING_TYPES : CORP_MEETING_TYPES).map((t) => (
                         <SelectItem key={t} value={t}>{t === "Shareholder Meeting" ? "Annual Meeting of Shareholders" : t === "Annual Meeting" && !isLLCType(company.entity_type) ? "Annual Meeting of Directors" : t}</SelectItem>
+
                       ))}
                     </SelectContent>
                   </Select>
@@ -846,12 +862,14 @@ export default function MeetingsTab({ companyId, company }: Props) {
           </DialogHeader>
           <AnnualMeetingWizard
             company={company}
+            meetingType={annualWizardType}
             onClose={() => setAnnualWizardOpen(false)}
             onMeetingCreated={() => {
               queryClient.invalidateQueries({ queryKey: ["meetings", companyId] });
               setAnnualWizardOpen(false);
             }}
           />
+
         </DialogContent>
       </Dialog>
 
