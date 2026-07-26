@@ -120,11 +120,16 @@ export function generateNonProfitAnnualMeetingPDF(data: NonProfitAnnualMeetingDa
     const time = data.meetingTime || "[Time]";
     const location = data.meetingLocation || "[Location]";
 
+    const scope = data.meetingScope === "members" ? "members" : "directors";
+    const attendeeNoun = scope === "members" ? "members" : "directors";
+    const titleText = scope === "members" ? "ANNUAL MEETING OF MEMBERS" : "ANNUAL MEETING MINUTES";
+    const bodyName = scope === "members" ? "membership" : "Board of Directors";
+
     // ===== 1. TITLE =====
     doc.setFontSize(14);
     doc.setFont("Arial", "bold");
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
-    doc.text("ANNUAL MEETING MINUTES", pw / 2, y, { align: "center" });
+    doc.text(titleText, pw / 2, y, { align: "center" });
     y += 14;
     doc.setFontSize(12);
     doc.text(corp.toUpperCase(), pw / 2, y, { align: "center" });
@@ -132,21 +137,31 @@ export function generateNonProfitAnnualMeetingPDF(data: NonProfitAnnualMeetingDa
 
     // 2. Meeting held
     sectionHeading("Meeting");
-    para(`The Annual Meeting of ${corp} was held on ${meetingDateStr} at ${location}, or by remote communication as permitted by the Corporation's bylaws.`);
+    const openingSubject = scope === "members"
+      ? `The Annual Meeting of the Members of ${corp}`
+      : `The Annual Meeting of ${corp}`;
+    para(`${openingSubject} was held on ${meetingDateStr} at ${location}, or by remote communication as permitted by the Corporation's bylaws.`);
 
-    // 3. Call to order / directors present / quorum
+    // 3. Call to order / attendees / quorum
     sectionHeading("Call to Order");
-    const directorsPresent = (data.attendees ?? []).map(a => a.name).filter(Boolean);
-    const directorsList = directorsPresent.length > 0 ? directorsPresent.join(", ") : "[Directors Present]";
-    para(`The meeting was called to order by ${chair} at ${time}. The following directors were present: ${directorsList}. A quorum was confirmed.`);
+    const attendeesList = (data.attendees ?? []).map(a => a.name).filter(Boolean);
+    const attendeesText = attendeesList.length > 0
+      ? attendeesList.join(", ")
+      : (scope === "members" ? "[Members Present]" : "[Directors Present]");
+    const quorumText = scope === "members"
+      ? `The meeting was called to order by ${chair} at ${time}. The following members were present in person or by proxy: ${attendeesText}. A quorum of the membership was confirmed.`
+      : `The meeting was called to order by ${chair} at ${time}. The following directors were present: ${attendeesText}. A quorum was confirmed.`;
+    para(quorumText);
 
     // 4. Notice
     sectionHeading("Notice of Meeting");
     if (gov.noticeType === "waived") {
-      para("Notice of the meeting was waived in writing by all directors entitled to notice.");
+      const waivedBy = scope === "members" ? "all members entitled to notice" : "all directors entitled to notice";
+      para(`Notice of the meeting was waived in writing by ${waivedBy}.`);
     } else {
       para("Notice of the meeting was duly given in accordance with the Corporation's bylaws.");
     }
+
 
     // 5. Prior minutes
     sectionHeading("Approval of Prior Minutes");
