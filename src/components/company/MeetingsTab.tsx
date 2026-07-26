@@ -585,6 +585,19 @@ export default function MeetingsTab({ companyId, company }: Props) {
                   setConsentWizardOpen(true);
                   return;
                 }
+                // Non-Profit Annual Meeting flow -> open AnnualMeetingWizard
+                // instead of creating meeting directly, so nonprofit governance
+                // step + 21-section PDF branching are reachable.
+                if (
+                  company.entity_type === "Non-Profit" &&
+                  (form.meeting_type === "Annual Meeting" ||
+                    form.meeting_type === "Annual Meeting of Members")
+                ) {
+                  setAnnualWizardType(form.meeting_type as "Annual Meeting" | "Annual Meeting of Members");
+                  setDialogOpen(false);
+                  setAnnualWizardOpen(true);
+                  return;
+                }
                 createMeeting.mutate();
               }}
               className="space-y-4"
