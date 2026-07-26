@@ -528,6 +528,9 @@ export default function MeetingsTab({ companyId, company }: Props) {
 
   const hasSubTypes = SUB_TYPES[form.meeting_type];
   const isOrgMeeting = form.meeting_type === "Organizational Meeting";
+  const meetingTypeOptions = company.entity_type === "Non-Profit"
+    ? NONPROFIT_MEETING_TYPES
+    : isLLCType(company.entity_type) ? LLC_MEETING_TYPES : CORP_MEETING_TYPES;
 
   const meetingTypeColor = (type: string) => {
     if (type === "Annual Meeting") return "bg-primary/10 text-primary";
@@ -537,6 +540,12 @@ export default function MeetingsTab({ companyId, company }: Props) {
 
   return (
     <div className="space-y-6">
+      <div style={{ background: "yellow", padding: "8px", fontWeight: "bold", color: "black" }}>
+        DEBUG: entity_type = "{String(company.entity_type)}" (type: {typeof company.entity_type})
+      </div>
+      <div style={{ background: "yellow", padding: "8px", color: "black" }}>
+        DEBUG: meeting types = {JSON.stringify(meetingTypeOptions)}
+      </div>
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-display text-lg font-semibold">Meetings</h3>
@@ -628,9 +637,7 @@ export default function MeetingsTab({ companyId, company }: Props) {
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {(company.entity_type === "Non-Profit"
-                        ? NONPROFIT_MEETING_TYPES
-                        : isLLCType(company.entity_type) ? LLC_MEETING_TYPES : CORP_MEETING_TYPES).map((t) => (
+                      {meetingTypeOptions.map((t) => (
                         <SelectItem key={t} value={t}>{t === "Shareholder Meeting" ? "Annual Meeting of Shareholders" : t === "Annual Meeting" && !isLLCType(company.entity_type) ? "Annual Meeting of Directors" : t}</SelectItem>
 
                       ))}
