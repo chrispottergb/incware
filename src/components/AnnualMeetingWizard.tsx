@@ -67,7 +67,14 @@ interface Props {
   company: any;
   onClose?: () => void;
   onMeetingCreated?: () => void;
+  /**
+   * Nonprofit meeting scope. When "Annual Meeting of Members" is chosen for a
+   * Non-Profit entity, the PDF title / opening / quorum / elections wording
+   * refers to the membership. Defaults to "Annual Meeting" (directors).
+   */
+  meetingType?: "Annual Meeting" | "Annual Meeting of Members";
 }
+
 
 // ---- Extracted DynamicTable to prevent re-mount on every keystroke ----
 function DynamicTableStable({
