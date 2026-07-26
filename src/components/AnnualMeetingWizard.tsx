@@ -735,7 +735,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         meeting_date: data.meetingDate,
         meeting_time: data.meetingTime || null,
         tax_year: data.taxYear ? parseInt(data.taxYear) : null,
-        meeting_type: "Annual Meeting",
+        meeting_type: meetingType,
         meeting_location: data.meetingLocation || null,
         chairperson: data.chairperson || null,
         mtg_secretary: data.secretary || null,
