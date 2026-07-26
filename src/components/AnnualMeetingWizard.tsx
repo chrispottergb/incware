@@ -939,7 +939,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       queryClient.invalidateQueries({ queryKey: ["meetings", company.id] });
       toast.success("Annual Meeting saved successfully!");
       onMeetingCreated?.();
-      onClose?.();
+      if (!opts?.keepOpen) onClose?.();
     } catch (err: any) {
       console.error("Meeting save failed:", err);
       toast.error("Failed to save meeting. Please try again.");
