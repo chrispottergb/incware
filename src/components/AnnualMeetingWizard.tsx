@@ -990,7 +990,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       // Without this, users who go straight from the wizard to "Download PDF"
       // end up with a PDF but no saved meeting.
       if (!savedMeetingId && !saving) {
-        await handleSaveMeeting({ keepOpen: true });
+        await handleSaveMeeting();
       } else {
         toast.success("PDF downloaded successfully!");
       }
