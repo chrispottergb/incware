@@ -1717,7 +1717,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
           )}
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => handleSaveMeeting()} disabled={!canGenerate() || saving}>
+          <Button variant="outline" size="sm" onClick={handleSaveMeeting} disabled={!canGenerate() || saving}>
             {saving ? "Saving..." : "Save Meeting"}
           </Button>
           {step < STEPS.length - 1 ? (
