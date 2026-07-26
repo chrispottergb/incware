@@ -19,7 +19,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { format } from "date-fns";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import NonProfitGovernanceStep, { type NonProfitGovernanceData } from "@/components/meeting/NonProfitGovernanceStep";
+import NonProfitGovernanceStep, { type NonProfitGovernanceData, defaultNonProfitGovernance } from "@/components/meeting/NonProfitGovernanceStep";
+import { generateNonProfitAnnualMeetingPDF } from "@/lib/nonprofit-annual-meeting-pdf";
 import Form1023EZCheck from "@/components/meeting/Form1023EZCheck";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
