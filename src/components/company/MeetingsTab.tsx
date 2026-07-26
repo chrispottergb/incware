@@ -119,6 +119,8 @@ export default function MeetingsTab({ companyId, company }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [orgWizardOpen, setOrgWizardOpen] = useState(false);
   const [annualWizardOpen, setAnnualWizardOpen] = useState(false);
+  const [annualWizardType, setAnnualWizardType] = useState<"Annual Meeting" | "Annual Meeting of Members">("Annual Meeting");
+
   const [consentWizardOpen, setConsentWizardOpen] = useState(false);
   const [editingConsentId, setEditingConsentId] = useState<string | null>(null);
 
