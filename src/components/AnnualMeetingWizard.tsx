@@ -720,6 +720,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
   };
 
   const [saving, setSaving] = useState(false);
+  const [savedMeetingId, setSavedMeetingId] = useState<string | null>(null);
 
   const handleSaveMeeting = async () => {
     if (!canGenerate()) {
