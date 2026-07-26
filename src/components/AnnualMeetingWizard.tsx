@@ -958,8 +958,10 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         priorMeetingDate: data.priorMeetingDate,
         attendees: data.attendees,
         governance: npGovernance,
+        meetingScope: meetingType === "Annual Meeting of Members" ? "members" : "directors",
       });
     }
+
     return generateAnnualMeetingPDF(data);
   };
 
