@@ -67,6 +67,17 @@ const LLC_MEETING_TYPES = [
   "Written Consent",
 ];
 
+// Nonprofits have no shareholders; "Shareholder Meeting" is intentionally omitted.
+// "Annual Meeting of Members" supports membership-based nonprofits.
+const NONPROFIT_MEETING_TYPES = [
+  "Annual Meeting",
+  "Annual Meeting of Members",
+  "Organizational Meeting",
+  "Special Meeting of Board of Directors",
+  "Written Consent",
+];
+
+
 const SUB_TYPES: Record<string, string[]> = {
   "Shareholder Meeting": [
     "Statutory Close Corporation",
