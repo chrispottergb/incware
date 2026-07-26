@@ -754,6 +754,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
 
       if (newMeeting) {
         const mid = newMeeting.id;
+        setSavedMeetingId(mid);
 
         // Save officers
         const officerRows = data.officers.filter(o => o.name).map(o => ({
