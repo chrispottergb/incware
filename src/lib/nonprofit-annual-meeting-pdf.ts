@@ -260,12 +260,18 @@ export function generateNonProfitAnnualMeetingPDF(data: NonProfitAnnualMeetingDa
     // 15. Elections of directors and officers
     sectionHeading("Election of Directors and Officers");
     const directors = gov.electedDirectors.filter(d => d.trim());
+    const electorPhrase = scope === "members"
+      ? "The following persons were elected by the members to serve as directors of the Corporation for the ensuing year:"
+      : "The following persons were elected to serve as directors of the Corporation for the ensuing year:";
     if (directors.length > 0) {
-      para("The following persons were elected to serve as directors of the Corporation for the ensuing year:");
+      para(electorPhrase);
       bullets(directors);
     } else {
-      para("The Board acted on the election of directors for the ensuing year.");
+      para(scope === "members"
+        ? "The members acted on the election of directors for the ensuing year."
+        : "The Board acted on the election of directors for the ensuing year.");
     }
+
     const officers = gov.electedOfficers.filter(o => o.name.trim() || o.role.trim());
     if (officers.length > 0) {
       const combinedNote = gov.chairpersonCombinedWithPresident
