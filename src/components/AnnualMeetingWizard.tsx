@@ -166,7 +166,7 @@ function RequiredField({ label, value }: { label: string; value: string }) {
 
 const STORAGE_KEY_PREFIX = "annual_meeting_draft_";
 
-export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated }: Props) {
+export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated, meetingType = "Annual Meeting" }: Props) {
   const queryClient = useQueryClient();
   const { upsert: upsertAddressBook } = useAddressBookContext(company?.id);
   const storageKey = `${STORAGE_KEY_PREFIX}${company?.id || "unknown"}`;
