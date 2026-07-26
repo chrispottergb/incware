@@ -540,12 +540,6 @@ export default function MeetingsTab({ companyId, company }: Props) {
 
   return (
     <div className="space-y-6">
-      <div style={{ background: "yellow", padding: "8px", fontWeight: "bold", color: "black" }}>
-        DEBUG: entity_type = "{String(company.entity_type)}" (type: {typeof company.entity_type})
-      </div>
-      <div style={{ background: "yellow", padding: "8px", color: "black" }}>
-        DEBUG: meeting types = {JSON.stringify(meetingTypeOptions)}
-      </div>
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-display text-lg font-semibold">Meetings</h3>
