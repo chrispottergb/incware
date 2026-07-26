@@ -184,15 +184,10 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
       const saved = sessionStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.npGovernance) return parsed.npGovernance;
+        if (parsed.npGovernance) return { ...defaultNonProfitGovernance, ...parsed.npGovernance };
       }
     } catch {}
-    return {
-      missionStatementReview: "",
-      conflictOfInterestConfirmed: false,
-      publicInspectionConfirmed: false,
-      programServiceAccomplishments: "",
-    };
+    return defaultNonProfitGovernance;
   });
   const [previewPage, setPreviewPage] = useState(1);
   const [pdfDocRef, setPdfDocRef] = useState<any>(null);
