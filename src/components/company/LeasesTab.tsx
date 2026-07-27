@@ -32,6 +32,13 @@ import { useLeaseClassification } from "@/hooks/useLeaseClassification";
 import { CLASSIFICATION_LABELS, type LeaseClassification, type LeaseParty } from "@/lib/lease-classification";
 import { computeLeaseRisk, RISK_BADGE_CLASS, getLeaseTypeDefaults, type LeaseTypeChoice } from "@/lib/lease-risk";
 import { sanitizeCurrencyInput, formatCurrencyDisplay } from "@/lib/currency-format";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { EMPTY_SPLIT_ADDRESS, joinAddress, splitAddressFallback, resolveLeaseholdStatus, type SplitAddress, type LeaseholdStatus } from "@/lib/lease-address";
+import { useZipLookup } from "@/hooks/useZipLookup";
+import { SplitAddressFields } from "./leases/SplitAddressFields";
+import { LeaseholdImprovementsSection } from "./leases/LeaseholdImprovementsSection";
+
 
 interface Props {
   companyId: string;
@@ -53,11 +60,17 @@ const LEASE_TYPE_OPTIONS: Array<{ value: LeaseTypeChoice; label: string; tip: st
 const emptyForm = {
   description: "",
   value: "",
+  // Legacy single-string (kept for downstream compatibility; auto-populated from split on save)
   address: "",
-  landlord_name: "",
   landlord_address: "",
-  tenant_name: "",
   tenant_address: "",
+  // New split addresses (source of truth going forward)
+  property_addr: { ...EMPTY_SPLIT_ADDRESS } as SplitAddress,
+  landlord_addr: { ...EMPTY_SPLIT_ADDRESS } as SplitAddress,
+  tenant_addr: { ...EMPTY_SPLIT_ADDRESS } as SplitAddress,
+  tenant_same_as_property: true as boolean,
+  landlord_name: "",
+  tenant_name: "",
   lease_type_choice: "modified_gross" as LeaseTypeChoice,
   lease_date: "",
   lease_start_date: "",
@@ -66,8 +79,11 @@ const emptyForm = {
   monthly_payment: "",
   purpose: "",
   security_deposit: "",
+  // Tri-state: 'yes' | 'no' | '' (empty = unanswered / null)
+  leasehold_improvements_status: "" as "" | "yes" | "no",
   leasehold_improvement_amount: "",
   leasehold_improvement_description: "",
+  leasehold_section_open: false as boolean,
   rent_frequency: "monthly" as string,
   lease_structure: "modified_gross" as string,
   expense_taxes_party: "landlord" as string,
@@ -103,8 +119,11 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       expense_taxes_party: defaults.expense_taxes_party,
       expense_insurance_party: defaults.expense_insurance_party,
       expense_maintenance_party: defaults.expense_maintenance_party,
+      // NNN auto-expands the leasehold improvements section
+      leasehold_section_open: defaults.lease_structure === "triple_net" ? true : p.leasehold_section_open,
     }));
   }, []);
+
 
   const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
 
@@ -143,22 +162,59 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       savingRef.current = true;
       try {
         const f = { ...form, ...(formOverrideRef.current || {}) };
+
+        // Compute effective addresses. Split fields are the source of truth;
+        // legacy single-string columns are populated as the joined form so
+        // every downstream reader (PDFs, hosted review) keeps working.
+        const propertyJoined = joinAddress(f.property_addr) || f.address || null;
+        const landlordJoined = joinAddress(f.landlord_addr) || f.landlord_address || null;
+        const tenantJoined = f.tenant_same_as_property
+          ? null
+          : (joinAddress(f.tenant_addr) || f.tenant_address || null);
+
+        // Leasehold: only persist amount/description when explicitly "yes".
+        // Null status means "not yet answered" — don't fabricate a No.
+        const status: "yes" | "no" | null =
+          f.leasehold_improvements_status === "yes" || f.leasehold_improvements_status === "no"
+            ? f.leasehold_improvements_status
+            : null;
+
         const payload: any = {
           asset_type: "lease",
           description: f.description || "Lease",
           value: f.value ? parseFloat(f.value) : null,
-          address: f.address || null,
+          // Legacy joined strings (for downstream compatibility)
+          address: propertyJoined,
+          landlord_address: landlordJoined,
+          tenant_address: tenantJoined,
+          // New split columns
+          address_street: f.property_addr.street || null,
+          address_city: f.property_addr.city || null,
+          address_state: f.property_addr.state || null,
+          address_zip: f.property_addr.zip || null,
+          landlord_address_street: f.landlord_addr.street || null,
+          landlord_address_city: f.landlord_addr.city || null,
+          landlord_address_state: f.landlord_addr.state || null,
+          landlord_address_zip: f.landlord_addr.zip || null,
+          tenant_address_street: f.tenant_same_as_property ? null : (f.tenant_addr.street || null),
+          tenant_address_city: f.tenant_same_as_property ? null : (f.tenant_addr.city || null),
+          tenant_address_state: f.tenant_same_as_property ? null : (f.tenant_addr.state || null),
+          tenant_address_zip: f.tenant_same_as_property ? null : (f.tenant_addr.zip || null),
+          tenant_address_same_as_property: f.tenant_same_as_property,
           landlord_name: f.landlord_name || null,
-          landlord_address: f.landlord_address || null,
-          tenant_address: f.tenant_address || null,
           lease_date: f.lease_date || null,
           lease_start_date: f.lease_start_date || null,
           lease_end_date: f.lease_end_date || null,
           lease_term: f.lease_term || null,
           monthly_payment: f.monthly_payment ? parseFloat(f.monthly_payment) : null,
           security_deposit: f.security_deposit ? parseFloat(f.security_deposit) : null,
-          leasehold_improvement_amount: f.leasehold_improvement_amount ? parseFloat(f.leasehold_improvement_amount) : null,
-          leasehold_improvement_description: f.leasehold_improvement_description || null,
+          leasehold_improvements_status: status,
+          leasehold_improvement_amount: status === "yes" && f.leasehold_improvement_amount
+            ? parseFloat(f.leasehold_improvement_amount)
+            : null,
+          leasehold_improvement_description: status === "yes"
+            ? (f.leasehold_improvement_description || null)
+            : null,
           rent_frequency: f.rent_frequency,
           landlord_party_kind: landlordParty.kind,
           landlord_company_id: landlordParty.kind === "company" ? landlordParty.companyId || null : null,
@@ -270,14 +326,28 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
           ? (structure as LeaseTypeChoice)
           : "modified_gross"
     );
+    const status = resolveLeaseholdStatus(a);
+    const tenantSame = a.tenant_address_same_as_property === null || a.tenant_address_same_as_property === undefined
+      ? !a.tenant_address // legacy fallback: no tenant address recorded ⇒ assume same as property
+      : !!a.tenant_address_same_as_property;
     setForm({
       description: a.description || "",
       value: a.value != null ? String(a.value) : "",
       address: a.address || "",
-      landlord_name: a.landlord_name || "",
       landlord_address: a.landlord_address || "",
-      tenant_name: a.tenant_name || companyName || "",
       tenant_address: a.tenant_address || "",
+      property_addr: splitAddressFallback(a.address, {
+        street: a.address_street, city: a.address_city, state: a.address_state, zip: a.address_zip,
+      }),
+      landlord_addr: splitAddressFallback(a.landlord_address, {
+        street: a.landlord_address_street, city: a.landlord_address_city, state: a.landlord_address_state, zip: a.landlord_address_zip,
+      }),
+      tenant_addr: splitAddressFallback(a.tenant_address, {
+        street: a.tenant_address_street, city: a.tenant_address_city, state: a.tenant_address_state, zip: a.tenant_address_zip,
+      }),
+      tenant_same_as_property: tenantSame,
+      landlord_name: a.landlord_name || "",
+      tenant_name: a.tenant_name || companyName || "",
       lease_type_choice: choice,
       lease_date: a.lease_date || "",
       lease_start_date: a.lease_start_date || "",
@@ -286,8 +356,10 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       monthly_payment: a.monthly_payment != null ? String(a.monthly_payment) : "",
       purpose: "",
       security_deposit: a.security_deposit != null ? String(a.security_deposit) : "",
+      leasehold_improvements_status: (status ?? "") as "" | "yes" | "no",
       leasehold_improvement_amount: a.leasehold_improvement_amount != null ? String(a.leasehold_improvement_amount) : "",
       leasehold_improvement_description: a.leasehold_improvement_description || "",
+      leasehold_section_open: status !== null || structure === "triple_net",
       rent_frequency: a.rent_frequency || "monthly",
       lease_structure: structure,
       expense_taxes_party: a.expense_taxes_party || "landlord",
@@ -417,135 +489,153 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                   {editId ? "Edit" : "Add"} Lease
                 </DialogTitle>
               </DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); if (!savingRef.current) saveLease.mutate(); }} className="space-y-2.5">
-                <div className="field-group">
-                  <Label className="field-label">Property Description</Label>
-                  <Select value={leaseOptions.includes(form.description) ? form.description : "__custom"} onValueChange={(v) => setForm((p) => ({ ...p, description: v === "__custom" ? "" : v }))}>
-                    <SelectTrigger className="h-8 text-sm">
-                      <SelectValue placeholder="Select lease type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {leaseOptions.map((opt) => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                      <SelectItem value="__custom">Other (type your own)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {!leaseOptions.includes(form.description) && (
-                    <Input className="h-8 text-sm mt-1" placeholder="Enter custom description" value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
-                  )}
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Property Address</Label>
-                  <NameAutocomplete
-                    value={form.address}
-                    onChange={(v) => setForm((p) => ({ ...p, address: v }))}
-                    onSelect={handlePropertySelect}
-                    search={searchAddressBook}
-                    getCompanySplitIndex={getCompanySplitIndex}
-                    className="h-8 text-sm"
-                    placeholder="Street address"
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (savingRef.current) return;
+                // Validate leasehold: if user selected "yes", amount + description are required
+                if (form.leasehold_improvements_status === "yes") {
+                  if (!form.leasehold_improvement_amount || !form.leasehold_improvement_description.trim()) {
+                    toast.error("Enter both an amount and a description for leasehold improvements, or select No.");
+                    return;
+                  }
+                }
+                saveLease.mutate();
+              }} className="space-y-3">
+                {/* ─── SECTION 1: PROPERTY ─── */}
+                <fieldset className="space-y-2.5 rounded-md border border-border p-3">
+                  <legend className="px-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Property</legend>
+                  <div className="field-group">
+                    <Label className="field-label">Property Description</Label>
+                    <Select value={leaseOptions.includes(form.description) ? form.description : "__custom"} onValueChange={(v) => setForm((p) => ({ ...p, description: v === "__custom" ? "" : v }))}>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue placeholder="Select lease type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {leaseOptions.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                        <SelectItem value="__custom">Other (type your own)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {!leaseOptions.includes(form.description) && (
+                      <Input className="h-8 text-sm mt-1" placeholder="Enter custom description" value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
+                    )}
+                  </div>
+                  <SplitAddressFields
+                    label="Property Address"
+                    value={form.property_addr}
+                    onChange={(next) => setForm((p) => ({ ...p, property_addr: next }))}
                   />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label">Landlord</Label>
-                    <Input className="h-8 text-sm" value={form.landlord_name} onChange={(e) => setForm((p) => ({ ...p, landlord_name: e.target.value }))} placeholder="Landlord name" />
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">Tenant</Label>
-                    <Input className="h-8 text-sm" value={form.tenant_name || companyName} onChange={(e) => setForm((p) => ({ ...p, tenant_name: e.target.value }))} placeholder="Tenant name" />
-                  </div>
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Landlord Address</Label>
-                  <Input
-                    className="h-8 text-sm"
-                    value={form.landlord_address}
-                    onChange={(e) => setForm((p) => ({ ...p, landlord_address: e.target.value }))}
-                    placeholder="Street, City, State ZIP"
-                  />
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Tenant Address</Label>
-                  <Input
-                    className="h-8 text-sm"
-                    value={form.tenant_address}
-                    onChange={(e) => setForm((p) => ({ ...p, tenant_address: e.target.value }))}
-                    placeholder="Street, City, State ZIP"
-                  />
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Lease Type</Label>
-                  <Select value={form.lease_type_choice} onValueChange={(v) => handleLeaseTypeChange(v as LeaseTypeChoice)}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {LEASE_TYPE_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value} title={opt.tip}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label">Lease Start Date</Label>
-                    <DatePickerField value={form.lease_start_date} onChange={(v) => setForm((p) => ({ ...p, lease_start_date: v }))} />
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">Lease End Date</Label>
-                    <DatePickerField value={form.lease_end_date} onChange={(v) => setForm((p) => ({ ...p, lease_end_date: v }))} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label">Monthly Payment ($)</Label>
-                    <Input
-                      type="text"
-                      inputMode="decimal"
-                      className="h-8 text-sm"
-                      value={focusedFields.has("monthly_payment") ? form.monthly_payment : formatCurrencyDisplay(form.monthly_payment)}
-                      onFocus={() => setFocusedFields((s) => new Set(s).add("monthly_payment"))}
-                      onBlur={() => setFocusedFields((s) => { const n = new Set(s); n.delete("monthly_payment"); return n; })}
-                      onChange={(e) => setForm((p) => ({ ...p, monthly_payment: sanitizeCurrencyInput(e.target.value) }))}
-                      placeholder="$0.00"
-                    />
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">Security Deposit ($)</Label>
-                    <Input
-                      type="text"
-                      inputMode="decimal"
-                      className="h-8 text-sm"
-                      value={focusedFields.has("security_deposit") ? form.security_deposit : formatCurrencyDisplay(form.security_deposit)}
-                      onFocus={() => setFocusedFields((s) => new Set(s).add("security_deposit"))}
-                      onBlur={() => setFocusedFields((s) => { const n = new Set(s); n.delete("security_deposit"); return n; })}
-                      onChange={(e) => setForm((p) => ({ ...p, security_deposit: sanitizeCurrencyInput(e.target.value) }))}
-                      placeholder="$0.00"
-                    />
-                  </div>
-                </div>
-                <div className="pt-2 border-t border-border">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Leasehold Improvements</p>
+                </fieldset>
+
+                {/* ─── SECTION 2: PARTIES ─── */}
+                <fieldset className="space-y-2.5 rounded-md border border-border p-3">
+                  <legend className="px-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Parties</legend>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="field-group">
-                      <Label className="field-label">Amount ($)</Label>
+                      <Label className="field-label">Landlord</Label>
+                      <Input className="h-8 text-sm" value={form.landlord_name} onChange={(e) => setForm((p) => ({ ...p, landlord_name: e.target.value }))} placeholder="Landlord name" />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Tenant</Label>
+                      <Input className="h-8 text-sm" value={form.tenant_name || companyName} onChange={(e) => setForm((p) => ({ ...p, tenant_name: e.target.value }))} placeholder="Tenant name" />
+                    </div>
+                  </div>
+                  <SplitAddressFields
+                    label="Landlord Address"
+                    value={form.landlord_addr}
+                    onChange={(next) => setForm((p) => ({ ...p, landlord_addr: next }))}
+                  />
+                  <div className="flex items-center gap-2 pt-1">
+                    <Checkbox
+                      id="tenant-same-as-property"
+                      checked={form.tenant_same_as_property}
+                      onCheckedChange={(v) => setForm((p) => ({ ...p, tenant_same_as_property: v === true }))}
+                    />
+                    <Label htmlFor="tenant-same-as-property" className="text-xs font-normal cursor-pointer">
+                      Tenant notice address same as property address
+                    </Label>
+                  </div>
+                  {!form.tenant_same_as_property && (
+                    <SplitAddressFields
+                      label="Tenant Notice Address"
+                      value={form.tenant_addr}
+                      onChange={(next) => setForm((p) => ({ ...p, tenant_addr: next }))}
+                    />
+                  )}
+                </fieldset>
+
+                {/* ─── SECTION 3: LEASE TERMS ─── */}
+                <fieldset className="space-y-2.5 rounded-md border border-border p-3">
+                  <legend className="px-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Lease terms</legend>
+                  <div className="field-group">
+                    <Label className="field-label">Lease Type</Label>
+                    <Select value={form.lease_type_choice} onValueChange={(v) => handleLeaseTypeChange(v as LeaseTypeChoice)}>
+                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {LEASE_TYPE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value} title={opt.tip}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Lease Start Date</Label>
+                      <DatePickerField value={form.lease_start_date} onChange={(v) => setForm((p) => ({ ...p, lease_start_date: v }))} />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Lease End Date</Label>
+                      <DatePickerField value={form.lease_end_date} onChange={(v) => setForm((p) => ({ ...p, lease_end_date: v }))} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Monthly Payment ($)</Label>
                       <Input
                         type="text"
                         inputMode="decimal"
                         className="h-8 text-sm"
-                        value={focusedFields.has("leasehold_improvement_amount") ? form.leasehold_improvement_amount : formatCurrencyDisplay(form.leasehold_improvement_amount)}
-                        onFocus={() => setFocusedFields((s) => new Set(s).add("leasehold_improvement_amount"))}
-                        onBlur={() => setFocusedFields((s) => { const n = new Set(s); n.delete("leasehold_improvement_amount"); return n; })}
-                        onChange={(e) => setForm((p) => ({ ...p, leasehold_improvement_amount: sanitizeCurrencyInput(e.target.value) }))}
+                        value={focusedFields.has("monthly_payment") ? form.monthly_payment : formatCurrencyDisplay(form.monthly_payment)}
+                        onFocus={() => setFocusedFields((s) => new Set(s).add("monthly_payment"))}
+                        onBlur={() => setFocusedFields((s) => { const n = new Set(s); n.delete("monthly_payment"); return n; })}
+                        onChange={(e) => setForm((p) => ({ ...p, monthly_payment: sanitizeCurrencyInput(e.target.value) }))}
                         placeholder="$0.00"
                       />
                     </div>
                     <div className="field-group">
-                      <Label className="field-label">Description</Label>
-                      <Input className="h-8 text-sm" value={form.leasehold_improvement_description} onChange={(e) => setForm((p) => ({ ...p, leasehold_improvement_description: e.target.value }))} placeholder="e.g. Office buildout" />
+                      <Label className="field-label">Security Deposit ($)</Label>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        className="h-8 text-sm"
+                        value={focusedFields.has("security_deposit") ? form.security_deposit : formatCurrencyDisplay(form.security_deposit)}
+                        onFocus={() => setFocusedFields((s) => new Set(s).add("security_deposit"))}
+                        onBlur={() => setFocusedFields((s) => { const n = new Set(s); n.delete("security_deposit"); return n; })}
+                        onChange={(e) => setForm((p) => ({ ...p, security_deposit: sanitizeCurrencyInput(e.target.value) }))}
+                        placeholder="$0.00"
+                      />
                     </div>
                   </div>
-                </div>
+                </fieldset>
+
+                {/* ─── LEASEHOLD IMPROVEMENTS (conditional, tri-state) ─── */}
+                <LeaseholdImprovementsSection
+                  status={form.leasehold_improvements_status}
+                  amount={form.leasehold_improvement_amount}
+                  description={form.leasehold_improvement_description}
+                  leaseStructure={form.lease_structure}
+                  sectionOpen={form.leasehold_section_open}
+                  focused={focusedFields}
+                  onFocus={(k) => setFocusedFields((s) => new Set(s).add(k))}
+                  onBlur={(k) => setFocusedFields((s) => { const n = new Set(s); n.delete(k); return n; })}
+                  onOpen={() => setForm((p) => ({ ...p, leasehold_section_open: true }))}
+                  onStatusChange={(v) => setForm((p) => ({ ...p, leasehold_improvements_status: v, leasehold_section_open: true }))}
+                  onAmountChange={(v) => setForm((p) => ({ ...p, leasehold_improvement_amount: v }))}
+                  onDescriptionChange={(v) => setForm((p) => ({ ...p, leasehold_improvement_description: v }))}
+                />
+
+
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
                   <Button type="submit" variant="outline" size="sm" disabled={saveLease.isPending}>
                     {saveLease.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}

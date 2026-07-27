@@ -1299,6 +1299,10 @@ export type Database = {
         Row: {
           address: string | null
           address_2: string | null
+          address_city: string | null
+          address_state: string | null
+          address_street: string | null
+          address_zip: string | null
           asset_type: string
           classification_overridden: boolean
           classification_reason: string | null
@@ -1316,6 +1320,10 @@ export type Database = {
           generated_lease_text: string | null
           id: string
           landlord_address: string | null
+          landlord_address_city: string | null
+          landlord_address_state: string | null
+          landlord_address_street: string | null
+          landlord_address_zip: string | null
           landlord_company_id: string | null
           landlord_name: string | null
           landlord_party_kind: string | null
@@ -1329,6 +1337,7 @@ export type Database = {
           lease_term: string | null
           leasehold_improvement_amount: number | null
           leasehold_improvement_description: string | null
+          leasehold_improvements_status: string | null
           make: string | null
           manufacturer: string | null
           market_rent_justified: boolean | null
@@ -1346,6 +1355,11 @@ export type Database = {
           security_deposit: number | null
           taxes: number | null
           tenant_address: string | null
+          tenant_address_city: string | null
+          tenant_address_same_as_property: boolean | null
+          tenant_address_state: string | null
+          tenant_address_street: string | null
+          tenant_address_zip: string | null
           tenant_company_id: string | null
           tenant_party_kind: string | null
           tenant_shareholder_id: string | null
@@ -1357,6 +1371,10 @@ export type Database = {
         Insert: {
           address?: string | null
           address_2?: string | null
+          address_city?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
           asset_type: string
           classification_overridden?: boolean
           classification_reason?: string | null
@@ -1374,6 +1392,10 @@ export type Database = {
           generated_lease_text?: string | null
           id?: string
           landlord_address?: string | null
+          landlord_address_city?: string | null
+          landlord_address_state?: string | null
+          landlord_address_street?: string | null
+          landlord_address_zip?: string | null
           landlord_company_id?: string | null
           landlord_name?: string | null
           landlord_party_kind?: string | null
@@ -1387,6 +1409,7 @@ export type Database = {
           lease_term?: string | null
           leasehold_improvement_amount?: number | null
           leasehold_improvement_description?: string | null
+          leasehold_improvements_status?: string | null
           make?: string | null
           manufacturer?: string | null
           market_rent_justified?: boolean | null
@@ -1404,6 +1427,11 @@ export type Database = {
           security_deposit?: number | null
           taxes?: number | null
           tenant_address?: string | null
+          tenant_address_city?: string | null
+          tenant_address_same_as_property?: boolean | null
+          tenant_address_state?: string | null
+          tenant_address_street?: string | null
+          tenant_address_zip?: string | null
           tenant_company_id?: string | null
           tenant_party_kind?: string | null
           tenant_shareholder_id?: string | null
@@ -1415,6 +1443,10 @@ export type Database = {
         Update: {
           address?: string | null
           address_2?: string | null
+          address_city?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
           asset_type?: string
           classification_overridden?: boolean
           classification_reason?: string | null
@@ -1432,6 +1464,10 @@ export type Database = {
           generated_lease_text?: string | null
           id?: string
           landlord_address?: string | null
+          landlord_address_city?: string | null
+          landlord_address_state?: string | null
+          landlord_address_street?: string | null
+          landlord_address_zip?: string | null
           landlord_company_id?: string | null
           landlord_name?: string | null
           landlord_party_kind?: string | null
@@ -1445,6 +1481,7 @@ export type Database = {
           lease_term?: string | null
           leasehold_improvement_amount?: number | null
           leasehold_improvement_description?: string | null
+          leasehold_improvements_status?: string | null
           make?: string | null
           manufacturer?: string | null
           market_rent_justified?: boolean | null
@@ -1462,6 +1499,11 @@ export type Database = {
           security_deposit?: number | null
           taxes?: number | null
           tenant_address?: string | null
+          tenant_address_city?: string | null
+          tenant_address_same_as_property?: boolean | null
+          tenant_address_state?: string | null
+          tenant_address_street?: string | null
+          tenant_address_zip?: string | null
           tenant_company_id?: string | null
           tenant_party_kind?: string | null
           tenant_shareholder_id?: string | null
