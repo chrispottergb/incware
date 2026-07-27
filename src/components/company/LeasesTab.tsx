@@ -320,14 +320,28 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
           ? (structure as LeaseTypeChoice)
           : "modified_gross"
     );
+    const status = resolveLeaseholdStatus(a);
+    const tenantSame = a.tenant_address_same_as_property === null || a.tenant_address_same_as_property === undefined
+      ? !a.tenant_address // legacy fallback: no tenant address recorded ⇒ assume same as property
+      : !!a.tenant_address_same_as_property;
     setForm({
       description: a.description || "",
       value: a.value != null ? String(a.value) : "",
       address: a.address || "",
-      landlord_name: a.landlord_name || "",
       landlord_address: a.landlord_address || "",
-      tenant_name: a.tenant_name || companyName || "",
       tenant_address: a.tenant_address || "",
+      property_addr: splitAddressFallback(a.address, {
+        street: a.address_street, city: a.address_city, state: a.address_state, zip: a.address_zip,
+      }),
+      landlord_addr: splitAddressFallback(a.landlord_address, {
+        street: a.landlord_address_street, city: a.landlord_address_city, state: a.landlord_address_state, zip: a.landlord_address_zip,
+      }),
+      tenant_addr: splitAddressFallback(a.tenant_address, {
+        street: a.tenant_address_street, city: a.tenant_address_city, state: a.tenant_address_state, zip: a.tenant_address_zip,
+      }),
+      tenant_same_as_property: tenantSame,
+      landlord_name: a.landlord_name || "",
+      tenant_name: a.tenant_name || companyName || "",
       lease_type_choice: choice,
       lease_date: a.lease_date || "",
       lease_start_date: a.lease_start_date || "",
@@ -336,8 +350,10 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       monthly_payment: a.monthly_payment != null ? String(a.monthly_payment) : "",
       purpose: "",
       security_deposit: a.security_deposit != null ? String(a.security_deposit) : "",
+      leasehold_improvements_status: (status ?? "") as "" | "yes" | "no",
       leasehold_improvement_amount: a.leasehold_improvement_amount != null ? String(a.leasehold_improvement_amount) : "",
       leasehold_improvement_description: a.leasehold_improvement_description || "",
+      leasehold_section_open: status !== null || structure === "triple_net",
       rent_frequency: a.rent_frequency || "monthly",
       lease_structure: structure,
       expense_taxes_party: a.expense_taxes_party || "landlord",
