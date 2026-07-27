@@ -57,11 +57,17 @@ const LEASE_TYPE_OPTIONS: Array<{ value: LeaseTypeChoice; label: string; tip: st
 const emptyForm = {
   description: "",
   value: "",
+  // Legacy single-string (kept for downstream compatibility; auto-populated from split on save)
   address: "",
-  landlord_name: "",
   landlord_address: "",
-  tenant_name: "",
   tenant_address: "",
+  // New split addresses (source of truth going forward)
+  property_addr: { ...EMPTY_SPLIT_ADDRESS } as SplitAddress,
+  landlord_addr: { ...EMPTY_SPLIT_ADDRESS } as SplitAddress,
+  tenant_addr: { ...EMPTY_SPLIT_ADDRESS } as SplitAddress,
+  tenant_same_as_property: true as boolean,
+  landlord_name: "",
+  tenant_name: "",
   lease_type_choice: "modified_gross" as LeaseTypeChoice,
   lease_date: "",
   lease_start_date: "",
@@ -70,8 +76,11 @@ const emptyForm = {
   monthly_payment: "",
   purpose: "",
   security_deposit: "",
+  // Tri-state: 'yes' | 'no' | '' (empty = unanswered / null)
+  leasehold_improvements_status: "" as "" | "yes" | "no",
   leasehold_improvement_amount: "",
   leasehold_improvement_description: "",
+  leasehold_section_open: false as boolean,
   rent_frequency: "monthly" as string,
   lease_structure: "modified_gross" as string,
   expense_taxes_party: "landlord" as string,
