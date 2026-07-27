@@ -36,6 +36,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { EMPTY_SPLIT_ADDRESS, joinAddress, splitAddressFallback, resolveLeaseholdStatus, type SplitAddress, type LeaseholdStatus } from "@/lib/lease-address";
 import { useZipLookup } from "@/hooks/useZipLookup";
+import { SplitAddressFields } from "./leases/SplitAddressFields";
+import { LeaseholdImprovementsSection } from "./leases/LeaseholdImprovementsSection";
+
 
 interface Props {
   companyId: string;
