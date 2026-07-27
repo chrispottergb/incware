@@ -32,6 +32,10 @@ import { useLeaseClassification } from "@/hooks/useLeaseClassification";
 import { CLASSIFICATION_LABELS, type LeaseClassification, type LeaseParty } from "@/lib/lease-classification";
 import { computeLeaseRisk, RISK_BADGE_CLASS, getLeaseTypeDefaults, type LeaseTypeChoice } from "@/lib/lease-risk";
 import { sanitizeCurrencyInput, formatCurrencyDisplay } from "@/lib/currency-format";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { EMPTY_SPLIT_ADDRESS, joinAddress, splitAddressFallback, resolveLeaseholdStatus, type SplitAddress, type LeaseholdStatus } from "@/lib/lease-address";
+import { useZipLookup } from "@/hooks/useZipLookup";
 
 interface Props {
   companyId: string;
