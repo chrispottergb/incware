@@ -156,22 +156,59 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       savingRef.current = true;
       try {
         const f = { ...form, ...(formOverrideRef.current || {}) };
+
+        // Compute effective addresses. Split fields are the source of truth;
+        // legacy single-string columns are populated as the joined form so
+        // every downstream reader (PDFs, hosted review) keeps working.
+        const propertyJoined = joinAddress(f.property_addr) || f.address || null;
+        const landlordJoined = joinAddress(f.landlord_addr) || f.landlord_address || null;
+        const tenantJoined = f.tenant_same_as_property
+          ? null
+          : (joinAddress(f.tenant_addr) || f.tenant_address || null);
+
+        // Leasehold: only persist amount/description when explicitly "yes".
+        // Null status means "not yet answered" — don't fabricate a No.
+        const status: "yes" | "no" | null =
+          f.leasehold_improvements_status === "yes" || f.leasehold_improvements_status === "no"
+            ? f.leasehold_improvements_status
+            : null;
+
         const payload: any = {
           asset_type: "lease",
           description: f.description || "Lease",
           value: f.value ? parseFloat(f.value) : null,
-          address: f.address || null,
+          // Legacy joined strings (for downstream compatibility)
+          address: propertyJoined,
+          landlord_address: landlordJoined,
+          tenant_address: tenantJoined,
+          // New split columns
+          address_street: f.property_addr.street || null,
+          address_city: f.property_addr.city || null,
+          address_state: f.property_addr.state || null,
+          address_zip: f.property_addr.zip || null,
+          landlord_address_street: f.landlord_addr.street || null,
+          landlord_address_city: f.landlord_addr.city || null,
+          landlord_address_state: f.landlord_addr.state || null,
+          landlord_address_zip: f.landlord_addr.zip || null,
+          tenant_address_street: f.tenant_same_as_property ? null : (f.tenant_addr.street || null),
+          tenant_address_city: f.tenant_same_as_property ? null : (f.tenant_addr.city || null),
+          tenant_address_state: f.tenant_same_as_property ? null : (f.tenant_addr.state || null),
+          tenant_address_zip: f.tenant_same_as_property ? null : (f.tenant_addr.zip || null),
+          tenant_address_same_as_property: f.tenant_same_as_property,
           landlord_name: f.landlord_name || null,
-          landlord_address: f.landlord_address || null,
-          tenant_address: f.tenant_address || null,
           lease_date: f.lease_date || null,
           lease_start_date: f.lease_start_date || null,
           lease_end_date: f.lease_end_date || null,
           lease_term: f.lease_term || null,
           monthly_payment: f.monthly_payment ? parseFloat(f.monthly_payment) : null,
           security_deposit: f.security_deposit ? parseFloat(f.security_deposit) : null,
-          leasehold_improvement_amount: f.leasehold_improvement_amount ? parseFloat(f.leasehold_improvement_amount) : null,
-          leasehold_improvement_description: f.leasehold_improvement_description || null,
+          leasehold_improvements_status: status,
+          leasehold_improvement_amount: status === "yes" && f.leasehold_improvement_amount
+            ? parseFloat(f.leasehold_improvement_amount)
+            : null,
+          leasehold_improvement_description: status === "yes"
+            ? (f.leasehold_improvement_description || null)
+            : null,
           rent_frequency: f.rent_frequency,
           landlord_party_kind: landlordParty.kind,
           landlord_company_id: landlordParty.kind === "company" ? landlordParty.companyId || null : null,
