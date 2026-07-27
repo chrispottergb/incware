@@ -27,6 +27,7 @@ export type ActionCategory = (typeof ACTION_CATEGORIES)[number];
 // Maps resolution labels to categories
 const CATEGORY_MAP: Record<string, ActionCategory> = {
   "Approve Officer Bonuses": "Compensation",
+  "Approve Employee Bonuses": "Compensation",
   "Approve Officer Bonuses (Reasonable Compensation)": "Compensation",
   "Approve Annual Officer Compensation": "Compensation",
   "Approve Guaranteed Payments": "Compensation",
