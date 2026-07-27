@@ -483,135 +483,153 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                   {editId ? "Edit" : "Add"} Lease
                 </DialogTitle>
               </DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); if (!savingRef.current) saveLease.mutate(); }} className="space-y-2.5">
-                <div className="field-group">
-                  <Label className="field-label">Property Description</Label>
-                  <Select value={leaseOptions.includes(form.description) ? form.description : "__custom"} onValueChange={(v) => setForm((p) => ({ ...p, description: v === "__custom" ? "" : v }))}>
-                    <SelectTrigger className="h-8 text-sm">
-                      <SelectValue placeholder="Select lease type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {leaseOptions.map((opt) => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                      <SelectItem value="__custom">Other (type your own)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {!leaseOptions.includes(form.description) && (
-                    <Input className="h-8 text-sm mt-1" placeholder="Enter custom description" value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
-                  )}
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Property Address</Label>
-                  <NameAutocomplete
-                    value={form.address}
-                    onChange={(v) => setForm((p) => ({ ...p, address: v }))}
-                    onSelect={handlePropertySelect}
-                    search={searchAddressBook}
-                    getCompanySplitIndex={getCompanySplitIndex}
-                    className="h-8 text-sm"
-                    placeholder="Street address"
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (savingRef.current) return;
+                // Validate leasehold: if user selected "yes", amount + description are required
+                if (form.leasehold_improvements_status === "yes") {
+                  if (!form.leasehold_improvement_amount || !form.leasehold_improvement_description.trim()) {
+                    toast.error("Enter both an amount and a description for leasehold improvements, or select No.");
+                    return;
+                  }
+                }
+                saveLease.mutate();
+              }} className="space-y-3">
+                {/* ─── SECTION 1: PROPERTY ─── */}
+                <fieldset className="space-y-2.5 rounded-md border border-border p-3">
+                  <legend className="px-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Property</legend>
+                  <div className="field-group">
+                    <Label className="field-label">Property Description</Label>
+                    <Select value={leaseOptions.includes(form.description) ? form.description : "__custom"} onValueChange={(v) => setForm((p) => ({ ...p, description: v === "__custom" ? "" : v }))}>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue placeholder="Select lease type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {leaseOptions.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                        <SelectItem value="__custom">Other (type your own)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {!leaseOptions.includes(form.description) && (
+                      <Input className="h-8 text-sm mt-1" placeholder="Enter custom description" value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
+                    )}
+                  </div>
+                  <SplitAddressFields
+                    label="Property Address"
+                    value={form.property_addr}
+                    onChange={(next) => setForm((p) => ({ ...p, property_addr: next }))}
                   />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label">Landlord</Label>
-                    <Input className="h-8 text-sm" value={form.landlord_name} onChange={(e) => setForm((p) => ({ ...p, landlord_name: e.target.value }))} placeholder="Landlord name" />
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">Tenant</Label>
-                    <Input className="h-8 text-sm" value={form.tenant_name || companyName} onChange={(e) => setForm((p) => ({ ...p, tenant_name: e.target.value }))} placeholder="Tenant name" />
-                  </div>
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Landlord Address</Label>
-                  <Input
-                    className="h-8 text-sm"
-                    value={form.landlord_address}
-                    onChange={(e) => setForm((p) => ({ ...p, landlord_address: e.target.value }))}
-                    placeholder="Street, City, State ZIP"
-                  />
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Tenant Address</Label>
-                  <Input
-                    className="h-8 text-sm"
-                    value={form.tenant_address}
-                    onChange={(e) => setForm((p) => ({ ...p, tenant_address: e.target.value }))}
-                    placeholder="Street, City, State ZIP"
-                  />
-                </div>
-                <div className="field-group">
-                  <Label className="field-label">Lease Type</Label>
-                  <Select value={form.lease_type_choice} onValueChange={(v) => handleLeaseTypeChange(v as LeaseTypeChoice)}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {LEASE_TYPE_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value} title={opt.tip}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label">Lease Start Date</Label>
-                    <DatePickerField value={form.lease_start_date} onChange={(v) => setForm((p) => ({ ...p, lease_start_date: v }))} />
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">Lease End Date</Label>
-                    <DatePickerField value={form.lease_end_date} onChange={(v) => setForm((p) => ({ ...p, lease_end_date: v }))} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="field-group">
-                    <Label className="field-label">Monthly Payment ($)</Label>
-                    <Input
-                      type="text"
-                      inputMode="decimal"
-                      className="h-8 text-sm"
-                      value={focusedFields.has("monthly_payment") ? form.monthly_payment : formatCurrencyDisplay(form.monthly_payment)}
-                      onFocus={() => setFocusedFields((s) => new Set(s).add("monthly_payment"))}
-                      onBlur={() => setFocusedFields((s) => { const n = new Set(s); n.delete("monthly_payment"); return n; })}
-                      onChange={(e) => setForm((p) => ({ ...p, monthly_payment: sanitizeCurrencyInput(e.target.value) }))}
-                      placeholder="$0.00"
-                    />
-                  </div>
-                  <div className="field-group">
-                    <Label className="field-label">Security Deposit ($)</Label>
-                    <Input
-                      type="text"
-                      inputMode="decimal"
-                      className="h-8 text-sm"
-                      value={focusedFields.has("security_deposit") ? form.security_deposit : formatCurrencyDisplay(form.security_deposit)}
-                      onFocus={() => setFocusedFields((s) => new Set(s).add("security_deposit"))}
-                      onBlur={() => setFocusedFields((s) => { const n = new Set(s); n.delete("security_deposit"); return n; })}
-                      onChange={(e) => setForm((p) => ({ ...p, security_deposit: sanitizeCurrencyInput(e.target.value) }))}
-                      placeholder="$0.00"
-                    />
-                  </div>
-                </div>
-                <div className="pt-2 border-t border-border">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Leasehold Improvements</p>
+                </fieldset>
+
+                {/* ─── SECTION 2: PARTIES ─── */}
+                <fieldset className="space-y-2.5 rounded-md border border-border p-3">
+                  <legend className="px-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Parties</legend>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="field-group">
-                      <Label className="field-label">Amount ($)</Label>
+                      <Label className="field-label">Landlord</Label>
+                      <Input className="h-8 text-sm" value={form.landlord_name} onChange={(e) => setForm((p) => ({ ...p, landlord_name: e.target.value }))} placeholder="Landlord name" />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Tenant</Label>
+                      <Input className="h-8 text-sm" value={form.tenant_name || companyName} onChange={(e) => setForm((p) => ({ ...p, tenant_name: e.target.value }))} placeholder="Tenant name" />
+                    </div>
+                  </div>
+                  <SplitAddressFields
+                    label="Landlord Address"
+                    value={form.landlord_addr}
+                    onChange={(next) => setForm((p) => ({ ...p, landlord_addr: next }))}
+                  />
+                  <div className="flex items-center gap-2 pt-1">
+                    <Checkbox
+                      id="tenant-same-as-property"
+                      checked={form.tenant_same_as_property}
+                      onCheckedChange={(v) => setForm((p) => ({ ...p, tenant_same_as_property: v === true }))}
+                    />
+                    <Label htmlFor="tenant-same-as-property" className="text-xs font-normal cursor-pointer">
+                      Tenant notice address same as property address
+                    </Label>
+                  </div>
+                  {!form.tenant_same_as_property && (
+                    <SplitAddressFields
+                      label="Tenant Notice Address"
+                      value={form.tenant_addr}
+                      onChange={(next) => setForm((p) => ({ ...p, tenant_addr: next }))}
+                    />
+                  )}
+                </fieldset>
+
+                {/* ─── SECTION 3: LEASE TERMS ─── */}
+                <fieldset className="space-y-2.5 rounded-md border border-border p-3">
+                  <legend className="px-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Lease terms</legend>
+                  <div className="field-group">
+                    <Label className="field-label">Lease Type</Label>
+                    <Select value={form.lease_type_choice} onValueChange={(v) => handleLeaseTypeChange(v as LeaseTypeChoice)}>
+                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {LEASE_TYPE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value} title={opt.tip}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Lease Start Date</Label>
+                      <DatePickerField value={form.lease_start_date} onChange={(v) => setForm((p) => ({ ...p, lease_start_date: v }))} />
+                    </div>
+                    <div className="field-group">
+                      <Label className="field-label">Lease End Date</Label>
+                      <DatePickerField value={form.lease_end_date} onChange={(v) => setForm((p) => ({ ...p, lease_end_date: v }))} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="field-group">
+                      <Label className="field-label">Monthly Payment ($)</Label>
                       <Input
                         type="text"
                         inputMode="decimal"
                         className="h-8 text-sm"
-                        value={focusedFields.has("leasehold_improvement_amount") ? form.leasehold_improvement_amount : formatCurrencyDisplay(form.leasehold_improvement_amount)}
-                        onFocus={() => setFocusedFields((s) => new Set(s).add("leasehold_improvement_amount"))}
-                        onBlur={() => setFocusedFields((s) => { const n = new Set(s); n.delete("leasehold_improvement_amount"); return n; })}
-                        onChange={(e) => setForm((p) => ({ ...p, leasehold_improvement_amount: sanitizeCurrencyInput(e.target.value) }))}
+                        value={focusedFields.has("monthly_payment") ? form.monthly_payment : formatCurrencyDisplay(form.monthly_payment)}
+                        onFocus={() => setFocusedFields((s) => new Set(s).add("monthly_payment"))}
+                        onBlur={() => setFocusedFields((s) => { const n = new Set(s); n.delete("monthly_payment"); return n; })}
+                        onChange={(e) => setForm((p) => ({ ...p, monthly_payment: sanitizeCurrencyInput(e.target.value) }))}
                         placeholder="$0.00"
                       />
                     </div>
                     <div className="field-group">
-                      <Label className="field-label">Description</Label>
-                      <Input className="h-8 text-sm" value={form.leasehold_improvement_description} onChange={(e) => setForm((p) => ({ ...p, leasehold_improvement_description: e.target.value }))} placeholder="e.g. Office buildout" />
+                      <Label className="field-label">Security Deposit ($)</Label>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        className="h-8 text-sm"
+                        value={focusedFields.has("security_deposit") ? form.security_deposit : formatCurrencyDisplay(form.security_deposit)}
+                        onFocus={() => setFocusedFields((s) => new Set(s).add("security_deposit"))}
+                        onBlur={() => setFocusedFields((s) => { const n = new Set(s); n.delete("security_deposit"); return n; })}
+                        onChange={(e) => setForm((p) => ({ ...p, security_deposit: sanitizeCurrencyInput(e.target.value) }))}
+                        placeholder="$0.00"
+                      />
                     </div>
                   </div>
-                </div>
+                </fieldset>
+
+                {/* ─── LEASEHOLD IMPROVEMENTS (conditional, tri-state) ─── */}
+                <LeaseholdImprovementsSection
+                  status={form.leasehold_improvements_status}
+                  amount={form.leasehold_improvement_amount}
+                  description={form.leasehold_improvement_description}
+                  leaseStructure={form.lease_structure}
+                  sectionOpen={form.leasehold_section_open}
+                  focused={focusedFields}
+                  onFocus={(k) => setFocusedFields((s) => new Set(s).add(k))}
+                  onBlur={(k) => setFocusedFields((s) => { const n = new Set(s); n.delete(k); return n; })}
+                  onOpen={() => setForm((p) => ({ ...p, leasehold_section_open: true }))}
+                  onStatusChange={(v) => setForm((p) => ({ ...p, leasehold_improvements_status: v, leasehold_section_open: true }))}
+                  onAmountChange={(v) => setForm((p) => ({ ...p, leasehold_improvement_amount: v }))}
+                  onDescriptionChange={(v) => setForm((p) => ({ ...p, leasehold_improvement_description: v }))}
+                />
+
+
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
                   <Button type="submit" variant="outline" size="sm" disabled={saveLease.isPending}>
                     {saveLease.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
