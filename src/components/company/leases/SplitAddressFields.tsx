@@ -17,7 +17,7 @@ interface Props {
 export function SplitAddressFields({ label, value, onChange }: Props) {
   const set = (patch: Partial<SplitAddress>) => onChange({ ...value, ...patch });
 
-  const { lookup } = useZipLookup((r) => {
+  const { handleZipChange } = useZipLookup((r) => {
     // Fill only empty city/state so we don't clobber user edits.
     onChange({
       ...value,
@@ -29,9 +29,10 @@ export function SplitAddressFields({ label, value, onChange }: Props) {
   const handleZipBlur = () => {
     const zip = (value.zip || "").trim();
     if (/^\d{5}$/.test(zip) && !(value.city && value.state)) {
-      lookup(zip);
+      handleZipChange(zip);
     }
   };
+
 
 
 
