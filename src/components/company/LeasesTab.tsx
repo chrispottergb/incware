@@ -116,8 +116,11 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       expense_taxes_party: defaults.expense_taxes_party,
       expense_insurance_party: defaults.expense_insurance_party,
       expense_maintenance_party: defaults.expense_maintenance_party,
+      // NNN auto-expands the leasehold improvements section
+      leasehold_section_open: defaults.lease_structure === "triple_net" ? true : p.leasehold_section_open,
     }));
   }, []);
+
 
   const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(companyId);
 
