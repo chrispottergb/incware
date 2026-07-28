@@ -358,8 +358,12 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     enabled: !!company.id,
   });
 
-  // Get resolution options for this entity type
-  const resolutionOptions = RESOLUTION_TYPES[company.entity_type] || RESOLUTION_TYPES["Corporation"];
+  // Get resolution options for this entity type (deduped by label)
+  const resolutionOptions = useMemo(() => {
+    const opts = RESOLUTION_TYPES[company.entity_type] || RESOLUTION_TYPES["Corporation"];
+    const seen = new Set<string>();
+    return opts.filter((o) => (seen.has(o.label) ? false : (seen.add(o.label), true)));
+  }, [company.entity_type]);
 
   // Filtered actions by category
   const filteredActions = useMemo(() => {
