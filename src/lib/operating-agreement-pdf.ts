@@ -90,13 +90,16 @@ export interface OperatingAgreementData {
   aiDraftSections?: Record<string, string> | null;
   shareholderHoldings?: Record<string, number>;
   totalIssuedUnits?: number;
+  /** Controls how ownership is described: "units" adds a Units column to
+   *  Schedule A, "percentage_only" shows percentages alone. */
+  draftingStyle?: "units" | "percentage_only";
 }
 
 export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsPDF {
   const doc = new jsPDF();
   registerArialFont(doc);
   doc.setLineHeightFactor(1.15);
-  const { company, members, officers, managementType, aiDraftSections, shareholderHoldings, totalIssuedUnits } = data;
+  const { company, members, officers, managementType, aiDraftSections, shareholderHoldings, totalIssuedUnits, draftingStyle } = data;
   const cx = pw(doc) / 2;
   const ai = aiDraftSections || {};
   const hasAi = !!aiDraftSections && Object.keys(aiDraftSections).length > 0;
@@ -441,18 +444,24 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
     return null;
   };
 
+  const showUnits = draftingStyle === "units" && totalUnits > 0;
+
   if (scheduleMembers.length > 0) {
     autoTable(doc, {
       startY: y,
-      head: [["Member Name", "Address", "City, State, ZIP", "Membership Interest (%)"]],
+      head: [showUnits
+        ? ["Member Name", "Address", "City, State, ZIP", "Units", "Membership Interest (%)"]
+        : ["Member Name", "Address", "City, State, ZIP", "Membership Interest (%)"]],
       body: scheduleMembers.map((m: any) => {
         const interest = getMemberInterest(m);
-        return [
+        const row = [
           m.name || "—",
           [m.address, m.address_2].filter(Boolean).join(", ") || "—",
           [m.city, m.state, m.zip].filter(Boolean).join(", ") || "—",
-          interest != null ? `${interest.toFixed(2)}%` : "—",
         ];
+        if (showUnits) row.push((holdings[m.id] || 0).toLocaleString());
+        row.push(interest != null ? `${interest.toFixed(2)}%` : "—");
+        return row;
       }),
       theme: "grid",
       headStyles: { fillColor: [200, 215, 235], textColor: [30, 30, 30], fontSize: 11, fontStyle: "bold",
@@ -461,9 +470,9 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
       },
       bodyStyles: { fontSize: 11 },
       margin: { left: MARGIN, right: R_MARGIN },
-      columnStyles: {
-        3: { halign: "center" },
-      },
+      columnStyles: showUnits
+        ? { 3: { halign: "center" }, 4: { halign: "center" } }
+        : { 3: { halign: "center" } },
     });
     y = (doc as any).lastAutoTable.finalY + 8;
   } else {
@@ -486,7 +495,9 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   doc.setFontSize(11);
   doc.setFont("Arial", "italic");
   doc.setTextColor(120, 120, 120);
-  const scheduleNote = "This Schedule A is incorporated into and made a part of the Operating Agreement. Any changes to membership interests shall be reflected by an amended Schedule A executed by all Members.";
+  const scheduleNote = showUnits
+    ? "Membership interests are expressed in Units issued by the Company; each Member's percentage interest equals such Member's Units divided by the total Units issued and outstanding. This Schedule A is incorporated into and made a part of the Operating Agreement. Any changes to membership interests shall be reflected by an amended Schedule A executed by all Members."
+    : "This Schedule A is incorporated into and made a part of the Operating Agreement. Any changes to membership interests shall be reflected by an amended Schedule A executed by all Members.";
   y = addParagraph(doc, y, scheduleNote);
 
   addFooters(doc, companyName);
