@@ -42,6 +42,9 @@ export async function generateCertificateFromTemplate(
   data: Record<string, string>,
 ): Promise<Uint8Array> {
   const template = CERTIFICATE_TEMPLATES[kind];
+  if (template.available === false) {
+    throw new TemplateNotAvailableError(template.pdfUrl, 404);
+  }
   const response = await fetch(template.pdfUrl);
   if (!response.ok) {
     throw new TemplateNotAvailableError(template.pdfUrl, response.status);
