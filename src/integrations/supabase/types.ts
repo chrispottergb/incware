@@ -3263,6 +3263,7 @@ export type Database = {
           meeting_type: string
           mtg_secretary: string | null
           next_annual_mtg: string | null
+          nonprofit_governance: Json | null
           old_business: string | null
           other_business: string | null
           others_present: string | null
@@ -3297,6 +3298,7 @@ export type Database = {
           meeting_type?: string
           mtg_secretary?: string | null
           next_annual_mtg?: string | null
+          nonprofit_governance?: Json | null
           old_business?: string | null
           other_business?: string | null
           others_present?: string | null
@@ -3331,6 +3333,7 @@ export type Database = {
           meeting_type?: string
           mtg_secretary?: string | null
           next_annual_mtg?: string | null
+          nonprofit_governance?: Json | null
           old_business?: string | null
           other_business?: string | null
           others_present?: string | null
