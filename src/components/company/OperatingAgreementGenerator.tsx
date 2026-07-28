@@ -538,9 +538,6 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
   if (!isLLC) return null;
 
   const activeMembers = members.filter((m) => m.status !== "inactive" && m.status !== "terminated");
-  const missingPctMembers = activeMembers
-    .filter((m) => memberInterest(m) == null)
-    .map((m) => m.name || "Unnamed Member");
   // Mirror the PDF's getMemberInterest(): unit holdings win over the
   // ownership_percentage column, so unit-tracked companies aren't blocked for
   // leaving that column empty.
@@ -549,6 +546,9 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
     if (totalIssuedShares > 0 && units > 0) return (units / totalIssuedShares) * 100;
     return typeof m.ownership_percentage === "number" ? m.ownership_percentage : null;
   };
+  const missingPctMembers = activeMembers
+    .filter((m) => memberInterest(m) == null)
+    .map((m) => m.name || "Unnamed Member");
   const percentageSum = activeMembers.reduce((sum, m) => sum + (memberInterest(m) ?? 0), 0);
   const draftingStyle = (company?.oa_drafting_style as "units" | "percentage_only" | null) ?? "percentage_only";
   // In "units" mode, ownership is derived from share_transactions (unit holdings ÷ total issued),
