@@ -86,6 +86,22 @@ export function StateCharitableRegistrationCard({
   const [showPin, setShowPin] = useState(false);
   const [pinLocal, setPinLocal] = useState(values.pin ?? "");
   const [credLocal, setCredLocal] = useState(values.registration_number ?? "");
+
+  // The parent hydrates `values` asynchronously (starts as nulls). Keep the
+  // uncontrolled-ish local inputs in sync so saved values appear and a plain
+  // focus+blur can never blank out stored data.
+  const pinRef = useRef<HTMLInputElement>(null);
+  const credRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (document.activeElement !== credRef.current) {
+      setCredLocal(values.registration_number ?? "");
+    }
+  }, [values.registration_number]);
+  useEffect(() => {
+    if (document.activeElement !== pinRef.current) {
+      setPinLocal(values.pin ?? "");
+    }
+  }, [values.pin]);
   const [uploadedName, setUploadedName] = useState<string | null>(null);
   const [uploadedAt, setUploadedAt] = useState<Date | null>(null);
   const fileInputId = useId();
