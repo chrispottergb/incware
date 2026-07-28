@@ -28,6 +28,9 @@ export interface CertificateTemplateSpec {
   /** Rectangles painted with maskColor before drawing text — used to hide
    *  baked-in [placeholder] labels in the source artwork. */
   masks?: CertificateMaskRect[];
+  /** When false, the overlay refuses the template so callers fall back to the
+   *  fully-drawn legacy generator. Used while real artwork is still pending. */
+  available?: boolean;
   fields: Record<string, CertificateFieldSpec>;
 }
 
@@ -66,6 +69,10 @@ export const CERTIFICATE_TEMPLATES: Record<CertificateKind, CertificateTemplateS
 
   corporation: {
     pdfUrl: "/certificate-templates/corporation.pdf",
+    // The bundled corporation.pdf is still a blank placeholder (no artwork,
+    // borders or labels), so overlaying on it produces an unusable document.
+    // Keep it disabled until real artwork is supplied.
+    available: false,
     fields: {
       certNumber:       { x: 90,  y: 555, size: 12, align: "center" },
       shares:           { x: 702, y: 555, size: 12, align: "center" },

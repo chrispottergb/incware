@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { ExternalLink, Eye, EyeOff, FileText, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,6 +86,22 @@ export function StateCharitableRegistrationCard({
   const [showPin, setShowPin] = useState(false);
   const [pinLocal, setPinLocal] = useState(values.pin ?? "");
   const [credLocal, setCredLocal] = useState(values.registration_number ?? "");
+
+  // The parent hydrates `values` asynchronously (starts as nulls). Keep the
+  // uncontrolled-ish local inputs in sync so saved values appear and a plain
+  // focus+blur can never blank out stored data.
+  const pinRef = useRef<HTMLInputElement>(null);
+  const credRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (document.activeElement !== credRef.current) {
+      setCredLocal(values.registration_number ?? "");
+    }
+  }, [values.registration_number]);
+  useEffect(() => {
+    if (document.activeElement !== pinRef.current) {
+      setPinLocal(values.pin ?? "");
+    }
+  }, [values.pin]);
   const [uploadedName, setUploadedName] = useState<string | null>(null);
   const [uploadedAt, setUploadedAt] = useState<Date | null>(null);
   const fileInputId = useId();
@@ -148,6 +164,7 @@ export function StateCharitableRegistrationCard({
               Credential Number
             </Label>
             <Input
+              ref={credRef}
               className="h-10 rounded-lg"
               placeholder="e.g. 18871-800"
               value={credLocal}
@@ -160,6 +177,7 @@ export function StateCharitableRegistrationCard({
             <Label className="text-sm font-medium text-muted-foreground">PIN#</Label>
             <div className="relative">
               <Input
+                ref={pinRef}
                 type={showPin ? "text" : "password"}
                 className="h-10 rounded-lg pr-9"
                 placeholder="e.g. 4821"

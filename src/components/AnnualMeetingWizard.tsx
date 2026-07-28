@@ -748,7 +748,10 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
         company_state_at_meeting: company?.state || null,
         company_zip_at_meeting: company?.zip || null,
         profit_improvement_plan: defaultProfitPlan,
-      }).select("id").single();
+        // Persist the non-profit governance step so it survives the wizard
+        // closing (the draft in sessionStorage is cleared right after save).
+        ...(isNonProfit ? { nonprofit_governance: npGovernance as any } : {}),
+      } as any).select("id").single();
 
       if (error) throw error;
 

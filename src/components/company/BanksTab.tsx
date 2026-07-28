@@ -362,7 +362,25 @@ export default function BanksTab({ companyId }: BanksTabProps) {
                           const prefix = field === "routing" ? "RT " : "";
                           const revealed = rowReveal[b.id]?.[field];
                           const isEditing = rowEdit?.bankId === b.id && rowEdit.field === field;
-                          if (!last4 && !revealed && !isEditing) return null;
+                          if (!last4 && !revealed && !isEditing) {
+                            // Newly created banks have no stored number yet; without this
+                            // affordance there is no way to enter one after the dialog dropped
+                            // the account/routing fields.
+                            return (
+                              <Button
+                                key={field}
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 px-1 text-[10px] text-muted-foreground"
+                                disabled={rowLoading[b.id]}
+                                onClick={() => startRowEdit(b.id, field)}
+                                title={field === "account" ? "Add account number" : "Add routing number"}
+                              >
+                                <Plus className="h-2.5 w-2.5 mr-0.5" />
+                                {field === "account" ? "Account #" : "Routing #"}
+                              </Button>
+                            );
+                          }
                           if (isEditing) {
                             return (
                               <div key={field} className="flex items-center gap-1">
