@@ -1483,17 +1483,17 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         y += 6;
 
         const usableW = doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN;
+        // Address intentionally omitted from the attendee list per client request.
         autoTable(doc, {
           startY: y,
-          head: [["Name", "Address"]],
-          body: attendeeEntries.map(e => [e.name, e.address || "—"]),
+          head: [["Name"]],
+          body: attendeeEntries.map(e => [e.name]),
           theme: "grid",
           headStyles: tableHeadStyles,
           bodyStyles: { fontSize: 10 },
           margin: { left: MARGIN, right: R_MARGIN },
           columnStyles: {
-            0: { cellWidth: usableW * 0.35 },
-            1: { cellWidth: usableW * 0.65 },
+            0: { cellWidth: usableW },
           },
         });
         y = (doc as any).lastAutoTable.finalY + 6;
