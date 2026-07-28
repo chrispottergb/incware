@@ -164,6 +164,7 @@ export function StateCharitableRegistrationCard({
               Credential Number
             </Label>
             <Input
+              ref={credRef}
               className="h-10 rounded-lg"
               placeholder="e.g. 18871-800"
               value={credLocal}
@@ -176,6 +177,7 @@ export function StateCharitableRegistrationCard({
             <Label className="text-sm font-medium text-muted-foreground">PIN#</Label>
             <div className="relative">
               <Input
+                ref={pinRef}
                 type={showPin ? "text" : "password"}
                 className="h-10 rounded-lg pr-9"
                 placeholder="e.g. 4821"
