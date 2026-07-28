@@ -360,7 +360,8 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
         .insert(insertPayload);
       if (insertErr) throw insertErr;
 
-      queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId, "OperatingAgreement-combined"] });
+      queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["scorp-oa-check"] });
     } catch (err: any) {
       console.error("Save version error:", err);
       throw err;
@@ -431,7 +432,8 @@ export default function SMOperatingAgreementGenerator({ companyId, companyName, 
       });
       if (regErr) throw regErr;
 
-      queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId, "OperatingAgreement-combined"] });
+      queryClient.invalidateQueries({ queryKey: ["doc-versions", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["scorp-oa-check"] });
       toast.success("Operating Agreement imported successfully");
     } catch (err: any) {
       toast.error(err.message || "Import failed");
