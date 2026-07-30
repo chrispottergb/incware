@@ -95,6 +95,29 @@ export function filterByCategory(
   );
 }
 
+/**
+ * "Approve Charitable Contributions" — ratification wording (past tense) for
+ * contributions already made during the tax year. Placeholders [TaxYear],
+ * [Amount] and [OrganizationName] are filled by
+ * src/components/meeting/CharitableContributionFields.tsx.
+ *
+ * Corporation / S Corporation:
+ *   WHEREAS, during the tax year ending [TaxYear], the corporation made charitable
+ *   contributions in the total amount of $[Amount] to [OrganizationName];
+ *   RESOLVED, that the Shareholders hereby confirm, approve, and ratify the charitable
+ *   contributions as expenditures made in the best interests of the corporation.
+ *
+ * LLC / LLC-S (plural approving body):
+ *   ... the company made ... ;
+ *   RESOLVED, that the Members hereby confirm, approve, and ratify ... of the company.
+ *
+ * Single Member LLC (singular approving body and verbs):
+ *   ... the company made ... ;
+ *   RESOLVED, that the Managing Member hereby confirms, approves, and ratifies ... of the company.
+ *
+ * NOTE: the "LLC-S" entity type assumes multi-member; single-member LLCs electing
+ * S-corp status use the "Single Member LLC" entity type with an s_election_date instead.
+ */
 export const RESOLUTION_TYPES: Record<string, ResolutionType[]> = {
   Corporation: [
     { label: "Authorize a Line of Credit", statute: "Wis. Stat. § 180.0302", template: "WHEREAS, it would be in the best interests of the corporation to obtain a line of credit, and after discussion, it was\n\nRESOLVED, that the proper officers of this corporation are hereby authorized to contact the Bank and are further authorized to execute any documents necessary to establish a line of credit not to exceed $_______ (amount) dollars for and on behalf of the corporation." },
