@@ -27,6 +27,13 @@ import { createGeneratedDocumentSignedUrl, downloadGeneratedDocumentBlob, saveBl
 
 import { RESOLUTION_TYPES } from "@/lib/resolution-types";
 import { isLLCType } from "@/lib/entity-terminology";
+import CharitableContributionFields, {
+  CHARITABLE_RESOLUTION_LABEL,
+  composeCharitableText,
+  initialCharitableState,
+  validateCharitable,
+  type CharitableState,
+} from "@/components/meeting/CharitableContributionFields";
 import BuySellWorkflow from "@/components/company/BuySellWorkflow";
 import BatchTransferDialog from "@/components/meeting/BatchTransferDialog";
 import LeaseTransactionDialog from "@/components/meeting/LeaseTransactionDialog";
@@ -63,6 +70,10 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
   const [purpose, setPurpose] = useState("");
   const [customPurpose, setCustomPurpose] = useState("");
   const [resolutionText, setResolutionText] = useState("");
+
+  // Charitable contribution structured fields (new resolutions only)
+  const [charitable, setCharitable] = useState<CharitableState>(() => initialCharitableState(meetingDate));
+  const [charitableErrors, setCharitableErrors] = useState<Record<string, string>>({});
 
   // Transfer workflow state
   const [transferOpen, setTransferOpen] = useState(false);
@@ -187,6 +198,8 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
     setPurpose("");
     setCustomPurpose("");
     setResolutionText("");
+    setCharitable(initialCharitableState(meetingDate));
+    setCharitableErrors({});
   };
 
   const openEdit = (r: any) => {
@@ -203,8 +216,24 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
     setDialogOpen(true);
   };
 
+  const showCharitableFields = !editingId && purpose === CHARITABLE_RESOLUTION_LABEL;
+
+  const handleCharitableChange = (next: CharitableState) => {
+    setCharitable(next);
+    setCharitableErrors({});
+    const template = resolutionOptions.find((o) => o.label === CHARITABLE_RESOLUTION_LABEL)?.template;
+    if (template) setResolutionText(composeCharitableText(template, next));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (showCharitableFields) {
+      const errs = validateCharitable(charitable);
+      if (Object.keys(errs).length > 0) {
+        setCharitableErrors(errs);
+        return;
+      }
+    }
     const effectivePurpose = purpose === "Other" ? (customPurpose.trim() || "Other") : purpose;
     if (editingId) {
       updateResolution.mutate(effectivePurpose);
@@ -228,6 +257,12 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
             ? new Date(meetingDate).getFullYear().toString()
             : new Date().getFullYear().toString();
           text = text.replace(/\[YEAR\]/g, year);
+        }
+        if (value === CHARITABLE_RESOLUTION_LABEL) {
+          const fresh = initialCharitableState(meetingDate);
+          setCharitable(fresh);
+          setCharitableErrors({});
+          text = composeCharitableText(text, fresh);
         }
         setResolutionText(text);
       } else {
@@ -374,6 +409,13 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                       required
                     />
                   </div>
+                )}
+                {showCharitableFields && (
+                  <CharitableContributionFields
+                    value={charitable}
+                    onChange={handleCharitableChange}
+                    errors={charitableErrors}
+                  />
                 )}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Resolution</Label>

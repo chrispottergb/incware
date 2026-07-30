@@ -44,6 +44,13 @@ import {
   type ActionCategory,
   type ResolutionType,
 } from "@/lib/resolution-types";
+import CharitableContributionFields, {
+  CHARITABLE_RESOLUTION_LABEL,
+  composeCharitableText,
+  initialCharitableState,
+  validateCharitable,
+  type CharitableState,
+} from "@/components/meeting/CharitableContributionFields";
 import { format } from "date-fns";
 import { generatePromissoryNotePDF } from "@/lib/promissory-note-pdf";
 import { exportMeetingMinutesPDF } from "@/lib/meeting-pdf-export";
@@ -108,6 +115,8 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   // Step 3: Resolution
   const [recitals, setRecitals] = useState("");
   const [resolutionText, setResolutionText] = useState("");
+  const [charitable, setCharitable] = useState<CharitableState>(() => initialCharitableState());
+  const [charitableErrors, setCharitableErrors] = useState<Record<string, string>>({});
 
   // Promissory Note wizard state
   const LOAN_RESOLUTION_LABELS = [
@@ -453,14 +462,30 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   }, [step, effectiveDate, actionCategory, selectedAction, resolutionText, signers]);
 
   // Handle action selection — auto-fill resolution template
+  const isCharitableResolution = selectedAction === CHARITABLE_RESOLUTION_LABEL;
+
   const handleActionSelect = (action: string) => {
     setSelectedAction(action);
     const match = resolutionOptions.find((r) => r.label === action);
     if (match?.template) {
-      setResolutionText(match.template);
+      if (action === CHARITABLE_RESOLUTION_LABEL) {
+        const fresh = initialCharitableState();
+        setCharitable(fresh);
+        setCharitableErrors({});
+        setResolutionText(composeCharitableText(match.template, fresh));
+      } else {
+        setResolutionText(match.template);
+      }
     } else {
       setResolutionText("");
     }
+  };
+
+  const handleCharitableChange = (next: CharitableState) => {
+    setCharitable(next);
+    setCharitableErrors({});
+    const template = resolutionOptions.find((r) => r.label === CHARITABLE_RESOLUTION_LABEL)?.template;
+    if (template) setResolutionText(composeCharitableText(template, next));
   };
 
   const buildConsentPdfData = useCallback((meetingId: string) => {
@@ -810,6 +835,13 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
 
   // Step advance with auto-save
   const handleNext = async () => {
+    if (step === 2 && selectedAction === CHARITABLE_RESOLUTION_LABEL) {
+      const errs = validateCharitable(charitable);
+      if (Object.keys(errs).length > 0) {
+        setCharitableErrors(errs);
+        return;
+      }
+    }
     try {
       await saveDraft();
     } catch (err: any) {
@@ -1222,6 +1254,14 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
               placeholder='Optional background or "WHEREAS" clauses. Leave blank to omit the Recitals section from the consent.'
             />
           </div>
+
+          {isCharitableResolution && (
+            <CharitableContributionFields
+              value={charitable}
+              onChange={handleCharitableChange}
+              errors={charitableErrors}
+            />
+          )}
 
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground">Resolution Text *</Label>
