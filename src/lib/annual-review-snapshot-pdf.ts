@@ -13,6 +13,13 @@ const val = (v: any) => {
   return s.length ? s : "—";
 };
 
+const money = (v: any) => {
+  if (v === null || v === undefined || String(v).trim() === "") return "—";
+  const n = Number(String(v).replace(/[^0-9.-]/g, ""));
+  if (!isFinite(n)) return String(v);
+  return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
 const joinAddr = (...parts: any[]) => parts.filter((p) => p && String(p).trim()).join(", ") || "—";
 
 function addHeader(doc: jsPDF, companyName: string, reviewYear: number | string) {
@@ -139,8 +146,10 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
 
   addHeader(doc, input.companyName, input.reviewYear);
   let y = 54;
+  let n = 0;
+  const num = (t: string) => `${++n}. ${t}`;
 
-  y = sectionTitle(doc, "1. Company Information", y);
+  y = sectionTitle(doc, num("Company Information"), y);
   y = kvTable(doc, [
     ["Company Name", val(c.name || input.companyName)],
     ["Entity Type", val(c.entity_type)],
@@ -161,7 +170,7 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
     ["Cell", val(ct.contact_cell)],
   ], y);
 
-  y = sectionTitle(doc, "2. Registered Agent", y);
+  y = sectionTitle(doc, num("Registered Agent"), y);
   y = kvTable(doc, [
     ["Agent Name", val(ra.name || ra.agent_name)],
     ["Address", joinAddr(ra.address, ra.address_2)],
@@ -169,7 +178,7 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
     ["Email", val(ra.email)],
   ], y);
 
-  y = sectionTitle(doc, "3. Accountant", y);
+  y = sectionTitle(doc, num("Accountant"), y);
   y = kvTable(doc, [
     ["Name", val(ac.name || ac.accountant_name)],
     ["Firm", val(ac.firm || ac.firm_name)],
@@ -178,7 +187,7 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
     ["Email", val(ac.email)],
   ], y);
 
-  y = sectionTitle(doc, "4. Attorney", y);
+  y = sectionTitle(doc, num("Attorney"), y);
   y = kvTable(doc, [
     ["Name", val(at.name || at.attorney_name)],
     ["Firm", val(at.firm || at.firm_name)],
@@ -187,7 +196,7 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
     ["Email", val(at.email)],
   ], y);
 
-  y = sectionTitle(doc, "5. Banking", y);
+  y = sectionTitle(doc, num("Banking"), y);
   y = dataTable(doc,
     ["Bank Name", "Account Type", "Branch Address", "Account #", "LOC Amount", "LOC Rate"],
     (e.banks || []).map((b: any) => [
@@ -195,7 +204,7 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
       val(b.account_type),
       joinAddr(b.address, b.city, b.state, b.zip),
       b.account_number_last4 ? `****${b.account_number_last4}` : "—",
-      val(b.loc_amount),
+      money(b.loc_amount),
       val(b.loc_rate),
     ]),
     y, "No bank accounts on file.");
@@ -209,7 +218,7 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
     }),
     y, "No authorized signers on file.");
 
-  y = sectionTitle(doc, `6. ${input.ownerLabel}`, y);
+  y = sectionTitle(doc, num(input.ownerLabel), y);
   y = dataTable(doc,
     ["Name", `${input.sharesLabel} Held`, "Ownership %", "Address"],
     (e.shareholders || []).map((s: any) => [
@@ -223,26 +232,26 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
     y, `No ${input.ownerLabel.toLowerCase()} on file.`);
 
   if (!input.isLLC) {
-    y = sectionTitle(doc, "7. Directors", y);
+    y = sectionTitle(doc, num("Directors"), y);
     y = dataTable(doc, ["Director"], (e.directors || []).map((d: any) => [val(d.name)]), y, "No directors on file.");
   }
 
-  y = sectionTitle(doc, "8. Officers", y);
+  y = sectionTitle(doc, num("Officers"), y);
   y = dataTable(doc,
     ["Title", "Name", "Salary", "Bonus", "Comp. Status", "Note"],
     (e.officers || []).map((o: any) => [
-      val(o.title), val(o.name), val(o.salary), val(o.bonus),
+      val(o.title), val(o.name), money(o.salary), money(o.bonus),
       val(o.compensation_status), val(o.compensation_note),
     ]),
     y, "No officers on file.");
 
-  y = sectionTitle(doc, "9. Lease Information", y);
+  y = sectionTitle(doc, num("Lease Information"), y);
   y = dataTable(doc,
     ["Property", "Landlord", "Monthly", "Start", "End", "Classification", "Improvements"],
     (e.leases || []).map((l: any) => [
       val(l.property_address),
       val(l.landlord_name),
-      val(l.monthly_payment),
+      money(l.monthly_payment),
       val(l.lease_start_date),
       val(l.lease_end_date),
       val(l.lease_classification),
@@ -250,7 +259,7 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
     ]),
     y, "No leases on file.");
 
-  y = sectionTitle(doc, "10. Benefits", y);
+  y = sectionTitle(doc, num("Benefits"), y);
   y = dataTable(doc,
     ["Description", "Type", "Provider", "Agency", "Agent / Admin", "Contribution"],
     (e.benefits || []).map((b: any) => [
@@ -259,31 +268,31 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
     ]),
     y, "No benefits on file.");
 
-  y = sectionTitle(doc, "11. Vehicles & Equipment", y);
+  y = sectionTitle(doc, num("Vehicles & Equipment"), y);
   y = dataTable(doc,
     ["Type", "Description", "Year", "Make", "Model", "VIN", "Purchased", "Amount"],
     (e.assets || []).map((a: any) => [
       val(a.asset_type), val(a.description), val(a.year), val(a.make),
-      val(a.model), val(a.vin), val(a.purchase_date), val(a.purchase_amount),
+      val(a.model), val(a.vin), val(a.purchase_date), money(a.purchase_amount),
     ]),
     y, "No new vehicles or equipment added this year.");
 
-  y = sectionTitle(doc, "12. Loans", y);
+  y = sectionTitle(doc, num("Loans"), y);
   y = dataTable(doc,
     ["Lender", "Borrower", "Amount", "Rate"],
-    (e.loans || []).map((l: any) => [val(l.lender_name), val(l.borrower_name), val(l.loan_amount), val(l.loan_rate)]),
+    (e.loans || []).map((l: any) => [val(l.lender_name), val(l.borrower_name), money(l.loan_amount), val(l.loan_rate)]),
     y, "No new loans added this year.");
 
   y = sectionTitle(doc, "Agreements / Contributions", y);
   y = dataTable(doc,
     ["Type", "With", "Amount", "Date", "Purpose"],
     (e.contributions || []).map((x: any) => [
-      val(x.agreement_type), val(x.agreement_with), val(x.amount), val(x.agreement_date), val(x.agreement_purpose),
+      val(x.agreement_type), val(x.agreement_with), money(x.amount), val(x.agreement_date), val(x.agreement_purpose),
     ]),
     y, "No new agreements or contributions added this year.");
 
   if (input.notes && input.notes.trim()) {
-    y = sectionTitle(doc, "13. Additional Notes", y);
+    y = sectionTitle(doc, num("Additional Notes"), y);
     doc.setFontSize(10);
     doc.setFont("Arial", "normal");
     doc.setTextColor(30, 30, 30);
