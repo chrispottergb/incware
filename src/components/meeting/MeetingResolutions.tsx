@@ -31,6 +31,7 @@ import CharitableContributionFields, {
   CHARITABLE_RESOLUTION_LABEL,
   composeCharitableText,
   initialCharitableState,
+  resolveApprovingBody,
   validateCharitable,
   type CharitableState,
 } from "@/components/meeting/CharitableContributionFields";
