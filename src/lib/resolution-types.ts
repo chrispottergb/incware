@@ -97,23 +97,15 @@ export function filterByCategory(
 
 /**
  * "Approve Charitable Contributions" — ratification wording (past tense) for
- * contributions already made during the tax year. Placeholders [TaxYear],
- * [Amount] and [OrganizationName] are filled by
- * src/components/meeting/CharitableContributionFields.tsx.
+ * contributions already made during the tax year.
  *
- * Corporation / S Corporation:
- *   WHEREAS, during the tax year ending [TaxYear], the corporation made charitable
- *   contributions in the total amount of $[Amount] to [OrganizationName];
- *   RESOLVED, that the Shareholders hereby confirm, approve, and ratify the charitable
- *   contributions as expenditures made in the best interests of the corporation.
- *
- * LLC / LLC-S (plural approving body):
- *   ... the company made ... ;
- *   RESOLVED, that the Members hereby confirm, approve, and ratify ... of the company.
- *
- * Single Member LLC (singular approving body and verbs):
- *   ... the company made ... ;
- *   RESOLVED, that the Managing Member hereby confirms, approves, and ratifies ... of the company.
+ * The live text shown in the Add Resolution form and the Written Consent wizard is
+ * composed dynamically by composeCharitableText() in
+ * src/components/meeting/CharitableContributionFields.tsx from the selected Tax
+ * Treatment plus the approving body resolved from the stored meeting/entity type
+ * (Shareholders / Board of Directors / Members / Managing Member, with matching
+ * singular or plural verb agreement). The templates below are only a static
+ * fallback and mirror the "deductible" variant.
  *
  * NOTE: the "LLC-S" entity type assumes multi-member; single-member LLCs electing
  * S-corp status use the "Single Member LLC" entity type with an s_election_date instead.
