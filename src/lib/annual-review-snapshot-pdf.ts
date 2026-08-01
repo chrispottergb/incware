@@ -1,6 +1,5 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { savePdfReliably } from "./pdf-save";
 import { registerArialFont } from "@/lib/arial-font";
 
 const MARGIN = 31.75; // 1.25" binder margin
@@ -325,5 +324,18 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
 export async function downloadAnnualReviewSnapshotPdf(input: ReviewSnapshotInput) {
   const doc = generateAnnualReviewSnapshotPdf(input);
   const safe = (input.companyName || "company").replace(/[^a-z0-9]+/gi, "_");
-  await savePdfReliably(doc, `${safe}_Annual_Review_${input.reviewYear}.pdf`);
+  const filename = `${safe}_Annual_Review_${input.reviewYear}.pdf`;
+  const blob: Blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.rel = "noopener";
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, 60 * 1000);
 }
