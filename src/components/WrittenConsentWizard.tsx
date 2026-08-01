@@ -462,7 +462,10 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   }, [step, effectiveDate, actionCategory, selectedAction, resolutionText, signers]);
 
   // Handle action selection — auto-fill resolution template
-  const isCharitableResolution = selectedAction === CHARITABLE_RESOLUTION_LABEL;
+  // The structured charitable panel only applies when the user picks the action in
+  // this session. Reopening a saved/draft consent keeps the stored text as free text
+  // (mirrors MeetingResolutions.tsx, which gates on !editingId).
+  const isCharitableResolution = charitablePanelActive && selectedAction === CHARITABLE_RESOLUTION_LABEL;
 
   const handleActionSelect = (action: string) => {
     setSelectedAction(action);
@@ -472,14 +475,18 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         const fresh = initialCharitableState();
         setCharitable(fresh);
         setCharitableErrors({});
+        setCharitablePanelActive(true);
         setResolutionText(composeCharitableText(match.template, fresh));
       } else {
+        setCharitablePanelActive(false);
         setResolutionText(match.template);
       }
     } else {
+      setCharitablePanelActive(false);
       setResolutionText("");
     }
   };
+
 
   const handleCharitableChange = (next: CharitableState) => {
     setCharitable(next);
