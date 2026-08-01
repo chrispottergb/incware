@@ -117,6 +117,8 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   const [resolutionText, setResolutionText] = useState("");
   const [charitable, setCharitable] = useState<CharitableState>(() => initialCharitableState());
   const [charitableErrors, setCharitableErrors] = useState<Record<string, string>>({});
+  const [charitablePanelActive, setCharitablePanelActive] = useState(false);
+
 
   // Promissory Note wizard state
   const LOAN_RESOLUTION_LABELS = [
@@ -462,7 +464,10 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   }, [step, effectiveDate, actionCategory, selectedAction, resolutionText, signers]);
 
   // Handle action selection — auto-fill resolution template
-  const isCharitableResolution = selectedAction === CHARITABLE_RESOLUTION_LABEL;
+  // The structured charitable panel only applies when the user picks the action in
+  // this session. Reopening a saved/draft consent keeps the stored text as free text
+  // (mirrors MeetingResolutions.tsx, which gates on !editingId).
+  const isCharitableResolution = charitablePanelActive && selectedAction === CHARITABLE_RESOLUTION_LABEL;
 
   const handleActionSelect = (action: string) => {
     setSelectedAction(action);
@@ -472,14 +477,18 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         const fresh = initialCharitableState();
         setCharitable(fresh);
         setCharitableErrors({});
+        setCharitablePanelActive(true);
         setResolutionText(composeCharitableText(match.template, fresh));
       } else {
+        setCharitablePanelActive(false);
         setResolutionText(match.template);
       }
     } else {
+      setCharitablePanelActive(false);
       setResolutionText("");
     }
   };
+
 
   const handleCharitableChange = (next: CharitableState) => {
     setCharitable(next);
@@ -835,7 +844,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
 
   // Step advance with auto-save
   const handleNext = async () => {
-    if (step === 2 && selectedAction === CHARITABLE_RESOLUTION_LABEL) {
+    if (step === 2 && isCharitableResolution) {
       const errs = validateCharitable(charitable);
       if (Object.keys(errs).length > 0) {
         setCharitableErrors(errs);
