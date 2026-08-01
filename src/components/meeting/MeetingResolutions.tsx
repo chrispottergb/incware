@@ -265,7 +265,7 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
           const fresh = initialCharitableState(meetingDate);
           setCharitable(fresh);
           setCharitableErrors({});
-          text = composeCharitableText(text, fresh);
+          text = composeCharitableText(fresh, approvingBody);
         }
         setResolutionText(text);
       } else {
