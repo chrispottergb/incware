@@ -48,6 +48,7 @@ import CharitableContributionFields, {
   CHARITABLE_RESOLUTION_LABEL,
   composeCharitableText,
   initialCharitableState,
+  resolveApprovingBody,
   validateCharitable,
   type CharitableState,
 } from "@/components/meeting/CharitableContributionFields";
@@ -469,32 +470,29 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   // (mirrors MeetingResolutions.tsx, which gates on !editingId).
   const isCharitableResolution = charitablePanelActive && selectedAction === CHARITABLE_RESOLUTION_LABEL;
 
+  // Written Consent has no meeting type — the entity type alone resolves the approving body.
+  const charitableApprovingBody = resolveApprovingBody(company.entity_type, undefined);
+
   const handleActionSelect = (action: string) => {
     setSelectedAction(action);
     const match = resolutionOptions.find((r) => r.label === action);
-    if (match?.template) {
-      if (action === CHARITABLE_RESOLUTION_LABEL) {
-        const fresh = initialCharitableState();
-        setCharitable(fresh);
-        setCharitableErrors({});
-        setCharitablePanelActive(true);
-        setResolutionText(composeCharitableText(match.template, fresh));
-      } else {
-        setCharitablePanelActive(false);
-        setResolutionText(match.template);
-      }
-    } else {
-      setCharitablePanelActive(false);
-      setResolutionText("");
+    if (action === CHARITABLE_RESOLUTION_LABEL) {
+      const fresh = initialCharitableState();
+      setCharitable(fresh);
+      setCharitableErrors({});
+      setCharitablePanelActive(true);
+      setResolutionText(composeCharitableText(fresh, charitableApprovingBody));
+      return;
     }
+    setCharitablePanelActive(false);
+    setResolutionText(match?.template || "");
   };
 
 
   const handleCharitableChange = (next: CharitableState) => {
     setCharitable(next);
     setCharitableErrors({});
-    const template = resolutionOptions.find((r) => r.label === CHARITABLE_RESOLUTION_LABEL)?.template;
-    if (template) setResolutionText(composeCharitableText(template, next));
+    setResolutionText(composeCharitableText(next, charitableApprovingBody));
   };
 
   const buildConsentPdfData = useCallback((meetingId: string) => {

@@ -1,19 +1,25 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { isLLCType } from "@/lib/entity-terminology";
 
 export const CHARITABLE_RESOLUTION_LABEL = "Approve Charitable Contributions";
-export const DEFAULT_ORGANIZATION_NAME = "a qualified charitable organization(s)";
+
+/** Fallback recipient wording when the optional Recipient(s) field is left blank. */
+export const DEFAULT_DEDUCTIBLE_RECIPIENTS = "a qualified charitable organization(s)";
+export const DEFAULT_NONDEDUCTIBLE_RECIPIENTS =
+  "one or more recipients as determined by the officers/managers of the entity";
 
 export const TAX_TREATMENT_NOTE =
-  "Tax Treatment Note: The contributions were recorded as expenses for financial reporting purposes. They were not deducted on the federal income tax return and were reflected on Schedule M-1 as expenses recorded on books but not deducted on the return.";
+  "Tax Treatment Note: The contributions were recorded as expenses for financial reporting purposes. They were not deducted as charitable contributions on the federal income tax return and were reflected on Schedule M-1 as expenses recorded on books but not otherwise deducted under Section 170.";
 
-export type TaxTreatment = "deductible" | "nondeductible" | "";
+export type TaxTreatment = "deductible" | "nondeductible";
 
 export interface CharitableState {
   taxYear: string;
   amount: string;
-  organizationName: string;
+  /** Optional. Comma-separated recipient name(s); blank yields a general approval. */
+  recipients: string;
   taxTreatment: TaxTreatment;
 }
 
@@ -24,21 +30,81 @@ export function initialCharitableState(meetingDate?: string): CharitableState {
   return {
     taxYear: year,
     amount: "",
-    organizationName: DEFAULT_ORGANIZATION_NAME,
-    taxTreatment: "",
+    recipients: "",
+    taxTreatment: "deductible",
   };
 }
 
-/** Fills the template placeholders and appends the Schedule M-1 note when applicable. */
-export function composeCharitableText(template: string, s: CharitableState): string {
-  let text = template
-    .replace(/\[TaxYear\]/g, s.taxYear || "[TaxYear]")
-    .replace(/\[Amount\]/g, s.amount || "[Amount]")
-    .replace(/\[OrganizationName\]/g, s.organizationName || DEFAULT_ORGANIZATION_NAME);
-  if (s.taxTreatment === "nondeductible") {
-    text = `${text}\n\n${TAX_TREATMENT_NOTE}`;
+export interface ApprovingBody {
+  /** e.g. "Shareholders", "Board of Directors", "Members", "Managing Member" */
+  label: string;
+  /** false → singular verb agreement ("confirms, approves, and ratifies") */
+  plural: boolean;
+  /** "corporation" | "company" */
+  entityNoun: string;
+}
+
+/**
+ * Resolves the approving body from the meeting/entity type already stored for the
+ * meeting. Mirrors the convention used by the meeting PDF exporter
+ * (src/lib/meeting-pdf-export.ts governingLabel): shareholder meeting → Shareholders;
+ * LLC → Members (Managing Member for a single-member LLC); everything else
+ * (annual, organizational, board meetings) → Board of Directors.
+ * When no meeting type is given (e.g. Written Consent) the entity type alone decides.
+ */
+export function resolveApprovingBody(
+  entityType?: string,
+  meetingType?: string
+): ApprovingBody {
+  const isLLC = isLLCType(entityType);
+  const isSMLLC = (entityType || "").trim().toLowerCase() === "single member llc";
+  const entityNoun = isLLC ? "company" : "corporation";
+  const mType = (meetingType || "").toLowerCase();
+
+  if (mType.includes("shareholder")) {
+    return { label: "Shareholders", plural: true, entityNoun };
   }
-  return text;
+  if (isSMLLC) {
+    return { label: "Managing Member", plural: false, entityNoun };
+  }
+  if (isLLC) {
+    // LLC meetings (annual, member, written consent) are approved by the Members.
+    return { label: "Members", plural: true, entityNoun };
+  }
+  if (!mType) {
+    // No meeting type (Written Consent) — corporations default to Shareholders.
+    return { label: "Shareholders", plural: true, entityNoun };
+  }
+  return { label: "Board of Directors", plural: true, entityNoun };
+}
+
+/** Builds the resolution text from the tax treatment and the resolved approving body. */
+export function composeCharitableText(s: CharitableState, body: ApprovingBody): string {
+  const taxYear = s.taxYear.trim() || "[TaxYear]";
+  const amount = s.amount.trim() || "[Amount]";
+  const recipients = s.recipients.trim();
+  const verbs = body.plural
+    ? "confirm, approve, and ratify"
+    : "confirms, approves, and ratifies";
+  const noun = body.entityNoun;
+
+  if (s.taxTreatment === "nondeductible") {
+    const to = recipients || DEFAULT_NONDEDUCTIBLE_RECIPIENTS;
+    return (
+      `WHEREAS, during the tax year ending ${taxYear}, the ${noun} made contributions in the aggregate amount of $${amount} to ${to}, ` +
+      `which contributions were made for business purposes, including community relations and goodwill benefiting the ${noun}, ` +
+      `rather than as charitable contributions to a qualified charitable organization under Section 170(c) of the Internal Revenue Code;` +
+      `\n\nRESOLVED, that the ${body.label} hereby ${verbs} the contributions described above as ordinary and necessary business expenditures ` +
+      `made in the best interests of the ${noun}, to be treated as deductible business expenses rather than charitable contributions for federal income tax purposes.` +
+      `\n\n${TAX_TREATMENT_NOTE}`
+    );
+  }
+
+  const to = recipients || DEFAULT_DEDUCTIBLE_RECIPIENTS;
+  return (
+    `WHEREAS, during the tax year ending ${taxYear}, the ${noun} made charitable contributions in the total amount of $${amount} to ${to};` +
+    `\n\nRESOLVED, that the ${body.label} hereby ${verbs} the charitable contributions as expenditures made in the best interests of the ${noun}.`
+  );
 }
 
 /** Validates the current values at submit time. Returns field -> message. */
@@ -46,14 +112,6 @@ export function validateCharitable(s: CharitableState): Record<string, string> {
   const errors: Record<string, string> = {};
   if (!s.taxYear.trim()) errors.taxYear = "Tax year is required.";
   if (!s.amount.trim()) errors.amount = "Amount is required.";
-  if (!s.taxTreatment) errors.taxTreatment = "Please select a tax treatment.";
-  if (
-    s.taxTreatment === "deductible" &&
-    s.organizationName.trim() === DEFAULT_ORGANIZATION_NAME
-  ) {
-    errors.organizationName =
-      "Please enter the name of the qualified charitable organization(s).";
-  }
   return errors;
 }
 
@@ -95,19 +153,17 @@ export default function CharitableContributionFields({ value, onChange, errors }
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="charitable-org">Organization Name *</Label>
+        <Label htmlFor="charitable-recipients">Recipient(s)</Label>
         <Input
-          id="charitable-org"
-          value={value.organizationName}
-          onChange={(e) => set({ organizationName: e.target.value })}
-          placeholder={DEFAULT_ORGANIZATION_NAME}
+          id="charitable-recipients"
+          value={value.recipients}
+          onChange={(e) => set({ recipients: e.target.value })}
+          placeholder="Red Cross, United Way"
         />
         <p className="text-xs text-muted-foreground">
-          For multiple organizations, enter a comma-separated list (e.g., "Red Cross, United Way").
+          Leave blank for a general approval, or list recipient name(s) comma-separated
+          (e.g., "Red Cross, United Way").
         </p>
-        {errors.organizationName && (
-          <p className="text-sm text-destructive">{errors.organizationName}</p>
-        )}
       </div>
 
       <div className="space-y-2">
@@ -135,8 +191,8 @@ export default function CharitableContributionFields({ value, onChange, errors }
                 Not deductible / book expense only
               </Label>
               <p className="text-xs text-muted-foreground">
-                The contribution was recorded as an expense but not deducted (includes
-                contributions to unqualified organizations).
+                The contribution was recorded as an expense but not deducted, including
+                contributions to unqualified organizations.
               </p>
             </div>
           </div>

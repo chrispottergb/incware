@@ -986,6 +986,7 @@ export default function MeetingDetail() {
         <MeetingResolutions
           meetingId={meeting.id}
           entityType={company?.entity_type || "Corporation"}
+          meetingType={meeting.meeting_type}
           companyId={id}
           companyName={company?.name}
           meetingDate={meeting.meeting_date}
