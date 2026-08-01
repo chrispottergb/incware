@@ -1,92 +1,62 @@
-## Verification: LLC-S approving body — **Case (a): LLC-S is always multi-member**
+## Goal
 
-Evidence gathered:
+Rework the "Approve Charitable Contributions" entry in the Add Resolution form: fewer/optional fields, a default tax treatment, two distinct generated texts, and an approving body derived from the meeting and entity type already stored (no new field).
 
-- Single-member LLCs that elect S-corp treatment are modeled as entity type **`Single Member LLC` plus an `s_election_date`**, not as `LLC-S`: `src/components/company/SMOperatingAgreementGenerator.tsx:198` computes `isScorpElected = !!company.s_election_date` and switches to the dedicated single-member S-corp document generator `src/lib/smllc-scorp-operating-agreement-pdf.ts`.
-- `src/components/company/OrganizationTab.tsx` treats `LLC-S` as its own type where the S election is *implied* ("not LLC-S where it's implied"), and shows the checkbox-based S-election only for `LLC` / `Single Member LLC`.
-- No code anywhere forks `LLC-S` on member count; `isLLCType()` in `src/lib/entity-terminology.ts` has no single-member branch for it. `src/components/CreateCompanyWizard.tsx:33` offers only `Corporation, LLC, Single Member LLC, Non-Profit, Partnership`, and its auto-detect (line 197) maps 1 member → `Single Member LLC`, else `LLC` — `LLC-S` is never auto-assigned.
-- Database check: 0 companies currently use `LLC-S` (29 Corporation, 16 LLC, 4 Single Member LLC, 4 Non-Profit).
+## Verified current state
 
-**Conclusion:** no single-member LLC-S variant is needed. The LLC-S template keeps plural "Members" wording, and a clarifying comment is added in `resolution-types.ts`:
+- Panel: `src/components/meeting/CharitableContributionFields.tsx` (Tax Year, Amount, Organization Name, Tax Treatment), mounted by `MeetingResolutions.tsx:413` and `WrittenConsentWizard.tsx:1267`.
+- Templates: `src/lib/resolution-types.ts`, five entity variants with `[TaxYear] / [Amount] / [OrganizationName]`.
+- `.template` is read only at `MeetingResolutions.tsx:224,252` and `WrittenConsentWizard.tsx:475,481,496` — no PDF export, preview pane, or picker tooltip consumes it.
+- `MeetingResolutions` accepts a `meetingType` prop, but `MeetingDetail.tsx:986` and the Written Consent embed (`WrittenConsentWizard.tsx:1331`) don't pass it; only `MeetingDetail.tsx:1353` does.
+- Existing approving-body convention lives at `meeting-pdf-export.ts:784`: shareholder meeting → "Shareholders"; else LLC → "Members"; else → "Board of Directors".
+- Stored meeting types: `Shareholder Meeting`, `Annual Meeting`, `Organizational Meeting`, `Special Meeting of Board of Directors`, `Written Consent`; LLC swaps in `Special Meeting of Members`; nonprofit adds `Annual Meeting of Members`. `"Board Meeting"` exists only as a compliance-checklist label, never as a `meeting_type`.
+- Disclaimer at `MeetingResolutions.tsx:431` is untouched.
 
-```ts
-// LLC-S entity type assumes multi-member; single-member LLCs electing S-corp status
-// use the "Single Member LLC" entity type with an s_election_date instead.
-```
+## Changes
 
-## A. Placeholder token audit — result
+**1. Approving-body helper (new, in `CharitableContributionFields.tsx`)**
 
-- **`[Organization Name]` (spaced)** — 6 occurrences, all in `src/lib/resolution-types.ts`: the 5 charitable templates (lines 126, 155, 177, 205, 232) plus the Non-Profit "Approve AI Governance Policy" consent caption (line 256), which refers to the nonprofit itself, not a charity payee — out of scope, unchanged.
-- **`[OrganizationName]` (no space)** — 0 existing occurrences.
-- **Parsing logic** — the only bracket-token substitution in the app is `src/components/meeting/MeetingResolutions.tsx:226-230`, which replaces `[YEAR]` only. `[Amount]`, `[TaxYear]`, `[Officer Name]`, `[Organization Name]` are literal text users edit; no PDF generator, edge function, or other component parses them.
+`resolveApprovingBody(entityType, meetingType)` → `{ label, plural, entityNoun }`, reusing the `meeting-pdf-export.ts:784` rule so wording stays consistent app-wide:
 
-**Conclusion:** the rename is scoped to the 5 charitable templates and touches no shared parsing logic.
+| Condition | Label | Verbs |
+|---|---|---|
+| meeting type contains "shareholder" | Shareholders | plural |
+| Single Member LLC | Managing Member | singular ("confirms, approves, and ratifies") |
+| any other LLC variant | Members | plural |
+| everything else (corp/nonprofit annual, organizational, board meetings) | Board of Directors | plural |
 
-## B. Final template text — all five entity variants
+Written Consent / no meeting type → falls through the same chain on entity type alone: corp → Shareholders, LLC → Members, Single Member LLC → Managing Member. `WrittenConsentWizard` already has `isLLC` / `isSMLLC` (lines 86-88) and will pass its entity type in, so it never defaults to the corp answer.
 
-**Corporation** (`Wis. Stat. § 180.0302`)
-```text
-WHEREAS, during the tax year ending [TaxYear], the corporation made charitable contributions in the total amount of $[Amount] to [OrganizationName];
+Entity noun: "corporation" for Corporation / S Corporation / Non-Profit, "company" for LLC variants.
 
-RESOLVED, that the Shareholders hereby confirm, approve, and ratify the charitable contributions as expenditures made in the best interests of the corporation.
-```
+**2. Fields**
 
-**S Corporation** (`Wis. Stat. § 180.0302; IRC § 1362`)
-```text
-WHEREAS, during the tax year ending [TaxYear], the corporation made charitable contributions in the total amount of $[Amount] to [OrganizationName];
+- Keep Tax Year (required) and Amount (required).
+- Rename "Organization Name" → "Recipient(s)", **optional**, empty by default, helper text: "Leave blank for a general approval, or list recipient name(s) comma-separated (e.g., 'Red Cross, United Way')."
+- Remove the default-string validation rule; `validateCharitable` checks only Tax Year and Amount.
+- Tax Treatment radios default to `deductible`; option 2 subtext becomes "The contribution was recorded as an expense but not deducted, including contributions to unqualified organizations."
 
-RESOLVED, that the Shareholders hereby confirm, approve, and ratify the charitable contributions as expenditures made in the best interests of the corporation.
-```
+**3. Text generation**
 
-**LLC** (`Wis. Stat. § 183.0301`)
-```text
-WHEREAS, during the tax year ending [TaxYear], the company made charitable contributions in the total amount of $[Amount] to [OrganizationName];
+`composeCharitableText` builds text from the tax treatment + resolved approving body instead of the per-entity static template:
 
-RESOLVED, that the Members hereby confirm, approve, and ratify the charitable contributions as expenditures made in the best interests of the company.
-```
+- **Deductible** — WHEREAS … made charitable contributions in the total amount of $X to *recipients, or "a qualified charitable organization(s)" when blank*; RESOLVED, that the {approving body} hereby confirm(s), approve(s), and ratif(y/ies) the charitable contributions as expenditures made in the best interests of the {corporation/company}.
+- **Not deductible** — the longer §170(c) business-expense wording; blank recipients fall back to "one or more recipients as determined by the officers/managers of the entity"; the Schedule M-1 "Tax Treatment Note" paragraph is appended.
 
-**Single Member LLC** (`Wis. Stat. § 183.0301`) — singular approving body and verbs
-```text
-WHEREAS, during the tax year ending [TaxYear], the company made charitable contributions in the total amount of $[Amount] to [OrganizationName];
+Output goes into the existing textarea and stays fully editable.
 
-RESOLVED, that the Managing Member hereby confirms, approves, and ratifies the charitable contributions as expenditures made in the best interests of the company.
-```
+**4. Wiring**
 
-**LLC-S** (`Wis. Stat. § 183.0301; IRC § 1362`) — multi-member, plural Members retained per the verification above
-```text
-WHEREAS, during the tax year ending [TaxYear], the company made charitable contributions in the total amount of $[Amount] to [OrganizationName];
+- `MeetingResolutions.tsx`: resolve the approving body from its `entityType` + `meetingType` props and pass it into compose; recompose on field/treatment change and on first selecting the resolution type (including seeding the default deductible text).
+- `MeetingDetail.tsx:986`: pass `meetingType={meeting.meeting_type}`.
+- `WrittenConsentWizard.tsx`: same derivation for its own charitable panel, and pass `meetingType="Written Consent"` to the embedded `MeetingResolutions`.
+- `resolution-types.ts`: keep the five entries (labels/statutes drive the picker and categorization), update their stored text to the new deductible wording as a static fallback, and refresh the doc comment to note the live text is composed dynamically.
 
-RESOLVED, that the Members hereby confirm, approve, and ratify the charitable contributions as expenditures made in the best interests of the company.
-```
+## Open item
 
-Conditional micro-note appended (all variants) when **Not deductible / book expense only** is selected:
-```text
-Tax Treatment Note: The contributions were recorded as expenses for financial reporting purposes. They were not deducted on the federal income tax return and were reflected on Schedule M-1 as expenses recorded on books but not deducted on the return.
-```
+Nonprofit "Annual Meeting of Members" resolves to **Board of Directors** under the reused rule. Say so if you'd rather it read "Members".
 
-All five blocks are reproduced in a comment above the charitable entries in `resolution-types.ts`.
+## Notes
 
-## Implementation
-
-**1. `src/lib/resolution-types.ts`** — replace the five charitable templates with the text above; labels and statutes unchanged; add the reference comment block and the LLC-S assumption note.
-
-**2. New `src/components/meeting/CharitableContributionFields.tsx`** — shared panel shown only when the selected purpose is "Approve Charitable Contributions" and only for new resolutions (editing keeps plain free-text):
-
-- **Tax Year** — text input, required, defaults to the meeting date's year.
-- **Amount** — currency input, required.
-- **Organization Name** — text input prefilled with the literal default `a qualified charitable organization(s)`, always editable, comma-separated list allowed.
-- **Tax Treatment** — required radio group:
-  - *Deductible charitable contribution* — "The organization was a qualified charity and the corporation claimed the deduction."
-  - *Not deductible / book expense only* — "The contribution was recorded as an expense but not deducted (includes contributions to unqualified organizations)."
-
-Every field change recomposes the resolution textarea from the entity's template and adds/removes the Tax Treatment Note; the textarea stays editable. Validation runs at submit against current values — no auto-clearing on radio change:
-- missing Tax Year, Amount, or Tax Treatment → inline error, submit blocked;
-- Deductible selected **and** Organization Name exactly equals the default string → inline error "Please enter the name of the qualified charitable organization(s)."
-
-**3. `src/components/meeting/MeetingResolutions.tsx`** and **4. `src/components/WrittenConsentWizard.tsx`** — mount the shared panel and gate their submit handlers on its validation so both entry points behave identically.
-
-Only the composed text is saved to `meeting_resolutions.resolution_text`. No migration; PDF generators untouched; existing saved resolutions keep their text.
-
-## Verification
-
-Add the resolution from a corporate meeting and from the Written Consent wizard: confirm submit is blocked with no tax treatment, blocked on Deductible + untouched default organization, the note appears only for the non-deductible option, and the saved text renders correctly in the meeting PDF.
+- Saved resolutions are plain text in `meeting_resolutions.resolution_text` — unaffected, no migration.
+- Editing an existing resolution keeps today's plain-textarea behavior (panel is new-resolution only).
