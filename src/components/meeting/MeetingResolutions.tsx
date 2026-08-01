@@ -218,11 +218,13 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
 
   const showCharitableFields = !editingId && purpose === CHARITABLE_RESOLUTION_LABEL;
 
+  // Approving body comes from the meeting/entity type already stored — never a form field.
+  const approvingBody = resolveApprovingBody(entityType, meetingType);
+
   const handleCharitableChange = (next: CharitableState) => {
     setCharitable(next);
     setCharitableErrors({});
-    const template = resolutionOptions.find((o) => o.label === CHARITABLE_RESOLUTION_LABEL)?.template;
-    if (template) setResolutionText(composeCharitableText(template, next));
+    setResolutionText(composeCharitableText(next, approvingBody));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
