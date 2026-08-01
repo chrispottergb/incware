@@ -117,6 +117,8 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   const [resolutionText, setResolutionText] = useState("");
   const [charitable, setCharitable] = useState<CharitableState>(() => initialCharitableState());
   const [charitableErrors, setCharitableErrors] = useState<Record<string, string>>({});
+  const [charitablePanelActive, setCharitablePanelActive] = useState(false);
+
 
   // Promissory Note wizard state
   const LOAN_RESOLUTION_LABELS = [
