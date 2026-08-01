@@ -844,7 +844,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
 
   // Step advance with auto-save
   const handleNext = async () => {
-    if (step === 2 && selectedAction === CHARITABLE_RESOLUTION_LABEL) {
+    if (step === 2 && isCharitableResolution) {
       const errs = validateCharitable(charitable);
       if (Object.keys(errs).length > 0) {
         setCharitableErrors(errs);
