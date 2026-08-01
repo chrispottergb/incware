@@ -242,20 +242,22 @@ export default function AnnualReviewPublic() {
     setEdits((p: any) => ({ ...p, [key]: (p[key] || []).filter((_: any, i: number) => i !== idx) }));
 
   const handleDownloadPdf = async () => {
-    if (!snapshotRef.current || !data) return;
+    if (!data || !edits) return;
     setDownloading(true);
     try {
-      const html2pdf = (await import("html2pdf.js")).default;
-      await html2pdf()
-        .set({
-          margin: [0.5, 0.4, 0.5, 0.4],
-          filename: `${data.company_name.replace(/[^a-z0-9]/gi, "_")}_Annual_Review_${data.review_year}.pdf`,
-          image: { type: "jpeg", quality: 0.95 },
-          html2canvas: { scale: 2, backgroundColor: "#ffffff" },
-          jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
-        } as any)
-        .from(snapshotRef.current)
-        .save();
+      const { downloadAnnualReviewSnapshotPdf } = await import("@/lib/annual-review-snapshot-pdf");
+      const et = String(edits?.company?.entity_type || data.entity_type || "").toLowerCase();
+      const llc = et.includes("llc");
+      await downloadAnnualReviewSnapshotPdf({
+        companyName: edits?.company?.name || data.company_name,
+        reviewYear: data.review_year,
+        lastUpdated: data.last_updated ? fmtDate(data.last_updated) : null,
+        isLLC: llc,
+        ownerLabel: llc ? "Members" : "Shareholders",
+        sharesLabel: llc ? "Units" : "Shares",
+        edits,
+        notes,
+      });
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate PDF.");
