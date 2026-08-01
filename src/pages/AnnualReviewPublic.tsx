@@ -246,7 +246,7 @@ export default function AnnualReviewPublic() {
     setDownloading(true);
     try {
       const { downloadAnnualReviewSnapshotPdf } = await import("@/lib/annual-review-snapshot-pdf");
-      const et = String(edits?.company?.entity_type || data.entity_type || "").toLowerCase();
+      const et = String(edits?.company?.entity_type || (data as any).entity_type || "").toLowerCase();
       const llc = et.includes("llc");
       await downloadAnnualReviewSnapshotPdf({
         companyName: edits?.company?.name || data.company_name,
