@@ -46,7 +46,7 @@ interface Props {
   companyAddress?: string;
 }
 
-const leaseOptions = ["Home Office", "Office Space", "Retail Office Space", "Shared / Coworking Space", "Storage Unit", "Warehouse Space", "Garage", "Shed / Outbuilding", "Small Workshop", "Parking Area", "Small Land Parcel", "Flex Space", "Showroom/Office Space", "Mixed-Use Commercial", "Service Center"];
+const leaseOptions = ["Home Office", "Office Space", "Retail Office Space", "Shared / Coworking Space", "Storage Unit", "Warehouse Space", "Garage", "Shed / Outbuilding", "Small Workshop", "Parking Area", "Small Land Parcel", "Flex Space", "Showroom/Office Space", "Mixed-Use Commercial", "Service Center", "Restaurant Premises", "Bar and Restaurant Premises", "Bar Premises"];
 
 const LEASE_TYPE_OPTIONS: Array<{ value: LeaseTypeChoice; label: string; tip: string }> = [
   { value: "gross", label: "Gross", tip: "Tenant pays a flat rent. Landlord covers property taxes, insurance, and most maintenance." },

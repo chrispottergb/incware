@@ -18,6 +18,7 @@ const leaseOptions = [
   "Home Office", "Office Space", "Shared / Coworking Space", "Storage Unit",
   "Warehouse Space", "Garage", "Shed / Outbuilding", "Small Workshop",
   "Parking Area", "Small Land Parcel",
+  "Restaurant Premises", "Bar and Restaurant Premises", "Bar Premises",
 ];
 
 interface Props {
