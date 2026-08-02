@@ -56,8 +56,16 @@ export function resolveApprovingBody(
   entityType?: string,
   meetingType?: string
 ): ApprovingBody {
-  const isLLC = isLLCType(entityType);
-  const isSMLLC = (entityType || "").trim().toLowerCase() === "single member llc";
+  // Normalize so LLC variants that isLLCType() doesn't cover (e.g. "LLC-S",
+  // "Single Member LLC-S") still resolve to LLC wording/approving body.
+  const normalizedEntity = (entityType || "")
+    .toLowerCase()
+    .replace(/[.]/g, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const isLLC = isLLCType(entityType) || /(^|\s)llc(\s|$)/.test(normalizedEntity);
+  const isSMLLC = normalizedEntity === "single member llc" || normalizedEntity === "single member llc s";
   const entityNoun = isLLC ? "company" : "corporation";
   const mType = (meetingType || "").toLowerCase();
 
