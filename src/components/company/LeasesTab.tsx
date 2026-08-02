@@ -483,7 +483,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                 <Plus className="mr-1 h-3 w-3" /> Add Lease
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="min-w-[600px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="font-display text-base">
                   {editId ? "Edit" : "Add"} Lease
