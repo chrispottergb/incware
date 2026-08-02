@@ -1,62 +1,66 @@
 ## Goal
 
-Rework the "Approve Charitable Contributions" entry in the Add Resolution form: fewer/optional fields, a default tax treatment, two distinct generated texts, and an approving body derived from the meeting and entity type already stored (no new field).
+Rebuild the Counsel tab as **Firms and Counsel**: two mirrored categories (Attorneys, Accountants), each rendering firm cards with nested people, plus standalone solo-practitioner cards. Existing firm extras (address, phone, website, master-directory autocomplete, engagement scope) stay in the firm dialog.
 
-## Verified current state
+## No database changes needed
 
-- Panel: `src/components/meeting/CharitableContributionFields.tsx` (Tax Year, Amount, Organization Name, Tax Treatment), mounted by `MeetingResolutions.tsx:413` and `WrittenConsentWizard.tsx:1267`.
-- Templates: `src/lib/resolution-types.ts`, five entity variants with `[TaxYear] / [Amount] / [OrganizationName]`.
-- `.template` is read only at `MeetingResolutions.tsx:224,252` and `WrittenConsentWizard.tsx:475,481,496` — no PDF export, preview pane, or picker tooltip consumes it.
-- `MeetingResolutions` accepts a `meetingType` prop, but `MeetingDetail.tsx:986` and the Written Consent embed (`WrittenConsentWizard.tsx:1331`) don't pass it; only `MeetingDetail.tsx:1353` does.
-- Existing approving-body convention lives at `meeting-pdf-export.ts:784`: shareholder meeting → "Shareholders"; else LLC → "Members"; else → "Board of Directors".
-- Stored meeting types: `Shareholder Meeting`, `Annual Meeting`, `Organizational Meeting`, `Special Meeting of Board of Directors`, `Written Consent`; LLC swaps in `Special Meeting of Members`; nonprofit adds `Annual Meeting of Members`. `"Board Meeting"` exists only as a compliance-checklist label, never as a `meeting_type`.
-- Disclaimer at `MeetingResolutions.tsx:431` is untouched.
+The current schema already supports everything:
+- `attorneys` / `accountants` have a nullable `firm_id`, plus `title`, `bar_number` / `cpa_number`, `email`.
+- Solo practitioner = `firm_id IS NULL`. Existing unaffiliated rows render as solo cards — no migration, no backfill.
 
-## Changes
+## List view
 
-**1. Approving-body helper (new, in `CharitableContributionFields.tsx`)**
+Per category, a header row: category name + **Add firm** and **Add solo practitioner**.
 
-`resolveApprovingBody(entityType, meetingType)` → `{ label, plural, entityNoun }`, reusing the `meeting-pdf-export.ts:784` rule so wording stays consistent app-wide:
+```text
+Attorneys                        [ Add firm ] [ Add solo practitioner ]
+┌────────────────────────────────────────────────┐
+│ 🏢  Smith & Associates                  ✎  🗑  │
+│     Law firm · Milwaukee, WI                    │
+│   ┌ (JS) Jane Smith — Partner            ✎ 🗑  │
+│   │ Bar #12345 · jane@smith.com                 │
+│   └ (RD) Rob Doe — Associate             ✎ 🗑  │
+│   + Add attorney to this firm                   │
+└────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────┐
+│ (AL) Anna Lee                           ✎  🗑  │
+│      Solo practitioner · no firm affiliation    │
+│      Bar #99887 · anna@lee.law                  │
+└────────────────────────────────────────────────┘
+```
 
-| Condition | Label | Verbs |
-|---|---|---|
-| meeting type contains "shareholder" | Shareholders | plural |
-| Single Member LLC | Managing Member | singular ("confirms, approves, and ratifies") |
-| any other LLC variant | Members | plural |
-| everything else (corp/nonprofit annual, organizational, board meetings) | Board of Directors | plural |
+- Nested people: left border + indent. Solo cards: same card weight, no indent.
+- Firm icon = building; person = initials avatar circle.
+- Empty category → one card with muted text **"None appointed"**.
+- Sorting: firm cards and solo cards are interleaved and sorted alphabetically together (firm name for firms, person name for solos). People nested in a firm sort alphabetically by name.
 
-Written Consent / no meeting type → falls through the same chain on entity type alone: corp → Shareholders, LLC → Members, Single Member LLC → Managing Member. `WrittenConsentWizard` already has `isLLC` / `isSMLLC` (lines 86-88) and will pass its entity type in, so it never defaults to the corp answer.
+## Add/Edit person form
 
-Entity noun: "corporation" for Corporation / S Corporation / Non-Profit, "company" for LLC variants.
+One dialog reused for both categories, with a two-tab toggle:
 
-**2. Fields**
+- **Firm affiliated**: Firm (dropdown of that category's firms + "Add new firm…"), Full name*, Role at firm, License number (labelled *Bar number* / *CPA number*, optional), Email*.
+- **Solo practitioner**: Full name*, License number (optional), Email*.
+- Switching tabs while Firm/Role are filled prompts a confirmation before clearing them.
+- Save disabled only while name or email is empty. License never required.
+- Opened from a firm's "Add … to this firm": Firm tab preselected, firm prefilled.
+- "Add new firm…" opens FirmDialog stacked over PersonDialog. On save: close FirmDialog, return focus to PersonDialog, auto-select the new firm. On cancel: return to PersonDialog with the dropdown unchanged (no firm selected).
 
-- Keep Tax Year (required) and Amount (required).
-- Rename "Organization Name" → "Recipient(s)", **optional**, empty by default, helper text: "Leave blank for a general approval, or list recipient name(s) comma-separated (e.g., 'Red Cross, United Way')."
-- Remove the default-string validation rule; `validateCharitable` checks only Tax Year and Amount.
-- Tax Treatment radios default to `deductible`; option 2 subtext becomes "The contribution was recorded as an expense but not deducted, including contributions to unqualified organizations."
+## Firm dialog
 
-**3. Text generation**
+Kept as-is (name with master-directory autocomplete, address / address 2 / city / state / zip with ZIP lookup, phone, website); header reads "Law firm" / "Accounting firm".
 
-`composeCharitableText` builds text from the tax treatment + resolved approving body instead of the per-entity static template:
+Firm type is fixed at creation from the category it was added under and is not editable afterward. A firm cannot serve both categories — the same real-world firm used for legal and accounting is two separate records.
 
-- **Deductible** — WHEREAS … made charitable contributions in the total amount of $X to *recipients, or "a qualified charitable organization(s)" when blank*; RESOLVED, that the {approving body} hereby confirm(s), approve(s), and ratif(y/ies) the charitable contributions as expenditures made in the best interests of the {corporation/company}.
-- **Not deductible** — the longer §170(c) business-expense wording; blank recipients fall back to "one or more recipients as determined by the officers/managers of the entity"; the Schedule M-1 "Tax Treatment Note" paragraph is appended.
+## Style
 
-Output goes into the existing textarea and stays fully editable.
+Neutral card backgrounds, thin borders, no heavy shadows or gradients; semantic tokens only. Deletes use the standard `ConfirmDeleteDialog`. Deleting a firm that has people asks how to handle them — **detach to solo** (pre-selected default, non-destructive) vs. delete them.
 
-**4. Wiring**
+## Technical notes
 
-- `MeetingResolutions.tsx`: resolve the approving body from its `entityType` + `meetingType` props and pass it into compose; recompose on field/treatment change and on first selecting the resolution type (including seeding the default deductible text).
-- `MeetingDetail.tsx:986`: pass `meetingType={meeting.meeting_type}`.
-- `WrittenConsentWizard.tsx`: same derivation for its own charitable panel, and pass `meetingType="Written Consent"` to the embedded `MeetingResolutions`.
-- `resolution-types.ts`: keep the five entries (labels/statutes drive the picker and categorization), update their stored text to the new deductible wording as a static fallback, and refresh the doc comment to note the live text is composed dynamically.
-
-## Open item
-
-Nonprofit "Annual Meeting of Members" resolves to **Board of Directors** under the reused rule. Say so if you'd rather it read "Members".
-
-## Notes
-
-- Saved resolutions are plain text in `meeting_resolutions.resolution_text` — unaffected, no migration.
-- Editing an existing resolution keeps today's plain-textarea behavior (panel is new-resolution only).
+- Rewrite `src/components/company/CounselTab.tsx` into:
+  - `src/components/company/counsel/CounselSection.tsx` — generic category renderer, config-driven (table names, column names, labels).
+  - `src/components/company/counsel/PersonDialog.tsx` — tabbed add/edit form.
+  - `src/components/company/counsel/FirmDialog.tsx` — extracted, behaviour unchanged.
+  - `src/components/company/counsel/FirmCard.tsx`, `PersonRow.tsx`, and an initials-avatar helper.
+- Keep existing TanStack Query keys and master-directory / address-book sync hooks so PDFs, record book, and annual review keep reading the same data.
+- Verify in the preview against a company with firm-linked and solo attorneys/accountants plus one empty category, confirming all three card states render, and that deleting a firm with people offers the detach/delete choice.
