@@ -154,6 +154,8 @@ export default function SplashScreen({ duration = DURATION, onComplete }: Splash
           alignItems: "center",
           justifyContent: "center",
           overflow: "hidden",
+          pointerEvents: phase === "exiting" ? "none" : "auto",
+
           animation: phase === "exiting"
             ? `eiq-splashExit ${EXIT_DURATION}ms ease-in-out forwards`
             : "none",
