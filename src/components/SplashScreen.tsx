@@ -42,8 +42,13 @@ function Corner({ pos, color, flipX, flipY }: CornerProps) {
 const SPLASH_SEEN_KEY = "eiq_splash_shown";
 
 export default function SplashScreen({ duration = DURATION, onComplete }: SplashScreenProps) {
-  const alreadyShown =
-    typeof window !== "undefined" && sessionStorage.getItem(SPLASH_SEEN_KEY) === "1";
+  // Read sessionStorage ONCE. Recomputing it on every render made this value
+  // flip false -> true after the first render wrote the flag, which changed the
+  // effect deps, cancelled the "done" timer, and left the (invisible) overlay
+  // mounted forever — silently swallowing every click on the page.
+  const [alreadyShown] = useState(
+    () => typeof window !== "undefined" && sessionStorage.getItem(SPLASH_SEEN_KEY) === "1"
+  );
   const [phase, setPhase] = useState<"visible" | "exiting" | "done">(
     alreadyShown ? "done" : "visible"
   );
@@ -66,7 +71,9 @@ export default function SplashScreen({ duration = DURATION, onComplete }: Splash
       clearTimeout(exitTimer);
       clearTimeout(doneTimer);
     };
-  }, [duration, onComplete, alreadyShown]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [duration, alreadyShown]);
+
 
   if (phase === "done") return null;
 
@@ -147,6 +154,8 @@ export default function SplashScreen({ duration = DURATION, onComplete }: Splash
           alignItems: "center",
           justifyContent: "center",
           overflow: "hidden",
+          pointerEvents: phase === "exiting" ? "none" : "auto",
+
           animation: phase === "exiting"
             ? `eiq-splashExit ${EXIT_DURATION}ms ease-in-out forwards`
             : "none",
