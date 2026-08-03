@@ -336,7 +336,7 @@ export async function downloadAnnualReviewSnapshotPdf(input: ReviewSnapshotInput
   const filename = `${safe}_Annual_Review_${input.reviewYear}.pdf`;
   // Use the shared reliable saver: a plain anchor download is silently blocked
   // inside sandboxed/embedded preview frames, so this falls back to a viewer tab.
-  const { savePdfReliably } = await import("@/lib/pdf-save");
-  await savePdfReliably(doc, filename);
+  const { downloadPdfReliably } = await import("@/lib/pdf-save");
+  await downloadPdfReliably(doc, filename);
 }
 
