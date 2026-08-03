@@ -334,17 +334,9 @@ export async function downloadAnnualReviewSnapshotPdf(input: ReviewSnapshotInput
   const doc = generateAnnualReviewSnapshotPdf(input);
   const safe = (input.companyName || "company").replace(/[^a-z0-9]+/gi, "_");
   const filename = `${safe}_Annual_Review_${input.reviewYear}.pdf`;
-  const blob: Blob = doc.output("blob");
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.rel = "noopener";
-  a.style.display = "none";
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    a.remove();
-    URL.revokeObjectURL(url);
-  }, 60 * 1000);
+  // Use the shared reliable saver: a plain anchor download is silently blocked
+  // inside sandboxed/embedded preview frames, so this falls back to a viewer tab.
+  const { savePdfReliably } = await import("@/lib/pdf-save");
+  await savePdfReliably(doc, filename);
 }
+
