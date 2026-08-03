@@ -430,3 +430,58 @@ export async function savePdfReliably(doc: jsPDF, filename: string): Promise<voi
     toast.error("Print blocked. Please allow popups and try again.");
   }
 }
+
+/**
+ * Download-oriented counterpart to savePdfReliably (which opens a print preview).
+ * A plain anchor download is silently blocked inside sandboxed/embedded preview
+ * frames, so when embedded we open the helper tab with an explicit Download button.
+ */
+export async function downloadPdfReliably(doc: jsPDF, filename: string): Promise<void> {
+  const pdfBlob: Blob = doc.output("blob");
+  if (!(pdfBlob instanceof Blob) || pdfBlob.size === 0) {
+    toast.error("Failed to generate PDF.");
+    return;
+  }
+
+  const blobUrl = URL.createObjectURL(pdfBlob);
+
+  if (!isEmbeddedPreview) {
+    try {
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      a.rel = "noopener";
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+      }, 60 * 1000);
+      toast.success("Download started.");
+      return;
+    } catch (err) {
+      console.warn("Direct blob download failed, falling back:", err);
+    }
+  }
+
+  const opened = openPdfViewerTab(blobUrl, filename);
+  if (opened) {
+    toast.info("PDF opened in a new tab. Click Download PDF in that tab.");
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 5 * 60 * 1000);
+  } else {
+    // Popups blocked — last resort: try the anchor anyway.
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = filename;
+    a.rel = "noopener";
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    }, 60 * 1000);
+    toast.info("Popup blocked — attempting a direct download instead.");
+  }
+}
