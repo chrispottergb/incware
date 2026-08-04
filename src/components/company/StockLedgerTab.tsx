@@ -121,6 +121,13 @@ const DEFAULT_TRANSACTION_TYPES = [
   { value: "gift", label: "Gift", statute: "" },
 ];
 
+// Available for every entity type — used to true up recorded holdings to actual ownership.
+const OWNERSHIP_RECONCILIATION_TYPE = {
+  value: "ownership_reconciliation",
+  label: "Ownership Reconciliation",
+  statute: "",
+};
+
 const CONSIDERATION_TYPES = [
   { value: "cash", label: "Cash" },
   { value: "property", label: "Property" },
