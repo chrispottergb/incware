@@ -156,7 +156,10 @@ export default function StockLedgerTab({
   const [editTarget, setEditTarget] = useState<any>(null);
   const [editEntryNum, setEditEntryNum] = useState<number | undefined>();
   const { isAdmin } = useUserRole();
-  const transactionTypes = TRANSACTION_TYPES_BY_ENTITY[entityType] || DEFAULT_TRANSACTION_TYPES;
+  const transactionTypes = [
+    ...(TRANSACTION_TYPES_BY_ENTITY[entityType] || DEFAULT_TRANSACTION_TYPES),
+    OWNERSHIP_RECONCILIATION_TYPE,
+  ];
   const term = getTerminology(entityType);
 
   const { data: shareholders = [] } = useQuery({
