@@ -121,6 +121,13 @@ const DEFAULT_TRANSACTION_TYPES = [
   { value: "gift", label: "Gift", statute: "" },
 ];
 
+// Available for every entity type — used to true up recorded holdings to actual ownership.
+const OWNERSHIP_RECONCILIATION_TYPE = {
+  value: "ownership_reconciliation",
+  label: "Ownership Reconciliation",
+  statute: "",
+};
+
 const CONSIDERATION_TYPES = [
   { value: "cash", label: "Cash" },
   { value: "property", label: "Property" },
@@ -156,7 +163,10 @@ export default function StockLedgerTab({
   const [editTarget, setEditTarget] = useState<any>(null);
   const [editEntryNum, setEditEntryNum] = useState<number | undefined>();
   const { isAdmin } = useUserRole();
-  const transactionTypes = TRANSACTION_TYPES_BY_ENTITY[entityType] || DEFAULT_TRANSACTION_TYPES;
+  const transactionTypes = [
+    ...(TRANSACTION_TYPES_BY_ENTITY[entityType] || DEFAULT_TRANSACTION_TYPES),
+    OWNERSHIP_RECONCILIATION_TYPE,
+  ];
   const term = getTerminology(entityType);
 
   const { data: shareholders = [] } = useQuery({
