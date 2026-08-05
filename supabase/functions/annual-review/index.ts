@@ -110,6 +110,9 @@ Deno.serve(async (req) => {
       supabase.from("meetings").select("id, meeting_date, meeting_location").eq("company_id", companyId).order("meeting_date", { ascending: false }).limit(5),
       supabase.from("ai_systems").select("id, status").eq("company_id", companyId),
       supabase.from("ai_usage_logs").select("id, usage_date").eq("company_id", companyId).gte("usage_date", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()),
+      supabase.from("officers").select("*").eq("company_id", companyId).maybeSingle(),
+      supabase.from("nonprofit_tax_exemption").select("*").eq("company_id", companyId).maybeSingle(),
+      supabase.from("nonprofit_form990_filings").select("*").eq("company_id", companyId).order("year", { ascending: false }),
     ]);
 
     if (companyRes.error || !companyRes.data) {
