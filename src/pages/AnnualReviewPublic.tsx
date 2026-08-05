@@ -214,6 +214,8 @@ export default function AnnualReviewPublic() {
             assets: (snap.assets || []).map((a) => ({ ...a })),
             loans: (snap.loans || []).map((l) => ({ ...l })),
             contributions: (snap.contributions || []).map((c) => ({ ...c })),
+            nonprofit: { ...(snap.nonprofit?.exemption || {}) },
+            form990: (snap.nonprofit?.filings || []).map((f: any) => ({ ...f })),
           });
         }
       } catch {
