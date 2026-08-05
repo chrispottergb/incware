@@ -572,7 +572,8 @@ export default function AnnualReviewPublic() {
           </Subsection>
         </Section>
 
-        {/* 6. Shareholders / Members */}
+        {/* 6. Shareholders / Members — non-stock corporations have no equity holders */}
+        {!isNonProfit && (
         <Section
           title={ownerLabel}
           icon={Users}
