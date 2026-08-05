@@ -645,6 +645,46 @@ export default function AnnualReviewPublic() {
           )}
         </Section>
 
+        {/* 8b. Non-profit tax exemption & charitable registration */}
+        {isNonProfit && (
+          <Section title="Tax Exemption &amp; Charitable Registration" icon={UserCheck}>
+            <Subsection title="Federal Tax Exemption">
+              <div className="grid grid-cols-2 gap-3">
+                <EditField label="Application Form" value={edits.nonprofit?.form_selection || ""} onChange={(v) => setObj("nonprofit", "form_selection", v)} />
+                <EditField label="Application Status" value={edits.nonprofit?.application_status || ""} onChange={(v) => setObj("nonprofit", "application_status", v)} />
+                <EditField label="Determination Letter Date" value={edits.nonprofit?.determination_letter_date || ""} onChange={(v) => setObj("nonprofit", "determination_letter_date", v)} />
+                <EditField label="Effective Date of Exemption" value={edits.nonprofit?.effective_date_of_exemption || ""} onChange={(v) => setObj("nonprofit", "effective_date_of_exemption", v)} />
+                <EditField label="Public Charity Classification" value={edits.nonprofit?.public_charity_classification || ""} onChange={(v) => setObj("nonprofit", "public_charity_classification", v)} />
+                <EditField label="Form 990 Version Required" value={edits.nonprofit?.form_990_version_required || ""} onChange={(v) => setObj("nonprofit", "form_990_version_required", v)} />
+              </div>
+            </Subsection>
+            <Subsection title="State Charitable Registration">
+              <div className="grid grid-cols-2 gap-3">
+                <EditField label="Credential Number" value={edits.nonprofit?.registration_number || ""} onChange={(v) => setObj("nonprofit", "registration_number", v)} />
+                <EditField label="PIN" value={edits.nonprofit?.pin || ""} onChange={(v) => setObj("nonprofit", "pin", v)} />
+                <EditField label="Registration Date" value={edits.nonprofit?.registration_date || ""} onChange={(v) => setObj("nonprofit", "registration_date", v)} />
+                <EditField label="Registration Status" value={edits.nonprofit?.registration_status || ""} onChange={(v) => setObj("nonprofit", "registration_status", v)} />
+                <EditField label="Expiration Date" value={edits.nonprofit?.expiration_date || ""} onChange={(v) => setObj("nonprofit", "expiration_date", v)} />
+                <EditField label="Annual Renewal Due (July 31)" value={edits.nonprofit?.annual_renewal_due_date || ""} onChange={(v) => setObj("nonprofit", "annual_renewal_due_date", v)} />
+              </div>
+            </Subsection>
+            <Subsection title="Form 990 Filing History">
+              {(edits.form990 || []).length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">No Form 990 filings on file.</p>
+              ) : (
+                (edits.form990 || []).map((f: any, i: number) => (
+                  <div key={i} className="grid grid-cols-4 gap-3">
+                    <EditField label="Year" value={String(f.year ?? "")} onChange={(v) => setArrItem("form990", i, "year", v)} />
+                    <EditField label="Form Version" value={f.form_version || ""} onChange={(v) => setArrItem("form990", i, "form_version", v)} />
+                    <EditField label="Date Filed" value={f.date_filed || ""} onChange={(v) => setArrItem("form990", i, "date_filed", v)} />
+                    <EditField label="Status" value={f.status || ""} onChange={(v) => setArrItem("form990", i, "status", v)} />
+                  </div>
+                ))
+              )}
+            </Subsection>
+          </Section>
+        )}
+
         {/* 9. Leases */}
         <Section
           title="Lease Information"
