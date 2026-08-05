@@ -94,6 +94,9 @@ Deno.serve(async (req) => {
       latestMeetingsRes,
       aiSystemsRes,
       aiUsageRes,
+      officersRowRes,
+      nonprofitExemptionRes,
+      nonprofit990Res,
     ] = await Promise.all([
       supabase.from("companies").select("*").eq("id", companyId).single(),
       supabase.from("accountants").select("*").eq("company_id", companyId).order("created_at"),
