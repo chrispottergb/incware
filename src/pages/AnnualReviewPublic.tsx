@@ -340,6 +340,7 @@ export default function AnnualReviewPublic() {
   const { company, banking } = data;
   const entityTypeLower = (edits.company?.entity_type || company.entity_type || "").toLowerCase();
   const isLLC = ["llc", "single member llc", "llc-s"].includes(entityTypeLower) || entityTypeLower.includes("llc");
+  const isNonProfit = entityTypeLower.includes("non-profit") || entityTypeLower.includes("nonprofit") || entityTypeLower.includes("non profit");
   const ownerLabel = isLLC ? "Members" : "Shareholders";
   const sharesLabel = isLLC ? "Units" : "Shares";
 
