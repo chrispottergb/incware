@@ -180,6 +180,18 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Final officer fallback — company-level officer record (common for
+    // non-profits and entities without officer data recorded at a meeting).
+    if (officers.length === 0 && officersRowRes?.data) {
+      const o: any = officersRowRes.data;
+      officers = [
+        { title: "President", name: o.president },
+        { title: "Vice President", name: o.vice_president },
+        { title: "Secretary", name: o.secretary },
+        { title: "Treasurer", name: o.treasurer },
+      ].filter((x) => x.name && String(x.name).trim());
+    }
+
     // Compute shares_held per shareholder from share_transactions
     const sharesByHolder: Record<string, number> = {};
     for (const tx of (shareTxRes.data || [])) {
