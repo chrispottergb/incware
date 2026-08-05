@@ -157,9 +157,11 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
     ["Address", joinAddr(c.address, c.address_2)],
     ["City / State / ZIP", joinAddr(c.city, c.state, c.zip)],
     ["Phone", val(c.phone)],
-    ["Website", val(c.website)],
+    ["Website", val(c.contact_webpage || c.website)],
+    ["EIN", c.ein_last4 ? `**-***${c.ein_last4}` : "—"],
     ["Fiscal Year End", val(c.fiscal_year_end)],
     ["Incorporation Date", val(c.incorporation_date)],
+    ["Corporate Status", val(c.corporate_status || c.status)],
     ["S-Election Date", val(c.s_election_date)],
   ], y);
 
