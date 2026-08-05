@@ -126,6 +126,7 @@ export interface ReviewSnapshotInput {
   reviewYear: number | string;
   lastUpdated?: string | null;
   isLLC: boolean;
+  isNonProfit?: boolean;
   ownerLabel: string;
   sharesLabel: string;
   edits: any;
@@ -156,9 +157,11 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
     ["Address", joinAddr(c.address, c.address_2)],
     ["City / State / ZIP", joinAddr(c.city, c.state, c.zip)],
     ["Phone", val(c.phone)],
-    ["Website", val(c.website)],
+    ["Website", val(c.contact_webpage || c.website)],
+    ["EIN", c.ein_last4 ? `**-***${c.ein_last4}` : "—"],
     ["Fiscal Year End", val(c.fiscal_year_end)],
     ["Incorporation Date", val(c.incorporation_date)],
+    ["Corporate Status", val(c.corporate_status || c.status)],
     ["S-Election Date", val(c.s_election_date)],
   ], y);
 
@@ -218,18 +221,27 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
     }),
     y, "No authorized signers on file.");
 
-  y = sectionTitle(doc, num(input.ownerLabel), y);
-  y = dataTable(doc,
-    ["Name", `${input.sharesLabel} Held`, "Ownership %", "Address"],
-    (e.shareholders || []).map((s: any) => [
-      val(s.name),
-      val(s.shares_held),
-      s.ownership_percentage != null && String(s.ownership_percentage).trim() !== ""
-        ? `${s.ownership_percentage}%`
-        : "—",
-      joinAddr(s.address, s.city, s.state, s.zip),
-    ]),
-    y, `No ${input.ownerLabel.toLowerCase()} on file.`);
+  // Non-stock corporations have no equity holders — skip the ownership table.
+  if (!input.isNonProfit) {
+    y = sectionTitle(doc, num(input.ownerLabel), y);
+    y = dataTable(doc,
+      ["Name", `${input.sharesLabel} Held`, "Ownership %", "Address"],
+      (e.shareholders || []).map((s: any) => [
+        val(s.name),
+        val(s.shares_held),
+        s.ownership_percentage != null && String(s.ownership_percentage).trim() !== ""
+          ? `${s.ownership_percentage}%`
+          : "—",
+        joinAddr(s.address, s.city, s.state, s.zip),
+      ]),
+      y, `No ${input.ownerLabel.toLowerCase()} on file.`);
+  } else if ((e.shareholders || []).length > 0) {
+    y = sectionTitle(doc, num("Members"), y);
+    y = dataTable(doc,
+      ["Name", "Address"],
+      (e.shareholders || []).map((s: any) => [val(s.name), joinAddr(s.address, s.city, s.state, s.zip)]),
+      y, "No members on file.");
+  }
 
   if (!input.isLLC) {
     y = sectionTitle(doc, num("Directors"), y);
@@ -238,12 +250,48 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
 
   y = sectionTitle(doc, num("Officers"), y);
   y = dataTable(doc,
-    ["Title", "Name", "Salary", "Bonus", "Comp. Status", "Note"],
-    (e.officers || []).map((o: any) => [
-      val(o.title), val(o.name), money(o.salary), money(o.bonus),
-      val(o.compensation_status), val(o.compensation_note),
-    ]),
+    input.isNonProfit ? ["Title", "Name"] : ["Title", "Name", "Salary", "Bonus", "Comp. Status", "Note"],
+    (e.officers || []).map((o: any) =>
+      input.isNonProfit
+        ? [val(o.title), val(o.name)]
+        : [val(o.title), val(o.name), money(o.salary), money(o.bonus),
+           val(o.compensation_status), val(o.compensation_note)]
+    ),
     y, "No officers on file.");
+
+  if (input.isNonProfit) {
+    const np = e.nonprofit || {};
+    y = sectionTitle(doc, num("Federal Tax Exemption"), y);
+    y = kvTable(doc, [
+      ["Electing 501(c)(3)", np.electing_501c3 == null ? "—" : np.electing_501c3 ? "Yes" : "No"],
+      ["Application Form", val(np.form_selection)],
+      ["Application Status", val(np.application_status)],
+      ["Application Submitted", val(np.date_application_submitted)],
+      ["Determination Letter Date", val(np.determination_letter_date)],
+      ["Effective Date of Exemption", val(np.effective_date_of_exemption)],
+      ["Public Charity Classification", val(np.public_charity_classification)],
+      ["Form 990 Version Required", val(np.form_990_version_required)],
+      ["Filing Due Date", val(np.filing_due_date)],
+      ["Authorized Signatory", val(np.authorized_signatory)],
+    ], y);
+
+    y = sectionTitle(doc, num("State Charitable Registration"), y);
+    y = kvTable(doc, [
+      ["Registration Required", val(np.state_registration_required)],
+      ["Credential Number", val(np.registration_number)],
+      ["PIN", val(np.pin)],
+      ["Registration Date", val(np.registration_date)],
+      ["Registration Status", val(np.registration_status)],
+      ["Expiration Date", val(np.expiration_date)],
+      ["Annual Renewal Due (July 31)", val(np.annual_renewal_due_date)],
+    ], y);
+
+    y = sectionTitle(doc, num("Form 990 Filing History"), y);
+    y = dataTable(doc,
+      ["Year", "Form Version", "Date Filed", "Status"],
+      (e.form990 || []).map((f: any) => [val(f.year), val(f.form_version), val(f.date_filed), val(f.status)]),
+      y, "No Form 990 filings on file.");
+  }
 
   y = sectionTitle(doc, num("Lease Information"), y);
   y = dataTable(doc,

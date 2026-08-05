@@ -94,6 +94,9 @@ Deno.serve(async (req) => {
       latestMeetingsRes,
       aiSystemsRes,
       aiUsageRes,
+      officersRowRes,
+      nonprofitExemptionRes,
+      nonprofit990Res,
     ] = await Promise.all([
       supabase.from("companies").select("*").eq("id", companyId).single(),
       supabase.from("accountants").select("*").eq("company_id", companyId).order("created_at"),
@@ -107,6 +110,9 @@ Deno.serve(async (req) => {
       supabase.from("meetings").select("id, meeting_date, meeting_location").eq("company_id", companyId).order("meeting_date", { ascending: false }).limit(5),
       supabase.from("ai_systems").select("id, status").eq("company_id", companyId),
       supabase.from("ai_usage_logs").select("id, usage_date").eq("company_id", companyId).gte("usage_date", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()),
+      supabase.from("officers").select("*").eq("company_id", companyId).maybeSingle(),
+      supabase.from("nonprofit_tax_exemption").select("*").eq("company_id", companyId).maybeSingle(),
+      supabase.from("nonprofit_form990_filings").select("*").eq("company_id", companyId).order("year", { ascending: false }),
     ]);
 
     if (companyRes.error || !companyRes.data) {
@@ -172,6 +178,18 @@ Deno.serve(async (req) => {
           if (data && data.length > 0) { officers = data; break; }
         }
       }
+    }
+
+    // Final officer fallback — company-level officer record (common for
+    // non-profits and entities without officer data recorded at a meeting).
+    if (officers.length === 0 && officersRowRes?.data) {
+      const o: any = officersRowRes.data;
+      officers = [
+        { title: "President", name: o.president },
+        { title: "Vice President", name: o.vice_president },
+        { title: "Secretary", name: o.secretary },
+        { title: "Treasurer", name: o.treasurer },
+      ].filter((x) => x.name && String(x.name).trim());
     }
 
     // Compute shares_held per shareholder from share_transactions
@@ -422,6 +440,41 @@ Deno.serve(async (req) => {
         recent_usage_count: recentAiUsage,
         frequency: aiFrequency,
       },
+
+      // Non-profit specific records (null for other entity types)
+      nonprofit: String(company.entity_type || "").toLowerCase().includes("non")
+        ? {
+            exemption: nonprofitExemptionRes?.data
+              ? {
+                  electing_501c3: nonprofitExemptionRes.data.electing_501c3,
+                  form_selection: nonprofitExemptionRes.data.form_selection,
+                  application_status: nonprofitExemptionRes.data.application_status ?? nonprofitExemptionRes.data.filing_status,
+                  date_application_submitted: nonprofitExemptionRes.data.date_application_submitted,
+                  determination_letter_date:
+                    nonprofitExemptionRes.data.irs_determination_letter_date ??
+                    nonprofitExemptionRes.data.determination_letter_date,
+                  effective_date_of_exemption: nonprofitExemptionRes.data.effective_date_of_exemption,
+                  public_charity_classification: nonprofitExemptionRes.data.public_charity_classification,
+                  form_990_version_required: nonprofitExemptionRes.data.form_990_version_required,
+                  filing_due_date: nonprofitExemptionRes.data.filing_due_date,
+                  authorized_signatory: nonprofitExemptionRes.data.authorized_signatory,
+                  state_registration_required: nonprofitExemptionRes.data.state_registration_required,
+                  registration_number: nonprofitExemptionRes.data.registration_number,
+                  pin: nonprofitExemptionRes.data.pin,
+                  registration_date: nonprofitExemptionRes.data.registration_date,
+                  expiration_date: nonprofitExemptionRes.data.expiration_date,
+                  registration_status: nonprofitExemptionRes.data.registration_status,
+                  annual_renewal_due_date: nonprofitExemptionRes.data.annual_renewal_due_date,
+                }
+              : null,
+            filings: (nonprofit990Res?.data || []).map((f: any) => ({
+              year: f.year,
+              form_version: f.form_version,
+              date_filed: f.date_filed,
+              status: f.status,
+            })),
+          }
+        : null,
     };
 
     return new Response(JSON.stringify(payload), {
