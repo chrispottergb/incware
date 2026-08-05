@@ -251,12 +251,14 @@ export default function AnnualReviewPublic() {
       const { downloadAnnualReviewSnapshotPdf } = await import("@/lib/annual-review-snapshot-pdf");
       const et = String(edits?.company?.entity_type || (data as any).entity_type || "").toLowerCase();
       const llc = et.includes("llc");
+      const nonProfit = et.includes("non-profit") || et.includes("nonprofit") || et.includes("non profit");
       await downloadAnnualReviewSnapshotPdf({
         companyName: edits?.company?.name || data.company_name,
         reviewYear: data.review_year,
         lastUpdated: data.last_updated ? fmtDate(data.last_updated) : null,
         isLLC: llc,
-        ownerLabel: llc ? "Members" : "Shareholders",
+        isNonProfit: nonProfit,
+        ownerLabel: nonProfit ? "Members" : llc ? "Members" : "Shareholders",
         sharesLabel: llc ? "Units" : "Shares",
         edits,
         notes,
