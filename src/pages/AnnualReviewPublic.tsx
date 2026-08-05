@@ -598,6 +598,7 @@ export default function AnnualReviewPublic() {
             ))
           )}
         </Section>
+        )}
 
         {/* 7. Directors — hidden for LLC entity types */}
         {!isLLC && (
