@@ -126,6 +126,7 @@ export interface ReviewSnapshotInput {
   reviewYear: number | string;
   lastUpdated?: string | null;
   isLLC: boolean;
+  isNonProfit?: boolean;
   ownerLabel: string;
   sharesLabel: string;
   edits: any;
