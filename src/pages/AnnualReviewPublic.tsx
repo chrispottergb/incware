@@ -138,6 +138,7 @@ interface Snapshot {
   contributions: any[];
   meeting: any;
   ai: any;
+  nonprofit?: { exemption: any; filings: any[] } | null;
 }
 
 // ---- Default factories ----
