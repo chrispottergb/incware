@@ -85,6 +85,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   const [showSsns, setShowSsns] = useState(false);
   const [decrypting, setDecrypting] = useState(false);
   const [nameChangeOwner, setNameChangeOwner] = useState<NameChangeOwner | null>(null);
+  const [originalName, setOriginalName] = useState("");
 
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
@@ -346,6 +347,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   const resetForm = () => {
     setForm(defaultForm);
     setEditId(null);
+    setOriginalName("");
     resetZip();
   };
 
@@ -363,6 +365,21 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
           representative_title: form.owner_kind === "entity" ? (form.representative_title?.trim() || null) : null,
         } as any).eq("id", editId);
         if (error) throw error;
+
+        // A name edited straight in this form is treated as a correction, but the
+        // prior spelling is still recorded so historical transfers keep resolving
+        // to this same owner record.
+        if (normalizeOwnerName(originalName) !== normalizeOwnerName(form.name) && originalName) {
+          await supabase.from("shareholder_name_history" as any).insert({
+            shareholder_id: editId,
+            company_id: companyId,
+            previous_name: originalName,
+            new_name: form.name.trim(),
+            effective_date: null,
+            reason: "correction",
+            note: "Recorded from the edit form.",
+          } as any);
+        }
       } else {
         const { data: inserted, error } = await supabase.from("shareholders").insert({
           company_id: companyId, name: form.name, address: form.address || null, address_2: form.address_2 || null,
@@ -404,6 +421,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
         queryClient.invalidateQueries({ queryKey: ["shareholders-for-holdings", companyId] }),
         queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] }),
         queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["shareholder_name_history", companyId] }),
       ]);
       setDialog(false); resetForm();
       setDecryptedSsns({});
@@ -429,6 +447,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
 
   const openEdit = (s: typeof shareholders[0]) => {
     setEditId(s.id);
+    setOriginalName(s.name);
     resetZip();
     // When editing, the SSN field starts empty since it's encrypted in DB
     // User can enter a new value or leave blank to keep existing
@@ -555,6 +574,28 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                       className="h-7 text-sm"
                       placeholder={form.owner_kind === "entity" ? "Entity legal name..." : "Start typing a name..."}
                     />
+                    {editId && originalName && normalizeOwnerName(originalName) !== normalizeOwnerName(form.name) && form.name.trim() !== "" && (
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        Saving here records this as a correction to the spelling. If this is a legal name change
+                        (marriage, divorce, trust restatement), cancel and use{" "}
+                        <button
+                          type="button"
+                          className="underline text-primary"
+                          onClick={() => {
+                            setDialog(false);
+                            setNameChangeOwner({
+                              id: editId,
+                              name: originalName,
+                              owner_kind: form.owner_kind,
+                              representative_name: form.representative_name || null,
+                            });
+                          }}
+                        >
+                          Record a name change
+                        </button>{" "}
+                        so it carries an effective date.
+                      </p>
+                    )}
                   </div>
                   {form.owner_kind === "entity" && (
                     <>
