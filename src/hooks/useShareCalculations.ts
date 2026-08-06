@@ -1,5 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  buildOwnerAliasIndex,
+  resolveOwnerIdByName,
+  normalizeOwnerName,
+  type NameHistoryRow,
+} from "@/lib/owner-aliases";
+
 
 const ISSUANCE_TYPES = [
   "Issuance", "initial_issuance", "authorized_issuance", "subscription_issuance",
