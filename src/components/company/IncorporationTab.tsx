@@ -343,6 +343,11 @@ export default function IncorporationTab({ company }: Props) {
 
   const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(company.id);
 
+  // Companies onboarded as existing clients (opening balance established) have
+  // historical formation facts that may be unknown — organizer/initial directors
+  // are always optional and can be backfilled later.
+  const isOnboardedEntity = !!(company as any).opening_balance_date;
+
   const handleOrganizerAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
     setNewOrganizer(prev => ({
       ...prev,
@@ -1115,7 +1120,14 @@ export default function IncorporationTab({ company }: Props) {
             </div>
 
             {organizers.length === 0 && !showOrganizerForm && (
-              <p className="text-sm text-muted-foreground text-center py-3">No organizers added yet.</p>
+              <div className="text-center py-3 space-y-0.5">
+                <p className="text-sm text-muted-foreground">No organizers added yet.</p>
+                {isOnboardedEntity && (
+                  <p className="text-xs text-muted-foreground">
+                    Optional for an existing company — this is a historical formation fact. Add it later from the Articles of Incorporation / Organization if the client locates them.
+                  </p>
+                )}
+              </div>
             )}
 
             {organizers.map((org: any) => (
@@ -1197,9 +1209,16 @@ export default function IncorporationTab({ company }: Props) {
             </div>
 
             {directors.length === 0 && !showDirectorForm && (
-              <p className="text-sm text-muted-foreground text-center py-3">
-                {isLLCType(form.entity_type) ? "No initial members added yet." : "No initial directors added yet."}
-              </p>
+              <div className="text-center py-3 space-y-0.5">
+                <p className="text-sm text-muted-foreground">
+                  {isLLCType(form.entity_type) ? "No initial members added yet." : "No initial directors added yet."}
+                </p>
+                {isOnboardedEntity && (
+                  <p className="text-xs text-muted-foreground">
+                    Optional for an existing company — add later from the Organizational Consent / Initial {isLLCType(form.entity_type) ? "Members'" : "Directors'"} Resolution if the client locates it.
+                  </p>
+                )}
+              </div>
             )}
 
             {directors.map((dir) => (
