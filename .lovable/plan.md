@@ -41,6 +41,17 @@ Rework the ownership grid so each row is one certificate:
 ## Technical notes
 
 - No migration required: `stock_certificates` is already a one-to-many child of `shareholders` with `certificate_number`, `num_shares`, `issue_date`, `cancelled_date`, `status`.
-- All edits are in `src/components/company/EstablishOwnershipDialog.tsx`: the `OwnerRow` shape gains `issue_date` and `status`, the save mutation groups rows by normalized owner name, and per-certificate `issue_date` replaces the shared `balanceDate` on both the certificate insert and its paired opening-balance transaction.
+- All edits are in `src/components/company/EstablishOwnershipDialog.tsx`: rows become certificate rows carrying an explicit owner reference (existing shareholder id, or a session-local new-owner id resolved to a single insert on save), plus `issue_date`, `status`, and `cancelled_date`. Per-certificate dates replace the shared `balanceDate` on both the certificate insert and its paired opening-balance transaction.
+- Certificate-number uniqueness is checked against existing `stock_certificates` rows filtered by `company_id`, and against other rows in the dialog.
 - `companies.opening_balance_date` keeps its current meaning (the pickup date and the back-dating lock).
-- Verification: enter a two-certificate owner with distinct historical dates, confirm the certificates tab shows both with original dates, and confirm the ledger and ownership percentages total correctly.
+
+## Verification
+
+Manual end-to-end checks after implementation:
+
+1. **Multi-certificate owner** — one owner with two active certificates at different historical issue dates; certificates tab shows both with original dates, holdings sum correctly.
+2. **Cancelled-then-reissued chain entered at onboarding** — enter Cert #1 (older issue date, Cancelled with its cancellation date) and Cert #2 (reissue, active) for the same owner in the same dialog session. Confirm: issue dates persist as entered, the cancellation date is stored, only the active certificate counts toward holdings and ownership percentage, and the paired opening-balance ledger transactions line up with the certificates rather than collapsing to the pickup date.
+3. **Fully divested prior owner** — an owner with only a cancelled certificate saves successfully, shows 0% ownership, and keeps the certificate visible in history.
+4. **Duplicate certificate number** within the entity is blocked inline; the same number in a different company still saves.
+5. **Owner picker** — adding a second certificate to an existing owner creates no duplicate owner record.
+
