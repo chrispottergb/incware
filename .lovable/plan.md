@@ -1,62 +1,44 @@
-## Goal
+# Multiple Certificates per Owner at Onboarding
 
-Rebuild the "Bank Accounts & Authorized Signers" section so signers are nested inside their bank account card, and remove account/routing numbers from the UI entirely.
+## Short answer
 
-## Confirmed decisions
+The data model already supports it. The onboarding dialog does not.
 
-- No signer email field (the signers table has no email column; skipping it means no migration).
-- Account/routing columns stay in the database untouched — only the UI is removed. No migration in this change at all.
-- Signer authority keeps the existing 7-option Authority Type list, including "Limited Authority (Specify)" with its detail input. (Your "Primary/Secondary signer" role list is not applied, per your answer.)
+- Certificates live in their own table, one row per certificate, each with its own number, owner link, share/unit count, issue date, and status (active / cancelled). Several companies in the database already have multiple certificates tied to a single owner, including cancelled-then-reissued chains. So no schema change is needed.
+- Ownership totals are already computed by summing ledger transactions as of a date — not by reading a single certificate field — so multi-certificate owners total correctly.
+- The gap is the **Establish Current Ownership** dialog used when onboarding an existing company: it allows exactly one row per person, one certificate number per row, and it forces every certificate's issue date to equal the single "opening balance date." Historical certificate dates are therefore lost at onboarding.
+- The Membership/Stock Certificates tab already lets you add certificates individually with their own original issue date, so today the workaround is: onboard with one row per owner, then add the extra certificates manually.
 
-## New file structure (mirrors `src/components/company/counsel/`)
+## What to change
 
-```text
-src/components/company/banks/
-  BanksSection.tsx    -- header row, list of cards, empty state, dialog orchestration
-  BankCard.tsx        -- collapsible card: name + type badge, warning badge, signer list
-  SignerRow.tsx       -- initials avatar + name + authority + edit/delete
-  BankDialog.tsx      -- add/edit bank form
-  SignerDialog.tsx    -- add/edit signer form (account implicit)
-```
+### 1. Onboarding dialog: rows become certificates, not owners
 
-`BanksTab.tsx` becomes a thin wrapper rendering `BanksSection`, same as `CounselTab.tsx`. The existing `InitialsAvatar` helper from the counsel folder is reused, not duplicated.
+Rework the ownership grid so each row is one certificate:
 
-## List view
+- Columns: Owner name, Class, Shares/Units, Certificate #, **Issue Date**, Status (Active / Cancelled), Notes.
+- Same owner name can appear on multiple rows; rows are grouped by owner on save so one shareholder record is created per unique name.
+- A per-owner subtotal and an entity-wide total are shown live so the entered cap table can be checked before saving.
+- An "Add certificate for this owner" action duplicates the owner name into a new row.
 
-- Header row: "Bank accounts and authorized signers" + `Add bank` button.
-- One card per account, chevron expand/collapse, **default expanded**.
-- Card header: bank name + account type badge + edit/delete icons. No account number, routing number, reveal eye, or inline "+ Account #" affordances anywhere.
-- Signers nested under an "Authorized signers" label with left border + indent, matching the firm card. Each row: initials avatar, name, authority text, edit/delete.
-- No count badge. `+ Add signer to this account` at the bottom of each card.
-- Zero bank accounts → single card with muted "None added."
-- Account with zero signers → small warning badge "No signer added" in the card header.
+### 2. Preserve original issue dates
 
-## Add bank flow
+- Each row's Issue Date defaults to the "as of" date but is freely editable to any earlier historical date.
+- The opening-balance date remains the single "as of" pickup date and continues to lock later transactions from being back-dated before it — but certificate issue dates and the matching opening-balance ledger entries will carry their own original dates so the certificate history reads accurately.
+- Rows marked Cancelled are written as cancelled certificates (with a cancellation date) and excluded from the opening totals, so a reissue history can be entered at onboarding.
 
-1. Save the bank account.
-2. Immediately chain into the Add Signer dialog, pre-scoped to the newly created account.
-3. If the user cancels that step, the bank stays saved and its card shows the "No signer added" badge.
+### 3. Validation
 
-The bank form keeps its existing useful fields (bank name with master-directory autocomplete, account type, contact name/title, phone, address, notes) minus account and routing numbers, which are already gone from the dialog today.
+- Certificate numbers must be unique within the entity; duplicates are flagged inline before save.
+- Issue date cannot be later than the "as of" date.
+- At least one active certificate required; rows with no name or zero shares are ignored.
 
-## Signer form
+### 4. Downstream checks
 
-- Fields: Signer name (autocomplete against the address book, as today), Authority Type dropdown (7 options), plus the conditional "Limited authority detail" input.
-- Save disabled while the name is empty.
-- Opened from a card, so no bank picker.
-
-## Delete behavior
-
-- Signer: `ConfirmDeleteDialog`. When it is the last signer on the account, the dialog text adds: "This is the only signer on this account. Removing them will leave the account without an authorized signer." Delete still allowed; card then shows the warning badge.
-- Bank account: `ConfirmDeleteDialog` warning that its signers are removed too; deletes signer rows for that bank then the bank row.
+- Certificates tab, stock ledger, transfer ledger, and ownership percentage recalculation all already read from the certificate and transaction tables, so they pick up multi-certificate owners with no change. These will be verified after the dialog change.
 
 ## Technical notes
 
-- Query keys stay exactly as they are — `["company_banks", companyId]` and `["bank_authorized_signers", companyId]` — so `MeetingAuthorizedSigners` auto-populate and the meeting/PDF paths are unaffected.
-- Master-directory sync (`useMasterFirms("bank")`) and address-book upsert on save are preserved.
-- Decrypt/encrypt edge-function calls disappear from this tab; the functions and columns remain in place for any future need.
-- Styling: neutral card backgrounds, thin borders, no shadows, existing semantic tokens; `Landmark` bank icon, initials-avatar circles for people.
-
-## Verification in preview
-
-Playwright pass covering: an account with 2+ signers, an account with exactly 1 signer, an account created via the cancel-out-of-signer path showing the warning badge, and the "None added." empty state.
+- No migration required: `stock_certificates` is already a one-to-many child of `shareholders` with `certificate_number`, `num_shares`, `issue_date`, `cancelled_date`, `status`.
+- All edits are in `src/components/company/EstablishOwnershipDialog.tsx`: the `OwnerRow` shape gains `issue_date` and `status`, the save mutation groups rows by normalized owner name, and per-certificate `issue_date` replaces the shared `balanceDate` on both the certificate insert and its paired opening-balance transaction.
+- `companies.opening_balance_date` keeps its current meaning (the pickup date and the back-dating lock).
+- Verification: enter a two-certificate owner with distinct historical dates, confirm the certificates tab shows both with original dates, and confirm the ledger and ownership percentages total correctly.
