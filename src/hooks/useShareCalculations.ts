@@ -164,15 +164,35 @@ export function useShareCalculations(companyId: string) {
   };
 }
 
-/** Get holdings for a specific shareholder by name (for validation in BuySellWorkflow) */
+/**
+ * Get holdings for a specific shareholder by name (for validation in BuySellWorkflow).
+ * Pass `nameHistory` so transfers recorded under a prior name still resolve to the
+ * same owner after a legal name change or a corrected misspelling.
+ */
 export function getHoldingsByName(
   transactions: any[],
   shareholderName: string,
-  shareholders: { id: string; name: string }[]
+  shareholders: { id: string; name: string }[],
+  nameHistory: NameHistoryRow[] = []
 ): number {
   let holdings = 0;
-  const nameNorm = shareholderName.toLowerCase().trim();
   const today = new Date().toISOString().split("T")[0];
+
+  const aliasIndex = buildOwnerAliasIndex(shareholders, nameHistory);
+  const targetId = resolveOwnerIdByName(shareholderName, aliasIndex);
+  const nameNorm = normalizeOwnerName(shareholderName);
+  const matchesTarget = (value?: string | null) => {
+    if (!value) return false;
+    const resolved = resolveOwnerIdByName(value, aliasIndex);
+    if (targetId && resolved) return resolved === targetId;
+    return normalizeOwnerName(value) === nameNorm;
+  };
+  const matchesLinked = (shareholderId?: string | null) => {
+    if (!shareholderId) return false;
+    if (targetId) return shareholderId === targetId;
+    const linked = shareholders.find((s) => s.id === shareholderId);
+    return !!linked && normalizeOwnerName(linked.name) === nameNorm;
+  };
 
   transactions.forEach((t: any) => {
     // Skip corrected transactions
@@ -183,38 +203,36 @@ export function getHoldingsByName(
 
     // Issuances to this shareholder
     if (ISSUANCE_TYPES.includes(t.transaction_type)) {
-      const linked = shareholders.find((s) => s.id === t.shareholder_id);
-      if (linked && linked.name.toLowerCase().trim() === nameNorm) {
+      if (matchesLinked(t.shareholder_id)) {
         holdings += t.num_shares || 0;
       }
     }
 
     // Redemptions from this shareholder
     if (REDUCTION_TYPES.includes(t.transaction_type)) {
-      const linked = shareholders.find((s) => s.id === t.shareholder_id);
-      if (linked && linked.name.toLowerCase().trim() === nameNorm) {
+      if (matchesLinked(t.shareholder_id)) {
         holdings -= t.num_shares || 0;
       }
     }
 
     // Transfers in
     if (TRANSFER_TYPES.includes(t.transaction_type)) {
-      if (t.to_shareholder && t.to_shareholder.toLowerCase().trim() === nameNorm) {
+      if (matchesTarget(t.to_shareholder)) {
         holdings += t.num_shares || 0;
       }
-      else if (t.shareholder_id) {
-        const linked = shareholders.find((s) => s.id === t.shareholder_id);
-        if (linked && linked.name.toLowerCase().trim() === nameNorm) {
+      else if (t.shareholder_id && !t.to_shareholder) {
+        if (matchesLinked(t.shareholder_id)) {
           holdings += t.num_shares || 0;
         }
       }
 
       // Transfers out
-      if (t.from_shareholder && t.from_shareholder.toLowerCase().trim() === nameNorm) {
+      if (matchesTarget(t.from_shareholder)) {
         holdings -= t.num_shares || 0;
       }
     }
   });
+
 
   return Math.max(0, holdings);
 }
