@@ -1115,7 +1115,14 @@ export default function IncorporationTab({ company }: Props) {
             </div>
 
             {organizers.length === 0 && !showOrganizerForm && (
-              <p className="text-sm text-muted-foreground text-center py-3">No organizers added yet.</p>
+              <div className="text-center py-3 space-y-0.5">
+                <p className="text-sm text-muted-foreground">No organizers added yet.</p>
+                {isOnboardedEntity && (
+                  <p className="text-xs text-muted-foreground">
+                    Optional for an existing company — this is a historical formation fact. Add it later from the Articles of Incorporation / Organization if the client locates them.
+                  </p>
+                )}
+              </div>
             )}
 
             {organizers.map((org: any) => (
