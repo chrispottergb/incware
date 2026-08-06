@@ -63,6 +63,12 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
   const queryClient = useQueryClient();
   const term = getTerminology(entityType);
   const isLLC = isLLCType(entityType);
+  // Certificate wording follows the same entity-type terminology helper used for
+  // owner / unit / interest-type labels — never hardcode "Certificate" below.
+  const certLabel = term.certificate;              // "Membership Unit Certificate" | "Stock Certificate"
+  const certsLabel = term.certificates;            // plural form
+  const certLower = certLabel.toLowerCase();
+  const certsLower = certsLabel.toLowerCase();
 
   const [balanceDate, setBalanceDate] = useState("");
   const [rows, setRows] = useState<CertRow[]>([emptyRow()]);
@@ -168,14 +174,14 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
       if (r.certificate_number.trim()) {
         const num = parseInt(r.certificate_number, 10);
         if (Number.isNaN(num)) {
-          errors.push(`Row ${i + 1}: certificate number must be a number.`);
+          errors.push(`Row ${i + 1}: ${certLower} number must be a number.`);
         } else {
           if (existingCertNumbers.includes(num)) {
-            errors.push(`Certificate #${num} already exists for this entity.`);
+            errors.push(`${certLabel} #${num} already exists for this entity.`);
             dupCertRows.add(i);
           }
           if (seen.has(num)) {
-            errors.push(`Certificate #${num} is entered more than once.`);
+            errors.push(`${certLabel} #${num} is entered more than once.`);
             dupCertRows.add(i);
             dupCertRows.add(seen.get(num)!);
           } else {
@@ -186,14 +192,14 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
     });
 
     if (usable.length === 0) {
-      errors.push(`Add at least one certificate.`);
+      errors.push(`Add at least one ${certLower}.`);
     } else if (entityTotal <= 0) {
-      errors.push(`At least one active certificate is required for the entity.`);
+      errors.push(`At least one active ${certLower} is required for the entity.`);
     }
 
     return { errors: Array.from(new Set(errors)), dupCertRows };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, newOwners, existingOwners, existingCertNumbers, balanceDate, entityTotal]);
+  }, [rows, newOwners, existingOwners, existingCertNumbers, balanceDate, entityTotal, certLabel, certLower]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -268,7 +274,7 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
         };
         if (isCancelled) {
           certInsert.cancelled_date = row.cancelled_date || issueDate;
-          certInsert.cancelled_reason = row.notes.trim() || "Historical certificate — cancelled prior to onboarding";
+          certInsert.cancelled_reason = row.notes.trim() || `Historical ${certLower} — cancelled prior to onboarding`;
         }
         const { data: cert, error: certErr } = await supabase.from("stock_certificates")
           .insert(certInsert).select("id, certificate_number").single();
@@ -296,7 +302,7 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
           par_value: parValue,
           notes: row.notes.trim()
             ? row.notes.trim()
-            : `Opening balance established as of ${balanceDate} (certificate issued ${issueDate})`,
+            : `Opening balance established as of ${balanceDate} (${certLower} issued ${issueDate})`,
         } as any);
       }
 
@@ -347,7 +353,7 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
             <Clipboard className="h-4 w-4" /> Establish Current Ownership
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Record ownership as of a pickup date. Each row is one certificate — an owner may hold several,
+            Record ownership as of a pickup date. Each row is one {certLower} — an owner may hold several,
             each keeping its own original issue date.
           </DialogDescription>
         </DialogHeader>
@@ -371,16 +377,16 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
                 placeholder="Select the date ownership is established as of"
               />
               <p className="text-[10px] text-muted-foreground">
-                The pickup date. Later transactions cannot be dated before it; individual certificates may
+                The pickup date. Later transactions cannot be dated before it; individual {certsLower} may
                 still carry earlier, original issue dates.
               </p>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-medium">Certificates</Label>
+                <Label className="text-xs font-medium">{certsLabel}</Label>
                 <Button type="button" variant="outline" size="sm" className="h-6 text-[10px]" onClick={addRow}>
-                  <Plus className="mr-1 h-3 w-3" /> Add Certificate
+                  <Plus className="mr-1 h-3 w-3" /> Add {certLabel}
                 </Button>
               </div>
 
@@ -491,7 +497,7 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
                           variant="ghost"
                           size="sm"
                           className="h-7 w-7 p-0"
-                          title={`Add another certificate for this ${term.shareholder.toLowerCase()}`}
+                          title={`Add another ${certLower} for this ${term.shareholder.toLowerCase()}`}
                           disabled={!row.ownerKey}
                           onClick={() => addCertForOwner(row.ownerKey)}
                         >
