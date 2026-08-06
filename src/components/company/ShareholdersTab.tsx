@@ -19,7 +19,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff, ArrowRightLeft, Building2, FileDown } from "lucide-react";
+import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff, ArrowRightLeft, Building2, FileDown, UserPen } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
@@ -32,6 +32,14 @@ import {
   downloadPdfBytes,
 } from "@/lib/certificate-pdf-overlay";
 import { downloadStockCertificatePdf } from "@/lib/stock-certificate-pdf";
+import NameChangeDialog, { type NameChangeOwner } from "./NameChangeDialog";
+import { useShareholderNameHistory } from "@/hooks/useShareholderNameHistory";
+import {
+  buildOwnerAliasIndex,
+  normalizeOwnerName,
+  priorNamesFor,
+  resolveOwnerIdByName,
+} from "@/lib/owner-aliases";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
@@ -76,6 +84,8 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   const [decryptedSsns, setDecryptedSsns] = useState<Record<string, string | null>>({});
   const [showSsns, setShowSsns] = useState(false);
   const [decrypting, setDecrypting] = useState(false);
+  const [nameChangeOwner, setNameChangeOwner] = useState<NameChangeOwner | null>(null);
+  const [originalName, setOriginalName] = useState("");
 
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
@@ -226,6 +236,8 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
     enabled: !!companyId,
   });
 
+  const { data: nameHistory = [] } = useShareholderNameHistory(companyId);
+
   const resolvedShareholderHoldings = useMemo<ShareholderHoldings>(() => {
     if (isTransactionsLoading || transactions.length === 0) {
       return shareholderHoldings ?? {};
@@ -280,11 +292,22 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
       balances[key] = (balances[key] || 0) + amount;
     });
 
+    // Balances are keyed by the name recorded on each transaction. Fold prior
+    // names (renames / corrections) into the current owner so a legal name change
+    // never orphans historical holdings.
+    const aliasIndex = buildOwnerAliasIndex(shareholders as any, nameHistory);
+    const byOwnerId: Record<string, number> = {};
+    Object.entries(balances).forEach(([nameKey, amount]) => {
+      const ownerId = resolveOwnerIdByName(nameKey, aliasIndex);
+      if (!ownerId) return;
+      byOwnerId[ownerId] = (byOwnerId[ownerId] || 0) + amount;
+    });
+
     return shareholders.reduce<ShareholderHoldings>((acc, shareholder) => {
-      acc[shareholder.id] = Math.max(0, balances[shareholder.name.toLowerCase().trim()] || 0);
+      acc[shareholder.id] = Math.max(0, byOwnerId[shareholder.id] ?? 0);
       return acc;
     }, {});
-  }, [isTransactionsLoading, shareholderHoldings, shareholders, transactions]);
+  }, [isTransactionsLoading, nameHistory, shareholderHoldings, shareholders, transactions]);
 
   // Compute capital account per shareholder from transactions (not DB column)
   const CAPITAL_CONTRIBUTION_TYPES = new Set([
@@ -324,6 +347,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   const resetForm = () => {
     setForm(defaultForm);
     setEditId(null);
+    setOriginalName("");
     resetZip();
   };
 
@@ -341,6 +365,21 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
           representative_title: form.owner_kind === "entity" ? (form.representative_title?.trim() || null) : null,
         } as any).eq("id", editId);
         if (error) throw error;
+
+        // A name edited straight in this form is treated as a correction, but the
+        // prior spelling is still recorded so historical transfers keep resolving
+        // to this same owner record.
+        if (normalizeOwnerName(originalName) !== normalizeOwnerName(form.name) && originalName) {
+          await supabase.from("shareholder_name_history" as any).insert({
+            shareholder_id: editId,
+            company_id: companyId,
+            previous_name: originalName,
+            new_name: form.name.trim(),
+            effective_date: null,
+            reason: "correction",
+            note: "Recorded from the edit form.",
+          } as any);
+        }
       } else {
         const { data: inserted, error } = await supabase.from("shareholders").insert({
           company_id: companyId, name: form.name, address: form.address || null, address_2: form.address_2 || null,
@@ -382,6 +421,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
         queryClient.invalidateQueries({ queryKey: ["shareholders-for-holdings", companyId] }),
         queryClient.invalidateQueries({ queryKey: ["stock_certificates", companyId] }),
         queryClient.invalidateQueries({ queryKey: ["share_transactions", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["shareholder_name_history", companyId] }),
       ]);
       setDialog(false); resetForm();
       setDecryptedSsns({});
@@ -407,6 +447,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
 
   const openEdit = (s: typeof shareholders[0]) => {
     setEditId(s.id);
+    setOriginalName(s.name);
     resetZip();
     // When editing, the SSN field starts empty since it's encrypted in DB
     // User can enter a new value or leave blank to keep existing
@@ -533,6 +574,28 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                       className="h-7 text-sm"
                       placeholder={form.owner_kind === "entity" ? "Entity legal name..." : "Start typing a name..."}
                     />
+                    {editId && originalName && normalizeOwnerName(originalName) !== normalizeOwnerName(form.name) && form.name.trim() !== "" && (
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        Saving here records this as a correction to the spelling. If this is a legal name change
+                        (marriage, divorce, trust restatement), cancel and use{" "}
+                        <button
+                          type="button"
+                          className="underline text-primary"
+                          onClick={() => {
+                            setDialog(false);
+                            setNameChangeOwner({
+                              id: editId,
+                              name: originalName,
+                              owner_kind: form.owner_kind,
+                              representative_name: form.representative_name || null,
+                            });
+                          }}
+                        >
+                          Record a name change
+                        </button>{" "}
+                        so it carries an effective date.
+                      </p>
+                    )}
                   </div>
                   {form.owner_kind === "entity" && (
                     <>
@@ -661,6 +724,13 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                               </Badge>
                             )}
                           </div>
+                          {priorNamesFor(s.id, s.name, nameHistory).length > 0 && (
+                            <div className="text-[10px] text-muted-foreground font-normal mt-0.5 italic">
+                              formerly {priorNamesFor(s.id, s.name, nameHistory)
+                                .map((p) => `${p.name}${p.effective_date ? ` (until ${p.effective_date})` : ""}`)
+                                .join("; ")}
+                            </div>
+                          )}
                           {(s as any).owner_kind === "entity" && (s as any).representative_name && (
                             <div className="text-[10px] text-muted-foreground font-normal mt-0.5">
                               rep. by {(s as any).representative_name}
@@ -721,6 +791,20 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                                 <ArrowRightLeft className="h-3 w-3" />
                               </Button>
                             )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              title="Record name change"
+                              onClick={() => setNameChangeOwner({
+                                id: s.id,
+                                name: s.name,
+                                owner_kind: (s as any).owner_kind ?? null,
+                                representative_name: (s as any).representative_name ?? null,
+                              })}
+                            >
+                              <UserPen className="h-3 w-3" />
+                            </Button>
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(s)}>
                               <Edit2 className="h-3 w-3" />
                             </Button>
@@ -759,6 +843,15 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
           );
         })()}
       </CardContent>
+
+      <NameChangeDialog
+        open={!!nameChangeOwner}
+        onOpenChange={(o) => { if (!o) setNameChangeOwner(null); }}
+        companyId={companyId}
+        entityType={entityType}
+        owner={nameChangeOwner}
+        onSuccessorHolder={(o) => onBuySell?.(o.id, o.name)}
+      />
     </Card>
   );
 }

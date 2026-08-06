@@ -3922,6 +3922,63 @@ export type Database = {
           },
         ]
       }
+      shareholder_name_history: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          effective_date: string | null
+          id: string
+          new_name: string
+          note: string | null
+          previous_name: string
+          reason: string | null
+          shareholder_id: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string | null
+          id?: string
+          new_name: string
+          note?: string | null
+          previous_name: string
+          reason?: string | null
+          shareholder_id: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string | null
+          id?: string
+          new_name?: string
+          note?: string | null
+          previous_name?: string
+          reason?: string | null
+          shareholder_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shareholder_name_history_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shareholder_name_history_shareholder_id_fkey"
+            columns: ["shareholder_id"]
+            isOneToOne: false
+            referencedRelation: "shareholders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shareholders: {
         Row: {
           additional_capital: number | null
@@ -3934,18 +3991,22 @@ export type Database = {
           created_at: string
           date_added: string | null
           distribution: string | null
+          holder_subtype: string | null
           id: string
           is_treasury: boolean
           name: string
           num_shares: number | null
           owner_kind: string
           ownership_percentage: number | null
+          predecessor_shareholder_id: string | null
           representative_name: string | null
           representative_title: string | null
           share_class: string | null
           ssn_ein_encrypted: string | null
           state: string | null
           status: string | null
+          trust_revocability: string | null
+          trustee_name: string | null
           updated_at: string
           zip: string | null
         }
@@ -3960,18 +4021,22 @@ export type Database = {
           created_at?: string
           date_added?: string | null
           distribution?: string | null
+          holder_subtype?: string | null
           id?: string
           is_treasury?: boolean
           name: string
           num_shares?: number | null
           owner_kind?: string
           ownership_percentage?: number | null
+          predecessor_shareholder_id?: string | null
           representative_name?: string | null
           representative_title?: string | null
           share_class?: string | null
           ssn_ein_encrypted?: string | null
           state?: string | null
           status?: string | null
+          trust_revocability?: string | null
+          trustee_name?: string | null
           updated_at?: string
           zip?: string | null
         }
@@ -3986,18 +4051,22 @@ export type Database = {
           created_at?: string
           date_added?: string | null
           distribution?: string | null
+          holder_subtype?: string | null
           id?: string
           is_treasury?: boolean
           name?: string
           num_shares?: number | null
           owner_kind?: string
           ownership_percentage?: number | null
+          predecessor_shareholder_id?: string | null
           representative_name?: string | null
           representative_title?: string | null
           share_class?: string | null
           ssn_ein_encrypted?: string | null
           state?: string | null
           status?: string | null
+          trust_revocability?: string | null
+          trustee_name?: string | null
           updated_at?: string
           zip?: string | null
         }
@@ -4007,6 +4076,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shareholders_predecessor_shareholder_id_fkey"
+            columns: ["predecessor_shareholder_id"]
+            isOneToOne: false
+            referencedRelation: "shareholders"
             referencedColumns: ["id"]
           },
         ]
