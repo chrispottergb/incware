@@ -1209,9 +1209,16 @@ export default function IncorporationTab({ company }: Props) {
             </div>
 
             {directors.length === 0 && !showDirectorForm && (
-              <p className="text-sm text-muted-foreground text-center py-3">
-                {isLLCType(form.entity_type) ? "No initial members added yet." : "No initial directors added yet."}
-              </p>
+              <div className="text-center py-3 space-y-0.5">
+                <p className="text-sm text-muted-foreground">
+                  {isLLCType(form.entity_type) ? "No initial members added yet." : "No initial directors added yet."}
+                </p>
+                {isOnboardedEntity && (
+                  <p className="text-xs text-muted-foreground">
+                    Optional for an existing company — add later from the Organizational Consent / Initial {isLLCType(form.entity_type) ? "Members'" : "Directors'"} Resolution if the client locates it.
+                  </p>
+                )}
+              </div>
             )}
 
             {directors.map((dir) => (
