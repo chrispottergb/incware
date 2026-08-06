@@ -343,6 +343,11 @@ export default function IncorporationTab({ company }: Props) {
 
   const { search: searchAddressBook, getCompanySplitIndex, upsert: upsertAddressBook } = useAddressBookContext(company.id);
 
+  // Companies onboarded as existing clients (opening balance established) have
+  // historical formation facts that may be unknown — organizer/initial directors
+  // are always optional and can be backfilled later.
+  const isOnboardedEntity = !!(company as any).opening_balance_date;
+
   const handleOrganizerAddressSelect = useCallback((entry: { full_name: string; address?: string | null; address_2?: string | null; city?: string | null; state?: string | null; zip?: string | null }) => {
     setNewOrganizer(prev => ({
       ...prev,
