@@ -81,7 +81,24 @@ export function useShareCalculations(companyId: string) {
     enabled: !!companyId,
   });
 
+  const { data: nameHistory = [] } = useQuery({
+    queryKey: ["shareholder_name_history", companyId],
+    queryFn: async (): Promise<NameHistoryRow[]> => {
+      const { data, error } = await supabase
+        .from("shareholder_name_history" as any)
+        .select("id, shareholder_id, previous_name, new_name, effective_date, reason, note, created_at")
+        .eq("company_id", companyId);
+      if (error) throw error;
+      return (data ?? []) as unknown as NameHistoryRow[];
+    },
+    enabled: !!companyId,
+  });
+
   const today = new Date().toISOString().split("T")[0];
+
+  // Historical transfers store owner names as free text. Resolve them through the
+  // alias index so prior names (renames, corrections) still credit the same owner.
+  const aliasIndex = buildOwnerAliasIndex(shareholders, nameHistory);
 
   // Calculate total issued shares and per-shareholder holdings from transactions
   // Transactions are the single source of truth for ownership
@@ -113,23 +130,22 @@ export function useShareCalculations(companyId: string) {
       }
     } else if (TRANSFER_TYPES.includes(t.transaction_type)) {
       if (t.from_shareholder) {
-        const fromNorm = t.from_shareholder.toLowerCase().trim();
-        const sender = shareholders.find(s => s.name.toLowerCase().trim() === fromNorm);
-        if (sender) {
-          shareholderHoldings[sender.id] -= shares;
+        const senderId = resolveOwnerIdByName(t.from_shareholder, aliasIndex);
+        if (senderId && shareholderHoldings[senderId] !== undefined) {
+          shareholderHoldings[senderId] -= shares;
         }
       }
       if (t.to_shareholder) {
-        const toNorm = t.to_shareholder.toLowerCase().trim();
-        const receiver = shareholders.find(s => s.name.toLowerCase().trim() === toNorm);
-        if (receiver) {
-          shareholderHoldings[receiver.id] += shares;
+        const receiverId = resolveOwnerIdByName(t.to_shareholder, aliasIndex);
+        if (receiverId && shareholderHoldings[receiverId] !== undefined) {
+          shareholderHoldings[receiverId] += shares;
         }
       } else if (t.shareholder_id && shareholderHoldings[t.shareholder_id] !== undefined) {
         shareholderHoldings[t.shareholder_id] += shares;
       }
     }
   });
+
 
   // Ensure no negative holdings display
   Object.keys(shareholderHoldings).forEach(id => {
