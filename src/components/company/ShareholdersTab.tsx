@@ -802,6 +802,15 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
           );
         })()}
       </CardContent>
+
+      <NameChangeDialog
+        open={!!nameChangeOwner}
+        onOpenChange={(o) => { if (!o) setNameChangeOwner(null); }}
+        companyId={companyId}
+        entityType={entityType}
+        owner={nameChangeOwner}
+        onSuccessorHolder={(o) => onBuySell?.(o.id, o.name)}
+      />
     </Card>
   );
 }
