@@ -63,6 +63,12 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
   const queryClient = useQueryClient();
   const term = getTerminology(entityType);
   const isLLC = isLLCType(entityType);
+  // Certificate wording follows the same entity-type terminology helper used for
+  // owner / unit / interest-type labels — never hardcode "Certificate" below.
+  const certLabel = term.certificate;              // "Membership Unit Certificate" | "Stock Certificate"
+  const certsLabel = term.certificates;            // plural form
+  const certLower = certLabel.toLowerCase();
+  const certsLower = certsLabel.toLowerCase();
 
   const [balanceDate, setBalanceDate] = useState("");
   const [rows, setRows] = useState<CertRow[]>([emptyRow()]);
