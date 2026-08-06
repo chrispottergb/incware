@@ -121,6 +121,13 @@ function dataTable(doc: jsPDF, headers: string[], rows: string[][], y: number, e
   return (doc as any).lastAutoTable.finalY + 6;
 }
 
+const ownerNameWithHistory = (s: any): string => {
+  const prior = (s.prior_names || [])
+    .map((p: any) => `${p.name}${p.effective_date ? ` until ${p.effective_date}` : ""}`)
+    .filter(Boolean);
+  return prior.length ? `${val(s.name)} (f/k/a ${prior.join("; ")})` : val(s.name);
+};
+
 export interface ReviewSnapshotInput {
   companyName: string;
   reviewYear: number | string;
@@ -227,7 +234,7 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
     y = dataTable(doc,
       ["Name", `${input.sharesLabel} Held`, "Ownership %", "Address"],
       (e.shareholders || []).map((s: any) => [
-        val(s.name),
+        ownerNameWithHistory(s),
         val(s.shares_held),
         s.ownership_percentage != null && String(s.ownership_percentage).trim() !== ""
           ? `${s.ownership_percentage}%`
@@ -239,7 +246,7 @@ export function generateAnnualReviewSnapshotPdf(input: ReviewSnapshotInput): jsP
     y = sectionTitle(doc, num("Members"), y);
     y = dataTable(doc,
       ["Name", "Address"],
-      (e.shareholders || []).map((s: any) => [val(s.name), joinAddr(s.address, s.city, s.state, s.zip)]),
+      (e.shareholders || []).map((s: any) => [ownerNameWithHistory(s), joinAddr(s.address, s.city, s.state, s.zip)]),
       y, "No members on file.");
   }
 
