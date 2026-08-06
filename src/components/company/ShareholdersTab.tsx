@@ -19,7 +19,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff, ArrowRightLeft, Building2, FileDown } from "lucide-react";
+import { Plus, Trash2, Loader2, Users, Edit2, Eye, EyeOff, ArrowRightLeft, Building2, FileDown, UserPen } from "lucide-react";
 import { toast } from "sonner";
 import SectionPdfActions from "./SectionPdfActions";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
@@ -32,6 +32,14 @@ import {
   downloadPdfBytes,
 } from "@/lib/certificate-pdf-overlay";
 import { downloadStockCertificatePdf } from "@/lib/stock-certificate-pdf";
+import NameChangeDialog, { type NameChangeOwner } from "./NameChangeDialog";
+import { useShareholderNameHistory } from "@/hooks/useShareholderNameHistory";
+import {
+  buildOwnerAliasIndex,
+  normalizeOwnerName,
+  priorNamesFor,
+  resolveOwnerIdByName,
+} from "@/lib/owner-aliases";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
@@ -76,6 +84,7 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
   const [decryptedSsns, setDecryptedSsns] = useState<Record<string, string | null>>({});
   const [showSsns, setShowSsns] = useState(false);
   const [decrypting, setDecrypting] = useState(false);
+  const [nameChangeOwner, setNameChangeOwner] = useState<NameChangeOwner | null>(null);
 
   const handleZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, city: result.city, state: result.state }));
@@ -226,6 +235,8 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
     enabled: !!companyId,
   });
 
+  const { data: nameHistory = [] } = useShareholderNameHistory(companyId);
+
   const resolvedShareholderHoldings = useMemo<ShareholderHoldings>(() => {
     if (isTransactionsLoading || transactions.length === 0) {
       return shareholderHoldings ?? {};
@@ -280,11 +291,22 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
       balances[key] = (balances[key] || 0) + amount;
     });
 
+    // Balances are keyed by the name recorded on each transaction. Fold prior
+    // names (renames / corrections) into the current owner so a legal name change
+    // never orphans historical holdings.
+    const aliasIndex = buildOwnerAliasIndex(shareholders as any, nameHistory);
+    const byOwnerId: Record<string, number> = {};
+    Object.entries(balances).forEach(([nameKey, amount]) => {
+      const ownerId = resolveOwnerIdByName(nameKey, aliasIndex);
+      if (!ownerId) return;
+      byOwnerId[ownerId] = (byOwnerId[ownerId] || 0) + amount;
+    });
+
     return shareholders.reduce<ShareholderHoldings>((acc, shareholder) => {
-      acc[shareholder.id] = Math.max(0, balances[shareholder.name.toLowerCase().trim()] || 0);
+      acc[shareholder.id] = Math.max(0, byOwnerId[shareholder.id] ?? 0);
       return acc;
     }, {});
-  }, [isTransactionsLoading, shareholderHoldings, shareholders, transactions]);
+  }, [isTransactionsLoading, nameHistory, shareholderHoldings, shareholders, transactions]);
 
   // Compute capital account per shareholder from transactions (not DB column)
   const CAPITAL_CONTRIBUTION_TYPES = new Set([
@@ -661,6 +683,13 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                               </Badge>
                             )}
                           </div>
+                          {priorNamesFor(s.id, s.name, nameHistory).length > 0 && (
+                            <div className="text-[10px] text-muted-foreground font-normal mt-0.5 italic">
+                              formerly {priorNamesFor(s.id, s.name, nameHistory)
+                                .map((p) => `${p.name}${p.effective_date ? ` (until ${p.effective_date})` : ""}`)
+                                .join("; ")}
+                            </div>
+                          )}
                           {(s as any).owner_kind === "entity" && (s as any).representative_name && (
                             <div className="text-[10px] text-muted-foreground font-normal mt-0.5">
                               rep. by {(s as any).representative_name}
@@ -721,6 +750,20 @@ export default function ShareholdersTab({ companyId, entityType = "Corporation",
                                 <ArrowRightLeft className="h-3 w-3" />
                               </Button>
                             )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              title="Record name change"
+                              onClick={() => setNameChangeOwner({
+                                id: s.id,
+                                name: s.name,
+                                owner_kind: (s as any).owner_kind ?? null,
+                                representative_name: (s as any).representative_name ?? null,
+                              })}
+                            >
+                              <UserPen className="h-3 w-3" />
+                            </Button>
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(s)}>
                               <Edit2 className="h-3 w-3" />
                             </Button>
