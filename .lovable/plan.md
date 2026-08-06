@@ -18,9 +18,20 @@ There is no concept of trust type (revocable/irrevocable), grantor, successor tr
 
 The recommendation is to keep the legal determination out of the app: the attorney/accountant decides whether the event is a rename or a new holder. What the app should add is an explicit fork at the point of the event, so the user's choice is recorded and routed correctly, and a small amount of trust-specific context so the record book explains what happened.
 
+## Data audit already run — results
+
+The unmatched-name check across all existing companies is done. Every `from_shareholder` / `to_shareholder` value was compared (case- and whitespace-insensitive) against the owner names on the same company.
+
+- **Most unmatched values are harmless sentinels, not owners**: `Pre-existing Ownership`, `Original Issue`, `Company`. These sit on issuance-type rows (`opening_balance`, `initial_issuance`, `membership_issuance`) where the field records a source, not a person, and issuance rows credit the owner through `shareholder_id` rather than the name string. No holdings are affected.
+- **Restricting the check to transfer-type rows — the only rows where name matching actually drives holdings — surfaces exactly one real problem**: **Incorporation Resources Company**, where two transfer rows are recorded against `Christoher R. Potter` (misspelling of Christopher). One transfer out of 2 units and one transfer in of 50 units are currently resolving to no owner, so that owner's holdings and the entity's ownership percentages are wrong today.
+- No other client entity has an orphaned transfer name.
+
+So the exposure is real but narrow. The fix for it falls out of this feature: once the alias layer exists, the misspelling is recorded as a prior-name/alias entry (reason: correction) and both rows resolve again — no transaction editing required, and the ledger keeps showing what was originally recorded. A one-time re-check will run after implementation to confirm zero unresolved transfer names remain.
+
 ## What to build
 
 ### 1. Owner name history (the rename path)
+
 
 New `shareholder_name_history` table: owner id, previous name, new name, effective date, reason (grantor death / trust restatement / marriage / entity renaming / correction / other), optional note, created_by, timestamps. Standard RLS scoped through `companies.user_id`, plus grants.
 
@@ -40,18 +51,23 @@ This is the part that keeps the rename from breaking reporting:
 - Owner detail shows a "Formerly known as" line listing prior names with effective dates.
 - The stock/membership ledger and transfer ledger display the name **as recorded at the time of the transaction**, with the current name shown alongside where useful — historical documents stay accurate while the owner stays traceable.
 - Record book and annual review snapshots include a name-history block for any owner that has one.
-- Existing certificates are not reissued automatically. The dialog offers an optional follow-up: cancel the old certificate and issue a replacement in the new name (a reissue, not a transfer — no change in units).
+- **Certificates when reissue is declined.** Existing certificates are never rewritten automatically. A certificate is a legal instrument that was issued in a particular name, so its stored and printed name stays the pre-rename name indefinitely — it does not resolve through the alias layer the way the ledger does. What changes is the surrounding context: certificate lists and certificate-based reports show the certificate's issued name with the owner's current name annotated next to it ("issued to Ken & Louise Revocable Trust — now Louise Revocable Trust"), and the certificate stays attached to the same owner record so holdings and totals are unaffected. The generated certificate PDF itself is untouched. The dialog offers the optional reissue — cancel the old certificate and issue a replacement in the new name, same unit count, no transfer — for clients who want the paper to match.
 
 ### 4. The rename vs. successor-holder fork
 
-When a user starts the name-change action, the dialog first asks which situation applies, with plain-language guidance and an explicit note that the determination belongs to the client's attorney or accountant:
+This is a general owner-identity feature, not a trust feature. Marriage and divorce name changes for individual owners are expected to be the most common use, with trust restatements and successor trustees behind them.
 
-- **Same legal holder, new name** — trust restatement, entity renamed, marriage. Proceeds with the rename path above.
-- **Different legal holder** — revocable trust became irrevocable at death and is treated as a new taxpayer, or the trust split into survivor's/bypass sub-trusts. Routes to the existing transfer/transaction flow, pre-set to a non-sale transfer type, pre-filled with the outgoing owner and full unit count, and links the new owner record to the predecessor so the chain of title is still one continuous, navigable history even though there are two records.
+The dialog is written in neutral language that fits an individual, a trust, or a business entity. The fork question reads: **"Is this the same owner under a new name, or a different legal owner taking over the interest?"**
 
-### 5. Light trust context (optional fields, no legal logic)
+- **Same owner, new legal name** — pre-selected as the default. Examples shown adapt to the owner: for an individual owner (`owner_kind = individual`) the guidance cites marriage, divorce, or a court-ordered name change; for an entity owner it cites trust restatement or a renamed company. Reason options are likewise filtered so an individual is never shown "trust restatement" and an entity is never shown "marriage." Proceeds with the rename path above.
+- **Different legal owner** — for the minority case: a revocable trust becoming irrevocable and treated as a new taxpayer, a split into survivor's/bypass sub-trusts, or an interest passing to an estate or heir. Routes to the existing transfer flow, pre-set to a non-sale transfer type, pre-filled with the outgoing owner and full unit count, and links the new owner record to the predecessor so the chain of title stays navigable.
 
-On owners with `owner_kind = entity`, add optional fields: holder subtype (trust / estate / LLC / corporation / partnership / other), and for trusts a revocable-vs-irrevocable marker and trustee name. These are descriptive only — nothing in the app infers a legal conclusion from them. They populate certificates and the record book, and give the fork dialog something to reference.
+Both branches carry the same note: the app records the determination, it does not make it — whether an event is a rename or a change of holder is the client's attorney's or accountant's call.
+
+### 5. Light holder context (optional fields, no legal logic)
+
+On owners with `owner_kind = entity`, add optional fields: holder subtype (trust / estate / LLC / corporation / partnership / other), and for trusts a revocable-vs-irrevocable marker and trustee name. Individual owners see none of this. These are descriptive only — nothing in the app infers a legal conclusion from them. They populate certificates and the record book, and give the fork dialog its examples.
+
 
 ## Technical notes
 
@@ -64,6 +80,9 @@ On owners with `owner_kind = entity`, add optional fields: holder subtype (trust
 
 1. Rename an owner who has both a direct issuance and a name-matched transfer recorded under the old name; confirm holdings and ownership percentage are unchanged before and after, in the UI and via the database function.
 2. Confirm the ledger still shows the old name on the pre-rename rows and the new name on post-rename rows.
-3. Confirm certificates stay attached and the optional reissue produces a replacement certificate with no change in units.
-4. Run the successor-holder path and confirm it creates a second owner record linked to the predecessor with a full, non-sale transfer.
-5. Confirm a multi-member entity's percentages still total 100% after a rename.
+3. Confirm certificates stay attached, keep their issued name, show the current-name annotation, and that the optional reissue produces a replacement certificate with no change in units.
+4. Run the rename flow on an **individual** owner (marriage name change) and confirm the dialog language, reason options, and result are correct with no trust/entity wording.
+5. Run the successor-holder path and confirm it creates a second owner record linked to the predecessor with a full, non-sale transfer.
+6. Confirm a multi-member entity's percentages still total 100% after a rename.
+7. Re-run the unmatched-name audit query after fixing the `Christoher R. Potter` alias and confirm zero unresolved transfer-type names remain across all companies.
+
