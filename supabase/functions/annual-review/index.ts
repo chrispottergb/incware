@@ -97,6 +97,7 @@ Deno.serve(async (req) => {
       officersRowRes,
       nonprofitExemptionRes,
       nonprofit990Res,
+      nameHistoryRes,
     ] = await Promise.all([
       supabase.from("companies").select("*").eq("id", companyId).single(),
       supabase.from("accountants").select("*").eq("company_id", companyId).order("created_at"),
@@ -113,6 +114,7 @@ Deno.serve(async (req) => {
       supabase.from("officers").select("*").eq("company_id", companyId).maybeSingle(),
       supabase.from("nonprofit_tax_exemption").select("*").eq("company_id", companyId).maybeSingle(),
       supabase.from("nonprofit_form990_filings").select("*").eq("company_id", companyId).order("year", { ascending: false }),
+      supabase.from("shareholder_name_history").select("shareholder_id, previous_name, new_name, effective_date, reason").eq("company_id", companyId).order("effective_date"),
     ]);
 
     if (companyRes.error || !companyRes.data) {
@@ -344,6 +346,14 @@ Deno.serve(async (req) => {
 
       shareholders: (shareholdersRes.data || []).map((s: any) => ({
         name: s.name,
+        prior_names: (nameHistoryRes.data || [])
+          .filter((h: any) => h.shareholder_id === s.id)
+          .map((h: any) => ({
+            name: h.previous_name,
+            effective_date: h.effective_date,
+            reason: h.reason,
+          }))
+          .filter((h: any) => (h.name || "").trim().toLowerCase() !== (s.name || "").trim().toLowerCase()),
         address: s.address,
         city: s.city,
         state: s.state,
