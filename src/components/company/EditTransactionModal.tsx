@@ -24,6 +24,7 @@ interface Props {
 
 const CONSIDERATION_TYPES = [
   { value: "cash", label: "Cash" },
+  { value: "gift", label: "Gift" },
   { value: "property", label: "Property" },
   { value: "services", label: "Services" },
   { value: "promissory_note", label: "Promissory Note" },

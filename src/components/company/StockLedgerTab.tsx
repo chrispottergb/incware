@@ -131,6 +131,7 @@ const OWNERSHIP_RECONCILIATION_TYPE = {
 
 const CONSIDERATION_TYPES = [
   { value: "cash", label: "Cash" },
+  { value: "gift", label: "Gift" },
   { value: "property", label: "Property" },
   { value: "services", label: "Services" },
   { value: "promissory_note", label: "Promissory Note" },
@@ -945,7 +946,9 @@ export default function StockLedgerTab({
                         setForm((p) => ({
                           ...p,
                           num_shares: val,
-                          total_consideration: updateTotal(val, p.price_per_share) || p.total_consideration,
+                          total_consideration: isGiftConsideration(p.consideration_type)
+                            ? p.total_consideration
+                            : updateTotal(val, p.price_per_share) || p.total_consideration,
                         }));
                       }}
                       required
@@ -975,7 +978,9 @@ export default function StockLedgerTab({
                         setForm((p) => ({
                           ...p,
                           price_per_share: val,
-                          total_consideration: updateTotal(p.num_shares, val) || p.total_consideration,
+                          total_consideration: isGiftConsideration(p.consideration_type)
+                            ? p.total_consideration
+                            : updateTotal(p.num_shares, val) || p.total_consideration,
                         }));
                       }}
                     />
