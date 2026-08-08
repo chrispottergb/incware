@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, TrendingUp, Lock, Info, Plus, Trash2, RotateCcw } from "lucide-react";
+import { Loader2, TrendingUp, Lock, Info, Plus, Trash2, RotateCcw, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useAutoSave } from "@/hooks/useAutoSave";
