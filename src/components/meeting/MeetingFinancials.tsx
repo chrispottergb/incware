@@ -172,6 +172,40 @@ export default function MeetingFinancials({ meetingId }: Props) {
 
   const [focusedFields, setFocusedFields] = useState<Set<string>>(new Set());
 
+  // ---- Inline-editable "Sales" label (display only, per entity) ----------
+  // Some entities track "Rental Income" instead of "Sales". The label is a
+  // pure display string: field keys (current_total_sales, etc.) and all ratio
+  // math are untouched. Stored per company_id so one entity can read
+  // "Rental Income" while another still reads the default "Sales".
+  const DEFAULT_SALES_LABEL = "Total Sales";
+  const salesLabelKey = meeting?.company_id ? `entityiq:sales_label:${meeting.company_id}` : null;
+  const [salesLabel, setSalesLabel] = useState(DEFAULT_SALES_LABEL);
+  const [editingSalesLabel, setEditingSalesLabel] = useState(false);
+  const [salesLabelDraft, setSalesLabelDraft] = useState(DEFAULT_SALES_LABEL);
+
+  useEffect(() => {
+    if (!salesLabelKey) return;
+    try {
+      const stored = localStorage.getItem(salesLabelKey);
+      setSalesLabel(stored && stored.trim() ? stored : DEFAULT_SALES_LABEL);
+    } catch {
+      /* storage unavailable — keep default */
+    }
+  }, [salesLabelKey]);
+
+  const commitSalesLabel = () => {
+    const next = salesLabelDraft.trim().slice(0, 30) || DEFAULT_SALES_LABEL;
+    setSalesLabel(next);
+    setEditingSalesLabel(false);
+    if (salesLabelKey) {
+      try {
+        localStorage.setItem(salesLabelKey, next);
+      } catch {
+        /* ignore */
+      }
+    }
+  };
+
   const sanitizeCurrencyInput = (raw: string): string => {
     // strip everything except digits, decimal point, and leading minus
     let s = raw.replace(/[^0-9.\-]/g, "");
