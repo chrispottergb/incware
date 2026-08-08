@@ -628,7 +628,34 @@ export default function MeetingFinancials({ meetingId }: Props) {
               };
               return (
                 <div key={f.key} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 mb-3 items-center">
-                  <Label className="text-sm">{f.label}</Label>
+                  {f.key === "total_sales" ? (
+                    editingSalesLabel ? (
+                      <Input
+                        autoFocus
+                        maxLength={30}
+                        value={salesLabelDraft}
+                        onChange={(e) => setSalesLabelDraft(e.target.value)}
+                        onBlur={commitSalesLabel}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); commitSalesLabel(); }
+                          if (e.key === "Escape") { e.preventDefault(); setEditingSalesLabel(false); }
+                        }}
+                        className="h-7 text-sm max-w-[180px]"
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => { setSalesLabelDraft(salesLabel); setEditingSalesLabel(true); }}
+                        title="Click to rename this label (e.g. Rental Income)"
+                        className="group flex items-center gap-1 text-sm text-left w-fit hover:text-primary"
+                      >
+                        {f.label}
+                        <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-100 text-muted-foreground" />
+                      </button>
+                    )
+                  ) : (
+                    <Label className="text-sm">{f.label}</Label>
+                  )}
                   <Input
                     type="text"
                     inputMode="decimal"
