@@ -24,6 +24,7 @@ import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { validateIssuanceLimit, validateSellerHoldings } from "@/lib/transaction-validation";
 import { downloadStockCertificatePdf } from "@/lib/stock-certificate-pdf";
 import { downloadBillOfSalePdf } from "@/lib/bill-of-sale-pdf";
+import { isGiftConsideration, considerationAmountForTypeChange } from "@/lib/consideration";
 
 function mapTxTypeToEquityType(txType: string, isLLC: boolean, consideration: number): string | null {
   if (txType === "initial_issuance") return "Original Issue";

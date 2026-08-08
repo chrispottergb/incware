@@ -29,6 +29,7 @@ import { Upload } from "lucide-react";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { getNextCertificateNumber, validateIssuanceLimit } from "@/lib/transaction-validation";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+import { isGiftConsideration, considerationAmountForTypeChange } from "@/lib/consideration";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "Single Member LLC", "Non-Profit", "Partnership"];
 const CORP_TYPES = ["Corporation"];

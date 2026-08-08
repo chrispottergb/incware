@@ -11,6 +11,7 @@ import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { isLLCType } from "@/lib/entity-terminology";
+import { isGiftConsideration, considerationAmountForTypeChange } from "@/lib/consideration";
 
 interface Props {
   open: boolean;

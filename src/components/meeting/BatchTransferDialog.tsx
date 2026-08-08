@@ -21,6 +21,7 @@ import {
   ArrowRightLeft, AlertTriangle, FileText, UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
+import { isGiftConsideration, considerationAmountForTypeChange } from "@/lib/consideration";
 
 const CONSIDERATION_TYPES = [
   { value: "cash", label: "Cash" },

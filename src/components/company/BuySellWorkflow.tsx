@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
+import { isGiftConsideration, considerationAmountForTypeChange } from "@/lib/consideration";
 
 const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string }[]> = {
   Corporation: [
