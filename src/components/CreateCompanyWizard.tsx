@@ -315,7 +315,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
       toast.error("Certificate number is required for existing entity setup.");
       return;
     }
-    if (flowType === "existing" && isLLC && !editingSh.consideration.trim()) {
+    if (flowType === "existing" && isLLC && !isGiftConsideration(editingSh.consideration_type) && !editingSh.consideration.trim()) {
       toast.error("Consideration amount is required for LLC members.");
       return;
     }

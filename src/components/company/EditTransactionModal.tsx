@@ -272,6 +272,7 @@ export default function EditTransactionModal({
                 className="h-8 text-sm"
                 type="number"
                 step="0.01"
+                disabled={isGiftConsideration(form.consideration_type)}
                 value={form.total_consideration}
                 onChange={(e) => setForm((p) => ({ ...p, total_consideration: e.target.value }))}
               />
@@ -280,7 +281,13 @@ export default function EditTransactionModal({
               <Label className="field-label">Consideration Type</Label>
               <Select
                 value={form.consideration_type}
-                onValueChange={(v) => setForm((p) => ({ ...p, consideration_type: v }))}
+                onValueChange={(v) =>
+                  setForm((p) => ({
+                    ...p,
+                    consideration_type: v,
+                    total_consideration: considerationAmountForTypeChange(v, p.consideration_type, p.total_consideration),
+                  }))
+                }
               >
                 <SelectTrigger className="h-8 text-sm">
                   <SelectValue />

@@ -533,6 +533,7 @@ export default function BatchTransferDialog({
                           className="h-8 text-sm"
                           type="number"
                           step="0.01"
+                          disabled={isGiftConsideration(row.consideration_type)}
                           value={row.total_consideration}
                           onChange={(e) => updateRow(idx, "total_consideration", e.target.value)}
                           placeholder={autoTotal ? `$${autoTotal.toFixed(2)}` : ""}
@@ -540,7 +541,10 @@ export default function BatchTransferDialog({
                       </div>
                       <div className="field-group">
                         <Label className="field-label">Type</Label>
-                        <Select value={row.consideration_type} onValueChange={(v) => updateRow(idx, "consideration_type", v)}>
+                        <Select value={row.consideration_type} onValueChange={(v) => {
+                          updateRow(idx, "consideration_type", v);
+                          updateRow(idx, "total_consideration", considerationAmountForTypeChange(v, row.consideration_type, row.total_consideration));
+                        }}>
                           <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {CONSIDERATION_TYPES.map((ct) => (
