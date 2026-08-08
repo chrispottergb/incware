@@ -451,7 +451,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
     { key: "total_sales", label: "Total Sales" },
     hasCogs
       ? { key: "cog", label: "Cost of Goods" }
-      : { key: "expenses", label: "Expenses" },
+      : { key: "expenses", label: "COG/Expenses" },
     { key: "gross_profit", label: "Gross Profit", computed: true },
     hasCogs
       ? { key: "cog_ratio", label: "COG Ratio (%)", computed: true }
@@ -476,7 +476,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
   const previousExpensesNum = toNum(form.previous_expenses) ?? 0;
   const currentSecondBar = currentCogNum && currentCogNum > 0 ? currentCogNum : currentExpensesNum;
   const previousSecondBar = previousCogNum && previousCogNum > 0 ? previousCogNum : previousExpensesNum;
-  const secondBarLabel = hasCogs ? "COG" : "Expenses";
+  const secondBarLabel = hasCogs ? "COG" : "COG/Expenses";
 
   const chartData = [
     { name: "Sales", "Current Year": toNum(form.current_total_sales) ?? 0, "Previous Year": toNum(form.previous_total_sales) ?? 0 },
@@ -493,9 +493,16 @@ export default function MeetingFinancials({ meetingId }: Props) {
     });
   }
 
+  // Ratio chart mirrors whichever ratio row the summary table is showing:
+  // COG Ratio when a COGS figure exists for that year, otherwise Expense Ratio.
+  // Missing years stay null (not 0) so no misleading 0.00% bar is drawn.
+  const currentRatio = toNum(form.current_cog_ratio) ?? toNum(form.current_expense_ratio);
+  const previousRatio = toNum(form.previous_cog_ratio) ?? toNum(form.previous_expense_ratio);
+  const ratioBarLabel = hasCogs ? "COG Ratio" : "COG/Expense Ratio";
   const cogChartData = [
-    { name: "COG Ratio", "Current Year": toNum(form.current_cog_ratio) ?? 0, "Previous Year": toNum(form.previous_cog_ratio) ?? 0 },
+    { name: ratioBarLabel, "Current Year": currentRatio, "Previous Year": previousRatio },
   ];
+  const hasPreviousRatio = previousRatio != null;
 
   const hasData = chartData.some((d) => d["Current Year"] > 0 || d["Previous Year"] > 0);
 
