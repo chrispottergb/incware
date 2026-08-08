@@ -759,7 +759,9 @@ export default function MeetingFinancials({ meetingId }: Props) {
           </Card>
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="font-display text-sm">Annual Cost of Goods Comparison</CardTitle>
+              <CardTitle className="font-display text-sm">
+                {hasCogs ? "Annual Cost of Goods Comparison" : "Annual COG/Expense Ratio Comparison"}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div style={{ width: "75%", height: 280 }}>
@@ -775,15 +777,21 @@ export default function MeetingFinancials({ meetingId }: Props) {
                       borderRadius: "var(--radius)",
                       fontSize: 12,
                     }}
-                    formatter={(value: number) => `${value.toFixed(2)}%`}
+                    formatter={(value: number | null) => (value == null ? "No previous data available" : `${value.toFixed(2)}%`)}
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="Current Year" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]}><LabelList dataKey="Current Year" position="top" style={{ fontSize: 9 }} formatter={(v: number) => `${v.toFixed(2)}%`} /></Bar>
-                  <Bar dataKey="Previous Year" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]}><LabelList dataKey="Previous Year" position="top" style={{ fontSize: 9 }} formatter={(v: number) => `${v.toFixed(2)}%`} /></Bar>
+                  <Bar dataKey="Current Year" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]}><LabelList dataKey="Current Year" position="top" style={{ fontSize: 9 }} formatter={(v: number | null) => (v == null ? "" : `${v.toFixed(2)}%`)} /></Bar>
+                  {hasPreviousRatio && (
+                    <Bar dataKey="Previous Year" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]}><LabelList dataKey="Previous Year" position="top" style={{ fontSize: 9 }} formatter={(v: number | null) => (v == null ? "" : `${v.toFixed(2)}%`)} /></Bar>
+                  )}
                 </BarChart>
               </ResponsiveContainer>
               </div>
+              {!hasPreviousRatio && (
+                <p className="text-xs text-muted-foreground mt-1">No previous data available</p>
+              )}
             </CardContent>
+
           </Card>
         </div>
       )}
