@@ -482,7 +482,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
   const hasCogs = (currentCogNum != null && currentCogNum > 0) || (previousCogNum != null && previousCogNum > 0);
 
   const fields: { key: string; label: string; computed?: boolean; manual?: boolean }[] = [
-    { key: "total_sales", label: "Total Sales" },
+    { key: "total_sales", label: salesLabel },
     hasCogs
       ? { key: "cog", label: "Cost of Goods" }
       : { key: "expenses", label: "COG/Expenses" },
@@ -513,7 +513,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
   const secondBarLabel = hasCogs ? "COG" : "COG/Expenses";
 
   const chartData = [
-    { name: "Sales", "Current Year": toNum(form.current_total_sales) ?? 0, "Previous Year": toNum(form.previous_total_sales) ?? 0 },
+    { name: salesLabel, "Current Year": toNum(form.current_total_sales) ?? 0, "Previous Year": toNum(form.previous_total_sales) ?? 0 },
     { name: secondBarLabel, "Current Year": currentSecondBar, "Previous Year": previousSecondBar },
     { name: "Gross Profit", "Current Year": toNum(form.current_gross_profit) ?? 0, "Previous Year": toNum(form.previous_gross_profit) ?? 0 },
     { name: "Net Income", "Current Year": toNum(form.current_net_income) ?? 0, "Previous Year": toNum(form.previous_net_income) ?? 0 },
