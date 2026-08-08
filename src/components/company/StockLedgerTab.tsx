@@ -24,6 +24,7 @@ import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { validateIssuanceLimit, validateSellerHoldings } from "@/lib/transaction-validation";
 import { downloadStockCertificatePdf } from "@/lib/stock-certificate-pdf";
 import { downloadBillOfSalePdf } from "@/lib/bill-of-sale-pdf";
+import { isGiftConsideration, considerationAmountForTypeChange } from "@/lib/consideration";
 
 function mapTxTypeToEquityType(txType: string, isLLC: boolean, consideration: number): string | null {
   if (txType === "initial_issuance") return "Original Issue";
@@ -130,6 +131,7 @@ const OWNERSHIP_RECONCILIATION_TYPE = {
 
 const CONSIDERATION_TYPES = [
   { value: "cash", label: "Cash" },
+  { value: "gift", label: "Gift" },
   { value: "property", label: "Property" },
   { value: "services", label: "Services" },
   { value: "promissory_note", label: "Promissory Note" },
@@ -944,7 +946,9 @@ export default function StockLedgerTab({
                         setForm((p) => ({
                           ...p,
                           num_shares: val,
-                          total_consideration: updateTotal(val, p.price_per_share) || p.total_consideration,
+                          total_consideration: isGiftConsideration(p.consideration_type)
+                            ? p.total_consideration
+                            : updateTotal(val, p.price_per_share) || p.total_consideration,
                         }));
                       }}
                       required
@@ -974,7 +978,9 @@ export default function StockLedgerTab({
                         setForm((p) => ({
                           ...p,
                           price_per_share: val,
-                          total_consideration: updateTotal(p.num_shares, val) || p.total_consideration,
+                          total_consideration: isGiftConsideration(p.consideration_type)
+                            ? p.total_consideration
+                            : updateTotal(p.num_shares, val) || p.total_consideration,
                         }));
                       }}
                     />
@@ -987,6 +993,7 @@ export default function StockLedgerTab({
                       className="h-8 text-sm"
                       type="number"
                       step="0.01"
+                      disabled={isGiftConsideration(form.consideration_type)}
                       value={form.total_consideration}
                       onChange={(e) => setForm((p) => ({ ...p, total_consideration: e.target.value }))}
                     />
@@ -995,7 +1002,13 @@ export default function StockLedgerTab({
                     <Label className="field-label">Consideration Type</Label>
                     <Select
                       value={form.consideration_type}
-                      onValueChange={(v) => setForm((p) => ({ ...p, consideration_type: v }))}
+                      onValueChange={(v) =>
+                        setForm((p) => ({
+                          ...p,
+                          consideration_type: v,
+                          total_consideration: considerationAmountForTypeChange(v, p.consideration_type, p.total_consideration),
+                        }))
+                      }
                     >
                       <SelectTrigger className="h-8 text-sm">
                         <SelectValue />

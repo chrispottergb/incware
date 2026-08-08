@@ -11,6 +11,7 @@ import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { isLLCType } from "@/lib/entity-terminology";
+import { isGiftConsideration, considerationAmountForTypeChange } from "@/lib/consideration";
 
 interface Props {
   open: boolean;
@@ -23,6 +24,7 @@ interface Props {
 
 const CONSIDERATION_TYPES = [
   { value: "cash", label: "Cash" },
+  { value: "gift", label: "Gift" },
   { value: "property", label: "Property" },
   { value: "services", label: "Services" },
   { value: "promissory_note", label: "Promissory Note" },
@@ -271,6 +273,7 @@ export default function EditTransactionModal({
                 className="h-8 text-sm"
                 type="number"
                 step="0.01"
+                disabled={isGiftConsideration(form.consideration_type)}
                 value={form.total_consideration}
                 onChange={(e) => setForm((p) => ({ ...p, total_consideration: e.target.value }))}
               />
@@ -279,7 +282,13 @@ export default function EditTransactionModal({
               <Label className="field-label">Consideration Type</Label>
               <Select
                 value={form.consideration_type}
-                onValueChange={(v) => setForm((p) => ({ ...p, consideration_type: v }))}
+                onValueChange={(v) =>
+                  setForm((p) => ({
+                    ...p,
+                    consideration_type: v,
+                    total_consideration: considerationAmountForTypeChange(v, p.consideration_type, p.total_consideration),
+                  }))
+                }
               >
                 <SelectTrigger className="h-8 text-sm">
                   <SelectValue />

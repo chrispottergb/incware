@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
+import { isGiftConsideration, considerationAmountForTypeChange } from "@/lib/consideration";
 
 const TRANSACTION_TYPES_BY_ENTITY: Record<string, { value: string; label: string }[]> = {
   Corporation: [
@@ -479,6 +480,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
               <div className="field-group">
                 <Label className="field-label">{isRedemption ? "Consideration Paid by Corp" : "Total Consideration"}</Label>
                 <Input className="h-8 text-sm" type="number" step="0.01"
+                  disabled={isGiftConsideration(form.consideration_type)}
                   value={form.total_consideration}
                   onChange={(e) => setForm(p => ({ ...p, total_consideration: e.target.value }))}
                   placeholder={autoTotal ? `$${autoTotal.toFixed(2)}` : ""}
@@ -486,7 +488,7 @@ export default function BuySellWorkflow({ companyId, companyName, entityType, op
               </div>
               <div className="field-group">
                 <Label className="field-label">Consideration Type</Label>
-                <Select value={form.consideration_type} onValueChange={(v) => setForm(p => ({ ...p, consideration_type: v }))}>
+                <Select value={form.consideration_type} onValueChange={(v) => setForm(p => ({ ...p, consideration_type: v, total_consideration: considerationAmountForTypeChange(v, p.consideration_type, p.total_consideration) }))}>
                   <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {CONSIDERATION_TYPES.map(ct => <SelectItem key={ct.value} value={ct.value}>{ct.label}</SelectItem>)}

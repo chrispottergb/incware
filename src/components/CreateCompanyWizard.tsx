@@ -29,6 +29,7 @@ import { Upload } from "lucide-react";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { getNextCertificateNumber, validateIssuanceLimit } from "@/lib/transaction-validation";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+import { isGiftConsideration, considerationAmountForTypeChange } from "@/lib/consideration";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "Single Member LLC", "Non-Profit", "Partnership"];
 const CORP_TYPES = ["Corporation"];
@@ -314,7 +315,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
       toast.error("Certificate number is required for existing entity setup.");
       return;
     }
-    if (flowType === "existing" && isLLC && !editingSh.consideration.trim()) {
+    if (flowType === "existing" && isLLC && !isGiftConsideration(editingSh.consideration_type) && !editingSh.consideration.trim()) {
       toast.error("Consideration amount is required for LLC members.");
       return;
     }
@@ -791,7 +792,7 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
         </div>
         <div className="field-group min-w-0">
           <Label className="field-label whitespace-nowrap">Consideration Type</Label>
-          <Select value={editingSh.consideration_type || "Cash"} onValueChange={(v) => setEditingSh(p => ({ ...p, consideration_type: v }))}>
+          <Select value={editingSh.consideration_type || "Cash"} onValueChange={(v) => setEditingSh(p => ({ ...p, consideration_type: v, consideration: considerationAmountForTypeChange(v, p.consideration_type, p.consideration) }))}>
             <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               {CONSIDERATION_TYPES.map(ct => <SelectItem key={ct} value={ct}>{ct}</SelectItem>)}
@@ -800,8 +801,8 @@ export default function CreateCompanyWizard({ open, onOpenChange }: Props) {
         </div>
       </div>
       <div className="field-group">
-        <Label className="field-label">Consideration Amount ($){isLLC ? " — required" : " — optional"}</Label>
-        <Input className="h-7 text-xs" type="number" step="0.01" value={editingSh.consideration} onChange={(e) => setEditingSh(p => ({ ...p, consideration: e.target.value }))} placeholder="0.00" />
+        <Label className="field-label">Consideration Amount ($){isGiftConsideration(editingSh.consideration_type) ? "" : isLLC ? " — required" : " — optional"}</Label>
+        <Input className="h-7 text-xs" type="number" step="0.01" disabled={isGiftConsideration(editingSh.consideration_type)} value={editingSh.consideration} onChange={(e) => setEditingSh(p => ({ ...p, consideration: e.target.value }))} placeholder="0.00" />
       </div>
       <div className="field-group">
         <Label className="field-label">Notes / Memo</Label>
