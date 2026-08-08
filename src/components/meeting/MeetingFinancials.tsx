@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, TrendingUp, Lock, Info, Plus, Trash2, RotateCcw } from "lucide-react";
+import { Loader2, TrendingUp, Lock, Info, Plus, Trash2, RotateCcw, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -171,6 +171,40 @@ export default function MeetingFinancials({ meetingId }: Props) {
   });
 
   const [focusedFields, setFocusedFields] = useState<Set<string>>(new Set());
+
+  // ---- Inline-editable "Sales" label (display only, per entity) ----------
+  // Some entities track "Rental Income" instead of "Sales". The label is a
+  // pure display string: field keys (current_total_sales, etc.) and all ratio
+  // math are untouched. Stored per company_id so one entity can read
+  // "Rental Income" while another still reads the default "Sales".
+  const DEFAULT_SALES_LABEL = "Total Sales";
+  const salesLabelKey = meeting?.company_id ? `entityiq:sales_label:${meeting.company_id}` : null;
+  const [salesLabel, setSalesLabel] = useState(DEFAULT_SALES_LABEL);
+  const [editingSalesLabel, setEditingSalesLabel] = useState(false);
+  const [salesLabelDraft, setSalesLabelDraft] = useState(DEFAULT_SALES_LABEL);
+
+  useEffect(() => {
+    if (!salesLabelKey) return;
+    try {
+      const stored = localStorage.getItem(salesLabelKey);
+      setSalesLabel(stored && stored.trim() ? stored : DEFAULT_SALES_LABEL);
+    } catch {
+      /* storage unavailable — keep default */
+    }
+  }, [salesLabelKey]);
+
+  const commitSalesLabel = () => {
+    const next = salesLabelDraft.trim().slice(0, 30) || DEFAULT_SALES_LABEL;
+    setSalesLabel(next);
+    setEditingSalesLabel(false);
+    if (salesLabelKey) {
+      try {
+        localStorage.setItem(salesLabelKey, next);
+      } catch {
+        /* ignore */
+      }
+    }
+  };
 
   const sanitizeCurrencyInput = (raw: string): string => {
     // strip everything except digits, decimal point, and leading minus
@@ -448,7 +482,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
   const hasCogs = (currentCogNum != null && currentCogNum > 0) || (previousCogNum != null && previousCogNum > 0);
 
   const fields: { key: string; label: string; computed?: boolean; manual?: boolean }[] = [
-    { key: "total_sales", label: "Total Sales" },
+    { key: "total_sales", label: salesLabel },
     hasCogs
       ? { key: "cog", label: "Cost of Goods" }
       : { key: "expenses", label: "COG/Expenses" },
@@ -479,7 +513,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
   const secondBarLabel = hasCogs ? "COG" : "COG/Expenses";
 
   const chartData = [
-    { name: "Sales", "Current Year": toNum(form.current_total_sales) ?? 0, "Previous Year": toNum(form.previous_total_sales) ?? 0 },
+    { name: salesLabel, "Current Year": toNum(form.current_total_sales) ?? 0, "Previous Year": toNum(form.previous_total_sales) ?? 0 },
     { name: secondBarLabel, "Current Year": currentSecondBar, "Previous Year": previousSecondBar },
     { name: "Gross Profit", "Current Year": toNum(form.current_gross_profit) ?? 0, "Previous Year": toNum(form.previous_gross_profit) ?? 0 },
     { name: "Net Income", "Current Year": toNum(form.current_net_income) ?? 0, "Previous Year": toNum(form.previous_net_income) ?? 0 },
@@ -594,7 +628,34 @@ export default function MeetingFinancials({ meetingId }: Props) {
               };
               return (
                 <div key={f.key} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 mb-3 items-center">
-                  <Label className="text-sm">{f.label}</Label>
+                  {f.key === "total_sales" ? (
+                    editingSalesLabel ? (
+                      <Input
+                        autoFocus
+                        maxLength={30}
+                        value={salesLabelDraft}
+                        onChange={(e) => setSalesLabelDraft(e.target.value)}
+                        onBlur={commitSalesLabel}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); commitSalesLabel(); }
+                          if (e.key === "Escape") { e.preventDefault(); setEditingSalesLabel(false); }
+                        }}
+                        className="h-7 text-sm max-w-[180px]"
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => { setSalesLabelDraft(salesLabel); setEditingSalesLabel(true); }}
+                        title="Click to rename this label (e.g. Rental Income)"
+                        className="group flex items-center gap-1 text-sm text-left w-fit hover:text-primary"
+                      >
+                        {f.label}
+                        <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-100 text-muted-foreground" />
+                      </button>
+                    )
+                  ) : (
+                    <Label className="text-sm">{f.label}</Label>
+                  )}
                   <Input
                     type="text"
                     inputMode="decimal"
@@ -750,8 +811,8 @@ export default function MeetingFinancials({ meetingId }: Props) {
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="Current Year" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]}><LabelList dataKey="Current Year" position="top" style={{ fontSize: 9 }} formatter={(v: number) => { const abs = Math.abs(v); const formatted = abs >= 1000000 ? `$${(abs/1000000).toFixed(1)}M` : abs >= 1000 ? `$${(abs/1000).toFixed(0)}K` : `$${abs}`; return v < 0 ? `-${formatted}` : formatted; }} /></Bar>
-                  <Bar dataKey="Previous Year" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]}><LabelList dataKey="Previous Year" position="top" style={{ fontSize: 9 }} formatter={(v: number) => { const abs = Math.abs(v); const formatted = abs >= 1000000 ? `$${(abs/1000000).toFixed(1)}M` : abs >= 1000 ? `$${(abs/1000).toFixed(0)}K` : `$${abs}`; return v < 0 ? `-${formatted}` : formatted; }} /></Bar>
+                  <Bar dataKey="Current Year" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} maxBarSize={36}><LabelList dataKey="Current Year" position="top" style={{ fontSize: 9 }} formatter={(v: number) => { const abs = Math.abs(v); const formatted = abs >= 1000000 ? `$${(abs/1000000).toFixed(1)}M` : abs >= 1000 ? `$${(abs/1000).toFixed(0)}K` : `$${abs}`; return v < 0 ? `-${formatted}` : formatted; }} /></Bar>
+                  <Bar dataKey="Previous Year" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} maxBarSize={36}><LabelList dataKey="Previous Year" position="top" style={{ fontSize: 9 }} formatter={(v: number) => { const abs = Math.abs(v); const formatted = abs >= 1000000 ? `$${(abs/1000000).toFixed(1)}M` : abs >= 1000 ? `$${(abs/1000).toFixed(0)}K` : `$${abs}`; return v < 0 ? `-${formatted}` : formatted; }} /></Bar>
                 </BarChart>
               </ResponsiveContainer>
               </div>
@@ -780,9 +841,9 @@ export default function MeetingFinancials({ meetingId }: Props) {
                     formatter={(value: number | null) => (value == null ? "No previous data available" : `${value.toFixed(2)}%`)}
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="Current Year" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]}><LabelList dataKey="Current Year" position="top" style={{ fontSize: 9 }} formatter={(v: number | null) => (v == null ? "" : `${v.toFixed(2)}%`)} /></Bar>
+                  <Bar dataKey="Current Year" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} barSize={36} maxBarSize={36}><LabelList dataKey="Current Year" position="top" style={{ fontSize: 9 }} formatter={(v: number | null) => (v == null ? "" : `${v.toFixed(2)}%`)} /></Bar>
                   {hasPreviousRatio && (
-                    <Bar dataKey="Previous Year" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]}><LabelList dataKey="Previous Year" position="top" style={{ fontSize: 9 }} formatter={(v: number | null) => (v == null ? "" : `${v.toFixed(2)}%`)} /></Bar>
+                    <Bar dataKey="Previous Year" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]} barSize={36} maxBarSize={36}><LabelList dataKey="Previous Year" position="top" style={{ fontSize: 9 }} formatter={(v: number | null) => (v == null ? "" : `${v.toFixed(2)}%`)} /></Bar>
                   )}
                 </BarChart>
               </ResponsiveContainer>
