@@ -811,8 +811,8 @@ export default function MeetingFinancials({ meetingId }: Props) {
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="Current Year" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]}><LabelList dataKey="Current Year" position="top" style={{ fontSize: 9 }} formatter={(v: number) => { const abs = Math.abs(v); const formatted = abs >= 1000000 ? `$${(abs/1000000).toFixed(1)}M` : abs >= 1000 ? `$${(abs/1000).toFixed(0)}K` : `$${abs}`; return v < 0 ? `-${formatted}` : formatted; }} /></Bar>
-                  <Bar dataKey="Previous Year" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]}><LabelList dataKey="Previous Year" position="top" style={{ fontSize: 9 }} formatter={(v: number) => { const abs = Math.abs(v); const formatted = abs >= 1000000 ? `$${(abs/1000000).toFixed(1)}M` : abs >= 1000 ? `$${(abs/1000).toFixed(0)}K` : `$${abs}`; return v < 0 ? `-${formatted}` : formatted; }} /></Bar>
+                  <Bar dataKey="Current Year" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} maxBarSize={36}><LabelList dataKey="Current Year" position="top" style={{ fontSize: 9 }} formatter={(v: number) => { const abs = Math.abs(v); const formatted = abs >= 1000000 ? `$${(abs/1000000).toFixed(1)}M` : abs >= 1000 ? `$${(abs/1000).toFixed(0)}K` : `$${abs}`; return v < 0 ? `-${formatted}` : formatted; }} /></Bar>
+                  <Bar dataKey="Previous Year" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} maxBarSize={36}><LabelList dataKey="Previous Year" position="top" style={{ fontSize: 9 }} formatter={(v: number) => { const abs = Math.abs(v); const formatted = abs >= 1000000 ? `$${(abs/1000000).toFixed(1)}M` : abs >= 1000 ? `$${(abs/1000).toFixed(0)}K` : `$${abs}`; return v < 0 ? `-${formatted}` : formatted; }} /></Bar>
                 </BarChart>
               </ResponsiveContainer>
               </div>
@@ -841,9 +841,9 @@ export default function MeetingFinancials({ meetingId }: Props) {
                     formatter={(value: number | null) => (value == null ? "No previous data available" : `${value.toFixed(2)}%`)}
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="Current Year" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]}><LabelList dataKey="Current Year" position="top" style={{ fontSize: 9 }} formatter={(v: number | null) => (v == null ? "" : `${v.toFixed(2)}%`)} /></Bar>
+                  <Bar dataKey="Current Year" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} barSize={36} maxBarSize={36}><LabelList dataKey="Current Year" position="top" style={{ fontSize: 9 }} formatter={(v: number | null) => (v == null ? "" : `${v.toFixed(2)}%`)} /></Bar>
                   {hasPreviousRatio && (
-                    <Bar dataKey="Previous Year" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]}><LabelList dataKey="Previous Year" position="top" style={{ fontSize: 9 }} formatter={(v: number | null) => (v == null ? "" : `${v.toFixed(2)}%`)} /></Bar>
+                    <Bar dataKey="Previous Year" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]} barSize={36} maxBarSize={36}><LabelList dataKey="Previous Year" position="top" style={{ fontSize: 9 }} formatter={(v: number | null) => (v == null ? "" : `${v.toFixed(2)}%`)} /></Bar>
                   )}
                 </BarChart>
               </ResponsiveContainer>
