@@ -451,7 +451,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
     { key: "total_sales", label: "Total Sales" },
     hasCogs
       ? { key: "cog", label: "Cost of Goods" }
-      : { key: "expenses", label: "Expenses" },
+      : { key: "expenses", label: "COG/Expenses" },
     { key: "gross_profit", label: "Gross Profit", computed: true },
     hasCogs
       ? { key: "cog_ratio", label: "COG Ratio (%)", computed: true }
@@ -476,7 +476,7 @@ export default function MeetingFinancials({ meetingId }: Props) {
   const previousExpensesNum = toNum(form.previous_expenses) ?? 0;
   const currentSecondBar = currentCogNum && currentCogNum > 0 ? currentCogNum : currentExpensesNum;
   const previousSecondBar = previousCogNum && previousCogNum > 0 ? previousCogNum : previousExpensesNum;
-  const secondBarLabel = hasCogs ? "COG" : "Expenses";
+  const secondBarLabel = hasCogs ? "COG" : "COG/Expenses";
 
   const chartData = [
     { name: "Sales", "Current Year": toNum(form.current_total_sales) ?? 0, "Previous Year": toNum(form.previous_total_sales) ?? 0 },
@@ -493,9 +493,16 @@ export default function MeetingFinancials({ meetingId }: Props) {
     });
   }
 
+  // Ratio chart mirrors whichever ratio row the summary table is showing:
+  // COG Ratio when a COGS figure exists for that year, otherwise Expense Ratio.
+  // Missing years stay null (not 0) so no misleading 0.00% bar is drawn.
+  const currentRatio = toNum(form.current_cog_ratio) ?? toNum(form.current_expense_ratio);
+  const previousRatio = toNum(form.previous_cog_ratio) ?? toNum(form.previous_expense_ratio);
+  const ratioBarLabel = hasCogs ? "COG Ratio" : "COG/Expense Ratio";
   const cogChartData = [
-    { name: "COG Ratio", "Current Year": toNum(form.current_cog_ratio) ?? 0, "Previous Year": toNum(form.previous_cog_ratio) ?? 0 },
+    { name: ratioBarLabel, "Current Year": currentRatio, "Previous Year": previousRatio },
   ];
+  const hasPreviousRatio = previousRatio != null;
 
   const hasData = chartData.some((d) => d["Current Year"] > 0 || d["Previous Year"] > 0);
 
@@ -752,7 +759,9 @@ export default function MeetingFinancials({ meetingId }: Props) {
           </Card>
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="font-display text-sm">Annual Cost of Goods Comparison</CardTitle>
+              <CardTitle className="font-display text-sm">
+                {hasCogs ? "Annual Cost of Goods Comparison" : "Annual COG/Expense Ratio Comparison"}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div style={{ width: "75%", height: 280 }}>
@@ -768,15 +777,21 @@ export default function MeetingFinancials({ meetingId }: Props) {
                       borderRadius: "var(--radius)",
                       fontSize: 12,
                     }}
-                    formatter={(value: number) => `${value.toFixed(2)}%`}
+                    formatter={(value: number | null) => (value == null ? "No previous data available" : `${value.toFixed(2)}%`)}
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="Current Year" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]}><LabelList dataKey="Current Year" position="top" style={{ fontSize: 9 }} formatter={(v: number) => `${v.toFixed(2)}%`} /></Bar>
-                  <Bar dataKey="Previous Year" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]}><LabelList dataKey="Previous Year" position="top" style={{ fontSize: 9 }} formatter={(v: number) => `${v.toFixed(2)}%`} /></Bar>
+                  <Bar dataKey="Current Year" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]}><LabelList dataKey="Current Year" position="top" style={{ fontSize: 9 }} formatter={(v: number | null) => (v == null ? "" : `${v.toFixed(2)}%`)} /></Bar>
+                  {hasPreviousRatio && (
+                    <Bar dataKey="Previous Year" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]}><LabelList dataKey="Previous Year" position="top" style={{ fontSize: 9 }} formatter={(v: number | null) => (v == null ? "" : `${v.toFixed(2)}%`)} /></Bar>
+                  )}
                 </BarChart>
               </ResponsiveContainer>
               </div>
+              {!hasPreviousRatio && (
+                <p className="text-xs text-muted-foreground mt-1">No previous data available</p>
+              )}
             </CardContent>
+
           </Card>
         </div>
       )}
