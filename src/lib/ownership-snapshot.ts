@@ -447,7 +447,12 @@ export function suggestNextCertificateNumber(
 /**
  * Paste-and-map for legacy books. Accepts tab- or comma-separated rows in the
  * order: Holder, Quantity, Certificate, Certificate Date, Acquired Date.
- * Unparseable rows are returned as `skipped` rather than silently dropped.
+ *
+ * Real transfer ledgers are dirty. A row is only `skipped` when it carries no
+ * usable quantity at all (header rows, separators). Rows that are readable but
+ * defective — missing holder name, unparseable date such as `13/31/15` — are
+ * KEPT with `importIssues` so they surface as `needs_review` instead of
+ * disappearing from the audit trail.
  */
 export function parsePastedLots(text: string): { lots: SnapshotLotInput[]; skipped: string[] } {
   const lots: SnapshotLotInput[] = [];
@@ -459,24 +464,35 @@ export function parsePastedLots(text: string): { lots: SnapshotLotInput[]; skipp
     const cells = line.includes("\t") ? line.split("\t") : line.split(",");
     const [name, qty, cert, certDate, acqDate] = cells.map((c) => (c ?? "").trim());
 
-    if (!name || !qty || Number.isNaN(parseQuantity(qty))) {
+    const parsedQty = parseQuantity(qty);
+    // No readable quantity => not a holding row (header, subtotal, separator).
+    if (!qty || Number.isNaN(parsedQty)) {
       skipped.push(line);
       continue;
     }
-    // Header rows ("Member, Units, ...") never parse as a quantity, so they land
-    // in `skipped` above — no special-casing needed.
+
+    const issues: string[] = [];
+    if (!name) issues.push("Holder name blank in source ledger — assign an owner before locking.");
+
+    const certDateNorm = normalizeDateCell(certDate);
+    if (certDate && !certDateNorm) issues.push(`Unreadable certificate date "${certDate}" — left blank.`);
+    const acqDateNorm = normalizeDateCell(acqDate);
+    if (acqDate && !acqDateNorm) issues.push(`Unreadable acquisition date "${acqDate}" — left blank.`);
+
     lots.push({
       ...emptyLot(""),
       holderName: name,
-      quantity: String(parseQuantity(qty)),
+      quantity: String(parsedQty),
       certificateLabel: cert || "",
-      certificateDate: normalizeDateCell(certDate),
-      acquiredDate: normalizeDateCell(acqDate),
+      certificateDate: certDateNorm,
+      acquiredDate: acqDateNorm,
+      ...(issues.length ? { importIssues: issues } : {}),
     });
   }
 
   return { lots, skipped };
 }
+
 
 /** Accepts yyyy-mm-dd and m/d/yyyy; anything else is dropped rather than guessed. */
 export function normalizeDateCell(raw?: string): string {
