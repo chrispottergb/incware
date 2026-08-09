@@ -42,12 +42,6 @@ export interface CompanyRelationship {
 /** A lookup of {companyId -> {shareholderId -> percent}} computed from share_transactions */
 export type OwnershipMap = Record<string, Record<string, number>>;
 
-// Deliberately narrow sets — see src/lib/transaction-types.ts for why this
-// module classifies fewer types than the cap-table calculator does.
-import {
-  LEASE_ISSUE_TYPES as ISSUE_TYPES,
-  LEASE_REDEEM_TYPES as REDEEM_TYPES,
-} from "@/lib/transaction-types";
 
 /**
  * Build an ownership map from share_transactions.
