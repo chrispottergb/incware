@@ -195,6 +195,116 @@ export function reconcileSnapshot(
   };
 }
 
+/** Minimal shape of a `share_transactions` row needed for pre-existing-ledger checks. */
+export interface PriorLedgerRow {
+  transaction_type?: string | null;
+  entry_type?: string | null;
+  effective_date?: string | null;
+  transaction_date?: string | null;
+  num_shares?: number | string | null;
+  status?: string | null;
+}
+
+export interface PriorLedgerAnalysis {
+  /** Rows effective on or before the as-of date (excluding corrected rows). */
+  priorCount: number;
+  /** Net units/shares those prior rows put on the books. */
+  priorNet: number;
+  /** Rows effective strictly after the as-of date. */
+  laterCount: number;
+  /** True when the wizard must refuse to lock. */
+  blocked: boolean;
+  /** Operator-facing explanation, empty when nothing was found. */
+  message: string;
+}
+
+/**
+ * Pre-existing ledger policy (Phase 1).
+ *
+ * A snapshot describes the COMPLETE position as of its date, and locking it
+ * writes one `opening_balance` row per outstanding lot. So:
+ *
+ *  - Ledger activity effective ON OR BEFORE the as-of date => **blocked**.
+ *    Writing the snapshot on top of it would double-count the position, and
+ *    Phase 1 has no supersede/void path (deferred to Phase 2). The analysis
+ *    still reports the ledger-derived net so the operator can reconcile their
+ *    lots against what is already recorded before deciding how to proceed.
+ *  - Ledger activity effective AFTER the as-of date => allowed, warned. The
+ *    snapshot legitimately back-dates behind later activity; those later rows
+ *    keep applying on top of the opening position.
+ *  - Rows already marked `corrected` are ignored — they are voided history.
+ */
+export function analyzePreExistingLedger(
+  rows: PriorLedgerRow[],
+  asOfDate: string
+): PriorLedgerAnalysis {
+  const empty: PriorLedgerAnalysis = {
+    priorCount: 0,
+    priorNet: 0,
+    laterCount: 0,
+    blocked: false,
+    message: "",
+  };
+  if (!asOfDate) return empty;
+
+  const live = rows.filter((r) => (r.status ?? "") !== "corrected");
+  const dateOf = (r: PriorLedgerRow) => String(r.effective_date || r.transaction_date || "");
+
+  const prior = live.filter((r) => {
+    const d = dateOf(r);
+    return !!d && d <= asOfDate;
+  });
+  const later = live.filter((r) => {
+    const d = dateOf(r);
+    return !!d && d > asOfDate;
+  });
+
+  const priorNet = roundQuantity(
+    prior.reduce((sum, r) => {
+      const qty = Number(r.num_shares ?? 0);
+      if (!Number.isFinite(qty)) return sum;
+      const type = String(r.transaction_type ?? "");
+      if (REDUCTION_TYPES_FOR_SNAPSHOT.has(type)) return sum - qty;
+      return sum + qty;
+    }, 0)
+  );
+
+  if (prior.length) {
+    return {
+      priorCount: prior.length,
+      priorNet,
+      laterCount: later.length,
+      blocked: true,
+      message:
+        `${prior.length} ledger transaction(s) are already recorded on or before ${asOfDate}` +
+        ` (net ${priorNet.toLocaleString()}). An opening snapshot replaces the entire position as of its date,` +
+        ` so locking now would double-count those rows. Move the "as of" date earlier than the first existing` +
+        ` transaction, or correct/remove the existing rows first.`,
+    };
+  }
+
+  if (later.length) {
+    return {
+      priorCount: 0,
+      priorNet: 0,
+      laterCount: later.length,
+      blocked: false,
+      message:
+        `${later.length} ledger transaction(s) are dated after ${asOfDate}. They will continue to apply on top of` +
+        ` this opening position — confirm the snapshot reflects ownership BEFORE that activity.`,
+    };
+  }
+
+  return empty;
+}
+
+/** Local reduction set for prior-ledger netting; mirrors REDUCTION_TYPES. */
+const REDUCTION_TYPES_FOR_SNAPSHOT = new Set([
+  "Redemption", "redemption", "Cancellation", "cancellation", "Return of Capital",
+  "reacquisition", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout",
+  "Transfer Out",
+]);
+
 export interface SnapshotValidationContext {
   asOfDate: string;
   /** Certificate integers already used by this entity. */
@@ -203,7 +313,10 @@ export interface SnapshotValidationContext {
   authorized: number | null;
   /** "Units" | "Shares" — from entity terminology. */
   unitLabel: string;
+  /** Result of `analyzePreExistingLedger`, when ledger rows are available. */
+  priorLedger?: PriorLedgerAnalysis;
 }
+
 
 export interface SnapshotValidation {
   errors: string[];
