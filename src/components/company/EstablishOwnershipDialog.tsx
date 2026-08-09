@@ -364,6 +364,20 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
           </DialogDescription>
         </DialogHeader>
 
+        {onUseSnapshotWizard && !hasExistingBalance && (
+          <button
+            type="button"
+            onClick={onUseSnapshotWizard}
+            className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-left text-[11px] text-muted-foreground hover:bg-primary/10"
+          >
+            <span className="font-medium text-foreground">Try the guided Opening Ownership Snapshot</span> —
+            reconciles against the client's declared total, keeps how each {certLower} was acquired, and locks
+            the result as a permanent audit record.
+          </button>
+        )}
+
+
+
         {hasExistingBalance ? (
           <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm">
             <p className="font-medium text-destructive">Opening balance already established</p>
