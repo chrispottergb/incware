@@ -393,8 +393,11 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   wLines.forEach((l: string) => { doc.text(l, cx, y, { align: "center" }); y += 4.5; });
   y += 15;
 
-  // Signature lines for each member
-  const sigMembers = members.length > 0 ? members : [{ name: "Member 1" }, { name: "Member 2" }];
+  // Signature lines for each member — a treasury position cannot sign.
+  const signingMembers = members.filter((m: any) => !m.is_treasury);
+  const sigMembers = signingMembers.length > 0
+    ? signingMembers
+    : [{ name: "Member 1" }, { name: "Member 2" }];
   sigMembers.forEach((m: any) => {
     y = checkBreak(doc, y, 30);
     doc.setDrawColor(100, 100, 100);
