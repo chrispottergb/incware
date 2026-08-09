@@ -31,6 +31,7 @@ vi.mock("jspdf", () => {
     setTextColor() { return this; }
     setDrawColor() { return this; }
     setFillColor() { return this; }
+    setLineHeightFactor() { return this; }
     setLineWidth() { return this; }
     line() { return this; }
     rect() { return this; }
