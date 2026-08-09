@@ -48,6 +48,13 @@ export interface SnapshotLotInput {
   transferorDescription: string;
   status: LotStatus;
   notes: string;
+  /**
+   * Defects detected while importing a legacy book (unreadable date, missing
+   * holder name, ...). Carried on the row instead of discarding the row, so the
+   * operator sees the original book faithfully and the lot is persisted with
+   * `needs_review = true`.
+   */
+  importIssues?: string[];
 }
 
 export const emptyLot = (ownerKey = ""): SnapshotLotInput => ({
@@ -62,6 +69,7 @@ export const emptyLot = (ownerKey = ""): SnapshotLotInput => ({
   status: "outstanding",
   notes: "",
 });
+
 
 /** Round to the ledger's stored scale so UI sums can never drift from the DB. */
 export function roundQuantity(value: number): number {
