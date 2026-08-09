@@ -15,8 +15,10 @@ ownership. A snapshot is the audited *entry event* that produced those rows — 
 - `ownership_snapshot_lots` — one row per certificate as typed, linked to its generated ledger row via
   `share_transaction_id`. `entered_quantity` is numeric(18,4), matching `share_transactions.num_shares`.
 - `retired_ownership_records` — surrendered certificates, display-only, excluded from all math.
-- `companies.ownership_snapshot_enabled` — per-entity feature flag, default false (legacy
-  EstablishOwnershipDialog stays the default path; the gate offers an opt-in switch).
+- `companies.ownership_snapshot_enabled` — per-entity feature flag, default false. The default
+  onboarding path (Establish Current Ownership -> legacy EstablishOwnershipDialog) is never changed.
+  The wizard is reached only from `SnapshotWorkflowCard` on the Ownership tab, which renders solely
+  when the flag is true. There is no in-app opt-in switch; the flag is flipped by migration.
 
 ## Rules
 - Locked snapshots are immutable — enforced by DB trigger `block_locked_snapshot_changes`; only
