@@ -65,7 +65,7 @@ const emptyRow = (ownerKey = "", issue_date = ""): CertRow => ({
   notes: "",
 });
 
-export default function EstablishOwnershipDialog({ companyId, entityType = "Corporation", open, onOpenChange }: Props) {
+export default function EstablishOwnershipDialog({ companyId, entityType = "Corporation", open, onOpenChange, onUseSnapshotWizard }: Props) {
   const queryClient = useQueryClient();
   const term = getTerminology(entityType);
   const isLLC = isLLCType(entityType);
