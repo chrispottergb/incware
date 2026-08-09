@@ -494,15 +494,21 @@ export function parsePastedLots(text: string): { lots: SnapshotLotInput[]; skipp
 }
 
 
-/** Accepts yyyy-mm-dd and m/d/yyyy; anything else is dropped rather than guessed. */
+/**
+ * Accepts yyyy-mm-dd and m/d/yyyy. Anything else — including a real calendar
+ * impossibility like `13/31/2015` or a two-digit year like `13/31/15` — returns
+ * "" rather than being guessed at; the caller records the raw text as an import
+ * issue so the operator can go back to the original book.
+ */
 export function normalizeDateCell(raw?: string): string {
   const value = (raw || "").trim();
-  if (!value) return "";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return isRealDate(value) ? value : "";
   const m = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (m) {
     const [, mm, dd, yyyy] = m;
-    return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+    const iso = `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+    return isRealDate(iso) ? iso : "";
   }
+
   return "";
 }
