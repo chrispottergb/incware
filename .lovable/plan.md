@@ -1,83 +1,100 @@
-# Opening Ownership Snapshot — Phase 0 Response (Step 3 of your deliverable order)
+# Opening Ownership Snapshot — C-Blocker Resolutions and Three Reports
 
-Answers to C1–C6 and B1–B4, plus one correction to an item you approved in section A. No code written.
+Everything below is verified against the live schema and codebase. No code written.
 
-## Correction to A — the app_settings feature flag will not work as approved
+## C-blocker 1 — Numeric precision
 
-You asked me to confirm app_settings RLS scopes the flag per workspace. It does not, and it cannot. The table is a global key/value store: three columns (`key`, `value`, `updated_at`), a SELECT policy of `USING (true)` for all authenticated users, and admin-only writes via `has_role()`. There is no `user_id` or `company_id` column. Flipping a flag there flips it for every tenant simultaneously — exactly the failure you were checking for.
+Verified actual precisions:
 
-The real tenant boundary in this app is `companies.user_id`. Recommendation: put the flag on the entity as `companies.ownership_snapshot_enabled boolean NOT NULL DEFAULT false`. Every read path already loads the company row, the flag rides existing RLS, and per-entity opt-in matches the two-regimes design in A. A global `app_settings` kill switch can sit on top as an AND condition if you want one lever to disable the feature everywhere.
+| Column | Type |
+|---|---|
+| `share_transactions.num_shares` | `numeric(18,4)` NOT NULL DEFAULT 0 |
+| `stock_certificates.num_shares` | `numeric(18,4)` NOT NULL DEFAULT 0 |
+| `shareholders.num_shares` | `numeric(18,4)` DEFAULT 0 |
+| `stock_certificates.ownership_percent_snapshot` | `numeric(7,4)` |
+| `shareholders.ownership_percentage` | `numeric` (unconstrained) |
 
-## C1 — Dual source of truth for quantity
+You are right that `(20,6)` was going to truncate on write and fail the three-way check. **`entered_quantity` becomes `numeric(18,4)`, matching exactly.** No rounding rule needed because no rounding occurs — all three legs of the integrity check are the same type. The wizard's quantity input enforces a 4-decimal maximum at entry so the user is stopped at the keyboard rather than silently truncated at the database. My B5 fixture note was the correct number; `(20,6)` was the error.
 
-**Recommendation: (a), the ledger row is authoritative.** The lot row is metadata and provenance only — certificate label, acquisition type, transferor description, consideration, review flags — and it holds no independent quantity after commit. Rationale: option (b) means a numeric column that every existing read path ignores, which is precisely how the two caches you already have drifted.
+Percentages remain `numeric(9,6)` per B2. They are a separate column on a separate table and never mix with quantities. Note for Phase 2: `shareholders.ownership_percentage` is unconstrained `numeric`, so copying a `(9,6)` value into it loses nothing.
 
-Mechanics: during wizard entry the lot carries a draft quantity (it must — nothing is in the ledger yet). At commit the ledger row is generated, `share_transaction_id` is set NOT NULL via a deferred constraint, and the draft quantity column is renamed in intent to `entered_quantity` and treated as immutable audit evidence of what was typed, never read by any calculator. Divergence between `entered_quantity` and the linked ledger row is then a detectable audit signal rather than a competing truth.
+## C-blocker 2 — Calculator branches on the lock, not the flag
 
-**Three-way lock-time integrity check**, run inside the lock transaction and blocking on failure: for each holder in the snapshot, `sum(linked opening_balance rows)` must equal `sum(lots.entered_quantity)` must equal `shareholders.num_shares`. The third leg is the valuable one — it is the first thing in this codebase that will catch the `num_shares` cache having drifted from the ledger, and the lock is the right moment to catch it. Failure reports the specific holder and the three values; it does not auto-repair.
+Confirmed exactly as you state. `companies.ownership_snapshot_enabled` gates **only** whether the wizard is offered in the UI. The calculator branches solely on the existence of a locked snapshot for that company and class. Once any snapshot is locked, the flag is irrelevant to computation and the UI renders it disabled with an explanatory tooltip; turning it off hides the wizard entrance and changes no number. I will assert this in the golden-master suite: same fixture, flag on and flag off, no locked snapshot, byte-identical output.
 
-## C2 — recalculate_ownership_percentages() and percentage-basis entities
+## C-blocker 3 — recalculate_ownership_percentages() and corrected rows
 
-Confirmed unaddressed and confirmed a real hazard: the function sums `num_shares` from `share_transactions` and divides by the company total. If a percentage entity wrote `50` into `num_shares` to mean 50%, the function would compute 50/100 = 50% and look correct — the percentages-of-percentages trap you named — right up until a second class or a treasury row makes the denominator something other than 100.
+**It does filter.** Every subquery in the function body carries `AND st.status != 'corrected'` — the total-units denominator, the direct-holdings term, the transfer-in term, and the transfer-out term. `share_transactions.status` is `text NOT NULL DEFAULT 'active'`, so there is no NULL-comparison hole. The amendment mechanism in C5 is safe: superseded rows marked `corrected` drop out of both the hook and the function. No pre-existing defect here.
 
-**Decision: percentage-basis entities are excluded from the function entirely.** Their `ownership_percentage` is written directly from the snapshot lots at commit, and `num_shares` stays `0` on both the ledger row and the shareholder row for those entities. Nothing writes a unit count that does not represent a unit count.
+## C-blocker 4 — Uniqueness, label ordering, and the status allowlist
 
-Implementation: add `companies.quantity_basis text NOT NULL DEFAULT 'units'`. Add a gate at the top of `recalculate_ownership_percentages()` that returns immediately when the company's basis is `'percentage'`. This is the one modification to an existing database object I am requesting; it is a guard clause with no effect on any current entity, since every existing row will be `'units'`. The percentage values themselves live on the lots as `numeric(9,6)` per B2 and are copied to `shareholders.ownership_percentage` on lock.
+**Uniqueness.** Accepted: `CREATE UNIQUE INDEX ... ON stock_certificates (company_id, certificate_label) WHERE certificate_label IS NOT NULL`.
 
-Consequence to accept explicitly: `useShareCalculations` returns `totalIssuedShares = 0` and all-zero holdings for percentage entities. Any UI that renders unit counts must read the basis and render percentages instead. I will enumerate those call sites during Phase 1 rather than guess at them now.
+**Label ordering.** Accepted, and it was a real bug in my answer. Pattern inference orders by the internal `certificate_number` integer, never by string sort.
 
-## C3 — Five duplicated classification lists
+**The allowlist grep — this is a blocker and `'historical'` does not ship as designed.** I grepped every shareholder-status filter. Most are inclusive allowlists and safe:
 
-Exception accepted, and I agree it is the top structural risk. Standalone behavior-preserving PR, merged before Phase 1: extract `ISSUANCE_TYPES` / `REDUCTION_TYPES` / `TRANSFER_TYPES` into `src/lib/transaction-types.ts` and import them in `useShareCalculations.ts`, `UnifiedLedgerTab.tsx`, `TransferLedgerTab.tsx`, `StockCertificatesTab.tsx`, and `SMOperatingAgreementGenerator.tsx`. Nothing else in that PR.
+- `ShareholdersTab.tsx:685, 757, 789` — `s.status === "active" && !s.is_treasury`
+- `ShareholdersTab.tsx:139`, `AnnualMeetingWizard.tsx:207`, `WrittenConsentWizard.tsx:365`, `MeetingsTab.tsx:396, 465` — `.eq("status", "active")` at the query level
+- `BatchTransferDialog.tsx:156` — `s.status === "active"`
+- `Reports.tsx:424`, `lib/pdf-export.ts:285` — `sh.status === "active"`
 
-Caveat you should know before approving the extraction: the five copies are **not currently identical**. `lease-classification.ts` uses `Set`s named `ISSUE_TYPES` / `REDEEM_TYPES` with different membership, and I have not yet diffed all five sets member by member. So a literal extraction is behavior-*changing* for whichever call sites have narrower lists. I will diff all five first and report the differences to you; where they differ, the default is to preserve each call site's current membership by passing an explicit subset, not to silently widen it to the union. Widening any list is a separate decision you make per site, not something the refactor sneaks in.
+**One exclusive blacklist leaks:** `OperatingAgreementGenerator.tsx:540` — `members.filter((m) => m.status !== "inactive" && m.status !== "terminated")`. A `'historical'` holder passes that filter and lands on a multi-member LLC operating agreement's member schedule — a dissolved 2017 trust printed as a current member on a legal document. Per your rule, that site converts to an inclusive `=== "active"` allowlist first, as its own small change with the golden-master green, before `'historical'` exists anywhere. (Separately: nothing writes `'terminated'` today; the only values present in the data are `active` and `inactive`.)
 
-On your one-line question: `lease-classification.ts` uses share-transaction types to determine related-party status by checking whether a lease counterparty holds equity — so it needs holdings math, and the type lists were copy-pasted to get it. The lists are copy-paste; the use is legitimate.
+**Status column type.** `shareholders.status` is `text`, nullable, `DEFAULT 'active'`. The only CHECK constraint on the table is `shareholders_owner_kind_check` on `owner_kind`. **There is no CHECK on status**, so adding `'historical'` modifies no existing constraint — but it also means nothing prevents typos today. I recommend adding a CHECK allowlist for status as part of this work; say the word and it goes in, otherwise I leave it alone.
 
-## C4 — Treasury
+## C-blocker 5 — NOT NULL is not deferrable
 
-`shareholders.is_treasury` is `boolean NOT NULL DEFAULT false` and is filtered out of roster, cap-table display, meeting attendance, operating-agreement schedules, and certificate issuance — but **it is not filtered anywhere in `useShareCalculations`**, so treasury units currently sit in `totalIssuedShares` and in the `recalculate_ownership_percentages()` denominator. That is pre-existing behavior; I am not changing it outside the snapshot flow, since doing so would move every existing entity's percentages.
+You are right; my wording described something Postgres does not support. **Mechanism: `share_transaction_id uuid` is a plain nullable FK column, validated inside the lock transaction.** The lock routine generates the ledger rows, back-fills the links, then asserts every lot in the snapshot has a non-null link before flipping status to `locked` — same transaction, so a failure rolls the whole lock back. A partial unique index enforces one lot per ledger row. No constraint trigger, no deferral.
 
-For the snapshot: the importer recognizes a treasury return from (1) an explicit destination holder flagged `is_treasury`, (2) holder-name matching against "treasury" / "the company" / the entity's own name, or (3) a retirement-style acquisition type with no successor holder. Any of the three routes the lot to the treasury holder, creates it flagged if absent, and marks it `needs_review` so a human confirms rather than the parser deciding. **Confirmed: treasury holdings are excluded from the reconciliation-gate denominator** — outstanding equals issued minus treasury, and the gate reconciles against outstanding. The gate will therefore disagree with `useShareCalculations` for any entity holding treasury units; that disagreement is surfaced in the reconciliation panel as a named line item, not hidden.
+**Column is named `entered_quantity` from creation.** No `quantity`, no rename.
 
-## C5 — Amendments
+## D — Unit basis only in Phase 1, and the enumeration
 
-Confirmed, and no parallel mechanism. Amending a locked snapshot sets the superseded snapshot's generated `opening_balance` rows to `status = 'corrected'`, which the calculator already skips, and the amended snapshot generates fresh rows. `supersedes_id` chains the headers. The corrected rows remain in `UnifiedLedgerTab` and `TransferLedgerTab` as visible history — those views render `corrected` rows with strikethrough today, so this needs no display work. One dependency: the `entered_quantity` NOT NULL link in C1 must be per-snapshot, not per-transaction-globally, so a superseded lot keeps pointing at its now-corrected row.
+Accepted in full. Phase 1 ships `'units'` only; `companies.quantity_basis text NOT NULL DEFAULT 'units'` and the guard clause in `recalculate_ownership_percentages()` both land now as no-ops; the wizard shows Percentage as a visible disabled option.
 
-## C6 — Encrypted PII
+**Enumeration: 29 files reference `num_shares`, `totalIssuedShares`, `shareholderHoldings`, or `getHoldingsByName`.**
 
-Confirmed on all three counts. `shareholders.ssn_ein_encrypted` is `bytea`, written only through the `encrypt_shareholder_ssn` security-definer function and read only through `decrypt_ssn_ein` behind an ownership check. The importer's holder-matching select will name its columns explicitly (`id, name, is_treasury, status`) and will never include the encrypted column or the legacy plaintext one, so the ciphertext never enters memory. No SSN/EIN field appears in the import column-mapping options, the preview grid, validation messages, or the review report. Import errors reference row number and holder name only. Nothing in the import path logs a row object wholesale.
+Ledger and equity UI (10): `StockLedgerTab`, `UnifiedLedgerTab`, `TransferLedgerTab`, `StockCertificatesTab`, `ShareholdersTab`, `BuySellWorkflow`, `BatchTransferDialog`, `EditTransactionModal`, `CorrectionModal`, `EstablishOwnershipDialog`.
 
-## B1 — Normalized class key
+Document generators (5): `OperatingAgreementGenerator`, `SMOperatingAgreementGenerator`, `operating-agreement-pdf`, `record-book-pdf`, `BillsOfSaleTab`.
 
-Accepted as corrected. `share_class_key` stored normalized (trim, lowercase, collapse whitespace), unique partial index on `(company_id, share_class_key) WHERE status = 'locked'`. Input constrained to the `classOptions` list from `entity-terminology.ts`, free text only via an explicit "Other" path that still normalizes. Note that existing `share_class` values in `stock_certificates` and `share_transactions` are unconstrained free text and stay that way — the normalization applies to snapshots only.
+Meetings and consents (4): `AnnualMeetingWizard`, `WrittenConsentWizard`, `MeetingsTab`, `MeetingDetail`.
 
-## B2 — Percentage tolerance
+Core logic and hooks (4): `useShareCalculations`, `transaction-validation`, `lease-classification`, `useLeaseClassification`.
 
-Accepted as corrected, three bands exactly as specified. Exact 100.000000 locks silently; within ±0.01% requires a typed `reconciliation_note` (text, NOT NULL when the deviation band is entered, no checkbox); beyond ±0.01% blocks with no override path in the UI or the API. Percentages stored `numeric(9,6)`.
+Other (6): `CreateCompanyWizard`, `TimelineTab`, `CompanyDetail`, `Reports`, `ImportAccess`, `lease-classification.test`.
 
-## B3 — Historical holders
+My read: this is not a small Phase 2. Roughly 15 of the 29 render or format a unit count for a human — including five document generators producing legal instruments where a blank or zero unit count is worse than a wrong one. Percentage basis is a project of its own, and the honest scoping is a separate design pass over the document generators specifically.
 
-**`stock_certificates.shareholder_id` is nullable today.** `company_id` and `certificate_number` are NOT NULL; the holder FK is not.
+## E1 — Legacy plaintext PII
 
-**Recommendation: create historical `shareholders` rows, do not use the nullable FK.** A free-text holder name on the certificate would be invisible to `owner-aliases.ts`, so a dissolved 2017 predecessor trust could never be linked to its successor by name history — which is the exact scenario the alias system was built for. Instead the importer creates the holder with `status = 'historical'` (a new status value alongside the existing `active`), which the cap table, roster, meeting attendance, and percentage math already exclude by their `status === "active"` checks, and which lets `predecessor_shareholder_id` chain a dissolved trust to its successor. Nothing is silently dropped: an unmatched retired holder becomes a historical shareholder row flagged `needs_review` on its lot.
+Reporting only; nothing touched.
 
-## B4 — certificate_label and the suggester
+- **`shareholders_legacy_ssn_archive.ssn_ein_plaintext` (text) — 1 row.** This is the intended archive from the earlier SSN encryption migration. Live `shareholders` has no plaintext SSN column at all, and 0 of 96 shareholder rows currently hold an encrypted SSN either.
+- **`companies.ein` (text) — 0 rows populated.** Retained as a read-fallback inside `decrypt_company_ein`; encryption writes NULL it out.
+- **`company_banks.account_number` / `routing_number`, `master_firms.account_number` / `routing_number` (text) — 0 rows each.** Writes are actively blocked by the `block_plaintext_bank_numbers` trigger.
+- **`filing_checklist.ein_number` (text) — 3 rows populated.** This one is not part of the encryption scheme at all: no trigger, no encrypted counterpart, no masking. It is a live plaintext EIN store. I flag it as the actual standing exposure in this report; the archive row is a known artifact by comparison.
 
-**`stock_certificates.certificate_number` is `integer NOT NULL`** — so an alphanumeric-only company must write something into it. It writes a monotonic internal sequence, per-company, used only for ordering and uniqueness, never displayed anywhere once `certificate_label` is present. I will enforce that: every display site resolves through a single `formatCertificateNumber(row)` helper that returns `certificate_label ?? certificate_number`, and the integer is not rendered directly anywhere.
+The import path touches none of these.
 
-`getNextCertificateNumber` keeps its current signature and behavior for integer-only companies — `MAX + 1`, returned as a suggestion the user can overwrite. Label-aware companies get a sibling that infers the pattern from the highest existing label (prefix plus zero-padded numeric tail) and falls back to the integer suggestion when no pattern is inferable. Both remain suggestions; neither blocks a manual entry.
+## E2 — Diff as a findings report
 
-## B5 — Golden-master regression suite, built first
+Agreed. When I deliver the C3 diff, each difference is marked intentional or defect with a one-line reason, delivered as a findings report before any extraction.
 
-Agreed and sequenced first. Fixture set covering: multiple share classes; `status = 'corrected'` rows; future-dated `effective_date` rows; transfers by free-text name resolved through the alias index, including a renamed trust; treasury holdings; fractional quantities at `numeric(18,4)` precision; an entity with existing `opening_balance` rows; and an entity with none. Snapshot the full output of `useShareCalculations` and `getHoldingsByName` across all of it and assert byte-identical results after every subsequent commit, including the C3 extraction.
+## E3 — Treasury
 
-I can produce that fixture set — the type lists, the alias resolution, and the precision rules are all readable from the existing code, and the fixtures are pure data passed to pure functions. Not a blocker.
+**Zero.** No company in the database has a shareholder flagged `is_treasury` — 0 treasury holders, 0 with a non-zero position, 0 ledger rows attached to one. The denominator defect is currently free to fix and has never affected a real percentage.
 
-## Delivery order
+Recommendation: fix it now as its own behavior-preserving-in-practice change — exclude `is_treasury` holders from `totalIssuedShares` and from the `recalculate_ownership_percentages()` denominator, aligning the calculator with what the roster, cap table, meeting attendance, and OA schedules already do. Every existing entity's percentages are unchanged because no entity has treasury units. The reconciliation panel then never needs the disagreement line item. This does require a golden-master fixture update for the treasury case, which is the one place the suite's output legitimately changes — I will call that out explicitly rather than fold it in.
 
-1. B5 golden-master suite.
-2. C3 diff report of the five lists, returned to you, then the behavior-preserving extraction PR.
-3. Phase 1, only after you approve the above and the corrections here.
+## Revised delivery order
 
-Approve, or tell me where this is wrong.
+1. ~~C-blockers 1–5~~ — resolved above, pending your approval.
+2. ~~D, E1, E3 reports~~ — delivered above.
+3. Two small pre-work items surfaced by the blockers: the `OperatingAgreementGenerator:540` allowlist conversion, and the treasury denominator fix.
+4. B5 golden-master suite.
+5. C3 findings report, then the behavior-preserving extraction PR.
+6. Phase 1, unit basis only.
+
+Approve items 3–6, or tell me which of the two pre-work items you want held back.
