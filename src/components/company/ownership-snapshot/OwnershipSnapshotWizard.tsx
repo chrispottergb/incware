@@ -17,8 +17,9 @@ import { Loader2, Plus, Trash2, ClipboardPaste, Lock, AlertTriangle, CheckCircle
 import { toast } from "sonner";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import {
-  ACQUISITION_TYPES, emptyLot, parsePastedLots, parseQuantity, reconcileSnapshot,
-  suggestNextCertificateNumber, validateSnapshot,
+  ACQUISITION_TYPES, analyzePreExistingLedger, emptyLot, parsePastedLots, parseQuantity,
+  reconcileSnapshot, suggestNextCertificateNumber, validateSnapshot,
+
   type EntryTier, type SnapshotLotInput,
 } from "@/lib/ownership-snapshot";
 import { useOwnershipSnapshot } from "@/hooks/useOwnershipSnapshot";
@@ -94,6 +95,26 @@ export default function OwnershipSnapshotWizard({ companyId, entityType = "Corpo
     enabled: !!companyId && open,
   });
 
+  // Pre-existing ledger activity decides whether this snapshot may lock at all.
+  const { data: existingLedger = [] } = useQuery({
+    queryKey: ["share_transactions", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("share_transactions")
+        .select("transaction_type, entry_type, effective_date, transaction_date, num_shares, status")
+        .eq("company_id", companyId);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!companyId && open,
+  });
+
+  const priorLedger = useMemo(
+    () => analyzePreExistingLedger(existingLedger as any[], asOfDate),
+    [existingLedger, asOfDate]
+  );
+
+
   const ownerName = (key: string) => {
     if (!key) return "";
     if (key.startsWith("new:")) return newOwnerNames[key] || "";
@@ -140,10 +161,11 @@ export default function OwnershipSnapshotWizard({ companyId, entityType = "Corpo
           existingCertificateNumbers: existingCertNumbers,
           authorized: company?.authorized_shares ?? null,
           unitLabel,
+          priorLedger,
         }
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [lots, reconciliation, asOfDate, existingCertNumbers, company, unitLabel, newOwnerNames, existingOwners]
+    [lots, reconciliation, asOfDate, existingCertNumbers, company, unitLabel, newOwnerNames, existingOwners, priorLedger]
   );
 
   const applyPaste = () => {
@@ -153,6 +175,8 @@ export default function OwnershipSnapshotWizard({ companyId, entityType = "Corpo
       return;
     }
     const mapped = parsed.map((lot, n) => {
+      // Blank-name rows keep their import issue and stay unassigned on purpose.
+      if (!lot.holderName.trim()) return lot;
       const match = existingOwners.find(
         (o) => o.name.trim().toLowerCase() === lot.holderName.trim().toLowerCase()
       );
@@ -161,6 +185,7 @@ export default function OwnershipSnapshotWizard({ companyId, entityType = "Corpo
       setNewOwnerNames((p) => ({ ...p, [key]: lot.holderName }));
       return { ...lot, ownerKey: key };
     });
+
     setLots(mapped);
     setPasteText("");
     setShowPaste(false);

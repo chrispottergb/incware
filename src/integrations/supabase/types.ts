@@ -4247,7 +4247,7 @@ export type Database = {
           share_class: string | null
           ssn_ein_encrypted: string | null
           state: string | null
-          status: string | null
+          status: string
           trust_revocability: string | null
           trustee_name: string | null
           updated_at: string
@@ -4278,7 +4278,7 @@ export type Database = {
           share_class?: string | null
           ssn_ein_encrypted?: string | null
           state?: string | null
-          status?: string | null
+          status?: string
           trust_revocability?: string | null
           trustee_name?: string | null
           updated_at?: string
@@ -4309,7 +4309,7 @@ export type Database = {
           share_class?: string | null
           ssn_ein_encrypted?: string | null
           state?: string | null
-          status?: string | null
+          status?: string
           trust_revocability?: string | null
           trustee_name?: string | null
           updated_at?: string

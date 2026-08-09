@@ -48,6 +48,13 @@ export interface SnapshotLotInput {
   transferorDescription: string;
   status: LotStatus;
   notes: string;
+  /**
+   * Defects detected while importing a legacy book (unreadable date, missing
+   * holder name, ...). Carried on the row instead of discarding the row, so the
+   * operator sees the original book faithfully and the lot is persisted with
+   * `needs_review = true`.
+   */
+  importIssues?: string[];
 }
 
 export const emptyLot = (ownerKey = ""): SnapshotLotInput => ({
@@ -62,6 +69,7 @@ export const emptyLot = (ownerKey = ""): SnapshotLotInput => ({
   status: "outstanding",
   notes: "",
 });
+
 
 /** Round to the ledger's stored scale so UI sums can never drift from the DB. */
 export function roundQuantity(value: number): number {
@@ -187,6 +195,116 @@ export function reconcileSnapshot(
   };
 }
 
+/** Minimal shape of a `share_transactions` row needed for pre-existing-ledger checks. */
+export interface PriorLedgerRow {
+  transaction_type?: string | null;
+  entry_type?: string | null;
+  effective_date?: string | null;
+  transaction_date?: string | null;
+  num_shares?: number | string | null;
+  status?: string | null;
+}
+
+export interface PriorLedgerAnalysis {
+  /** Rows effective on or before the as-of date (excluding corrected rows). */
+  priorCount: number;
+  /** Net units/shares those prior rows put on the books. */
+  priorNet: number;
+  /** Rows effective strictly after the as-of date. */
+  laterCount: number;
+  /** True when the wizard must refuse to lock. */
+  blocked: boolean;
+  /** Operator-facing explanation, empty when nothing was found. */
+  message: string;
+}
+
+/**
+ * Pre-existing ledger policy (Phase 1).
+ *
+ * A snapshot describes the COMPLETE position as of its date, and locking it
+ * writes one `opening_balance` row per outstanding lot. So:
+ *
+ *  - Ledger activity effective ON OR BEFORE the as-of date => **blocked**.
+ *    Writing the snapshot on top of it would double-count the position, and
+ *    Phase 1 has no supersede/void path (deferred to Phase 2). The analysis
+ *    still reports the ledger-derived net so the operator can reconcile their
+ *    lots against what is already recorded before deciding how to proceed.
+ *  - Ledger activity effective AFTER the as-of date => allowed, warned. The
+ *    snapshot legitimately back-dates behind later activity; those later rows
+ *    keep applying on top of the opening position.
+ *  - Rows already marked `corrected` are ignored — they are voided history.
+ */
+export function analyzePreExistingLedger(
+  rows: PriorLedgerRow[],
+  asOfDate: string
+): PriorLedgerAnalysis {
+  const empty: PriorLedgerAnalysis = {
+    priorCount: 0,
+    priorNet: 0,
+    laterCount: 0,
+    blocked: false,
+    message: "",
+  };
+  if (!asOfDate) return empty;
+
+  const live = rows.filter((r) => (r.status ?? "") !== "corrected");
+  const dateOf = (r: PriorLedgerRow) => String(r.effective_date || r.transaction_date || "");
+
+  const prior = live.filter((r) => {
+    const d = dateOf(r);
+    return !!d && d <= asOfDate;
+  });
+  const later = live.filter((r) => {
+    const d = dateOf(r);
+    return !!d && d > asOfDate;
+  });
+
+  const priorNet = roundQuantity(
+    prior.reduce((sum, r) => {
+      const qty = Number(r.num_shares ?? 0);
+      if (!Number.isFinite(qty)) return sum;
+      const type = String(r.transaction_type ?? "");
+      if (REDUCTION_TYPES_FOR_SNAPSHOT.has(type)) return sum - qty;
+      return sum + qty;
+    }, 0)
+  );
+
+  if (prior.length) {
+    return {
+      priorCount: prior.length,
+      priorNet,
+      laterCount: later.length,
+      blocked: true,
+      message:
+        `${prior.length} ledger transaction(s) are already recorded on or before ${asOfDate}` +
+        ` (net ${priorNet.toLocaleString()}). An opening snapshot replaces the entire position as of its date,` +
+        ` so locking now would double-count those rows. Move the "as of" date earlier than the first existing` +
+        ` transaction, or correct/remove the existing rows first.`,
+    };
+  }
+
+  if (later.length) {
+    return {
+      priorCount: 0,
+      priorNet: 0,
+      laterCount: later.length,
+      blocked: false,
+      message:
+        `${later.length} ledger transaction(s) are dated after ${asOfDate}. They will continue to apply on top of` +
+        ` this opening position — confirm the snapshot reflects ownership BEFORE that activity.`,
+    };
+  }
+
+  return empty;
+}
+
+/** Local reduction set for prior-ledger netting; mirrors REDUCTION_TYPES. */
+const REDUCTION_TYPES_FOR_SNAPSHOT = new Set([
+  "Redemption", "redemption", "Cancellation", "cancellation", "Return of Capital",
+  "reacquisition", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout",
+  "Transfer Out",
+]);
+
 export interface SnapshotValidationContext {
   asOfDate: string;
   /** Certificate integers already used by this entity. */
@@ -195,7 +313,10 @@ export interface SnapshotValidationContext {
   authorized: number | null;
   /** "Units" | "Shares" — from entity terminology. */
   unitLabel: string;
+  /** Result of `analyzePreExistingLedger`, when ledger rows are available. */
+  priorLedger?: PriorLedgerAnalysis;
 }
+
 
 export interface SnapshotValidation {
   errors: string[];
@@ -218,12 +339,15 @@ export function validateSnapshot(
   const warnings: string[] = [];
   const reviewRows: Record<number, string> = {};
   const unit = ctx.unitLabel.toLowerCase();
+  const flagReview = (index: number, reason: string) => {
+    reviewRows[index] = reviewRows[index] ? `${reviewRows[index]} ${reason}` : reason;
+  };
 
   if (!ctx.asOfDate) errors.push('Select the "as of" date for this snapshot.');
 
   const usable = lots
     .map((lot, index) => ({ lot, index }))
-    .filter(({ lot }) => lot.ownerKey || lot.quantity.trim());
+    .filter(({ lot }) => lot.ownerKey || lot.quantity.trim() || (lot.importIssues?.length ?? 0) > 0);
 
   if (usable.length === 0) errors.push("Add at least one holding.");
 
@@ -231,6 +355,10 @@ export function validateSnapshot(
 
   usable.forEach(({ lot, index }) => {
     const row = index + 1;
+    // Import defects are recorded on the row first, so a lot that also fails a
+    // hard check still carries its provenance into `needs_review`.
+    for (const issue of lot.importIssues ?? []) flagReview(index, issue);
+
     if (!lot.ownerKey) errors.push(`Row ${row}: choose or name a holder.`);
     if (lot.ownerKey.startsWith("new:") && !lot.holderName.trim()) {
       errors.push(`Row ${row}: enter the new holder's name.`);
@@ -260,14 +388,14 @@ export function validateSnapshot(
         errors.push(`Certificate #${asNumber} already exists for this entity.`);
       }
       if (asNumber === null) {
-        reviewRows[index] = "Non-numeric certificate label — kept as text, no ledger number assigned.";
+        flagReview(index, "Non-numeric certificate label — kept as text, no ledger number assigned.");
       }
     } else {
-      reviewRows[index] = "No certificate number on record — one will be assigned at lock.";
+      flagReview(index, "No certificate number on record — one will be assigned at lock.");
     }
 
     if (!lot.certificateDate && !lot.acquiredDate) {
-      reviewRows[index] = "No original date on record — the snapshot date will be used.";
+      flagReview(index, "No original date on record — the snapshot date will be used.");
     }
   });
 
@@ -285,6 +413,12 @@ export function validateSnapshot(
       `Outstanding ${unit} (${reconciliation.computedTotal.toLocaleString()}) exceed the ${ctx.authorized.toLocaleString()} authorized ${unit}. Increase the authorized amount first.`
     );
   }
+
+  // Pre-existing ledger policy — see analyzePreExistingLedger.
+  if (ctx.priorLedger?.blocked) errors.push(ctx.priorLedger.message);
+  else if (ctx.priorLedger?.message) warnings.push(ctx.priorLedger.message);
+
+
 
   if (Object.keys(reviewRows).length) {
     warnings.push(
@@ -313,7 +447,12 @@ export function suggestNextCertificateNumber(
 /**
  * Paste-and-map for legacy books. Accepts tab- or comma-separated rows in the
  * order: Holder, Quantity, Certificate, Certificate Date, Acquired Date.
- * Unparseable rows are returned as `skipped` rather than silently dropped.
+ *
+ * Real transfer ledgers are dirty. A row is only `skipped` when it carries no
+ * usable quantity at all (header rows, separators). Rows that are readable but
+ * defective — missing holder name, unparseable date such as `13/31/15` — are
+ * KEPT with `importIssues` so they surface as `needs_review` instead of
+ * disappearing from the audit trail.
  */
 export function parsePastedLots(text: string): { lots: SnapshotLotInput[]; skipped: string[] } {
   const lots: SnapshotLotInput[] = [];
@@ -325,34 +464,60 @@ export function parsePastedLots(text: string): { lots: SnapshotLotInput[]; skipp
     const cells = line.includes("\t") ? line.split("\t") : line.split(",");
     const [name, qty, cert, certDate, acqDate] = cells.map((c) => (c ?? "").trim());
 
-    if (!name || !qty || Number.isNaN(parseQuantity(qty))) {
+    const parsedQty = parseQuantity(qty);
+    // No readable quantity => not a holding row (header, subtotal, separator).
+    if (!qty || Number.isNaN(parsedQty)) {
       skipped.push(line);
       continue;
     }
-    // Header rows ("Member, Units, ...") never parse as a quantity, so they land
-    // in `skipped` above — no special-casing needed.
+
+    const issues: string[] = [];
+    if (!name) issues.push("Holder name blank in source ledger — assign an owner before locking.");
+
+    const certDateNorm = normalizeDateCell(certDate);
+    if (certDate && !certDateNorm) issues.push(`Unreadable certificate date "${certDate}" — left blank.`);
+    const acqDateNorm = normalizeDateCell(acqDate);
+    if (acqDate && !acqDateNorm) issues.push(`Unreadable acquisition date "${acqDate}" — left blank.`);
+
     lots.push({
       ...emptyLot(""),
       holderName: name,
-      quantity: String(parseQuantity(qty)),
+      quantity: String(parsedQty),
       certificateLabel: cert || "",
-      certificateDate: normalizeDateCell(certDate),
-      acquiredDate: normalizeDateCell(acqDate),
+      certificateDate: certDateNorm,
+      acquiredDate: acqDateNorm,
+      ...(issues.length ? { importIssues: issues } : {}),
     });
   }
 
   return { lots, skipped };
 }
 
-/** Accepts yyyy-mm-dd and m/d/yyyy; anything else is dropped rather than guessed. */
+
+/**
+ * Accepts yyyy-mm-dd and m/d/yyyy. Anything else — including a real calendar
+ * impossibility like `13/31/2015` or a two-digit year like `13/31/15` — returns
+ * "" rather than being guessed at; the caller records the raw text as an import
+ * issue so the operator can go back to the original book.
+ */
 export function normalizeDateCell(raw?: string): string {
   const value = (raw || "").trim();
-  if (!value) return "";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return isRealDate(value) ? value : "";
   const m = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (m) {
     const [, mm, dd, yyyy] = m;
-    return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+    const iso = `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+    return isRealDate(iso) ? iso : "";
   }
+
   return "";
 }
+
+/** True only for an ISO date that round-trips — rejects 2015-13-31, 2019-02-30, etc. */
+function isRealDate(iso: string): boolean {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d || m < 1 || m > 12 || d < 1 || d > 31) return false;
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
+
