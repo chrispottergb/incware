@@ -152,6 +152,16 @@ export function useShareCalculations(companyId: string) {
     if (shareholderHoldings[id] < 0) shareholderHoldings[id] = 0;
   });
 
+  // Treasury units are issued but NOT outstanding. Every other surface in the
+  // app (roster, cap table, meeting attendance, OA member schedules) already
+  // excludes `is_treasury` holders; the cap-table math is the last place that
+  // did not, which understated every real holder's percentage. Outstanding =
+  // issued − treasury, so the denominator matches what the documents show.
+  const treasuryHeld = shareholders
+    .filter((s: any) => s.is_treasury)
+    .reduce((sum, s: any) => sum + (shareholderHoldings[s.id] || 0), 0);
+  totalIssuedShares = Math.max(0, totalIssuedShares - treasuryHeld);
+
   const authorizedShares = company?.authorized_shares ?? null;
   const availableShares = authorizedShares != null ? authorizedShares - totalIssuedShares : null;
 
