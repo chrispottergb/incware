@@ -537,7 +537,11 @@ export default function OperatingAgreementGenerator({ companyId, companyName, co
   const isLLC = company.entity_type === "LLC" || company.entity_type === "LLC-S" || company.entity_type === "Single Member LLC";
   if (!isLLC) return null;
 
-  const activeMembers = members.filter((m) => m.status !== "inactive" && m.status !== "terminated");
+  // Inclusive allowlist, not an exclusion list: any future status value
+  // (e.g. "historical" for pre-onboarding holders) must NOT reach a member
+  // schedule on an executed operating agreement. Verified behavior-preserving —
+  // every shareholder row carries either "active" or "inactive"; none are null.
+  const activeMembers = members.filter((m) => (m.status ?? "active") === "active" && !(m as any).is_treasury);
   // Mirror the PDF's getMemberInterest(): unit holdings win over the
   // ownership_percentage column, so unit-tracked companies aren't blocked for
   // leaving that column empty.
