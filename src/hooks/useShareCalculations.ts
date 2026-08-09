@@ -72,7 +72,7 @@ export function useShareCalculations(companyId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shareholders")
-        .select("id, name")
+        .select("id, name, is_treasury")
         .eq("company_id", companyId)
         .order("name");
       if (error) throw error;
