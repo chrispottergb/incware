@@ -94,6 +94,26 @@ export default function OwnershipSnapshotWizard({ companyId, entityType = "Corpo
     enabled: !!companyId && open,
   });
 
+  // Pre-existing ledger activity decides whether this snapshot may lock at all.
+  const { data: existingLedger = [] } = useQuery({
+    queryKey: ["share_transactions", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("share_transactions")
+        .select("transaction_type, entry_type, effective_date, transaction_date, num_shares, status")
+        .eq("company_id", companyId);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!companyId && open,
+  });
+
+  const priorLedger = useMemo(
+    () => analyzePreExistingLedger(existingLedger as any[], asOfDate),
+    [existingLedger, asOfDate]
+  );
+
+
   const ownerName = (key: string) => {
     if (!key) return "";
     if (key.startsWith("new:")) return newOwnerNames[key] || "";
