@@ -134,7 +134,11 @@ describe("operating agreement: treasury holders never reach the member schedule"
       draftingStyle: "units",
     });
 
-    const row = tableRows.find((r) => String(r[0]) === REAL_MEMBER)!;
+    // Schedule A row (5 columns with the units drafting style), not the
+    // Article-level roster row.
+    const row = tableRows.find(
+      (r) => String(r[0]) === REAL_MEMBER && r.length === 5
+    )!;
     expect(row.map(String).join(" ")).toContain("100.00");
   });
 });
