@@ -44,7 +44,13 @@ interface Props {
   entityType?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /**
+   * Offered by the ownership-snapshot gate when this entity has not been
+   * onboarded yet. Undefined means the guided flow is not available here.
+   */
+  onUseSnapshotWizard?: () => void;
 }
+
 
 const NEW_OWNER_ACTION = "__new_owner__";
 
