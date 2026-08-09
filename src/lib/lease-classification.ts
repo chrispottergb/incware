@@ -1,6 +1,13 @@
 // Pure TS lease classification engine.
 // Determines lease type from ownership relationships between landlord & tenant.
 
+// Deliberately narrow sets — see src/lib/transaction-types.ts for why this
+// module classifies fewer types than the cap-table calculator does.
+import {
+  LEASE_ISSUE_TYPES as ISSUE_TYPES,
+  LEASE_REDEEM_TYPES as REDEEM_TYPES,
+} from "@/lib/transaction-types";
+
 export type PartyKind = "individual" | "company" | "external";
 export type LeaseClassification = "standard" | "related_party" | "self_rental" | "intercompany";
 
@@ -35,20 +42,6 @@ export interface CompanyRelationship {
 /** A lookup of {companyId -> {shareholderId -> percent}} computed from share_transactions */
 export type OwnershipMap = Record<string, Record<string, number>>;
 
-const ISSUE_TYPES = new Set([
-  "Issuance",
-  "Capital Contribution",
-  "Initial Contribution",
-  "initial_issuance",
-  "initial_contribution",
-  "opening_balance",
-]);
-const REDEEM_TYPES = new Set([
-  "Redemption",
-  "Cancellation",
-  "Return of Capital",
-  "redemption",
-]);
 
 /**
  * Build an ownership map from share_transactions.

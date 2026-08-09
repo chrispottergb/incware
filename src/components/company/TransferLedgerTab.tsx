@@ -11,22 +11,13 @@ import { getTerminology } from "@/lib/entity-terminology";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import SectionPdfActions from "./SectionPdfActions";
 
-const ISSUANCE_TYPES = [
-  "Issuance", "initial_issuance", "authorized_issuance", "subscription_issuance",
-  "consideration_issuance", "share_dividend", "fractional_shares", "preemptive_rights",
-  "treasury_reissue", "Capital Contribution", "Initial Contribution", "initial_contribution",
-  "additional_contribution", "membership_issuance", "opening_balance",
-];
-
-const REDUCTION_TYPES = [
-  "Redemption", "redemption", "Return of Capital",
-  "reacquisition", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout",
-];
-
-const TRANSFER_TYPES = [
-  "transfer", "interest_transfer", "interest_assignment", "gift",
-  "share_exchange", "Transfer In", "Transfer Out",
-];
+// Classification lists live in one place so the ledger views, the cap table and
+// the ownership hook cannot drift apart. See src/lib/transaction-types.ts.
+import {
+  TRANSFER_LEDGER_ISSUANCE_TYPES as ISSUANCE_TYPES,
+  TRANSFER_LEDGER_REDUCTION_TYPES as REDUCTION_TYPES,
+  TRANSFER_TYPES,
+} from "@/lib/transaction-types";
 
 // Certificate lifecycle types that are part of a transfer — not standalone ledger rows
 const CERT_LIFECYCLE_TYPES = ["cancellation", "reissuance"];

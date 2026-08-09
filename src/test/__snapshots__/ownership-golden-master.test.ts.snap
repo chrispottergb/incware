@@ -1,0 +1,94 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden master: getHoldingsByName > corp-multiclass — holdings by name for every owner 1`] = `
+{
+  "Alice Nguyen": 899.75,
+  "Bruno Ortiz": 250.5,
+  "Cascade Holdings, Inc.": 450,
+}
+`;
+
+exports[`golden master: getHoldingsByName > corp-treasury — holdings by name for every owner 1`] = `
+{
+  "Elena Marsh": 950,
+  "Treasury": 250,
+}
+`;
+
+exports[`golden master: getHoldingsByName > empty-entity — holdings by name for every owner 1`] = `
+{
+  "Zoe Karras": 0,
+}
+`;
+
+exports[`golden master: getHoldingsByName > llc-renamed-trust — holdings by name for every owner 1`] = `
+{
+  "Dana Whitfield": 550,
+  "Louise Revocable Trust": 450,
+}
+`;
+
+exports[`golden master: getHoldingsByName > no-authorized-cap — holdings by name for every owner 1`] = `
+{
+  "Yusuf Amin": 33.3333,
+}
+`;
+
+exports[`golden master: useShareCalculations > corp-multiclass — Corporation, Common + Preferred, a corrected row, a future-dated row, and fractional shares 1`] = `
+{
+  "authorizedShares": 10000,
+  "availableShares": 8399.75,
+  "shareholderHoldings": {
+    "sh-a": 899.75,
+    "sh-b": 250.5,
+    "sh-c": 450,
+  },
+  "totalIssuedShares": 1600.25,
+}
+`;
+
+exports[`golden master: useShareCalculations > corp-treasury — Corporation holding treasury shares — treasury is issued but not outstanding 1`] = `
+{
+  "authorizedShares": 5000,
+  "availableShares": 4050,
+  "shareholderHoldings": {
+    "sh-e": 950,
+    "sh-tr": 250,
+  },
+  "totalIssuedShares": 950,
+}
+`;
+
+exports[`golden master: useShareCalculations > empty-entity — Entity with no transactions at all 1`] = `
+{
+  "authorizedShares": 100,
+  "availableShares": 100,
+  "shareholderHoldings": {
+    "sh-z": 0,
+  },
+  "totalIssuedShares": 0,
+}
+`;
+
+exports[`golden master: useShareCalculations > llc-renamed-trust — LLC where a transfer was recorded under a trust's prior name; alias index must credit the current owner 1`] = `
+{
+  "authorizedShares": 1000,
+  "availableShares": 0,
+  "shareholderHoldings": {
+    "sh-d": 550,
+    "sh-t": 450,
+  },
+  "totalIssuedShares": 1000,
+}
+`;
+
+exports[`golden master: useShareCalculations > no-authorized-cap — Entity with no authorized cap set — availableShares must stay null 1`] = `
+{
+  "authorizedShares": null,
+  "availableShares": null,
+  "shareholderHoldings": {
+    "sh-y": 33.3333,
+  },
+  "totalIssuedShares": 33.3333,
+}
+`;

@@ -250,13 +250,15 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   if (ai.members) y = addAiBadge(doc, y);
   y = addParagraph(doc, y, ai.members || `The names, addresses, and membership interests of the Members are as set forth in the attached Schedule A. Each Member's interest in the Company shall be personal property as provided in Wis. Stat. § 183.0701.`);
 
-  // Members table
-  if (members.length > 0) {
+  // Members table — treasury positions are held by the company itself and are
+  // not Members; they must never appear on an executed operating agreement.
+  const rosterMembers = members.filter((m: any) => !m.is_treasury);
+  if (rosterMembers.length > 0) {
     y = checkBreak(doc, y, 20);
     autoTable(doc, {
       startY: y,
       head: [["Member Name", "Address", "City/State/Zip", "Status"]],
-      body: members.map((m) => [
+      body: rosterMembers.map((m) => [
         m.name,
         m.address || "—",
         [m.city, m.state, m.zip].filter(Boolean).join(", ") || "—",
@@ -391,8 +393,11 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   wLines.forEach((l: string) => { doc.text(l, cx, y, { align: "center" }); y += 4.5; });
   y += 15;
 
-  // Signature lines for each member
-  const sigMembers = members.length > 0 ? members : [{ name: "Member 1" }, { name: "Member 2" }];
+  // Signature lines for each member — a treasury position cannot sign.
+  const signingMembers = members.filter((m: any) => !m.is_treasury);
+  const sigMembers = signingMembers.length > 0
+    ? signingMembers
+    : [{ name: "Member 1" }, { name: "Member 2" }];
   sigMembers.forEach((m: any) => {
     y = checkBreak(doc, y, 30);
     doc.setDrawColor(100, 100, 100);
