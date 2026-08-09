@@ -6,25 +6,11 @@ import {
   normalizeOwnerName,
   type NameHistoryRow,
 } from "@/lib/owner-aliases";
-
-
-const ISSUANCE_TYPES = [
-  "Issuance", "initial_issuance", "authorized_issuance", "subscription_issuance",
-  "consideration_issuance", "share_dividend", "fractional_shares", "preemptive_rights",
-  "treasury_reissue", "Reissuance", "reissuance",
-  "Capital Contribution", "Initial Contribution", "initial_contribution",
-  "additional_contribution", "membership_issuance", "opening_balance",
-];
-
-const REDUCTION_TYPES = [
-  "Redemption", "redemption", "Cancellation", "cancellation", "Return of Capital",
-  "reacquisition", "treasury_acquisition", "withdrawal_distribution", "dissociation_buyout",
-];
-
-const TRANSFER_TYPES = [
-  "transfer", "interest_transfer", "interest_assignment", "gift",
-  "share_exchange", "Transfer In", "Transfer Out",
-];
+import {
+  ISSUANCE_TYPES,
+  REDUCTION_TYPES,
+  TRANSFER_TYPES,
+} from "@/lib/transaction-types";
 
 export interface ShareholderHoldings {
   [shareholderId: string]: number;
