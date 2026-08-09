@@ -44,7 +44,13 @@ interface Props {
   entityType?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /**
+   * Offered by the ownership-snapshot gate when this entity has not been
+   * onboarded yet. Undefined means the guided flow is not available here.
+   */
+  onUseSnapshotWizard?: () => void;
 }
+
 
 const NEW_OWNER_ACTION = "__new_owner__";
 
@@ -59,7 +65,7 @@ const emptyRow = (ownerKey = "", issue_date = ""): CertRow => ({
   notes: "",
 });
 
-export default function EstablishOwnershipDialog({ companyId, entityType = "Corporation", open, onOpenChange }: Props) {
+export default function EstablishOwnershipDialog({ companyId, entityType = "Corporation", open, onOpenChange, onUseSnapshotWizard }: Props) {
   const queryClient = useQueryClient();
   const term = getTerminology(entityType);
   const isLLC = isLLCType(entityType);
@@ -357,6 +363,20 @@ export default function EstablishOwnershipDialog({ companyId, entityType = "Corp
             each keeping its own original issue date.
           </DialogDescription>
         </DialogHeader>
+
+        {onUseSnapshotWizard && !hasExistingBalance && (
+          <button
+            type="button"
+            onClick={onUseSnapshotWizard}
+            className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-left text-[11px] text-muted-foreground hover:bg-primary/10"
+          >
+            <span className="font-medium text-foreground">Try the guided Opening Ownership Snapshot</span> —
+            reconciles against the client's declared total, keeps how each {certLower} was acquired, and locks
+            the result as a permanent audit record.
+          </button>
+        )}
+
+
 
         {hasExistingBalance ? (
           <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm">

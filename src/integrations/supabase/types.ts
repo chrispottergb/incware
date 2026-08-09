@@ -1098,6 +1098,7 @@ export type Database = {
           oa_drafting_style: string | null
           opening_balance_date: string | null
           organizational_structure: string | null
+          ownership_snapshot_enabled: boolean
           par_value: number | null
           par_value_type: string | null
           phone: string | null
@@ -1178,6 +1179,7 @@ export type Database = {
           oa_drafting_style?: string | null
           opening_balance_date?: string | null
           organizational_structure?: string | null
+          ownership_snapshot_enabled?: boolean
           par_value?: number | null
           par_value_type?: string | null
           phone?: string | null
@@ -1258,6 +1260,7 @@ export type Database = {
           oa_drafting_style?: string | null
           opening_balance_date?: string | null
           organizational_structure?: string | null
+          ownership_snapshot_enabled?: boolean
           par_value?: number | null
           par_value_type?: string | null
           phone?: string | null
@@ -3656,6 +3659,185 @@ export type Database = {
           },
         ]
       }
+      ownership_snapshot_lots: {
+        Row: {
+          acquired_date: string | null
+          acquisition_type: string
+          certificate_date: string | null
+          certificate_label: string | null
+          certificate_number: number | null
+          company_id: string
+          consideration_paid: number | null
+          created_at: string
+          entered_quantity: number
+          holder_name_as_entered: string
+          id: string
+          needs_review: boolean
+          notes: string | null
+          review_reason: string | null
+          share_transaction_id: string | null
+          shareholder_id: string | null
+          snapshot_id: string
+          status: string
+          transferor_description: string | null
+          updated_at: string
+        }
+        Insert: {
+          acquired_date?: string | null
+          acquisition_type?: string
+          certificate_date?: string | null
+          certificate_label?: string | null
+          certificate_number?: number | null
+          company_id: string
+          consideration_paid?: number | null
+          created_at?: string
+          entered_quantity: number
+          holder_name_as_entered: string
+          id?: string
+          needs_review?: boolean
+          notes?: string | null
+          review_reason?: string | null
+          share_transaction_id?: string | null
+          shareholder_id?: string | null
+          snapshot_id: string
+          status?: string
+          transferor_description?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acquired_date?: string | null
+          acquisition_type?: string
+          certificate_date?: string | null
+          certificate_label?: string | null
+          certificate_number?: number | null
+          company_id?: string
+          consideration_paid?: number | null
+          created_at?: string
+          entered_quantity?: number
+          holder_name_as_entered?: string
+          id?: string
+          needs_review?: boolean
+          notes?: string | null
+          review_reason?: string | null
+          share_transaction_id?: string | null
+          shareholder_id?: string | null
+          snapshot_id?: string
+          status?: string
+          transferor_description?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ownership_snapshot_lots_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ownership_snapshot_lots_share_transaction_id_fkey"
+            columns: ["share_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "share_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ownership_snapshot_lots_shareholder_id_fkey"
+            columns: ["shareholder_id"]
+            isOneToOne: false
+            referencedRelation: "shareholders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ownership_snapshot_lots_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "ownership_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ownership_snapshots: {
+        Row: {
+          as_of_date: string
+          company_id: string
+          created_at: string
+          declared_total: number | null
+          entry_tier: string
+          highest_certificate_number_issued: string | null
+          id: string
+          locked_at: string | null
+          locked_by: string | null
+          notes: string | null
+          quantity_basis: string
+          reconciliation_note: string | null
+          share_class_key: string
+          share_class_label: string
+          source_document_id: string | null
+          status: string
+          suggested_next_certificate_number: string | null
+          supersedes_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          as_of_date: string
+          company_id: string
+          created_at?: string
+          declared_total?: number | null
+          entry_tier?: string
+          highest_certificate_number_issued?: string | null
+          id?: string
+          locked_at?: string | null
+          locked_by?: string | null
+          notes?: string | null
+          quantity_basis?: string
+          reconciliation_note?: string | null
+          share_class_key?: string
+          share_class_label?: string
+          source_document_id?: string | null
+          status?: string
+          suggested_next_certificate_number?: string | null
+          supersedes_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          as_of_date?: string
+          company_id?: string
+          created_at?: string
+          declared_total?: number | null
+          entry_tier?: string
+          highest_certificate_number_issued?: string | null
+          id?: string
+          locked_at?: string | null
+          locked_by?: string | null
+          notes?: string | null
+          quantity_basis?: string
+          reconciliation_note?: string | null
+          share_class_key?: string
+          share_class_label?: string
+          source_document_id?: string | null
+          status?: string
+          suggested_next_certificate_number?: string | null
+          supersedes_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ownership_snapshots_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ownership_snapshots_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "ownership_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -3775,10 +3957,68 @@ export type Database = {
         }
         Relationships: []
       }
+      retired_ownership_records: {
+        Row: {
+          certificate_label: string | null
+          certificate_number: number | null
+          company_id: string
+          created_at: string
+          holder_name: string
+          id: string
+          issue_date: string | null
+          quantity: number | null
+          reason: string | null
+          snapshot_id: string
+          surrender_date: string | null
+        }
+        Insert: {
+          certificate_label?: string | null
+          certificate_number?: number | null
+          company_id: string
+          created_at?: string
+          holder_name: string
+          id?: string
+          issue_date?: string | null
+          quantity?: number | null
+          reason?: string | null
+          snapshot_id: string
+          surrender_date?: string | null
+        }
+        Update: {
+          certificate_label?: string | null
+          certificate_number?: number | null
+          company_id?: string
+          created_at?: string
+          holder_name?: string
+          id?: string
+          issue_date?: string | null
+          quantity?: number | null
+          reason?: string | null
+          snapshot_id?: string
+          surrender_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retired_ownership_records_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retired_ownership_records_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "ownership_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       share_transactions: {
         Row: {
           bill_of_sale_id: string | null
           certificate_id: string | null
+          certificate_label: string | null
           company_id: string
           consideration_type: string | null
           corrected_by_id: string | null
@@ -3808,6 +4048,7 @@ export type Database = {
         Insert: {
           bill_of_sale_id?: string | null
           certificate_id?: string | null
+          certificate_label?: string | null
           company_id: string
           consideration_type?: string | null
           corrected_by_id?: string | null
@@ -3837,6 +4078,7 @@ export type Database = {
         Update: {
           bill_of_sale_id?: string | null
           certificate_id?: string | null
+          certificate_label?: string | null
           company_id?: string
           consideration_type?: string | null
           corrected_by_id?: string | null
@@ -3985,6 +4227,7 @@ export type Database = {
           address: string | null
           address_2: string | null
           basis: number | null
+          capacity_description: string | null
           capital_account_balance: number | null
           city: string | null
           company_id: string
@@ -4015,6 +4258,7 @@ export type Database = {
           address?: string | null
           address_2?: string | null
           basis?: number | null
+          capacity_description?: string | null
           capital_account_balance?: number | null
           city?: string | null
           company_id: string
@@ -4045,6 +4289,7 @@ export type Database = {
           address?: string | null
           address_2?: string | null
           basis?: number | null
+          capacity_description?: string | null
           capital_account_balance?: number | null
           city?: string | null
           company_id?: string
@@ -4145,6 +4390,7 @@ export type Database = {
         Row: {
           cancelled_date: string | null
           cancelled_reason: string | null
+          certificate_label: string | null
           certificate_number: number
           company_id: string
           created_at: string
@@ -4161,6 +4407,7 @@ export type Database = {
         Insert: {
           cancelled_date?: string | null
           cancelled_reason?: string | null
+          certificate_label?: string | null
           certificate_number: number
           company_id: string
           created_at?: string
@@ -4177,6 +4424,7 @@ export type Database = {
         Update: {
           cancelled_date?: string | null
           cancelled_reason?: string | null
+          certificate_label?: string | null
           certificate_number?: number
           company_id?: string
           created_at?: string
