@@ -161,10 +161,11 @@ export default function OwnershipSnapshotWizard({ companyId, entityType = "Corpo
           existingCertificateNumbers: existingCertNumbers,
           authorized: company?.authorized_shares ?? null,
           unitLabel,
+          priorLedger,
         }
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [lots, reconciliation, asOfDate, existingCertNumbers, company, unitLabel, newOwnerNames, existingOwners]
+    [lots, reconciliation, asOfDate, existingCertNumbers, company, unitLabel, newOwnerNames, existingOwners, priorLedger]
   );
 
   const applyPaste = () => {
@@ -174,6 +175,8 @@ export default function OwnershipSnapshotWizard({ companyId, entityType = "Corpo
       return;
     }
     const mapped = parsed.map((lot, n) => {
+      // Blank-name rows keep their import issue and stay unassigned on purpose.
+      if (!lot.holderName.trim()) return lot;
       const match = existingOwners.find(
         (o) => o.name.trim().toLowerCase() === lot.holderName.trim().toLowerCase()
       );
@@ -182,6 +185,7 @@ export default function OwnershipSnapshotWizard({ companyId, entityType = "Corpo
       setNewOwnerNames((p) => ({ ...p, [key]: lot.holderName }));
       return { ...lot, ownerKey: key };
     });
+
     setLots(mapped);
     setPasteText("");
     setShowPaste(false);
