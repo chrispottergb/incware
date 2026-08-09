@@ -49,7 +49,8 @@ import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { useShareCalculations } from "@/hooks/useShareCalculations";
 import EntityDeleteGuard from "@/components/company/EntityDeleteGuard";
 import ShareholderWorkflowCards from "@/components/company/ShareholderWorkflowCards";
-import EstablishOwnershipGate from "@/components/company/ownership-snapshot/EstablishOwnershipGate";
+import EstablishOwnershipDialog from "@/components/company/EstablishOwnershipDialog";
+import SnapshotWorkflowCard from "@/components/company/ownership-snapshot/SnapshotWorkflowCard";
 import CapTableStatusBar from "@/components/company/CapTableStatusBar";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -326,6 +327,8 @@ export default function CompanyDetail() {
               onEstablishOwnership={() => setEstablishOwnershipOpen(true)}
             />
 
+            <SnapshotWorkflowCard companyId={company.id} entityType={company.entity_type} />
+
             {(isCorp || isLLCType(company.entity_type)) && (
               <CapTableStatusBar
                 term={getTerminology(company.entity_type)}
@@ -405,7 +408,7 @@ export default function CompanyDetail() {
             availableShares={shareCalc.availableShares}
             initialSeller={initialSeller}
           />
-          <EstablishOwnershipGate
+          <EstablishOwnershipDialog
             companyId={company.id}
             entityType={company.entity_type}
             open={establishOwnershipOpen}
