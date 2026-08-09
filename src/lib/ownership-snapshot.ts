@@ -339,12 +339,15 @@ export function validateSnapshot(
   const warnings: string[] = [];
   const reviewRows: Record<number, string> = {};
   const unit = ctx.unitLabel.toLowerCase();
+  const flagReview = (index: number, reason: string) => {
+    reviewRows[index] = reviewRows[index] ? `${reviewRows[index]} ${reason}` : reason;
+  };
 
   if (!ctx.asOfDate) errors.push('Select the "as of" date for this snapshot.');
 
   const usable = lots
     .map((lot, index) => ({ lot, index }))
-    .filter(({ lot }) => lot.ownerKey || lot.quantity.trim());
+    .filter(({ lot }) => lot.ownerKey || lot.quantity.trim() || (lot.importIssues?.length ?? 0) > 0);
 
   if (usable.length === 0) errors.push("Add at least one holding.");
 
@@ -352,6 +355,10 @@ export function validateSnapshot(
 
   usable.forEach(({ lot, index }) => {
     const row = index + 1;
+    // Import defects are recorded on the row first, so a lot that also fails a
+    // hard check still carries its provenance into `needs_review`.
+    for (const issue of lot.importIssues ?? []) flagReview(index, issue);
+
     if (!lot.ownerKey) errors.push(`Row ${row}: choose or name a holder.`);
     if (lot.ownerKey.startsWith("new:") && !lot.holderName.trim()) {
       errors.push(`Row ${row}: enter the new holder's name.`);
@@ -381,14 +388,14 @@ export function validateSnapshot(
         errors.push(`Certificate #${asNumber} already exists for this entity.`);
       }
       if (asNumber === null) {
-        reviewRows[index] = "Non-numeric certificate label — kept as text, no ledger number assigned.";
+        flagReview(index, "Non-numeric certificate label — kept as text, no ledger number assigned.");
       }
     } else {
-      reviewRows[index] = "No certificate number on record — one will be assigned at lock.";
+      flagReview(index, "No certificate number on record — one will be assigned at lock.");
     }
 
     if (!lot.certificateDate && !lot.acquiredDate) {
-      reviewRows[index] = "No original date on record — the snapshot date will be used.";
+      flagReview(index, "No original date on record — the snapshot date will be used.");
     }
   });
 
@@ -406,6 +413,12 @@ export function validateSnapshot(
       `Outstanding ${unit} (${reconciliation.computedTotal.toLocaleString()}) exceed the ${ctx.authorized.toLocaleString()} authorized ${unit}. Increase the authorized amount first.`
     );
   }
+
+  // Pre-existing ledger policy — see analyzePreExistingLedger.
+  if (ctx.priorLedger?.blocked) errors.push(ctx.priorLedger.message);
+  else if (ctx.priorLedger?.message) warnings.push(ctx.priorLedger.message);
+
+
 
   if (Object.keys(reviewRows).length) {
     warnings.push(
