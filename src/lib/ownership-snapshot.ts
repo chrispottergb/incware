@@ -512,3 +512,12 @@ export function normalizeDateCell(raw?: string): string {
 
   return "";
 }
+
+/** True only for an ISO date that round-trips — rejects 2015-13-31, 2019-02-30, etc. */
+function isRealDate(iso: string): boolean {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d || m < 1 || m > 12 || d < 1 || d > 31) return false;
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
+
