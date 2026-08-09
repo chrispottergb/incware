@@ -405,7 +405,7 @@ export default function CompanyDetail() {
             availableShares={shareCalc.availableShares}
             initialSeller={initialSeller}
           />
-          <EstablishOwnershipDialog
+          <EstablishOwnershipGate
             companyId={company.id}
             entityType={company.entity_type}
             open={establishOwnershipOpen}
