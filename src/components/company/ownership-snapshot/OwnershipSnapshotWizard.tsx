@@ -17,8 +17,9 @@ import { Loader2, Plus, Trash2, ClipboardPaste, Lock, AlertTriangle, CheckCircle
 import { toast } from "sonner";
 import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import {
-  ACQUISITION_TYPES, emptyLot, parsePastedLots, parseQuantity, reconcileSnapshot,
-  suggestNextCertificateNumber, validateSnapshot,
+  ACQUISITION_TYPES, analyzePreExistingLedger, emptyLot, parsePastedLots, parseQuantity,
+  reconcileSnapshot, suggestNextCertificateNumber, validateSnapshot,
+
   type EntryTier, type SnapshotLotInput,
 } from "@/lib/ownership-snapshot";
 import { useOwnershipSnapshot } from "@/hooks/useOwnershipSnapshot";
