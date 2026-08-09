@@ -49,7 +49,7 @@ import { getTerminology, isLLCType } from "@/lib/entity-terminology";
 import { useShareCalculations } from "@/hooks/useShareCalculations";
 import EntityDeleteGuard from "@/components/company/EntityDeleteGuard";
 import ShareholderWorkflowCards from "@/components/company/ShareholderWorkflowCards";
-import EstablishOwnershipDialog from "@/components/company/EstablishOwnershipDialog";
+import EstablishOwnershipGate from "@/components/company/ownership-snapshot/EstablishOwnershipGate";
 import CapTableStatusBar from "@/components/company/CapTableStatusBar";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
