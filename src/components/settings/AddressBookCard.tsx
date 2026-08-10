@@ -173,30 +173,31 @@ export default function AddressBookCard() {
             <p className="text-sm">{entries.length === 0 ? "No saved names yet." : "No matches."}</p>
           </div>
         ) : (
-          <div className="rounded-md border border-border max-h-[420px] overflow-y-auto overflow-x-auto">
-            <Table>
+          <div className="rounded-md border border-border max-h-[420px] overflow-y-auto">
+            <Table className="table-fixed w-full">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-64">Name</TableHead>
-                  <TableHead>Address</TableHead>
-                  <TableHead className="w-48">Company</TableHead>
-                  <TableHead className="w-40 text-right">Actions</TableHead>
+                  <TableHead className="w-[26%]">Name</TableHead>
+                  <TableHead className="w-[36%]">Address</TableHead>
+                  <TableHead className="w-[20%]">Company</TableHead>
+                  <TableHead className="w-[18%] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((e) => (
                   <TableRow key={e.id}>
-                    <TableCell className="font-medium whitespace-nowrap">{e.full_name}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="font-medium truncate" title={e.full_name}>{e.full_name}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground truncate">
                       {[e.address, e.address_2, [e.city, e.state].filter(Boolean).join(", "), e.zip]
                         .filter(Boolean)
                         .join(" · ") || "—"}
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                    <TableCell className="text-xs text-muted-foreground truncate">
                       {e.company_name || "—"}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1 whitespace-nowrap">
+
                         <Button variant="outline" size="sm" className="h-7 px-2" onClick={() => openEdit(e)}>
                           <Pencil className="h-3.5 w-3.5 mr-1" />
                           Edit
