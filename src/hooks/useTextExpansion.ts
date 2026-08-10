@@ -110,7 +110,7 @@ export function useTextExpansion(
   }, [applyExpansion]);
 
   useEffect(() => {
-    const el = ref.current;
+    const el = node ?? ref.current;
     if (!el) return;
 
     el.addEventListener("keydown", handleKeyDown);
@@ -120,5 +120,6 @@ export function useTextExpansion(
       el.removeEventListener("keydown", handleKeyDown);
       el.removeEventListener("blur", handleBlur);
     };
-  }, [handleBlur, handleKeyDown, ref]);
+  }, [handleBlur, handleKeyDown, ref, node]);
+
 }
