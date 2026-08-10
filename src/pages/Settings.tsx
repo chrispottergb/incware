@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Search, Code2 } from "lucide-react";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
+import AddressBookCard from "@/components/settings/AddressBookCard";
 
 type Shortcode = {
   id: string;
