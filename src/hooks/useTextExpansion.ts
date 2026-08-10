@@ -49,8 +49,9 @@ export function useTextExpansion(
 
   const applyExpansion = useCallback(
     (trigger: "space" | "tab" | "enter" | "blur") => {
-      const el = ref.current;
+      const el = node ?? ref.current;
       if (!el || el.classList.contains("no-expansion")) return false;
+
 
       const map = shortcodesRef.current;
       if (!map || Object.keys(map).length === 0) return false;
