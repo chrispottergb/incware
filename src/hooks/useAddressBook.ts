@@ -107,7 +107,7 @@ export function useAddressBook(initialCompanyId?: string) {
         console.error("Address book seed failed:", err);
       }
     })();
-  }, [user, entries, refetch]);
+  }, [user, entries, refetch, isFetched]);
 
   // Search entries: current company first, then rest
   const search = useCallback(
