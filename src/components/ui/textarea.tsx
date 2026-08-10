@@ -54,7 +54,9 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(({ classNa
     internalRef,
     isControlled ? String(value) : "",
     handleExpansionChange,
+    node,
   );
+
 
   return (
     <textarea
