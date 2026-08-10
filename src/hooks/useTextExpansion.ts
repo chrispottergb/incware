@@ -84,7 +84,7 @@ export function useTextExpansion(
 
       return true;
     },
-    [ref],
+    [ref, node],
   );
 
   const handleKeyDown = useCallback(
