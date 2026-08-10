@@ -31,7 +31,15 @@ export function useTextExpansion(
   ref: React.RefObject<HTMLTextAreaElement | HTMLInputElement | null>,
   _value: string,
   onChange: (newValue: string) => void,
+  /**
+   * The live DOM node. Passing it lets the listener effect re-run whenever React
+   * swaps the underlying element (dialog remounts, conditional rendering, etc.).
+   * Without it the listeners can stay bound to a detached node and expansion
+   * silently stops working for that field.
+   */
+  node?: HTMLTextAreaElement | HTMLInputElement | null,
 ) {
+
   const { data: shortcodes } = useShortcodes();
   const shortcodesRef = useRef(shortcodes);
   shortcodesRef.current = shortcodes;
