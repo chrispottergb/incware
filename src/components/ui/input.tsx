@@ -13,16 +13,20 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
         ? undefined
         : "off";
     const internalRef = React.useRef<HTMLInputElement | null>(null);
+    // Track the live DOM node so expansion listeners re-bind when React swaps it.
+    const [node, setNode] = React.useState<HTMLInputElement | null>(null);
 
     const setRefs = React.useCallback(
       (node: HTMLInputElement | null) => {
         internalRef.current = node;
+        setNode(node);
         if (typeof forwardedRef === "function") forwardedRef(node);
         else if (forwardedRef)
           (forwardedRef as React.MutableRefObject<HTMLInputElement | null>).current = node;
       },
       [forwardedRef],
     );
+
 
     const isControlled = value !== undefined && onChange !== undefined;
 
@@ -52,7 +56,9 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
       internalRef,
       isControlled ? String(value) : "",
       handleExpansionChange,
+      node,
     );
+
 
     return (
       <input

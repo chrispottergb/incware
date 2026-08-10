@@ -31,7 +31,15 @@ export function useTextExpansion(
   ref: React.RefObject<HTMLTextAreaElement | HTMLInputElement | null>,
   _value: string,
   onChange: (newValue: string) => void,
+  /**
+   * The live DOM node. Passing it lets the listener effect re-run whenever React
+   * swaps the underlying element (dialog remounts, conditional rendering, etc.).
+   * Without it the listeners can stay bound to a detached node and expansion
+   * silently stops working for that field.
+   */
+  node?: HTMLTextAreaElement | HTMLInputElement | null,
 ) {
+
   const { data: shortcodes } = useShortcodes();
   const shortcodesRef = useRef(shortcodes);
   shortcodesRef.current = shortcodes;
@@ -41,8 +49,9 @@ export function useTextExpansion(
 
   const applyExpansion = useCallback(
     (trigger: "space" | "tab" | "enter" | "blur") => {
-      const el = ref.current;
+      const el = node ?? ref.current;
       if (!el || el.classList.contains("no-expansion")) return false;
+
 
       const map = shortcodesRef.current;
       if (!map || Object.keys(map).length === 0) return false;
@@ -75,7 +84,7 @@ export function useTextExpansion(
 
       return true;
     },
-    [ref],
+    [ref, node],
   );
 
   const handleKeyDown = useCallback(
@@ -102,7 +111,7 @@ export function useTextExpansion(
   }, [applyExpansion]);
 
   useEffect(() => {
-    const el = ref.current;
+    const el = node ?? ref.current;
     if (!el) return;
 
     el.addEventListener("keydown", handleKeyDown);
@@ -112,5 +121,6 @@ export function useTextExpansion(
       el.removeEventListener("keydown", handleKeyDown);
       el.removeEventListener("blur", handleBlur);
     };
-  }, [handleBlur, handleKeyDown, ref]);
+  }, [handleBlur, handleKeyDown, ref, node]);
+
 }

@@ -6,16 +6,21 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(({ className, value, onChange, ...props }, forwardedRef) => {
   const internalRef = React.useRef<HTMLTextAreaElement | null>(null);
+  // Track the live DOM node in state so the expansion listeners re-bind whenever
+  // React swaps the element (dialog remount, conditional rendering, etc.).
+  const [node, setNode] = React.useState<HTMLTextAreaElement | null>(null);
 
   // Merge forwarded ref and internal ref
   const setRefs = React.useCallback(
     (node: HTMLTextAreaElement | null) => {
       internalRef.current = node;
+      setNode(node);
       if (typeof forwardedRef === "function") forwardedRef(node);
       else if (forwardedRef) (forwardedRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = node;
     },
     [forwardedRef],
   );
+
 
   // Only enable expansion for controlled textareas
   const isControlled = value !== undefined && onChange !== undefined;
@@ -49,7 +54,9 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(({ classNa
     internalRef,
     isControlled ? String(value) : "",
     handleExpansionChange,
+    node,
   );
+
 
   return (
     <textarea
