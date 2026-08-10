@@ -73,7 +73,7 @@ export default function AddressBookCard() {
   const saveMutation = useMutation({
     mutationFn: async (values: typeof emptyForm) => {
       if (!editing) return;
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("user_address_book" as any)
         .update({
           full_name: values.full_name.trim(),
@@ -84,8 +84,14 @@ export default function AddressBookCard() {
           zip: values.zip.trim() || null,
           updated_at: new Date().toISOString(),
         } as any)
-        .eq("id", editing.id);
+        .eq("id", editing.id)
+        .select("id");
       if (error) throw error;
+      // A successful call that changes nothing means the row was not reachable
+      // (permissions / stale id) — surface it instead of showing a false success.
+      if (!data || data.length === 0) {
+        throw new Error("No entry was updated. Try refreshing the page and editing again.");
+      }
     },
     onSuccess: () => {
       invalidate();
@@ -167,14 +173,14 @@ export default function AddressBookCard() {
             <p className="text-sm">{entries.length === 0 ? "No saved names yet." : "No matches."}</p>
           </div>
         ) : (
-          <div className="rounded-md border border-border max-h-[420px] overflow-y-auto">
+          <div className="rounded-md border border-border max-h-[420px] overflow-y-auto overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-64">Name</TableHead>
                   <TableHead>Address</TableHead>
                   <TableHead className="w-48">Company</TableHead>
-                  <TableHead className="w-20 text-right">Actions</TableHead>
+                  <TableHead className="w-40 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -190,17 +196,19 @@ export default function AddressBookCard() {
                       {e.company_name || "—"}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(e)}>
-                          <Pencil className="h-3.5 w-3.5" />
+                      <div className="flex justify-end gap-1 whitespace-nowrap">
+                        <Button variant="outline" size="sm" className="h-7 px-2" onClick={() => openEdit(e)}>
+                          <Pencil className="h-3.5 w-3.5 mr-1" />
+                          Edit
                         </Button>
                         <Button
                           variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          size="sm"
+                          className="h-7 px-2 text-destructive hover:text-destructive"
                           onClick={() => setDeleteTarget(e)}
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-3.5 w-3.5 mr-1" />
+                          Delete
                         </Button>
                       </div>
                     </TableCell>
