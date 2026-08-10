@@ -73,7 +73,7 @@ export default function AddressBookCard() {
   const saveMutation = useMutation({
     mutationFn: async (values: typeof emptyForm) => {
       if (!editing) return;
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("user_address_book" as any)
         .update({
           full_name: values.full_name.trim(),
@@ -84,8 +84,14 @@ export default function AddressBookCard() {
           zip: values.zip.trim() || null,
           updated_at: new Date().toISOString(),
         } as any)
-        .eq("id", editing.id);
+        .eq("id", editing.id)
+        .select("id");
       if (error) throw error;
+      // A successful call that changes nothing means the row was not reachable
+      // (permissions / stale id) — surface it instead of showing a false success.
+      if (!data || data.length === 0) {
+        throw new Error("No entry was updated. Try refreshing the page and editing again.");
+      }
     },
     onSuccess: () => {
       invalidate();
