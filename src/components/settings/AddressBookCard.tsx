@@ -167,14 +167,14 @@ export default function AddressBookCard() {
             <p className="text-sm">{entries.length === 0 ? "No saved names yet." : "No matches."}</p>
           </div>
         ) : (
-          <div className="rounded-md border border-border max-h-[420px] overflow-y-auto">
+          <div className="rounded-md border border-border max-h-[420px] overflow-y-auto overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-64">Name</TableHead>
                   <TableHead>Address</TableHead>
                   <TableHead className="w-48">Company</TableHead>
-                  <TableHead className="w-20 text-right">Actions</TableHead>
+                  <TableHead className="w-40 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -190,17 +190,19 @@ export default function AddressBookCard() {
                       {e.company_name || "—"}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(e)}>
-                          <Pencil className="h-3.5 w-3.5" />
+                      <div className="flex justify-end gap-1 whitespace-nowrap">
+                        <Button variant="outline" size="sm" className="h-7 px-2" onClick={() => openEdit(e)}>
+                          <Pencil className="h-3.5 w-3.5 mr-1" />
+                          Edit
                         </Button>
                         <Button
                           variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          size="sm"
+                          className="h-7 px-2 text-destructive hover:text-destructive"
                           onClick={() => setDeleteTarget(e)}
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-3.5 w-3.5 mr-1" />
+                          Delete
                         </Button>
                       </div>
                     </TableCell>
