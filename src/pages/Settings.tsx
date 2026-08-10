@@ -124,11 +124,15 @@ export default function Settings() {
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <div>
         <h1 className="font-display text-xl font-bold tracking-tight">Settings</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Manage shortcodes and text expansion library</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Manage shortcodes, the address book, and text expansion library</p>
       </div>
       {isError && <QueryErrorBanner message="Failed to load shortcodes." onRetry={refetch} />}
 
       <AnnualReviewSettingsCard />
+
+      <AddressBookCard />
+
+
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
