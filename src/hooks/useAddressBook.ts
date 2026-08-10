@@ -23,7 +23,7 @@ export function useAddressBook(initialCompanyId?: string) {
     setCurrentCompanyId(id);
   }, []);
 
-  const { data: entries = [], refetch } = useQuery({
+  const { data: entries = [], refetch, isFetched } = useQuery({
     queryKey: ["address_book", user?.id],
     enabled: !!user,
     queryFn: async () => {
@@ -38,11 +38,14 @@ export function useAddressBook(initialCompanyId?: string) {
     gcTime: Infinity,
   });
 
-  // One-time auto-seed: populate address book from existing shareholders, directors, master_contacts
+  // One-time auto-seed: populate address book from existing shareholders, directors, master_contacts.
+  // Only runs when the book is completely empty — otherwise entries the user deleted in
+  // Settings > Address Book (e.g. misspellings) would be silently re-created on the next load.
   const seededRef = useRef(false);
   useEffect(() => {
-    if (!user || seededRef.current) return;
+    if (!user || seededRef.current || !isFetched || entries.length > 0) return;
     seededRef.current = true;
+
 
     (async () => {
       try {
