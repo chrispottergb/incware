@@ -2013,13 +2013,17 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     // Distribution resolution for each member/shareholder with a distribution amount
     if (hasDistribution) {
-      const isSCorpEntity = !!company?.s_election_date;
+      // S-corp clause is driven strictly by an actual S-election on file,
+      // never by entity type alone (a plain LLC has no § 1362 election).
+      const isSCorpEntity =
+        !!company?.s_election_date || company?.entity_type === "LLC-S";
       const distribMembers = (data.shareholders ?? []).filter(s => s.distribution_amount != null && Number(s.distribution_amount) > 0);
 
       if (distribMembers.length > 0) {
-        const sCorpClause = isSCorpEntity || isLLC
+        const sCorpClause = isSCorpEntity
           ? " and consistent with the Company's S Corporation election under Section 1362 of the Internal Revenue Code"
           : "";
+
 
         // Single WHEREAS statement for all distributions
         y = checkPageBreak(doc, y, 50);
@@ -2030,9 +2034,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         );
 
         // Individual RESOLVED for each member/shareholder
-        const sCorpResolvedClause = isSCorpEntity || isLLC
+        const sCorpResolvedClause = isSCorpEntity
           ? " and in compliance with the Company's S Corporation tax election"
           : "";
+
         const meetingDateStr = meeting.meeting_date
           ? new Date(meeting.meeting_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
           : "[DATE]";
