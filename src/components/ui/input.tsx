@@ -56,7 +56,9 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
       internalRef,
       isControlled ? String(value) : "",
       handleExpansionChange,
+      node,
     );
+
 
     return (
       <input
