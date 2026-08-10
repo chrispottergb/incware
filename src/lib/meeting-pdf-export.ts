@@ -2034,9 +2034,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         );
 
         // Individual RESOLVED for each member/shareholder
-        const sCorpResolvedClause = isSCorpEntity || isLLC
+        const sCorpResolvedClause = isSCorpEntity
           ? " and in compliance with the Company's S Corporation tax election"
           : "";
+
         const meetingDateStr = meeting.meeting_date
           ? new Date(meeting.meeting_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
           : "[DATE]";
