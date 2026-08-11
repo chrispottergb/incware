@@ -1,97 +1,87 @@
-# Snapshot Amendment / Supersede Path — Inspection Report
+# Snapshot Amendment / Supersede — Transactional Core
 
-Read-only inspection. Nothing was changed.
+Delivering the transactional core first, as required. The RPC signature and the assertion list are below; the UI is the last step and is trivial once this is correct.
 
-## 1. Schema — present and sufficient
+## Verified current state
 
-`ownership_snapshots`:
+- `ownership_snapshots` already has `supersedes_id`, `source_document_id`, `notes`, and a `status` check allowing `draft | locked | amended`. No migration is needed for columns.
+- `ownership_snapshots_one_locked_per_class` is a partial unique index filtered `WHERE status = 'locked'` — an amendment chain is legal.
+- Trigger `block_locked_snapshot_changes` permits exactly one transition out of `locked`: `locked -> amended`. The RPC works with that, not around it.
+- `ownership_snapshot_lots.share_transaction_id` is uniquely indexed where not null — new amendment lots must point at new ledger rows.
+- The company driving this has certificates in the system generally (100 rows across all companies), so the cancellation step must be conditional per entity, as specified.
 
-| Column | Type | Nullable |
-| --- | --- | --- |
-| `supersedes_id` | uuid | YES — FK to `ownership_snapshots(id)`, `ON DELETE SET NULL` |
-| `status` | text, default `'draft'` | NO |
-| `as_of_date` | date | NO |
-| `locked_at` | timestamptz | YES |
-| `locked_by` | uuid | YES |
+## The single RPC
 
-`status` is a text column with a CHECK, not an enum:
+One `SECURITY DEFINER` Postgres function. Everything commits or rolls back as a unit; the React hook makes exactly one call.
 
 ```sql
-CHECK (status = ANY (ARRAY['draft','locked','amended']))
+public.amend_ownership_snapshot(
+  p_company_id          uuid,
+  p_prior_snapshot_id   uuid,
+  p_as_of_date          date,
+  p_share_class_label   text,
+  p_quantity_basis      text,     -- 'units' | 'shares'
+  p_entry_tier          text,     -- 'position_lots'
+  p_declared_total      numeric(18,4),
+  p_amendment_reason    text,     -- REQUIRED, non-empty; stored in notes
+  p_source_document_id  uuid,     -- REQUIRED, must exist in document_registry for this company
+  p_is_llc              boolean,
+  p_par_value           numeric,
+  p_lots                jsonb     -- [{ shareholder_id?, new_holder_name?, quantity,
+                                  --    certificate_label?, certificate_date?, acquired_date?,
+                                  --    acquisition_type, status, needs_review, review_reason?, notes? }]
+) RETURNS jsonb  -- { snapshot_id, prior_snapshot_id, corrected_rows, new_ledger_rows, computed_total }
 ```
 
-`'amended'` is allowed. A second CHECK, `ownership_snapshots_locked_fields`, requires `locked_at` and `declared_total` to be non-null when status is `'locked'`; it does not constrain `'amended'` rows, so a snapshot can be demoted from locked to amended without violating it. The existing DB trigger `block_locked_snapshot_changes` explicitly permits the locked → amended transition and rejects everything else.
+Ownership is verified inside the function (`companies.user_id = auth.uid()`), so `SECURITY DEFINER` grants no extra reach.
 
-Uniqueness limiting locked snapshots:
+### Order of work inside the transaction
 
-```sql
-CREATE UNIQUE INDEX ownership_snapshots_one_locked_per_class
-  ON public.ownership_snapshots (company_id, share_class_key)
-  WHERE (status = 'locked');
-```
+1. Authorize; lock the prior snapshot row `FOR UPDATE`.
+2. Validate inputs: reason non-empty, `source_document_id` resolves to this company, prior snapshot is `locked` and belongs to this company/class, `p_as_of_date >= prior.as_of_date`.
+3. Mark every `share_transactions` row referenced by the prior snapshot's lots `status = 'corrected'`.
+4. Conditionally cancel prior certificates — **skipped entirely when the entity has no `stock_certificates` rows** (uncertificated clients generate nothing).
+5. Insert the new snapshot as `draft` with `supersedes_id = p_prior_snapshot_id`.
+6. Upsert holders (create only for `new_holder_name` entries), insert certificates only if the entity is certificated, insert new `opening_balance` ledger rows, insert new lots linked to those rows, insert retired records for surrendered lots.
+7. Recompute `shareholders.num_shares`; set `companies.opening_balance_date = p_as_of_date`; call `recalculate_ownership_percentages`.
+8. Run every assertion below.
+9. Flip prior snapshot to `amended`, new snapshot to `locked`.
 
-Because of the `WHERE status = 'locked'` clause, this permits any number of `draft` and `amended` snapshots alongside one locked snapshot on the same company and class. It only blocks two simultaneously *locked* ones — so an amendment must demote the old snapshot to `'amended'` before (or in the same transaction as) locking the new one.
+## Assertion list (all run before commit; any failure raises and rolls back)
 
-`ownership_snapshot_lots.share_transaction_id` is uuid, nullable, FK to `share_transactions(id)` `ON DELETE SET NULL`. Its unique index is **global, not per-snapshot**:
+1. **Three-way total match** — `sum(new lots where status='outstanding') = sum(new opening_balance ledger rows) = sum(shareholders.num_shares for non-treasury holders of this class)`, each within ±0.00005.
+2. **Declared-total reconciliation** — computed outstanding total equals `p_declared_total` within ±0.00005.
+3. **Per-holder match** — for each holder, lot sum equals ledger-row sum equals `shareholders.num_shares`.
+4. **Prior rows fully corrected** — every `share_transactions` row referenced by the prior snapshot's lots has `status = 'corrected'`; zero remain `active`.
+5. **No stale opening balances** — no `entry_type = 'opening_balance'` row for this company/class outside the new snapshot is still `active`.
+6. **Exactly one locked snapshot** — `count(*) where company_id, share_class_key, status='locked'` equals 1 on exit, and it is the new snapshot.
+7. **Chain integrity** — new snapshot's `supersedes_id` = prior id; prior status is `amended`; no cycle.
+8. **Lot/ledger pairing** — every outstanding lot has a non-null `share_transaction_id` pointing at a row created in this call; no lot reuses an existing ledger row.
+9. **Reason and source document present** — `notes` non-empty, `source_document_id` non-null and resolvable.
+10. **Authorized cap** — if the company declares authorized units/shares, the new outstanding total does not exceed it.
+11. **Certificate step consistency** — if the entity is uncertificated, zero certificate rows were created or cancelled by this call.
 
-```sql
-CREATE UNIQUE INDEX ownership_snapshot_lots_one_per_ledger_row
-  ON public.ownership_snapshot_lots (share_transaction_id)
-  WHERE (share_transaction_id IS NOT NULL);
-```
+## Application-side changes
 
-This is fine for the amendment case as specified: the superseded lot keeps pointing at its own (now `corrected`) ledger row, and each new lot points at a distinct new ledger row. One lot per ledger row still holds. It would only break if the amendment tried to reuse the same ledger rows across two snapshots, which it must not do.
+- **`src/hooks/useOwnershipSnapshot.ts`** — add `amend` mutation: one `supabase.rpc('amend_ownership_snapshot', ...)` call, then the existing cache invalidation set. Also fix the reachable failure in `lock()`: if `lockedSnapshot` exists, throw an explicit error pointing at the amend path instead of surfacing an opaque unique-violation.
+- **`src/lib/ownership-snapshot.ts`** — `analyzePreExistingLedger` gains an amendment mode: when amending, ledger rows belonging to the snapshot being superseded are expected and do not block; unrelated non-corrected activity still blocks with the existing message.
+- **`src/components/company/ownership-snapshot/OwnershipSnapshotWizard.tsx`** — `LockedView` gets an "Amend snapshot" entry point; the amendment form requires a reason and a linked source document before submit is enabled. The locked snapshot view renders the reason and the linked document adjacent to the quantity change, so the ledger discontinuity explains itself.
+- Code comment at the amendment quantity handling: option (A), post-split quantities carried in the amendment, is a **stand-in for a real `stock_split` transaction type queued as its own Phase 2 item**.
 
-## 2. Backend logic — absent
+## Tests
 
-No code path anywhere in `src/` writes `supersedes_id`, sets a snapshot's status to `'amended'`, or sets superseded `opening_balance` rows to `status = 'corrected'`. A full-tree search for `supersedes_id` and `amended` returns only the type union in `src/lib/ownership-snapshot.ts:23` (`SnapshotStatus = "draft" | "locked" | "amended"`).
+`src/test/ownership-snapshot-amendment.test.ts` plus additions to the existing acceptance suite:
 
-`useOwnershipSnapshot.lock()` in `src/hooks/useOwnershipSnapshot.ts` reuses `draftSnapshot?.id` if one exists, otherwise inserts a new snapshot. It never inspects `lockedSnapshot`. If invoked while a locked snapshot exists it would attempt a second locked row and be rejected by `ownership_snapshots_one_locked_per_class` at the DB level — an opaque unique-violation, not a guarded error.
+- Supersede happy path — totals, chain, single locked snapshot.
+- Rollback — force a failure after the correction step; assert holdings, snapshot count, and corrected-row count are byte-identical to the pre-amendment state.
+- Chained amendments — amend twice; `supersedes_id` chain readable end to end, exactly one locked snapshot, holdings reflect only the newest.
+- Post-amendment transactions — ordinary transfers compute against the new baseline; a transaction dated before the new `as_of_date` is rejected with the existing message.
+- Guard test — `lock()` with a locked snapshot present raises the explicit amend-path error.
+- Golden master unchanged for companies with no snapshot and companies with one unamended locked snapshot.
 
-The blocking validation is in `src/lib/ownership-snapshot.ts`, `analyzePreExistingLedger()`. Any ledger row effective on or before the as-of date sets `blocked: true`. Its own comment states the reason:
+## Delivery order
 
-> "Ledger activity effective ON OR BEFORE the as-of date => **blocked**. Writing the snapshot on top of it would double-count the position, and Phase 1 has no supersede/void path (deferred to Phase 2)."
-
-Since a locked snapshot always leaves `opening_balance` rows on or before its as-of date, this check alone blocks every amendment attempt unless the prior rows are first marked `corrected` (which the function already ignores).
-
-Separately: the app has no stock-split event type. The split itself would have to be represented either as the amendment's new lot quantities, or as issuance rows — no split-specific handling exists.
-
-## 3. Calculator behavior — safe, but not for the reason assumed
-
-`useShareCalculations` does **not** branch on the existence of a locked snapshot. It reads `share_transactions` directly and skips rows with `status === 'corrected'` (two places: lines 100 and 195). It never queries `ownership_snapshots`. So with one amended and one locked snapshot it reads neither — it reads the ledger, and superseded rows drop out purely via the `corrected` filter. No double-counting, and no most-recent/first-found ambiguity to worry about, because no snapshot selection happens at all.
-
-`recalculate_ownership_percentages()` behaves the same way: every branch filters `st.status != 'corrected'`, and it too never references the snapshot tables.
-
-The one place that does select a snapshot is `useOwnershipSnapshot`, which uses `snapshots.find((s) => s.status === "locked")` — an explicit status match, not most-recent. With one amended and one locked snapshot it correctly returns the locked one. Its lots query is keyed to that locked snapshot's id.
-
-Consequence: correctness of the amendment depends entirely on the `corrected` flag being written to the superseded `opening_balance` rows. That is the single load-bearing step.
-
-## 4. UI — not reachable
-
-`SnapshotWorkflowCard` renders whenever `companies.ownership_snapshot_enabled` is true, regardless of snapshot state, so the card stays visible. But `OwnershipSnapshotWizard` switches to `<LockedView>` when `lockedSnapshot` is truthy (line 247) and hides the entire footer including the action button (line 518). Once locked, the wizard is a read-only receipt. There is no amend button, menu item, or route anywhere.
-
-## 5. Verdict — (c) Schema present, logic missing
-
-Schema is complete and needs no migration. Both the amendment logic and its UI entry point are missing.
-
-### Logic needed
-
-1. An `amend()` mutation alongside `lock()`: mark the prior snapshot's generated `opening_balance` rows `status = 'corrected'` (found via `ownership_snapshot_lots.share_transaction_id` for the prior snapshot), zero/recompute affected holder totals, flip the prior snapshot to `'amended'`, then run the existing lock sequence for the new snapshot with `supersedes_id` set to the prior one, and re-run `recalculate_ownership_percentages`. Order matters: correct the old rows first so the new snapshot's own pre-existing-ledger check passes.
-2. An amendment-aware variant of the pre-existing-ledger guard so prior rows already being superseded do not block, while genuinely unrelated activity still does.
-3. Prior certificates from the superseded snapshot marked cancelled as of the amendment date, so the certificate register matches the ledger.
-
-### Smallest additive change
-
-Files touched:
-
-- `src/lib/ownership-snapshot.ts` — add an `amendment` mode to `analyzePreExistingLedger` (new optional argument; default behavior byte-identical).
-- `src/hooks/useOwnershipSnapshot.ts` — add `amend` mutation; extract the shared write sequence from `lock`.
-- `src/components/company/ownership-snapshot/OwnershipSnapshotWizard.tsx` — an "Amend snapshot" action in `LockedView` that re-enters the wizard in amendment mode, prefilled from the locked lots, with a new as-of date and a required reason.
-- `src/components/company/ownership-snapshot/SnapshotWorkflowCard.tsx` — card copy reflecting amended state.
-- `src/test/ownership-snapshot-acceptance.test.ts` — coverage for supersede: prior rows corrected, no double-count, amended chain readable.
-
-No destructive migration is required — every column, constraint, and index the path needs already exists. No change to ownership calculation for companies without a superseding snapshot: the calculators are untouched, and the only new writes are `corrected` flags on rows belonging to a snapshot that is being explicitly superseded.
-
-### Open question before building
-
-A stock split has no event type. Two options for representing it: (A) the amendment carries the post-split lot quantities and the split is documented in the snapshot's reason/notes — no new event type, smallest change; (B) add a `stock_split` transaction type and generate ratio-derived ledger rows — larger, touches the transaction-type taxonomy and every ledger view. Recommend (A) for this client scenario unless split events need to be reportable in their own right.
+1. Migration: the RPC function only (no schema changes).
+2. Hook `amend` + `lock()` guard + `analyzePreExistingLedger` amendment mode.
+3. Tests, run green.
+4. `LockedView` amend UI last.
