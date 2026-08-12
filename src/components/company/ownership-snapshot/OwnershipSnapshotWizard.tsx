@@ -23,6 +23,7 @@ import {
   type EntryTier, type SnapshotLotInput,
 } from "@/lib/ownership-snapshot";
 import { useOwnershipSnapshot } from "@/hooks/useOwnershipSnapshot";
+import AmendSnapshotDialog from "@/components/company/ownership-snapshot/AmendSnapshotDialog";
 
 interface Props {
   companyId: string;
@@ -246,10 +247,13 @@ export default function OwnershipSnapshotWizard({ companyId, entityType = "Corpo
 
         {lockedSnapshot ? (
           <LockedView
+            companyId={companyId}
             snapshot={lockedSnapshot}
             lots={lockedLots}
             unitLabel={unitLabel}
             holderLabel={holderLabel}
+            isLLC={isLLC}
+            parValue={company?.par_value_type === "par" ? company?.par_value ?? null : null}
           />
         ) : (
           <div className="space-y-4">
@@ -561,10 +565,29 @@ function StepBar({ step }: { step: number }) {
   );
 }
 
-function LockedView({ snapshot, lots, unitLabel, holderLabel }: {
-  snapshot: any; lots: any[]; unitLabel: string; holderLabel: string;
+function LockedView({ companyId, snapshot, lots, unitLabel, holderLabel, isLLC, parValue }: {
+  companyId: string; snapshot: any; lots: any[]; unitLabel: string; holderLabel: string;
+  isLLC: boolean; parValue: number | null;
 }) {
+  const [amendOpen, setAmendOpen] = useState(false);
   const outstanding = lots.filter((l) => l.status === "outstanding");
+
+  // The amendment's stored reason and linked document are rendered here, next
+  // to the restated quantities, so the record can explain its own jump.
+  const { data: sourceDocument } = useQuery({
+    queryKey: ["document_registry_item", snapshot.source_document_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("document_registry")
+        .select("id, title, file_url")
+        .eq("id", snapshot.source_document_id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+    enabled: !!snapshot.source_document_id,
+  });
+
   return (
     <div className="space-y-3">
       <div className="rounded-md border border-border bg-muted/30 p-3 text-xs space-y-1">
@@ -574,12 +597,44 @@ function LockedView({ snapshot, lots, unitLabel, holderLabel }: {
             As of {new Date(snapshot.as_of_date + "T00:00:00").toLocaleDateString()} ·{" "}
             {Number(snapshot.declared_total ?? 0).toLocaleString()} {unitLabel.toLowerCase()} declared
           </span>
+          {snapshot.supersedes_id && (
+            <Badge variant="outline" className="text-[10px]">Amendment</Badge>
+          )}
         </div>
         <p className="text-[11px] text-muted-foreground">
           This snapshot is immutable. Later ownership changes belong in the ledger as transactions; to restate the
           snapshot itself, record an amendment.
         </p>
+        {snapshot.supersedes_id && (
+          <div className="rounded border border-border bg-background p-2 space-y-1">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              Reason for amendment
+            </p>
+            <p className="text-[11px] text-foreground">{snapshot.notes || "—"}</p>
+            <p className="text-[10px] text-muted-foreground">
+              Source document: {sourceDocument?.title || "not linked"}
+            </p>
+          </div>
+        )}
+        <div className="pt-1">
+          <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setAmendOpen(true)}>
+            Amend snapshot
+          </Button>
+        </div>
       </div>
+
+      <AmendSnapshotDialog
+        companyId={companyId}
+        snapshot={snapshot}
+        lots={lots}
+        unitLabel={unitLabel}
+        holderLabel={holderLabel}
+        isLLC={isLLC}
+        parValue={parValue}
+        open={amendOpen}
+        onOpenChange={setAmendOpen}
+      />
+
       <div className="rounded-md border border-border">
         <div className="grid grid-cols-[1fr_100px_90px_110px_90px] gap-2 px-3 py-1.5 bg-muted/50 border-b text-[10px] font-medium uppercase text-muted-foreground">
           <span>{holderLabel}</span>

@@ -4712,6 +4712,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      amend_ownership_snapshot: {
+        Args: {
+          p_amendment_reason: string
+          p_as_of_date: string
+          p_company_id: string
+          p_declared_total: number
+          p_entry_tier: string
+          p_is_llc: boolean
+          p_lots: Json
+          p_par_value: number
+          p_prior_snapshot_id: string
+          p_quantity_basis: string
+          p_share_class_label: string
+          p_source_document_id: string
+        }
+        Returns: Json
+      }
       decrypt_companies_ein_batch: {
         Args: { p_company_ids: string[]; p_encryption_key: string }
         Returns: {

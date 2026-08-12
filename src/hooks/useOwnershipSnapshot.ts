@@ -85,10 +85,22 @@ export function useOwnershipSnapshot(companyId: string, enabled = true) {
       ctx: LockContext;
     }) => {
       const { header, lots, reconciliation, newOwnerNames, existingCertificateNumbers, ctx } = args;
+
+      // Guard: a locked snapshot already owns this class. Without this the
+      // insert below fails on `ownership_snapshots_one_locked_per_class` with
+      // an opaque unique-violation. Amending is the supported path.
+      if (lockedSnapshot) {
+        throw new Error(
+          "A locked ownership snapshot already exists for this entity. Locked snapshots are immutable — " +
+            "use “Amend snapshot” to supersede it with a new one."
+        );
+      }
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+
 
       const usable = lots
         .map((lot, index) => ({ lot, index }))
@@ -322,6 +334,96 @@ export function useOwnershipSnapshot(companyId: string, enabled = true) {
     },
   });
 
+  const invalidateAll = async () => {
+    for (const key of [
+      ["ownership_snapshots", companyId],
+      ["ownership_snapshot_lots"],
+      ["shareholders", companyId],
+      ["shareholders-establish", companyId],
+      ["shareholders-for-holdings", companyId],
+      ["share_transactions", companyId],
+      ["stock_certificates", companyId],
+      ["stock_certificates_numbers", companyId],
+      ["stock_certificates_ledger", companyId],
+      ["company", companyId],
+      ["company-establish", companyId],
+      ["company-authorized-shares", companyId],
+    ]) {
+      await queryClient.invalidateQueries({ queryKey: key });
+    }
+  };
+
+  /**
+   * Supersede a locked snapshot.
+   *
+   * The ENTIRE amendment is one Postgres transaction (`amend_ownership_snapshot`).
+   * That is deliberate and load-bearing: the amendment marks the prior
+   * snapshot's `opening_balance` rows `corrected` before writing the new ones,
+   * and the cap-table calculators read only the ledger. Split across sequential
+   * client calls, a dropped connection between those two steps would leave the
+   * company reading zero outstanding — silently, and surviving a reload. One
+   * RPC means the client can never observe a partial state.
+   *
+   * Option (A) stand-in: a corporate action with no event type (e.g. a stock
+   * split) is carried as post-split lot quantities plus the required reason and
+   * source document. A real `stock_split` transaction type is queued as its own
+   * Phase 2 item.
+   */
+  const amend = useMutation({
+    mutationFn: async (args: {
+      priorSnapshotId: string;
+      asOfDate: string;
+      shareClassLabel: string;
+      quantityBasis: QuantityBasis;
+      entryTier: EntryTier;
+      declaredTotal: number;
+      /** Required, stored. The only record of the corporate action behind the jump. */
+      amendmentReason: string;
+      /** Required. The document that explains the discontinuity. */
+      sourceDocumentId: string;
+      isLLC: boolean;
+      parValue: number | null;
+      lots: Array<{
+        shareholder_id?: string | null;
+        new_holder_name?: string | null;
+        quantity: number;
+        certificate_label?: string | null;
+        certificate_date?: string | null;
+        acquired_date?: string | null;
+        acquisition_type?: string;
+        status?: "outstanding" | "surrendered";
+        needs_review?: boolean;
+        review_reason?: string | null;
+        notes?: string | null;
+      }>;
+    }) => {
+      if (!args.amendmentReason?.trim()) {
+        throw new Error("An amendment reason is required — it is the record of the corporate action.");
+      }
+      if (!args.sourceDocumentId) {
+        throw new Error("A source document is required for an amendment.");
+      }
+
+      const { data, error } = await supabase.rpc("amend_ownership_snapshot" as any, {
+        p_company_id: companyId,
+        p_prior_snapshot_id: args.priorSnapshotId,
+        p_as_of_date: args.asOfDate,
+        p_share_class_label: args.shareClassLabel,
+        p_quantity_basis: args.quantityBasis,
+        p_entry_tier: args.entryTier,
+        p_declared_total: args.declaredTotal,
+        p_amendment_reason: args.amendmentReason.trim(),
+        p_source_document_id: args.sourceDocumentId,
+        p_is_llc: args.isLLC,
+        p_par_value: args.parValue,
+        p_lots: args.lots,
+      });
+      if (error) throw error;
+      return data as any;
+    },
+    onSuccess: invalidateAll,
+  });
+
   return {
     snapshots,
     lockedSnapshot,
@@ -329,8 +431,10 @@ export function useOwnershipSnapshot(companyId: string, enabled = true) {
     lockedLots: lotsQuery.data ?? [],
     isLoading: snapshotQuery.isLoading,
     lock,
+    amend,
   };
 }
+
 
 function buildLotRow(args: {
   snapshotId?: string;
