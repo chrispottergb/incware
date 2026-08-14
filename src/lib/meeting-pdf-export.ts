@@ -3663,46 +3663,122 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       (data.officers || []).forEach(o => { if (o.name) wcAddUnique({ name: o.name }); });
     }
 
-    // Date line
-    if (meeting?.meeting_date) {
-      const mtgDate = new Date(meeting.meeting_date + "T12:00:00");
-      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-      const dateStr = `${days[mtgDate.getDay()]}, ${months[mtgDate.getMonth()]} ${mtgDate.getDate()}, ${mtgDate.getFullYear()}`;
-      doc.text(`DATED: ${dateStr}`, MARGIN, y);
-      y += 10;
-    } else {
-      y += 4;
-    }
+    const sigRows = (Array.isArray(data.signatures) ? data.signatures : [])
+      .slice()
+      .sort((a: any, b: any) => (a?.sort_order ?? 0) - (b?.sort_order ?? 0));
 
-    // Signature rows — one line per signer, with body-specific columns
-    doc.setFontSize(10);
-    wcSigners.forEach(s => {
-      y = checkPageBreak(doc, y, 16);
-      doc.setDrawColor(30, 30, 30);
-      doc.setLineWidth(0.3);
-      // Signature line
-      doc.line(MARGIN, y, MARGIN + 90, y);
-      y += 4;
-      let label = `${s.name}, ${signerRoleLabel}`;
-      if (consentBody === "shareholders" && s.shares != null) {
-        label += `  —  Shares Held: ${s.shares.toLocaleString()}`;
-      } else if (consentBody === "members") {
-        if (s.shares && s.shares > 0) label += `  —  Units: ${s.shares.toLocaleString()}`;
-        if (s.ownership && s.ownership > 0) label += `  —  Ownership: ${Number(s.ownership).toFixed(2)}%`;
-      }
-      doc.text(label, MARGIN, y);
-      y += 10;
-
-    });
-
-    // If no signers, render blank line
-    if (wcSigners.length === 0) {
+    if (sigRows.length > 0) {
+      // --- New dating model: execution clause + per-signer date lines ---
       const pw = doc.internal.pageSize.getWidth();
-      const sigLineW = pw - MARGIN - R_MARGIN;
-      doc.line(MARGIN, y, MARGIN + sigLineW, y);
-      doc.text(signerRoleLabel, MARGIN, y + 5);
+      const usableW = pw - MARGIN - R_MARGIN;
+      const colW = usableW / 2;
+
+      doc.setFontSize(11);
+      doc.setFont("Arial", "normal");
+      doc.setTextColor(30, 30, 30);
+      const execText = `IN WITNESS WHEREOF, the undersigned have executed this Consent on the respective dates set forth below, effective as of the Effective Date first written above. This Consent may be executed in counterparts, each of which shall be deemed an original.`;
+      const execLines = doc.splitTextToSize(execText, usableW);
+      for (const line of execLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5;
+      }
+      y += 8;
+
+      doc.setFontSize(10);
+      for (let i = 0; i < sigRows.length; i += 2) {
+        y = checkPageBreak(doc, y, 34);
+        const rowTop = y;
+        let rowBottom = y;
+        for (let c = 0; c < 2; c++) {
+          const row = sigRows[i + c];
+          if (!row) continue;
+          const x = MARGIN + c * colW;
+          const lineW = colW - 10;
+          let cy = rowTop;
+          doc.setDrawColor(30, 30, 30);
+          doc.setLineWidth(0.3);
+          doc.line(x, cy, x + lineW, cy);
+          cy += 4.5;
+
+          const rep = (row.representative_name || "").toString().trim();
+          const repTitle = (row.representative_title || "").toString().trim();
+          const nameLabel = rep
+            ? `${row.signer_name}, represented by ${rep}${repTitle ? `, its ${repTitle}` : ""}`
+            : String(row.signer_name || "");
+          doc.setTextColor(30, 30, 30);
+          const nameLines = doc.splitTextToSize(nameLabel, lineW);
+          doc.text(nameLines, x, cy);
+          cy += nameLines.length * 4.5;
+
+          const roleTitle = [row.signer_role, row.signer_title].filter(Boolean).join(" & ");
+          if (roleTitle) {
+            doc.setTextColor(80, 80, 80);
+            doc.text(roleTitle, x, cy);
+            cy += 4.5;
+          }
+
+          cy += 2;
+          doc.setTextColor(30, 30, 30);
+          const dateLabel = "Date signed: ";
+          doc.text(dateLabel, x, cy);
+          const labelW = doc.getTextWidth(dateLabel);
+          const signedOn = formatLongDate(row.signed_on);
+          if (signedOn) {
+            doc.text(signedOn, x + labelW, cy);
+          }
+          doc.setDrawColor(120, 120, 120);
+          doc.line(x + labelW, cy + 1.2, x + lineW, cy + 1.2);
+          cy += 6;
+
+          rowBottom = Math.max(rowBottom, cy);
+        }
+        y = rowBottom + 6;
+      }
+    } else {
+      // --- Legacy output (unchanged for every consent created before signature rows existed) ---
+      // Date line
+      if (meeting?.meeting_date) {
+        const mtgDate = new Date(meeting.meeting_date + "T12:00:00");
+        const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const dateStr = `${days[mtgDate.getDay()]}, ${months[mtgDate.getMonth()]} ${mtgDate.getDate()}, ${mtgDate.getFullYear()}`;
+        doc.text(`DATED: ${dateStr}`, MARGIN, y);
+        y += 10;
+      } else {
+        y += 4;
+      }
+
+      // Signature rows — one line per signer, with body-specific columns
+      doc.setFontSize(10);
+      wcSigners.forEach(s => {
+        y = checkPageBreak(doc, y, 16);
+        doc.setDrawColor(30, 30, 30);
+        doc.setLineWidth(0.3);
+        // Signature line
+        doc.line(MARGIN, y, MARGIN + 90, y);
+        y += 4;
+        let label = `${s.name}, ${signerRoleLabel}`;
+        if (consentBody === "shareholders" && s.shares != null) {
+          label += `  —  Shares Held: ${s.shares.toLocaleString()}`;
+        } else if (consentBody === "members") {
+          if (s.shares && s.shares > 0) label += `  —  Units: ${s.shares.toLocaleString()}`;
+          if (s.ownership && s.ownership > 0) label += `  —  Ownership: ${Number(s.ownership).toFixed(2)}%`;
+        }
+        doc.text(label, MARGIN, y);
+        y += 10;
+
+      });
+
+      // If no signers, render blank line
+      if (wcSigners.length === 0) {
+        const pw = doc.internal.pageSize.getWidth();
+        const sigLineW = pw - MARGIN - R_MARGIN;
+        doc.line(MARGIN, y, MARGIN + sigLineW, y);
+        doc.text(signerRoleLabel, MARGIN, y + 5);
+      }
     }
+
 
   } else {
     // Regular meetings: adjournment + Chairperson/Secretary signatures
