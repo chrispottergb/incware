@@ -646,7 +646,9 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       if (r.whereas) {
         whereasPara(r.whereas);
       }
-      resolvedPara(`that ${r.resolved || "[Enter resolved clause]"}`);
+      // User-typed resolutions often already start with "that" — don't double it up.
+      const rBody = (r.resolved || "[Enter resolved clause]").trimStart();
+      resolvedPara(rBody.toLowerCase().startsWith("that ") ? rBody : `that ${rBody}`);
     });
   }
 
