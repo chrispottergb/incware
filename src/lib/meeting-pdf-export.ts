@@ -75,6 +75,15 @@ function expandStateName(state?: string | null): string {
   return US_STATE_NAMES[raw.toUpperCase()] ?? raw;
 }
 
+// Expands a trailing two-letter state abbreviation in a free-text address
+// ("Anytown, WI." -> "Anytown, Wisconsin."). Anything else passes through unchanged.
+function expandTrailingStateInLocation(location: string): string {
+  return location.replace(/(,\s*)([A-Za-z]{2})(\s*\.?)$/, (m, sep, abbr, tail) => {
+    const full = US_STATE_NAMES[abbr.toUpperCase()];
+    return full ? `${sep}${full}${tail}` : m;
+  });
+}
+
 // Format a shareholder/member name for output, handling entity owners with a representative.
 // Individual owners (or entity rows without a representative_name) return the bare name —
 // preserves byte-for-byte parity with prior PDFs.
