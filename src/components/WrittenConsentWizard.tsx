@@ -345,6 +345,9 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   const [signedDates, setSignedDates] = useState<Record<string, string>>({});
   const [bulkSignedDate, setBulkSignedDate] = useState("");
   const [showBulkSignedDate, setShowBulkSignedDate] = useState(false);
+  // Dates loaded from an existing consent, keyed by lowercased signer name until
+  // the signer list resolves and they can be mapped onto signer ids.
+  const [loadedSignedByName, setLoadedSignedByName] = useState<Record<string, string>>({});
 
   // Queries for signers
   const { data: directors = [] } = useQuery({
