@@ -20,7 +20,28 @@ Surgical, non-destructive. No schema, query, section-numbering, or heading chang
 - Rebuild the WHEREAS recital to use the entity word (`limited liability company` / `corporation`) and omit the citation entirely when the helper returns `null`.
 - `src/lib/annual-meeting-pdf.ts` line 656 (LLC-only path): `183.0113` → `183.0115`.
 - `src/components/AnnualMeetingWizard.tsx` lines ~1649 and ~1661 (preview): same change so preview matches PDF.
-- Out of scope, untouched: `meeting-pdf-export.ts:1993` (§ 183.0407, correctly gated on `isLLC`), `org-meeting-pdf.ts:213`, `OrgMeetingWizard.tsx:305`, `WIComplianceChecklist.tsx:376`.
+- Out of scope, untouched: `meeting-pdf-export.ts:1993` (§ 183.0407, correctly gated on `isLLC`), `org-meeting-pdf.ts:213`, `OrgMeetingWizard.tsx:305` (see Amendment B — citation text stays, a guard goes in instead).
+
+## Amendment A — WIComplianceChecklist LLC registered-agent item (text only)
+
+`src/components/company/WIComplianceChecklist.tsx`, `llc_registered_agent` item (lines 374–378). Entity-type gated, so no corporation sees it, but the citation is wrong and the description cites § 183.0115 for resignation while § 183.0115 is the maintenance provision.
+
+- `statute: "§ 183.0113"` → `"§ 183.0115"`.
+- Rewrite the description: keep the maintenance sentence and the § 183.0114 statement-of-change reference; drop the resignation sentence rather than guess a section number.
+- Displayed text only — no logic, gating, or other checklist items.
+
+## Amendment B — OrgMeetingWizard guard (not a citation fix)
+
+`src/components/OrgMeetingWizard.tsx` picks the generator with `isSmllc ? generateSmllcOrgMeetingPDF : generateOrgMeetingPDF` — a single-member-LLC vs. everything-else branch. `org-meeting-pdf.ts` is an LLC-only template (`${data.companyName}, LLC`, Articles of Organization, Ch. 183 cites), so a Corporation, S-Corp, or Non-Profit would receive LLC minutes.
+
+- Add a guard at the top of `OrgMeetingWizard`: when `isLLCType(company?.entity_type)` is false, render a short blocking message ("Organizational meeting minutes are currently available for LLCs only. Corporation and non-profit templates are coming soon.") instead of the wizard steps, so neither generator is reachable.
+- The § 183.0113 text in `OrgMeetingWizard.tsx` and `org-meeting-pdf.ts` is deliberately left as-is this pass. Making `org-meeting-pdf.ts` entity-aware is a new template, out of scope.
+
+Reachability, confirmed: `OrgMeetingWizard` is imported by `src/components/company/MeetingsTab.tsx:51` and rendered in a Dialog at line 891 bound to `orgWizardOpen` (line 120) — but there is no `setOrgWizardOpen(true)` anywhere in the repo, so the dialog can never open. It is dead code today. The guard still goes in.
+
+## Amendment C — report only, no change
+
+`WIComplianceChecklist.tsx:33` derives `const isCorp = !isLLC;`, so Non-Profit and Partnership entities fall into the corporation branch (line 573) and are shown the Ch. 180 business-corporation checklist — stock certificates § 180.0625, shareholder inspection § 180.1602, and a "Ch. 180 Business Corporations" header. Wisconsin non-profits are nonstock corporations under Ch. 181. Confirmed, left unchanged, to be scoped separately.
 
 ## Fix 3 — Section 1 opening sentence
 
@@ -45,3 +66,5 @@ The Annual Meeting of the Board of Directors of ABC Electric, Inc., a Wisconsin 
 ## Verification
 
 Drive the preview with Playwright and inspect generated PDF text for: corporation (no `that that`, `§ 180.0501`), LLC through both builders (`§ 183.0115`), non-profit (`§ 181.0501`), a Delaware entity (recital with no citation), Section 1 naming the company with the state spelled out for all three entity types, exactly one `that` per resolution including manually typed ones, and unchanged section numbers. Run typecheck and the existing test suite.
+
+Additionally: after the change, searching the repo for `183.0113` must return zero hits in `meeting-pdf-export.ts`, `annual-meeting-pdf.ts`, `AnnualMeetingWizard.tsx`, and `WIComplianceChecklist.tsx`; the only remaining occurrences should be in `org-meeting-pdf.ts` and `OrgMeetingWizard.tsx`, both unreachable by non-LLC entities after the guard.
