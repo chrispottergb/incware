@@ -562,11 +562,26 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
           };
         })
       : [];
+    // Signature rows drive the effective/executed dual-date treatment in the PDF.
+    const signatureRows = signers.map((signer, i) => ({
+      signer_name: signer.name,
+      signer_role: signer.role || null,
+      signer_title: null,
+      representative_name: null,
+      representative_title: null,
+      signed_on: signedDates[signer.id || String(i)] || null,
+      sort_order: i,
+    }));
+    const allSigned = signatureRows.length > 0 && signatureRows.every((r) => !!r.signed_on);
+    const executedDate = allSigned
+      ? signatureRows.map((r) => r.signed_on as string).sort().slice(-1)[0]
+      : null;
     return {
       meeting: {
         id: meetingId,
         company_id: company.id,
         meeting_date: effectiveDate,
+        executed_date: executedDate,
         meeting_type: "Written Consent",
         sub_type: selectedAction || null,
         tax_year: taxYear ? parseInt(taxYear, 10) : null,
@@ -591,8 +606,9 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         : [],
       directors: !useShareholderRows ? signers.map((signer) => ({ director_name: signer.name })) : [],
       shareholders: shareholderRows,
+      signatures: signatureRows,
     };
-  }, [company, consentBody, recitals, effectiveDate, isCorp, resolutionText, selectedAction, shareholders, shareholderHoldings, signers, taxYear, totalIssuedShares]);
+  }, [company, consentBody, recitals, effectiveDate, isCorp, resolutionText, selectedAction, shareholders, shareholderHoldings, signedDates, signers, taxYear, totalIssuedShares]);
 
   const renderPdfPages = useCallback(async (bytes: ArrayBuffer) => {
     const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
