@@ -731,7 +731,10 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
     if (resolvedBody.toUpperCase().startsWith("RESOLVED,")) {
       resolvedBody = resolvedBody.substring(resolvedBody.indexOf(",") + 1).trim();
     }
-    const fullResolved = resolvedPrefix + "that " + resolvedBody;
+    // Call sites pass "BE IT RESOLVED, that ..." so the stripped body usually already
+    // begins with "that". Only inject it when missing (mirrors addResolutionBlock()).
+    const needsThat = !resolvedBody.trim().toLowerCase().startsWith("that ");
+    const fullResolved = resolvedPrefix + (needsThat ? "that " : "") + resolvedBody.trimStart();
     const rLines = doc.splitTextToSize(fullResolved, pw - MARGIN - R_MARGIN - rIndent);
     y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
 
