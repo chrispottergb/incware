@@ -1427,7 +1427,20 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
 
     } else {
       const meetingLabel = "Annual Meeting";
-      const introText = `The ${meetingLabel} of the ${stateOfInc} ${entityLabel} was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${meeting.meeting_location ? `, at ${meeting.meeting_location}` : ""}.`;
+      // Name the company (historical name when the meeting recorded one) and spell the
+      // state of incorporation out in full: "…of ABC Electric, Inc., a Wisconsin corporation…"
+      const introCompanyName = meeting.company_name_at_meeting || company?.name || "the Company";
+      const introState = expandStateName(stateOfInc) || "Wisconsin";
+      const isNonprofitEntity = (company?.entity_type || "").toLowerCase().includes("nonprofit")
+        || (company?.entity_type || "").toLowerCase().includes("non-profit");
+      const bodyLabel = isLLC ? "Members" : "Board of Directors";
+      const introEntityWord = isLLC
+        ? "limited liability company"
+        : (isNonprofitEntity ? "nonstock corporation" : "corporation");
+      const locationPart = meeting.meeting_location
+        ? `, at ${expandTrailingStateInLocation(meeting.meeting_location)}`
+        : "";
+      const introText = `The ${meetingLabel} of the ${bodyLabel} of ${introCompanyName}, a ${introState} ${introEntityWord}, was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${locationPart}.`;
       const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
       for (const line of introLines) {
         y = checkPageBreak(doc, y, 6);
