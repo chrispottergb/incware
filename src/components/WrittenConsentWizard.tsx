@@ -882,6 +882,23 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
             // Ignore legacy non-JSON notes rows
           }
         }
+
+        // Restore previously entered signature dates, keyed by signer name so
+        // they survive a re-ordered or re-derived signer list.
+        const { data: signatureRows } = await supabase
+          .from("meeting_signatures")
+          .select("signer_name, signed_on, sort_order")
+          .eq("meeting_id", existingMeetingId)
+          .order("sort_order");
+        if (signatureRows && signatureRows.length > 0) {
+          setLoadedSignedByName(
+            Object.fromEntries(
+              signatureRows
+                .filter((r) => r.signed_on)
+                .map((r) => [String(r.signer_name).trim().toLowerCase(), r.signed_on as string])
+            )
+          );
+        }
       } catch (err: any) {
         toast.error("Failed to load consent data");
         console.error(err);
