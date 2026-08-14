@@ -461,6 +461,22 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     return directors.map((d) => ({ name: d.name, role: t.director, id: d.id }));
   }, [isCorp, isLLC, isNonProfit, isSMLLC, managementType, consentBody, directors, shareholders, t]);
 
+  const signerKey = (s: { id?: string }, i: number) => s.id || String(i);
+
+  // Map saved signature dates onto the resolved signer list (edit mode only).
+  useEffect(() => {
+    if (Object.keys(loadedSignedByName).length === 0 || signers.length === 0) return;
+    setSignedDates((prev) => {
+      const next = { ...prev };
+      signers.forEach((s, i) => {
+        const hit = loadedSignedByName[String(s.name || "").trim().toLowerCase()];
+        const key = signerKey(s, i);
+        if (hit && !next[key]) next[key] = hit;
+      });
+      return next;
+    });
+  }, [loadedSignedByName, signers]);
+
 
   // Voting statute
   const votingStatute = useMemo(() => {
