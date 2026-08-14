@@ -1191,12 +1191,17 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
 
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">Effective Date *</Label>
+            <Label className="text-xs font-medium text-muted-foreground">
+              Effective date — the date the decision was actually made *
+            </Label>
             <DatePickerField
               value={effectiveDate}
               onChange={setEffectiveDate}
               placeholder="Pick effective date"
             />
+            <p className="text-[10px] text-muted-foreground">
+              Signature dates are entered separately. If this is being signed today, enter today's date here too.
+            </p>
           </div>
 
           <div className="space-y-1.5">
