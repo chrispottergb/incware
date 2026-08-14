@@ -1462,27 +1462,80 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
             </Card>
           ) : (
             <div className="space-y-2">
-              {signers.map((s, i) => (
-                <Card key={s.id || i} className="border">
-                  <CardContent className="flex items-center gap-3 py-3">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold">
-                      {s.name.charAt(0).toUpperCase()}
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  className="text-[11px] text-primary hover:underline"
+                  onClick={() => setShowBulkSignedDate((v) => !v)}
+                >
+                  All signed on the same day →
+                </button>
+              </div>
+              {showBulkSignedDate && (
+                <Card className="border-dashed">
+                  <CardContent className="flex items-end gap-3 py-3">
+                    <div className="flex-1 space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground">Date signed (all blank signers)</Label>
+                      <DatePickerField
+                        value={bulkSignedDate}
+                        onChange={setBulkSignedDate}
+                        placeholder="Pick date signed"
+                      />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{s.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{s.role}</p>
-                    </div>
-                    {"ownershipPct" in s && s.ownershipPct != null && (
-                      <Badge variant="outline" className="text-[10px] shrink-0">
-                        {Number(s.ownershipPct).toFixed(1)}%
-                      </Badge>
-                    )}
-                    <Badge variant="secondary" className="text-[10px] shrink-0">
-                      Pending
-                    </Badge>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={!bulkSignedDate}
+                      onClick={() => {
+                        setSignedDates((prev) => {
+                          const next = { ...prev };
+                          signers.forEach((s, i) => {
+                            const key = signerKey(s, i);
+                            if (!next[key]) next[key] = bulkSignedDate;
+                          });
+                          return next;
+                        });
+                      }}
+                    >
+                      Apply
+                    </Button>
                   </CardContent>
                 </Card>
-              ))}
+              )}
+              {signers.map((s, i) => {
+                const key = signerKey(s, i);
+                const signedOn = signedDates[key] || "";
+                return (
+                  <Card key={key} className="border">
+                    <CardContent className="flex items-center gap-3 py-3">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold">
+                        {s.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{s.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{s.role}</p>
+                      </div>
+                      {"ownershipPct" in s && s.ownershipPct != null && (
+                        <Badge variant="outline" className="text-[10px] shrink-0">
+                          {Number(s.ownershipPct).toFixed(1)}%
+                        </Badge>
+                      )}
+                      <div className="w-[200px] shrink-0 space-y-1">
+                        <Label className="text-[10px] font-medium text-muted-foreground">Date signed</Label>
+                        <DatePickerField
+                          value={signedOn}
+                          onChange={(v) => setSignedDates((prev) => ({ ...prev, [key]: v || "" }))}
+                          placeholder="leave blank until signed"
+                        />
+                      </div>
+                      <Badge variant={signedOn ? "default" : "secondary"} className="text-[10px] shrink-0">
+                        {signedOn ? "Signed" : "Pending"}
+                      </Badge>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
