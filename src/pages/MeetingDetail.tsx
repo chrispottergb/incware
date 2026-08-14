@@ -864,6 +864,7 @@ export default function MeetingDetail() {
         company,
         shareholders: hydratedMeetingShareholders,
         directors,
+        signatures,
         officers,
         counsel,
         assets,
