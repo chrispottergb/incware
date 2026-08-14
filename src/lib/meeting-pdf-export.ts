@@ -41,6 +41,49 @@ const getStatutoryCloseStatute = (state?: string | null): string => {
   return statutes[(state ?? "").toUpperCase()] ?? "applicable state close corporation statutes";
 };
 
+// Registered agent / registered office citation, by entity type.
+// Wisconsin only — returns null for any other state of incorporation,
+// in which case the recital omits the citation entirely.
+function getRegisteredAgentStatute(entityType?: string | null, state?: string | null): string | null {
+  const st = (state || "Wisconsin").trim().toLowerCase();
+  if (st !== "wisconsin" && st !== "wi") return null;
+  const t = (entityType || "").trim().toLowerCase();
+  if (t.includes("non-profit") || t.includes("nonprofit")) return "Wis. Stat. § 181.0501";
+  if (t.includes("llc") || t.includes("limited liability")) return "Wis. Stat. § 183.0115";
+  return "Wis. Stat. § 180.0501"; // Corporation, S-Corp, and default
+}
+
+// Full state names for narrative sentences ("a Wisconsin corporation").
+// Values that are already full names, or unrecognized, pass through unchanged.
+const US_STATE_NAMES: Record<string, string> = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+  CO: "Colorado", CT: "Connecticut", DE: "Delaware", DC: "District of Columbia",
+  FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois",
+  IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana",
+  ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota",
+  MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada",
+  NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York",
+  NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon",
+  PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota",
+  TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia",
+  WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+};
+
+function expandStateName(state?: string | null): string {
+  const raw = (state || "").trim();
+  if (!raw) return "";
+  return US_STATE_NAMES[raw.toUpperCase()] ?? raw;
+}
+
+// Expands a trailing two-letter state abbreviation in a free-text address
+// ("Anytown, WI." -> "Anytown, Wisconsin."). Anything else passes through unchanged.
+function expandTrailingStateInLocation(location: string): string {
+  return location.replace(/(,\s*)([A-Za-z]{2})(\s*\.?)$/, (m, sep, abbr, tail) => {
+    const full = US_STATE_NAMES[abbr.toUpperCase()];
+    return full ? `${sep}${full}${tail}` : m;
+  });
+}
+
 // Format a shareholder/member name for output, handling entity owners with a representative.
 // Individual owners (or entity rows without a representative_name) return the bare name —
 // preserves byte-for-byte parity with prior PDFs.
@@ -731,7 +774,10 @@ function addWhereasResolved(doc: jsPDF, y: number, whereas: string, resolved: st
     if (resolvedBody.toUpperCase().startsWith("RESOLVED,")) {
       resolvedBody = resolvedBody.substring(resolvedBody.indexOf(",") + 1).trim();
     }
-    const fullResolved = resolvedPrefix + "that " + resolvedBody;
+    // Call sites pass "BE IT RESOLVED, that ..." so the stripped body usually already
+    // begins with "that". Only inject it when missing (mirrors addResolutionBlock()).
+    const needsThat = !resolvedBody.trim().toLowerCase().startsWith("that ");
+    const fullResolved = resolvedPrefix + (needsThat ? "that " : "") + resolvedBody.trimStart();
     const rLines = doc.splitTextToSize(fullResolved, pw - MARGIN - R_MARGIN - rIndent);
     y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
 
@@ -1390,7 +1436,20 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
 
     } else {
       const meetingLabel = "Annual Meeting";
-      const introText = `The ${meetingLabel} of the ${stateOfInc} ${entityLabel} was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${meeting.meeting_location ? `, at ${meeting.meeting_location}` : ""}.`;
+      // Name the company (historical name when the meeting recorded one) and spell the
+      // state of incorporation out in full: "…of ABC Electric, Inc., a Wisconsin corporation…"
+      const introCompanyName = meeting.company_name_at_meeting || company?.name || "the Company";
+      const introState = expandStateName(stateOfInc) || "Wisconsin";
+      const isNonprofitEntity = (company?.entity_type || "").toLowerCase().includes("nonprofit")
+        || (company?.entity_type || "").toLowerCase().includes("non-profit");
+      const bodyLabel = isLLC ? "Members" : "Board of Directors";
+      const introEntityWord = isLLC
+        ? "limited liability company"
+        : (isNonprofitEntity ? "nonstock corporation" : "corporation");
+      const locationPart = meeting.meeting_location
+        ? `, at ${expandTrailingStateInLocation(meeting.meeting_location)}`
+        : "";
+      const introText = `The ${meetingLabel} of the ${bodyLabel} of ${introCompanyName}, a ${introState} ${introEntityWord}, was held on ${dateStr}${meeting.meeting_time ? `, at ${meeting.meeting_time}` : ""}${locationPart}.`;
       const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
       for (const line of introLines) {
         y = checkPageBreak(doc, y, 6);
@@ -2495,8 +2554,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
             );
           }
           const hasSigners = bankSignerList.length > 0;
-          // Note: addWhereasResolved auto-injects "that " after the RESOLVED prefix,
-          // so the resolved body below must NOT start with "that".
+          // Note: addWhereasResolved prepends "that " after the RESOLVED prefix only when
+          // the body does not already begin with it, so either form is safe here.
           const resolvedBody = hasSigners
             ? `${bank.bank_name} is hereby approved and confirmed as a depository for the funds of ${companyName}, and that the following persons are hereby authorized as signers on said account:`
             : `${bank.bank_name} is hereby approved and confirmed as a depository for the funds of ${companyName}.`;
@@ -3466,8 +3525,13 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 40);
     y = section("Registered Agent Confirmation");
     const agentAddr = [company.registered_agent_address, company.registered_agent_city, company.registered_agent_state, company.registered_agent_zip].filter(Boolean).join(", ");
+    const raState = expandStateName(company.state_of_incorporation || company.state) || "Wisconsin";
+    const raCite = getRegisteredAgentStatute(company.entity_type, raState);
+    const raEntityWord = isLLC ? "limited liability company" : "corporation";
     y = addWhereasResolved(doc, y,
-      `WHEREAS, pursuant to Wis. Stat. § 183.0113, the company is required to maintain a registered agent in the State of ${company.state_of_incorporation || company.state || "Wisconsin"};`,
+      raCite
+        ? `WHEREAS, pursuant to ${raCite}, the ${raEntityWord} is required to maintain a registered agent in the State of ${raState};`
+        : `WHEREAS, the ${raEntityWord} is required to maintain a registered agent in the State of ${raState};`,
       `NOW, THEREFORE, BE IT RESOLVED, that ${company.registered_agent_name}${agentAddr ? `, located at ${agentAddr},` : ""} is hereby confirmed as the registered agent of the company.`,
       bt
     );
