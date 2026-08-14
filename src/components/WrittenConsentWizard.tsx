@@ -797,6 +797,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     recitals,
     draftMeetingId,
     isCorp,
+    signedDates,
     managementType,
     ownershipThreshold,
     resolutionText,
