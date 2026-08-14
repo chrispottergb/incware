@@ -1,62 +1,50 @@
-# Built-in Ratification Section for Annual Meetings
+# Written Consent Dating — Effective vs. Executed
 
-Add a first-class "Ratification of Interim Actions" capability: informal actions are logged with their own dates as they happen during the year, and the annual meeting sweeps every unratified item in the period into one ratification resolution printed in the minutes.
+Separate *when the action took effect* from *when each person actually signed*. Purely additive: `meetings.meeting_date` keeps its current meaning (effective date), and any consent that exists today prints exactly the same document as before.
 
-## How it works
+## What changes for the user
 
-**1. Interim Actions log (company level)**
+**Wizard**
+- The date field is relabeled "Effective date — the date the decision was actually made", with helper text explaining that signature dates are entered separately.
+- The Signers step gains an optional "Date signed" input per signer (placeholder "leave blank until signed"), starting empty. A small "All signed on the same day →" link reveals one date input that fills every blank signer date. Nothing is ever auto-filled from the effective date.
+- Non-profits can now complete a written consent. Today the signer list returns empty for `Non-Profit`, which blocks the Signers step. Non-profits are treated as board consents (signers from directors, role label Director), matching what the PDF layer already assumes.
+- Signer resolution is verified for Corporation, S-Corp, LLC, LLC-S, Single Member LLC, Non-Profit, and Partnership using the existing `isLLCType()` / entity-terminology helpers — no second set of entity-type string checks.
 
-A new "Interim Actions" list on the company record. Each entry records:
-- Action date (the real date it happened — the *effective* date)
-- Short title and description
-- Category (Banking, Contract, Compensation, Equity, Tax/Election, Distribution, Officer/Manager action, Other)
-- Approved/taken by (name, optional title)
-- Optional linked document
-- Status: Unratified / Ratified (with the meeting that ratified it) / Excluded
+**Printed consent**
+- Only changes when the consent has signature rows. Consents without them render byte-identical to today, including the current `DATED:` line.
+- With signature rows: a two-cell header (EFFECTIVE DATE / EXECUTED, the EXECUTED cell omitted while unsigned), an opening paragraph carrying "effective as of {date} (the 'Effective Date')", and an execution clause replacing `DATED:`:
+  "IN WITNESS WHEREOF, the undersigned have executed this Consent on the respective dates set forth below, effective as of the Effective Date first written above. This Consent may be executed in counterparts, each of which shall be deemed an original."
+- Each signature block gains a "Date signed: ____" line, printed when set and left blank when not. Existing "represented by" treatment for entity holders is preserved.
 
-Entries can be added any time. This is the honest declared-vs-effective record: the action's own date stays intact, and ratification is a separate later event.
-
-**2. Ratification tab on annual meetings**
-
-A new "Ratification" tab in the meeting workspace (annual meetings and written consents). It shows:
-- All unratified interim actions with an action date on or before the meeting date and on or after the prior annual meeting date (period is shown and editable).
-- Auto-suggested candidates from records already in the system dated in that period — share transactions, loans, lease transactions, agreements executed, banking/signer changes, vehicle transactions — presented as checkbox candidates you accept or skip. Accepting one creates an interim-action entry linked back to the source record so it can't be double-counted.
-- Ability to add a free-text action inline (date + description).
-- Each row can be included or excluded from this meeting's ratification.
-
-On save, included items are stamped ratified by this meeting.
-
-**3. Printed minutes**
-
-A "Ratification of Interim Actions" section is inserted into the annual meeting minutes (after Other Business, before Adjournment), formatted to match the existing banking-tab style:
-
-```text
-WHEREAS, during the period from January 1, 2025 through December 31, 2025,
-certain actions were taken on behalf of the Company by its officers,
-directors, or authorized persons without formal action at a meeting; and
-
-WHEREAS, the [Board of Directors / Members] has reviewed each such action
-as set forth below;
-
-    NOW, THEREFORE, BE IT RESOLVED, that each of the following actions,
-    taken on the date indicated, is hereby ratified, approved, and confirmed
-    in all respects as the act of the Company as of the date so taken:
-
-        March 14, 2025 — Opened operating account at First National Bank.
-        June 2, 2025 — Executed equipment lease with Acme Leasing, LLC.
-        ...
-
-    FURTHER RESOLVED, that ratification of the foregoing actions shall
-    relate back to the respective dates on which such actions were taken.
-```
-
-If there are no items, the section prints "No interim actions requiring ratification were presented" (or is omitted, controlled by a toggle on the tab). Wording adapts to entity type via existing terminology (Board of Directors / Members / Managing Member) with the matching statutory citation (Wis. Stat. § 180.0302 for corporations, § 183.0301 for LLCs).
+**Consent detail page**
+- Header shows both Effective and Executed, with Executed reading "awaiting signatures" when unset.
+- A compact signature list lets a user record dates inline as signatures come back, without reopening the wizard.
 
 ## Technical notes
 
-- **New table** `interim_actions`: company_id, action_date, title, description, category, actor_name, actor_title, source_table/source_id (nullable, for de-dup of auto-suggested items), document_id, status, ratified_meeting_id, ratified_at, standard timestamps. RLS scoped like other company-child tables (owner + role policies matching `meeting_resolutions`), with explicit GRANTs and an updated_at trigger. Unique partial index on (source_table, source_id) to prevent duplicate suggestions.
-- **New components**: `src/components/company/InterimActionsTab.tsx` (log + CRUD) and `src/components/meeting/MeetingRatification.tsx` (sweep UI, candidate suggestions, include/exclude, save).
-- **Candidate discovery** in `src/lib/interim-actions.ts`: pure functions mapping rows from `share_transactions`, `meeting_loans`, `agreements`, `company_banks`/`bank_authorized_signers`, `asset_transactions`, `meeting_vehicle_*` into candidate descriptors with a date and generated sentence. Unit-tested.
-- **PDF**: new `renderRatificationSection` in `src/lib/meeting-pdf-export.ts` using existing WHEREAS/RESOLVED indent constants; called from the annual minutes builder. Nonprofit path (`nonprofit-annual-meeting-pdf.ts`) gets the same section with Board wording.
-- **Wiring**: add the tab to `MeetingDetail.tsx` sub-tabs (annual + written consent) and to the company tab list; `AnnualMeetingWizard` gains a step that previews the sweep.
-- **Period default**: prior annual meeting date + 1 day through this meeting's date; falls back to Jan 1 of the tax year when no prior meeting exists.
+**Migration (additive only)**
+- `ALTER TABLE public.meetings ADD COLUMN IF NOT EXISTS executed_date date NULL;` — derived, never user-entered, never backfilled.
+- New `public.meeting_signatures`: `meeting_id` (FK → meetings, ON DELETE CASCADE), `signer_name`, `signer_role`, `signer_title`, `representative_name`, `representative_title`, `signed_on date NULL` (no default), `sort_order`, timestamps; index on `meeting_id`. RLS policies and GRANTs mirror `public.meeting_resolutions` exactly; same `update_updated_at_column` trigger as sibling tables.
+- Trigger on `meeting_signatures` (INSERT/UPDATE/DELETE) recomputes the parent: `executed_date = MAX(signed_on)` when every row for the meeting has a non-null `signed_on`, otherwise `NULL`.
+
+**`src/components/WrittenConsentWizard.tsx`**
+- Keep the existing `meeting_date` binding untouched; label/helper text only.
+- Keep writing `meeting_directors` / `meeting_shareholders` exactly as today. Additionally write one `meeting_signatures` row per signer with role derived from the existing `consentBody` logic. On edit, upsert by `(meeting_id, sort_order)` instead of delete-and-recreate so entered dates survive.
+- Extend the signers memo (~line 432) so `Non-Profit` resolves to `consentBody = 'board'` with directors as signers; audit Partnership and the remaining entity types for a non-empty signer path.
+
+**`src/lib/meeting-pdf-export.ts`** (consent block ~3558–3653)
+- Load `meeting_signatures` into the consent data set. Branch: no rows → current code path verbatim; rows present → new header cells, effective-date clause, execution clause, per-signer date rules. Same two-column layout and `checkPageBreak` handling.
+- Apply the same block in `src/lib/nonprofit-annual-meeting-pdf.ts` only if consents actually route through it.
+
+**`src/pages/MeetingDetail.tsx`** — `isWrittenConsent` branch (~line 928): dual-date header plus the inline-editable signature list.
+
+**Explicitly not done:** no rename or repurpose of `meeting_date`; no migration of the consent JSON in `meeting_other.notes`; no change to `meeting_directors` / `meeting_shareholders` writes; no backfill of `signed_on` or `executed_date`; `executed_date` never appears in an editable form.
+
+## Verification
+
+1. Existing consent, opened and printed without editing → identical PDF.
+2. New consent with blank signature dates → blank date rules, no EXECUTED cell.
+3. Signature dates Oct 28 and Nov 2 → `executed_date = 2025-11-02`, both dates print.
+4. Clearing one signature date → `executed_date` returns to NULL.
+5. End-to-end consent creation for Corporation, S-Corp, LLC, Single Member LLC, Non-Profit, Partnership.
+6. Editing a consent preserves previously entered signature dates.
