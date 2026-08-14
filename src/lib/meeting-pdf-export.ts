@@ -3503,8 +3503,13 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 40);
     y = section("Registered Agent Confirmation");
     const agentAddr = [company.registered_agent_address, company.registered_agent_city, company.registered_agent_state, company.registered_agent_zip].filter(Boolean).join(", ");
+    const raState = expandStateName(company.state_of_incorporation || company.state) || "Wisconsin";
+    const raCite = getRegisteredAgentStatute(company.entity_type, raState);
+    const raEntityWord = isLLC ? "limited liability company" : "corporation";
     y = addWhereasResolved(doc, y,
-      `WHEREAS, pursuant to Wis. Stat. § 183.0113, the company is required to maintain a registered agent in the State of ${company.state_of_incorporation || company.state || "Wisconsin"};`,
+      raCite
+        ? `WHEREAS, pursuant to ${raCite}, the ${raEntityWord} is required to maintain a registered agent in the State of ${raState};`
+        : `WHEREAS, the ${raEntityWord} is required to maintain a registered agent in the State of ${raState};`,
       `NOW, THEREFORE, BE IT RESOLVED, that ${company.registered_agent_name}${agentAddr ? `, located at ${agentAddr},` : ""} is hereby confirmed as the registered agent of the company.`,
       bt
     );
