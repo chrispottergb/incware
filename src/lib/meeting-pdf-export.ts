@@ -72,12 +72,27 @@ function formatShareholderDisplay(
     : `${base}, represented by ${rep}`;
 }
 
+/** Long-form date, e.g. "March 14, 2025". Returns "" for empty input. */
+function formatLongDate(value?: string | null): string {
+  if (!value) return "";
+  const d = new Date(String(value).slice(0, 10) + "T12:00:00");
+  if (isNaN(d.getTime())) return "";
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
 interface MeetingData {
   meeting: any;
   company: any;
   shareholders?: any[];
   directors?: any[];
   officers?: any[];
+  /**
+   * Written-consent signature rows (public.meeting_signatures). When present,
+   * the consent renders the effective/executed dual-date treatment and per-signer
+   * date lines. When absent, the legacy single-date output is preserved verbatim.
+   */
+  signatures?: any[];
   counsel?: any[];
   assets?: any[];
   amendments?: any[];
