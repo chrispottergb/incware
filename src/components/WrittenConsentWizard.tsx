@@ -722,6 +722,31 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       await supabase.from("meeting_directors").delete().eq("meeting_id", meetingId);
     }
 
+    // Signature rows (new dating model). Upsert by (meeting_id, sort_order) so
+    // previously entered signature dates survive an edit of the consent.
+    const signatureRows = signers.map((s, i) => ({
+      meeting_id: meetingId!,
+      signer_name: s.name,
+      signer_role: s.role || null,
+      signer_title: null,
+      representative_name: null,
+      representative_title: null,
+      signed_on: signedDates[s.id || String(i)] || null,
+      sort_order: i,
+    }));
+    if (signatureRows.length > 0) {
+      const { error: sigError } = await supabase
+        .from("meeting_signatures")
+        .upsert(signatureRows, { onConflict: "meeting_id,sort_order" });
+      if (sigError) throw sigError;
+    }
+    // Drop any rows left over from a longer signer list
+    await supabase
+      .from("meeting_signatures")
+      .delete()
+      .eq("meeting_id", meetingId)
+      .gte("sort_order", signatureRows.length);
+
     const metadata = JSON.stringify({
       kind: "written-consent-meta",
       managementType,
