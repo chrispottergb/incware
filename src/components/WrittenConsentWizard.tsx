@@ -339,8 +339,12 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     }
   };
 
-  // Step 4: Signers (auto-populated)
-  // No additional state needed — computed from queries
+  // Step 4: Signers (auto-populated) + the date each signer actually signed.
+  // signed_on is deliberately NOT seeded from the effective date: a consent is
+  // routinely dated as of the decision and signed weeks later.
+  const [signedDates, setSignedDates] = useState<Record<string, string>>({});
+  const [bulkSignedDate, setBulkSignedDate] = useState("");
+  const [showBulkSignedDate, setShowBulkSignedDate] = useState(false);
 
   // Queries for signers
   const { data: directors = [] } = useQuery({
