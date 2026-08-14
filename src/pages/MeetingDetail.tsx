@@ -474,6 +474,21 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
+  // Written-consent signature rows (effective vs. executed dating model)
+  const { data: signatures = [], refetch: refetchSignatures } = useQuery({
+    queryKey: ["meeting_signatures", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meeting_signatures")
+        .select("*")
+        .eq("meeting_id", meetingId!)
+        .order("sort_order");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!meetingId,
+  });
+
   const { data: benefits = [] } = useQuery({
     queryKey: ["meeting_benefits", meetingId],
     queryFn: async () => {
