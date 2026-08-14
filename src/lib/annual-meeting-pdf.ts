@@ -655,7 +655,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   // ===== SECTION 14: REGISTERED AGENT CONFIRMATION =====
   sectionHeading("Registered Agent Confirmation");
 
-  resolvedPara(`that ${data.registeredAgentName || "[Registered Agent Name]"}, located at ${data.registeredAgentAddress || "[Address, City, State, ZIP]"}, is hereby confirmed as the registered agent of the limited liability company in the State of Wisconsin, pursuant to Wis. Stat. § 183.0113.`);
+  resolvedPara(`that ${data.registeredAgentName || "[Registered Agent Name]"}, located at ${data.registeredAgentAddress || "[Address, City, State, ZIP]"}, is hereby confirmed as the registered agent of the limited liability company in the State of Wisconsin, pursuant to Wis. Stat. § 183.0115.`);
 
   // ===== SECTION 15: GENERAL AUTHORIZATION =====
   sectionHeading("General Authorization");

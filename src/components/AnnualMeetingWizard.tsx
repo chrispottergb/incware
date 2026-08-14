@@ -1646,7 +1646,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
           {currentStepLabel === "Registered Agent" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Registered Agent Confirmation</h3>
-              <p className="text-xs text-muted-foreground">Wis. Stat. § 183.0113</p>
+              <p className="text-xs text-muted-foreground">Wis. Stat. § 183.0115</p>
               <div className="grid grid-cols-12 gap-2">
                 <div className="col-span-12">
                   <Label className={labelClass}>Registered Agent Name</Label>
@@ -1658,7 +1658,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
                 </div>
               </div>
               <div className="p-3 rounded-md bg-muted/50 text-xs text-muted-foreground italic">
-                <p><strong className="not-italic">RESOLVED,</strong> that {data.registeredAgentName || "[Name]"}, located at {data.registeredAgentAddress || "[Address]"}, is hereby confirmed as the registered agent of the limited liability company in the State of Wisconsin, pursuant to Wis. Stat. § 183.0113.</p>
+                <p><strong className="not-italic">RESOLVED,</strong> that {data.registeredAgentName || "[Name]"}, located at {data.registeredAgentAddress || "[Address]"}, is hereby confirmed as the registered agent of the limited liability company in the State of Wisconsin, pursuant to Wis. Stat. § 183.0115.</p>
               </div>
             </div>
           )}
