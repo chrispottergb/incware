@@ -1003,6 +1003,15 @@ export default function MeetingDetail() {
         {/* Meeting Info summary */}
         <MeetingInfoCard meeting={meeting} />
 
+        {/* Signatures — record dates as they come back */}
+        <ConsentSignatureList
+          signatures={signatures as any[]}
+          onChanged={() => {
+            refetchSignatures();
+            queryClient.invalidateQueries({ queryKey: ["meeting", meetingId] });
+          }}
+        />
+
         {/* Resolutions */}
         <MeetingResolutions
           meetingId={meeting.id}
