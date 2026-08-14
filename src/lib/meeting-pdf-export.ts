@@ -2532,8 +2532,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
             );
           }
           const hasSigners = bankSignerList.length > 0;
-          // Note: addWhereasResolved auto-injects "that " after the RESOLVED prefix,
-          // so the resolved body below must NOT start with "that".
+          // Note: addWhereasResolved prepends "that " after the RESOLVED prefix only when
+          // the body does not already begin with it, so either form is safe here.
           const resolvedBody = hasSigners
             ? `${bank.bank_name} is hereby approved and confirmed as a depository for the funds of ${companyName}, and that the following persons are hereby authorized as signers on said account:`
             : `${bank.bank_name} is hereby approved and confirmed as a depository for the funds of ${companyName}.`;
