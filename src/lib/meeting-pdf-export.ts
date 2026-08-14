@@ -207,21 +207,49 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
       y += 5;
     }
 
-    // Date
+    // Date — consents with recorded signatures print effective/executed cells;
+    // legacy consents (no signature rows) keep the single centered date line.
+    const hasSignatureRows = Array.isArray(meetingData?.signatures) && (meetingData!.signatures as any[]).length > 0;
+    const effectiveDateLong = formatLongDate(meeting?.meeting_date) || meetingDate;
+    const executedDateLong = formatLongDate(meeting?.executed_date);
+
     doc.setFontSize(11);
     doc.setTextColor(40, 40, 40);
-    const dateLabel = "Date: ";
-    doc.setFont("Arial", "normal");
-    const dateLabelWidth = doc.getTextWidth(dateLabel);
-    doc.setFont("Arial", "italic");
-    const dateValueWidth = doc.getTextWidth(meetingDate);
-    const dateStartX = cx - (dateLabelWidth + dateValueWidth) / 2;
-    doc.setFont("Arial", "normal");
-    doc.text(dateLabel, dateStartX, y);
-    doc.setFont("Arial", "italic");
-    doc.text(meetingDate, dateStartX + dateLabelWidth, y);
-    doc.setFont("Arial", "normal");
-    y += 4;
+
+    if (hasSignatureRows) {
+      const colLeft = MARGIN;
+      const colRight = MARGIN + (pw - MARGIN - R_MARGIN) / 2;
+      doc.setFont("Arial", "bold");
+      doc.setFontSize(9);
+      doc.text("EFFECTIVE DATE", colLeft, y);
+      if (executedDateLong) doc.text("EXECUTED", colRight, y);
+      y += 5;
+      doc.setFont("Arial", "normal");
+      doc.setFontSize(11);
+      doc.text(effectiveDateLong, colLeft, y);
+      if (executedDateLong) doc.text(executedDateLong, colRight, y);
+      y += 4.5;
+      doc.setFontSize(8);
+      doc.setTextColor(120, 120, 120);
+      doc.text("the date the action was taken", colLeft, y);
+      if (executedDateLong) doc.text("last signature obtained", colRight, y);
+      doc.setFontSize(11);
+      doc.setTextColor(40, 40, 40);
+      y += 4;
+    } else {
+      const dateLabel = "Date: ";
+      doc.setFont("Arial", "normal");
+      const dateLabelWidth = doc.getTextWidth(dateLabel);
+      doc.setFont("Arial", "italic");
+      const dateValueWidth = doc.getTextWidth(meetingDate);
+      const dateStartX = cx - (dateLabelWidth + dateValueWidth) / 2;
+      doc.setFont("Arial", "normal");
+      doc.text(dateLabel, dateStartX, y);
+      doc.setFont("Arial", "italic");
+      doc.text(meetingDate, dateStartX + dateLabelWidth, y);
+      doc.setFont("Arial", "normal");
+      y += 4;
+    }
 
 
     // Blue rule
@@ -235,7 +263,15 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     doc.setFont("Arial", "normal");
     doc.setTextColor(30, 30, 30);
     let introText: string;
-    if (consentBody === "shareholders") {
+    if (hasSignatureRows) {
+      const bodyPhrase =
+        consentBody === "shareholders" ? "shareholders"
+          : consentBody === "members" ? "members"
+          : "directors";
+      const entityDescriptor = [company?.state_of_incorporation || company?.state || "Wisconsin", company?.entity_type || ""]
+        .filter(Boolean).join(" ");
+      introText = `The undersigned, being all of the ${bodyPhrase} of ${companyName}${entityDescriptor ? `, a ${entityDescriptor}` : ""}, do hereby consent to and adopt the following resolutions, effective as of ${effectiveDateLong} (the "Effective Date"), with the same force and effect as if adopted at a duly called and held meeting.`;
+    } else if (consentBody === "shareholders") {
       introText = `The undersigned, being all shareholders holding the required voting power of ${companyName}, hereby adopt the following resolutions by written consent without a meeting, pursuant to applicable law and the corporation's governing documents.`;
     } else if (consentBody === "members") {
       introText = `The undersigned, being all Members of ${companyName}, hereby adopt the following resolutions by written consent without a meeting, pursuant to applicable law and the operating agreement.`;
@@ -248,6 +284,7 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     const lines = doc.splitTextToSize(introText, pw - MARGIN - R_MARGIN);
     doc.text(lines, MARGIN, y);
     y += lines.length * 5 + 6;
+
 
   } else {
     // Standard Meeting Type Header - compact spacing
