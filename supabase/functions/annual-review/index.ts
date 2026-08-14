@@ -317,7 +317,7 @@ Deno.serve(async (req) => {
           state: banksRes.data[0].state,
           zip: banksRes.data[0].zip,
           account_type: banksRes.data[0].account_type,
-          account_number_last4: last4(banksRes.data[0].account_number),
+          account_number_last4: banksRes.data[0].account_number_last4 ?? null,
           loc_amount: counsel?.loc_amount ?? null,
           loc_rate: counsel?.loc_interest_rate ?? null,
           loc_lender: counsel?.bank_name ?? banksRes.data[0].bank_name ?? null,
@@ -331,7 +331,7 @@ Deno.serve(async (req) => {
           state: b.state,
           zip: b.zip,
           account_type: b.account_type,
-          account_number_last4: last4(b.account_number),
+          account_number_last4: b.account_number_last4 ?? null,
           // LOC info is meeting-level; only attach to the first bank
           loc_amount: idx === 0 ? counsel?.loc_amount ?? null : null,
           loc_rate: idx === 0 ? counsel?.loc_interest_rate ?? null : null,
