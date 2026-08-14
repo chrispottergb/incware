@@ -3071,6 +3071,56 @@ export type Database = {
           },
         ]
       }
+      meeting_signatures: {
+        Row: {
+          created_at: string
+          id: string
+          meeting_id: string
+          representative_name: string | null
+          representative_title: string | null
+          signed_on: string | null
+          signer_name: string
+          signer_role: string | null
+          signer_title: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meeting_id: string
+          representative_name?: string | null
+          representative_title?: string | null
+          signed_on?: string | null
+          signer_name: string
+          signer_role?: string | null
+          signer_title?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          representative_name?: string | null
+          representative_title?: string | null
+          signed_on?: string | null
+          signer_name?: string
+          signer_role?: string | null
+          signer_title?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_signatures_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_vehicle_leases: {
         Row: {
           asset_type: string
@@ -3258,6 +3308,7 @@ export type Database = {
           company_zip_at_meeting: string | null
           created_at: string
           document_status: string | null
+          executed_date: string | null
           id: string
           loan_balance_comment: string | null
           meeting_date: string
@@ -3293,6 +3344,7 @@ export type Database = {
           company_zip_at_meeting?: string | null
           created_at?: string
           document_status?: string | null
+          executed_date?: string | null
           id?: string
           loan_balance_comment?: string | null
           meeting_date: string
@@ -3328,6 +3380,7 @@ export type Database = {
           company_zip_at_meeting?: string | null
           created_at?: string
           document_status?: string | null
+          executed_date?: string | null
           id?: string
           loan_balance_comment?: string | null
           meeting_date?: string

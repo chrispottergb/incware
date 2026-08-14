@@ -87,6 +87,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   const isSMLLC = company.entity_type === "Single Member LLC";
   const isLLC = isLLCType(company.entity_type);
   const isCorp = company.entity_type === "Corporation" || company.entity_type === "S-Corp";
+  const isNonProfit = company.entity_type === "Non-Profit";
 
   // Share/unit calculations for populating member holdings
   const { shareholderHoldings, totalIssuedShares } = useShareCalculations(company.id);
@@ -338,8 +339,15 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     }
   };
 
-  // Step 4: Signers (auto-populated)
-  // No additional state needed — computed from queries
+  // Step 4: Signers (auto-populated) + the date each signer actually signed.
+  // signed_on is deliberately NOT seeded from the effective date: a consent is
+  // routinely dated as of the decision and signed weeks later.
+  const [signedDates, setSignedDates] = useState<Record<string, string>>({});
+  const [bulkSignedDate, setBulkSignedDate] = useState("");
+  const [showBulkSignedDate, setShowBulkSignedDate] = useState(false);
+  // Dates loaded from an existing consent, keyed by lowercased signer name until
+  // the signer list resolves and they can be mapped onto signer ids.
+  const [loadedSignedByName, setLoadedSignedByName] = useState<Record<string, string>>({});
 
   // Queries for signers
   const { data: directors = [] } = useQuery({
@@ -388,7 +396,10 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     return resolutionOptions.find((r) => r.label === selectedAction);
   }, [selectedAction, resolutionOptions]);
 
-  // Compute signers based on entity type and selected consent body
+  // Compute signers based on entity type and selected consent body.
+  // Every entity type must resolve to a usable list — Non-Profit and Partnership
+  // are neither isCorp nor isLLCType(), and previously fell through to [] which
+  // blocked the Signers step entirely.
   const signers = useMemo(() => {
     if (isCorp) {
       if (consentBody === "shareholders") {
@@ -429,8 +440,43 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         ownershipPct: s.ownership_percentage,
       }));
     }
-    return [];
-  }, [isCorp, isLLC, isSMLLC, managementType, consentBody, directors, shareholders, t]);
+    if (isNonProfit) {
+      // Non-profits consent through the board of directors.
+      return directors.map((d) => ({
+        name: d.name,
+        role: t.director,
+        id: d.id,
+      }));
+    }
+    // Partnership and any other type — the equity holders are the signers,
+    // falling back to directors/authorized binders when none are recorded.
+    if (shareholders.length > 0) {
+      return shareholders.map((s) => ({
+        name: s.name,
+        role: "Partner",
+        id: s.id,
+        ownershipPct: s.ownership_percentage,
+      }));
+    }
+    return directors.map((d) => ({ name: d.name, role: t.director, id: d.id }));
+  }, [isCorp, isLLC, isNonProfit, isSMLLC, managementType, consentBody, directors, shareholders, t]);
+
+  const signerKey = (s: { id?: string }, i: number) => s.id || String(i);
+
+  // Map saved signature dates onto the resolved signer list (edit mode only).
+  useEffect(() => {
+    if (Object.keys(loadedSignedByName).length === 0 || signers.length === 0) return;
+    setSignedDates((prev) => {
+      const next = { ...prev };
+      signers.forEach((s, i) => {
+        const hit = loadedSignedByName[String(s.name || "").trim().toLowerCase()];
+        const key = signerKey(s, i);
+        if (hit && !next[key]) next[key] = hit;
+      });
+      return next;
+    });
+  }, [loadedSignedByName, signers]);
+
 
   // Voting statute
   const votingStatute = useMemo(() => {
@@ -516,11 +562,26 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
           };
         })
       : [];
+    // Signature rows drive the effective/executed dual-date treatment in the PDF.
+    const signatureRows = signers.map((signer, i) => ({
+      signer_name: signer.name,
+      signer_role: signer.role || null,
+      signer_title: null,
+      representative_name: null,
+      representative_title: null,
+      signed_on: signedDates[signer.id || String(i)] || null,
+      sort_order: i,
+    }));
+    const allSigned = signatureRows.length > 0 && signatureRows.every((r) => !!r.signed_on);
+    const executedDate = allSigned
+      ? signatureRows.map((r) => r.signed_on as string).sort().slice(-1)[0]
+      : null;
     return {
       meeting: {
         id: meetingId,
         company_id: company.id,
         meeting_date: effectiveDate,
+        executed_date: executedDate,
         meeting_type: "Written Consent",
         sub_type: selectedAction || null,
         tax_year: taxYear ? parseInt(taxYear, 10) : null,
@@ -545,8 +606,9 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         : [],
       directors: !useShareholderRows ? signers.map((signer) => ({ director_name: signer.name })) : [],
       shareholders: shareholderRows,
+      signatures: signatureRows,
     };
-  }, [company, consentBody, recitals, effectiveDate, isCorp, resolutionText, selectedAction, shareholders, shareholderHoldings, signers, taxYear, totalIssuedShares]);
+  }, [company, consentBody, recitals, effectiveDate, isCorp, resolutionText, selectedAction, shareholders, shareholderHoldings, signedDates, signers, taxYear, totalIssuedShares]);
 
   const renderPdfPages = useCallback(async (bytes: ArrayBuffer) => {
     const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
@@ -695,6 +757,31 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       await supabase.from("meeting_directors").delete().eq("meeting_id", meetingId);
     }
 
+    // Signature rows (new dating model). Upsert by (meeting_id, sort_order) so
+    // previously entered signature dates survive an edit of the consent.
+    const signatureRows = signers.map((s, i) => ({
+      meeting_id: meetingId!,
+      signer_name: s.name,
+      signer_role: s.role || null,
+      signer_title: null,
+      representative_name: null,
+      representative_title: null,
+      signed_on: signedDates[s.id || String(i)] || null,
+      sort_order: i,
+    }));
+    if (signatureRows.length > 0) {
+      const { error: sigError } = await supabase
+        .from("meeting_signatures")
+        .upsert(signatureRows, { onConflict: "meeting_id,sort_order" });
+      if (sigError) throw sigError;
+    }
+    // Drop any rows left over from a longer signer list
+    await supabase
+      .from("meeting_signatures")
+      .delete()
+      .eq("meeting_id", meetingId)
+      .gte("sort_order", signatureRows.length);
+
     const metadata = JSON.stringify({
       kind: "written-consent-meta",
       managementType,
@@ -745,6 +832,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     recitals,
     draftMeetingId,
     isCorp,
+    signedDates,
     managementType,
     ownershipThreshold,
     resolutionText,
@@ -828,6 +916,23 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
           } catch {
             // Ignore legacy non-JSON notes rows
           }
+        }
+
+        // Restore previously entered signature dates, keyed by signer name so
+        // they survive a re-ordered or re-derived signer list.
+        const { data: signatureRows } = await supabase
+          .from("meeting_signatures")
+          .select("signer_name, signed_on, sort_order")
+          .eq("meeting_id", existingMeetingId)
+          .order("sort_order");
+        if (signatureRows && signatureRows.length > 0) {
+          setLoadedSignedByName(
+            Object.fromEntries(
+              signatureRows
+                .filter((r) => r.signed_on)
+                .map((r) => [String(r.signer_name).trim().toLowerCase(), r.signed_on as string])
+            )
+          );
         }
       } catch (err: any) {
         toast.error("Failed to load consent data");
@@ -1102,12 +1207,17 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
 
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">Effective Date *</Label>
+            <Label className="text-xs font-medium text-muted-foreground">
+              Effective date — the date the decision was actually made *
+            </Label>
             <DatePickerField
               value={effectiveDate}
               onChange={setEffectiveDate}
               placeholder="Pick effective date"
             />
+            <p className="text-[10px] text-muted-foreground">
+              Signature dates are entered separately. If this is being signed today, enter today's date here too.
+            </p>
           </div>
 
           <div className="space-y-1.5">
@@ -1368,27 +1478,80 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
             </Card>
           ) : (
             <div className="space-y-2">
-              {signers.map((s, i) => (
-                <Card key={s.id || i} className="border">
-                  <CardContent className="flex items-center gap-3 py-3">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold">
-                      {s.name.charAt(0).toUpperCase()}
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  className="text-[11px] text-primary hover:underline"
+                  onClick={() => setShowBulkSignedDate((v) => !v)}
+                >
+                  All signed on the same day →
+                </button>
+              </div>
+              {showBulkSignedDate && (
+                <Card className="border-dashed">
+                  <CardContent className="flex items-end gap-3 py-3">
+                    <div className="flex-1 space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground">Date signed (all blank signers)</Label>
+                      <DatePickerField
+                        value={bulkSignedDate}
+                        onChange={setBulkSignedDate}
+                        placeholder="Pick date signed"
+                      />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{s.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{s.role}</p>
-                    </div>
-                    {"ownershipPct" in s && s.ownershipPct != null && (
-                      <Badge variant="outline" className="text-[10px] shrink-0">
-                        {Number(s.ownershipPct).toFixed(1)}%
-                      </Badge>
-                    )}
-                    <Badge variant="secondary" className="text-[10px] shrink-0">
-                      Pending
-                    </Badge>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={!bulkSignedDate}
+                      onClick={() => {
+                        setSignedDates((prev) => {
+                          const next = { ...prev };
+                          signers.forEach((s, i) => {
+                            const key = signerKey(s, i);
+                            if (!next[key]) next[key] = bulkSignedDate;
+                          });
+                          return next;
+                        });
+                      }}
+                    >
+                      Apply
+                    </Button>
                   </CardContent>
                 </Card>
-              ))}
+              )}
+              {signers.map((s, i) => {
+                const key = signerKey(s, i);
+                const signedOn = signedDates[key] || "";
+                return (
+                  <Card key={key} className="border">
+                    <CardContent className="flex items-center gap-3 py-3">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold">
+                        {s.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{s.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{s.role}</p>
+                      </div>
+                      {"ownershipPct" in s && s.ownershipPct != null && (
+                        <Badge variant="outline" className="text-[10px] shrink-0">
+                          {Number(s.ownershipPct).toFixed(1)}%
+                        </Badge>
+                      )}
+                      <div className="w-[200px] shrink-0 space-y-1">
+                        <Label className="text-[10px] font-medium text-muted-foreground">Date signed</Label>
+                        <DatePickerField
+                          value={signedOn}
+                          onChange={(v) => setSignedDates((prev) => ({ ...prev, [key]: v || "" }))}
+                          placeholder="leave blank until signed"
+                        />
+                      </div>
+                      <Badge variant={signedOn ? "default" : "secondary"} className="text-[10px] shrink-0">
+                        {signedOn ? "Signed" : "Pending"}
+                      </Badge>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>

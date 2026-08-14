@@ -10,6 +10,7 @@ import { ArrowLeft, Calendar, FileText, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import MeetingAuthorizedSigners from "@/components/meeting/MeetingAuthorizedSigners";
 import MeetingInfoCard from "@/components/meeting/MeetingInfoCard";
+import ConsentSignatureList from "@/components/meeting/ConsentSignatureList";
 import MeetingFinancials from "@/components/meeting/MeetingFinancials";
 import MeetingSubTable from "@/components/meeting/MeetingSubTable";
 import MeetingResolutions from "@/components/meeting/MeetingResolutions";
@@ -474,6 +475,21 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
+  // Written-consent signature rows (effective vs. executed dating model)
+  const { data: signatures = [], refetch: refetchSignatures } = useQuery({
+    queryKey: ["meeting_signatures", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meeting_signatures")
+        .select("*")
+        .eq("meeting_id", meetingId!)
+        .order("sort_order");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!meetingId,
+  });
+
   const { data: benefits = [] } = useQuery({
     queryKey: ["meeting_benefits", meetingId],
     queryFn: async () => {
@@ -849,6 +865,7 @@ export default function MeetingDetail() {
         company,
         shareholders: hydratedMeetingShareholders,
         directors,
+        signatures,
         officers,
         counsel,
         assets,
@@ -944,7 +961,12 @@ export default function MeetingDetail() {
               </h1>
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {company?.name} · {new Date(meeting.meeting_date + "T00:00:00").toLocaleDateString()}
+              {company?.name}
+              {" · "}Effective {new Date(meeting.meeting_date + "T00:00:00").toLocaleDateString()}
+              {" · "}Executed{" "}
+              {(meeting as any).executed_date
+                ? new Date((meeting as any).executed_date + "T00:00:00").toLocaleDateString()
+                : "awaiting signatures"}
               {meeting.tax_year && ` · Tax Year ${meeting.tax_year}`}
             </p>
           </div>
@@ -981,6 +1003,15 @@ export default function MeetingDetail() {
 
         {/* Meeting Info summary */}
         <MeetingInfoCard meeting={meeting} />
+
+        {/* Signatures — record dates as they come back */}
+        <ConsentSignatureList
+          signatures={signatures as any[]}
+          onChanged={() => {
+            refetchSignatures();
+            queryClient.invalidateQueries({ queryKey: ["meeting", meetingId] });
+          }}
+        />
 
         {/* Resolutions */}
         <MeetingResolutions
