@@ -66,3 +66,5 @@ The Annual Meeting of the Board of Directors of ABC Electric, Inc., a Wisconsin 
 ## Verification
 
 Drive the preview with Playwright and inspect generated PDF text for: corporation (no `that that`, `§ 180.0501`), LLC through both builders (`§ 183.0115`), non-profit (`§ 181.0501`), a Delaware entity (recital with no citation), Section 1 naming the company with the state spelled out for all three entity types, exactly one `that` per resolution including manually typed ones, and unchanged section numbers. Run typecheck and the existing test suite.
+
+Additionally: after the change, searching the repo for `183.0113` must return zero hits in `meeting-pdf-export.ts`, `annual-meeting-pdf.ts`, `AnnualMeetingWizard.tsx`, and `WIComplianceChecklist.tsx`; the only remaining occurrences should be in `org-meeting-pdf.ts` and `OrgMeetingWizard.tsx`, both unreachable by non-LLC entities after the guard.
