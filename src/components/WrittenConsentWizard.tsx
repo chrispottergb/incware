@@ -388,7 +388,10 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
     return resolutionOptions.find((r) => r.label === selectedAction);
   }, [selectedAction, resolutionOptions]);
 
-  // Compute signers based on entity type and selected consent body
+  // Compute signers based on entity type and selected consent body.
+  // Every entity type must resolve to a usable list — Non-Profit and Partnership
+  // are neither isCorp nor isLLCType(), and previously fell through to [] which
+  // blocked the Signers step entirely.
   const signers = useMemo(() => {
     if (isCorp) {
       if (consentBody === "shareholders") {
@@ -429,8 +432,27 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         ownershipPct: s.ownership_percentage,
       }));
     }
-    return [];
-  }, [isCorp, isLLC, isSMLLC, managementType, consentBody, directors, shareholders, t]);
+    if (isNonProfit) {
+      // Non-profits consent through the board of directors.
+      return directors.map((d) => ({
+        name: d.name,
+        role: t.director,
+        id: d.id,
+      }));
+    }
+    // Partnership and any other type — the equity holders are the signers,
+    // falling back to directors/authorized binders when none are recorded.
+    if (shareholders.length > 0) {
+      return shareholders.map((s) => ({
+        name: s.name,
+        role: "Partner",
+        id: s.id,
+        ownershipPct: s.ownership_percentage,
+      }));
+    }
+    return directors.map((d) => ({ name: d.name, role: t.director, id: d.id }));
+  }, [isCorp, isLLC, isNonProfit, isSMLLC, managementType, consentBody, directors, shareholders, t]);
+
 
   // Voting statute
   const votingStatute = useMemo(() => {
