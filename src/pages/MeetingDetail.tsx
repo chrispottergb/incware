@@ -960,7 +960,12 @@ export default function MeetingDetail() {
               </h1>
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {company?.name} · {new Date(meeting.meeting_date + "T00:00:00").toLocaleDateString()}
+              {company?.name}
+              {" · "}Effective {new Date(meeting.meeting_date + "T00:00:00").toLocaleDateString()}
+              {" · "}Executed{" "}
+              {(meeting as any).executed_date
+                ? new Date((meeting as any).executed_date + "T00:00:00").toLocaleDateString()
+                : "awaiting signatures"}
               {meeting.tax_year && ` · Tax Year ${meeting.tax_year}`}
             </p>
           </div>
