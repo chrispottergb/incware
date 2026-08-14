@@ -375,7 +375,7 @@ export default function WIComplianceChecklist({ company }: Props) {
       label: "Registered Agent on File",
       statute: "§ 183.0115",
       description:
-        "Each LLC must continuously maintain a registered agent in Wisconsin. The agent must be an individual resident of WI or an entity authorized to do business in WI. Changes must be filed with the DFI via a statement of change (§ 183.0114). Resignation of the agent must be properly noticed (§ 183.0115).",
+        "Each LLC must continuously maintain a registered agent and registered office in Wisconsin. The agent must be an individual resident of WI or an entity authorized to do business in WI. Changes must be filed with the DFI via a statement of change (§ 183.0114).",
       status: hasRegisteredAgent ? "complete" : "incomplete",
       icon: Building2,
       entityTypes: ["LLC"],
