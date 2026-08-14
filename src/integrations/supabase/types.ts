@@ -1555,7 +1555,6 @@ export type Database = {
       }
       company_banks: {
         Row: {
-          account_number: string | null
           account_number_encrypted: string | null
           account_number_last4: string | null
           account_type: string | null
@@ -1570,7 +1569,6 @@ export type Database = {
           id: string
           notes: string | null
           phone: string | null
-          routing_number: string | null
           routing_number_encrypted: string | null
           routing_number_last4: string | null
           state: string | null
@@ -1578,7 +1576,6 @@ export type Database = {
           zip: string | null
         }
         Insert: {
-          account_number?: string | null
           account_number_encrypted?: string | null
           account_number_last4?: string | null
           account_type?: string | null
@@ -1593,7 +1590,6 @@ export type Database = {
           id?: string
           notes?: string | null
           phone?: string | null
-          routing_number?: string | null
           routing_number_encrypted?: string | null
           routing_number_last4?: string | null
           state?: string | null
@@ -1601,7 +1597,6 @@ export type Database = {
           zip?: string | null
         }
         Update: {
-          account_number?: string | null
           account_number_encrypted?: string | null
           account_number_last4?: string | null
           account_type?: string | null
@@ -1616,7 +1611,6 @@ export type Database = {
           id?: string
           notes?: string | null
           phone?: string | null
-          routing_number?: string | null
           routing_number_encrypted?: string | null
           routing_number_last4?: string | null
           state?: string | null
@@ -2281,7 +2275,6 @@ export type Database = {
       }
       master_firms: {
         Row: {
-          account_number: string | null
           account_number_encrypted: string | null
           account_number_last4: string | null
           account_type: string | null
@@ -2296,7 +2289,6 @@ export type Database = {
           firm_type: string
           id: string
           phone: string | null
-          routing_number: string | null
           routing_number_encrypted: string | null
           routing_number_last4: string | null
           state: string | null
@@ -2306,7 +2298,6 @@ export type Database = {
           zip: string | null
         }
         Insert: {
-          account_number?: string | null
           account_number_encrypted?: string | null
           account_number_last4?: string | null
           account_type?: string | null
@@ -2321,7 +2312,6 @@ export type Database = {
           firm_type?: string
           id?: string
           phone?: string | null
-          routing_number?: string | null
           routing_number_encrypted?: string | null
           routing_number_last4?: string | null
           state?: string | null
@@ -2331,7 +2321,6 @@ export type Database = {
           zip?: string | null
         }
         Update: {
-          account_number?: string | null
           account_number_encrypted?: string | null
           account_number_last4?: string | null
           account_type?: string | null
@@ -2346,7 +2335,6 @@ export type Database = {
           firm_type?: string
           id?: string
           phone?: string | null
-          routing_number?: string | null
           routing_number_encrypted?: string | null
           routing_number_last4?: string | null
           state?: string | null
@@ -4385,30 +4373,6 @@ export type Database = {
           },
         ]
       }
-      shareholders_legacy_ssn_archive: {
-        Row: {
-          archived_at: string
-          company_id: string | null
-          id: string
-          shareholder_id: string
-          ssn_ein_plaintext: string
-        }
-        Insert: {
-          archived_at?: string
-          company_id?: string | null
-          id?: string
-          shareholder_id: string
-          ssn_ein_plaintext: string
-        }
-        Update: {
-          archived_at?: string
-          company_id?: string | null
-          id?: string
-          shareholder_id?: string
-          ssn_ein_plaintext?: string
-        }
-        Relationships: []
-      }
       shortcode_expansions: {
         Row: {
           category: string | null
@@ -4865,10 +4829,6 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
-      }
-      migrate_legacy_bank_numbers: {
-        Args: { p_encryption_key: string }
-        Returns: Json
       }
       migrate_legacy_company_ein: {
         Args: { p_encryption_key: string }
