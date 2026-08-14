@@ -212,6 +212,19 @@ export default function OrgMeetingWizard({ company, onClose }: Props) {
   const inputClass = "h-8 text-sm";
   const labelClass = "text-xs font-medium text-muted-foreground";
 
+  // The organizational meeting templates (org-meeting-pdf.ts and smllc-org-meeting-pdf.ts)
+  // are LLC-only: they name the company "<Name>, LLC", describe it as a limited liability
+  // company, and cite Ch. 183. Block non-LLC entities entirely rather than emit wrong minutes.
+  if (!isLLCType(company?.entity_type)) {
+    return (
+      <div className="space-y-4 py-6 text-center">
+        <p className="text-sm font-medium">Organizational meeting minutes are currently available for LLCs only.</p>
+        <p className="text-sm text-muted-foreground">Corporation and non-profit templates are coming soon.</p>
+        <Button variant="outline" onClick={onClose}>Close</Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Progress */}
