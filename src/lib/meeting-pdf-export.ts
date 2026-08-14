@@ -41,6 +41,40 @@ const getStatutoryCloseStatute = (state?: string | null): string => {
   return statutes[(state ?? "").toUpperCase()] ?? "applicable state close corporation statutes";
 };
 
+// Registered agent / registered office citation, by entity type.
+// Wisconsin only — returns null for any other state of incorporation,
+// in which case the recital omits the citation entirely.
+function getRegisteredAgentStatute(entityType?: string | null, state?: string | null): string | null {
+  const st = (state || "Wisconsin").trim().toLowerCase();
+  if (st !== "wisconsin" && st !== "wi") return null;
+  const t = (entityType || "").trim().toLowerCase();
+  if (t.includes("non-profit") || t.includes("nonprofit")) return "Wis. Stat. § 181.0501";
+  if (t.includes("llc") || t.includes("limited liability")) return "Wis. Stat. § 183.0115";
+  return "Wis. Stat. § 180.0501"; // Corporation, S-Corp, and default
+}
+
+// Full state names for narrative sentences ("a Wisconsin corporation").
+// Values that are already full names, or unrecognized, pass through unchanged.
+const US_STATE_NAMES: Record<string, string> = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+  CO: "Colorado", CT: "Connecticut", DE: "Delaware", DC: "District of Columbia",
+  FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois",
+  IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana",
+  ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota",
+  MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada",
+  NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York",
+  NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon",
+  PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota",
+  TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia",
+  WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+};
+
+function expandStateName(state?: string | null): string {
+  const raw = (state || "").trim();
+  if (!raw) return "";
+  return US_STATE_NAMES[raw.toUpperCase()] ?? raw;
+}
+
 // Format a shareholder/member name for output, handling entity owners with a representative.
 // Individual owners (or entity rows without a representative_name) return the bare name —
 // preserves byte-for-byte parity with prior PDFs.
