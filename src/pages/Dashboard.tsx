@@ -60,15 +60,9 @@ export default function Dashboard() {
       .catch(() => { /* silent — non-admins get 403, which is fine */ });
   }, [user]);
 
-  // One-time auto-migration of legacy plaintext bank account / routing numbers (admin only).
-  useEffect(() => {
-    if (!user) return;
-    if (sessionStorage.getItem("bank-legacy-migrated")) return;
-    sessionStorage.setItem("bank-legacy-migrated", "1");
-    supabase.functions
-      .invoke("migrate-legacy-bank-numbers")
-      .catch(() => { /* silent — non-admins get 403, which is fine */ });
-  }, [user]);
+  // Legacy plaintext bank account / routing numbers were removed from the
+  // database entirely, so no client-side migration pass is needed anymore.
+
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("active");
