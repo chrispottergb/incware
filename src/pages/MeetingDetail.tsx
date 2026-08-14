@@ -10,6 +10,7 @@ import { ArrowLeft, Calendar, FileText, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import MeetingAuthorizedSigners from "@/components/meeting/MeetingAuthorizedSigners";
 import MeetingInfoCard from "@/components/meeting/MeetingInfoCard";
+import ConsentSignatureList from "@/components/meeting/ConsentSignatureList";
 import MeetingFinancials from "@/components/meeting/MeetingFinancials";
 import MeetingSubTable from "@/components/meeting/MeetingSubTable";
 import MeetingResolutions from "@/components/meeting/MeetingResolutions";
