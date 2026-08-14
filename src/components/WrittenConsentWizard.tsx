@@ -87,6 +87,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   const isSMLLC = company.entity_type === "Single Member LLC";
   const isLLC = isLLCType(company.entity_type);
   const isCorp = company.entity_type === "Corporation" || company.entity_type === "S-Corp";
+  const isNonProfit = company.entity_type === "Non-Profit";
 
   // Share/unit calculations for populating member holdings
   const { shareholderHoldings, totalIssuedShares } = useShareCalculations(company.id);
