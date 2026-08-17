@@ -4062,17 +4062,17 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     sy += 8;
     autoTable(doc, {
       startY: sy,
-      head: [["Date", "Action", "Amount", "Related Party"]],
-      body: ratified.map((r) => [
+      head: [["Date", "Action", "Amount"]],
+      body: ordinaryRatified.map((r) => [
         r.action_date ? new Date(r.action_date + "T00:00:00").toLocaleDateString() : "—",
         r.description,
         r.amount != null ? fmt(r.amount) : "—",
-        r.is_related_party ? "Yes" : "—",
       ]),
       theme: "grid",
       headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
-      columnStyles: { 0: { cellWidth: 24 }, 2: { cellWidth: 26 }, 3: { cellWidth: 24 } },
+      columnStyles: { 0: { cellWidth: 24 }, 2: { cellWidth: 26 } },
+
       margin: { left: MARGIN, right: R_MARGIN },
     });
   }
