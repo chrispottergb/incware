@@ -1395,7 +1395,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
 
   // Statutory Close Corporation Governance Notice — rendered before Section 1.
   // Not numbered, so "Meeting Information" remains Section 1.
-  if (isStatutoryClose) {
+  if (isCloseCorp) {
     const pw = doc.internal.pageSize.getWidth();
     y = checkPageBreak(doc, y, 40);
     doc.setFontSize(11);
@@ -1405,8 +1405,11 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     y += 6;
     doc.setFont("Arial", "normal");
     doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
-    const statuteCitation = getStatutoryCloseStatute(company?.state_of_incorporation || company?.state);
-    const noticeText = `${companyName} is organized as a Statutory Close Corporation pursuant to ${statuteCitation}. This corporation operates without a board of directors. All governance powers vested by statute in a board of directors are exercised directly by the shareholders of the corporation. The actions taken at this meeting are made in that capacity.`;
+    const articleRef = ((company as any)?.board_elimination_article || "").toString().trim();
+    const articleClause = articleRef || "the Articles of Incorporation";
+    const noticeText = isBoardEliminated
+      ? `This corporation has elected statutory close corporation status pursuant to s. 180.1803, Wis. Stats., and has further elected, by ${articleClause} of its Articles of Incorporation and pursuant to s. 180.1821, Wis. Stats., not to have a board of directors. The shareholders exercise all corporate powers and manage the business and affairs of the corporation, and are subject to all duties otherwise imposed on a board of directors.`
+      : `This corporation has elected statutory close corporation status pursuant to s. 180.1803, Wis. Stats. Its shares are subject to the transfer restrictions of s. 180.1805, Wis. Stats. The corporation has a board of directors.`;
     const noticeLines = doc.splitTextToSize(noticeText, pw - MARGIN - R_MARGIN);
     for (const line of noticeLines) {
       y = checkPageBreak(doc, y, 6);
