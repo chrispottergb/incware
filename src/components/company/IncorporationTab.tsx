@@ -336,6 +336,27 @@ export default function IncorporationTab({ company }: Props) {
     // triggerSave is called after state settles (via useAutoSave debounce)
     setTimeout(() => incAutoSave.triggerSave(), 50);
   };
+
+  // Statutory close corporation status (Wis. Stat. s. 180.1803) and the separate
+  // election not to have a board of directors (s. 180.1821) are constrained in the
+  // database: board_eliminated cannot be true unless statutory_close_corporation is.
+  // Clearing the parent flag must therefore clear the child fields in the SAME
+  // setState — sequential updateAndSave calls would emit an UPDATE that violates
+  // board_eliminated_requires_close_corp and reject the whole form payload.
+  const setCloseCorp = (checked: boolean) => {
+    setForm((prev) => ({
+      ...prev,
+      statutory_close_corporation: checked,
+      ...(checked
+        ? {}
+        : {
+            board_eliminated: false,
+            board_elimination_article: "",
+            board_elimination_date: "",
+          }),
+    }));
+    setTimeout(() => incAutoSave.triggerSave(), 50);
+  };
   const handleAgentZipResult = useCallback((result: { city: string; state: string }) => {
     setForm(prev => ({ ...prev, registered_agent_city: result.city, registered_agent_state: result.state }));
   }, []);
