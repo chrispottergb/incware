@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2, Loader2, Users, FileText, ChevronDown, ExternalLink, Shield, History, Building2, User, Phone, Globe } from "lucide-react";
+import DirectorConflictNotice from "@/components/company/DirectorConflictNotice";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 import { toast } from "sonner";
@@ -1558,6 +1559,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
               </div>
             </CardHeader>
             <CardContent className="px-4 pb-4">
+              <DirectorConflictNotice companyId={companyId} boardEliminated={(company as any)?.board_eliminated} />
               {isLLC ? (
                 <form
                   onSubmit={(e) => e.preventDefault()}

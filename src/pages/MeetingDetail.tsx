@@ -22,6 +22,7 @@ import PrintPreviewButton from "@/components/meeting/PrintPreviewButton";
 import DirectorReElection from "@/components/meeting/DirectorReElection";
 import MeetingAttendanceSelector from "@/components/meeting/MeetingAttendanceSelector";
 import AssetLeaseTransactionLog from "@/components/company/AssetLeaseTransactionLog";
+import DirectorConflictNotice from "@/components/company/DirectorConflictNotice";
 import MeetingBanking from "@/components/meeting/MeetingBanking";
 import MeetingOfficersTable from "@/components/meeting/MeetingOfficersTable";
 import { OFFICER_TITLE_OPTIONS } from "@/components/company/OrganizationTab";
@@ -927,14 +928,21 @@ export default function MeetingDetail() {
     { value: "other", label: "Other" },
   ];
 
-  // Shareholder meetings only need a focused subset of tabs
+  // Shareholder meetings only need a focused subset of tabs. For statutory-close
+  // shareholder meetings we normally hide the directors tab because the meeting is
+  // of shareholders, but if the company has elected not to have a board (s. 180.1821)
+  // and director records still exist, keep the tab visible so the conflict is
+  // surfaced rather than concealed.
   const shareholderTabs = new Set(["info", "shareholders", "directors", "resolutions", "other"]);
   const isNonProfit = company?.entity_type === "Non-Profit";
+  const boardEliminated = !!(company as any)?.board_eliminated;
+  const hasAnyDirectorRecords = (companyDirectors?.length || 0) > 0 || (directors?.length || 0) > 0;
+  const showDirectorsTabInCloseMeeting = boardEliminated && hasAnyDirectorRecords;
   const subTabs = (
     isShareholderMeeting && !isStatutoryCloseShareholderMeeting
       ? allSubTabs.filter(t => shareholderTabs.has(t.value))
       : isStatutoryCloseShareholderMeeting
-      ? allSubTabs.filter(t => t.value !== "directors")
+      ? allSubTabs.filter(t => t.value !== "directors" || showDirectorsTabInCloseMeeting)
       : allSubTabs
   ).filter(t => !(isNonProfit && t.value === "shareholders"));
 
@@ -1232,6 +1240,7 @@ export default function MeetingDetail() {
         </TabsContent>
         <TabsContent value="directors" className="mt-5">
           <div className="space-y-4">
+            <DirectorConflictNotice companyId={id || ""} boardEliminated={(company as any)?.board_eliminated} />
             {(isShareholderMeeting || isAnnualMeeting) && effectiveDirectorRoster.length > 0 && (
               <DirectorReElection directors={effectiveDirectorRoster as any} meetingDirectorNames={directors.map((d: any) => d.director_name)} shareholders={companyShareholders} directorLabel={term.director} directorsLabel={term.directors} shareholdersLabel={term.shareholders} />
             )}
