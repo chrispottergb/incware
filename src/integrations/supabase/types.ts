@@ -2103,6 +2103,56 @@ export type Database = {
           },
         ]
       }
+      interim_actions: {
+        Row: {
+          action_date: string | null
+          amount: number | null
+          category: string | null
+          company_id: string
+          created_at: string
+          description: string
+          id: string
+          is_related_party: boolean
+          source_id: string | null
+          source_table: string | null
+          updated_at: string
+        }
+        Insert: {
+          action_date?: string | null
+          amount?: number | null
+          category?: string | null
+          company_id: string
+          created_at?: string
+          description: string
+          id?: string
+          is_related_party?: boolean
+          source_id?: string | null
+          source_table?: string | null
+          updated_at?: string
+        }
+        Update: {
+          action_date?: string | null
+          amount?: number | null
+          category?: string | null
+          company_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_related_party?: boolean
+          source_id?: string | null
+          source_table?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interim_actions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lease_classification_audit: {
         Row: {
           changed_at: string
@@ -2941,6 +2991,51 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "meeting_other_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_ratifications: {
+        Row: {
+          created_at: string
+          disposition: string
+          id: string
+          interim_action_id: string
+          meeting_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          disposition?: string
+          id?: string
+          interim_action_id: string
+          meeting_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          disposition?: string
+          id?: string
+          interim_action_id?: string
+          meeting_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_ratifications_interim_action_id_fkey"
+            columns: ["interim_action_id"]
+            isOneToOne: false
+            referencedRelation: "interim_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_ratifications_meeting_id_fkey"
             columns: ["meeting_id"]
             isOneToOne: false
             referencedRelation: "meetings"
