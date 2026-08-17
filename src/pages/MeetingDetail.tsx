@@ -531,6 +531,32 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
+  // Ratified interim actions for this meeting (annual meetings only print this section)
+  const { data: ratifications = [] } = useQuery({
+    queryKey: ["meeting_ratifications", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meeting_ratifications")
+        .select("disposition, sort_order, interim_actions(*)")
+        .eq("meeting_id", meetingId!)
+        .eq("disposition", "ratified")
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? [])
+        .map((r: any) => r.interim_actions)
+        .filter(Boolean)
+        .map((a: any) => ({
+          action_date: a.action_date as string | null,
+          description: a.description as string,
+          amount: a.amount === null ? null : Number(a.amount),
+          is_related_party: !!a.is_related_party,
+        }));
+    },
+    enabled: !!meetingId,
+  });
+
+
+
   // Entity-wide Asset & Lease Transaction Log (replaces legacy per-meeting vehicle tables)
   const { data: assetTransactions = [] } = useQuery({
     queryKey: ["asset_transactions", meeting?.company_id],
