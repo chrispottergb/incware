@@ -528,6 +528,8 @@ export default function MeetingsTab({ companyId, company }: Props) {
   });
 
   const hasSubTypes = SUB_TYPES[form.meeting_type];
+  // Exact printed minutes title, computed from the same predicate as the PDF.
+  const titlePreview = resolveMinutesTitlePreview(company, form.meeting_type);
   const isOrgMeeting = form.meeting_type === "Organizational Meeting";
   const meetingTypeOptions = company.entity_type === "Non-Profit"
     ? NONPROFIT_MEETING_TYPES
