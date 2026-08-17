@@ -3701,21 +3701,23 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       `NOW, THEREFORE, BE IT RESOLVED, that the officers of the company are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.`,
       bt
     );
-    // Backstop for actions not separately itemized in the ratification sweep.
-    if (isAnnual && !isShareholder) {
+    // Prospective standing authority — makes subsequent annual ratifications
+    // confirmations of acts within authority already granted.
+    {
       doc.setFontSize(11);
       doc.setFont("Arial", "normal");
       doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
-      const backstop = `FURTHER RESOLVED, that all other lawful acts taken by the officers and agents of ${companyName} on its behalf since the last annual meeting, to the extent not separately ratified above, are hereby ratified, approved, and confirmed.`;
-      const backstopLines = doc.splitTextToSize(backstop, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      const prospective = `FURTHER RESOLVED, that the officers of the Company are authorized to conduct the ordinary business and affairs of the Company — including banking, borrowing within existing facilities, purchasing, contracting, leasing, and employment matters arising in the ordinary course — without further action of the ${boardLabel()}, until this authority is modified or revoked by subsequent action of the ${boardLabel()}.`;
+      const pLines = doc.splitTextToSize(prospective, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
       y += 2;
-      for (const line of backstopLines) {
+      for (const line of pLines) {
         y = checkPageBreak(doc, y, 6);
         doc.text(line, MARGIN, y);
         y += 5.5;
       }
       y += 4;
     }
+
   }
 
   // Tax Return Filing Acknowledgment (Annual Meeting)
