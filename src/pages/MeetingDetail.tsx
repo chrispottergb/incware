@@ -19,6 +19,8 @@ import MeetingBenefits from "@/components/meeting/MeetingBenefits";
 import MeetingLoans from "@/components/meeting/MeetingLoans";
 import MeetingAgreements from "@/components/meeting/MeetingAgreements";
 import PrintPreviewButton from "@/components/meeting/PrintPreviewButton";
+import RatificationSweep from "@/components/meeting/RatificationSweep";
+import { defaultPeriod } from "@/lib/interim-actions";
 import DirectorReElection from "@/components/meeting/DirectorReElection";
 import MeetingAttendanceSelector from "@/components/meeting/MeetingAttendanceSelector";
 import AssetLeaseTransactionLog from "@/components/company/AssetLeaseTransactionLog";
@@ -57,6 +59,8 @@ export default function MeetingDetail() {
   const autoPreview = searchParams.get("preview") === "true";
   const queryClient = useQueryClient();
   const [editWizardOpen, setEditWizardOpen] = useState(false);
+  const [sweepOpen, setSweepOpen] = useState(false);
+  const sweepResolver = useRef<((proceed: boolean) => void) | null>(null);
 
   const { data: meeting, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["meeting", meetingId],
@@ -924,6 +928,8 @@ export default function MeetingDetail() {
         companyAttorneys,
         companyAccountants,
         companyLeases,
+        ratifications,
+        ratificationPeriod,
       });
       
       return doc;
@@ -1108,6 +1114,7 @@ export default function MeetingDetail() {
           label="Print Full Minutes"
           generatePDF={generateFullMinutes}
           fileName={meetingFileName}
+          beforeAction={isAnnualMeeting ? openSweep : undefined}
         />
       </div>
 
