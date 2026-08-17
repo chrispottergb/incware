@@ -33,6 +33,10 @@ export interface NonProfitAnnualMeetingData {
    * wording change.
    */
   meetingScope?: "directors" | "members";
+
+  /** Ratified interim actions (optional — printed only when the ratification sweep supplies them). */
+  ratifications?: { action_date: string | null; description: string; amount: number | null; is_related_party: boolean }[];
+  ratificationPeriod?: { start: string; end: string };
 }
 
 
@@ -301,6 +305,23 @@ export function generateNonProfitAnnualMeetingPDF(data: NonProfitAnnualMeetingDa
     const nextDate = gov.nextMeetingDate ? fmtDate(gov.nextMeetingDate) : "[Date]";
     const nextLoc = gov.nextMeetingLocation?.trim() || "[Location]";
     para(`The next Annual Meeting of the Corporation is scheduled for ${nextDate} at ${nextLoc}.`);
+
+    // Ratification of actions taken during the year (narrative form for nonprofits).
+    const ratified = (data.ratifications ?? []).filter(r => (r?.description || "").trim().length > 0);
+    if (ratified.length > 0) {
+      sectionHeading("Ratification of Actions Taken During the Year");
+      const ps = data.ratificationPeriod?.start;
+      const pe = data.ratificationPeriod?.end;
+      para(
+        `The board reviewed actions taken on behalf of the Corporation ${ps && pe ? `during the period from ${fmtDate(ps)} through ${fmtDate(pe)}` : "since the last annual meeting"} without formal action at a meeting. Upon motion duly made and seconded, each of the following actions was ratified, approved, and confirmed in all respects as the act of the Corporation:`
+      );
+      ratified.forEach(r => {
+        const d = r.action_date ? fmtDate(r.action_date) : "Date not recorded";
+        const amt = r.amount != null ? ` in the amount of $${Number(r.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "";
+        const rp = r.is_related_party ? " (related-party transaction, disclosed to and approved by the disinterested directors)" : "";
+        para(`${d} \u2014 ${r.description}${amt}${rp}.`, 12);
+      });
+    }
 
     // 18. Other business
     sectionHeading("Other Business");
