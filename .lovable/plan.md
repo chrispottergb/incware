@@ -17,21 +17,38 @@ Add constraint `board_eliminated_requires_close_corp`: `CHECK (NOT board_elimina
 
 ## 2. Company edit form (Incorporation tab, Corporate Elections group)
 
-Directly beneath the existing Statutory Close Corporation checkbox, add an indented nested group, disabled and greyed out unless the parent box is checked:
+Directly beneath the existing Statutory Close Corporation checkbox, add an indented nested group within the same `equityCard.show1244` gate, disabled and greyed out unless the parent box is checked:
 
 - Checkbox: "Corporation has elected NOT to have a board of directors", with helper text citing Wis. Stat. s. 180.1821 — a separate election requiring a statement in the articles approved unanimously by all shareholders; check only if the articles actually contain it.
 - Text input "Articles reference" (placeholder e.g. "Article VII") -> `board_elimination_article`
 - Date input "Election date" -> `board_elimination_date`
 
-Unchecking the parent clears all three child fields (set false / null) and saves.
+The parent checkbox uses a single dedicated handler, `setCloseCorp(checked)`, that updates all four related fields in one `setState` and then calls `triggerSave()` once:
+```ts
+const setCloseCorp = (checked: boolean) => {
+  setForm(prev => ({
+    ...prev,
+    statutory_close_corporation: checked,
+    ...(checked ? {} : {
+      board_eliminated: false,
+      board_elimination_article: "",
+      board_elimination_date: "",
+    }),
+  }));
+  setTimeout(() => incAutoSave.triggerSave(), 50);
+};
+```
+This avoids sequential debounced saves that would violate the new CHECK constraint when the parent flag is removed.
+
+Add `board_eliminated`, `board_elimination_article`, and `board_elimination_date` to both form-state initializers (the initial `useState` block and the `useEffect` reset on `[company.id]`), and include them in the single save mutation `.update({...})` payload (~line 580), sending empty strings as `null` for the text and date fields.
 
 Update the parent helper text to: "Elected under Wis. Stat. s. 180.1803. Limited to 50 or fewer shareholders. This does not by itself eliminate the board of directors."
 
 ## 3. Verification banner (company detail page)
 
-When `statutory_close_corporation` and `board_eliminated` are both true but `board_elimination_article` is null, show a dismissible amber notice asking the user to confirm the articles contain the s. 180.1821 statement and record the article reference, and warning that if they do not, the box should be unchecked because the corporation has a board whose annual election must appear in the minutes.
+When `statutory_close_corporation` and `board_eliminated` are both true but `board_elimination_article` is null, show a non-dismissible amber notice asking the user to confirm the articles contain the s. 180.1821 statement and record the article reference, and warning that if they do not, the box should be unchecked because the corporation has a board whose annual election must appear in the minutes.
 
-Dismissal is per-browser (local storage, keyed by company id) so no extra column is needed; the notice returns if the article reference is still missing on another device.
+The banner clears only when the user records the article reference or unchecks the board-elimination election. No localStorage, no extra column.
 
 ## Technical notes
 
