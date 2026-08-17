@@ -1406,9 +1406,9 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setFont("Arial", "normal");
     doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     const articleRef = ((company as any)?.board_elimination_article || "").toString().trim();
-    const articleClause = articleRef || "the Articles of Incorporation";
+    const articleClause = articleRef ? `${articleRef} of its Articles of Incorporation` : "the Articles of Incorporation";
     const noticeText = isBoardEliminated
-      ? `This corporation has elected statutory close corporation status pursuant to s. 180.1803, Wis. Stats., and has further elected, by ${articleClause} of its Articles of Incorporation and pursuant to s. 180.1821, Wis. Stats., not to have a board of directors. The shareholders exercise all corporate powers and manage the business and affairs of the corporation, and are subject to all duties otherwise imposed on a board of directors.`
+      ? `This corporation has elected statutory close corporation status pursuant to s. 180.1803, Wis. Stats., and has further elected, by ${articleClause} and pursuant to s. 180.1821, Wis. Stats., not to have a board of directors. The shareholders exercise all corporate powers and manage the business and affairs of the corporation, and are subject to all duties otherwise imposed on a board of directors.`
       : `This corporation has elected statutory close corporation status pursuant to s. 180.1803, Wis. Stats. Its shares are subject to the transfer restrictions of s. 180.1805, Wis. Stats. The corporation has a board of directors.`;
     const noticeLines = doc.splitTextToSize(noticeText, pw - MARGIN - R_MARGIN);
     for (const line of noticeLines) {
