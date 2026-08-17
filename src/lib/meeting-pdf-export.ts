@@ -924,7 +924,7 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
     (data.officers || []).forEach(o => { if (o.name) addUnique(o.name); });
   }
 
-  const isStatutoryCloseWaiver = companyIsCloseCorp || (isShareholderMeeting && (meeting?.sub_type || "") === "Statutory Close Corporation");
+  const isStatutoryCloseWaiver = isBoardEliminated;
   const purposes = isShareholderMeeting
     ? [
         isStatutoryCloseWaiver ? "elect officers of the corporation" : "elect a new board of directors",
