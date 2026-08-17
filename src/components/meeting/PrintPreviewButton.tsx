@@ -22,9 +22,14 @@ interface Props {
   generatePDF: () => jsPDF;
   fileName: string;
   autoPreview?: boolean;
+  /**
+   * Optional gate run before Preview / PDF / Print. Return false to abort.
+   * Used by Annual Meetings to open the ratification sweep on the way to output.
+   */
+  beforeAction?: () => Promise<boolean>;
 }
 
-export default function PrintPreviewButton({ label = "Print", generatePDF, fileName, autoPreview = false }: Props) {
+export default function PrintPreviewButton({ label = "Print", generatePDF, fileName, autoPreview = false, beforeAction }: Props) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [pdfData, setPdfData] = useState<Uint8Array | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,7 +40,8 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
   const containerRef = useRef<HTMLDivElement>(null);
   const pdfDocRef = useRef<any>(null);
 
-  const handlePreview = () => {
+  const handlePreview = async () => {
+    if (beforeAction && !(await beforeAction())) return;
     setLoading(true);
     try {
       
@@ -184,8 +190,9 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     return true;
   };
 
-  const handleDownload = async () => {
+  const handleDownload = async (skipGate = false) => {
     try {
+      if (!skipGate && beforeAction && !(await beforeAction())) return;
       
       const doc = generatePDF();
       if (!doc) {
@@ -208,8 +215,9 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     }
   };
 
-  const handlePrint = async () => {
+  const handlePrint = async (skipGate = false) => {
     try {
+      if (!skipGate && beforeAction && !(await beforeAction())) return;
       const doc = generatePDF();
       if (!doc) {
         console.warn("[PDF Print] generatePDF returned null/falsy — aborting.");
@@ -309,11 +317,11 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
           {loading ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Eye className="mr-1.5 h-3.5 w-3.5" />}
           Preview
         </Button>
-        <Button size="sm" variant="outline" onClick={handleDownload}>
+        <Button size="sm" variant="outline" onClick={() => handleDownload()}>
           <Download className="mr-1.5 h-3.5 w-3.5" />
           PDF
         </Button>
-        <Button size="sm" variant="outline" onClick={handlePrint}>
+        <Button size="sm" variant="outline" onClick={() => handlePrint()}>
           <Printer className="mr-1.5 h-3.5 w-3.5" />
           {label}
         </Button>
@@ -325,11 +333,11 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
             <div className="flex items-center justify-between">
               <DialogTitle className="font-display text-base">Document Preview</DialogTitle>
               <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline" onClick={handleDownload}>
+                <Button size="sm" variant="outline" onClick={() => handleDownload(true)}>
                   <Download className="mr-1.5 h-3.5 w-3.5" />
                   Download PDF
                 </Button>
-                <Button size="sm" onClick={handlePrint}>
+                <Button size="sm" onClick={() => handlePrint(true)}>
                   <Printer className="mr-1.5 h-3.5 w-3.5" />
                   Print
                 </Button>

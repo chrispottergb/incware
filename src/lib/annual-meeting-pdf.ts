@@ -87,6 +87,10 @@ export interface AnnualMeetingData {
 
   // Entity type (used for conditional sections like Shareholder Tax Basis disclaimer)
   entityType?: string;
+
+  // Ratified interim actions (optional — printed only when the ratification sweep supplies them)
+  ratifications?: { action_date: string | null; description: string; amount: number | null; is_related_party: boolean }[];
+  ratificationPeriod?: { start: string; end: string };
 }
 
 // Blue theme colors matching org meeting
@@ -652,6 +656,31 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     });
   }
 
+  // ===== RATIFICATION OF ACTIONS TAKEN DURING THE YEAR =====
+  const ratified = (data.ratifications ?? []).filter(r => (r?.description || "").trim().length > 0);
+  if (ratified.length > 0) {
+    const fmtD = (d?: string | null) => (d ? new Date(d + "T00:00:00").toLocaleDateString() : "\u2014");
+    const ps = data.ratificationPeriod?.start;
+    const pe = data.ratificationPeriod?.end;
+    sectionHeading("Ratification of Actions Taken During the Year");
+    whereasPara(
+      `certain actions were taken on behalf of ${fullName} ${ps && pe ? `during the period from ${fmtD(ps)} through ${fmtD(pe)}` : "during the period since the last annual meeting"} without formal action at a meeting, and the members have reviewed each such action;`
+    );
+    resolvedPara(`that each of the following actions is hereby ratified, approved, and confirmed in all respects as the act of ${fullName}:`);
+    addTable(
+      ["Date", "Action", "Amount", "Related Party"],
+      ratified.map(r => [
+        fmtD(r.action_date),
+        r.description,
+        r.amount != null ? `$${Number(r.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "\u2014",
+        r.is_related_party ? "Yes" : "\u2014",
+      ])
+    );
+    if (ratified.some(r => r.is_related_party)) {
+      para("Actions marked as related-party transactions were disclosed to and approved by the disinterested members, who determined each such action to be fair to the company at the time it was taken.");
+    }
+  }
+
   // ===== SECTION 14: REGISTERED AGENT CONFIRMATION =====
   sectionHeading("Registered Agent Confirmation");
 
@@ -661,6 +690,9 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   sectionHeading("General Authorization");
 
   resolvedPara("that the officers of the limited liability company are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.");
+
+  // Backstop for actions not separately itemized above.
+  resolvedPara(`that all other lawful acts taken by the officers and agents of ${fullName} on its behalf since the last annual meeting, to the extent not separately ratified above, are hereby ratified, approved, and confirmed.`);
 
   // ===== SHAREHOLDER TAX BASIS (S-election entities only) =====
   const entityTypeLower = (data.entityType || "").toLowerCase();

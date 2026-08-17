@@ -19,6 +19,8 @@ import MeetingBenefits from "@/components/meeting/MeetingBenefits";
 import MeetingLoans from "@/components/meeting/MeetingLoans";
 import MeetingAgreements from "@/components/meeting/MeetingAgreements";
 import PrintPreviewButton from "@/components/meeting/PrintPreviewButton";
+import RatificationSweep from "@/components/meeting/RatificationSweep";
+import { defaultPeriod } from "@/lib/interim-actions";
 import DirectorReElection from "@/components/meeting/DirectorReElection";
 import MeetingAttendanceSelector from "@/components/meeting/MeetingAttendanceSelector";
 import AssetLeaseTransactionLog from "@/components/company/AssetLeaseTransactionLog";
@@ -57,6 +59,8 @@ export default function MeetingDetail() {
   const autoPreview = searchParams.get("preview") === "true";
   const queryClient = useQueryClient();
   const [editWizardOpen, setEditWizardOpen] = useState(false);
+  const [sweepOpen, setSweepOpen] = useState(false);
+  const sweepResolver = useRef<((proceed: boolean) => void) | null>(null);
 
   const { data: meeting, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["meeting", meetingId],
@@ -531,6 +535,32 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
+  // Ratified interim actions for this meeting (annual meetings only print this section)
+  const { data: ratifications = [] } = useQuery({
+    queryKey: ["meeting_ratifications", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meeting_ratifications")
+        .select("disposition, sort_order, interim_actions(*)")
+        .eq("meeting_id", meetingId!)
+        .eq("disposition", "ratified")
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? [])
+        .map((r: any) => r.interim_actions)
+        .filter(Boolean)
+        .map((a: any) => ({
+          action_date: a.action_date as string | null,
+          description: a.description as string,
+          amount: a.amount === null ? null : Number(a.amount),
+          is_related_party: !!a.is_related_party,
+        }));
+    },
+    enabled: !!meetingId,
+  });
+
+
+
   // Entity-wide Asset & Lease Transaction Log (replaces legacy per-meeting vehicle tables)
   const { data: assetTransactions = [] } = useQuery({
     queryKey: ["asset_transactions", meeting?.company_id],
@@ -898,6 +928,8 @@ export default function MeetingDetail() {
         companyAttorneys,
         companyAccountants,
         companyLeases,
+        ratifications,
+        ratificationPeriod,
       });
       
       return doc;
@@ -909,6 +941,31 @@ export default function MeetingDetail() {
   };
 
   const term = getTerminology(company?.entity_type);
+
+  const ratificationPeriod = meeting
+    ? defaultPeriod({
+        meeting_date: meeting.meeting_date,
+        prior_mtg_date: meeting.prior_mtg_date,
+        tax_year: meeting.tax_year,
+      })
+    : { start: "", end: "" };
+
+  // Annual meetings review this year's informal actions on the way to output.
+  const openSweep = () =>
+    new Promise<boolean>((resolve) => {
+      sweepResolver.current = resolve;
+      setSweepOpen(true);
+    });
+
+  const resolveSweep = (proceed: boolean) => {
+    setSweepOpen(false);
+    const r = sweepResolver.current;
+    sweepResolver.current = null;
+    if (proceed) queryClient.invalidateQueries({ queryKey: ["meeting_ratifications", meetingId] });
+    // Let the refreshed ratifications land before the PDF is generated.
+    setTimeout(() => r?.(proceed), proceed ? 400 : 0);
+  };
+
 
   const allSubTabs = [
     { value: "info", label: "Meeting Info" },
@@ -1082,8 +1139,24 @@ export default function MeetingDetail() {
           label="Print Full Minutes"
           generatePDF={generateFullMinutes}
           fileName={meetingFileName}
+          beforeAction={isAnnualMeeting ? openSweep : undefined}
         />
       </div>
+
+      {isAnnualMeeting && meeting && (
+        <RatificationSweep
+          open={sweepOpen}
+          meeting={{
+            id: meeting.id,
+            company_id: meeting.company_id,
+            meeting_date: meeting.meeting_date,
+            prior_mtg_date: meeting.prior_mtg_date,
+            tax_year: meeting.tax_year,
+          }}
+          onCancel={() => resolveSweep(false)}
+          onContinue={() => resolveSweep(true)}
+        />
+      )}
 
       <Tabs defaultValue="info" className="w-full">
         <div className="border-b border-border">
