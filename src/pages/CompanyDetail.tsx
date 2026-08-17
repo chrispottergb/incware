@@ -289,6 +289,21 @@ export default function CompanyDetail() {
         deleting={deleting}
       />
 
+      {/* Board election verification — s. 180.1821 requires its own statement in the articles */}
+      {(company as any).statutory_close_corporation &&
+        (company as any).board_eliminated &&
+        !(company as any).board_elimination_article && (
+          <Alert className="border-amber-400/40 bg-amber-50 dark:bg-amber-950/20">
+            <AlertDescription className="text-xs text-amber-900 dark:text-amber-200">
+              <span className="font-semibold">Confirm board election</span> — this corporation is set to
+              operate without a board of directors. Verify the articles of incorporation contain a
+              statement to that effect under Wis. Stat. s. 180.1821 and record the article reference.
+              If they do not, uncheck this box; the corporation has a board and its minutes must record
+              the annual election of directors.
+            </AlertDescription>
+          </Alert>
+        )}
+
       {/* Tabs */}
       <Tabs value={hashTab} onValueChange={handleTabChange} className="w-full">
         <div className="border-b border-border">

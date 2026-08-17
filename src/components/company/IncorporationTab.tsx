@@ -204,6 +204,9 @@ export default function IncorporationTab({ company }: Props) {
     scheduled_meeting_month: (company as any).scheduled_meeting_month ?? "",
     election_1244: company.election_1244 ?? false,
     statutory_close_corporation: (company as any).statutory_close_corporation ?? false,
+    board_eliminated: (company as any).board_eliminated ?? false,
+    board_elimination_article: (company as any).board_elimination_article ?? "",
+    board_elimination_date: (company as any).board_elimination_date ?? "",
     has_preferred_shares: company.has_preferred_shares ?? false,
     preferred_class_name: (company as any).preferred_class_name ?? "Class B",
     preferred_authorized_shares: (company as any).preferred_authorized_shares?.toString() ?? "",
@@ -280,6 +283,9 @@ export default function IncorporationTab({ company }: Props) {
       scheduled_meeting_month: (company as any).scheduled_meeting_month ?? "",
     election_1244: company.election_1244 ?? false,
     statutory_close_corporation: (company as any).statutory_close_corporation ?? false,
+    board_eliminated: (company as any).board_eliminated ?? false,
+    board_elimination_article: (company as any).board_elimination_article ?? "",
+    board_elimination_date: (company as any).board_elimination_date ?? "",
     has_preferred_shares: company.has_preferred_shares ?? false,
     preferred_class_name: (company as any).preferred_class_name ?? "Class B",
     preferred_authorized_shares: (company as any).preferred_authorized_shares?.toString() ?? "",
@@ -328,6 +334,27 @@ export default function IncorporationTab({ company }: Props) {
   const updateAndSave = (field: string, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     // triggerSave is called after state settles (via useAutoSave debounce)
+    setTimeout(() => incAutoSave.triggerSave(), 50);
+  };
+
+  // Statutory close corporation status (Wis. Stat. s. 180.1803) and the separate
+  // election not to have a board of directors (s. 180.1821) are constrained in the
+  // database: board_eliminated cannot be true unless statutory_close_corporation is.
+  // Clearing the parent flag must therefore clear the child fields in the SAME
+  // setState — sequential updateAndSave calls would emit an UPDATE that violates
+  // board_eliminated_requires_close_corp and reject the whole form payload.
+  const setCloseCorp = (checked: boolean) => {
+    setForm((prev) => ({
+      ...prev,
+      statutory_close_corporation: checked,
+      ...(checked
+        ? {}
+        : {
+            board_eliminated: false,
+            board_elimination_article: "",
+            board_elimination_date: "",
+          }),
+    }));
     setTimeout(() => incAutoSave.triggerSave(), 50);
   };
   const handleAgentZipResult = useCallback((result: { city: string; state: string }) => {
@@ -578,6 +605,13 @@ export default function IncorporationTab({ company }: Props) {
           scheduled_meeting_month: form.scheduled_meeting_month || null,
           election_1244: form.election_1244,
           statutory_close_corporation: form.statutory_close_corporation,
+          board_eliminated: form.statutory_close_corporation ? form.board_eliminated : false,
+          board_elimination_article: form.statutory_close_corporation
+            ? (form.board_elimination_article || null)
+            : null,
+          board_elimination_date: form.statutory_close_corporation
+            ? (form.board_elimination_date || null)
+            : null,
           has_preferred_shares: form.has_preferred_shares,
           preferred_class_name: form.has_preferred_shares ? (form.preferred_class_name || "Class B") : null,
           preferred_authorized_shares: form.has_preferred_shares && form.preferred_authorized_shares
@@ -1478,11 +1512,59 @@ export default function IncorporationTab({ company }: Props) {
               <Checkbox
                 id="statutory_close_corp"
                 checked={form.statutory_close_corporation}
-                onCheckedChange={(v) => updateAndSave("statutory_close_corporation", !!v)}
+                onCheckedChange={(v) => setCloseCorp(!!v)}
               />
               <div className="flex-1">
                 <Label htmlFor="statutory_close_corp" className="cursor-pointer text-sm font-medium">Statutory Close Corporation</Label>
-                <p className="text-[11px] text-muted-foreground">This corporation elects to operate without a board of directors under close corporation statutes. Shareholders exercise all governance powers directly.</p>
+                <p className="text-[11px] text-muted-foreground">Elected under Wis. Stat. s. 180.1803. Limited to 50 or fewer shareholders. This does not by itself eliminate the board of directors.</p>
+
+                {/* Separate election under Wis. Stat. s. 180.1821 — nested, requires the parent election */}
+                <div
+                  className={`mt-3 ml-1 border-l-2 border-border pl-3 ${
+                    form.statutory_close_corporation ? "" : "opacity-50 pointer-events-none"
+                  }`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <Checkbox
+                      id="board_eliminated"
+                      disabled={!form.statutory_close_corporation}
+                      checked={form.board_eliminated}
+                      onCheckedChange={(v) => updateAndSave("board_eliminated", !!v)}
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor="board_eliminated" className="cursor-pointer text-sm font-medium">
+                        Corporation has elected NOT to have a board of directors
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        Wis. Stat. s. 180.1821. This is a separate election from statutory close corporation status. It requires a statement in the articles of incorporation approved unanimously by all shareholders. Check this only if the articles actually contain that statement.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-2.5 grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="board_elimination_article" className="text-[11px] text-muted-foreground">Articles reference</Label>
+                      <Input
+                        id="board_elimination_article"
+                        placeholder="Article VII"
+                        disabled={!form.statutory_close_corporation || !form.board_eliminated}
+                        value={form.board_elimination_article}
+                        onChange={(e) => setForm((prev) => ({ ...prev, board_elimination_article: e.target.value }))}
+                        onBlur={() => incAutoSave.triggerSave()}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="board_elimination_date" className="text-[11px] text-muted-foreground">Election date</Label>
+                      <Input
+                        id="board_elimination_date"
+                        type="date"
+                        disabled={!form.statutory_close_corporation || !form.board_eliminated}
+                        value={form.board_elimination_date}
+                        onChange={(e) => setForm((prev) => ({ ...prev, board_elimination_date: e.target.value }))}
+                        onBlur={() => incAutoSave.triggerSave()}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
