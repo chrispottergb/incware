@@ -942,6 +942,31 @@ export default function MeetingDetail() {
 
   const term = getTerminology(company?.entity_type);
 
+  const ratificationPeriod = meeting
+    ? defaultPeriod({
+        meeting_date: meeting.meeting_date,
+        prior_mtg_date: meeting.prior_mtg_date,
+        tax_year: meeting.tax_year,
+      })
+    : { start: "", end: "" };
+
+  // Annual meetings review this year's informal actions on the way to output.
+  const openSweep = () =>
+    new Promise<boolean>((resolve) => {
+      sweepResolver.current = resolve;
+      setSweepOpen(true);
+    });
+
+  const resolveSweep = (proceed: boolean) => {
+    setSweepOpen(false);
+    const r = sweepResolver.current;
+    sweepResolver.current = null;
+    if (proceed) queryClient.invalidateQueries({ queryKey: ["meeting_ratifications", meetingId] });
+    // Let the refreshed ratifications land before the PDF is generated.
+    setTimeout(() => r?.(proceed), proceed ? 400 : 0);
+  };
+
+
   const allSubTabs = [
     { value: "info", label: "Meeting Info" },
     { value: "financials", label: "Financial" },
