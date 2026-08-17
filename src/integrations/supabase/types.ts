@@ -1062,6 +1062,9 @@ export type Database = {
           authorized_binders: string | null
           authorized_shares: number | null
           authorized_units_backfill_dismissed: boolean
+          board_eliminated: boolean
+          board_elimination_article: string | null
+          board_elimination_date: string | null
           business_purpose: string | null
           city: string | null
           contact_cell: string | null
@@ -1143,6 +1146,9 @@ export type Database = {
           authorized_binders?: string | null
           authorized_shares?: number | null
           authorized_units_backfill_dismissed?: boolean
+          board_eliminated?: boolean
+          board_elimination_article?: string | null
+          board_elimination_date?: string | null
           business_purpose?: string | null
           city?: string | null
           contact_cell?: string | null
@@ -1224,6 +1230,9 @@ export type Database = {
           authorized_binders?: string | null
           authorized_shares?: number | null
           authorized_units_backfill_dismissed?: boolean
+          board_eliminated?: boolean
+          board_elimination_article?: string | null
+          board_elimination_date?: string | null
           business_purpose?: string | null
           city?: string | null
           contact_cell?: string | null
