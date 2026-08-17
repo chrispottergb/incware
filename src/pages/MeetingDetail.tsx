@@ -1143,6 +1143,21 @@ export default function MeetingDetail() {
         />
       </div>
 
+      {isAnnualMeeting && meeting && (
+        <RatificationSweep
+          open={sweepOpen}
+          meeting={{
+            id: meeting.id,
+            company_id: meeting.company_id,
+            meeting_date: meeting.meeting_date,
+            prior_mtg_date: meeting.prior_mtg_date,
+            tax_year: meeting.tax_year,
+          }}
+          onCancel={() => resolveSweep(false)}
+          onContinue={() => resolveSweep(true)}
+        />
+      )}
+
       <Tabs defaultValue="info" className="w-full">
         <div className="border-b border-border">
           <TabsList className="h-auto w-full flex flex-wrap justify-start gap-0 rounded-none bg-transparent p-0">
