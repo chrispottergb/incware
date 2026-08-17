@@ -48,6 +48,7 @@ import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { useNavigate } from "react-router-dom";
 import TaxReturnUpload from "@/components/TaxReturnUpload";
 import { isLLCType } from "@/lib/entity-terminology";
+import { resolveMinutesTitlePreview } from "@/lib/meeting-pdf-export";
 import OrgMeetingWizard from "@/components/OrgMeetingWizard";
 import AnnualMeetingWizard from "@/components/AnnualMeetingWizard";
 import WrittenConsentWizard from "@/components/WrittenConsentWizard";
