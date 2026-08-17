@@ -1512,11 +1512,59 @@ export default function IncorporationTab({ company }: Props) {
               <Checkbox
                 id="statutory_close_corp"
                 checked={form.statutory_close_corporation}
-                onCheckedChange={(v) => updateAndSave("statutory_close_corporation", !!v)}
+                onCheckedChange={(v) => setCloseCorp(!!v)}
               />
               <div className="flex-1">
                 <Label htmlFor="statutory_close_corp" className="cursor-pointer text-sm font-medium">Statutory Close Corporation</Label>
-                <p className="text-[11px] text-muted-foreground">This corporation elects to operate without a board of directors under close corporation statutes. Shareholders exercise all governance powers directly.</p>
+                <p className="text-[11px] text-muted-foreground">Elected under Wis. Stat. s. 180.1803. Limited to 50 or fewer shareholders. This does not by itself eliminate the board of directors.</p>
+
+                {/* Separate election under Wis. Stat. s. 180.1821 — nested, requires the parent election */}
+                <div
+                  className={`mt-3 ml-1 border-l-2 border-border pl-3 ${
+                    form.statutory_close_corporation ? "" : "opacity-50 pointer-events-none"
+                  }`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <Checkbox
+                      id="board_eliminated"
+                      disabled={!form.statutory_close_corporation}
+                      checked={form.board_eliminated}
+                      onCheckedChange={(v) => updateAndSave("board_eliminated", !!v)}
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor="board_eliminated" className="cursor-pointer text-sm font-medium">
+                        Corporation has elected NOT to have a board of directors
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        Wis. Stat. s. 180.1821. This is a separate election from statutory close corporation status. It requires a statement in the articles of incorporation approved unanimously by all shareholders. Check this only if the articles actually contain that statement.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-2.5 grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="board_elimination_article" className="text-[11px] text-muted-foreground">Articles reference</Label>
+                      <Input
+                        id="board_elimination_article"
+                        placeholder="Article VII"
+                        disabled={!form.statutory_close_corporation || !form.board_eliminated}
+                        value={form.board_elimination_article}
+                        onChange={(e) => setForm((prev) => ({ ...prev, board_elimination_article: e.target.value }))}
+                        onBlur={() => incAutoSave.triggerSave()}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="board_elimination_date" className="text-[11px] text-muted-foreground">Election date</Label>
+                      <Input
+                        id="board_elimination_date"
+                        type="date"
+                        disabled={!form.statutory_close_corporation || !form.board_eliminated}
+                        value={form.board_elimination_date}
+                        onChange={(e) => setForm((prev) => ({ ...prev, board_elimination_date: e.target.value }))}
+                        onBlur={() => incAutoSave.triggerSave()}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
