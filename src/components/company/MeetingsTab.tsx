@@ -651,6 +651,17 @@ export default function MeetingsTab({ companyId, company }: Props) {
                       ))}
                     </SelectContent>
                   </Select>
+                  {titlePreview && (
+                    <p className="text-xs text-muted-foreground leading-snug">
+                      Will print as: <span className="font-medium">{titlePreview.title}</span>
+                      {titlePreview.note && (
+                        <>
+                          <br />
+                          {titlePreview.note}
+                        </>
+                      )}
+                    </p>
+                  )}
                 </div>
                 {hasSubTypes && (
                   <div className="space-y-1.5">
