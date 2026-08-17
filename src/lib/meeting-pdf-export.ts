@@ -875,10 +875,13 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
   const entityType = company?.entity_type || "Corporation";
   const isLLC = entityType?.toLowerCase().includes("llc") || entityType?.toLowerCase().includes("limited liability");
   const isNonprofit = entityType?.toLowerCase().includes("nonprofit") || entityType?.toLowerCase().includes("non-profit");
-  // A Statutory Close Corporation has no board of directors — every meeting is a
-  // shareholder meeting for labeling/signature purposes, regardless of meeting_type.
-  const companyIsCloseCorp = !isLLC && !!(company as any)?.statutory_close_corporation;
-  const isShareholderMeeting = (meeting?.meeting_type || "").toLowerCase().includes("shareholder") || companyIsCloseCorp;
+  // s. 180.1803 — statutory close corporation status. This alone does NOT eliminate
+  // the board of directors; eliminating the board is a separate election.
+  const isCloseCorp = !isLLC && !!(company as any)?.statutory_close_corporation;
+  // s. 180.1821 — separate election not to have a board of directors. Only this
+  // election means the shareholders act in place of a board.
+  const isBoardEliminated = isCloseCorp && !!(company as any)?.board_eliminated;
+  const isShareholderMeeting = (meeting?.meeting_type || "").toLowerCase().includes("shareholder") || isBoardEliminated;
   const pw = doc.internal.pageSize.getWidth();
   const cx = pw / 2;
 
