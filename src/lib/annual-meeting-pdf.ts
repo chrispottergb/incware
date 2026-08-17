@@ -184,10 +184,9 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     y += 4;
   }
 
-  // RESOLVED: indented, "RESOLVED" in bold, remainder normal
-  function resolvedPara(rest: string) {
+  // RESOLVED: indented, prefix in bold, remainder normal
+  function prefixedResolvedPara(prefix: string, rest: string) {
     const indent = 36;
-    const prefix = "RESOLVED, ";
     doc.setFontSize(11);
     doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
     const fullText = prefix + rest;
@@ -210,6 +209,13 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
     }
     y += lines.length * 16 + 6;
   }
+  function resolvedPara(rest: string) {
+    prefixedResolvedPara("RESOLVED, ", rest);
+  }
+  function furtherResolvedPara(rest: string) {
+    prefixedResolvedPara("FURTHER RESOLVED, ", rest);
+  }
+
 
   // WHEREAS: flush left, "WHEREAS" in bold italic, remainder in italic
   function whereasPara(rest: string) {
