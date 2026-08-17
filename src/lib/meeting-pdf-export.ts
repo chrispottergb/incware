@@ -17,6 +17,36 @@ const BODY_COLOR: [number, number, number] = [40, 40, 40];
 const WHEREAS_INDENT = 0; // Flush left
 const RESOLVED_INDENT = 12.7; // 0.5 inch
 
+/**
+ * Resolve the exact minutes title that will be printed for a meeting type,
+ * using the same predicate as the PDF generator (s. 180.1821 board elimination,
+ * NOT s. 180.1803 close-corp status). Returns null when the meeting type does
+ * not produce a numbered "MINUTES OF THE ANNUAL MEETING..." title.
+ */
+export function resolveMinutesTitlePreview(
+  company: any,
+  meetingType: string,
+): { title: string; note?: string } | null {
+  const entityType = (company?.entity_type || "").toLowerCase();
+  const isLLC = entityType.includes("llc") || entityType.includes("limited liability");
+  const type = (meetingType || "").toLowerCase();
+  const isAnnual = type.includes("annual");
+  const isShareholder = type.includes("shareholder");
+  if (!isAnnual && !isShareholder) return null;
+  const isCloseCorp = !isLLC && !!company?.statutory_close_corporation;
+  const isBoardEliminated = isCloseCorp && !!company?.board_eliminated;
+  if (isShareholder || isBoardEliminated) {
+    const article = (company?.board_elimination_article || "").toString().trim();
+    return {
+      title: "MINUTES OF THE ANNUAL MEETING OF SHAREHOLDERS",
+      note: isBoardEliminated
+        ? `(no board of directors — ${article ? `${article}, ` : ""}s. 180.1821)`
+        : undefined,
+    };
+  }
+  return { title: "MINUTES OF THE ANNUAL MEETING" };
+}
+
 // State-specific statute citations for Statutory Close Corporation governance notice.
 // Used ONLY in the Statutory Close Corporation governance notice block.
 const getStatutoryCloseStatute = (state?: string | null): string => {
