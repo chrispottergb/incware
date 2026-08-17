@@ -197,6 +197,13 @@ interface MeetingData {
   companyAttorneys?: any[];
   companyAccountants?: any[];
   companyLeases?: any[];
+  /**
+   * Ratified interim actions (public.interim_actions joined via meeting_ratifications
+   * with disposition = 'ratified'). Annual meetings only.
+   */
+  ratifications?: { action_date: string | null; description: string; amount: number | null; is_related_party: boolean }[];
+  /** Sweep period printed in the ratification recital. */
+  ratificationPeriod?: { start: string; end: string };
 }
 
 function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType: string, meeting?: any, company?: any) {
@@ -1822,11 +1829,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     } else {
       // Annual meeting ratification
       y = section("Call to Order & Approval of Prior Meeting Minutes");
-      y = addWhereasResolved(doc, y,
-        `WHEREAS, the ${boardLabel()} and ${isLLC ? "members" : "shareholders"} of ${companyName} have taken various actions and made certain decisions during the prior fiscal year in the ordinary course of business; and`,
-        `NOW, THEREFORE, BE IT RESOLVED, that all acts and decisions of the ${isLLC ? "members" : "directors"} and ${isLLC ? "officers" : "officers"} of ${companyName} taken or made since the last annual meeting are hereby ratified, confirmed, and approved in all respects.`,
-        bt
-      );
+      // The blanket ratification formerly printed here has moved to the dedicated
+      // "Ratification of Actions Taken During the Year" section, where it backstops
+      // an itemized, dated list instead of standing alone. Shareholder meetings
+      // (handled in the branch above) keep the original blanket resolution.
 
       if (meeting.prior_mtg_date) {
         const priorDate = new Date(meeting.prior_mtg_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
