@@ -3579,6 +3579,67 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 6;
   }
 
+  // Ratification of Actions Taken During the Year (Annual Meetings only).
+  // Itemized, dated list of informal actions swept from the operating record.
+  // Long lists overflow to Schedule A after the signature block.
+  const ratified = (data.ratifications ?? []).filter((r) => (r?.description || "").trim().length > 0);
+  const SCHEDULE_A_THRESHOLD = 12;
+  const useScheduleA = ratified.length > SCHEDULE_A_THRESHOLD;
+  if (bt && isAnnual && !isShareholder && ratified.length > 0) {
+    const periodStart = data.ratificationPeriod?.start;
+    const periodEnd = data.ratificationPeriod?.end;
+    const fmtDate = (d?: string | null) =>
+      d ? new Date(d + "T00:00:00").toLocaleDateString() : "—";
+    const periodPhrase =
+      periodStart && periodEnd
+        ? `during the period from ${fmtDate(periodStart)} through ${fmtDate(periodEnd)}`
+        : "during the period since the last annual meeting";
+
+    y = checkPageBreak(doc, y, useScheduleA ? 50 : 50 + ratified.length * 8);
+    y = section("Ratification of Actions Taken During the Year");
+    y = addWhereasResolved(doc, y,
+      `WHEREAS, certain actions were taken on behalf of ${companyName} ${periodPhrase} without formal action at a meeting, and the ${boardLabel()} ${boardVerb("has")} reviewed each such action;`,
+      useScheduleA
+        ? `NOW, THEREFORE, BE IT RESOLVED, that each of the actions set forth on Schedule A attached hereto is hereby ratified, approved, and confirmed in all respects as the act of ${companyName}.`
+        : `NOW, THEREFORE, BE IT RESOLVED, that each of the following actions is hereby ratified, approved, and confirmed in all respects as the act of ${companyName}:`,
+      bt
+    );
+
+    if (!useScheduleA) {
+      autoTable(doc, {
+        startY: y,
+        head: [["Date", "Action", "Amount", "Related Party"]],
+        body: ratified.map((r) => [
+          fmtDate(r.action_date),
+          r.description,
+          r.amount != null ? fmt(r.amount) : "—",
+          r.is_related_party ? "Yes" : "—",
+        ]),
+        theme: "grid",
+        headStyles: tableHeadStyles,
+        bodyStyles: { fontSize: 10 },
+        columnStyles: { 0: { cellWidth: 24 }, 2: { cellWidth: 26 }, 3: { cellWidth: 24 } },
+        margin: { left: MARGIN, right: R_MARGIN },
+      });
+      y = (doc as any).lastAutoTable.finalY + 6;
+    }
+
+    if (ratified.some((r) => r.is_related_party)) {
+      doc.setFontSize(10);
+      doc.setFont("Arial", "italic");
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
+      const rpText = "Actions marked as related-party transactions were disclosed to and approved by the disinterested parties, who determined each such action to be fair to the company at the time it was taken.";
+      const rpLines = doc.splitTextToSize(rpText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of rpLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5;
+      }
+      doc.setFont("Arial", "normal");
+      y += 4;
+    }
+  }
+
   // Registered Agent Confirmation (Annual Meeting blue theme)
   if (bt && !isShareholderOnly && company?.registered_agent_name) {
     y = checkPageBreak(doc, y, 40);
@@ -3605,6 +3666,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       `NOW, THEREFORE, BE IT RESOLVED, that the officers of the company are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.`,
       bt
     );
+    // Backstop for actions not separately itemized in the ratification sweep.
+    if (isAnnual && !isShareholder) {
+      y = addParagraph(doc, y,
+        `FURTHER RESOLVED, that all other lawful acts taken by the officers and agents of ${companyName} on its behalf since the last annual meeting, to the extent not separately ratified above, are hereby ratified, approved, and confirmed.`
+      );
+    }
   }
 
   // Tax Return Filing Acknowledgment (Annual Meeting)
