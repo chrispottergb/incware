@@ -3708,11 +3708,14 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (isWrittenConsent) {
     // Determine consent body from meeting (defaults: LLC → members, else → board)
     const rawBody = (meeting?.consent_body || "").toString().toLowerCase();
-    const consentBody: "board" | "shareholders" | "members" =
+    let consentBody: "board" | "shareholders" | "members" =
       rawBody === "shareholders" ? "shareholders"
         : rawBody === "members" ? "members"
         : rawBody === "board" ? "board"
         : (isLLC ? "members" : "board");
+    // s. 180.1821(1)(e) — with the board eliminated, a board consent is a
+    // shareholder consent; keep this in sync with the heading block above.
+    if (isBoardEliminated && consentBody === "board") consentBody = "shareholders";
 
     const signerRoleLabel =
       consentBody === "shareholders" ? "Shareholder"
