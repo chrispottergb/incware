@@ -875,7 +875,10 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
   const entityType = company?.entity_type || "Corporation";
   const isLLC = entityType?.toLowerCase().includes("llc") || entityType?.toLowerCase().includes("limited liability");
   const isNonprofit = entityType?.toLowerCase().includes("nonprofit") || entityType?.toLowerCase().includes("non-profit");
-  const isShareholderMeeting = (meeting?.meeting_type || "").toLowerCase().includes("shareholder");
+  // A Statutory Close Corporation has no board of directors — every meeting is a
+  // shareholder meeting for labeling/signature purposes, regardless of meeting_type.
+  const companyIsCloseCorp = !isLLC && !!(company as any)?.statutory_close_corporation;
+  const isShareholderMeeting = (meeting?.meeting_type || "").toLowerCase().includes("shareholder") || companyIsCloseCorp;
   const pw = doc.internal.pageSize.getWidth();
   const cx = pw / 2;
 
@@ -918,7 +921,7 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
     (data.officers || []).forEach(o => { if (o.name) addUnique(o.name); });
   }
 
-  const isStatutoryCloseWaiver = isShareholderMeeting && (meeting?.sub_type || "") === "Statutory Close Corporation";
+  const isStatutoryCloseWaiver = companyIsCloseCorp || (isShareholderMeeting && (meeting?.sub_type || "") === "Statutory Close Corporation");
   const purposes = isShareholderMeeting
     ? [
         isStatutoryCloseWaiver ? "elect officers of the corporation" : "elect a new board of directors",
@@ -1299,7 +1302,10 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   const isLLC = entityType?.toLowerCase().includes("llc") || entityType?.toLowerCase().includes("limited liability");
   const isAnnual = (meeting.meeting_type || "").toLowerCase().includes("annual");
   const isShareholder = (meeting.meeting_type || "").toLowerCase().includes("shareholder");
-  const isStatutoryClose = isShareholder && (meeting.sub_type || "") === "Statutory Close Corporation";
+  // Statutory Close Corporations operate without a board of directors: the company-level
+  // election drives close-corp wording on every meeting, not just shareholder meetings.
+  const companyIsCloseCorp = !isLLC && !!(company as any)?.statutory_close_corporation;
+  const isStatutoryClose = companyIsCloseCorp || (isShareholder && (meeting.sub_type || "") === "Statutory Close Corporation");
   // For section gating: a statutory close shareholder meeting includes the full directors-style section set.
   const isShareholderOnly = isShareholder && !isStatutoryClose;
   const bt = isAnnual || isShareholder; // blue theme flag for both annual and shareholder meetings
@@ -1349,7 +1355,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setFontSize(14);
     doc.setFont("Arial", "bold");
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
-    const titleText = isShareholder ? "MINUTES OF THE ANNUAL MEETING OF SHAREHOLDERS" : "MINUTES OF THE ANNUAL MEETING";
+    const titleText = (isShareholder || companyIsCloseCorp) ? "MINUTES OF THE ANNUAL MEETING OF SHAREHOLDERS" : "MINUTES OF THE ANNUAL MEETING";
     doc.text(titleText, pw / 2, y, { align: "center" });
     y += 6;
   } else {
@@ -1442,7 +1448,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
       const introState = expandStateName(stateOfInc) || "Wisconsin";
       const isNonprofitEntity = (company?.entity_type || "").toLowerCase().includes("nonprofit")
         || (company?.entity_type || "").toLowerCase().includes("non-profit");
-      const bodyLabel = isLLC ? "Members" : "Board of Directors";
+      const bodyLabel = isLLC ? "Members" : (isStatutoryClose ? "Shareholders" : "Board of Directors");
       const introEntityWord = isLLC
         ? "limited liability company"
         : (isNonprofitEntity ? "nonstock corporation" : "corporation");
@@ -1583,7 +1589,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
       (data.shareholders || []).forEach(s =>
         addAttendee(s.shareholder_name, formatShareholderDisplay(s, "inline"))
       );
-      (data.directors || []).forEach(d => addAttendee(d.director_name));
+      if (!isStatutoryClose) (data.directors || []).forEach(d => addAttendee(d.director_name));
       (data.officers || []).forEach(o => addAttendee(o.name));
       const attendeeEntries = Array.from(attendeeMap.values());
       if (attendeeEntries.length > 0) {
@@ -1813,7 +1819,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
 
   // Directors / Board Election (shareholder meetings only)
-  if (data.directors && (data.directors ?? []).length > 0 && isShareholder) {
+  if (data.directors && (data.directors ?? []).length > 0 && isShareholder && !isStatutoryClose) {
     y += 3;
     y = checkPageBreak(doc, y, 30 + (data.directors ?? []).length * 7);
     y = section("Nomination and Election of Board of Directors");
@@ -1881,7 +1887,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 
   // Non-shareholder corp: Directors Present (before officers) — skip for written consents
-  if (data.directors && (data.directors ?? []).length > 0 && !isShareholderOnly && !isWrittenConsent && !isLLC) {
+  if (data.directors && (data.directors ?? []).length > 0 && !isShareholderOnly && !isStatutoryClose && !isWrittenConsent && !isLLC) {
     y += 3;
     y = checkPageBreak(doc, y, 30 + (data.directors ?? []).length * 7);
     y = section("Directors Present");
