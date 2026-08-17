@@ -48,6 +48,7 @@ import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import { useNavigate } from "react-router-dom";
 import TaxReturnUpload from "@/components/TaxReturnUpload";
 import { isLLCType } from "@/lib/entity-terminology";
+import { resolveMinutesTitlePreview } from "@/lib/meeting-pdf-export";
 import OrgMeetingWizard from "@/components/OrgMeetingWizard";
 import AnnualMeetingWizard from "@/components/AnnualMeetingWizard";
 import WrittenConsentWizard from "@/components/WrittenConsentWizard";
@@ -527,6 +528,8 @@ export default function MeetingsTab({ companyId, company }: Props) {
   });
 
   const hasSubTypes = SUB_TYPES[form.meeting_type];
+  // Exact printed minutes title, computed from the same predicate as the PDF.
+  const titlePreview = resolveMinutesTitlePreview(company, form.meeting_type);
   const isOrgMeeting = form.meeting_type === "Organizational Meeting";
   const meetingTypeOptions = company.entity_type === "Non-Profit"
     ? NONPROFIT_MEETING_TYPES
@@ -650,6 +653,17 @@ export default function MeetingsTab({ companyId, company }: Props) {
                       ))}
                     </SelectContent>
                   </Select>
+                  {titlePreview && (
+                    <p className="text-xs text-muted-foreground leading-snug">
+                      Will print as: <span className="font-medium">{titlePreview.title}</span>
+                      {titlePreview.note && (
+                        <>
+                          <br />
+                          {titlePreview.note}
+                        </>
+                      )}
+                    </p>
+                  )}
                 </div>
                 {hasSubTypes && (
                   <div className="space-y-1.5">

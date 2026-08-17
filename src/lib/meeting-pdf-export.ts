@@ -17,6 +17,36 @@ const BODY_COLOR: [number, number, number] = [40, 40, 40];
 const WHEREAS_INDENT = 0; // Flush left
 const RESOLVED_INDENT = 12.7; // 0.5 inch
 
+/**
+ * Resolve the exact minutes title that will be printed for a meeting type,
+ * using the same predicate as the PDF generator (s. 180.1821 board elimination,
+ * NOT s. 180.1803 close-corp status). Returns null when the meeting type does
+ * not produce a numbered "MINUTES OF THE ANNUAL MEETING..." title.
+ */
+export function resolveMinutesTitlePreview(
+  company: any,
+  meetingType: string,
+): { title: string; note?: string } | null {
+  const entityType = (company?.entity_type || "").toLowerCase();
+  const isLLC = entityType.includes("llc") || entityType.includes("limited liability");
+  const type = (meetingType || "").toLowerCase();
+  const isAnnual = type.includes("annual");
+  const isShareholder = type.includes("shareholder");
+  if (!isAnnual && !isShareholder) return null;
+  const isCloseCorp = !isLLC && !!company?.statutory_close_corporation;
+  const isBoardEliminated = isCloseCorp && !!company?.board_eliminated;
+  if (isShareholder || isBoardEliminated) {
+    const article = (company?.board_elimination_article || "").toString().trim();
+    return {
+      title: "MINUTES OF THE ANNUAL MEETING OF SHAREHOLDERS",
+      note: isBoardEliminated
+        ? `(no board of directors — ${article ? `${article}, ` : ""}s. 180.1821)`
+        : undefined,
+    };
+  }
+  return { title: "MINUTES OF THE ANNUAL MEETING" };
+}
+
 // State-specific statute citations for Statutory Close Corporation governance notice.
 // Used ONLY in the Statutory Close Corporation governance notice block.
 const getStatutoryCloseStatute = (state?: string | null): string => {
@@ -214,12 +244,19 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     // Determine the consenting body (board / shareholders / members)
     const entityTypeLower = (company?.entity_type || "").toLowerCase();
     const isLLCEntity = entityTypeLower.includes("llc") || entityTypeLower.includes("limited liability");
+    // s. 180.1821 — where the board has been eliminated, director approval
+    // requirements are satisfied by shareholder approval (s. 180.1821(1)(e)),
+    // so a "board" consent is in fact a shareholder consent.
+    const boardEliminated = !isLLCEntity
+      && !!(company as any)?.statutory_close_corporation
+      && !!(company as any)?.board_eliminated;
     const rawBody = (meeting?.consent_body || "").toString().toLowerCase();
-    const consentBody: "board" | "shareholders" | "members" =
+    let consentBody: "board" | "shareholders" | "members" =
       rawBody === "shareholders" ? "shareholders"
         : rawBody === "members" ? "members"
         : rawBody === "board" ? "board"
         : (isLLCEntity ? "members" : "board");
+    if (boardEliminated && consentBody === "board") consentBody = "shareholders";
 
     const bodyTitle =
       consentBody === "shareholders" ? "SHAREHOLDERS"
@@ -875,10 +912,13 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
   const entityType = company?.entity_type || "Corporation";
   const isLLC = entityType?.toLowerCase().includes("llc") || entityType?.toLowerCase().includes("limited liability");
   const isNonprofit = entityType?.toLowerCase().includes("nonprofit") || entityType?.toLowerCase().includes("non-profit");
-  // A Statutory Close Corporation has no board of directors — every meeting is a
-  // shareholder meeting for labeling/signature purposes, regardless of meeting_type.
-  const companyIsCloseCorp = !isLLC && !!(company as any)?.statutory_close_corporation;
-  const isShareholderMeeting = (meeting?.meeting_type || "").toLowerCase().includes("shareholder") || companyIsCloseCorp;
+  // s. 180.1803 — statutory close corporation status. This alone does NOT eliminate
+  // the board of directors; eliminating the board is a separate election.
+  const isCloseCorp = !isLLC && !!(company as any)?.statutory_close_corporation;
+  // s. 180.1821 — separate election not to have a board of directors. Only this
+  // election means the shareholders act in place of a board.
+  const isBoardEliminated = isCloseCorp && !!(company as any)?.board_eliminated;
+  const isShareholderMeeting = (meeting?.meeting_type || "").toLowerCase().includes("shareholder") || isBoardEliminated;
   const pw = doc.internal.pageSize.getWidth();
   const cx = pw / 2;
 
@@ -921,7 +961,7 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
     (data.officers || []).forEach(o => { if (o.name) addUnique(o.name); });
   }
 
-  const isStatutoryCloseWaiver = companyIsCloseCorp || (isShareholderMeeting && (meeting?.sub_type || "") === "Statutory Close Corporation");
+  const isStatutoryCloseWaiver = isBoardEliminated;
   const purposes = isShareholderMeeting
     ? [
         isStatutoryCloseWaiver ? "elect officers of the corporation" : "elect a new board of directors",
@@ -1302,15 +1342,19 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   const isLLC = entityType?.toLowerCase().includes("llc") || entityType?.toLowerCase().includes("limited liability");
   const isAnnual = (meeting.meeting_type || "").toLowerCase().includes("annual");
   const isShareholder = (meeting.meeting_type || "").toLowerCase().includes("shareholder");
-  // Statutory Close Corporations operate without a board of directors: the company-level
-  // election drives close-corp wording on every meeting, not just shareholder meetings.
-  const companyIsCloseCorp = !isLLC && !!(company as any)?.statutory_close_corporation;
-  const isStatutoryClose = companyIsCloseCorp || (isShareholder && (meeting.sub_type || "") === "Statutory Close Corporation");
-  // For section gating: a statutory close shareholder meeting includes the full directors-style section set.
+  // s. 180.1803 — statutory close corporation status (transfer restrictions,
+  // certificate legend). This alone does NOT eliminate the board of directors.
+  const isCloseCorp = !isLLC && !!(company as any)?.statutory_close_corporation;
+  // s. 180.1821 — separate election not to have a board of directors, approved
+  // unanimously by the shareholders in the articles. Only this election means the
+  // shareholders exercise the powers otherwise vested in a board.
+  const isBoardEliminated = isCloseCorp && !!(company as any)?.board_eliminated;
+  const isStatutoryClose = isBoardEliminated;
+  // For section gating: a board-eliminated corporation includes the full directors-style section set.
   const isShareholderOnly = isShareholder && !isStatutoryClose;
   const bt = isAnnual || isShareholder; // blue theme flag for both annual and shareholder meetings
 
-  // Statutory Close Corporation gated helpers — when isStatutoryClose is false these
+  // Board-elimination gated helpers — when isStatutoryClose is false these
   // return the original strings, preserving byte-identical output for other meetings.
   const boardLabel = () =>
     isLLC ? "members" : (isStatutoryClose ? "shareholders" : "Board of Directors");
@@ -1355,7 +1399,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setFontSize(14);
     doc.setFont("Arial", "bold");
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
-    const titleText = (isShareholder || companyIsCloseCorp) ? "MINUTES OF THE ANNUAL MEETING OF SHAREHOLDERS" : "MINUTES OF THE ANNUAL MEETING";
+    const titleText = (isShareholder || isBoardEliminated) ? "MINUTES OF THE ANNUAL MEETING OF SHAREHOLDERS" : "MINUTES OF THE ANNUAL MEETING";
     doc.text(titleText, pw / 2, y, { align: "center" });
     y += 6;
   } else {
@@ -1388,7 +1432,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
 
   // Statutory Close Corporation Governance Notice — rendered before Section 1.
   // Not numbered, so "Meeting Information" remains Section 1.
-  if (isStatutoryClose) {
+  if (isCloseCorp) {
     const pw = doc.internal.pageSize.getWidth();
     y = checkPageBreak(doc, y, 40);
     doc.setFontSize(11);
@@ -1398,8 +1442,11 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     y += 6;
     doc.setFont("Arial", "normal");
     doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
-    const statuteCitation = getStatutoryCloseStatute(company?.state_of_incorporation || company?.state);
-    const noticeText = `${companyName} is organized as a Statutory Close Corporation pursuant to ${statuteCitation}. This corporation operates without a board of directors. All governance powers vested by statute in a board of directors are exercised directly by the shareholders of the corporation. The actions taken at this meeting are made in that capacity.`;
+    const articleRef = ((company as any)?.board_elimination_article || "").toString().trim();
+    const articleClause = articleRef ? `${articleRef} of its Articles of Incorporation` : "the Articles of Incorporation";
+    const noticeText = isBoardEliminated
+      ? `This corporation has elected statutory close corporation status pursuant to s. 180.1803, Wis. Stats., and has further elected, by ${articleClause} and pursuant to s. 180.1821, Wis. Stats., not to have a board of directors. The shareholders exercise all corporate powers and manage the business and affairs of the corporation, and are subject to all duties otherwise imposed on a board of directors.`
+      : `This corporation has elected statutory close corporation status pursuant to s. 180.1803, Wis. Stats. Its shares are subject to the transfer restrictions of s. 180.1805, Wis. Stats. The corporation has a board of directors.`;
     const noticeLines = doc.splitTextToSize(noticeText, pw - MARGIN - R_MARGIN);
     for (const line of noticeLines) {
       y = checkPageBreak(doc, y, 6);
@@ -3691,11 +3738,14 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (isWrittenConsent) {
     // Determine consent body from meeting (defaults: LLC → members, else → board)
     const rawBody = (meeting?.consent_body || "").toString().toLowerCase();
-    const consentBody: "board" | "shareholders" | "members" =
+    let consentBody: "board" | "shareholders" | "members" =
       rawBody === "shareholders" ? "shareholders"
         : rawBody === "members" ? "members"
         : rawBody === "board" ? "board"
         : (isLLC ? "members" : "board");
+    // s. 180.1821(1)(e) — with the board eliminated, a board consent is a
+    // shareholder consent; keep this in sync with the heading block above.
+    if (isBoardEliminated && consentBody === "board") consentBody = "shareholders";
 
     const signerRoleLabel =
       consentBody === "shareholders" ? "Shareholder"
