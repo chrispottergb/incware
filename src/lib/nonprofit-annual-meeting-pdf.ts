@@ -307,21 +307,48 @@ export function generateNonProfitAnnualMeetingPDF(data: NonProfitAnnualMeetingDa
     para(`The next Annual Meeting of the Corporation is scheduled for ${nextDate} at ${nextLoc}.`);
 
     // Ratification of actions taken during the year (narrative form for nonprofits).
-    const ratified = (data.ratifications ?? []).filter(r => (r?.description || "").trim().length > 0);
-    if (ratified.length > 0) {
-      sectionHeading("Ratification of Actions Taken During the Year");
+    // Always printed: an empty sweep prints an express negative statement.
+    {
+      const ratified = (data.ratifications ?? []).filter(r => (r?.description || "").trim().length > 0);
+      const ordinary = ratified.filter(r => !r.is_related_party);
+      const related = ratified.filter(r => r.is_related_party);
       const ps = data.ratificationPeriod?.start;
       const pe = data.ratificationPeriod?.end;
-      para(
-        `The board reviewed actions taken on behalf of the Corporation ${ps && pe ? `during the period from ${fmtDate(ps)} through ${fmtDate(pe)}` : "since the last annual meeting"} without formal action at a meeting. Upon motion duly made and seconded, each of the following actions was ratified, approved, and confirmed in all respects as the act of the Corporation:`
-      );
-      ratified.forEach(r => {
+      const periodPhrase = ps && pe ? `during the period from ${fmtDate(ps)} through ${fmtDate(pe)}` : "since the last annual meeting";
+      const lineFor = (r: { action_date: string | null; description: string; amount: number | null }) => {
         const d = r.action_date ? fmtDate(r.action_date) : "Date not recorded";
         const amt = r.amount != null ? ` in the amount of $${Number(r.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "";
-        const rp = r.is_related_party ? " (related-party transaction, disclosed to and approved by the disinterested directors)" : "";
-        para(`${d} \u2014 ${r.description}${amt}${rp}.`, 12);
-      });
+        return `${d} \u2014 ${r.description}${amt}.`;
+      };
+
+      sectionHeading("Ratification of Actions Taken During the Year");
+      if (ratified.length === 0) {
+        para("No actions requiring ratification were presented at this meeting.");
+        para(`Upon motion duly made and seconded, all lawful acts taken by the officers and agents of the Corporation on its behalf since the last annual meeting were ratified, approved, and confirmed.`);
+      } else {
+        if (ordinary.length > 0) {
+          para(
+            `The board reviewed actions taken on behalf of the Corporation ${periodPhrase} without formal action at a meeting. Upon motion duly made and seconded, each of the following actions was ratified, approved, and confirmed in all respects as the act of the Corporation:`
+          );
+          ordinary.forEach(r => para(lineFor(r), 12));
+        }
+        para(
+          "Upon further motion duly made and seconded, all other lawful acts taken by the officers and agents of the Corporation on its behalf since the last annual meeting, to the extent not separately ratified above, were ratified, approved, and confirmed."
+        );
+      }
+
+      para(
+        "The Board further authorized the officers to continue conducting the ordinary business and affairs of the Corporation — including banking, purchasing, contracting, leasing, and employment matters arising in the ordinary course — without further Board action, until this authority is modified or revoked."
+      );
+
+      if (related.length > 0) {
+        sectionHeading("Interested Transactions");
+        para("The following transactions were entered into with a party related to one or more directors or officers of the Corporation, and the material facts of each relationship and of each transaction were disclosed to and known by the Board:");
+        related.forEach(r => para(lineFor(r), 12));
+        para("The disinterested directors, having considered the terms of each of the foregoing transactions, determined that the terms are fair to the organization and no less favorable than could reasonably have been obtained from an unrelated party, and ratified, confirmed, and approved each such transaction.");
+      }
     }
+
 
     // 18. Other business
     sectionHeading("Other Business");
