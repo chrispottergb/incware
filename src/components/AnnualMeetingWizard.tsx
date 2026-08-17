@@ -1321,14 +1321,18 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
                       ].map(metric => {
                         const finItem = data.financialItems?.find((f: any) => f.item?.toLowerCase().includes(metric.itemMatch));
                         const prevVal = priorFinancials ? (priorFinancials as any)[metric.priorKey] : null;
+                        const isComputed = metric.key === "grossProfit" || metric.key === "cogRatio";
                         return (
                           <tr key={metric.key} className="border-t">
                             <td className="p-2 text-xs font-medium border-r">{metric.label}</td>
                             <td className="p-1 border-r">
                               <Input
                                 className="h-7 text-sm"
+                                readOnly={isComputed}
+                                tabIndex={isComputed ? -1 : undefined}
                                 value={finItem?.amount || ""}
                                 onChange={e => {
+                                  if (isComputed) return;
                                   const items = [...(data.financialItems || [])];
                                   const idx = items.findIndex((f: any) => f.item?.toLowerCase().includes(metric.itemMatch));
                                   if (idx >= 0) {
@@ -1336,7 +1340,7 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
                                   }
                                   update("financialItems", items);
                                 }}
-                                placeholder="Enter amount"
+                                placeholder={isComputed ? "Auto-calculated" : "Enter amount"}
                               />
                             </td>
                             <td className="p-2 text-xs text-muted-foreground">
