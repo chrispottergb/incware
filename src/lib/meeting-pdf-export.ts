@@ -3668,9 +3668,18 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     );
     // Backstop for actions not separately itemized in the ratification sweep.
     if (isAnnual && !isShareholder) {
-      y = addParagraph(doc, y,
-        `FURTHER RESOLVED, that all other lawful acts taken by the officers and agents of ${companyName} on its behalf since the last annual meeting, to the extent not separately ratified above, are hereby ratified, approved, and confirmed.`
-      );
+      doc.setFontSize(11);
+      doc.setFont("Arial", "normal");
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
+      const backstop = `FURTHER RESOLVED, that all other lawful acts taken by the officers and agents of ${companyName} on its behalf since the last annual meeting, to the extent not separately ratified above, are hereby ratified, approved, and confirmed.`;
+      const backstopLines = doc.splitTextToSize(backstop, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      y += 2;
+      for (const line of backstopLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 4;
     }
   }
 
@@ -4003,6 +4012,32 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const rightX = MARGIN + sigLineW + 20;
     doc.line(rightX, y, rightX + sigLineW, y);
     doc.text(secName ? `${secName}, Meeting Secretary` : "Secretary", rightX, y + 5);
+  }
+
+  // Schedule A — overflow list of ratified actions, printed after the signatures.
+  if (useScheduleA && bt && isAnnual && !isShareholder) {
+    doc.addPage();
+    let sy = 25;
+    doc.setFontSize(12);
+    doc.setFont("Arial", "bold");
+    doc.setTextColor(30, 30, 30);
+    doc.text("SCHEDULE A — ACTIONS RATIFIED", doc.internal.pageSize.getWidth() / 2, sy, { align: "center" });
+    sy += 8;
+    autoTable(doc, {
+      startY: sy,
+      head: [["Date", "Action", "Amount", "Related Party"]],
+      body: ratified.map((r) => [
+        r.action_date ? new Date(r.action_date + "T00:00:00").toLocaleDateString() : "—",
+        r.description,
+        r.amount != null ? fmt(r.amount) : "—",
+        r.is_related_party ? "Yes" : "—",
+      ]),
+      theme: "grid",
+      headStyles: tableHeadStyles,
+      bodyStyles: { fontSize: 10 },
+      columnStyles: { 0: { cellWidth: 24 }, 2: { cellWidth: 26 }, 3: { cellWidth: 24 } },
+      margin: { left: MARGIN, right: R_MARGIN },
+    });
   }
 
   // Footer
