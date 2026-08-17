@@ -1305,15 +1305,19 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   const isLLC = entityType?.toLowerCase().includes("llc") || entityType?.toLowerCase().includes("limited liability");
   const isAnnual = (meeting.meeting_type || "").toLowerCase().includes("annual");
   const isShareholder = (meeting.meeting_type || "").toLowerCase().includes("shareholder");
-  // Statutory Close Corporations operate without a board of directors: the company-level
-  // election drives close-corp wording on every meeting, not just shareholder meetings.
-  const companyIsCloseCorp = !isLLC && !!(company as any)?.statutory_close_corporation;
-  const isStatutoryClose = companyIsCloseCorp || (isShareholder && (meeting.sub_type || "") === "Statutory Close Corporation");
-  // For section gating: a statutory close shareholder meeting includes the full directors-style section set.
+  // s. 180.1803 — statutory close corporation status (transfer restrictions,
+  // certificate legend). This alone does NOT eliminate the board of directors.
+  const isCloseCorp = !isLLC && !!(company as any)?.statutory_close_corporation;
+  // s. 180.1821 — separate election not to have a board of directors, approved
+  // unanimously by the shareholders in the articles. Only this election means the
+  // shareholders exercise the powers otherwise vested in a board.
+  const isBoardEliminated = isCloseCorp && !!(company as any)?.board_eliminated;
+  const isStatutoryClose = isBoardEliminated;
+  // For section gating: a board-eliminated corporation includes the full directors-style section set.
   const isShareholderOnly = isShareholder && !isStatutoryClose;
   const bt = isAnnual || isShareholder; // blue theme flag for both annual and shareholder meetings
 
-  // Statutory Close Corporation gated helpers — when isStatutoryClose is false these
+  // Board-elimination gated helpers — when isStatutoryClose is false these
   // return the original strings, preserving byte-identical output for other meetings.
   const boardLabel = () =>
     isLLC ? "members" : (isStatutoryClose ? "shareholders" : "Board of Directors");
