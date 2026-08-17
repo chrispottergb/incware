@@ -909,16 +909,6 @@ export default function MeetingDetail() {
   };
 
   const term = getTerminology(company?.entity_type);
-  console.log("[DEBUG subTabs]", {
-    companyId: company?.id,
-    boardEliminated: !!(company as any)?.board_eliminated,
-    companyDirectorsCount: companyDirectors?.length,
-    meetingDirectorsCount: directors?.length,
-    isStatutoryCloseShareholderMeeting,
-    isShareholderMeeting,
-    meetingType: meeting?.meeting_type,
-    subType: meeting?.sub_type,
-  });
 
   const allSubTabs = [
     { value: "info", label: "Meeting Info" },
