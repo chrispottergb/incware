@@ -666,6 +666,37 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     }
   }, [data, step, initialized, storageKey, npGovernance]);
 
+  // Auto-compute Gross Profit and COG Ratio from Total Sales / Cost of Goods
+  // (these two rows are read-only in the Financial Comparison table).
+  useEffect(() => {
+    if (!initialized) return;
+    setData(prev => {
+      const items = prev.financialItems || [];
+      if (!items.length) return prev;
+      const findIdx = (m: string) => items.findIndex((f: any) => f.item?.toLowerCase().includes(m));
+      const num = (v: any) => {
+        const n = parseFloat(String(v ?? "").replace(/[$,]/g, ""));
+        return isNaN(n) ? null : n;
+      };
+      const salesIdx = findIdx("revenue");
+      const cogIdx = findIdx("cost of goods");
+      const gpIdx = findIdx("gross profit");
+      const ratioIdx = findIdx("cog ratio");
+      if (gpIdx < 0 && ratioIdx < 0) return prev;
+      const sales = salesIdx >= 0 ? num(items[salesIdx].amount) : null;
+      const cog = cogIdx >= 0 ? num(items[cogIdx].amount) : null;
+      const gp = sales != null ? (sales - (cog ?? 0)).toFixed(2) : "";
+      const ratio = sales != null && sales > 0 && cog != null ? ((cog / sales) * 100).toFixed(2) : "";
+      const gpCurrent = gpIdx >= 0 ? (items[gpIdx].amount ?? "") : gp;
+      const ratioCurrent = ratioIdx >= 0 ? (items[ratioIdx].amount ?? "") : ratio;
+      if (gpCurrent === gp && ratioCurrent === ratio) return prev;
+      const next = [...items];
+      if (gpIdx >= 0) next[gpIdx] = { ...next[gpIdx], amount: gp };
+      if (ratioIdx >= 0) next[ratioIdx] = { ...next[ratioIdx], amount: ratio };
+      return { ...prev, financialItems: next };
+    });
+  }, [initialized, data.financialItems]);
+
   const clearDraft = () => {
     try { sessionStorage.removeItem(storageKey); } catch {}
     setHasDraft(false);
