@@ -663,27 +663,43 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   }
 
   // ===== RATIFICATION OF ACTIONS TAKEN DURING THE YEAR =====
-  const ratified = (data.ratifications ?? []).filter(r => (r?.description || "").trim().length > 0);
-  if (ratified.length > 0) {
+  // Always printed for the annual meeting; an empty sweep prints an express
+  // negative statement rather than omitting the section.
+  {
+    const ratified = (data.ratifications ?? []).filter(r => (r?.description || "").trim().length > 0);
+    const ordinary = ratified.filter(r => !r.is_related_party);
+    const related = ratified.filter(r => r.is_related_party);
     const fmtD = (d?: string | null) => (d ? new Date(d + "T00:00:00").toLocaleDateString() : "\u2014");
+    const fmtAmt = (a: number | null) =>
+      a != null ? `$${Number(a).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "\u2014";
     const ps = data.ratificationPeriod?.start;
     const pe = data.ratificationPeriod?.end;
     sectionHeading("Ratification of Actions Taken During the Year");
-    whereasPara(
-      `certain actions were taken on behalf of ${fullName} ${ps && pe ? `during the period from ${fmtD(ps)} through ${fmtD(pe)}` : "during the period since the last annual meeting"} without formal action at a meeting, and the members have reviewed each such action;`
-    );
-    resolvedPara(`that each of the following actions is hereby ratified, approved, and confirmed in all respects as the act of ${fullName}:`);
-    addTable(
-      ["Date", "Action", "Amount", "Related Party"],
-      ratified.map(r => [
-        fmtD(r.action_date),
-        r.description,
-        r.amount != null ? `$${Number(r.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "\u2014",
-        r.is_related_party ? "Yes" : "\u2014",
-      ])
-    );
-    if (ratified.some(r => r.is_related_party)) {
-      para("Actions marked as related-party transactions were disclosed to and approved by the disinterested members, who determined each such action to be fair to the company at the time it was taken.");
+
+    if (ratified.length === 0) {
+      para("No actions requiring ratification were presented at this meeting.");
+      resolvedPara(`that all lawful acts taken by the officers and agents of ${fullName} on its behalf since the last annual meeting are hereby ratified, approved, and confirmed.`);
+    } else {
+      if (ordinary.length > 0) {
+        whereasPara(
+          `certain actions were taken on behalf of ${fullName} ${ps && pe ? `during the period from ${fmtD(ps)} through ${fmtD(pe)}` : "during the period since the last annual meeting"} without formal action at a meeting, and the members have reviewed each such action;`
+        );
+        resolvedPara(`that each of the following actions is hereby ratified, approved, and confirmed in all respects as the act of ${fullName}:`);
+        addTable(["Date", "Action", "Amount"], ordinary.map(r => [fmtD(r.action_date), r.description, fmtAmt(r.amount)]));
+      }
+
+      if (related.length > 0) {
+        subHeading("Interested Transactions");
+        whereasPara(
+          "the following transactions were entered into with a party related to one or more members of the Company, and the material facts of the relationship and of each transaction were disclosed to and known by the Members;"
+        );
+        addTable(["Date", "Action", "Amount"], related.map(r => [fmtD(r.action_date), r.description, fmtAmt(r.amount)]));
+        resolvedPara(
+          "that the disinterested members, having considered the terms of each of the foregoing transactions and having determined that the terms are fair to the Company and no less favorable to the Company than could reasonably have been obtained from an unrelated party, hereby ratify, confirm, and approve each such transaction."
+        );
+      }
+
+      furtherResolvedPara(`that all other lawful acts taken by the officers and agents of ${fullName} on its behalf since the last annual meeting, to the extent not separately ratified above, are hereby ratified, approved, and confirmed.`);
     }
   }
 
@@ -697,8 +713,9 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   resolvedPara("that the officers of the limited liability company are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.");
 
-  // Backstop for actions not separately itemized above.
-  resolvedPara(`that all other lawful acts taken by the officers and agents of ${fullName} on its behalf since the last annual meeting, to the extent not separately ratified above, are hereby ratified, approved, and confirmed.`);
+  // Prospective standing authority for the ordinary course of business.
+  furtherResolvedPara("that the officers of the Company are authorized to conduct the ordinary business and affairs of the Company — including banking, borrowing within existing facilities, purchasing, contracting, leasing, and employment matters arising in the ordinary course — without further action of the Members, until this authority is modified or revoked by subsequent action of the Members.");
+
 
   // ===== SHAREHOLDER TAX BASIS (S-election entities only) =====
   const entityTypeLower = (data.entityType || "").toLowerCase();
