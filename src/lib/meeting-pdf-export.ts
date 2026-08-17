@@ -214,12 +214,19 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     // Determine the consenting body (board / shareholders / members)
     const entityTypeLower = (company?.entity_type || "").toLowerCase();
     const isLLCEntity = entityTypeLower.includes("llc") || entityTypeLower.includes("limited liability");
+    // s. 180.1821 — where the board has been eliminated, director approval
+    // requirements are satisfied by shareholder approval (s. 180.1821(1)(e)),
+    // so a "board" consent is in fact a shareholder consent.
+    const boardEliminated = !isLLCEntity
+      && !!(company as any)?.statutory_close_corporation
+      && !!(company as any)?.board_eliminated;
     const rawBody = (meeting?.consent_body || "").toString().toLowerCase();
-    const consentBody: "board" | "shareholders" | "members" =
+    let consentBody: "board" | "shareholders" | "members" =
       rawBody === "shareholders" ? "shareholders"
         : rawBody === "members" ? "members"
         : rawBody === "board" ? "board"
         : (isLLCEntity ? "members" : "board");
+    if (boardEliminated && consentBody === "board") consentBody = "shareholders";
 
     const bodyTitle =
       consentBody === "shareholders" ? "SHAREHOLDERS"
