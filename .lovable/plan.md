@@ -1,160 +1,66 @@
-# Name/Address Cleanup Screen — Audit Report and Hardening Plan
+# Mark and purge test data
 
-## STEP 0 — AUDIT (read-only, nothing modified)
+## Step 0 — Audit report (read-only, already run)
 
-### 1. The screen
-- **File:** `src/components/settings/AddressBookCard.tsx`
-- **Component:** `AddressBookCard` ("Address Book" card)
-- **Route:** `/settings` (rendered inside `src/pages/Settings.tsx`)
-- Supporting files: `src/hooks/useAddressBook.ts` (data + search + upsert), `src/contexts/AddressBookContext.tsx` (app-wide provider), `src/components/NameAutocomplete.tsx` (the typeahead these values feed).
+### `companies` columns (83)
+id, user_id, name, entity_type, state_of_incorporation, incorporation_date, fiscal_year_end, authorized_shares, par_value, par_value_type, registered_agent_name, registered_agent_address, registered_agent_city, registered_agent_state, registered_agent_zip, s_election_date, address, city, state, zip, phone, created_at, updated_at, corporate_status, verification_date, annual_report_year, seal_type, election_1244, second_name_choice, filing_date, delayed_effective_filing_date, business_purpose, accounting_method, naics_code, first_year_annual_meeting, initial_directors_count, max_directors_allowed, max_vps_allowed, additional_provisions, status, address_2, registered_agent_address_2, authorized_binders, contact_email, salutation_name, contact_full_name, contact_phone, contact_cell, contact_webpage, registered_agent_type, registered_agent_phone, registered_agent_email, registered_agent_appointed_date, registered_agent_resigned_date, management_type, ein, opening_balance_date, has_preferred_shares, preferred_class_name, preferred_authorized_shares, state_filing_number, ntee_code, tax_exempt_purpose, non_distribution_clause, organizational_structure, llc_management_structure, llc_authorized_binders, llc_dfi_statement_filed, llc_dfi_statement_reference, llc_dfi_statement_date, ein_encrypted, scheduled_meeting_ordinal, scheduled_meeting_day_of_week, scheduled_meeting_month, scheduled_annual_meeting, statutory_close_corporation, authorized_units_backfill_dismissed, oa_drafting_style, ownership_snapshot_enabled, board_eliminated, board_elimination_article, board_elimination_date
 
-### 2. Storage
-There **is** a real lookup table — the screen is not reading DISTINCT off record tables.
+There is no `is_test` column today.
 
-**`public.user_address_book`** (240 rows, all belonging to 1 user):
+### Tables with a foreign key to `companies`
 
-| column | type | null | default |
-|---|---|---|---|
-| id | uuid | no | gen_random_uuid() |
-| user_id | uuid | no | — |
-| full_name | text | no | — |
-| address | text | yes | — |
-| address_2 | text | yes | — |
-| city | text | yes | — |
-| state | text | yes | — |
-| zip | text | yes | — |
-| company_id | uuid | yes | — |
-| created_at | timestamptz | no | now() |
-| updated_at | timestamptz | no | now() |
+Every table below already has `ON DELETE CASCADE` unless marked otherwise. A query confirmed there is **no** table in `public` carrying a `company_id`/`entity_id` column without an FK to `companies` — so the FK list is the complete cascade surface.
 
-**Reads:** `user_address_book` (all columns above) and `companies(name)` via the `company_id` join, for the "Company" column only.
+**Cascade on company delete (41 direct references):**
+accountant_firms, accountants, ai_oversight_contacts, ai_risk_incidents, ai_systems, ai_usage_logs, annual_review_links, annual_review_submissions, asset_transactions (`entity_id`), attorney_firms, attorneys, bank_authorized_signers, bills_of_sale, business_sales, company_assets (`company_id`), company_banks, company_documents, company_relationships (`parent_company_id` and `child_company_id`), directors, document_registry, filing_checklist, interim_actions, llc_managers, meetings, nonprofit_form990_filings, nonprofit_initial_directors, nonprofit_tax_exemption, officers, organizers, ownership_snapshot_lots, ownership_snapshots, registered_agent_history, retired_ownership_records, share_transactions, shareholder_name_history, shareholders, stock_certificates, timeline_events, transaction_assets
 
-**Writes:** `user_address_book` only — UPDATE of `full_name, address, address_2, city, state, zip, updated_at` on one id; DELETE of one id.
+**Set NULL instead of cascade (3 references — these rows survive):**
+- `company_assets.landlord_company_id`, `company_assets.tenant_company_id` (a lease at another company that pointed at the deleted entity keeps its row, loses the link)
+- `tax_return_jobs.company_id`
+- `user_address_book.company_id`
 
-**One-time seed (separate path, `useAddressBook.ts`):** reads `companies.id`, `shareholders(name,address,address_2,city,state,zip,company_id)`, `directors(same)`, `master_contacts(contact_name)` and INSERTs into `user_address_book`. It runs **only when the book is completely empty**, so it does not resurrect deleted rows today.
+**Cascades indirectly through `meetings`:** meeting_amendments, meeting_assets, meeting_authorized_signers, meeting_balance_entries, meeting_benefits, meeting_counsel, meeting_directors, meeting_financials, meeting_lease_terminations, meeting_loans, meeting_non_recurring_items, meeting_officers, meeting_other, meeting_ratifications, meeting_resolutions, meeting_shareholders, meeting_signatures, meeting_vehicle_leases, meeting_vehicle_purchases, meeting_vehicle_sales, agreements, lease_clauses, ai_oversight_persons, lease_classification_audit (child tables of the cascading parents above).
 
-### 3. The CORRECT / rename action — actual code
-
-```ts
-const { data, error } = await supabase
-  .from("user_address_book" as any)
-  .update({
-    full_name: values.full_name.trim(),
-    address: values.address.trim() || null,
-    address_2: values.address_2.trim() || null,
-    city: values.city.trim() || null,
-    state: values.state.trim() || null,
-    zip: values.zip.trim() || null,
-    updated_at: new Date().toISOString(),
-  } as any)
-  .eq("id", editing.id)
-  .select("id");
-```
-
-**Answer: (a) — it updates only the lookup row.** There is no cross-table UPDATE anywhere in this screen. A rename does **not** touch `shareholders`, `directors`, `officers`, `organizers`, `master_contacts`, `share_transactions`, or any generated document. Consequence: today a rename silently leaves the old spelling on every saved record, and the old spelling can reappear in the suggestion list the next time that record's name is upserted.
-
-### 4. The DELETE action — actual code
-
-```ts
-const { error } = await supabase.from("user_address_book" as any).delete().eq("id", id);
-```
-
-**Answer: it hard-DELETEs the lookup row.** It does not set an inactive flag (no such column exists) and it does not null or clear the value on any record table. Saved records are untouched.
-
-### 5. Row counts
-- Total rows: **240** (single user).
-- Obvious test data by name pattern (test/abc/asdf/xxx/demo/sample): **0**.
-- Rows with whitespace/punctuation defects (leading/trailing space, doubled internal space, trailing comma or period): **4**.
-
-### Part A4 confirmation (stated up front, as requested)
-Because rename is lookup-only and delete is lookup-only, **nothing in Part A changes a stored value on any record table.** The Part A work adds a confirmation dialog, an insert-only audit log, and a soft-hide flag. No record-table UPDATE is introduced by this change.
-
----
-
-## PART A — Make destructive actions safe
-
-**A1 — Rename confirmation.** Rename does not perform a cross-record UPDATE, so the scary "this will change N saved records" warning would be false. Instead, before saving a rename we count how many saved records still carry the **old** string (case-insensitive, exact match) across `shareholders.name`, `directors.name`, `officers.name`, `organizers.organizer_name`, `master_contacts.contact_name`, `bank_authorized_signers.signer_name`, and show an accurate dialog:
-
-- N > 0: "N saved record(s) across M compan(ies) still use \"old value\". Renaming here only fixes the suggestion list — those records keep the old spelling, and documents already generated will not match. Continue?"
-- N = 0: "No saved records use this value. This only updates the suggestion." — plain, no count theatre.
-
-Cancel is the default-focused button in both cases.
-
-**A2 — Audit table `name_cleanup_log`** (new table, insert-only):
-`id, action ('rename'|'hide'|'delete'), target_table, target_column, old_value, new_value, affected_row_count, performed_at, performed_by`.
-RLS: user may INSERT and SELECT own rows; **no UPDATE or DELETE policy at all**. Surfaced as a read-only list at the bottom of the Address Book card (newest first, no controls).
-
-**A3 — Delete becomes a soft hide.** Add `is_hidden boolean NOT NULL DEFAULT false` to `user_address_book`. The row's stored values are never cleared.
-- Value referenced by N > 0 records: only **Hide** is offered, with an "In use by N records" badge. No hard delete.
-- Value referenced by 0 records: **Hide** is the primary action; hard **Delete** stays available as a secondary action for genuinely junk entries.
-- Both actions write a `name_cleanup_log` row. A "Show hidden" toggle lets the user unhide.
-
-**A4 — Confirmed above.** No Part A code path writes to any record table.
-
----
-
-## PART B — Normalize on save
-
-A single pure helper `normalizeEntryText(value)`: trim ends, collapse internal whitespace runs to one space, strip trailing commas and periods. No case changes, no expansion or abbreviation.
-
-Applied at the point of save in:
-- `useAddressBook.ts` → `upsert` (the single funnel every "remember this name" call goes through: OrganizationTab, ShareholdersTab, CounselSection, LeasesTab, BillsOfSaleTab, BusinessSalesTab, MeetingVehicles, BatchTransferDialog, LeaseTransactionDialog, CreateCompanyWizard, OrgMeetingWizard, AnnualMeetingWizard).
-- `AddressBookCard` edit form (name, address, address_2, city, state, zip).
-
-Existing rows are **not** retroactively normalized.
-
----
-
-## PART C — Near-match hint at entry
-
-Added to `NameAutocomplete`, computed client-side against the already-loaded entries list (no per-keystroke query). When the typed value is not an exact match and a close match exists, one non-blocking hint renders below the field:
-
-> Similar existing entry: "Robertson Ryan & Associates"  [Use this] [Keep what I typed]
-
-Close-match rules (first hit wins, at most one suggestion): equal after lowercasing and stripping punctuation/whitespace; OR one is a prefix of the other with >= 5 characters; OR Levenshtein distance <= 2 for strings >= 6 characters. Never blocks save, never auto-replaces.
-
----
-
-## PART D — Hidden values drop out of suggestions
-
-`useAddressBook`'s `search()` and the `entries` it exposes to typeaheads filter `is_hidden = false`. The Settings management list still shows hidden rows (flagged, behind the "Show hidden" toggle) so they can be restored. Values already stored on records render normally everywhere — nothing reads `is_hidden` outside the suggestion path.
-
----
-
-## Out of scope (not built)
-No merge/dedupe wizard, no bulk fuzzy merge, no retroactive normalization, no PDF builder changes, no changes to `meeting_benefits` / ratification / `interim_actions`, no new nav entries.
-
----
-
-## Technical details
-
-**Migration SQL (additive only — no column dropped or altered):**
+## Step 1 — Migration
 
 ```sql
-ALTER TABLE public.user_address_book
-  ADD COLUMN IF NOT EXISTS is_hidden boolean NOT NULL DEFAULT false;
-
-CREATE TABLE public.name_cleanup_log (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  action text NOT NULL CHECK (action IN ('rename','hide','delete')),
-  target_table text NOT NULL,
-  target_column text NOT NULL,
-  old_value text,
-  new_value text,
-  affected_row_count integer NOT NULL DEFAULT 0,
-  performed_at timestamptz NOT NULL DEFAULT now(),
-  performed_by uuid NOT NULL DEFAULT auth.uid()
-);
-GRANT SELECT, INSERT ON public.name_cleanup_log TO authenticated;
-GRANT ALL ON public.name_cleanup_log TO service_role;
-ALTER TABLE public.name_cleanup_log ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "own log insert" ON public.name_cleanup_log
-  FOR INSERT TO authenticated WITH CHECK (performed_by = auth.uid());
-CREATE POLICY "own log select" ON public.name_cleanup_log
-  FOR SELECT TO authenticated USING (performed_by = auth.uid());
--- deliberately no UPDATE or DELETE policy: insert-only
+ALTER TABLE public.companies
+  ADD COLUMN is_test boolean NOT NULL DEFAULT false;
 ```
 
-**Files touched:** `src/components/settings/AddressBookCard.tsx`, `src/hooks/useAddressBook.ts`, `src/components/NameAutocomplete.tsx`, plus two new files `src/lib/name-normalize.ts` (normalize + Levenshtein/near-match, unit-testable pure TS) and `src/components/settings/NameCleanupLogList.tsx`.
+Nothing else. No existing row is reclassified; every company stays `false`.
 
-**Acceptance evidence to be produced after build:** reference-count dialog screenshot for N>0 and N=0; before/after `SELECT` on one affected `shareholders` row proving a hide changed nothing; hidden value absent from a typeahead while still rendering on its record; `" Delta Dental "` stored as `Delta Dental`; the "Robertson Ryan" hint shown and ignored, saving exactly as typed.
+Two extra cleanup steps the audit shows are needed for the purge to be complete (they are deletes performed by the app, not schema changes):
+- `user_address_book` rows whose `company_id` is the deleted company are removed explicitly (the FK only nulls them, which would leave orphan suggestion entries behind).
+- `tax_return_jobs` rows for the company are removed explicitly, same reason.
+
+## Step 2 — Mark a company as test
+
+- Checkbox on the company record (Organizational Info / Incorporation panel) labeled **"Test company (excluded from reports and suggestion lists)"**, saved to `companies.is_test`.
+- A small outlined **TEST** badge next to the company name everywhere a name is rendered: the company detail header, the sidebar company list, the dashboard company cards, the reports/org-chart/relationship pickers and the entity party picker. The badge sits next to the existing Active/Inactive badge and uses a muted destructive-tinted token, not a hardcoded color.
+- Selecting the checkbox invalidates the company and address-book query caches so suggestions update immediately without a refresh.
+
+## Step 3 — Test records drop out of suggestions
+
+- The address-book query keeps a set of test company ids and filters out entries whose `company_id` belongs to a test company, in the same place hidden entries are already filtered. Everything typeahead-driven (`NameAutocomplete`) inherits this.
+- The database address autocomplete, which queries `shareholders` and `companies` directly, filters those queries by non-test companies.
+- The company/entity pickers (relationships, lease party picker) exclude test companies from their option lists.
+- Inside the test company itself nothing changes: its own tabs, forms and existing records display and edit normally.
+
+## Step 4 — Delete test company and all its records
+
+- New destructive action on the company record, rendered **only** when `is_test = true`. On a normal company the button does not exist at all.
+- Confirmation dialog requires typing the exact company name; the confirm button stays disabled until it matches.
+- The handler re-reads `is_test` from the database immediately before deleting and aborts with an error toast if it is not `true` — so a stale UI or a hand-crafted call cannot purge a live company. There is no override.
+- The delete removes the `user_address_book` and `tax_return_jobs` rows for the company, then deletes the `companies` row, which cascades to all 41 referencing tables and their meeting-level children listed in Step 0.
+- The existing generic delete button stays as it is for non-test companies.
+
+## Out of scope
+
+No bulk reclassification of existing companies, no PDF builder changes.
+
+## Verification before reporting done
+
+1. On a non-test company, confirm the purge action is absent from the DOM and that invoking the handler directly is refused.
+2. Tick the checkbox on a scratch company, confirm its names disappear from a typeahead without a reload while still rendering inside the company.
+3. Purge a scratch test company and confirm row counts across the cascade tables drop to zero for that id.
