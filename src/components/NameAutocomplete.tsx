@@ -1,6 +1,8 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { findNearMatch, normalizeEntryText } from "@/lib/name-normalize";
+import { useVisibleAddressBookEntries } from "@/contexts/AddressBookContext";
 import type { AddressBookEntry } from "@/hooks/useAddressBook";
 
 interface Props {
@@ -27,9 +29,19 @@ export default function NameAutocomplete({
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<AddressBookEntry[]>([]);
   const [highlightIdx, setHighlightIdx] = useState(-1);
+  const [dismissedHint, setDismissedHint] = useState<string | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const suppressRef = useRef(false);
+
+  // Near-match hint runs client-side over the already-loaded list — no query
+  // per keystroke. Hidden entries are already filtered out upstream.
+  const allEntries = useVisibleAddressBookEntries();
+  const nearMatch = useMemo(() => {
+    if (!value || value.trim().length < 3) return null;
+    if (dismissedHint && dismissedHint === value) return null;
+    return findNearMatch(value, allEntries);
+  }, [value, allEntries, dismissedHint]);
 
   const handleChange = useCallback(
     (val: string) => {
@@ -102,6 +114,12 @@ export default function NameAutocomplete({
           }
         }}
         onKeyDown={handleKeyDown}
+        onBlur={() => {
+          // Part B — normalize on save: trim, collapse internal whitespace and
+          // strip trailing commas/periods. Case and abbreviations are untouched.
+          const normalized = normalizeEntryText(value);
+          if (normalized !== value) onChange(normalized);
+        }}
         placeholder={placeholder}
         className={className}
         disabled={disabled}
@@ -137,6 +155,38 @@ export default function NameAutocomplete({
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {nearMatch && !disabled && (
+        <div
+          className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
+          data-testid="near-match-hint"
+        >
+          <span>
+            Similar existing entry: <span className="font-medium text-foreground">"{nearMatch.full_name}"</span>
+          </span>
+          <button
+            type="button"
+            className="underline underline-offset-2 hover:text-foreground"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              handleSelect(nearMatch);
+            }}
+          >
+            Use this
+          </button>
+          <span aria-hidden>·</span>
+          <button
+            type="button"
+            className="underline underline-offset-2 hover:text-foreground"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setDismissedHint(value);
+            }}
+          >
+            Keep what I typed
+          </button>
         </div>
       )}
     </div>
