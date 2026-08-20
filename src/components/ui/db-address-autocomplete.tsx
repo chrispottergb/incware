@@ -35,6 +35,7 @@ export default function DbAddressAutocomplete({
   companyId,
   source = "companies",
 }: Props) {
+  const testCompanyIds = useTestCompanyIds();
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<AddressSuggestion[]>([]);
   const [highlightIdx, setHighlightIdx] = useState(-1);
