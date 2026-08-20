@@ -92,6 +92,7 @@ export default function DbAddressAutocomplete({
         let q = supabase
           .from("companies")
           .select("id, address, address_2, city, state, zip")
+          .eq("is_test", false)
           .not("address", "is", null)
           .ilike("address", pattern)
           .limit(5);
