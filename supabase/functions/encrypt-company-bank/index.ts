@@ -18,10 +18,13 @@ Deno.serve(async (req) => {
     const key = Deno.env.get("SSN_ENCRYPTION_KEY");
     if (!key) return new Response(JSON.stringify({ error: "Encryption key not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const supabase = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
+    const authClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
     const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: claimsErr } = await supabase.auth.getClaims(token);
-    if (claimsErr || !claims?.claims) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data: claims, error: claimsErr } = await authClient.auth.getClaims(token);
+    const callerId = (claims?.claims as { sub?: string } | undefined)?.sub;
+    if (claimsErr || !callerId) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const { bank_id, account_number, routing_number } = await req.json();
     if (!bank_id) return new Response(JSON.stringify({ error: "bank_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -31,6 +34,7 @@ Deno.serve(async (req) => {
       p_account: account_number ?? null,
       p_routing: routing_number ?? null,
       p_encryption_key: key,
+      p_caller_id: callerId,
     });
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 

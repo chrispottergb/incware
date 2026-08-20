@@ -18,15 +18,18 @@ Deno.serve(async (req) => {
     const key = Deno.env.get("SSN_ENCRYPTION_KEY");
     if (!key) return new Response(JSON.stringify({ error: "Encryption key not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const supabase = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
+    const authClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
     const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: claimsErr } = await supabase.auth.getClaims(token);
-    if (claimsErr || !claims?.claims) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data: claims, error: claimsErr } = await authClient.auth.getClaims(token);
+    const callerId = (claims?.claims as { sub?: string } | undefined)?.sub;
+    if (claimsErr || !callerId) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const { firm_id } = await req.json();
     if (!firm_id) return new Response(JSON.stringify({ error: "firm_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { data, error } = await supabase.rpc("decrypt_master_firm_bank", { p_firm_id: firm_id, p_encryption_key: key });
+    const { data, error } = await supabase.rpc("decrypt_master_firm_bank", { p_firm_id: firm_id, p_encryption_key: key, p_caller_id: callerId });
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const row = Array.isArray(data) ? data[0] : data;
     return new Response(JSON.stringify({ account_number: row?.account_number ?? null, routing_number: row?.routing_number ?? null }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
