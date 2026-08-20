@@ -1,69 +1,160 @@
-# Ratification of Actions Taken During the Year
+# Name/Address Cleanup Screen — Audit Report and Hardening Plan
 
-Additive feature: capture the informal decisions a company made during the year, review them in one dialog on the way to printing the annual minutes, and print them as a dated, itemized ratification section.
+## STEP 0 — AUDIT (read-only, nothing modified)
 
-## What the user will see
+### 1. The screen
+- **File:** `src/components/settings/AddressBookCard.tsx`
+- **Component:** `AddressBookCard` ("Address Book" card)
+- **Route:** `/settings` (rendered inside `src/pages/Settings.tsx`)
+- Supporting files: `src/hooks/useAddressBook.ts` (data + search + upsert), `src/contexts/AddressBookContext.tsx` (app-wide provider), `src/components/NameAutocomplete.tsx` (the typeahead these values feed).
 
-1. On an Annual Meeting, clicking Preview / PDF / Print Full Minutes first opens a dialog: "What happened this year?"
-2. The dialog lists what the app already knows happened in the period (assets, leases, loans, agreements, bank signers, benefit plans), each with a plain-English sentence, date, amount, and source badge — all checked by default.
-3. Related-party items (e.g. a lease from an owner) sit in their own group, flagged, with a toggle to clear the flag.
-4. The user can add items by hand (date optional, one sentence, amount, category, related-party checkbox).
-5. Items already covered by a written consent appear in a collapsed "Already documented" panel and can never be ratified again.
-6. Continue saves the choices and proceeds to the original print/preview action. Reopening later shows the saved choices, not a fresh guess.
-7. The minutes gain a new section, "Ratification of Actions Taken During the Year", with a dated table, a relate-back resolution, an "Interested Transactions" sub-section when applicable, and a Schedule A page when the list exceeds ten rows. With nothing selected it prints one sentence saying no actions were presented.
+### 2. Storage
+There **is** a real lookup table — the screen is not reading DISTINCT off record tables.
 
-## Data model
+**`public.user_address_book`** (240 rows, all belonging to 1 user):
 
-Two new tables, RLS and GRANTs mirroring `meeting_resolutions`, plus the standard `update_updated_at_column` trigger.
+| column | type | null | default |
+|---|---|---|---|
+| id | uuid | no | gen_random_uuid() |
+| user_id | uuid | no | — |
+| full_name | text | no | — |
+| address | text | yes | — |
+| address_2 | text | yes | — |
+| city | text | yes | — |
+| state | text | yes | — |
+| zip | text | yes | — |
+| company_id | uuid | yes | — |
+| created_at | timestamptz | no | now() |
+| updated_at | timestamptz | no | now() |
 
-- `interim_actions` — company-scoped: `company_id`, nullable `action_date`, `description`, `category`, `amount`, `is_related_party`, `source_table`, `source_id`, timestamps. Index on `company_id`; partial unique index on `(company_id, source_table, source_id)` so a source record can never be swept twice.
-- `meeting_ratifications` — join: `meeting_id`, `interim_action_id`, `disposition` ('ratified' | 'excluded'), `sort_order`, timestamps, unique `(meeting_id, interim_action_id)`. Unchecking persists as `excluded` rather than deleting, so skipped items stay skipped.
+**Reads:** `user_address_book` (all columns above) and `companies(name)` via the `company_id` join, for the "Company" column only.
 
-Neither table is added to `cloneSubTables` in `src/components/company/MeetingsTab.tsx` (verified: the clone list is `meeting_officers`, `meeting_directors`, `meeting_shareholders`, `meeting_counsel`, `meeting_authorized_signers`, `meeting_benefits`, `meeting_loans`, `agreements`, `meeting_other`). `meeting_other` is not reused for this data.
+**Writes:** `user_address_book` only — UPDATE of `full_name, address, address_2, city, state, zip, updated_at` on one id; DELETE of one id.
 
-## Candidate discovery — `src/lib/interim-actions.ts` (new, pure TS)
+**One-time seed (separate path, `useAddressBook.ts`):** reads `companies.id`, `shareholders(name,address,address_2,city,state,zip,company_id)`, `directors(same)`, `master_contacts(contact_name)` and INSERTs into `user_address_book`. It runs **only when the book is completely empty**, so it does not resurrect deleted rows today.
 
-Given a company and a date range, produce descriptors `{ sourceTable, sourceId, actionDate, description, amount, category, isRelatedParty }` from only the tables that carry a real event date:
+### 3. The CORRECT / rename action — actual code
 
-| Source | Date column | Category |
-| --- | --- | --- |
-| `asset_transactions` | `date` | Asset (purchase / vehicle_sale / lease / lease_termination wording) |
-| `company_assets` where `asset_type = 'lease'` | `lease_date` → `lease_start_date` | Lease |
-| `meeting_loans` | `loan_date` → `start_date` | Loan |
-| `agreements` | `agreement_date` | Agreement |
-| `bank_authorized_signers` | `effective_date` | Banking |
-| `meeting_benefits` | `new_plan_effective_date` | Other |
+```ts
+const { data, error } = await supabase
+  .from("user_address_book" as any)
+  .update({
+    full_name: values.full_name.trim(),
+    address: values.address.trim() || null,
+    address_2: values.address_2.trim() || null,
+    city: values.city.trim() || null,
+    state: values.state.trim() || null,
+    zip: values.zip.trim() || null,
+    updated_at: new Date().toISOString(),
+  } as any)
+  .eq("id", editing.id)
+  .select("id");
+```
 
-No `created_at` is ever used as an action date. Tables without an event date (`meeting_amendments`, `meeting_officers`, `meeting_shareholders`, `meeting_counsel`, `company_banks`, `meeting_authorized_signers`, `meeting_resolutions`, `meeting_directors`, `meeting_other`) are not auto-suggested; those items are typed in by hand.
+**Answer: (a) — it updates only the lookup row.** There is no cross-table UPDATE anywhere in this screen. A rename does **not** touch `shareholders`, `directors`, `officers`, `organizers`, `master_contacts`, `share_transactions`, or any generated document. Consequence: today a rename silently leaves the old spelling on every saved record, and the old spelling can reappear in the suggestion list the next time that record's name is upserted.
 
-Related-party suggestion: on a lease candidate, normalized case-insensitive match of landlord name or address against shareholder/member names and addresses or the company's own address. Always editable.
+### 4. The DELETE action — actual code
 
-Suppression: candidates already materialized into `interim_actions`, and source records already covered by a `Written Consent` meeting (shown in the "Already documented" group with the consent date).
+```ts
+const { error } = await supabase.from("user_address_book" as any).delete().eq("id", id);
+```
 
-## Sweep dialog — `src/components/meeting/RatificationSweep.tsx` (new)
+**Answer: it hard-DELETEs the lookup row.** It does not set an inactive flag (no such column exists) and it does not null or clear the value on any record table. Saved records are untouched.
 
-No meeting sub-tab is added, removed, or reordered; `allSubTabs` in `src/pages/MeetingDetail.tsx` stays at its current 15 entries. The dialog is wired in front of the existing `PrintPreviewButton` actions on Annual Meetings only, and calls through to the original handler on Continue.
+### 5. Row counts
+- Total rows: **240** (single user).
+- Obvious test data by name pattern (test/abc/asdf/xxx/demo/sample): **0**.
+- Rows with whitespace/punctuation defects (leading/trailing space, doubled internal space, trailing comma or period): **4**.
 
-Sections: header with counts; editable period defaulting to (prior_mtg_date + 1 day) → meeting_date, falling back to Jan 1 of `tax_year`; "Found in your records"; "Needs separate treatment" (related party); "Added by you"; "+ Add an action"; collapsed "Already documented"; footer note that unchecking everything is a valid answer. Plain wording on screen — the word "ratification" stays in the printed document.
+### Part A4 confirmation (stated up front, as requested)
+Because rename is lookup-only and delete is lookup-only, **nothing in Part A changes a stored value on any record table.** The Part A work adds a confirmation dialog, an insert-only audit log, and a soft-hide flag. No record-table UPDATE is introduced by this change.
 
-## Printed output
+---
 
-`src/lib/meeting-pdf-export.ts` — new section inserted after "Other Notes" and before "Registered Agent Confirmation", using the existing `section()` closure, `addWhereasResolved`, `addSubHeading`, the existing indent constants, and the Capital Assets table style. Entity wording comes from `src/lib/entity-terminology.ts`. Date | Action | Amount table sorted ascending with undated items ("During the year") last; more than ten rows becomes a Schedule A reference plus a Schedule A page after the signature block. Related-party items print only in the "Interested Transactions" sub-section. Empty state prints the single explanatory sentence.
+## PART A — Make destructive actions safe
 
-Two other edits in the same file:
-- Remove the blanket WHEREAS/RESOLVED ratification pair from the Annual Meeting branch of "Call to Order & Approval of Prior Meeting Minutes" (around lines 1817-1823). The Shareholder-meeting blanket ratification and the prior-minutes approval resolution are untouched.
-- Add one FURTHER RESOLVED to "General Authorization" granting prospective ordinary-course authority; the existing RESOLVED is unchanged.
+**A1 — Rename confirmation.** Rename does not perform a cross-record UPDATE, so the scary "this will change N saved records" warning would be false. Instead, before saving a rename we count how many saved records still carry the **old** string (case-insensitive, exact match) across `shareholders.name`, `directors.name`, `officers.name`, `organizers.organizer_name`, `master_contacts.contact_name`, `bank_authorized_signers.signer_name`, and show an accurate dialog:
 
-`src/lib/annual-meeting-pdf.ts` — same section between Section 13 "Special Resolutions" and Section 14 "Registered Agent Confirmation", using that file's `whereasPara` / `resolvedPara` and `indent = 36`, member wording.
+- N > 0: "N saved record(s) across M compan(ies) still use \"old value\". Renaming here only fixes the suggestion list — those records keep the old spelling, and documents already generated will not match. Continue?"
+- N = 0: "No saved records use this value. This only updates the suggestion." — plain, no count theatre.
 
-`src/lib/nonprofit-annual-meeting-pdf.ts` — narrative section after "Other Business" using only `para()` and `bullets()`: lead paragraph naming the period, "{date} — {description}" bullets, closing sentence that the Board reviewed and ratified each action as of the date taken. Board wording only.
+Cancel is the default-focused button in both cases.
 
-Not added to Written Consents, Special, or Organizational meetings.
+**A2 — Audit table `name_cleanup_log`** (new table, insert-only):
+`id, action ('rename'|'hide'|'delete'), target_table, target_column, old_value, new_value, affected_row_count, performed_at, performed_by`.
+RLS: user may INSERT and SELECT own rows; **no UPDATE or DELETE policy at all**. Surfaced as a read-only list at the bottom of the Address Book card (newest first, no controls).
 
-## Verification
+**A3 — Delete becomes a soft hide.** Add `is_hidden boolean NOT NULL DEFAULT false` to `user_address_book`. The row's stored values are never cleared.
+- Value referenced by N > 0 records: only **Hide** is offered, with an "In use by N records" badge. No hard delete.
+- Value referenced by 0 records: **Hide** is the primary action; hard **Delete** stays available as a secondary action for genuinely junk entries.
+- Both actions write a `name_cleanup_log` row. A "Show hidden" toggle lets the user unhide.
 
-Manual pass in the preview against a real annual meeting: empty state, in-period vs out-of-period records, unchecking persistence across reopen and across a newly created meeting, written-consent exclusion, related-party routing, 10 vs 11 row Schedule A behavior, and correct wording for Corporation, S-Corp, LLC, Single Member LLC, and Non-Profit. Plus §15 showing both resolutions, shareholder meetings keeping the blanket ratification, and typecheck + existing test suite green.
+**A4 — Confirmed above.** No Part A code path writes to any record table.
 
-## To report, not fix
+---
 
-Confirm and report the asymmetry in `addWhereasResolved()` (line 760): the blue-theme branch has a "that " guard while the non-blue branch's `fullResolved = resolvedPrefix + resolvedBody` has none. No change in this pass.
+## PART B — Normalize on save
+
+A single pure helper `normalizeEntryText(value)`: trim ends, collapse internal whitespace runs to one space, strip trailing commas and periods. No case changes, no expansion or abbreviation.
+
+Applied at the point of save in:
+- `useAddressBook.ts` → `upsert` (the single funnel every "remember this name" call goes through: OrganizationTab, ShareholdersTab, CounselSection, LeasesTab, BillsOfSaleTab, BusinessSalesTab, MeetingVehicles, BatchTransferDialog, LeaseTransactionDialog, CreateCompanyWizard, OrgMeetingWizard, AnnualMeetingWizard).
+- `AddressBookCard` edit form (name, address, address_2, city, state, zip).
+
+Existing rows are **not** retroactively normalized.
+
+---
+
+## PART C — Near-match hint at entry
+
+Added to `NameAutocomplete`, computed client-side against the already-loaded entries list (no per-keystroke query). When the typed value is not an exact match and a close match exists, one non-blocking hint renders below the field:
+
+> Similar existing entry: "Robertson Ryan & Associates"  [Use this] [Keep what I typed]
+
+Close-match rules (first hit wins, at most one suggestion): equal after lowercasing and stripping punctuation/whitespace; OR one is a prefix of the other with >= 5 characters; OR Levenshtein distance <= 2 for strings >= 6 characters. Never blocks save, never auto-replaces.
+
+---
+
+## PART D — Hidden values drop out of suggestions
+
+`useAddressBook`'s `search()` and the `entries` it exposes to typeaheads filter `is_hidden = false`. The Settings management list still shows hidden rows (flagged, behind the "Show hidden" toggle) so they can be restored. Values already stored on records render normally everywhere — nothing reads `is_hidden` outside the suggestion path.
+
+---
+
+## Out of scope (not built)
+No merge/dedupe wizard, no bulk fuzzy merge, no retroactive normalization, no PDF builder changes, no changes to `meeting_benefits` / ratification / `interim_actions`, no new nav entries.
+
+---
+
+## Technical details
+
+**Migration SQL (additive only — no column dropped or altered):**
+
+```sql
+ALTER TABLE public.user_address_book
+  ADD COLUMN IF NOT EXISTS is_hidden boolean NOT NULL DEFAULT false;
+
+CREATE TABLE public.name_cleanup_log (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  action text NOT NULL CHECK (action IN ('rename','hide','delete')),
+  target_table text NOT NULL,
+  target_column text NOT NULL,
+  old_value text,
+  new_value text,
+  affected_row_count integer NOT NULL DEFAULT 0,
+  performed_at timestamptz NOT NULL DEFAULT now(),
+  performed_by uuid NOT NULL DEFAULT auth.uid()
+);
+GRANT SELECT, INSERT ON public.name_cleanup_log TO authenticated;
+GRANT ALL ON public.name_cleanup_log TO service_role;
+ALTER TABLE public.name_cleanup_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "own log insert" ON public.name_cleanup_log
+  FOR INSERT TO authenticated WITH CHECK (performed_by = auth.uid());
+CREATE POLICY "own log select" ON public.name_cleanup_log
+  FOR SELECT TO authenticated USING (performed_by = auth.uid());
+-- deliberately no UPDATE or DELETE policy: insert-only
+```
+
+**Files touched:** `src/components/settings/AddressBookCard.tsx`, `src/hooks/useAddressBook.ts`, `src/components/NameAutocomplete.tsx`, plus two new files `src/lib/name-normalize.ts` (normalize + Levenshtein/near-match, unit-testable pure TS) and `src/components/settings/NameCleanupLogList.tsx`.
+
+**Acceptance evidence to be produced after build:** reference-count dialog screenshot for N>0 and N=0; before/after `SELECT` on one affected `shareholders` row proving a hide changed nothing; hidden value absent from a typeahead while still rendering on its record; `" Delta Dental "` stored as `Delta Dental`; the "Robertson Ryan" hint shown and ignored, saving exactly as typed.
