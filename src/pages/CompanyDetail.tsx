@@ -269,16 +269,58 @@ export default function CompanyDetail() {
             {company.incorporation_date &&
               ` · Inc. ${new Date(company.incorporation_date + "T00:00:00").toLocaleDateString()}`}
           </p>
+          <div className="mt-1.5 flex items-center gap-2">
+            <Checkbox
+              id="company-is-test"
+              checked={!!(company as any).is_test}
+              onCheckedChange={async (checked) => {
+                const next = checked === true;
+                const { error } = await supabase
+                  .from("companies")
+                  .update({ is_test: next } as any)
+                  .eq("id", company.id);
+                if (error) {
+                  toast.error("Failed to update the test flag");
+                  return;
+                }
+                // Suggestion lists read these caches — refresh so the change
+                // takes effect without a reload.
+                queryClient.invalidateQueries({ queryKey: ["company", company.id] });
+                queryClient.invalidateQueries({ queryKey: ["companies"] });
+                queryClient.invalidateQueries({ queryKey: ["test_company_ids"] });
+                queryClient.invalidateQueries({ queryKey: ["address_book"] });
+                queryClient.invalidateQueries({ queryKey: ["my_companies_for_picker"] });
+                toast.success(next ? "Marked as a test company" : "Test flag removed");
+              }}
+            />
+            <Label htmlFor="company-is-test" className="text-xs text-muted-foreground cursor-pointer">
+              Test company (excluded from reports and suggestion lists)
+            </Label>
+          </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setDeleteOpen(true)}
-          className="mt-0.5 shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-          title="Delete company"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <div className="mt-0.5 flex shrink-0 items-center gap-1">
+          {/* Purge is rendered only for test companies; the handler re-checks the flag. */}
+          {(company as any).is_test && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPurgeOpen(true)}
+              className="h-8 border-destructive/40 text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              Delete test company and all its records
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setDeleteOpen(true)}
+            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            title="Delete company"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <EntityDeleteGuard
@@ -289,6 +331,21 @@ export default function CompanyDetail() {
         onDelete={handleDelete}
         deleting={deleting}
       />
+
+      {(company as any).is_test && (
+        <TestCompanyPurgeDialog
+          open={purgeOpen}
+          onOpenChange={setPurgeOpen}
+          companyId={company.id}
+          companyName={company.name}
+          onPurged={() => {
+            queryClient.invalidateQueries({ queryKey: ["companies"] });
+            queryClient.invalidateQueries({ queryKey: ["test_company_ids"] });
+            navigate("/");
+          }}
+        />
+      )}
+
 
       {/* Board election verification — s. 180.1821 requires its own statement in the articles */}
       {(company as any).statutory_close_corporation &&
