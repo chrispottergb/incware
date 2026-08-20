@@ -127,7 +127,7 @@ export default function DbAddressAutocomplete({
       }
       setHighlightIdx(-1);
     },
-    [companyId, source]
+    [companyId, source, testCompanyIds]
   );
 
   const handleChange = useCallback(
