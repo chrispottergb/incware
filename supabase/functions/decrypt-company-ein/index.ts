@@ -26,13 +26,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    const callerId = (claimsData?.claims as { sub?: string } | undefined)?.sub;
+    const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    if (claimsError || !callerId) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -53,6 +55,7 @@ Deno.serve(async (req) => {
     const { data, error } = await supabase.rpc("decrypt_companies_ein_batch", {
       p_company_ids: company_ids,
       p_encryption_key: encryptionKey,
+      p_caller_id: callerId,
     });
 
     if (error) {
