@@ -4896,14 +4896,22 @@ export type Database = {
         Returns: Json
       }
       decrypt_companies_ein_batch: {
-        Args: { p_company_ids: string[]; p_encryption_key: string }
+        Args: {
+          p_caller_id?: string
+          p_company_ids: string[]
+          p_encryption_key: string
+        }
         Returns: {
           company_id: string
           ein: string
         }[]
       }
       decrypt_company_bank: {
-        Args: { p_bank_id: string; p_encryption_key: string }
+        Args: {
+          p_bank_id: string
+          p_caller_id?: string
+          p_encryption_key: string
+        }
         Returns: {
           account_number: string
           routing_number: string
@@ -4918,7 +4926,11 @@ export type Database = {
         Returns: string
       }
       decrypt_master_firm_bank: {
-        Args: { p_encryption_key: string; p_firm_id: string }
+        Args: {
+          p_caller_id?: string
+          p_encryption_key: string
+          p_firm_id: string
+        }
         Returns: {
           account_number: string
           routing_number: string
@@ -4937,18 +4949,25 @@ export type Database = {
         Args: {
           p_account: string
           p_bank_id: string
+          p_caller_id?: string
           p_encryption_key: string
           p_routing: string
         }
         Returns: undefined
       }
       encrypt_company_ein: {
-        Args: { p_company_id: string; p_ein: string; p_encryption_key: string }
+        Args: {
+          p_caller_id?: string
+          p_company_id: string
+          p_ein: string
+          p_encryption_key: string
+        }
         Returns: undefined
       }
       encrypt_master_firm_bank: {
         Args: {
           p_account: string
+          p_caller_id?: string
           p_encryption_key: string
           p_firm_id: string
           p_routing: string
@@ -4957,6 +4976,7 @@ export type Database = {
       }
       encrypt_shareholder_ssn: {
         Args: {
+          p_caller_id?: string
           p_encryption_key: string
           p_shareholder_id: string
           p_ssn_ein: string
