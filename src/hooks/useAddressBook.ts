@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCallback, useState, useEffect, useRef, useMemo } from "react";
 import { normalizeEntryText, matchKey } from "@/lib/name-normalize";
+import { useTestCompanyIds } from "@/hooks/useTestCompanies";
 
 export interface AddressBookEntry {
   id: string;
