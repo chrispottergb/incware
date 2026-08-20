@@ -152,7 +152,7 @@ export default function NameAutocomplete({
         </div>
       )}
 
-      {!open && nearMatch && !disabled && (
+      {nearMatch && !disabled && (
         <div
           className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
           data-testid="near-match-hint"
