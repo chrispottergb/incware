@@ -1,20 +1,12 @@
 import { createContext, useContext, type ReactNode } from "react";
-import { useAddressBook, type AddressBookEntry } from "@/hooks/useAddressBook";
+import { useAddressBook, type AddressBookEntry, type UpsertEntryInput } from "@/hooks/useAddressBook";
 import type { UseMutationResult } from "@tanstack/react-query";
 
 interface AddressBookContextValue {
   entries: AddressBookEntry[];
   search: (query: string) => AddressBookEntry[];
   getCompanySplitIndex: (results: AddressBookEntry[]) => number;
-  upsert: UseMutationResult<void, Error, {
-    full_name: string;
-    address?: string;
-    address_2?: string;
-    city?: string;
-    state?: string;
-    zip?: string;
-    company_id?: string;
-  }, unknown>;
+  upsert: UseMutationResult<void, Error, UpsertEntryInput, unknown>;
   setCompanyId: (id: string | undefined) => void;
 }
 
@@ -45,4 +37,13 @@ export function useAddressBookContext(companyId?: string) {
     getCompanySplitIndex: ctx.getCompanySplitIndex,
     upsert: ctx.upsert,
   };
+}
+
+/**
+ * Non-throwing accessor for the visible (non-hidden) suggestion list. Used by
+ * `NameAutocomplete` to compute the near-match hint client-side; returns an
+ * empty list when the component is rendered outside the provider.
+ */
+export function useVisibleAddressBookEntries(): AddressBookEntry[] {
+  return useContext(AddressBookContext)?.entries ?? [];
 }

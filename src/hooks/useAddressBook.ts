@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useCallback, useState, useEffect, useRef } from "react";
+import { useCallback, useState, useEffect, useRef, useMemo } from "react";
+import { normalizeEntryText, matchKey } from "@/lib/name-normalize";
 
 export interface AddressBookEntry {
   id: string;
@@ -12,6 +13,44 @@ export interface AddressBookEntry {
   state: string | null;
   zip: string | null;
   company_id: string | null;
+  is_hidden?: boolean;
+}
+
+export interface UpsertEntryInput {
+  full_name: string;
+  address?: string;
+  address_2?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  company_id?: string;
+}
+
+type UpsertAction = "skip_hidden" | "update" | "insert";
+
+/**
+ * Decides what an upsert should do, given the rows that already exist.
+ *
+ * This is the fix for the re-seed loop: a value the user hid in Settings must
+ * not come back to life the next time a record carrying that same name is
+ * saved. Matching is done on the *normalized, case-folded* name so
+ * `"  delta   dental "` and `"Delta Dental"` are the same entry.
+ *
+ * - hidden match  -> do nothing, keep it hidden, return its id
+ * - visible match -> update in place
+ * - no match      -> insert
+ */
+export function resolveUpsertPlan(
+  fullName: string,
+  existing: Pick<AddressBookEntry, "id" | "full_name" | "is_hidden">[],
+): { action: UpsertAction; id: string | null } {
+  const key = matchKey(fullName);
+  if (!key) return { action: "skip_hidden", id: null };
+
+  const match = existing.find((e) => matchKey(e.full_name) === key);
+  if (!match) return { action: "insert", id: null };
+  if (match.is_hidden) return { action: "skip_hidden", id: match.id };
+  return { action: "update", id: match.id };
 }
 
 export function useAddressBook(initialCompanyId?: string) {
@@ -23,13 +62,13 @@ export function useAddressBook(initialCompanyId?: string) {
     setCurrentCompanyId(id);
   }, []);
 
-  const { data: entries = [], refetch, isFetched } = useQuery({
+  const { data: allEntries = [], refetch, isFetched } = useQuery({
     queryKey: ["address_book", user?.id],
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_address_book" as any)
-        .select("id, full_name, address, address_2, city, state, zip, company_id")
+        .select("id, full_name, address, address_2, city, state, zip, company_id, is_hidden")
         .order("full_name");
       if (error) throw error;
       return (data as any[]) as AddressBookEntry[];
@@ -38,17 +77,30 @@ export function useAddressBook(initialCompanyId?: string) {
     gcTime: Infinity,
   });
 
+  // Hidden values never feed a suggestion list. They stay in the table so the
+  // Settings screen can show and restore them, and so records that already
+  // carry the value keep rendering it.
+  const entries = useMemo(() => allEntries.filter((e) => !e.is_hidden), [allEntries]);
+
   // One-time auto-seed: populate address book from existing shareholders, directors, master_contacts.
-  // Only runs when the book is completely empty — otherwise entries the user deleted in
-  // Settings > Address Book (e.g. misspellings) would be silently re-created on the next load.
+  // Only runs when the book is completely empty AND the user has never performed a
+  // cleanup action — otherwise entries the user hid or deleted in
+  // Settings > Address Book (e.g. misspellings) would be silently re-created.
   const seededRef = useRef(false);
   useEffect(() => {
-    if (!user || seededRef.current || !isFetched || entries.length > 0) return;
+    if (!user || seededRef.current || !isFetched || allEntries.length > 0) return;
     seededRef.current = true;
 
 
     (async () => {
       try {
+        // Seed guard: any prior cleanup action means the empty book is a
+        // deliberate state, not a fresh account.
+        const { count: cleanupCount } = await supabase
+          .from("name_cleanup_log" as any)
+          .select("id", { count: "exact", head: true });
+        if ((cleanupCount ?? 0) > 0) return;
+
         // Get user's companies
         const { data: companies } = await supabase
           .from("companies")
@@ -57,8 +109,8 @@ export function useAddressBook(initialCompanyId?: string) {
         const companyIds = (companies || []).map((c: any) => c.id);
         if (companyIds.length === 0) return;
 
-        // Build existing-name set (case-insensitive) to skip dupes
-        const existing = new Set(entries.map((e) => e.full_name.toLowerCase().trim()));
+        // Build existing-name set (normalized) to skip dupes
+        const existing = new Set(allEntries.map((e) => matchKey(e.full_name)));
 
         const [{ data: shareholders }, { data: directors }, { data: contacts }] = await Promise.all([
           supabase
@@ -78,19 +130,19 @@ export function useAddressBook(initialCompanyId?: string) {
         const rows: any[] = [];
         const seenInBatch = new Set<string>();
         const addRow = (name: string | null | undefined, src: any, company_id: string | null) => {
-          const trimmed = (name || "").trim();
+          const trimmed = normalizeEntryText(name);
           if (!trimmed) return;
-          const key = trimmed.toLowerCase();
+          const key = matchKey(trimmed);
           if (existing.has(key) || seenInBatch.has(key)) return;
           seenInBatch.add(key);
           rows.push({
             user_id: user.id,
             full_name: trimmed,
-            address: src?.address || null,
-            address_2: src?.address_2 || null,
-            city: src?.city || null,
-            state: src?.state || null,
-            zip: src?.zip || null,
+            address: normalizeEntryText(src?.address) || null,
+            address_2: normalizeEntryText(src?.address_2) || null,
+            city: normalizeEntryText(src?.city) || null,
+            state: normalizeEntryText(src?.state) || null,
+            zip: normalizeEntryText(src?.zip) || null,
             company_id,
           });
         };
@@ -107,7 +159,7 @@ export function useAddressBook(initialCompanyId?: string) {
         console.error("Address book seed failed:", err);
       }
     })();
-  }, [user, entries, refetch, isFetched]);
+  }, [user, allEntries, refetch, isFetched]);
 
   // Search entries: current company first, then rest
   const search = useCallback(
@@ -141,43 +193,35 @@ export function useAddressBook(initialCompanyId?: string) {
   );
 
   const upsert = useMutation({
-    mutationFn: async (entry: {
-      full_name: string;
-      address?: string;
-      address_2?: string;
-      city?: string;
-      state?: string;
-      zip?: string;
-      company_id?: string;
-    }) => {
-      if (!user || !entry.full_name.trim()) return;
-      const trimmedName = entry.full_name.trim();
-      const trimmedAddr = (entry.address || "").trim() || null;
+    mutationFn: async (entry: UpsertEntryInput) => {
+      const trimmedName = normalizeEntryText(entry.full_name);
+      if (!user || !trimmedName) return;
 
-      // Check existing
-      const { data: existing } = await supabase
+      // Read current rows (including hidden ones) and decide on the normalized key.
+      const { data: existingRows } = await supabase
         .from("user_address_book" as any)
-        .select("id")
-        .eq("user_id", user.id)
-        .ilike("full_name", trimmedName)
-        .maybeSingle();
+        .select("id, full_name, is_hidden")
+        .eq("user_id", user.id);
+
+      const plan = resolveUpsertPlan(trimmedName, (existingRows as any[]) || []);
+      if (plan.action === "skip_hidden") return;
 
       const payload = {
         full_name: trimmedName,
-        address: trimmedAddr,
-        address_2: entry.address_2?.trim() || null,
-        city: entry.city?.trim() || null,
-        state: entry.state?.trim() || null,
-        zip: entry.zip?.trim() || null,
+        address: normalizeEntryText(entry.address) || null,
+        address_2: normalizeEntryText(entry.address_2) || null,
+        city: normalizeEntryText(entry.city) || null,
+        state: normalizeEntryText(entry.state) || null,
+        zip: normalizeEntryText(entry.zip) || null,
         company_id: entry.company_id || null,
         updated_at: new Date().toISOString(),
       };
 
-      if (existing) {
+      if (plan.action === "update" && plan.id) {
         await supabase
           .from("user_address_book" as any)
           .update(payload as any)
-          .eq("id", (existing as any).id);
+          .eq("id", plan.id);
       } else {
         await supabase
           .from("user_address_book" as any)
@@ -187,5 +231,5 @@ export function useAddressBook(initialCompanyId?: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["address_book"] }),
   });
 
-  return { entries, search, getCompanySplitIndex, upsert, setCompanyId };
+  return { entries, allEntries, search, getCompanySplitIndex, upsert, setCompanyId };
 }

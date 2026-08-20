@@ -3503,6 +3503,45 @@ export type Database = {
           },
         ]
       }
+      name_cleanup_log: {
+        Row: {
+          action: string
+          affected_row_count: number
+          id: string
+          new_value: string | null
+          old_value: string | null
+          performed_at: string
+          performed_by: string
+          row_snapshot: Json | null
+          target_column: string
+          target_table: string
+        }
+        Insert: {
+          action: string
+          affected_row_count?: number
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          performed_at?: string
+          performed_by?: string
+          row_snapshot?: Json | null
+          target_column: string
+          target_table: string
+        }
+        Update: {
+          action?: string
+          affected_row_count?: number
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          performed_at?: string
+          performed_by?: string
+          row_snapshot?: Json | null
+          target_column?: string
+          target_table?: string
+        }
+        Relationships: []
+      }
       nonprofit_form990_filings: {
         Row: {
           company_id: string
@@ -4739,6 +4778,7 @@ export type Database = {
           created_at: string
           full_name: string
           id: string
+          is_hidden: boolean
           state: string | null
           updated_at: string
           user_id: string
@@ -4752,6 +4792,7 @@ export type Database = {
           created_at?: string
           full_name: string
           id?: string
+          is_hidden?: boolean
           state?: string | null
           updated_at?: string
           user_id: string
@@ -4765,6 +4806,7 @@ export type Database = {
           created_at?: string
           full_name?: string
           id?: string
+          is_hidden?: boolean
           state?: string | null
           updated_at?: string
           user_id?: string
