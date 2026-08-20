@@ -239,6 +239,7 @@ export default function CompanyDetail() {
             <h1 className="font-display text-xl font-bold tracking-tight truncate">
               {company.name}
             </h1>
+            {(company as any).is_test && <TestBadge />}
             <Badge 
               variant="outline" 
               className={`${statusColor} text-[10px] px-1.5 py-0 cursor-pointer hover:opacity-80 transition-opacity`}
