@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { findNearMatch } from "@/lib/name-normalize";
+import { findNearMatch, normalizeEntryText } from "@/lib/name-normalize";
 import { useVisibleAddressBookEntries } from "@/contexts/AddressBookContext";
 import type { AddressBookEntry } from "@/hooks/useAddressBook";
 
