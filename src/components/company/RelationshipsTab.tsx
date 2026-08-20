@@ -40,7 +40,12 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
   const { data: allCompanies = [], isLoading: loadingCompanies, isError: isCompaniesError, refetch: refetchCompanies } = useQuery({
     queryKey: ["companies"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("companies").select("id, name, entity_type").order("name");
+      // Test companies stay out of the picker.
+      const { data, error } = await supabase
+        .from("companies")
+        .select("id, name, entity_type")
+        .eq("is_test", false)
+        .order("name");
       if (error) throw error;
       return data;
     },
