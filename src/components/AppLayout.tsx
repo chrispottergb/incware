@@ -336,6 +336,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     >
                       <Building2 className="h-3 w-3 shrink-0 opacity-50" />
                       <span className="truncate flex-1">{c.name}</span>
+                      {(c as any).is_test && <TestBadge className="shrink-0" />}
                       <span className="shrink-0 rounded bg-sidebar-accent/60 px-1 py-0 text-[9px] font-semibold uppercase text-sidebar-foreground/50">
                         {entityBadge(c.entity_type)}
                       </span>
