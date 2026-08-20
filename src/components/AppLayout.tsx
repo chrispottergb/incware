@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { isLLCType } from "@/lib/entity-terminology";
 import ResourcesPanel from "@/components/ResourcesPanel";
+import TestBadge from "@/components/TestBadge";
 
 function entityBadge(entityType: string | undefined) {
   if (entityType === "Corporation") return "Corp";
