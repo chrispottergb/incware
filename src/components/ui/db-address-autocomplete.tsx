@@ -55,7 +55,7 @@ export default function DbAddressAutocomplete({
       if (source === "shareholders") {
         let q = supabase
           .from("shareholders")
-          .select("id, address, address_2, city, state, zip")
+          .select("id, address, address_2, city, state, zip, company_id")
           .not("address", "is", null)
           .ilike("address", pattern)
           .limit(5);
