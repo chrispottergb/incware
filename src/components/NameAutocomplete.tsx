@@ -114,6 +114,12 @@ export default function NameAutocomplete({
           }
         }}
         onKeyDown={handleKeyDown}
+        onBlur={() => {
+          // Part B — normalize on save: trim, collapse internal whitespace and
+          // strip trailing commas/periods. Case and abbreviations are untouched.
+          const normalized = normalizeEntryText(value);
+          if (normalized !== value) onChange(normalized);
+        }}
         placeholder={placeholder}
         className={className}
         disabled={disabled}
