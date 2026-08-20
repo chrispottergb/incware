@@ -1086,6 +1086,7 @@ export type Database = {
           id: string
           incorporation_date: string | null
           initial_directors_count: number | null
+          is_test: boolean
           llc_authorized_binders: Json | null
           llc_dfi_statement_date: string | null
           llc_dfi_statement_filed: boolean | null
@@ -1170,6 +1171,7 @@ export type Database = {
           id?: string
           incorporation_date?: string | null
           initial_directors_count?: number | null
+          is_test?: boolean
           llc_authorized_binders?: Json | null
           llc_dfi_statement_date?: string | null
           llc_dfi_statement_filed?: boolean | null
@@ -1254,6 +1256,7 @@ export type Database = {
           id?: string
           incorporation_date?: string | null
           initial_directors_count?: number | null
+          is_test?: boolean
           llc_authorized_binders?: Json | null
           llc_dfi_statement_date?: string | null
           llc_dfi_statement_filed?: boolean | null
