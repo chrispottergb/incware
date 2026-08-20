@@ -53,7 +53,12 @@ export function EntityPartyPicker({
   const { data: companies = [] } = useQuery({
     queryKey: ["my_companies_for_picker"],
     queryFn: async () => {
-      const { data } = await supabase.from("companies").select("id, name").order("name");
+      // Test companies stay out of the picker.
+      const { data } = await supabase
+        .from("companies")
+        .select("id, name")
+        .eq("is_test", false)
+        .order("name");
       return data || [];
     },
   });

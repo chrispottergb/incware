@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { useTestCompanyIds } from "@/hooks/useTestCompanies";
 
 export interface AddressSuggestion {
   id: string;
@@ -35,6 +36,7 @@ export default function DbAddressAutocomplete({
   companyId,
   source = "companies",
 }: Props) {
+  const testCompanyIds = useTestCompanyIds();
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<AddressSuggestion[]>([]);
   const [highlightIdx, setHighlightIdx] = useState(-1);
@@ -55,7 +57,7 @@ export default function DbAddressAutocomplete({
       if (source === "shareholders") {
         let q = supabase
           .from("shareholders")
-          .select("id, address, address_2, city, state, zip")
+          .select("id, address, address_2, city, state, zip, company_id")
           .not("address", "is", null)
           .ilike("address", pattern)
           .limit(5);
@@ -69,6 +71,8 @@ export default function DbAddressAutocomplete({
         const suggestions: AddressSuggestion[] = [];
         for (const row of data) {
           if (!row.address) continue;
+          // Records owned by a test company never feed a suggestion list.
+          if ((row as any).company_id && testCompanyIds.has((row as any).company_id)) continue;
           const key = `${row.address}|${row.city}|${row.state}|${row.zip}`;
           if (seen.has(key)) continue;
           seen.add(key);
@@ -90,6 +94,7 @@ export default function DbAddressAutocomplete({
         let q = supabase
           .from("companies")
           .select("id, address, address_2, city, state, zip")
+          .eq("is_test", false)
           .not("address", "is", null)
           .ilike("address", pattern)
           .limit(5);
@@ -122,7 +127,7 @@ export default function DbAddressAutocomplete({
       }
       setHighlightIdx(-1);
     },
-    [companyId, source]
+    [companyId, source, testCompanyIds]
   );
 
   const handleChange = useCallback(

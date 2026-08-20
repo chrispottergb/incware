@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCallback, useState, useEffect, useRef, useMemo } from "react";
 import { normalizeEntryText, matchKey } from "@/lib/name-normalize";
+import { useTestCompanyIds } from "@/hooks/useTestCompanies";
 
 export interface AddressBookEntry {
   id: string;
@@ -80,7 +81,18 @@ export function useAddressBook(initialCompanyId?: string) {
   // Hidden values never feed a suggestion list. They stay in the table so the
   // Settings screen can show and restore them, and so records that already
   // carry the value keep rendering it.
-  const entries = useMemo(() => allEntries.filter((e) => !e.is_hidden), [allEntries]);
+  //
+  // Entries belonging to a company flagged as test data are filtered out for
+  // the same reason: test names must not pollute typeaheads. They remain
+  // untouched in the table and fully visible inside the test company itself.
+  const testCompanyIds = useTestCompanyIds();
+  const entries = useMemo(
+    () =>
+      allEntries.filter(
+        (e) => !e.is_hidden && !(e.company_id && testCompanyIds.has(e.company_id)),
+      ),
+    [allEntries, testCompanyIds],
+  );
 
   // One-time auto-seed: populate address book from existing shareholders, directors, master_contacts.
   // Only runs when the book is completely empty AND the user has never performed a

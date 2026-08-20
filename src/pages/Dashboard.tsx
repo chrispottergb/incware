@@ -35,6 +35,7 @@ import cardImportTaxReturn from "@/assets/card-import-tax-return.jpg";
 import cardExistingClient from "@/assets/card-existing-client.jpg";
 import cardAnnualUpdate from "@/assets/card-annual-update.jpg";
 import cardQuickSearch from "@/assets/card-quick-search.jpg";
+import TestBadge from "@/components/TestBadge";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "Single Member LLC", "Non-Profit", "Partnership"];
 
@@ -383,6 +384,7 @@ export default function Dashboard() {
                             <Building2 className="h-3.5 w-3.5 text-primary" />
                           </div>
                           {company.name}
+                          {(company as any).is_test && <TestBadge />}
                         </div>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
