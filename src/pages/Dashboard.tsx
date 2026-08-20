@@ -383,6 +383,7 @@ export default function Dashboard() {
                             <Building2 className="h-3.5 w-3.5 text-primary" />
                           </div>
                           {company.name}
+                          {(company as any).is_test && <TestBadge />}
                         </div>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
