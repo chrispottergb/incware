@@ -1,0 +1,1 @@
+DELETE FROM public.meeting_benefits WHERE id = '553e8da7-e535-42d6-a56f-cee208817c9e';
