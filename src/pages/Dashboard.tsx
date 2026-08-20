@@ -35,6 +35,7 @@ import cardImportTaxReturn from "@/assets/card-import-tax-return.jpg";
 import cardExistingClient from "@/assets/card-existing-client.jpg";
 import cardAnnualUpdate from "@/assets/card-annual-update.jpg";
 import cardQuickSearch from "@/assets/card-quick-search.jpg";
+import TestBadge from "@/components/TestBadge";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "Single Member LLC", "Non-Profit", "Partnership"];
 
