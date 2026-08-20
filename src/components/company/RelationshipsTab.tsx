@@ -38,7 +38,7 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
 
   // All user companies (for the dropdown)
   const { data: allCompanies = [], isLoading: loadingCompanies, isError: isCompaniesError, refetch: refetchCompanies } = useQuery({
-    queryKey: ["companies"],
+    queryKey: ["companies", "non_test"],
     queryFn: async () => {
       // Test companies stay out of the picker.
       const { data, error } = await supabase
