@@ -68,6 +68,7 @@ export default function CompanyDetail() {
   const rawHashTab = location.hash.replace("#", "");
 
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [purgeOpen, setPurgeOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [buySellOpen, setBuySellOpen] = useState(false);
   const [initialSeller, setInitialSeller] = useState<{ id: string; name: string } | undefined>();
