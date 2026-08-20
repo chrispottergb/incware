@@ -69,6 +69,8 @@ export default function DbAddressAutocomplete({
         const suggestions: AddressSuggestion[] = [];
         for (const row of data) {
           if (!row.address) continue;
+          // Records owned by a test company never feed a suggestion list.
+          if ((row as any).company_id && testCompanyIds.has((row as any).company_id)) continue;
           const key = `${row.address}|${row.city}|${row.state}|${row.zip}`;
           if (seen.has(key)) continue;
           seen.add(key);
