@@ -13,12 +13,16 @@
  *    candidate. It never blocks a save and never rewrites what was typed.
  */
 
-/** Trim ends, collapse internal whitespace runs, strip trailing commas/periods. */
+/**
+ * Trim ends, collapse internal whitespace runs, strip trailing commas.
+ * Trailing periods are preserved — they are meaningful in legal names
+ * ("John Smith Jr.", "Acme Widgets, Inc.", "123 N. Main St.").
+ */
 export function normalizeEntryText(value?: string | null): string {
   return String(value ?? "")
     .trim()
     .replace(/\s+/g, " ")
-    .replace(/[,.\s]+$/, "")
+    .replace(/[,\s]+$/, "")
     .trim();
 }
 
