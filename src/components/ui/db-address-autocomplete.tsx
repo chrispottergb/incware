@@ -33,6 +33,7 @@ export default function DbAddressAutocomplete({
   value,
   onChange,
   onSelect,
+  onBlur,
   placeholder,
   className,
   disabled,
@@ -206,6 +207,7 @@ export default function DbAddressAutocomplete({
           if (value.length >= 2) fetchSuggestions(value);
         }}
         onKeyDown={handleKeyDown}
+        onBlur={(e) => onBlur?.(e.target.value)}
         placeholder={placeholder}
         className={className}
         disabled={disabled}
