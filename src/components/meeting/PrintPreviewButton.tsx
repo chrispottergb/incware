@@ -200,7 +200,7 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
     try {
       if (!skipGate && beforeAction && !(await beforeAction())) return;
       
-      const doc = generatePDF();
+      const doc = generatePDFRef.current();
       if (!doc) {
         console.warn("[PDF Download] generatePDF returned null/falsy — aborting.");
         return;
@@ -224,7 +224,7 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
   const handlePrint = async (skipGate = false) => {
     try {
       if (!skipGate && beforeAction && !(await beforeAction())) return;
-      const doc = generatePDF();
+      const doc = generatePDFRef.current();
       if (!doc) {
         console.warn("[PDF Print] generatePDF returned null/falsy — aborting.");
         return;
