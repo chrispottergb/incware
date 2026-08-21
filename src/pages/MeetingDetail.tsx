@@ -536,7 +536,7 @@ export default function MeetingDetail() {
   });
 
   // Ratified interim actions for this meeting (annual meetings only print this section)
-  const { data: ratifications = [] } = useQuery({
+  const { data: ratifications = [], refetch: refetchRatifications } = useQuery({
     queryKey: ["meeting_ratifications", meetingId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -957,13 +957,22 @@ export default function MeetingDetail() {
       setSweepOpen(true);
     });
 
-  const resolveSweep = (proceed: boolean) => {
+  const resolveSweep = async (proceed: boolean) => {
     setSweepOpen(false);
     const r = sweepResolver.current;
     sweepResolver.current = null;
-    if (proceed) queryClient.invalidateQueries({ queryKey: ["meeting_ratifications", meetingId] });
-    // Let the refreshed ratifications land before the PDF is generated.
-    setTimeout(() => r?.(proceed), proceed ? 400 : 0);
+    if (!proceed) {
+      r?.(false);
+      return;
+    }
+    // Wait for the refreshed ratifications to actually land (and for React to
+    // commit the re-render) before letting the PDF build continue.
+    try {
+      await refetchRatifications();
+    } catch (err) {
+      console.error("[resolveSweep] ratification refetch failed:", err);
+    }
+    setTimeout(() => r?.(true), 0);
   };
 
 

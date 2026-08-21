@@ -17,13 +17,15 @@ describe("normalizeEntryText", () => {
     expect(normalizeEntryText("Robertson   Ryan  &   Associates")).toBe("Robertson Ryan & Associates");
   });
 
-  it("strips trailing commas and periods", () => {
+  it("strips trailing commas but preserves trailing periods", () => {
     expect(normalizeEntryText("Acme Holdings, ")).toBe("Acme Holdings");
-    expect(normalizeEntryText("Acme Holdings.")).toBe("Acme Holdings");
+    expect(normalizeEntryText("Acme Holdings.")).toBe("Acme Holdings.");
+    expect(normalizeEntryText("John Smith Jr. ")).toBe("John Smith Jr.");
+    expect(normalizeEntryText("Acme Widgets, Inc.")).toBe("Acme Widgets, Inc.");
   });
 
   it("never changes case and never expands abbreviations", () => {
-    expect(normalizeEntryText("123 N. Main St.")).toBe("123 N. Main St");
+    expect(normalizeEntryText("123 N. Main St.")).toBe("123 N. Main St.");
     expect(normalizeEntryText("mcDONALD trust")).toBe("mcDONALD trust");
     expect(normalizeEntryText("St. Mary's Foundation")).toBe("St. Mary's Foundation");
   });

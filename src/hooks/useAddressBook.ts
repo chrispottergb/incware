@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCallback, useState, useEffect, useRef, useMemo } from "react";
-import { normalizeEntryText, matchKey } from "@/lib/name-normalize";
+import { normalizeEntryText, matchKey, comparisonKey } from "@/lib/name-normalize";
 import { useTestCompanyIds } from "@/hooks/useTestCompanies";
 
 export interface AddressBookEntry {
@@ -49,9 +49,20 @@ export function resolveUpsertPlan(
   if (!key) return { action: "skip_hidden", id: null };
 
   const match = existing.find((e) => matchKey(e.full_name) === key);
-  if (!match) return { action: "insert", id: null };
-  if (match.is_hidden) return { action: "skip_hidden", id: match.id };
-  return { action: "update", id: match.id };
+  if (match) {
+    if (match.is_hidden) return { action: "skip_hidden", id: match.id };
+    return { action: "update", id: match.id };
+  }
+
+  // A hidden entry must never come back through a punctuation-only variant
+  // ("Delta Dental." vs "Delta Dental").
+  const cKey = comparisonKey(fullName);
+  const hiddenMatch = existing.find(
+    (e) => e.is_hidden && comparisonKey(e.full_name) === cKey,
+  );
+  if (hiddenMatch) return { action: "skip_hidden", id: hiddenMatch.id };
+
+  return { action: "insert", id: null };
 }
 
 export function useAddressBook(initialCompanyId?: string) {
