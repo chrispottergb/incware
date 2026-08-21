@@ -18,6 +18,8 @@ interface Props {
   value: string;
   onChange: (value: string) => void;
   onSelect: (address: { line1: string; line2: string; city: string; state: string; zip: string }) => void;
+  /** Fired when the input loses focus, with the current text. Use to persist free-typed values. */
+  onBlur?: (value: string) => void;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
@@ -26,10 +28,12 @@ interface Props {
   source?: "companies" | "shareholders";
 }
 
+
 export default function DbAddressAutocomplete({
   value,
   onChange,
   onSelect,
+  onBlur,
   placeholder,
   className,
   disabled,
@@ -203,6 +207,7 @@ export default function DbAddressAutocomplete({
           if (value.length >= 2) fetchSuggestions(value);
         }}
         onKeyDown={handleKeyDown}
+        onBlur={(e) => onBlur?.(e.target.value)}
         placeholder={placeholder}
         className={className}
         disabled={disabled}
