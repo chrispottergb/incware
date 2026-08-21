@@ -40,12 +40,18 @@ export default function PrintPreviewButton({ label = "Print", generatePDF, fileN
   const containerRef = useRef<HTMLDivElement>(null);
   const pdfDocRef = useRef<any>(null);
 
+  // `beforeAction` (the ratification sweep) can change the parent's data before
+  // the PDF is built. Always call through the latest prop so the document
+  // reflects post-sweep state instead of the closure captured at click time.
+  const generatePDFRef = useRef(generatePDF);
+  generatePDFRef.current = generatePDF;
+
   const handlePreview = async () => {
     if (beforeAction && !(await beforeAction())) return;
     setLoading(true);
     try {
       
-      const doc = generatePDF();
+      const doc = generatePDFRef.current();
       if (!doc) {
         console.warn("[PDF Preview] generatePDF returned null/falsy — aborting.");
         setLoading(false);
