@@ -297,6 +297,8 @@ export default function MeetingInfoCard({ meeting }: Props) {
               <DbAddressAutocomplete
                 value={getValue("company_address_at_meeting")}
                 onChange={(v) => handleChange("company_address_at_meeting", v)}
+                onBlur={(v) => handleBlur("company_address_at_meeting", v)}
+
                 onSelect={(addr) => {
                   handleBlur("company_address_at_meeting", addr.line1);
                   handleBlur("company_city_at_meeting", addr.city);
