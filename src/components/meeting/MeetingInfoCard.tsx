@@ -214,7 +214,7 @@ export default function MeetingInfoCard({ meeting }: Props) {
               </div>
             )}
           </div>
-          {/* Row 2: Chairperson, Secretary, Others Present, Prior Meeting Date, Next Annual Meeting — hidden for Written Consents */}
+          {/* Row 2: Chairperson, Secretary, Others Present, Prior Meeting Date — hidden for Written Consents */}
           {!isWrittenConsent && (
           <div className="mt-4 flex gap-3">
             <div className="flex-1 min-w-[120px] space-y-1.5">
@@ -258,15 +258,6 @@ export default function MeetingInfoCard({ meeting }: Props) {
               <DatePickerField
                 value={meeting.prior_mtg_date ?? ""}
                 onChange={(val) => handleDateChange("prior_mtg_date", val || null)}
-                placeholder="Pick date"
-                className="h-9"
-              />
-            </div>
-            <div className="w-[145px] space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">Next Annual Meeting</Label>
-              <DatePickerField
-                value={meeting.next_annual_mtg ?? ""}
-                onChange={(val) => handleDateChange("next_annual_mtg", val || null)}
                 placeholder="Pick date"
                 className="h-9"
               />
