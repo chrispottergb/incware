@@ -1653,8 +1653,8 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         doc.text("The following were present at the meeting:", MARGIN, y);
         y += 6;
 
-        const usableW = doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN;
         // Address intentionally omitted from the attendee list per client request.
+        // Keep the single Name field to 2 inches now that no address column is shown.
         autoTable(doc, {
           startY: y,
           head: [["Name"]],
@@ -1664,7 +1664,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
           bodyStyles: { fontSize: 10 },
           margin: { left: MARGIN, right: R_MARGIN },
           columnStyles: {
-            0: { cellWidth: usableW },
+            0: { cellWidth: 50.8 },
           },
         });
         y = (doc as any).lastAutoTable.finalY + 6;
@@ -1952,6 +1952,9 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       headStyles: tableHeadStyles,
       bodyStyles: { fontSize: 10 },
       margin: { left: MARGIN, right: R_MARGIN },
+      columnStyles: {
+        0: { cellWidth: 50.8 },
+      },
     });
     y = (doc as any).lastAutoTable.finalY + 6;
   }
