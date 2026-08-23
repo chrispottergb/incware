@@ -341,6 +341,77 @@ export default function MeetingInfoCard({ meeting }: Props) {
         </CardContent>
       </Card>
 
+      {/* Organizational Activities — nonprofit corporations only */}
+      {isNonprofit && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="font-display text-base flex items-center gap-2">
+              <HandHeart className="h-4 w-4" />
+              Organizational Activities
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-muted-foreground">Fundraising Methods Used</Label>
+              <Popover open={fundraisingOpen} onOpenChange={setFundraisingOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="h-9 w-full max-w-[420px] justify-between text-sm font-normal"
+                  >
+                    {fundraisingMethods.length > 0
+                      ? `${fundraisingMethods.length} selected`
+                      : "Select fundraising methods"}
+                    <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[420px] p-2 bg-background/95 backdrop-blur z-50" align="start">
+                  <div className="space-y-0.5">
+                    {FUNDRAISING_OPTIONS.map((opt) => {
+                      const checked = fundraisingMethods.includes(opt);
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => toggleFundraisingMethod(opt)}
+                          className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-left"
+                        >
+                          <Checkbox checked={checked} className="pointer-events-none" />
+                          <span>{opt}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {fundraisingMethods.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {fundraisingMethods.map((m) => (
+                    <Badge key={m} variant="secondary" className="text-[11px] gap-1 pr-1">
+                      {m}
+                      <button
+                        type="button"
+                        aria-label={`Remove ${m}`}
+                        onClick={() => toggleFundraisingMethod(m)}
+                        className="rounded-full hover:bg-muted p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <p className="text-[10px] text-muted-foreground">
+                Selected methods appear in the meeting minutes under "Fundraising Activities."
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+
       {/* Annual Meeting Extras */}
       {meeting.meeting_type === "Annual Meeting" && (
         <>
