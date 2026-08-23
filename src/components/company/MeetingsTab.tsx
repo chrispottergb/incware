@@ -138,7 +138,6 @@ export default function MeetingsTab({ companyId, company }: Props) {
     mtg_secretary: "",
     others_present: "",
     prior_mtg_date: "",
-    next_annual_mtg: "",
     company_name_at_meeting: company.name,
     company_address_at_meeting: company.address ?? "",
     company_city_at_meeting: company.city ?? "",
@@ -188,7 +187,6 @@ export default function MeetingsTab({ companyId, company }: Props) {
         mtg_secretary: lastAnnual.mtg_secretary || "",
         others_present: lastAnnual.others_present || "",
         prior_mtg_date: lastAnnual.meeting_date || "",
-        next_annual_mtg: "",
         company_name_at_meeting: lastAnnual.company_name_at_meeting || company.name,
         company_address_at_meeting: lastAnnual.company_address_at_meeting || company.address || "",
         company_city_at_meeting: lastAnnual.company_city_at_meeting || company.city || "",
@@ -222,7 +220,6 @@ export default function MeetingsTab({ companyId, company }: Props) {
         mtg_secretary: last.mtg_secretary || "",
         others_present: last.others_present || "",
         prior_mtg_date: last.meeting_date || "",
-        next_annual_mtg: "",
         company_name_at_meeting: last.company_name_at_meeting || company.name,
         company_address_at_meeting: last.company_address_at_meeting || company.address || "",
         company_city_at_meeting: last.company_city_at_meeting || company.city || "",
@@ -368,7 +365,6 @@ export default function MeetingsTab({ companyId, company }: Props) {
         mtg_secretary: form.mtg_secretary || null,
         others_present: form.others_present || null,
         prior_mtg_date: form.prior_mtg_date || null,
-        next_annual_mtg: form.next_annual_mtg || null,
         company_name_at_meeting: form.company_name_at_meeting || null,
         company_address_at_meeting: form.company_address_at_meeting || null,
         company_city_at_meeting: form.company_city_at_meeting || null,
@@ -713,23 +709,13 @@ export default function MeetingsTab({ companyId, company }: Props) {
                 />
               </div>
 
-              {form.meeting_type !== "Written Consent" && (
+              {form.meeting_type !== "Written Consent" && !isOrgMeeting && (
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {!isOrgMeeting && (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-muted-foreground">Prior Meeting Date</Label>
-                      <DatePickerField
-                        value={form.prior_mtg_date}
-                        onChange={(val) => setForm((p) => ({ ...p, prior_mtg_date: val }))}
-                        placeholder="Pick a date"
-                      />
-                    </div>
-                  )}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">Next Annual Meeting</Label>
+                    <Label className="text-xs font-medium text-muted-foreground">Prior Meeting Date</Label>
                     <DatePickerField
-                      value={form.next_annual_mtg}
-                      onChange={(val) => setForm((p) => ({ ...p, next_annual_mtg: val }))}
+                      value={form.prior_mtg_date}
+                      onChange={(val) => setForm((p) => ({ ...p, prior_mtg_date: val }))}
                       placeholder="Pick a date"
                     />
                   </div>
