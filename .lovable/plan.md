@@ -15,14 +15,16 @@ Non-destructive UI cleanup. The `meetings.next_annual_mtg` column stays in the d
 
 ### 1. `src/components/meeting/MeetingInfoCard.tsx`
 
-- Remove the "Next Annual Meeting" `DatePickerField` from Row 2 of the Meeting Information card (the last field after Chairperson, Secretary, Others Present, and Prior Meeting Date).
+- Remove the "Next Annual Meeting" `DatePickerField` from Row 2 of the Meeting Information card — the single `w-[145px]` block containing `value={meeting.next_annual_mtg ?? ""}` and its `onChange` handler.
 - Update the Row 2 code comment so it no longer lists "Next Annual Meeting".
-- Leave Prior Meeting Date, Chairperson, Secretary, Others Present, and all save handlers unchanged.
-- Let the remaining Row 2 fields reflow naturally.
+- Leave Prior Meeting Date, Chairperson, Secretary, Others Present, and all save handlers unchanged. `handleDateChange` stays — it is still used by `meeting_date` and `prior_mtg_date`.
+- Let the remaining Row 2 fields reflow naturally in the flex row.
+- Do not touch the `textFields` or `companyFields` arrays.
 
 ### 2. `src/components/company/MeetingsTab.tsx`
 
-- Remove the "Next Annual Meeting" `DatePickerField` from the 2-column grid it shares with "Prior Meeting Date". Prior Meeting Date remains and should occupy the row cleanly.
+- Remove the "Next Annual Meeting" `DatePickerField` from the two-column grid it shares with "Prior Meeting Date".
+- That grid now has a single occupant, and Prior Meeting Date is itself conditionally hidden for organizational meetings — so handle both cases: no orphaned empty grid cell, and no empty grid container rendering when neither field shows.
 - Remove `next_annual_mtg: ""` from `defaultForm()`.
 - Remove `next_annual_mtg: form.next_annual_mtg || null` from the `meetings` insert payload.
 - Remove the `next_annual_mtg: ""` reset lines from both `prefillFromLastAnnual` and `prefillFromLastStatutoryClose`.
@@ -37,10 +39,10 @@ Non-destructive UI cleanup. The `meetings.next_annual_mtg` column stays in the d
 ## Verification
 
 1. Re-run `rg -n "next_annual_mtg" src/ supabase/functions/` — only `src/integrations/supabase/types.ts` should remain.
-2. Open an existing Annual Meeting: Meeting Info tab renders without the field and without a layout gap; other fields still save.
-3. Open a Written Consent: unchanged (field was already hidden there).
-4. Create a new meeting from the New Meeting dialog: saves successfully with no console error about a missing key.
-5. Generate a corporate annual meeting PDF and a nonprofit annual meeting PDF: content is byte-for-byte unchanged from before this change.
+2. Open an existing Annual Meeting: Meeting Info tab renders without the field and without a layout gap; every other field still saves.
+3. Open a Written Consent: unchanged (the field was already hidden there).
+4. Create a new meeting from the New Meeting dialog, both as an Annual Meeting and as an Organizational Meeting: each saves with no console error and no empty or broken grid.
+5. Generate a corporate annual meeting PDF and a nonprofit annual meeting PDF: the rendered content is unchanged — same sections, same numbering, same text. Do not compare file bytes; jsPDF embeds a creation timestamp, so byte comparison always differs.
 
 ## Note on Prompt 2
 
