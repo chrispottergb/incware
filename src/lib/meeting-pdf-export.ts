@@ -3746,7 +3746,40 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 6;
   }
 
+  // Fundraising Activities (nonprofit corporations only)
+  {
+    const isNonprofitEntity = (entityType || "").toLowerCase().includes("nonprofit")
+      || (entityType || "").toLowerCase().includes("non-profit");
+    const gov = (meeting as any)?.nonprofit_governance;
+    const methods: string[] = Array.isArray(gov?.fundraising_methods) ? gov.fundraising_methods : [];
+    if (isNonprofitEntity && methods.length > 0) {
+      y += 3;
+      y = checkPageBreak(doc, y, 30);
+      y = section("Fundraising Activities");
+      doc.setFontSize(11);
+      doc.setFont("Arial", "normal");
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
+      const intro = "The following fundraising methods were used by the corporation during the period covered by this meeting:";
+      for (const line of doc.splitTextToSize(intro, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN)) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 2;
+      for (const m of methods) {
+        const bulletLines = doc.splitTextToSize(m, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN - 12.7);
+        bulletLines.forEach((line: string, i: number) => {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(i === 0 ? `\u2022  ${line}` : line, MARGIN + 12.7, y);
+          y += 5.5;
+        });
+      }
+      y += 6;
+    }
+  }
+
   // Charitable Contributions (Annual Meeting)
+
   // Skip if a Special Resolution covering charitable contributions was already rendered above,
   // to avoid duplicate WHEREAS/RESOLVED clauses on the same topic.
   {

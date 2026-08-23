@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { format, parseISO } from "date-fns";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,16 +9,32 @@ import { Input } from "@/components/ui/input";
 import DbAddressAutocomplete from "@/components/ui/db-address-autocomplete";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { Clock, MapPin, User, Users, Loader2, Hash, Calendar as CalendarIcon, Heart, Car, FileText, AlertTriangle } from "lucide-react";
+import { Clock, MapPin, User, Users, Loader2, Hash, Calendar as CalendarIcon, Heart, HandHeart, Car, FileText, AlertTriangle, ChevronsUpDown, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 
 type Meeting = Tables<"meetings">;
 
+const FUNDRAISING_OPTIONS = [
+  "Individual Giving",
+  "Grants",
+  "Events",
+  "Campaigns",
+  "Digital Fundraising",
+  "Corporate Support",
+  "Earned Revenue",
+  "Investment & Asset Income",
+];
+
 interface Props {
   meeting: Meeting;
 }
+
 
 function DateFieldWrapper({
   label,
@@ -50,7 +66,31 @@ function DateFieldWrapper({
 export default function MeetingInfoCard({ meeting }: Props) {
   const queryClient = useQueryClient();
   const [values, setValues] = useState<Record<string, string>>({});
+  const [fundraisingOpen, setFundraisingOpen] = useState(false);
   const isWrittenConsent = meeting.meeting_type === "Written Consent";
+
+  const { data: company } = useQuery({
+    queryKey: ["company-entity-type", meeting.company_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("id, entity_type")
+        .eq("id", meeting.company_id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!meeting.company_id,
+  });
+
+  const isNonprofit = (company?.entity_type || "").toLowerCase().includes("non-profit")
+    || (company?.entity_type || "").toLowerCase().includes("nonprofit");
+
+  const governance = ((meeting as any).nonprofit_governance || {}) as Record<string, any>;
+  const fundraisingMethods: string[] = Array.isArray(governance.fundraising_methods)
+    ? governance.fundraising_methods
+    : [];
+
 
   const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(
     useCallback(({ city, state }: { city: string; state: string }) => {
@@ -73,6 +113,17 @@ export default function MeetingInfoCard({ meeting }: Props) {
     },
     onError: (err: Error) => toast.error(err.message),
   });
+
+  const toggleFundraisingMethod = (method: string) => {
+    const next = fundraisingMethods.includes(method)
+      ? fundraisingMethods.filter((m) => m !== method)
+      : [...fundraisingMethods, method];
+    // Preserve any other nonprofit governance keys already stored on the meeting.
+    updateMeeting.mutate({
+      nonprofit_governance: { ...governance, fundraising_methods: next },
+    } as any);
+  };
+
 
   const handleBlur = (field: string, value: string) => {
     const original = (meeting as any)[field] ?? "";
@@ -340,6 +391,77 @@ export default function MeetingInfoCard({ meeting }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Organizational Activities — nonprofit corporations only */}
+      {isNonprofit && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="font-display text-base flex items-center gap-2">
+              <HandHeart className="h-4 w-4" />
+              Organizational Activities
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-muted-foreground">Fundraising Methods Used</Label>
+              <Popover open={fundraisingOpen} onOpenChange={setFundraisingOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="h-9 w-full max-w-[420px] justify-between text-sm font-normal"
+                  >
+                    {fundraisingMethods.length > 0
+                      ? `${fundraisingMethods.length} selected`
+                      : "Select fundraising methods"}
+                    <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[420px] p-2 bg-background/95 backdrop-blur z-50" align="start">
+                  <div className="space-y-0.5">
+                    {FUNDRAISING_OPTIONS.map((opt) => {
+                      const checked = fundraisingMethods.includes(opt);
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => toggleFundraisingMethod(opt)}
+                          className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-left"
+                        >
+                          <Checkbox checked={checked} className="pointer-events-none" />
+                          <span>{opt}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {fundraisingMethods.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {fundraisingMethods.map((m) => (
+                    <Badge key={m} variant="secondary" className="text-[11px] gap-1 pr-1">
+                      {m}
+                      <button
+                        type="button"
+                        aria-label={`Remove ${m}`}
+                        onClick={() => toggleFundraisingMethod(m)}
+                        className="rounded-full hover:bg-muted p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <p className="text-[10px] text-muted-foreground">
+                Selected methods appear in the meeting minutes under "Fundraising Activities."
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
 
       {/* Annual Meeting Extras */}
       {meeting.meeting_type === "Annual Meeting" && (
