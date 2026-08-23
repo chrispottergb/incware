@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { format, parseISO } from "date-fns";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,16 +9,32 @@ import { Input } from "@/components/ui/input";
 import DbAddressAutocomplete from "@/components/ui/db-address-autocomplete";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { Clock, MapPin, User, Users, Loader2, Hash, Calendar as CalendarIcon, Heart, Car, FileText, AlertTriangle } from "lucide-react";
+import { Clock, MapPin, User, Users, Loader2, Hash, Calendar as CalendarIcon, Heart, HandHeart, Car, FileText, AlertTriangle, ChevronsUpDown, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 
 type Meeting = Tables<"meetings">;
 
+const FUNDRAISING_OPTIONS = [
+  "Individual Giving",
+  "Grants",
+  "Events",
+  "Campaigns",
+  "Digital Fundraising",
+  "Corporate Support",
+  "Earned Revenue",
+  "Investment & Asset Income",
+];
+
 interface Props {
   meeting: Meeting;
 }
+
 
 function DateFieldWrapper({
   label,
