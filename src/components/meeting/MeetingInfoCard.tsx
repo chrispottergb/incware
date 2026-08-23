@@ -66,7 +66,31 @@ function DateFieldWrapper({
 export default function MeetingInfoCard({ meeting }: Props) {
   const queryClient = useQueryClient();
   const [values, setValues] = useState<Record<string, string>>({});
+  const [fundraisingOpen, setFundraisingOpen] = useState(false);
   const isWrittenConsent = meeting.meeting_type === "Written Consent";
+
+  const { data: company } = useQuery({
+    queryKey: ["company-entity-type", meeting.company_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("id, entity_type")
+        .eq("id", meeting.company_id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!meeting.company_id,
+  });
+
+  const isNonprofit = (company?.entity_type || "").toLowerCase().includes("non-profit")
+    || (company?.entity_type || "").toLowerCase().includes("nonprofit");
+
+  const governance = ((meeting as any).nonprofit_governance || {}) as Record<string, any>;
+  const fundraisingMethods: string[] = Array.isArray(governance.fundraising_methods)
+    ? governance.fundraising_methods
+    : [];
+
 
   const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(
     useCallback(({ city, state }: { city: string; state: string }) => {
