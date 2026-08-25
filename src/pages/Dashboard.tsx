@@ -495,7 +495,7 @@ export default function Dashboard() {
                           ? new Date(company.incorporation_date + "T00:00:00").toLocaleDateString()
                           : "—"}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{company.fiscal_year_end || "—"}</TableCell>
+                      
                       <TableCell>{statusBadge(company)}</TableCell>
                       <TableCell>
                         <AnnualMeetingChip
