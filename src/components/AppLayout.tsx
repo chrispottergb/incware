@@ -112,12 +112,30 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const mainNav = [
     { label: "Dashboard", href: "/", icon: LayoutDashboard },
     { label: "Pending Reviews", href: "/pending-reviews", icon: ClipboardList },
-    { label: "Import Access DB", href: "/import-access", icon: Database },
     { label: "Reports", href: "/reports", icon: ClipboardList },
     { label: "Org Chart", href: "/org-chart", icon: GitBranch },
-    { label: "Promissory Note", href: "/promissory-note", icon: FileText },
     ...(isAdmin ? [{ label: "Strategy", href: "/strategy", icon: Target }] : []),
   ];
+
+  const renderMainItem = (item: { label: string; href: string; icon: any }) => {
+    const active = location.pathname === item.href;
+    return (
+      <Link
+        key={item.href}
+        to={item.href}
+        onClick={() => setMobileOpen(false)}
+        className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
+          active
+            ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
+            : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+        }`}
+      >
+        <item.icon className="h-4 w-4 shrink-0" />
+        {item.label}
+      </Link>
+    );
+  };
+
 
 
 
@@ -193,110 +211,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
             Main
           </p>
-          {mainNav.map((item) => {
-            const active = location.pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                to={item.href}
-                onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
-                  active
-                    ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                }`}
-              >
-                <item.icon className="h-4 w-4 shrink-0" />
-                {item.label}
-              </Link>
-            );
-          })}
-
-          {/* Resources & Governance */}
-          <Collapsible open={resourcesOpen} onOpenChange={setResourcesOpen}>
-            <CollapsibleTrigger className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
-              resourcesOpen
-                ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-            }`}>
-              <BookOpen className="h-4 w-4 shrink-0" />
-              <span className="flex-1 text-left">Resources</span>
-              <ChevronDown className={`h-3 w-3 transition-transform ${resourcesOpen ? "" : "-rotate-90"}`} />
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="space-y-0.5 mt-0.5">
-                {[
-                  { label: "Corporate Governance", icon: Building2 },
-                  { label: "Document Signing", icon: PenTool },
-                  { label: "Helpful Hints", icon: Lightbulb },
-                  { label: "Compliance Reminders", icon: ShieldCheck },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    onClick={() => {
-                      setActiveResourceCategory(item.label);
-                      setMobileOpen(false);
-                    }}
-                    className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
-                      activeResourceCategory === item.label
-                        ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <item.icon className="h-4 w-4 shrink-0" />
-                    {item.label}
-                  </button>
-                ))}
-                {isAdmin && (
-                  <Link
-                    to="/settings/resources"
-                    onClick={() => setMobileOpen(false)}
-                    className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
-                      location.pathname === "/settings/resources"
-                        ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <SettingsIcon className="h-4 w-4 shrink-0" />
-                    Manage Resources
-                  </Link>
-                )}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-
-          <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen}>
-            <CollapsibleTrigger className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
-              location.pathname.startsWith("/settings")
-                ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-            }`}>
-              <SettingsIcon className="h-4 w-4 shrink-0" />
-              <span className="flex-1 text-left">Settings</span>
-              <ChevronDown className={`h-3 w-3 transition-transform ${settingsOpen ? "" : "-rotate-90"}`} />
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="ml-6 mt-0.5 space-y-0.5 border-l border-sidebar-border pl-2">
-                {settingsSubNav.map((sub) => {
-                  const active = location.pathname === sub.href;
-                  return (
-                    <Link
-                      key={sub.href}
-                      to={sub.href}
-                      onClick={() => setMobileOpen(false)}
-                      className={`block rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors ${
-                        active
-                          ? "text-primary bg-sidebar-accent"
-                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                      }`}
-                    >
-                      {sub.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+          {mainNav.slice(0, 1).map(renderMainItem)}
 
           {/* Divider above Companies */}
           <div className="mx-3 mt-3 border-t border-sidebar-border" />
@@ -404,6 +319,97 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               </Collapsible>
             </>
           )}
+
+          <div className="mx-3 mt-3 border-t border-sidebar-border" />
+
+          {mainNav.slice(1).map(renderMainItem)}
+
+
+          {/* Resources & Governance */}
+          <Collapsible open={resourcesOpen} onOpenChange={setResourcesOpen}>
+            <CollapsibleTrigger className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
+              resourcesOpen
+                ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+            }`}>
+              <BookOpen className="h-4 w-4 shrink-0" />
+              <span className="flex-1 text-left">Resources</span>
+              <ChevronDown className={`h-3 w-3 transition-transform ${resourcesOpen ? "" : "-rotate-90"}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="space-y-0.5 mt-0.5">
+                {[
+                  { label: "Corporate Governance", icon: Building2 },
+                  { label: "Document Signing", icon: PenTool },
+                  { label: "Helpful Hints", icon: Lightbulb },
+                  { label: "Compliance Reminders", icon: ShieldCheck },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => {
+                      setActiveResourceCategory(item.label);
+                      setMobileOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
+                      activeResourceCategory === item.label
+                        ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {item.label}
+                  </button>
+                ))}
+                {isAdmin && (
+                  <Link
+                    to="/settings/resources"
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
+                      location.pathname === "/settings/resources"
+                        ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    <SettingsIcon className="h-4 w-4 shrink-0" />
+                    Manage Resources
+                  </Link>
+                )}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <CollapsibleTrigger className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
+              location.pathname.startsWith("/settings")
+                ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+            }`}>
+              <SettingsIcon className="h-4 w-4 shrink-0" />
+              <span className="flex-1 text-left">Settings</span>
+              <ChevronDown className={`h-3 w-3 transition-transform ${settingsOpen ? "" : "-rotate-90"}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="ml-6 mt-0.5 space-y-0.5 border-l border-sidebar-border pl-2">
+                {settingsSubNav.map((sub) => {
+                  const active = location.pathname === sub.href;
+                  return (
+                    <Link
+                      key={sub.href}
+                      to={sub.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={`block rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                        active
+                          ? "text-primary bg-sidebar-accent"
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                      }`}
+                    >
+                      {sub.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
 
           {companyNav.length > 0 && (

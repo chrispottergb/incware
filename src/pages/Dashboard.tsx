@@ -140,6 +140,15 @@ export default function Dashboard() {
     unscheduled: withStatus.filter((r) => r.annual.status === "UNSCHEDULED").length,
   };
 
+  // If the active chip's count drops to zero, fall back to All
+  useEffect(() => {
+    if (annualFilter !== "all" && chipCounts[annualFilter] === 0) {
+      setAnnualFilter("all");
+    }
+  }, [annualFilter, chipCounts.overdue, chipCounts.due_soon, chipCounts.unscheduled]);
+
+
+
   let rows = withStatus;
   if (annualFilter === "overdue") rows = withStatus.filter((r) => r.annual.status === "OVERDUE");
   else if (annualFilter === "due_soon") rows = withStatus.filter((r) => r.annual.status === "DUE_SOON");
@@ -365,7 +374,7 @@ export default function Dashboard() {
             { key: "overdue", label: "Overdue", count: chipCounts.overdue },
             { key: "due_soon", label: "Due soon", count: chipCounts.due_soon },
             { key: "unscheduled", label: "No schedule set", count: chipCounts.unscheduled },
-          ] as const).map((chip) => {
+          ] as const).filter((chip) => chip.key === "all" || chip.count > 0).map((chip) => {
             const active = annualFilter === chip.key;
             return (
               <button
@@ -404,12 +413,12 @@ export default function Dashboard() {
       ) : (
         <Card>
           <CardContent className="p-0">
-            <div className="overflow-hidden rounded-lg">
-              <Table>
+            <div className="overflow-x-auto rounded-lg">
+              <Table className="min-w-[900px]">
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead className="font-semibold text-xs">
-                      <div className="flex items-center gap-1.5">
+                    <TableHead className="font-semibold text-xs sticky left-0 z-20 bg-card border-r border-border before:absolute before:inset-0 before:bg-muted/50 before:pointer-events-none">
+                      <div className="relative z-10 flex items-center gap-1.5">
                         <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                         <span>Company Name</span>
                       </div>
@@ -432,12 +441,6 @@ export default function Dashboard() {
                         <span>Inc. Date</span>
                       </div>
                     </TableHead>
-                    <TableHead className="text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>Fiscal Year End</span>
-                      </div>
-                    </TableHead>
                     <TableHead className="text-xs">Status</TableHead>
                     <TableHead className="text-xs">
                       <div className="flex items-center gap-1.5">
@@ -455,8 +458,8 @@ export default function Dashboard() {
                       className="cursor-pointer group"
                       onClick={() => navigate(`/company/${company.id}`)}
                     >
-                      <TableCell className="font-medium text-sm">
-                        <div className="flex items-center gap-2.5">
+                      <TableCell className="font-medium text-sm sticky left-0 z-10 bg-card border-r border-border before:absolute before:inset-0 before:bg-muted/50 before:opacity-0 before:pointer-events-none group-hover:before:opacity-100">
+                        <div className="relative z-10 flex items-center gap-2.5">
                           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/8 shrink-0">
                             <Building2 className="h-3.5 w-3.5 text-primary" />
                           </div>
@@ -492,7 +495,7 @@ export default function Dashboard() {
                           ? new Date(company.incorporation_date + "T00:00:00").toLocaleDateString()
                           : "—"}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{company.fiscal_year_end || "—"}</TableCell>
+                      
                       <TableCell>{statusBadge(company)}</TableCell>
                       <TableCell>
                         <AnnualMeetingChip

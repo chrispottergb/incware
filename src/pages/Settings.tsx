@@ -23,9 +23,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Search, Code2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Code2, Database } from "lucide-react";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import AddressBookCard from "@/components/settings/AddressBookCard";
+import { Link } from "react-router-dom";
 
 type Shortcode = {
   id: string;
@@ -131,6 +132,31 @@ export default function Settings() {
       <AnnualReviewSettingsCard />
 
       <AddressBookCard />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Database className="h-5 w-5 text-primary" />
+            Data
+          </CardTitle>
+          <CardDescription>Import and maintenance tools for existing records.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between gap-4 rounded-md border border-border p-4">
+            <div>
+              <p className="text-sm font-medium">Import Access Database</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                One-time import of an existing Microsoft Access records database
+              </p>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/import-access">Open Importer</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+
 
 
 
