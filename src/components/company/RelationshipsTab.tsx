@@ -26,6 +26,13 @@ const RELATIONSHIP_TYPES = ["subsidiary", "division", "affiliate", "joint_ventur
 
 const formatType = (t: string) => t.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
+const RELATIONSHIP_DESCRIPTIONS: Record<string, string> = {
+  subsidiary: "One entity owns a controlling interest (over 50%) in the other. Both are separately filed entities. Record the actual percentage in Ownership %.",
+  affiliate: "The entities are under common control but neither owns the other — for example, two companies owned by the same person or the same holding company.",
+  joint_venture: "Two or more otherwise-unrelated owners hold the entity together for a shared purpose or project.",
+  division: "A branded operating segment inside a single company, with no separate charter or filing of its own.",
+};
+
 export default function RelationshipsTab({ companyId, companyName }: RelationshipsTabProps) {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -345,6 +352,14 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                {RELATIONSHIP_DESCRIPTIONS[form.relationship_type]}
+              </p>
+              {form.relationship_type === "division" && (
+                <p className="text-xs text-destructive mt-1.5 leading-relaxed">
+                  Both records here are separately filed entities. If this entity has its own articles on file, it is not a division — choose subsidiary or affiliate.
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -358,6 +373,9 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
                   onChange={(e) => setForm((p) => ({ ...p, ownership_percentage: e.target.value }))}
                   placeholder="e.g. 100"
                 />
+                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                  Percentage of units or shares held. If voting control differs from ownership under the operating agreement or bylaws, note that in Notes.
+                </p>
               </div>
               <div>
                 <Label className="text-xs">Effective Date</Label>
