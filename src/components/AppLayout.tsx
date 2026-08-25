@@ -112,12 +112,30 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const mainNav = [
     { label: "Dashboard", href: "/", icon: LayoutDashboard },
     { label: "Pending Reviews", href: "/pending-reviews", icon: ClipboardList },
-    { label: "Import Access DB", href: "/import-access", icon: Database },
     { label: "Reports", href: "/reports", icon: ClipboardList },
     { label: "Org Chart", href: "/org-chart", icon: GitBranch },
-    { label: "Promissory Note", href: "/promissory-note", icon: FileText },
     ...(isAdmin ? [{ label: "Strategy", href: "/strategy", icon: Target }] : []),
   ];
+
+  const renderMainItem = (item: { label: string; href: string; icon: any }) => {
+    const active = location.pathname === item.href;
+    return (
+      <Link
+        key={item.href}
+        to={item.href}
+        onClick={() => setMobileOpen(false)}
+        className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
+          active
+            ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
+            : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+        }`}
+      >
+        <item.icon className="h-4 w-4 shrink-0" />
+        {item.label}
+      </Link>
+    );
+  };
+
 
 
 
