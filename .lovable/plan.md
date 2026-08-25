@@ -1,73 +1,42 @@
-# Client Companies table: overflow fix, chip cleanup, newly-formed status
+# Fix annual-meeting due anchoring across year boundaries
 
-Non-destructive. No schema changes, no new columns, no component extraction.
+## Problem
 
-## Changed files
+The next due date is currently anchored to `lastAnnualMeetingDate.getFullYear() + 1`. When the bylaw month sits next to the year boundary (e.g. 1st Tuesday in January), a meeting held a few days early lands in the prior calendar year and the function reports the occurrence it already satisfied as overdue.
 
-- `src/pages/Dashboard.tsx` — remove Fiscal Year End column, sticky first column, conditional chips
-- `src/hooks/useAnnualMeetingsDue.ts` — add `NEWLY_FORMED` branch to `getAnnualMeetingStatus`
-- `src/test/annual-meeting-status.test.ts` — three new unit tests
+## Change
 
-Protected files (`src/lib/meeting-pdf-export.ts`, `src/lib/annual-meeting-pdf.ts`,
-`src/lib/nonprofit-annual-meeting-pdf.ts`, Supabase auto-generated files) untouched.
+In `getAnnualMeetingStatus()` (src/hooks/useAnnualMeetingsDue.ts), replace the `year + 1` line with occurrence matching:
 
-## 1. Horizontal overflow
+1. Resolve the scheduled occurrence for the last meeting's year minus 1, that year, and that year plus 1, skipping any the resolver returns null for.
+2. Pick the candidate with the smallest absolute whole-day difference from the last meeting date — that is the satisfied occurrence. On an exact tie, prefer the earlier candidate.
+3. `dueDate = resolveScheduledDate(..., satisfiedYear + 1)`.
+4. If no candidate resolves, keep the existing unscheduled fallback.
 
-a. Drop the "Fiscal Year End" `TableHead` and the matching `TableCell`
-(`company.fiscal_year_end`) from the Dashboard table only. The field stays in the
-database, in the company detail page and in every form.
+Downstream logic (days-until comparison, OVERDUE / DUE_SOON / SCHEDULED) and the NOT_REQUIRED, UNSCHEDULED and NEVER_HELD branches are untouched. Doc comment updated to describe the matching rule.
 
-b. Company Name becomes sticky:
+## Tests
 
-- Header cell and body cell get `sticky left-0 z-20` (header) / `z-10` (body).
-- Solid backgrounds so scrolled cells never show through: header uses the same
-  `bg-muted` tone as the header row; body cells get `bg-card` plus a
-  `group-hover:bg-muted/50` companion so the sticky cell tracks the row's hover
-  state instead of staying pale.
-- A right-hand hairline (`border-r`) marks the frozen edge.
-- The table wrapper changes from `overflow-hidden` to `overflow-x-auto` so
-  sticky positioning has a scroll container to stick within; `rounded-lg` is kept.
+Add to src/test/annual-meeting-status.test.ts, today fixed at 2026-08-25:
 
-## 2. Zero-count filter chips
+Schedule 3rd Tuesday in March (regression):
+- last 2026-03-10 -> 2027-03-16 SCHEDULED
+- last 2026-03-17 -> 2027-03-16 SCHEDULED
+- last 2026-04-02 -> 2027-03-16 SCHEDULED
+- last 2025-03-11 -> 2026-03-17 OVERDUE
+- last 2024-03-19 -> 2025-03-18 OVERDUE
 
-The chip array is filtered before render: "All (n)" always renders; Overdue,
-Due soon and No schedule set render only when their count is greater than zero.
+Schedule 1st Tuesday in January (new):
+- last 2025-12-30 -> 2027-01-05 SCHEDULED
+- last 2026-01-06 -> 2027-01-05 SCHEDULED
+- last 2025-01-07 -> 2026-01-06 OVERDUE
 
-An effect watches `chipCounts`: if the active chip's count reaches zero,
-`annualFilter` resets to `"all"`, so no filter can be stuck on an invisible chip.
+Schedule 2nd Tuesday in December (new):
+- last 2026-01-05 -> 2026-12-08 OVERDUE
 
-## 3. NEWLY_FORMED status
+All eight existing tests stay as-is and must keep passing. Verification: run the test file and report the changed-file list.
 
-Field used: `companies.incorporation_date` — the same column the Dashboard's
-"Inc. Date" column renders. Populated for LLCs as well as corporations
-(4/4 Single Member LLC, 15/22 LLC, 26/30 Corporation, 3/4 Non-Profit); rows with a
-null date simply fall through to the existing `NEVER_HELD` behaviour.
+## Files
 
-New branch order inside `getAnnualMeetingStatus`:
-
-1. `NOT_REQUIRED` (statutory close corp) — unchanged
-2. `UNSCHEDULED` (any schedule column null) — unchanged, still wins over newly formed
-3. **`NEWLY_FORMED`** — no annual meeting on record AND `incorporation_date` within
-   365 days of today. `dueDate` = next scheduled occurrence after today,
-   label `First meeting {MMM d, yyyy}`, tone `neutral`
-4. `NEVER_HELD` — unchanged for entities older than 365 days
-5. Overdue / due soon / scheduled — unchanged
-
-`ScheduleCompany` gains an optional `incorporation_date?: string | null`.
-The status union and the tone map already cover `neutral`, so the chip renders grey.
-
-Live check: Friebel Real Estate, LLC (organized 2026-06-30, 3rd/May schedule) is the
-Single Member LLC that must render the neutral "First meeting" chip.
-
-New tests in `src/test/annual-meeting-status.test.ts`:
-
-- newly formed with a schedule → `NEWLY_FORMED`, neutral, label starts "First meeting"
-- newly formed without a schedule → `UNSCHEDULED`
-- 366 days old with no annual meeting → `NEVER_HELD`
-
-## Acceptance
-
-- Company Name stays visible at full horizontal scroll
-- Fiscal Year End gone from the Dashboard table only
-- No chip renders with a count of zero except All
-- Friebel Real Estate, LLC shows a neutral "First meeting" chip
+- src/hooks/useAnnualMeetingsDue.ts
+- src/test/annual-meeting-status.test.ts
