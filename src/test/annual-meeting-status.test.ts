@@ -33,6 +33,14 @@ describe("getAnnualMeetingStatus", () => {
     expect(r.dueDate && r.dueDate.getFullYear()).toBe(2025);
   });
 
+  it("treats an annual meeting held before the bylaw date as satisfying that calendar year", () => {
+    // Held January 2026 even though the bylaw date is in May: next due is May 2027, not May 2026.
+    const r = getAnnualMeetingStatus(scheduled, d("2026-01-29"), d("2026-08-25"));
+    expect(r.status).toBe("SCHEDULED");
+    expect(r.dueDate?.getFullYear()).toBe(2027);
+    expect(r.dueDate?.getMonth()).toBe(4);
+  });
+
   it("reports unscheduled when any schedule column is missing", () => {
     const r = getAnnualMeetingStatus(
       { ...scheduled, scheduled_meeting_month: null },
