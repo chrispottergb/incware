@@ -120,9 +120,10 @@ function fmtFull(d: Date): string {
  *  1. Statutory close corporations are exempt (Wis. Stat. s. 180.1827) — never overdue.
  *  2. No bylaw schedule -> unscheduled.
  *  3. Scheduled but never held -> next occurrence after today.
- *  4. Otherwise -> the scheduled occurrence in the calendar year after the
- *     last annual meeting. A meeting held before that year's bylaw date still
- *     satisfies that year's annual-meeting requirement.
+ *  4. Otherwise -> match the last meeting to the nearest scheduled occurrence
+ *     (the one it satisfied, even across a year boundary) and take the
+ *     occurrence one year after that.
+
  */
 export function getAnnualMeetingStatus(
   company: ScheduleCompany,
@@ -159,15 +160,30 @@ export function getAnnualMeetingStatus(
     };
   }
 
-  const dueDate = resolveScheduledDate(
-    ordinal,
-    dayOfWeek,
-    month,
-    lastAnnualMeetingDate.getFullYear() + 1,
-  );
+  // Match the last meeting to the scheduled occurrence it actually satisfied
+  // (nearest occurrence in year-1 / year / year+1; ties prefer the earlier one),
+  // then the next deadline is the occurrence one year after that.
+  const lastYear = lastAnnualMeetingDate.getFullYear();
+  let satisfiedYear: number | null = null;
+  let bestDelta = Infinity;
+  for (const y of [lastYear - 1, lastYear, lastYear + 1]) {
+    const candidate = resolveScheduledDate(ordinal, dayOfWeek, month, y);
+    if (!candidate) continue;
+    const delta = Math.abs(wholeDaysBetween(candidate, lastAnnualMeetingDate));
+    if (delta < bestDelta) {
+      bestDelta = delta;
+      satisfiedYear = y;
+    }
+  }
+
+  const dueDate =
+    satisfiedYear === null
+      ? null
+      : resolveScheduledDate(ordinal, dayOfWeek, month, satisfiedYear + 1);
   if (!dueDate) {
     return { status: "UNSCHEDULED", dueDate: null, label: "No schedule set", tone: "neutral" };
   }
+
 
   const daysUntil = wholeDaysBetween(today, dueDate);
   if (daysUntil < 0) {

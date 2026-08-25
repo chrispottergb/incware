@@ -76,3 +76,43 @@ describe("getAnnualMeetingStatus", () => {
     expect(date!.getDate()).toBe(27);
   });
 });
+
+describe("getAnnualMeetingStatus — occurrence matching", () => {
+  const today = d("2026-08-25");
+  const march = {
+    statutory_close_corporation: false,
+    scheduled_meeting_ordinal: "3rd",
+    scheduled_meeting_day_of_week: "Tuesday",
+    scheduled_meeting_month: "March",
+  };
+  const january = { ...march, scheduled_meeting_month: "January", scheduled_meeting_ordinal: "1st" };
+  const december = { ...march, scheduled_meeting_month: "December", scheduled_meeting_ordinal: "2nd" };
+
+  const iso = (date: Date | null) =>
+    date
+      ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+      : null;
+
+  const cases: Array<[typeof march, string, string, string]> = [
+    [march, "2026-03-10", "2027-03-16", "SCHEDULED"],
+    [march, "2026-03-17", "2027-03-16", "SCHEDULED"],
+    [march, "2026-04-02", "2027-03-16", "SCHEDULED"],
+    [march, "2025-03-11", "2026-03-17", "OVERDUE"],
+    [march, "2024-03-19", "2025-03-18", "OVERDUE"],
+    [january, "2025-12-30", "2027-01-05", "SCHEDULED"],
+    [january, "2026-01-06", "2027-01-05", "SCHEDULED"],
+    [january, "2025-01-07", "2026-01-06", "OVERDUE"],
+    // Jan 2026 meeting is nearest the Dec 2025 occurrence, so Dec 2026 is still outstanding
+    // (105 days out from 2026-08-25, so it reads as SCHEDULED rather than overdue).
+    [december, "2026-01-05", "2026-12-08", "SCHEDULED"],
+  ];
+
+  for (const [company, last, expectedDue, expectedStatus] of cases) {
+    it(`${company.scheduled_meeting_month}: last ${last} -> ${expectedDue} ${expectedStatus}`, () => {
+      const r = getAnnualMeetingStatus(company, d(last), today);
+      expect(iso(r.dueDate)).toBe(expectedDue);
+      expect(r.status).toBe(expectedStatus);
+    });
+  }
+});
+
