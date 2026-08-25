@@ -120,9 +120,10 @@ function fmtFull(d: Date): string {
  *  1. Statutory close corporations are exempt (Wis. Stat. s. 180.1827) — never overdue.
  *  2. No bylaw schedule -> unscheduled.
  *  3. Scheduled but never held -> next occurrence after today.
- *  4. Otherwise -> the scheduled occurrence in the calendar year after the
- *     last annual meeting. A meeting held before that year's bylaw date still
- *     satisfies that year's annual-meeting requirement.
+ *  4. Otherwise -> match the last meeting to the nearest scheduled occurrence
+ *     (the one it satisfied, even across a year boundary) and take the
+ *     occurrence one year after that.
+
  */
 export function getAnnualMeetingStatus(
   company: ScheduleCompany,
