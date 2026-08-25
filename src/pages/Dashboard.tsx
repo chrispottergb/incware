@@ -36,7 +36,7 @@ import cardExistingClient from "@/assets/card-existing-client.jpg";
 import cardAnnualUpdate from "@/assets/card-annual-update.jpg";
 import cardQuickSearch from "@/assets/card-quick-search.jpg";
 import TestBadge from "@/components/TestBadge";
-import AnnualMeetingsDueCard from "@/components/dashboard/AnnualMeetingsDueCard";
+import { getAnnualMeetingStatus, type AnnualMeetingStatusResult } from "@/hooks/useAnnualMeetingsDue";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "Single Member LLC", "Non-Profit", "Partnership"];
 
