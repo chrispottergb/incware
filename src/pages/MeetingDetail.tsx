@@ -332,13 +332,13 @@ export default function MeetingDetail() {
     shareholders.forEach((sh: any) => {
       const needsAddr = !hasAnyAddr(sh);
       const key = normalizeName(sh.shareholder_name);
-       const companyMatch: any = companyShareholders.find(
+      const companyMatch: any = companyShareholders.find(
         (c: any) => normalizeName(c.name) === key && (hasAnyAddr(c) || c.owner_kind != null)
       );
-       const needsEntity = sh.owner_kind == null
-         || (sh.owner_kind === "individual" && companyMatch?.owner_kind === "entity");
-       if (!needsAddr && !needsEntity) return;
-       let match: any = companyMatch;
+      const needsEntity = sh.owner_kind == null
+        || (sh.owner_kind === "individual" && companyMatch?.owner_kind === "entity");
+      if (!needsAddr && !needsEntity) return;
+      let match: any = companyMatch;
       if (!match) match = priorIndex.get(key);
       if (!match) return;
       const update: any = { id: sh.id };
