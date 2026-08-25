@@ -6,7 +6,7 @@ No schema changes, no new columns, no extraction of the inline table.
 
 ## Changed files
 
-- `src/hooks/useAnnualMeetingsDue.ts` — export a single `getAnnualMeetingStatus()`; refactor the existing hook to call it
+- `src/hooks/useAnnualMeetingsDue.ts` — keep helpers, add `getAnnualMeetingStatus()`, remove the now-unused `useAnnualMeetingsDue()` query export
 - `src/pages/Dashboard.tsx` — reorder sections, extend the companies query, add column + filter chips, drop the card import
 - `src/test/annual-meeting-status.test.ts` — new unit tests
 - `src/components/dashboard/AnnualMeetingsDueCard.tsx` — deleted
@@ -28,7 +28,12 @@ AI Compliance Summary            moved to bottom
 ```
 
 `<AnnualMeetingsDueCard />` is removed from the page and the component file is deleted
-along with its import. No other consumers exist.
+along with its import. It was the **only** consumer of `useAnnualMeetingsDue()` — a
+codebase-wide search finds no other reference. So the hook is not kept alive: the file
+`src/hooks/useAnnualMeetingsDue.ts` is retained for its pure helpers
+(`resolveScheduledDate`, `addOneYear`, `wholeDaysBetween`, `bucketFor`, and the new
+`getAnnualMeetingStatus`), while the `useAnnualMeetingsDue()` export and its
+`["annual-meetings-due"]` React Query key are removed. No orphaned query fires.
 
 ## 2. Single source of truth for "due"
 
@@ -55,9 +60,8 @@ Precedence:
    - `SCHEDULED` otherwise → "{MMM d, yyyy}", neutral
 
 The function reuses the existing `resolveScheduledDate`, `addOneYear` and
-`wholeDaysBetween` helpers — no new date math. `useAnnualMeetingsDue()` is refactored to
-call it per company so the hook and the table column can never disagree; its exported row
-shape is kept so nothing else breaks.
+`wholeDaysBetween` helpers — no new date math. It becomes the only definition of "due";
+the retired hook's per-company logic is folded into it.
 
 Unit tests (`src/test/annual-meeting-status.test.ts`) cover: overdue, due soon, scheduled,
 unscheduled, never held, close-corp exemption, and a month that has no 5th weekday.
@@ -65,16 +69,40 @@ unscheduled, never held, close-corp exemption, and a month that has no 5th weekd
 ## 3. Data
 
 The existing `useQuery(["companies"])` gains one additional parallel query against
-`meetings` (`meeting_type ILIKE 'Annual Meeting%'`, non-null `meeting_date`), reduced
-client-side to a max date per `company_id`. Two queries total, none per row. Companies
-with no annual meeting still appear. Pagination `range(0, 499)` unchanged.
+`meetings` (non-null `meeting_date`), reduced client-side to a max date per `company_id`.
+Two queries total, none per row. Companies with no annual meeting still appear.
+Pagination `range(0, 499)` unchanged.
+
+Distinct `meetings.meeting_type` values and counts in the live database:
+
+```text
+Annual Meeting                            97
+Shareholder Meeting                       45
+Written Consent                           14
+Organizational Meeting                    13
+Special Meeting of Board of Directors      2
+Annual Meeting of Members                  1
+```
+
+`ILIKE 'Annual Meeting%'` matches exactly two of these: "Annual Meeting" (97) and
+"Annual Meeting of Members" (1) — the latter is the LLC-terminology annual meeting and
+should count. A strict `= 'Annual Meeting'` would mark that one LLC as never having held
+an annual meeting. Recommendation: keep the `ILIKE` prefix match. Say the word if you want
+strict equality instead and the plan flips to `= 'Annual Meeting'`.
 
 ## 4. New column
 
 "Annual Meeting" is appended after Status (before the chevron cell) and renders the status
 chip using the tone from `getAnnualMeetingStatus`. The six existing columns are unchanged.
-The "No schedule set" chip is clickable and navigates to `/company/{id}#incorporation`
-(the scheduled-meeting setting), stopping row-click propagation.
+The "No schedule set" chip is clickable and stops row-click propagation.
+
+Anchor confirmation: `ScheduledMeetingPicker` (the scheduled annual meeting control) is
+rendered in two places — `IncorporationTab.tsx` (corporations / non-profits) and
+`OrganizationTab.tsx` (LLCs). `CompanyDetail.tsx` reads the URL hash as the active tab,
+and for LLC entity types it rewrites `#incorporation` to the `organization` tab.
+So `/company/{id}#incorporation` lands on the correct tab in both cases:
+"Incorporation Info" for corporations, "Organization" for LLCs. The route is correct as
+written; the chip scrolls the picker into view after the tab renders.
 
 ## 5. Filter chips
 
