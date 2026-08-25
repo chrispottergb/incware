@@ -28,7 +28,12 @@ AI Compliance Summary            moved to bottom
 ```
 
 `<AnnualMeetingsDueCard />` is removed from the page and the component file is deleted
-along with its import. No other consumers exist.
+along with its import. It was the **only** consumer of `useAnnualMeetingsDue()` — a
+codebase-wide search finds no other reference. So the hook is not kept alive: the file
+`src/hooks/useAnnualMeetingsDue.ts` is retained for its pure helpers
+(`resolveScheduledDate`, `addOneYear`, `wholeDaysBetween`, `bucketFor`, and the new
+`getAnnualMeetingStatus`), while the `useAnnualMeetingsDue()` export and its
+`["annual-meetings-due"]` React Query key are removed. No orphaned query fires.
 
 ## 2. Single source of truth for "due"
 
