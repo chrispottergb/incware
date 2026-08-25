@@ -77,7 +77,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [activeResourceCategory, setActiveResourceCategory] = useState<string | null>(null);
 
   const { data: companies = [] } = useQuery({
-    queryKey: ["companies"],
+    queryKey: ["companies", "sidebar"],
     queryFn: async () => {
       const { data, error } = await supabase.from("companies").select("id, name, entity_type, status, is_test").order("name");
       if (error) throw error;
