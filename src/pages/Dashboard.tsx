@@ -306,11 +306,6 @@ export default function Dashboard() {
       {/* Client Annual Review Link Generator */}
       <AnnualReviewLinkGenerator open={annualReviewOpen} onOpenChange={setAnnualReviewOpen} companies={companies} />
 
-      {/* AI Compliance Summary */}
-      <AnnualMeetingsDueCard />
-
-      <AIComplianceSummary />
-
       <div id="companies-section" />
       {isError && <QueryErrorBanner message="Failed to load companies." onRetry={refetch} />}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
