@@ -102,7 +102,9 @@ describe("getAnnualMeetingStatus — occurrence matching", () => {
     [january, "2025-12-30", "2027-01-05", "SCHEDULED"],
     [january, "2026-01-06", "2027-01-05", "SCHEDULED"],
     [january, "2025-01-07", "2026-01-06", "OVERDUE"],
-    [december, "2026-01-05", "2026-12-08", "OVERDUE"],
+    // Jan 2026 meeting is nearest the Dec 2025 occurrence, so Dec 2026 is still outstanding
+    // (105 days out from 2026-08-25, so it reads as SCHEDULED rather than overdue).
+    [december, "2026-01-05", "2026-12-08", "SCHEDULED"],
   ];
 
   for (const [company, last, expectedDue, expectedStatus] of cases) {
