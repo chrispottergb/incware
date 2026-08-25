@@ -84,7 +84,7 @@ export default function Dashboard() {
   // Legacy form state removed — now handled by CreateCompanyWizard
 
   const { data: companies = [], isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["companies"],
+    queryKey: ["companies", "dashboard"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("companies")
