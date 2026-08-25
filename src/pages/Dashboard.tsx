@@ -95,14 +95,60 @@ export default function Dashboard() {
     },
   });
 
-  // Company creation now handled by CreateCompanyWizard
+  // Last ANNUAL meeting per company — one query, never per row.
+  const { data: lastAnnualByCompany = {} } = useQuery({
+    queryKey: ["last-annual-meeting-dates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meetings")
+        .select("company_id, meeting_date")
+        .ilike("meeting_type", "Annual Meeting%")
+        .not("meeting_date", "is", null)
+        .range(0, 9999);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      for (const m of data || []) {
+        if (!m.company_id || !m.meeting_date) continue;
+        const prev = map[m.company_id];
+        if (!prev || (m.meeting_date as string) > prev) map[m.company_id] = m.meeting_date as string;
+      }
+      return map;
+    },
+  });
 
-  const filtered = companies.filter((c) => {
+  const today = new Date();
+
+  const annualStatusFor = (company: any): AnnualMeetingStatusResult => {
+    const iso = lastAnnualByCompany[company.id];
+    return getAnnualMeetingStatus(company, iso ? new Date(`${iso}T12:00:00`) : null, today);
+  };
+
+  const baseFiltered = companies.filter((c) => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
     const matchesType = filterType === "all" || c.entity_type === filterType;
     const matchesStatus = filterStatus === "all" || (filterStatus === "active" ? c.status !== "inactive" : c.status === "inactive");
     return matchesSearch && matchesType && matchesStatus;
   });
+
+  const withStatus = baseFiltered.map((c) => ({ company: c, annual: annualStatusFor(c) }));
+
+  const chipCounts = {
+    all: withStatus.length,
+    overdue: withStatus.filter((r) => r.annual.status === "OVERDUE").length,
+    due_soon: withStatus.filter((r) => r.annual.status === "DUE_SOON").length,
+    unscheduled: withStatus.filter((r) => r.annual.status === "UNSCHEDULED").length,
+  };
+
+  let rows = withStatus;
+  if (annualFilter === "overdue") rows = withStatus.filter((r) => r.annual.status === "OVERDUE");
+  else if (annualFilter === "due_soon") rows = withStatus.filter((r) => r.annual.status === "DUE_SOON");
+  else if (annualFilter === "unscheduled") rows = withStatus.filter((r) => r.annual.status === "UNSCHEDULED");
+
+  if (annualFilter === "overdue" || annualFilter === "due_soon") {
+    rows = rows.slice().sort((a, b) => (a.annual.dueDate?.getTime() ?? 0) - (b.annual.dueDate?.getTime() ?? 0));
+  }
+
+  const filtered = rows;
 
   const statusBadge = (company: typeof companies[0]) => {
     const status = company.corporate_status;
