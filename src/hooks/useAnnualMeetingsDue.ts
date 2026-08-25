@@ -1,30 +1,39 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { MONTHS, DAYS_OF_WEEK } from "@/components/company/ScheduledMeetingPicker";
 
 /**
- * READ-ONLY annual meeting due-date projection.
+ * READ-ONLY annual meeting due-date projection helpers.
  *
  * Nothing here writes to the database. The due date is always DERIVED from
  * (a) the bylaw schedule columns on `companies` and (b) the most recent
  * `meetings.meeting_date` where meeting_type ILIKE 'Annual Meeting%'.
  * It replaces the retired `meetings.next_annual_mtg` field, which must never
  * be reintroduced as a user-entered value.
+ *
+ * `getAnnualMeetingStatus` is the SINGLE definition of "due" used by the UI.
  */
 
-export type DueSource = "schedule" | "anniversary" | "none";
-export type DueStatus = "Overdue" | "Due now" | "Upcoming" | "Later" | "Not scheduled";
+export type AnnualMeetingStatus =
+  | "NOT_REQUIRED"
+  | "UNSCHEDULED"
+  | "NEVER_HELD"
+  | "OVERDUE"
+  | "DUE_SOON"
+  | "SCHEDULED";
 
-export interface AnnualMeetingDueRow {
-  companyId: string;
-  name: string;
-  entityType: string | null;
-  lastAnnual: Date | null;
+export type StatusTone = "muted" | "neutral" | "amber" | "red";
+
+export interface AnnualMeetingStatusResult {
+  status: AnnualMeetingStatus;
   dueDate: Date | null;
-  daysUntil: number | null;
-  status: DueStatus;
-  source: DueSource;
-  sourceLabel: string;
+  label: string;
+  tone: StatusTone;
+}
+
+export interface ScheduleCompany {
+  statutory_close_corporation?: boolean | null;
+  scheduled_meeting_ordinal?: string | null;
+  scheduled_meeting_day_of_week?: string | null;
+  scheduled_meeting_month?: string | null;
 }
 
 const MONTH_INDEX = new Map(MONTHS.map((m, i) => [m.toLowerCase(), i]));
@@ -68,7 +77,7 @@ export function resolveScheduledDate(
     return null;
   }
 
-  const n = { "1st": 1, "2nd": 2, "3rd": 3, "4th": 4 }[ord];
+  const n = { "1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5 }[ord];
   if (!n) return null;
 
   // First matching weekday of the month.
@@ -90,127 +99,75 @@ export function addOneYear(date: Date): Date {
   return atNoon(year, monthIndex, day);
 }
 
-function parseDbDate(value: string): Date {
-  return new Date(`${value}T12:00:00`);
-}
-
-function wholeDaysBetween(from: Date, to: Date): number {
+export function wholeDaysBetween(from: Date, to: Date): number {
   const a = new Date(from.getFullYear(), from.getMonth(), from.getDate()).getTime();
   const b = new Date(to.getFullYear(), to.getMonth(), to.getDate()).getTime();
   return Math.round((b - a) / 86400000);
 }
 
-export function bucketFor(daysUntil: number | null): DueStatus {
-  if (daysUntil === null) return "Not scheduled";
-  if (daysUntil < 0) return "Overdue";
-  if (daysUntil <= 30) return "Due now";
-  if (daysUntil <= 90) return "Upcoming";
-  return "Later";
+function fmtShort(d: Date): string {
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-export function useAnnualMeetingsDue() {
-  return useQuery({
-    queryKey: ["annual-meetings-due"],
-    queryFn: async (): Promise<AnnualMeetingDueRow[]> => {
-      // Exactly two queries — never one per company.
-      const [companiesRes, meetingsRes] = await Promise.all([
-        supabase
-          .from("companies")
-          .select(
-            "id, name, entity_type, status, scheduled_meeting_ordinal, scheduled_meeting_day_of_week, scheduled_meeting_month, scheduled_annual_meeting",
-          )
-          .order("name")
-          .range(0, 999),
-        supabase
-          .from("meetings")
-          .select("company_id, meeting_date, meeting_type")
-          .ilike("meeting_type", "Annual Meeting%")
-          .not("meeting_date", "is", null)
-          .range(0, 9999),
-      ]);
-      if (companiesRes.error) throw companiesRes.error;
-      if (meetingsRes.error) throw meetingsRes.error;
+function fmtFull(d: Date): string {
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
 
-      // Reduce to a max meeting_date per company, plus the full set of annual dates
-      // (used to skip forward past a schedule date that has already been met).
-      const datesByCompany = new Map<string, string[]>();
-      for (const m of meetingsRes.data || []) {
-        if (!m.company_id || !m.meeting_date) continue;
-        const list = datesByCompany.get(m.company_id) || [];
-        list.push(m.meeting_date as string);
-        datesByCompany.set(m.company_id, list);
-      }
+/**
+ * The one and only definition of annual-meeting "due" status.
+ *
+ * Precedence:
+ *  1. Statutory close corporations are exempt (Wis. Stat. s. 180.1827) — never overdue.
+ *  2. No bylaw schedule -> unscheduled.
+ *  3. Scheduled but never held -> next occurrence after today.
+ *  4. Otherwise -> next occurrence strictly after the last annual meeting.
+ */
+export function getAnnualMeetingStatus(
+  company: ScheduleCompany,
+  lastAnnualMeetingDate: Date | null,
+  today: Date = new Date(),
+): AnnualMeetingStatusResult {
+  if (company.statutory_close_corporation) {
+    return { status: "NOT_REQUIRED", dueDate: null, label: "Not required (close corp)", tone: "muted" };
+  }
 
-      const today = new Date();
+  const ordinal = company.scheduled_meeting_ordinal;
+  const dayOfWeek = company.scheduled_meeting_day_of_week;
+  const month = company.scheduled_meeting_month;
+  if (!ordinal || !dayOfWeek || !month) {
+    return { status: "UNSCHEDULED", dueDate: null, label: "No schedule set", tone: "neutral" };
+  }
 
-      return (companiesRes.data || [])
-        .filter((c) => c.status !== "inactive")
-        .map((c) => {
-          const dates = (datesByCompany.get(c.id) || []).slice().sort();
-          const lastAnnualStr = dates.length ? dates[dates.length - 1] : null;
-          const lastAnnual = lastAnnualStr ? parseDbDate(lastAnnualStr) : null;
+  const nextAfter = (anchor: Date): Date | null => {
+    let year = anchor.getFullYear();
+    for (let i = 0; i < 6; i++) {
+      const candidate = resolveScheduledDate(ordinal, dayOfWeek, month, year + i);
+      if (candidate && candidate.getTime() > anchor.getTime()) return candidate;
+    }
+    return null;
+  };
 
-          const hasSchedule = Boolean(
-            c.scheduled_meeting_ordinal && c.scheduled_meeting_day_of_week && c.scheduled_meeting_month,
-          );
+  if (!lastAnnualMeetingDate) {
+    const dueDate = nextAfter(today);
+    return {
+      status: "NEVER_HELD",
+      dueDate,
+      label: "No annual meeting on record",
+      tone: "amber",
+    };
+  }
 
-          let dueDate: Date | null = null;
-          let source: DueSource = "none";
-          let sourceLabel = "No meeting schedule set";
+  const dueDate = nextAfter(lastAnnualMeetingDate);
+  if (!dueDate) {
+    return { status: "UNSCHEDULED", dueDate: null, label: "No schedule set", tone: "neutral" };
+  }
 
-          if (hasSchedule) {
-            let year = lastAnnual ? lastAnnual.getFullYear() + 1 : today.getFullYear();
-            let candidate = resolveScheduledDate(
-              c.scheduled_meeting_ordinal,
-              c.scheduled_meeting_day_of_week,
-              c.scheduled_meeting_month,
-              year,
-            );
-            for (let i = 0; i < 5 && candidate; i++) {
-              const iso = `${candidate.getFullYear()}-${String(candidate.getMonth() + 1).padStart(2, "0")}-${String(candidate.getDate()).padStart(2, "0")}`;
-              const alreadyHeld = dates.some((d) => d >= iso);
-              if (!alreadyHeld) break;
-              year += 1;
-              candidate = resolveScheduledDate(
-                c.scheduled_meeting_ordinal,
-                c.scheduled_meeting_day_of_week,
-                c.scheduled_meeting_month,
-                year,
-              );
-            }
-            if (candidate) {
-              dueDate = candidate;
-              source = "schedule";
-              sourceLabel =
-                c.scheduled_annual_meeting ||
-                `${c.scheduled_meeting_ordinal} ${c.scheduled_meeting_day_of_week} in ${c.scheduled_meeting_month}`;
-            }
-          } else if (lastAnnual) {
-            dueDate = addOneYear(lastAnnual);
-            source = "anniversary";
-            sourceLabel = "One year after last annual meeting";
-          }
-
-          const daysUntil = dueDate ? wholeDaysBetween(today, dueDate) : null;
-
-          return {
-            companyId: c.id,
-            name: c.name,
-            entityType: c.entity_type ?? null,
-            lastAnnual,
-            dueDate,
-            daysUntil,
-            status: bucketFor(daysUntil),
-            source,
-            sourceLabel,
-          } satisfies AnnualMeetingDueRow;
-        })
-        .sort((a, b) => {
-          if (a.dueDate && b.dueDate) return a.dueDate.getTime() - b.dueDate.getTime();
-          if (a.dueDate) return -1;
-          if (b.dueDate) return 1;
-          return a.name.localeCompare(b.name);
-        });
-    },
-  });
+  const daysUntil = wholeDaysBetween(today, dueDate);
+  if (daysUntil < 0) {
+    return { status: "OVERDUE", dueDate, label: `Overdue ${Math.abs(daysUntil)}d`, tone: "red" };
+  }
+  if (daysUntil <= 60) {
+    return { status: "DUE_SOON", dueDate, label: `Due ${fmtShort(dueDate)}`, tone: "amber" };
+  }
+  return { status: "SCHEDULED", dueDate, label: fmtFull(dueDate), tone: "neutral" };
 }
