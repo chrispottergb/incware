@@ -439,11 +439,17 @@ export default function Dashboard() {
                       </div>
                     </TableHead>
                     <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <CalendarCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>Annual Meeting</span>
+                      </div>
+                    </TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((company) => (
+                  {filtered.map(({ company, annual }) => (
                     <TableRow
                       key={company.id}
                       className="cursor-pointer group"
@@ -489,6 +495,15 @@ export default function Dashboard() {
                       <TableCell className="text-xs text-muted-foreground">{company.fiscal_year_end || "—"}</TableCell>
                       <TableCell>{statusBadge(company)}</TableCell>
                       <TableCell>
+                        <AnnualMeetingChip
+                          result={annual}
+                          onSetSchedule={(e) => {
+                            e.stopPropagation();
+                            navigate(`/company/${company.id}#incorporation`);
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
                         <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary transition-colors" />
                       </TableCell>
                     </TableRow>
@@ -499,7 +514,40 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
+
+      <AIComplianceSummary />
     </div>
+  );
+}
+
+const ANNUAL_TONE_CLASS: Record<string, string> = {
+  red: "bg-destructive/10 text-destructive border-destructive/20",
+  amber: "bg-warning/10 text-warning border-warning/20",
+  neutral: "bg-muted text-muted-foreground border-border",
+  muted: "bg-muted/50 text-muted-foreground border-border",
+};
+
+function AnnualMeetingChip({
+  result,
+  onSetSchedule,
+}: {
+  result: AnnualMeetingStatusResult;
+  onSetSchedule: (e: React.MouseEvent) => void;
+}) {
+  const className = `text-[10px] px-1.5 py-0 whitespace-nowrap ${ANNUAL_TONE_CLASS[result.tone]}`;
+  if (result.status === "UNSCHEDULED") {
+    return (
+      <button type="button" onClick={onSetSchedule} className="focus:outline-none">
+        <Badge variant="outline" className={`${className} cursor-pointer hover:opacity-80`}>
+          {result.label}
+        </Badge>
+      </button>
+    );
+  }
+  return (
+    <Badge variant="outline" className={className}>
+      {result.label}
+    </Badge>
   );
 }
 
