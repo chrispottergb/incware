@@ -358,6 +358,32 @@ export default function Dashboard() {
             <SelectItem value="all">All Clients</SelectItem>
           </SelectContent>
         </Select>
+        {/* Annual meeting chips — same filters row, compose with search/type/status */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {([
+            { key: "all", label: "All", count: chipCounts.all },
+            { key: "overdue", label: "Overdue", count: chipCounts.overdue },
+            { key: "due_soon", label: "Due soon", count: chipCounts.due_soon },
+            { key: "unscheduled", label: "No schedule set", count: chipCounts.unscheduled },
+          ] as const).map((chip) => {
+            const active = annualFilter === chip.key;
+            return (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={() => setAnnualFilter(active && chip.key !== "all" ? "all" : chip.key)}
+                className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs transition-colors ${
+                  active
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:bg-muted/50"
+                }`}
+              >
+                <span>{chip.label}</span>
+                <span className="font-semibold">({chip.count})</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Companies Table */}
