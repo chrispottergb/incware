@@ -140,6 +140,15 @@ export default function Dashboard() {
     unscheduled: withStatus.filter((r) => r.annual.status === "UNSCHEDULED").length,
   };
 
+  // If the active chip's count drops to zero, fall back to All
+  useEffect(() => {
+    if (annualFilter !== "all" && chipCounts[annualFilter] === 0) {
+      setAnnualFilter("all");
+    }
+  }, [annualFilter, chipCounts.overdue, chipCounts.due_soon, chipCounts.unscheduled]);
+
+
+
   let rows = withStatus;
   if (annualFilter === "overdue") rows = withStatus.filter((r) => r.annual.status === "OVERDUE");
   else if (annualFilter === "due_soon") rows = withStatus.filter((r) => r.annual.status === "DUE_SOON");
