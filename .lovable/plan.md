@@ -1,67 +1,56 @@
-# Entity-member signature blocks in the LLC Annual Meeting PDF
+# Fix written-consent entity-holder representatives
 
-Fix: in the LLC annual meeting document, an entity member (a trust, LLC, or corporation that owns units) currently signs as just "Member: ABC Holdings, LLC" with an empty Title line — no natural person is identified. The meeting minutes builder already handles this correctly; the annual meeting builder does not. This brings the two into agreement by sharing one formatting helper.
-
-No schema changes, no new columns, no change to how holders are entered.
+Non-destructive, two-file data-path correction. No schema/default changes and no PDF-renderer changes.
 
 ## Changed files
 
-1. `src/lib/holder-display.ts` — NEW. Home of the promoted `formatShareholderDisplay` helper.
-2. `src/lib/meeting-pdf-export.ts` — remove the local helper definition, import it from the new module. Nothing else in this file changes.
-3. `src/lib/annual-meeting-pdf.ts` — widen the `memberSignatures` type, render the entity By-line block, and route the members table and attendee list through the helper.
-4. `src/components/AnnualMeetingWizard.tsx` — carry `owner_kind` / `representative_name` / `representative_title` from the holder records into the member, attendee, and signature lists it hands to the builder.
+1. `src/components/WrittenConsentWizard.tsx`
+2. `src/pages/MeetingDetail.tsx`
 
-Out of scope and untouched: `nonprofit-annual-meeting-pdf.ts`, `org-meeting-pdf.ts` and its caller in `MeetingDetail.tsx` (its `memberSignatures` is a different SMLLC organizational-meeting shape), the `officers` table, `ShareholdersTab.tsx`.
+This is the complete changed-file list; it will be reported before edits are applied.
 
-## 1. Promote the helper
+## Implementation
 
-Move `formatShareholderDisplay` from `src/lib/meeting-pdf-export.ts` (lines 117-146, including its comment block) into `src/lib/holder-display.ts` as an exported function. Character-for-character identical body, same parameter shape, same three modes (`inline`, `twoLine`, `signer`), same fallbacks. `meeting-pdf-export.ts` gains one import line and loses the definition — no call site changes, no output change.
+### `WrittenConsentWizard.tsx`
 
-After the move there is exactly one definition in the codebase.
+Carry the existing holder metadata through every written-consent transformation:
 
-## 2. Entity signature blocks in `annual-meeting-pdf.ts`
+- In each signer mapping sourced from `shareholders` (corporate shareholder consent, single-member LLC, member-managed LLC, and partnership fallback), add camel-case signer fields sourced from `owner_kind`, `representative_name`, and `representative_title`.
+- Leave director/manager/nonprofit signer mappings without representative values, preserving their current behavior.
+- In `buildConsentPdfData()`, replace the hardcoded null representative fields in `signatureRows` with the signer's actual values. Also carry holder metadata into the in-memory shareholder rows so preview data and saved data have matching shapes.
+- In the `meeting_shareholders` insert, copy `owner_kind`, `representative_name`, and `representative_title` from the authoritative shareholder row already resolved as `sh`.
+- In the `meeting_signatures` upsert, replace the hardcoded null representative fields with the signer's actual values.
+- Keep names, roles, ownership calculations, signature dates, sort order, save behavior, and the generated PDF renderer unchanged.
 
-Widen the type at line 86:
+### `MeetingDetail.tsx`
 
-```ts
-memberSignatures: {
-  name: string;
-  ownerKind?: string;
-  representativeName?: string;
-  representativeTitle?: string;
-}[];
-```
+Widen the existing recovery predicate so entity metadata is restored when either:
 
-All three new fields optional, so existing callers and any saved wizard drafts keep compiling and keep rendering exactly as today.
+- the meeting snapshot has no `owner_kind`, or
+- it says `individual` while the matching current shareholder row authoritatively says `entity`.
 
-In the Signatures section (~lines 771-790), branch per signer:
-
-- Individual (or no `ownerKind`): unchanged — the current signature line, `Member: {name}`, `Date:`, `Title:` lines, identical geometry.
-- Entity with a representative:
-  ```text
-  {ENTITY NAME}, Member
-  By: ____________________________
-      {representativeName}, {representativeTitle}
-  Date: ________________
-  ```
-  When `representativeTitle` is empty, the second line reads `{representativeName}, Authorized Representative`.
-- Entity with no representative: same block, with the `By:` rule and the name/title line left blank — an unsigned line awaiting signature, never omitted.
-
-The entity name and representative caption come from the promoted helper's `twoLine` mode, split on its newline, rather than new formatting logic.
-
-## 3. Members table and attendee list
-
-- Members table (~lines 325-331): the Name cell renders through the helper's `inline` mode, so an entity member reads `ABC Holdings, LLC, represented by Jane Doe, its Trustee`. Individuals unchanged.
-- Attendee list (~lines 287-295): same `inline` treatment.
-
-Both require the corresponding row types to carry the same three optional fields.
-
-## 4. Wizard wiring
-
-In `src/components/AnnualMeetingWizard.tsx`, the member list is built from the company's holder records (both in `buildDefaultData` and in the effect that refreshes members from the database). Add `ownerKind`, `representativeName`, `representativeTitle` to each member row from `owner_kind`, `representative_name`, `representative_title`. Propagate them through `addAttendee` into `attendeeList`, and through the `memberSignatures` mapping at line 590. The manual add/remove signature rows in the wizard UI stay name-only and render as individuals.
+When that mismatch is detected, reuse the existing update path to copy `owner_kind`, `representative_name`, and `representative_title`. True individual holders remain untouched.
 
 ## Verification
 
-- Generate the annual meeting PDF and the meeting minutes PDF for a company whose holders are all individuals, before and after, and diff the rendered output — must be identical.
-- Generate for an LLC with an entity member plus representative and confirm the two-line `By:` block, the inline form in the members table, and the inline form in the attendee list.
-- Confirm a single `formatShareholderDisplay` definition remains, and that a TypeScript check passes.
+- Add or run a targeted fixture-based regression check proving an entity holder reaches preview and persisted payloads with its representative name/title and renders through the existing written-consent PDF path as:
+  ```text
+  The Stiegler Company, Inc., represented by [name], its [title]
+  Member
+  Date signed: ______
+  ```
+- Verify a fixture containing only individual signers produces unchanged signer/shareholder payloads and byte-identical PDF bytes before versus after where deterministic; otherwise compare normalized PDF text and drawing structure while confirming the individual rendering branch is untouched.
+- Exercise the `MeetingDetail` recovery condition for the erroneous `individual` snapshot versus authoritative `entity` source case, and confirm a genuine individual does not trigger recovery.
+- Run targeted tests/type validation, check the preview flow, and inspect the latest build result.
+
+## Data note
+
+The current Stiegler shareholder row is classified as `entity`, but its live `representative_name` and `representative_title` are empty. Per the selected approach, live data will not be modified; Stiegler-format acceptance will be verified with a temporary fixture carrying representative values.
+
+## Explicitly untouched
+
+- Database schema and column defaults
+- `src/lib/meeting-pdf-export.ts`
+- `src/lib/annual-meeting-pdf.ts`
+- Holder-display helper promotion work
+- Any live shareholder or meeting data
