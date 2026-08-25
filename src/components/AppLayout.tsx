@@ -320,7 +320,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </>
           )}
 
-          <div className="mx-3 mt-3 border-t border-sidebar-border" />
+          {/* Divider between company groups and the rest of the nav */}
+          <div className="border-t border-sidebar-border/50 my-3" />
 
           {mainNav.slice(1).map(renderMainItem)}
 
