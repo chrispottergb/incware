@@ -87,9 +87,18 @@ export default function MeetingInfoCard({ meeting }: Props) {
     || (company?.entity_type || "").toLowerCase().includes("nonprofit");
 
   const governance = ((meeting as any).nonprofit_governance || {}) as Record<string, any>;
-  const fundraisingMethods: string[] = Array.isArray(governance.fundraising_methods)
+  const serverFundraisingMethods: string[] = Array.isArray(governance.fundraising_methods)
     ? governance.fundraising_methods
     : [];
+  // Optimistic local copy: rapid back-to-back toggles must not recompute from the
+  // stale server prop (the invalidate round-trip lags behind clicks).
+  const [localFundraisingMethods, setLocalFundraisingMethods] = useState<string[] | null>(null);
+  const serverFundraisingKey = serverFundraisingMethods.join("|");
+  useEffect(() => {
+    setLocalFundraisingMethods(null);
+  }, [serverFundraisingKey]);
+  const fundraisingMethods: string[] = localFundraisingMethods ?? serverFundraisingMethods;
+
 
 
   const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(
