@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { format, parseISO } from "date-fns";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -87,9 +87,18 @@ export default function MeetingInfoCard({ meeting }: Props) {
     || (company?.entity_type || "").toLowerCase().includes("nonprofit");
 
   const governance = ((meeting as any).nonprofit_governance || {}) as Record<string, any>;
-  const fundraisingMethods: string[] = Array.isArray(governance.fundraising_methods)
+  const serverFundraisingMethods: string[] = Array.isArray(governance.fundraising_methods)
     ? governance.fundraising_methods
     : [];
+  // Optimistic local copy: rapid back-to-back toggles must not recompute from the
+  // stale server prop (the invalidate round-trip lags behind clicks).
+  const [localFundraisingMethods, setLocalFundraisingMethods] = useState<string[] | null>(null);
+  const serverFundraisingKey = serverFundraisingMethods.join("|");
+  useEffect(() => {
+    setLocalFundraisingMethods(null);
+  }, [serverFundraisingKey]);
+  const fundraisingMethods: string[] = localFundraisingMethods ?? serverFundraisingMethods;
+
 
 
   const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(
@@ -115,14 +124,17 @@ export default function MeetingInfoCard({ meeting }: Props) {
   });
 
   const toggleFundraisingMethod = (method: string) => {
-    const next = fundraisingMethods.includes(method)
-      ? fundraisingMethods.filter((m) => m !== method)
-      : [...fundraisingMethods, method];
+    const current = localFundraisingMethods ?? serverFundraisingMethods;
+    const next = current.includes(method)
+      ? current.filter((m) => m !== method)
+      : [...current, method];
+    setLocalFundraisingMethods(next);
     // Preserve any other nonprofit governance keys already stored on the meeting.
     updateMeeting.mutate({
       nonprofit_governance: { ...governance, fundraising_methods: next },
     } as any);
   };
+
 
 
   const handleBlur = (field: string, value: string) => {
