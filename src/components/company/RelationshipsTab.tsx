@@ -352,6 +352,14 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                {RELATIONSHIP_DESCRIPTIONS[form.relationship_type]}
+              </p>
+              {form.relationship_type === "division" && (
+                <p className="text-xs text-destructive mt-1.5 leading-relaxed">
+                  Both records here are separately filed entities. If this entity has its own articles on file, it is not a division — choose subsidiary or affiliate.
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -365,6 +373,9 @@ export default function RelationshipsTab({ companyId, companyName }: Relationshi
                   onChange={(e) => setForm((p) => ({ ...p, ownership_percentage: e.target.value }))}
                   placeholder="e.g. 100"
                 />
+                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                  Percentage of units or shares held. If voting control differs from ownership under the operating agreement or bylaws, note that in Notes.
+                </p>
               </div>
               <div>
                 <Label className="text-xs">Effective Date</Label>
