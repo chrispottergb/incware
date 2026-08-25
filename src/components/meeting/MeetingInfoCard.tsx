@@ -124,14 +124,17 @@ export default function MeetingInfoCard({ meeting }: Props) {
   });
 
   const toggleFundraisingMethod = (method: string) => {
-    const next = fundraisingMethods.includes(method)
-      ? fundraisingMethods.filter((m) => m !== method)
-      : [...fundraisingMethods, method];
+    const current = localFundraisingMethods ?? serverFundraisingMethods;
+    const next = current.includes(method)
+      ? current.filter((m) => m !== method)
+      : [...current, method];
+    setLocalFundraisingMethods(next);
     // Preserve any other nonprofit governance keys already stored on the meeting.
     updateMeeting.mutate({
       nonprofit_governance: { ...governance, fundraising_methods: next },
     } as any);
   };
+
 
 
   const handleBlur = (field: string, value: string) => {
