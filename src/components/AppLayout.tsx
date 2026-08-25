@@ -213,8 +213,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </p>
           {mainNav.slice(0, 1).map(renderMainItem)}
 
-          {/* Divider above Companies */}
-          <div className="mx-3 mt-3 border-t border-sidebar-border" />
+          {/* Divider between Dashboard and the company groups */}
+          <div className="border-t border-sidebar-border/50 my-3" />
           <Collapsible open={companiesOpen} onOpenChange={setCompaniesOpen}>
             <CollapsibleTrigger className="flex w-full items-center gap-1 px-3 pt-2 pb-1">
               <ChevronDown className={`h-3 w-3 text-primary/60 transition-transform ${companiesOpen ? "" : "-rotate-90"}`} />
