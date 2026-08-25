@@ -1,49 +1,98 @@
-# Prompt 1 — Remove the write-only "Next Annual Meeting" field from the UI
+# Annual Meeting status moves into the Client Companies table
 
-Non-destructive UI cleanup. The `meetings.next_annual_mtg` column stays in the database; no rows are modified or deleted.
+Retire the standalone "Annual Meetings Due" card and surface the same due-status
+information as a column plus filter chips on the existing Client Companies table.
+No schema changes, no new columns, no extraction of the inline table.
 
-## What we know
+## Changed files
 
-- `rg -n "next_annual_mtg" src/ supabase/functions/` currently returns hits only in:
-  - `src/integrations/supabase/types.ts` (generated Row/Insert/Update types)
-  - `src/components/meeting/MeetingInfoCard.tsx`
-  - `src/components/company/MeetingsTab.tsx`
-- No PDF generator, dashboard, report, timeline, or edge function reads this column.
-- The nonprofit "Next Annual Meeting" mechanism is separate: it lives in `meetings.nonprofit_governance.nextMeetingDate` and must remain untouched.
+- `src/hooks/useAnnualMeetingsDue.ts` — export a single `getAnnualMeetingStatus()`; refactor the existing hook to call it
+- `src/pages/Dashboard.tsx` — reorder sections, extend the companies query, add column + filter chips, drop the card import
+- `src/test/annual-meeting-status.test.ts` — new unit tests
+- `src/components/dashboard/AnnualMeetingsDueCard.tsx` — deleted
 
-## Changes
+Protected files (`src/lib/meeting-pdf-export.ts`, `src/lib/annual-meeting-pdf.ts`,
+`src/lib/nonprofit-annual-meeting-pdf.ts`, Supabase auto-generated files) are untouched.
 
-### 1. `src/components/meeting/MeetingInfoCard.tsx`
+## 1. Dashboard order
 
-- Remove the "Next Annual Meeting" `DatePickerField` from Row 2 of the Meeting Information card — the single `w-[145px]` block containing `value={meeting.next_annual_mtg ?? ""}` and its `onChange` handler.
-- Update the Row 2 code comment so it no longer lists "Next Annual Meeting".
-- Leave Prior Meeting Date, Chairperson, Secretary, Others Present, and all save handlers unchanged. `handleDateChange` stays — it is still used by `meeting_date` and `prior_mtg_date`.
-- Let the remaining Row 2 fields reflow naturally in the flex row.
-- Do not touch the `textFields` or `companyFields` arrays.
+New render order in `src/pages/Dashboard.tsx`:
 
-### 2. `src/components/company/MeetingsTab.tsx`
+```text
+Welcome action cards (5 tiles)   unchanged
+hidden dialogs                   unchanged
+Client Companies header + Add Company
+Filters row (search / type / status / new chips)
+Client Companies table
+AI Compliance Summary            moved to bottom
+```
 
-- Remove the "Next Annual Meeting" `DatePickerField` from the two-column grid it shares with "Prior Meeting Date".
-- That grid now has a single occupant, and Prior Meeting Date is itself conditionally hidden for organizational meetings — so handle both cases: no orphaned empty grid cell, and no empty grid container rendering when neither field shows.
-- Remove `next_annual_mtg: ""` from `defaultForm()`.
-- Remove `next_annual_mtg: form.next_annual_mtg || null` from the `meetings` insert payload.
-- Remove the `next_annual_mtg: ""` reset lines from both `prefillFromLastAnnual` and `prefillFromLastStatutoryClose`.
+`<AnnualMeetingsDueCard />` is removed from the page and the component file is deleted
+along with its import. No other consumers exist.
 
-## Explicitly out of scope
+## 2. Single source of truth for "due"
 
-- Do NOT drop the `meetings.next_annual_mtg` column.
-- Do NOT modify `src/integrations/supabase/types.ts`.
-- Do NOT change `src/lib/meeting-pdf-export.ts`, `src/lib/annual-meeting-pdf.ts`, or `src/lib/record-book-pdf.ts`.
-- Do NOT change `src/lib/nonprofit-annual-meeting-pdf.ts`, `NonProfitGovernanceStep.tsx`, or the `meetings.nonprofit_governance` JSONB column.
+In `src/hooks/useAnnualMeetingsDue.ts`, add and export:
 
-## Verification
+```ts
+getAnnualMeetingStatus(company, lastAnnualMeetingDate, today)
+  -> { status, dueDate: Date | null, label, tone }
+```
 
-1. Re-run `rg -n "next_annual_mtg" src/ supabase/functions/` — only `src/integrations/supabase/types.ts` should remain.
-2. Open an existing Annual Meeting: Meeting Info tab renders without the field and without a layout gap; every other field still saves.
-3. Open a Written Consent: unchanged (the field was already hidden there).
-4. Create a new meeting from the New Meeting dialog, both as an Annual Meeting and as an Organizational Meeting: each saves with no console error and no empty or broken grid.
-5. Generate a corporate annual meeting PDF and a nonprofit annual meeting PDF: the rendered content is unchanged — same sections, same numbering, same text. Do not compare file bytes; jsPDF embeds a creation timestamp, so byte comparison always differs.
+Precedence:
 
-## Note on Prompt 2
+1. `NOT_REQUIRED` — `statutory_close_corporation = true`. Label "Not required (close corp)",
+   tone muted. Per Wis. Stat. s. 180.1827 a statutory close corporation need not hold an
+   annual meeting unless a shareholder demands one in writing at least 30 days prior.
+   Never renders as overdue.
+2. `UNSCHEDULED` — any of `scheduled_meeting_ordinal`, `scheduled_meeting_day_of_week`,
+   `scheduled_meeting_month` is null. Label "No schedule set", tone neutral.
+3. `NEVER_HELD` — scheduled but no Annual Meeting on record. `dueDate` = next occurrence
+   after today. Label "No annual meeting on record".
+4. Otherwise `dueDate` = next scheduled occurrence strictly after the last Annual Meeting date:
+   - `OVERDUE` when `dueDate < today` → "Overdue {n}d", red
+   - `DUE_SOON` when `dueDate <= today + 60d` → "Due {MMM d}", amber
+   - `SCHEDULED` otherwise → "{MMM d, yyyy}", neutral
 
-Prompt 2 will be sent only after Prompt 1 is verified working. It is not part of this plan.
+The function reuses the existing `resolveScheduledDate`, `addOneYear` and
+`wholeDaysBetween` helpers — no new date math. `useAnnualMeetingsDue()` is refactored to
+call it per company so the hook and the table column can never disagree; its exported row
+shape is kept so nothing else breaks.
+
+Unit tests (`src/test/annual-meeting-status.test.ts`) cover: overdue, due soon, scheduled,
+unscheduled, never held, close-corp exemption, and a month that has no 5th weekday.
+
+## 3. Data
+
+The existing `useQuery(["companies"])` gains one additional parallel query against
+`meetings` (`meeting_type ILIKE 'Annual Meeting%'`, non-null `meeting_date`), reduced
+client-side to a max date per `company_id`. Two queries total, none per row. Companies
+with no annual meeting still appear. Pagination `range(0, 499)` unchanged.
+
+## 4. New column
+
+"Annual Meeting" is appended after Status (before the chevron cell) and renders the status
+chip using the tone from `getAnnualMeetingStatus`. The six existing columns are unchanged.
+The "No schedule set" chip is clickable and navigates to `/company/{id}#incorporation`
+(the scheduled-meeting setting), stopping row-click propagation.
+
+## 5. Filter chips
+
+Added inside the existing filters row — no second row:
+
+```text
+All (60) · Overdue (n) · Due soon (n) · No schedule set (n)
+```
+
+Counts are live and computed after the existing search / type / status filters, so the
+chips compose with them. Default is All. When Overdue or Due soon is active, rows are
+ordered by `dueDate` ascending; otherwise the current name ordering is kept. No sortable
+column headers are added anywhere.
+
+## Acceptance
+
+- Client Companies renders above AI Compliance Summary
+- `AnnualMeetingsDueCard.tsx` deleted with no orphan imports
+- No migration in the diff
+- All 60 companies visible under "All"
+- Neither statutory close corporation shows a red chip
