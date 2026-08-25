@@ -207,10 +207,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <img src={logoEntityIQ} alt="EntityIQ" className="h-7" />
         </div>
 
-        <nav className="flex-1 space-y-0.5 p-2">
-          <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
-            Main
-          </p>
+        <nav className="flex-1 space-y-0.5 p-2 pt-4">
           {mainNav.slice(0, 1).map(renderMainItem)}
 
           {/* Divider between Dashboard and the company groups */}
