@@ -26,6 +26,13 @@ const RELATIONSHIP_TYPES = ["subsidiary", "division", "affiliate", "joint_ventur
 
 const formatType = (t: string) => t.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
+const RELATIONSHIP_DESCRIPTIONS: Record<string, string> = {
+  subsidiary: "One entity owns a controlling interest (over 50%) in the other. Both are separately filed entities. Record the actual percentage in Ownership %.",
+  affiliate: "The entities are under common control but neither owns the other — for example, two companies owned by the same person or the same holding company.",
+  joint_venture: "Two or more otherwise-unrelated owners hold the entity together for a shared purpose or project.",
+  division: "A branded operating segment inside a single company, with no separate charter or filing of its own.",
+};
+
 export default function RelationshipsTab({ companyId, companyName }: RelationshipsTabProps) {
   const { user } = useAuth();
   const qc = useQueryClient();
