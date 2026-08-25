@@ -6,7 +6,7 @@ No schema changes, no new columns, no extraction of the inline table.
 
 ## Changed files
 
-- `src/hooks/useAnnualMeetingsDue.ts` — export a single `getAnnualMeetingStatus()`; refactor the existing hook to call it
+- `src/hooks/useAnnualMeetingsDue.ts` — keep helpers, add `getAnnualMeetingStatus()`, remove the now-unused `useAnnualMeetingsDue()` query export
 - `src/pages/Dashboard.tsx` — reorder sections, extend the companies query, add column + filter chips, drop the card import
 - `src/test/annual-meeting-status.test.ts` — new unit tests
 - `src/components/dashboard/AnnualMeetingsDueCard.tsx` — deleted
