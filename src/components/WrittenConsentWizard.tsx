@@ -79,6 +79,16 @@ interface Props {
   onConsentCreated?: () => void;
 }
 
+interface ConsentSigner {
+  name: string;
+  role: string;
+  id: string;
+  ownershipPct?: number | null;
+  ownerKind?: string | null;
+  representativeName?: string | null;
+  representativeTitle?: string | null;
+}
+
 export default function WrittenConsentWizard({ company, existingMeetingId, onClose, onConsentCreated }: Props) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -400,7 +410,7 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
   // Every entity type must resolve to a usable list — Non-Profit and Partnership
   // are neither isCorp nor isLLCType(), and previously fell through to [] which
   // blocked the Signers step entirely.
-  const signers = useMemo(() => {
+  const signers = useMemo<ConsentSigner[]>(() => {
     if (isCorp) {
       if (consentBody === "shareholders") {
         return shareholders.map((s) => ({
@@ -408,6 +418,9 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
           role: "Shareholder",
           id: s.id,
           ownershipPct: s.ownership_percentage,
+          ownerKind: s.owner_kind,
+          representativeName: s.representative_name,
+          representativeTitle: s.representative_title,
         }));
       }
       return directors.map((d) => ({
@@ -422,6 +435,9 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
           name: s.name,
           role: "Sole Member",
           id: s.id,
+          ownerKind: s.owner_kind,
+          representativeName: s.representative_name,
+          representativeTitle: s.representative_title,
         }));
       }
       if (managementType === "Manager Managed") {
@@ -438,6 +454,9 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         role: "Member",
         id: s.id,
         ownershipPct: s.ownership_percentage,
+        ownerKind: s.owner_kind,
+        representativeName: s.representative_name,
+        representativeTitle: s.representative_title,
       }));
     }
     if (isNonProfit) {
@@ -456,6 +475,9 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
         role: "Partner",
         id: s.id,
         ownershipPct: s.ownership_percentage,
+        ownerKind: s.owner_kind,
+        representativeName: s.representative_name,
+        representativeTitle: s.representative_title,
       }));
     }
     return directors.map((d) => ({ name: d.name, role: t.director, id: d.id }));
@@ -559,6 +581,9 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
             zip: shareholder?.zip || null,
             common_shares: holdings,
             preferred_shares: ownershipPct,
+            owner_kind: signer.ownerKind || "individual",
+            representative_name: signer.representativeName || null,
+            representative_title: signer.representativeTitle || null,
           };
         })
       : [];
@@ -567,8 +592,8 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       signer_name: signer.name,
       signer_role: signer.role || null,
       signer_title: null,
-      representative_name: null,
-      representative_title: null,
+      representative_name: signer.representativeName || null,
+      representative_title: signer.representativeTitle || null,
       signed_on: signedDates[signer.id || String(i)] || null,
       sort_order: i,
     }));
@@ -747,6 +772,9 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
           zip: sh?.zip || null,
           common_shares: holdings,
           preferred_shares: ownershipPct,
+          owner_kind: sh?.owner_kind || "individual",
+          representative_name: sh?.representative_name || null,
+          representative_title: sh?.representative_title || null,
         };
       });
       if (memberRows.length > 0) {
@@ -764,8 +792,8 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       signer_name: s.name,
       signer_role: s.role || null,
       signer_title: null,
-      representative_name: null,
-      representative_title: null,
+      representative_name: s.representativeName || null,
+      representative_title: s.representativeTitle || null,
       signed_on: signedDates[s.id || String(i)] || null,
       sort_order: i,
     }));
