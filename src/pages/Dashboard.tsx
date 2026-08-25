@@ -413,12 +413,12 @@ export default function Dashboard() {
       ) : (
         <Card>
           <CardContent className="p-0">
-            <div className="overflow-hidden rounded-lg">
+            <div className="overflow-x-auto rounded-lg">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead className="font-semibold text-xs">
-                      <div className="flex items-center gap-1.5">
+                    <TableHead className="font-semibold text-xs sticky left-0 z-20 bg-card border-r border-border before:absolute before:inset-0 before:bg-muted/50 before:pointer-events-none">
+                      <div className="relative z-10 flex items-center gap-1.5">
                         <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                         <span>Company Name</span>
                       </div>
