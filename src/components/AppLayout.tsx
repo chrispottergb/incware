@@ -119,7 +119,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   const renderMainItem = (item: { label: string; href: string; icon: any }) => {
     const active = location.pathname === item.href;
-    const isDashboard = item.label === "Dashboard";
     return (
       <Link
         key={item.href}
@@ -128,13 +127,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
           active
             ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
-            : isDashboard
-              ? "text-primary hover:bg-sidebar-accent/50 hover:text-sidebar-primary-foreground"
-              : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+            : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
         }`}
       >
-        <item.icon className={`h-4 w-4 shrink-0 ${isDashboard ? "text-primary" : ""}`} />
-        <span className={isDashboard ? "uppercase tracking-wider" : ""}>{item.label}</span>
+        <item.icon className="h-4 w-4 shrink-0" />
+        <span>{item.label}</span>
       </Link>
     );
   };
@@ -216,8 +213,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </p>
           {mainNav.slice(0, 1).map(renderMainItem)}
 
-          {/* Divider above Companies */}
-          <div className="mx-3 mt-3 border-t border-sidebar-border" />
+          {/* Divider between Dashboard and the company groups */}
+          <div className="border-t border-sidebar-border/50 my-3" />
           <Collapsible open={companiesOpen} onOpenChange={setCompaniesOpen}>
             <CollapsibleTrigger className="flex w-full items-center gap-1 px-3 pt-2 pb-1">
               <ChevronDown className={`h-3 w-3 text-primary/60 transition-transform ${companiesOpen ? "" : "-rotate-90"}`} />
@@ -323,7 +320,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </>
           )}
 
-          <div className="mx-3 mt-3 border-t border-sidebar-border" />
+          {/* Divider between company groups and the rest of the nav */}
+          <div className="border-t border-sidebar-border/50 my-3" />
 
           {mainNav.slice(1).map(renderMainItem)}
 
