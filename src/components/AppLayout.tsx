@@ -119,6 +119,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   const renderMainItem = (item: { label: string; href: string; icon: any }) => {
     const active = location.pathname === item.href;
+    const isDashboard = item.label === "Dashboard";
     return (
       <Link
         key={item.href}
@@ -127,11 +128,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
           active
             ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground"
-            : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+            : isDashboard
+              ? "text-primary hover:bg-sidebar-accent/50 hover:text-sidebar-primary-foreground"
+              : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
         }`}
       >
-        <item.icon className="h-4 w-4 shrink-0" />
-        {item.label}
+        <item.icon className={`h-4 w-4 shrink-0 ${isDashboard ? "text-primary" : ""}`} />
+        <span className={isDashboard ? "uppercase tracking-wider" : ""}>{item.label}</span>
       </Link>
     );
   };
