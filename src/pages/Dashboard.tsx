@@ -441,12 +441,6 @@ export default function Dashboard() {
                         <span>Inc. Date</span>
                       </div>
                     </TableHead>
-                    <TableHead className="text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>Fiscal Year End</span>
-                      </div>
-                    </TableHead>
                     <TableHead className="text-xs">Status</TableHead>
                     <TableHead className="text-xs">
                       <div className="flex items-center gap-1.5">
