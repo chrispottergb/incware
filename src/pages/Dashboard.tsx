@@ -36,7 +36,7 @@ import cardExistingClient from "@/assets/card-existing-client.jpg";
 import cardAnnualUpdate from "@/assets/card-annual-update.jpg";
 import cardQuickSearch from "@/assets/card-quick-search.jpg";
 import TestBadge from "@/components/TestBadge";
-import AnnualMeetingsDueCard from "@/components/dashboard/AnnualMeetingsDueCard";
+import { getAnnualMeetingStatus, type AnnualMeetingStatusResult } from "@/hooks/useAnnualMeetingsDue";
 
 const ENTITY_TYPES = ["Corporation", "LLC", "Single Member LLC", "Non-Profit", "Partnership"];
 
@@ -68,6 +68,7 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("active");
+  const [annualFilter, setAnnualFilter] = useState<"all" | "overdue" | "due_soon" | "unscheduled">("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [taxReturnOpen, setTaxReturnOpen] = useState(false);
@@ -95,14 +96,60 @@ export default function Dashboard() {
     },
   });
 
-  // Company creation now handled by CreateCompanyWizard
+  // Last ANNUAL meeting per company — one query, never per row.
+  const { data: lastAnnualByCompany = {} } = useQuery({
+    queryKey: ["last-annual-meeting-dates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meetings")
+        .select("company_id, meeting_date")
+        .ilike("meeting_type", "Annual Meeting%")
+        .not("meeting_date", "is", null)
+        .range(0, 9999);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      for (const m of data || []) {
+        if (!m.company_id || !m.meeting_date) continue;
+        const prev = map[m.company_id];
+        if (!prev || (m.meeting_date as string) > prev) map[m.company_id] = m.meeting_date as string;
+      }
+      return map;
+    },
+  });
 
-  const filtered = companies.filter((c) => {
+  const today = new Date();
+
+  const annualStatusFor = (company: any): AnnualMeetingStatusResult => {
+    const iso = lastAnnualByCompany[company.id];
+    return getAnnualMeetingStatus(company, iso ? new Date(`${iso}T12:00:00`) : null, today);
+  };
+
+  const baseFiltered = companies.filter((c) => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
     const matchesType = filterType === "all" || c.entity_type === filterType;
     const matchesStatus = filterStatus === "all" || (filterStatus === "active" ? c.status !== "inactive" : c.status === "inactive");
     return matchesSearch && matchesType && matchesStatus;
   });
+
+  const withStatus = baseFiltered.map((c) => ({ company: c, annual: annualStatusFor(c) }));
+
+  const chipCounts = {
+    all: withStatus.length,
+    overdue: withStatus.filter((r) => r.annual.status === "OVERDUE").length,
+    due_soon: withStatus.filter((r) => r.annual.status === "DUE_SOON").length,
+    unscheduled: withStatus.filter((r) => r.annual.status === "UNSCHEDULED").length,
+  };
+
+  let rows = withStatus;
+  if (annualFilter === "overdue") rows = withStatus.filter((r) => r.annual.status === "OVERDUE");
+  else if (annualFilter === "due_soon") rows = withStatus.filter((r) => r.annual.status === "DUE_SOON");
+  else if (annualFilter === "unscheduled") rows = withStatus.filter((r) => r.annual.status === "UNSCHEDULED");
+
+  if (annualFilter === "overdue" || annualFilter === "due_soon") {
+    rows = rows.slice().sort((a, b) => (a.annual.dueDate?.getTime() ?? 0) - (b.annual.dueDate?.getTime() ?? 0));
+  }
+
+  const filtered = rows;
 
   const statusBadge = (company: typeof companies[0]) => {
     const status = company.corporate_status;
@@ -259,11 +306,6 @@ export default function Dashboard() {
       {/* Client Annual Review Link Generator */}
       <AnnualReviewLinkGenerator open={annualReviewOpen} onOpenChange={setAnnualReviewOpen} companies={companies} />
 
-      {/* AI Compliance Summary */}
-      <AnnualMeetingsDueCard />
-
-      <AIComplianceSummary />
-
       <div id="companies-section" />
       {isError && <QueryErrorBanner message="Failed to load companies." onRetry={refetch} />}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -316,6 +358,32 @@ export default function Dashboard() {
             <SelectItem value="all">All Clients</SelectItem>
           </SelectContent>
         </Select>
+        {/* Annual meeting chips — same filters row, compose with search/type/status */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {([
+            { key: "all", label: "All", count: chipCounts.all },
+            { key: "overdue", label: "Overdue", count: chipCounts.overdue },
+            { key: "due_soon", label: "Due soon", count: chipCounts.due_soon },
+            { key: "unscheduled", label: "No schedule set", count: chipCounts.unscheduled },
+          ] as const).map((chip) => {
+            const active = annualFilter === chip.key;
+            return (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={() => setAnnualFilter(active && chip.key !== "all" ? "all" : chip.key)}
+                className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs transition-colors ${
+                  active
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:bg-muted/50"
+                }`}
+              >
+                <span>{chip.label}</span>
+                <span className="font-semibold">({chip.count})</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Companies Table */}
@@ -371,11 +439,17 @@ export default function Dashboard() {
                       </div>
                     </TableHead>
                     <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <CalendarCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>Annual Meeting</span>
+                      </div>
+                    </TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((company) => (
+                  {filtered.map(({ company, annual }) => (
                     <TableRow
                       key={company.id}
                       className="cursor-pointer group"
@@ -421,6 +495,15 @@ export default function Dashboard() {
                       <TableCell className="text-xs text-muted-foreground">{company.fiscal_year_end || "—"}</TableCell>
                       <TableCell>{statusBadge(company)}</TableCell>
                       <TableCell>
+                        <AnnualMeetingChip
+                          result={annual}
+                          onSetSchedule={(e) => {
+                            e.stopPropagation();
+                            navigate(`/company/${company.id}#incorporation`);
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
                         <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary transition-colors" />
                       </TableCell>
                     </TableRow>
@@ -431,7 +514,40 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
+
+      <AIComplianceSummary />
     </div>
+  );
+}
+
+const ANNUAL_TONE_CLASS: Record<string, string> = {
+  red: "bg-destructive/10 text-destructive border-destructive/20",
+  amber: "bg-warning/10 text-warning border-warning/20",
+  neutral: "bg-muted text-muted-foreground border-border",
+  muted: "bg-muted/50 text-muted-foreground border-border",
+};
+
+function AnnualMeetingChip({
+  result,
+  onSetSchedule,
+}: {
+  result: AnnualMeetingStatusResult;
+  onSetSchedule: (e: React.MouseEvent) => void;
+}) {
+  const className = `text-[10px] px-1.5 py-0 whitespace-nowrap ${ANNUAL_TONE_CLASS[result.tone]}`;
+  if (result.status === "UNSCHEDULED") {
+    return (
+      <button type="button" onClick={onSetSchedule} className="focus:outline-none">
+        <Badge variant="outline" className={`${className} cursor-pointer hover:opacity-80`}>
+          {result.label}
+        </Badge>
+      </button>
+    );
+  }
+  return (
+    <Badge variant="outline" className={className}>
+      {result.label}
+    </Badge>
   );
 }
 
