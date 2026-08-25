@@ -23,9 +23,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Search, Code2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Code2, Database } from "lucide-react";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import AddressBookCard from "@/components/settings/AddressBookCard";
+import { Link } from "react-router-dom";
 
 type Shortcode = {
   id: string;
