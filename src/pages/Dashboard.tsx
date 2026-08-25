@@ -414,7 +414,7 @@ export default function Dashboard() {
         <Card>
           <CardContent className="p-0">
             <div className="overflow-x-auto rounded-lg">
-              <Table>
+              <Table className="min-w-[900px]">
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
                     <TableHead className="font-semibold text-xs sticky left-0 z-20 bg-card border-r border-border before:absolute before:inset-0 before:bg-muted/50 before:pointer-events-none">
