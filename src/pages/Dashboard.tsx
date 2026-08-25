@@ -458,8 +458,8 @@ export default function Dashboard() {
                       className="cursor-pointer group"
                       onClick={() => navigate(`/company/${company.id}`)}
                     >
-                      <TableCell className="font-medium text-sm">
-                        <div className="flex items-center gap-2.5">
+                      <TableCell className="font-medium text-sm sticky left-0 z-10 bg-card border-r border-border before:absolute before:inset-0 before:bg-muted/50 before:opacity-0 before:pointer-events-none group-hover:before:opacity-100">
+                        <div className="relative z-10 flex items-center gap-2.5">
                           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/8 shrink-0">
                             <Building2 className="h-3.5 w-3.5 text-primary" />
                           </div>
