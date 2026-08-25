@@ -374,7 +374,7 @@ export default function Dashboard() {
             { key: "overdue", label: "Overdue", count: chipCounts.overdue },
             { key: "due_soon", label: "Due soon", count: chipCounts.due_soon },
             { key: "unscheduled", label: "No schedule set", count: chipCounts.unscheduled },
-          ] as const).map((chip) => {
+          ] as const).filter((chip) => chip.key === "all" || chip.count > 0).map((chip) => {
             const active = annualFilter === chip.key;
             return (
               <button
