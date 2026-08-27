@@ -1990,6 +1990,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 30 + (data.officers ?? []).length * 7);
     y = section("Officers");
     const isSCorp = !!company?.s_election_date;
+    const officerCompensationClause = isNonprofitMeeting
+      ? ", and the Board has determined the compensation to be reasonable and aligned with IRS nonprofit compensation guidelines"
+      : isSCorp
+        ? ", and recognizing the requirement under IRC \u00A7 1366 that officer-shareholders receive reasonable compensation"
+        : "";
 
     const priorOfficerNames = new Set(
       (data.priorYear?.officers || []).map((o: any) => o.name?.toLowerCase())
@@ -1998,7 +2003,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const electionVerb = hasNewOfficers ? (isLLC ? "appointed" : "elected") : (isLLC ? "appointed" : "re-elected");
 
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${boardLabel()} ${boardVerb("has")} reviewed the current ${isLLC ? "management" : "officer"} positions and compensation of ${companyName}${isSCorp ? ", and recognizing the requirement under IRC \u00A7 1366 that officer-shareholders receive reasonable compensation" : ""}; and`,
+      `WHEREAS, the ${boardLabel()} ${boardVerb("has")} reviewed the current ${isLLC ? "management" : "officer"} positions and compensation of ${companyName}${officerCompensationClause}; and`,
       "",
       bt
     );
@@ -2050,7 +2055,9 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y = checkPageBreak(doc, y, 20);
       const rIndent = RESOLVED_INDENT;
       const resolvedPrefix = "FURTHER RESOLVED, ";
-      const resolvedBody = "that the Board has reviewed the compensation of each officer named above and determined that each salary is reasonable and commensurate with services performed, consistent with the requirements of IRC \u00A7 1366.";
+      const resolvedBody = isNonprofitMeeting
+        ? "that the Board has reviewed the compensation of each officer named above and determined that each salary is reasonable and commensurate with services performed. The Board has determined the compensation to be reasonable and aligned with IRS nonprofit compensation guidelines."
+        : "that the Board has reviewed the compensation of each officer named above and determined that each salary is reasonable and commensurate with services performed, consistent with the requirements of IRC \u00A7 1366.";
       const fullResolved = resolvedPrefix + resolvedBody;
       const rLines = doc.splitTextToSize(fullResolved, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN - rIndent);
       y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
@@ -2075,6 +2082,14 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       const processedNames = new Set<string>();
       const compParagraphs: string[] = [];
 
+      const sanitizeCompNote = (note: string): string => {
+        if (!isNonprofitMeeting) return note;
+        return note
+          .replace(/, consistent with IRC § 1366\./g, ". The Board has determined the compensation to be reasonable and aligned with IRS nonprofit compensation guidelines.")
+          .replace(/, as the duties performed do not constitute substantial services under IRC § 1366\./g, ". The Board has determined the compensation to be reasonable and aligned with IRS nonprofit compensation guidelines.")
+          .replace(/IRC § 1366/g, "IRS nonprofit compensation guidelines");
+      };
+
       for (const o of data.officers) {
         if (!o.compensation_note || !o.compensation_status) continue;
         const nameKey = (o.name || "").trim().toLowerCase();
@@ -2088,13 +2103,13 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         );
 
         if (secondaryRoles.length > 0 && !processedNames.has(nameKey)) {
-          compParagraphs.push(o.compensation_note);
+          compParagraphs.push(sanitizeCompNote(o.compensation_note));
           for (const sec of secondaryRoles) {
-            compParagraphs.push(sec.compensation_note);
+            compParagraphs.push(sanitizeCompNote(sec.compensation_note));
           }
           processedNames.add(nameKey);
         } else if (!processedNames.has(nameKey + o.id)) {
-          compParagraphs.push(o.compensation_note);
+          compParagraphs.push(sanitizeCompNote(o.compensation_note));
         }
       }
 

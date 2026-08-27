@@ -67,13 +67,16 @@ function getDefaultNoteText(
   salary: number | null,
   primaryTitle?: string,
   secondaryTitle?: string,
+  isNonprofit?: boolean,
 ): string {
   const amt = salary != null ? `$${Number(salary).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "$[AMOUNT]";
   switch (status) {
     case "pending_approval":
       return `Compensation for ${name} as ${title} has not yet been established. Compensation to be determined and approved by Board or Member Resolution at a future meeting.`;
     case "reasonable":
-      return `The Board has reviewed the compensation of ${name} as ${title} and determined that the salary of ${amt} is reasonable and commensurate with the services performed, consistent with IRC § 1366.`;
+      return isNonprofit
+        ? `The Board has reviewed the compensation of ${name} as ${title} and determined that the salary of ${amt} is reasonable and commensurate with the services performed. The Board has determined the compensation to be reasonable and aligned with IRS nonprofit compensation guidelines.`
+        : `The Board has reviewed the compensation of ${name} as ${title} and determined that the salary of ${amt} is reasonable and commensurate with the services performed, consistent with IRC § 1366.`;
     case "below_market":
       return `The Board has reviewed the compensation of ${name} as ${title} and determined that the salary of ${amt} is below prevailing market rates. The Board finds this level of compensation appropriate at this time for the following reason: [REASON]. The Board intends to review this compensation at the next annual meeting.`;
     case "above_market":
@@ -81,7 +84,9 @@ function getDefaultNoteText(
     case "included_in_primary":
       return `${name} serves as both ${primaryTitle || "[PRIMARY TITLE]"} and ${secondaryTitle || "[SECONDARY TITLE]"} of the corporation. Compensation is reported under the ${primaryTitle || "[PRIMARY TITLE]"} title. The Board determined that no separate compensation is assigned to the ${secondaryTitle || "[SECONDARY TITLE]"} role, as it is fulfilled by the same individual in conjunction with their primary duties.`;
     case "non_compensable":
-      return `The Board determined that the ${title} position is held in a limited, non-compensable capacity, as the duties performed do not constitute substantial services under IRC § 1366.`;
+      return isNonprofit
+        ? `The Board determined that the ${title} position is held in a limited, non-compensable capacity. The Board has determined the compensation to be reasonable and aligned with IRS nonprofit compensation guidelines.`
+        : `The Board determined that the ${title} position is held in a limited, non-compensable capacity, as the duties performed do not constitute substantial services under IRC § 1366.`;
     case "payroll_wages":
       return `The Board noted that ${name} holds an officer title but is compensated through standard employee payroll for operational services. Wages will be reported as officer compensation on the Company's tax return in accordance with IRS requirements.`;
   }
@@ -129,6 +134,21 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
       return data;
     },
   });
+
+  const { data: meetingCompany } = useQuery({
+    queryKey: ["meeting_company", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meetings")
+        .select("company_id, companies(entity_type)")
+        .eq("id", meetingId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const entityType = ((meetingCompany as any)?.companies?.entity_type || "").toString().toLowerCase();
+  const isNonprofit = entityType.includes("nonprofit") || entityType.includes("non-profit");
 
   // --- Dual-role detection ---
   const dualRoleGroups = useMemo<Map<string, DualRoleGroup>>(() => {
@@ -181,6 +201,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
             other.salary,
             primaryTitle,
             other.title || "Officer",
+            isNonprofit,
           );
           await supabase.from("meeting_officers").update({
             dual_role_type: "secondary",
@@ -316,6 +337,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
             other.salary,
             primaryTitle,
             other.title || "Officer",
+            isNonprofit,
           );
           await supabase.from("meeting_officers").update({
             dual_role_type: "secondary",
@@ -365,12 +387,12 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
         const group = getDualRoleGroup(row)!;
         const primaryRow = group.rows.find((r: any) => r.id === group.primaryId || isPrimary(r));
         setCompStatus("included_in_primary");
-        setCompNote(getDefaultNoteText("included_in_primary", row.name || "Officer", row.title || "Officer", row.salary, primaryRow?.title || "Officer", row.title || "Officer"));
+        setCompNote(getDefaultNoteText("included_in_primary", row.name || "Officer", row.title || "Officer", row.salary, primaryRow?.title || "Officer", row.title || "Officer", isNonprofit));
       } else {
         const noSalary = row.salary == null;
         const suggestedStatus: CompensationStatus = noSalary ? "non_compensable" : "reasonable";
         setCompStatus(suggestedStatus);
-        setCompNote(getDefaultNoteText(suggestedStatus, row.name || "Officer", row.title || "Officer", row.salary));
+        setCompNote(getDefaultNoteText(suggestedStatus, row.name || "Officer", row.title || "Officer", row.salary, undefined, undefined, isNonprofit));
       }
     }
     setCompDialogOpen(true);
@@ -382,9 +404,9 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
       if (newStatus === "included_in_primary") {
         const group = getDualRoleGroup(compOfficer);
         const primaryRow = group?.rows.find((r: any) => isPrimary(r));
-        setCompNote(getDefaultNoteText(newStatus, compOfficer.name || "Officer", compOfficer.title || "Officer", compOfficer.salary, primaryRow?.title || "Officer", compOfficer.title || "Officer"));
+        setCompNote(getDefaultNoteText(newStatus, compOfficer.name || "Officer", compOfficer.title || "Officer", compOfficer.salary, primaryRow?.title || "Officer", compOfficer.title || "Officer", isNonprofit));
       } else {
-        setCompNote(getDefaultNoteText(newStatus, compOfficer.name || "Officer", compOfficer.title || "Officer", compOfficer.salary));
+        setCompNote(getDefaultNoteText(newStatus, compOfficer.name || "Officer", compOfficer.title || "Officer", compOfficer.salary, undefined, undefined, isNonprofit));
       }
     }
   };
