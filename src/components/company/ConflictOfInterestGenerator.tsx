@@ -70,8 +70,7 @@ export default function ConflictOfInterestGenerator({ companyId, companyName, co
 
   const handlePreview = () => {
     if (previewUrl) {
-      const win = window.open("", "_blank");
-      if (win) win.location.href = previewUrl;
+      window.open(previewUrl, "_blank");
     }
   };
 
