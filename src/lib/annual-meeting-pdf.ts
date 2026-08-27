@@ -273,7 +273,7 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   y += 14;
   doc.setFontSize(12);
   doc.text(`OF ${fullName.toUpperCase()}`, pw / 2, y, { align: "center" });
-  y += 32;
+  y += 38;
 
   // ===== SECTION 1: MEETING INFORMATION =====
   sectionHeading("Meeting Information");
