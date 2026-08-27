@@ -1067,6 +1067,7 @@ export type Database = {
           board_elimination_date: string | null
           business_purpose: string | null
           city: string | null
+          conflict_policy_adopted_date: string | null
           contact_cell: string | null
           contact_email: string | null
           contact_full_name: string | null
@@ -1152,6 +1153,7 @@ export type Database = {
           board_elimination_date?: string | null
           business_purpose?: string | null
           city?: string | null
+          conflict_policy_adopted_date?: string | null
           contact_cell?: string | null
           contact_email?: string | null
           contact_full_name?: string | null
@@ -1237,6 +1239,7 @@ export type Database = {
           board_elimination_date?: string | null
           business_purpose?: string | null
           city?: string | null
+          conflict_policy_adopted_date?: string | null
           contact_cell?: string | null
           contact_email?: string | null
           contact_full_name?: string | null
@@ -1846,6 +1849,56 @@ export type Database = {
             columns: ["entry_id"]
             isOneToOne: false
             referencedRelation: "competitor_pricing_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conflict_disclosures: {
+        Row: {
+          company_id: string
+          conflict_disclosed: boolean
+          created_at: string
+          disclosure_year: number
+          id: string
+          notes: string | null
+          person_name: string
+          person_source: string
+          person_title: string | null
+          received_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          conflict_disclosed?: boolean
+          created_at?: string
+          disclosure_year: number
+          id?: string
+          notes?: string | null
+          person_name: string
+          person_source?: string
+          person_title?: string | null
+          received_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          conflict_disclosed?: boolean
+          created_at?: string
+          disclosure_year?: number
+          id?: string
+          notes?: string | null
+          person_name?: string
+          person_source?: string
+          person_title?: string | null
+          received_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conflict_disclosures_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
