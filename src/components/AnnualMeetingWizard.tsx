@@ -430,18 +430,22 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     }
     if (binderList.length === 0) binderList.push({ name: "", title: "", scope: "Full authority", status: "Confirmed" });
 
-    // Build bank accounts
+    // Build bank accounts — one row per authorized signer so every signer carries into the meeting
     const bankList = companyBanks.length > 0
-      ? companyBanks.map(b => {
+      ? companyBanks.flatMap(b => {
         const signers = bankSigners.filter(s => s.bank_id === b.id);
-        return {
+        if (signers.length === 0) {
+          return [{ institution: b.bank_name, accountType: b.account_type || "Checking", signatory: "", title: "" }];
+        }
+        return signers.map(s => ({
           institution: b.bank_name,
           accountType: b.account_type || "Checking",
-          signatory: signers.map(s => s.signer_name).join(", ") || "",
-          title: signers.map(s => s.title || "").join(", ") || "",
-        };
+          signatory: s.signer_name || "",
+          title: s.title || "",
+        }));
       })
       : [{ institution: "", accountType: "", signatory: "", title: "" }];
+
 
     // Build vehicles from assets
     const vehicleList = companyAssets
@@ -875,13 +879,19 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
           );
         }
 
-        const signerRows = data.bankAccounts.filter(b => b.institution && b.signatory).map(b => ({
-          meeting_id: mid,
-          signer_name: b.signatory,
-          bank_name: b.institution,
-          title: b.title || null,
-        }));
+        const signerRows = data.bankAccounts.filter(b => b.institution && b.signatory).flatMap(b => {
+          // A signatory cell may hold several comma-separated names (legacy/manual entry)
+          const names = String(b.signatory).split(",").map(n => n.trim()).filter(Boolean);
+          const titles = String(b.title || "").split(",").map(t => t.trim());
+          return names.map((name, i) => ({
+            meeting_id: mid,
+            signer_name: name,
+            bank_name: b.institution,
+            title: (names.length > 1 ? titles[i] : titles.join(", ")) || null,
+          }));
+        });
         if (signerRows.length > 0) await supabase.from("meeting_authorized_signers").insert(signerRows);
+
 
         // Save institutional loans
         const instLoanRows = (data.institutionalLoans || []).filter(l => l.lender).map(l => ({
