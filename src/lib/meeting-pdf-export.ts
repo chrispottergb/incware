@@ -999,14 +999,14 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
   doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
   const meetingTypeLabel = isShareholderMeeting ? "Meeting of Shareholders" : `Annual Meeting of ${governingLabel}`;
   doc.text(meetingTypeLabel, cx, y, { align: "center" });
-  y += 4;
+  y += 10;
 
   doc.setFontSize(12);
   doc.setFont("Arial", "italic");
   doc.setTextColor(30, 30, 30);
   doc.text(fullDateStr, cx, y, { align: "center" });
   doc.setFont("Arial", "normal");
-  y += 4;
+  y += 8;
 
 
   // Blue horizontal line beneath header
