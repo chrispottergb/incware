@@ -387,12 +387,12 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
         const group = getDualRoleGroup(row)!;
         const primaryRow = group.rows.find((r: any) => r.id === group.primaryId || isPrimary(r));
         setCompStatus("included_in_primary");
-        setCompNote(getDefaultNoteText("included_in_primary", row.name || "Officer", row.title || "Officer", row.salary, primaryRow?.title || "Officer", row.title || "Officer"));
+        setCompNote(getDefaultNoteText("included_in_primary", row.name || "Officer", row.title || "Officer", row.salary, primaryRow?.title || "Officer", row.title || "Officer", isNonprofit));
       } else {
         const noSalary = row.salary == null;
         const suggestedStatus: CompensationStatus = noSalary ? "non_compensable" : "reasonable";
         setCompStatus(suggestedStatus);
-        setCompNote(getDefaultNoteText(suggestedStatus, row.name || "Officer", row.title || "Officer", row.salary));
+        setCompNote(getDefaultNoteText(suggestedStatus, row.name || "Officer", row.title || "Officer", row.salary, undefined, undefined, isNonprofit));
       }
     }
     setCompDialogOpen(true);
