@@ -137,7 +137,7 @@ export function generateNonProfitAnnualMeetingPDF(data: NonProfitAnnualMeetingDa
     y += 14;
     doc.setFontSize(12);
     doc.text(corp.toUpperCase(), pw / 2, y, { align: "center" });
-    y += 28;
+    y += 34;
 
     // 2. Meeting held
     sectionHeading("Meeting");

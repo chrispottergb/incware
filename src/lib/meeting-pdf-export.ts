@@ -385,7 +385,7 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     doc.setFont("Arial", "bold");
     doc.setTextColor(30, 30, 30);
     doc.text(`MINUTES OF ${meetingType.toUpperCase()}`, cx, y, { align: "center" });
-    y += 4;
+    y += 8;
     doc.setFontSize(11);
     doc.setTextColor(60, 60, 60);
     const namePart = `${companyName} — `;
@@ -399,7 +399,7 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
     doc.setFont("Arial", "italic");
     doc.text(meetingDate, startX + namePartWidth, y);
     doc.setFont("Arial", "normal");
-    y += 4;
+    y += 6;
 
     // Blue horizontal line beneath header
     doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
@@ -1419,7 +1419,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
     doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
     const titleText = (isShareholder || isBoardEliminated) ? "MINUTES OF THE ANNUAL MEETING OF SHAREHOLDERS" : "MINUTES OF THE ANNUAL MEETING";
     doc.text(titleText, pw / 2, y, { align: "center" });
-    y += 6;
+    y += 14;
   } else {
     // Meeting Type Header
     y = addMeetingTypeHeader(doc, y, meeting.meeting_type, companyName, meetingDate, isWrittenConsent, meeting, company, data);
