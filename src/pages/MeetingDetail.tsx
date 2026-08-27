@@ -955,6 +955,7 @@ export default function MeetingDetail() {
         companyLeases,
         ratifications,
         ratificationPeriod,
+        conflictDisclosures,
       });
       
       return doc;
