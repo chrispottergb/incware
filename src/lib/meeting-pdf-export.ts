@@ -1634,17 +1634,38 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         return [line1, line2, zip].filter(Boolean).join(" ");
       };
 
+      // Dedupe key that treats "Richard M. Kuranda" and "Richard Kuranda" as the
+      // same person: punctuation and suffixes dropped, middle names/initials
+      // ignored, compared on first + last token only. Prevents the same director
+      // appearing twice when the officer/director rows spell the name differently.
+      const SUFFIXES = new Set(["jr", "sr", "ii", "iii", "iv", "v", "md", "phd", "esq", "cpa"]);
+      const personKey = (n: string) => {
+        const tokens = n
+          .toLowerCase()
+          .replace(/[^a-z\s]/g, " ")
+          .split(/\s+/)
+          .filter(t => t && !SUFFIXES.has(t));
+        if (tokens.length === 0) return "";
+        if (tokens.length === 1) return tokens[0];
+        return `${tokens[0]} ${tokens[tokens.length - 1]}`;
+      };
+
       const addAttendee = (name: string | null | undefined, displayOverride?: string) => {
         if (!name) return;
-        const key = normKey(name);
-        if (!key || attendeeMap.has(key)) return;
-        attendeeMap.set(key, { name: (displayOverride || name).trim(), address: buildAddress(name) });
+        const key = personKey(name);
+        if (!key) return;
+        const display = (displayOverride || name).trim();
+        const existing = attendeeMap.get(key);
+        // Keep the most complete spelling (e.g. prefer "Richard M. Kuranda").
+        if (existing && existing.name.length >= display.length) return;
+        attendeeMap.set(key, { name: display, address: buildAddress(name) });
       };
       (data.shareholders || []).forEach(s =>
         addAttendee(s.shareholder_name, formatShareholderDisplay(s, "inline"))
       );
       if (!isStatutoryClose) (data.directors || []).forEach(d => addAttendee(d.director_name));
       (data.officers || []).forEach(o => addAttendee(o.name));
+
       const attendeeEntries = Array.from(attendeeMap.values());
       if (attendeeEntries.length > 0) {
         doc.setFontSize(11);
