@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   FileText, Download, Eye, Loader2, Printer, Copy, Check, Share2, ShieldAlert,
 } from "lucide-react";
 import { generateConflictOfInterestPDF, type ConflictOfInterestData } from "@/lib/conflict-of-interest-pdf";
+import ConflictDisclosureCard from "@/components/company/ConflictDisclosureCard";
 
 interface Props {
   companyId: string;
@@ -22,6 +25,22 @@ export default function ConflictOfInterestGenerator({ companyId, companyName, co
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [adoptedDate, setAdoptedDate] = useState<string>(company?.conflict_policy_adopted_date ?? "");
+
+  useEffect(() => {
+    setAdoptedDate(company?.conflict_policy_adopted_date ?? "");
+  }, [company?.conflict_policy_adopted_date]);
+
+  const saveAdoptedDate = async (value: string) => {
+    setAdoptedDate(value);
+    const { error } = await supabase
+      .from("companies")
+      .update({ conflict_policy_adopted_date: value || null })
+      .eq("id", companyId);
+    if (error) toast.error(error.message);
+    else toast.success(value ? "Policy adoption date saved." : "Policy adoption date cleared.");
+  };
+
 
   const { data: directors = [] } = useQuery({
     queryKey: ["directors", companyId],
@@ -151,16 +170,46 @@ export default function ConflictOfInterestGenerator({ companyId, companyName, co
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Generate the IRS-required Conflict of Interest Policy for your 501(c)(3) tax-exempt organization. Includes the full policy text, procedures for addressing conflicts, and an annual disclosure statement form per IRS Form 1023 Schedule requirements.
+            The Conflict of Interest Policy is adopted once. Record the adoption date below; the annual
+            disclosure statements are handled separately in the card beneath this one.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Policy Adoption Date</Label>
+              <Input
+                type="date"
+                className="h-9 w-44"
+                value={adoptedDate}
+                onChange={(e) => setAdoptedDate(e.target.value)}
+                onBlur={(e) => {
+                  if ((e.target.value || "") !== (company?.conflict_policy_adopted_date ?? "")) {
+                    saveAdoptedDate(e.target.value);
+                  }
+                }}
+              />
+            </div>
+            {adoptedDate && (
+              <p className="text-xs text-muted-foreground pb-2.5">
+                Policy adopted on {new Date(adoptedDate + "T00:00:00").toLocaleDateString()} — no new policy is
+                needed each year.
+              </p>
+            )}
+          </div>
+
           <div className="flex flex-wrap gap-2">
-            <Button onClick={handleGenerate} disabled={isGenerating} variant="outline">
+            <Button
+              onClick={handleGenerate}
+              disabled={isGenerating}
+              variant={adoptedDate ? "ghost" : "outline"}
+              size={adoptedDate ? "sm" : "default"}
+            >
               {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-              Generate Policy
+              {adoptedDate ? "Regenerate / Amend Policy" : "Generate Policy"}
             </Button>
           </div>
+
 
           {pdfDoc && (
             <div className="flex flex-wrap gap-2">
@@ -194,6 +243,14 @@ export default function ConflictOfInterestGenerator({ companyId, companyName, co
           )}
         </CardContent>
       </Card>
+
+      <ConflictDisclosureCard
+        companyId={companyId}
+        companyName={companyName}
+        policyAdoptedDate={adoptedDate || null}
+      />
+
+
 
     </div>
   );
