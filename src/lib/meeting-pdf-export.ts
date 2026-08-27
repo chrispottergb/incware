@@ -204,7 +204,13 @@ interface MeetingData {
   ratifications?: { action_date: string | null; description: string; amount: number | null; is_related_party: boolean }[];
   /** Sweep period printed in the ratification recital. */
   ratificationPeriod?: { start: string; end: string };
+  /**
+   * Annual conflict of interest disclosure statements for the meeting's year
+   * (public.conflict_disclosures). Nonprofit annual meetings only.
+   */
+  conflictDisclosures?: { person_name: string; received_date: string | null; conflict_disclosed: boolean }[];
 }
+
 
 function addDFIHeader(doc: jsPDF, title: string, companyName: string, entityType: string, meeting?: any, company?: any) {
   const pw = doc.internal.pageSize.getWidth();
