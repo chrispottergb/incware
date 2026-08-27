@@ -999,7 +999,7 @@ function addWaiverOfNoticePages(doc: jsPDF, data: MeetingData): void {
   doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
   const meetingTypeLabel = isShareholderMeeting ? "Meeting of Shareholders" : `Annual Meeting of ${governingLabel}`;
   doc.text(meetingTypeLabel, cx, y, { align: "center" });
-  y += 13;
+  y += 6;
 
   doc.setFontSize(12);
   doc.setFont("Arial", "italic");
