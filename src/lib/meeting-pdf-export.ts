@@ -3834,7 +3834,26 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
   }
 
+  // State Compliance (nonprofit corporations only)
+  if (isNonprofitMeeting && !isWrittenConsent) {
+    y += 3;
+    y = checkPageBreak(doc, y, 30);
+    y = section("State Compliance");
+    doc.setFontSize(11);
+    doc.setFont("Arial", "normal");
+    doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
+    const stateComplianceText = "The Board acknowledged that the organization's annual nonprofit report and required state filing fee have been timely and properly filed with the State of Wisconsin for the current fiscal year. The filing is confirmed as complete and in good standing with the Wisconsin Department of Financial Institutions.";
+    const scLines = doc.splitTextToSize(stateComplianceText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+    for (const line of scLines) {
+      y = checkPageBreak(doc, y, 6);
+      doc.text(line, MARGIN, y);
+      y += 5;
+    }
+    y += 3;
+  }
+
   // Other Business / Vehicle Policy / Profit Improvement Plan (last section before adjournment)
+
   const hasOtherBiz = meeting.other_business?.trim();
   const hasProfitPlan = meeting.profit_improvement_plan?.trim();
   if (!isShareholderOnly && !isWrittenConsent && (hasOtherBiz || hasProfitPlan)) {
