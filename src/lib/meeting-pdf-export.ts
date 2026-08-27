@@ -2031,13 +2031,27 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 6;
 
     // Compensation Determinations block
-    if (isSCorp && (data.officers ?? []).length > 0) {
+    if (isNonprofitMeeting && (data.officers ?? []).length > 0) {
+      y = checkPageBreak(doc, y, 20);
+      const hasSecretary = (data.officers ?? []).some((o: any) => /secretary/i.test(o.title || ""));
+      const statement = hasSecretary
+        ? "The Board reviewed all officer positions and compensation and determined that the compensation levels set forth above are reasonable and aligned with IRS nonprofit compensation guidelines. The Board further notes that the Secretary position is non-compensable due to limited duties that do not constitute substantial services."
+        : "The Board reviewed all officer positions and compensation and determined that the compensation levels set forth above are reasonable and aligned with IRS nonprofit compensation guidelines.";
+      doc.setFontSize(11);
+      doc.setFont("Arial", "normal");
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
+      const stmtLines = doc.splitTextToSize(statement, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      for (const line of stmtLines) {
+        y = checkPageBreak(doc, y, 6);
+        doc.text(line, MARGIN, y);
+        y += 5.5;
+      }
+      y += 3;
+    } else if (isSCorp && (data.officers ?? []).length > 0) {
       y = checkPageBreak(doc, y, 20);
       const rIndent = RESOLVED_INDENT;
       const resolvedPrefix = "FURTHER RESOLVED, ";
-      const resolvedBody = isNonprofitMeeting
-        ? "that the Board has reviewed the compensation of each officer named above and determined that each salary is reasonable and commensurate with services performed. The Board has determined the compensation to be reasonable and aligned with IRS nonprofit compensation guidelines."
-        : "that the Board has reviewed the compensation of each officer named above and determined that each salary is reasonable and commensurate with services performed, consistent with the requirements of IRC \u00A7 1366.";
+      const resolvedBody = "that the Board has reviewed the compensation of each officer named above and determined that each salary is reasonable and commensurate with services performed, consistent with the requirements of IRC \u00A7 1366.";
       const fullResolved = resolvedPrefix + resolvedBody;
       const rLines = doc.splitTextToSize(fullResolved, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN - rIndent);
       y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
@@ -2058,7 +2072,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         y += 5.5;
       }
       y += 3;
-    } else {
+    } else if ((data.officers ?? []).length > 0) {
       const processedNames = new Set<string>();
       const compParagraphs: string[] = [];
 
@@ -2122,6 +2136,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         }
       }
     }
+
 
   }
 
