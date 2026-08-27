@@ -61,6 +61,8 @@ export function generateConflictDisclosurePDF(data: ConflictDisclosureData): jsP
   doc.setLineHeightFactor(1.15);
   const cx = pw(doc) / 2;
   const { companyName, disclosureYear, signers, policyAdoptedDate } = data;
+  // Avoid "Inc.." when the legal name already ends in a period.
+  const nameNoDot = companyName.replace(/\.$/, "");
 
   // ── COVER PAGE ──
   let y = 40;
@@ -159,7 +161,7 @@ export function generateConflictDisclosurePDF(data: ConflictDisclosureData): jsP
     );
 
     y = heading(doc, y, "Affirmations");
-    y = para(doc, y, `1.  I have received a copy of the Conflict of Interest Policy of ${companyName}.`);
+    y = para(doc, y, `1.  I have received a copy of the Conflict of Interest Policy of ${nameNoDot}.`);
     y = para(doc, y, `2.  I have read and understand the policy.`);
     y = para(doc, y, `3.  I agree to comply with the policy.`);
     y = para(
