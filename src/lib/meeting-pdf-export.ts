@@ -2082,6 +2082,14 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       const processedNames = new Set<string>();
       const compParagraphs: string[] = [];
 
+      const sanitizeCompNote = (note: string): string => {
+        if (!isNonprofitMeeting) return note;
+        return note
+          .replace(/, consistent with IRC § 1366\./g, ". The Board has determined the compensation to be reasonable and aligned with IRS nonprofit compensation guidelines.")
+          .replace(/, as the duties performed do not constitute substantial services under IRC § 1366\./g, ". The Board has determined the compensation to be reasonable and aligned with IRS nonprofit compensation guidelines.")
+          .replace(/IRC § 1366/g, "IRS nonprofit compensation guidelines");
+      };
+
       for (const o of data.officers) {
         if (!o.compensation_note || !o.compensation_status) continue;
         const nameKey = (o.name || "").trim().toLowerCase();
@@ -2095,13 +2103,13 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         );
 
         if (secondaryRoles.length > 0 && !processedNames.has(nameKey)) {
-          compParagraphs.push(o.compensation_note);
+          compParagraphs.push(sanitizeCompNote(o.compensation_note));
           for (const sec of secondaryRoles) {
-            compParagraphs.push(sec.compensation_note);
+            compParagraphs.push(sanitizeCompNote(sec.compensation_note));
           }
           processedNames.add(nameKey);
         } else if (!processedNames.has(nameKey + o.id)) {
-          compParagraphs.push(o.compensation_note);
+          compParagraphs.push(sanitizeCompNote(o.compensation_note));
         }
       }
 
