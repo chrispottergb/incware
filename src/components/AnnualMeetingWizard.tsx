@@ -430,18 +430,22 @@ export default function AnnualMeetingWizard({ company, onClose, onMeetingCreated
     }
     if (binderList.length === 0) binderList.push({ name: "", title: "", scope: "Full authority", status: "Confirmed" });
 
-    // Build bank accounts
+    // Build bank accounts — one row per authorized signer so every signer carries into the meeting
     const bankList = companyBanks.length > 0
-      ? companyBanks.map(b => {
+      ? companyBanks.flatMap(b => {
         const signers = bankSigners.filter(s => s.bank_id === b.id);
-        return {
+        if (signers.length === 0) {
+          return [{ institution: b.bank_name, accountType: b.account_type || "Checking", signatory: "", title: "" }];
+        }
+        return signers.map(s => ({
           institution: b.bank_name,
           accountType: b.account_type || "Checking",
-          signatory: signers.map(s => s.signer_name).join(", ") || "",
-          title: signers.map(s => s.title || "").join(", ") || "",
-        };
+          signatory: s.signer_name || "",
+          title: s.title || "",
+        }));
       })
       : [{ institution: "", accountType: "", signatory: "", title: "" }];
+
 
     // Build vehicles from assets
     const vehicleList = companyAssets
