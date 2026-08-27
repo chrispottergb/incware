@@ -244,6 +244,14 @@ export default function ConflictOfInterestGenerator({ companyId, companyName, co
         </CardContent>
       </Card>
 
+      <ConflictDisclosureCard
+        companyId={companyId}
+        companyName={companyName}
+        policyAdoptedDate={adoptedDate || null}
+      />
+
+
+
     </div>
   );
 }
