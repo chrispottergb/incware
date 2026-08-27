@@ -2030,111 +2030,39 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     });
     y = (doc as any).lastAutoTable.finalY + 6;
 
-    // Compensation Determinations block
-    if (isNonprofitMeeting && (data.officers ?? []).length > 0) {
+    // Unified compensation comment — produced once immediately after the officer table
+    if ((data.officers ?? []).length > 0) {
       y = checkPageBreak(doc, y, 20);
-      const hasSecretary = (data.officers ?? []).some((o: any) => /secretary/i.test(o.title || ""));
-      const statement = hasSecretary
-        ? "The Board reviewed all officer positions and compensation and determined that the compensation levels set forth above are reasonable and aligned with IRS nonprofit compensation guidelines. The Board further notes that the Secretary position is non-compensable due to limited duties that do not constitute substantial services."
-        : "The Board reviewed all officer positions and compensation and determined that the compensation levels set forth above are reasonable and aligned with IRS nonprofit compensation guidelines.";
+
+      const reviewerLabel = isLLC ? "members" : "Board";
+      const positionLabel = isLLC ? "manager/officer" : "officer";
+
+      const statement = isNonprofitMeeting
+        ? `The ${reviewerLabel} reviewed all ${positionLabel} positions and compensation and determined that the compensation levels set forth above are reasonable and aligned with IRS nonprofit compensation guidelines.`
+        : `The ${reviewerLabel} reviewed all ${positionLabel} positions and compensation and determined that the compensation levels set forth above are reasonable and appropriate for the services performed.`;
+
+      const nonCompensableTitles = (data.officers ?? [])
+        .filter((o: any) => o.compensation_status === "non_compensable")
+        .map((o: any) => o.title)
+        .filter(Boolean);
+
+      let fullStatement = statement;
+      if (nonCompensableTitles.length > 0) {
+        const titles = nonCompensableTitles.join(", ");
+        const verb = nonCompensableTitles.length === 1 ? "is" : "are";
+        fullStatement += ` The ${reviewerLabel} further notes that the ${titles} position${nonCompensableTitles.length === 1 ? "" : "s"} ${verb} unpaid due to limited duties that do not constitute substantial services.`;
+      }
+
       doc.setFontSize(11);
       doc.setFont("Arial", "normal");
       doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
-      const stmtLines = doc.splitTextToSize(statement, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
+      const stmtLines = doc.splitTextToSize(fullStatement, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
       for (const line of stmtLines) {
         y = checkPageBreak(doc, y, 6);
         doc.text(line, MARGIN, y);
         y += 5.5;
       }
       y += 3;
-    } else if (isSCorp && (data.officers ?? []).length > 0) {
-      y = checkPageBreak(doc, y, 20);
-      const rIndent = RESOLVED_INDENT;
-      const resolvedPrefix = "FURTHER RESOLVED, ";
-      const resolvedBody = "that the Board has reviewed the compensation of each officer named above and determined that each salary is reasonable and commensurate with services performed, consistent with the requirements of IRC \u00A7 1366.";
-      const fullResolved = resolvedPrefix + resolvedBody;
-      const rLines = doc.splitTextToSize(fullResolved, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN - rIndent);
-      y = checkPageBreak(doc, y, rLines.length * 5.5 + 6);
-
-      for (let i = 0; i < rLines.length; i++) {
-        y = checkPageBreak(doc, y, 6);
-        if (i === 0) {
-          doc.setFont("Arial", "bold");
-          const prefixWidth = doc.getTextWidth(resolvedPrefix);
-          doc.text(resolvedPrefix, MARGIN + rIndent, y);
-          doc.setFont("Arial", "normal");
-          const remainder = rLines[0].substring(resolvedPrefix.length);
-          if (remainder) doc.text(remainder, MARGIN + rIndent + prefixWidth, y);
-        } else {
-          doc.setFont("Arial", "normal");
-          doc.text(rLines[i], MARGIN + rIndent, y);
-        }
-        y += 5.5;
-      }
-      y += 3;
-    } else if ((data.officers ?? []).length > 0) {
-      const processedNames = new Set<string>();
-      const compParagraphs: string[] = [];
-
-      const sanitizeCompNote = (note: string): string => {
-        if (!isNonprofitMeeting) return note;
-        return note
-          .replace(/, consistent with IRC § 1366\./g, ". The Board has determined the compensation to be reasonable and aligned with IRS nonprofit compensation guidelines.")
-          .replace(/, as the duties performed do not constitute substantial services under IRC § 1366\./g, ". The Board has determined the compensation to be reasonable and aligned with IRS nonprofit compensation guidelines.")
-          .replace(/IRC § 1366/g, "IRS nonprofit compensation guidelines");
-      };
-
-      for (const o of data.officers) {
-        if (!o.compensation_note || !o.compensation_status) continue;
-        const nameKey = (o.name || "").trim().toLowerCase();
-        if (o.compensation_status === "included_in_primary") continue;
-
-        const secondaryRoles = (data.officers ?? []).filter((other: any) =>
-          other.id !== o.id &&
-          (other.name || "").trim().toLowerCase() === nameKey &&
-          other.compensation_status === "included_in_primary" &&
-          other.compensation_note
-        );
-
-        if (secondaryRoles.length > 0 && !processedNames.has(nameKey)) {
-          compParagraphs.push(sanitizeCompNote(o.compensation_note));
-          for (const sec of secondaryRoles) {
-            compParagraphs.push(sanitizeCompNote(sec.compensation_note));
-          }
-          processedNames.add(nameKey);
-        } else if (!processedNames.has(nameKey + o.id)) {
-          compParagraphs.push(sanitizeCompNote(o.compensation_note));
-        }
-      }
-
-      if (compParagraphs.length > 0) {
-        y = checkPageBreak(doc, y, 20);
-        doc.setFontSize(11);
-        doc.setFont("Arial", "normal");
-        doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
-        const introText = `The ${boardLabel()} made the following compensation determinations with respect to the ${isLLC ? "managers/officers" : "officers"} of the ${isLLC ? "LLC" : "corporation"}:`;
-        const introLines = doc.splitTextToSize(introText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-        for (const line of introLines) {
-          y = checkPageBreak(doc, y, 6);
-          doc.text(line, MARGIN, y);
-          y += 5.5;
-        }
-        y += 3;
-
-        for (const para of compParagraphs) {
-          y = checkPageBreak(doc, y, 20);
-          doc.setFontSize(11);
-          doc.setFont("Arial", "normal");
-          doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
-          const noteLines = doc.splitTextToSize(para, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
-          for (const line of noteLines) {
-            y = checkPageBreak(doc, y, 6);
-            doc.text(line, MARGIN, y);
-            y += 5.5;
-          }
-          y += 4;
-        }
-      }
     }
 
 
