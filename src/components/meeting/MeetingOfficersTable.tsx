@@ -404,9 +404,9 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
       if (newStatus === "included_in_primary") {
         const group = getDualRoleGroup(compOfficer);
         const primaryRow = group?.rows.find((r: any) => isPrimary(r));
-        setCompNote(getDefaultNoteText(newStatus, compOfficer.name || "Officer", compOfficer.title || "Officer", compOfficer.salary, primaryRow?.title || "Officer", compOfficer.title || "Officer"));
+        setCompNote(getDefaultNoteText(newStatus, compOfficer.name || "Officer", compOfficer.title || "Officer", compOfficer.salary, primaryRow?.title || "Officer", compOfficer.title || "Officer", isNonprofit));
       } else {
-        setCompNote(getDefaultNoteText(newStatus, compOfficer.name || "Officer", compOfficer.title || "Officer", compOfficer.salary));
+        setCompNote(getDefaultNoteText(newStatus, compOfficer.name || "Officer", compOfficer.title || "Officer", compOfficer.salary, undefined, undefined, isNonprofit));
       }
     }
   };
