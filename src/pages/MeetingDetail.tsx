@@ -561,6 +561,29 @@ export default function MeetingDetail() {
     enabled: !!meetingId,
   });
 
+  // Annual conflict of interest disclosures for the meeting's year (nonprofits print this).
+  const disclosureYear = Number(
+    (meeting as any)?.tax_year ||
+    (meeting as any)?.fiscal_year ||
+    ((meeting as any)?.meeting_date ? String((meeting as any).meeting_date).slice(0, 4) : new Date().getFullYear())
+  );
+  const { data: conflictDisclosures = [] } = useQuery({
+    queryKey: ["conflict_disclosures", companyId, disclosureYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("conflict_disclosures")
+        .select("person_name, received_date, conflict_disclosed")
+        .eq("company_id", companyId!)
+        .eq("disclosure_year", disclosureYear)
+        .order("person_name");
+      if (error) throw error;
+      return (data ?? []) as { person_name: string; received_date: string | null; conflict_disclosed: boolean }[];
+    },
+    enabled: !!companyId && Number.isFinite(disclosureYear),
+  });
+
+
+
 
 
   // Entity-wide Asset & Lease Transaction Log (replaces legacy per-meeting vehicle tables)
