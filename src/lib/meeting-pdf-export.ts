@@ -3730,13 +3730,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       `NOW, THEREFORE, BE IT RESOLVED, that the officers of the company are hereby authorized and directed to execute and deliver any and all documents, instruments, and certificates, and to take any and all actions as may be necessary or appropriate to carry out the intent and purposes of the foregoing resolutions.`,
       bt
     );
-    // Prospective standing authority — makes subsequent annual ratifications
-    // confirmations of acts within authority already granted.
+    // Prospective standing authority tied to the ratification list above.
     {
       doc.setFontSize(11);
       doc.setFont("Arial", "normal");
       doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
-      const prospective = `FURTHER RESOLVED, that the officers of the Company are authorized to conduct the ordinary business and affairs of the Company — including banking, borrowing within existing facilities, purchasing, contracting, leasing, and employment matters arising in the ordinary course — without further action of the ${boardLabel()}, until this authority is modified or revoked by subsequent action of the ${boardLabel()}.`;
+      const prospective = `FURTHER RESOLVED, that the officers of ${companyName} are authorized to take such further actions as may be necessary or appropriate to carry out and effectuate the purposes of the actions ratified above, including the execution and delivery of any and all documents, agreements, certificates, and instruments on behalf of ${companyName}.`;
       const pLines = doc.splitTextToSize(prospective, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
       y += 2;
       for (const line of pLines) {
