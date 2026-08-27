@@ -1357,6 +1357,11 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
   // shareholders exercise the powers otherwise vested in a board.
   const isBoardEliminated = isCloseCorp && !!(company as any)?.board_eliminated;
   const isStatutoryClose = isBoardEliminated;
+  // Nonprofit corporations (Wis. Stat. ch. 181) have no shareholders.
+  const isNonprofitMeeting = !isLLC && (() => {
+    const et = (company?.entity_type || "").toLowerCase();
+    return et.includes("nonprofit") || et.includes("non-profit");
+  })();
   // For section gating: a board-eliminated corporation includes the full directors-style section set.
   const isShareholderOnly = isShareholder && !isStatutoryClose;
   const bt = isAnnual || isShareholder; // blue theme flag for both annual and shareholder meetings
@@ -2149,8 +2154,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = (doc as any).lastAutoTable.finalY + 6;
   }
 
-  // Shareholders — skip for shareholder meetings and written consents
-  if (!isShareholderOnly && !isWrittenConsent && data.shareholders && (data.shareholders ?? []).length > 0) {
+  // Shareholders — skip for shareholder meetings, written consents, and nonprofits
+  if (!isShareholderOnly && !isWrittenConsent && !isNonprofitMeeting && data.shareholders && (data.shareholders ?? []).length > 0) {
     y = checkPageBreak(doc, y, 30 + (data.shareholders ?? []).length * 7);
     const memberLabel = isLLC ? "Members" : "Shareholders";
     y = section(memberLabel);
