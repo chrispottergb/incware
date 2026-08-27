@@ -1990,6 +1990,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 30 + (data.officers ?? []).length * 7);
     y = section("Officers");
     const isSCorp = !!company?.s_election_date;
+    const officerCompensationClause = isNonprofitMeeting
+      ? ", and the Board has determined the compensation to be reasonable and aligned with IRS nonprofit compensation guidelines"
+      : isSCorp
+        ? ", and recognizing the requirement under IRC \u00A7 1366 that officer-shareholders receive reasonable compensation"
+        : "";
 
     const priorOfficerNames = new Set(
       (data.priorYear?.officers || []).map((o: any) => o.name?.toLowerCase())
@@ -1998,7 +2003,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const electionVerb = hasNewOfficers ? (isLLC ? "appointed" : "elected") : (isLLC ? "appointed" : "re-elected");
 
     y = addWhereasResolved(doc, y,
-      `WHEREAS, the ${boardLabel()} ${boardVerb("has")} reviewed the current ${isLLC ? "management" : "officer"} positions and compensation of ${companyName}${isSCorp ? ", and recognizing the requirement under IRC \u00A7 1366 that officer-shareholders receive reasonable compensation" : ""}; and`,
+      `WHEREAS, the ${boardLabel()} ${boardVerb("has")} reviewed the current ${isLLC ? "management" : "officer"} positions and compensation of ${companyName}${officerCompensationClause}; and`,
       "",
       bt
     );
