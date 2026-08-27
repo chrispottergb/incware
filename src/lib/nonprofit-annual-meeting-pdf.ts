@@ -349,8 +349,11 @@ export function generateNonProfitAnnualMeetingPDF(data: NonProfitAnnualMeetingDa
       }
     }
 
+    // State compliance affirmation (Wisconsin nonprofit report filing).
+    sectionHeading("State Compliance");
+    para("The Board acknowledged that the organization's annual nonprofit report and required state filing fee have been timely and properly filed with the State of Wisconsin for the current fiscal year. The filing is confirmed as complete and in good standing with the Wisconsin Department of Financial Institutions.");
 
-    // 18. Other business
+    // 19. Other business
     sectionHeading("Other Business");
     if (gov.otherBusiness?.trim()) {
       para(gov.otherBusiness.trim());
