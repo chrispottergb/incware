@@ -201,6 +201,7 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
             other.salary,
             primaryTitle,
             other.title || "Officer",
+            isNonprofit,
           );
           await supabase.from("meeting_officers").update({
             dual_role_type: "secondary",
