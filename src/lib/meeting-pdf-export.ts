@@ -3777,7 +3777,31 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
   }
 
+  // Annual Conflict of Interest Disclosures (nonprofit corporations only)
+  {
+    const cds = (data.conflictDisclosures ?? []).filter((d) => (d?.person_name || "").trim().length > 0);
+    if (isNonprofitMeeting && !isWrittenConsent && cds.length > 0) {
+      const returned = cds.filter((d) => !!d.received_date).length;
+      const withConflicts = cds.filter((d) => d.conflict_disclosed).map((d) => d.person_name.trim());
+      y += 3;
+      y = checkPageBreak(doc, y, 30);
+      y = section("Annual Conflict of Interest Disclosures");
+      doc.setFontSize(11);
+      doc.setFont("Arial", "normal");
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
+      const conflictSentence = withConflicts.length > 0
+        ? `Interests were disclosed by the following: ${withConflicts.join(", ")}. Each disclosed interest was reviewed by the Board in accordance with the corporation's Conflict of Interest Policy.`
+        : `No conflicts of interest were disclosed.`;
+      y = addWhereasResolved(doc, y,
+        `WHEREAS, annual conflict of interest disclosure statements were distributed to the directors and officers of the corporation, and ${returned} of ${cds.length} statements were completed and returned; and ${conflictSentence}`,
+        `NOW, THEREFORE, BE IT RESOLVED, that the Board hereby acknowledges receipt and review of the annual conflict of interest disclosure statements, and directs that the completed statements be retained in the permanent records of the corporation.`,
+        bt
+      );
+    }
+  }
+
   // State Compliance (nonprofit corporations only)
+
   if (isNonprofitMeeting && !isWrittenConsent) {
     y += 3;
     y = checkPageBreak(doc, y, 30);
