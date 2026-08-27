@@ -195,18 +195,6 @@ export default function ConflictOfInterestGenerator({ companyId, companyName, co
         </CardContent>
       </Card>
 
-      {previewUrl && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-display flex items-center gap-2">
-              <Eye className="h-4 w-4" /> Preview
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <iframe src={previewUrl} className="w-full h-[600px] rounded border border-border" title="Conflict of Interest Policy Preview" />
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
