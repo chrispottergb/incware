@@ -135,6 +135,21 @@ export default function MeetingOfficersTable({ meetingId, titleOptions, showSala
     },
   });
 
+  const { data: meetingCompany } = useQuery({
+    queryKey: ["meeting_company", meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meetings")
+        .select("company_id, companies(entity_type)")
+        .eq("id", meetingId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const entityType = ((meetingCompany as any)?.companies?.entity_type || "").toString().toLowerCase();
+  const isNonprofit = entityType.includes("nonprofit") || entityType.includes("non-profit");
+
   // --- Dual-role detection ---
   const dualRoleGroups = useMemo<Map<string, DualRoleGroup>>(() => {
     const groups = new Map<string, DualRoleGroup>();
