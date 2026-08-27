@@ -1965,26 +1965,6 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 8;
   }
 
-  // Non-shareholder corp: Directors Present (before officers) — skip for written consents
-  if (data.directors && (data.directors ?? []).length > 0 && !isShareholderOnly && !isStatutoryClose && !isWrittenConsent && !isLLC) {
-    y += 3;
-    y = checkPageBreak(doc, y, 30 + (data.directors ?? []).length * 7);
-    y = section("Directors Present");
-    autoTable(doc, {
-      startY: y,
-      head: [["Director Name"]],
-      body: (data.directors ?? []).map(d => [d.director_name]),
-      theme: "grid",
-      headStyles: tableHeadStyles,
-      bodyStyles: { fontSize: 10 },
-      margin: { left: MARGIN, right: R_MARGIN },
-      columnStyles: {
-        0: { cellWidth: 50.8 },
-      },
-    });
-    y = (doc as any).lastAutoTable.finalY + 6;
-  }
-
   // Officers (with salary/bonus) — skip for shareholder meetings and written consents
   if (!isShareholderOnly && !isWrittenConsent && data.officers && (data.officers ?? []).length > 0) {
     y = checkPageBreak(doc, y, 30 + (data.officers ?? []).length * 7);
