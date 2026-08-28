@@ -4097,7 +4097,24 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const rightX = MARGIN + sigLineW + 20;
     doc.line(rightX, y, rightX + sigLineW, y);
     doc.text(secName ? `${secName}, Meeting Secretary` : "Secretary", rightX, y + 5);
+    y += 5;
+
+    // Closing footer statement (annual meetings)
+    if (isAnnual) {
+      y = checkPageBreak(doc, y + 12, 20);
+      doc.setFontSize(9);
+      doc.setFont("Arial", "italic");
+      doc.setTextColor(60, 60, 60);
+      const closing = "These minutes reflect the actions taken at the Annual Meeting held on the date stated above. The written record was subsequently prepared, reviewed, and approved.";
+      const lines = doc.splitTextToSize(closing, pw - MARGIN - R_MARGIN);
+      doc.text(lines, MARGIN, y);
+      y += lines.length * 4.5;
+      doc.setFont("Arial", "normal");
+      doc.setTextColor(30, 30, 30);
+      doc.setFontSize(10);
+    }
   }
+
 
   // Schedule A — overflow list of ratified actions, printed after the signatures.
   if (useScheduleA && bt && isAnnual && !isShareholder) {
