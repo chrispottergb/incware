@@ -33,6 +33,7 @@ const V2Layout = lazy(() => import("@/pages/v2/V2Layout"));
 const DashboardV2 = lazy(() => import("@/pages/v2/DashboardV2"));
 const ClientsV2 = lazy(() => import("@/pages/v2/ClientsV2"));
 const Strategy = lazy(() => import("@/pages/Strategy"));
+const DamageControl = lazy(() => import("@/pages/DamageControl"));
 
 const queryClient = new QueryClient();
 
@@ -188,6 +189,10 @@ const App = () => (
                   </AppLayout>
                 </ProtectedRoute>
               }
+            />
+            <Route
+              path="/damage-control"
+              element={<DamageControl />}
             />
             <Route path="/v2" element={<V2Layout />}>
               <Route index element={<DashboardV2 />} />
