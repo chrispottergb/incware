@@ -214,6 +214,20 @@ export default function DocumentsTab({ companyId }: Props) {
       }
       queryClient.invalidateQueries({ queryKey: ["company_documents", companyId] });
       toast.success(`${files.length} file(s) uploaded`);
+
+      // Marking an upload as the executed engagement letter records the
+      // execution date on the company (generating a draft does not).
+      if (markSignedEngagement && engagementExecutionDate) {
+        const { error: companyError } = await supabase
+          .from("companies")
+          .update({ engagement_letter_on_file: engagementExecutionDate })
+          .eq("id", companyId);
+        if (companyError) throw companyError;
+        queryClient.invalidateQueries({ queryKey: ["companies"] });
+        queryClient.invalidateQueries({ queryKey: ["company", companyId] });
+        setMarkSignedEngagement(false);
+        toast.success("Engagement letter marked as on file");
+      }
     } catch (err: any) {
       console.error("Document upload failed:", err);
       toast.error(`Upload failed: ${err?.message ?? "unknown error"}`);
