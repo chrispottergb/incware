@@ -115,6 +115,11 @@ export default function DocumentsTab({ companyId }: Props) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [engagementOpen, setEngagementOpen] = useState(false);
+  const [markSignedEngagement, setMarkSignedEngagement] = useState(false);
+  const [engagementExecutionDate, setEngagementExecutionDate] = useState(() =>
+    new Date().toISOString().slice(0, 10)
+  );
 
   const { data: documents = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["company_documents", companyId],
