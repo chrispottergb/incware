@@ -360,6 +360,15 @@ export default function DocumentsTab({ companyId }: Props) {
               {uploading ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
               Upload Files
             </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs"
+              onClick={() => setEngagementOpen(true)}
+            >
+              <FileSignature className="h-3.5 w-3.5 mr-1.5" />
+              Generate Engagement Letter
+            </Button>
             <div className="flex-1" />
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
