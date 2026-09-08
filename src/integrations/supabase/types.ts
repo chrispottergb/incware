@@ -4111,6 +4111,48 @@ export type Database = {
         }
         Relationships: []
       }
+      record_audit: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          changed_fields: string[] | null
+          company_id: string | null
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          operation: string
+          owner_user_id: string | null
+          record_id: string
+          table_name: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          changed_fields?: string[] | null
+          company_id?: string | null
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          operation: string
+          owner_user_id?: string | null
+          record_id: string
+          table_name: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          changed_fields?: string[] | null
+          company_id?: string | null
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          operation?: string
+          owner_user_id?: string | null
+          record_id?: string
+          table_name?: string
+        }
+        Relationships: []
+      }
       registered_agent_history: {
         Row: {
           address: string | null
