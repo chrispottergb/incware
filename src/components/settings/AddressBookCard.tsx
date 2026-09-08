@@ -64,6 +64,7 @@ export default function AddressBookCard() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [showHidden, setShowHidden] = useState(false);
+  const [showTest, setShowTest] = useState(false);
   const [editing, setEditing] = useState<EntryRow | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [renameConfirm, setRenameConfirm] = useState<{
