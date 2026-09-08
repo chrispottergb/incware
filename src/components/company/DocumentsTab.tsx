@@ -380,8 +380,37 @@ export default function DocumentsTab({ companyId }: Props) {
               />
             </div>
           </div>
+          <div className="flex items-center gap-3 flex-wrap mt-3 pt-3 border-t border-border">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="mark-signed-engagement"
+                checked={markSignedEngagement}
+                onCheckedChange={(v) => setMarkSignedEngagement(v === true)}
+              />
+              <Label htmlFor="mark-signed-engagement" className="text-xs font-normal cursor-pointer">
+                This upload is the signed engagement letter
+              </Label>
+            </div>
+            {markSignedEngagement && (
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-normal">Execution date</Label>
+                <Input
+                  type="date"
+                  className="h-8 text-xs w-[160px]"
+                  value={engagementExecutionDate}
+                  onChange={(e) => setEngagementExecutionDate(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
+
+      <EngagementLetterDialog
+        companyId={companyId}
+        open={engagementOpen}
+        onOpenChange={setEngagementOpen}
+      />
 
       {/* Category filter chips */}
       <div className="flex flex-wrap gap-1.5">
