@@ -341,6 +341,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   { label: "Document Signing", icon: PenTool },
                   { label: "Helpful Hints", icon: Lightbulb },
                   { label: "Compliance Reminders", icon: ShieldCheck },
+                  { label: "Legal Disclaimer", icon: Scale },
                 ].map((item) => (
                   <button
                     key={item.label}
