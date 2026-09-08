@@ -68,7 +68,7 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("active");
-  const [annualFilter, setAnnualFilter] = useState<"all" | "overdue" | "due_soon" | "unscheduled">("all");
+  const [annualFilter, setAnnualFilter] = useState<"all" | "overdue" | "due_soon" | "unscheduled" | "no_engagement_letter">("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [taxReturnOpen, setTaxReturnOpen] = useState(false);
@@ -138,6 +138,7 @@ export default function Dashboard() {
     overdue: withStatus.filter((r) => r.annual.status === "OVERDUE").length,
     due_soon: withStatus.filter((r) => r.annual.status === "DUE_SOON").length,
     unscheduled: withStatus.filter((r) => r.annual.status === "UNSCHEDULED").length,
+    no_engagement_letter: withStatus.filter((r) => !(r.company as any).engagement_letter_on_file).length,
   };
 
   // If the active chip's count drops to zero, fall back to All
@@ -145,7 +146,7 @@ export default function Dashboard() {
     if (annualFilter !== "all" && chipCounts[annualFilter] === 0) {
       setAnnualFilter("all");
     }
-  }, [annualFilter, chipCounts.overdue, chipCounts.due_soon, chipCounts.unscheduled]);
+  }, [annualFilter, chipCounts.overdue, chipCounts.due_soon, chipCounts.unscheduled, chipCounts.no_engagement_letter]);
 
 
 
@@ -153,6 +154,7 @@ export default function Dashboard() {
   if (annualFilter === "overdue") rows = withStatus.filter((r) => r.annual.status === "OVERDUE");
   else if (annualFilter === "due_soon") rows = withStatus.filter((r) => r.annual.status === "DUE_SOON");
   else if (annualFilter === "unscheduled") rows = withStatus.filter((r) => r.annual.status === "UNSCHEDULED");
+  else if (annualFilter === "no_engagement_letter") rows = withStatus.filter((r) => !(r.company as any).engagement_letter_on_file);
 
   if (annualFilter === "overdue" || annualFilter === "due_soon") {
     rows = rows.slice().sort((a, b) => (a.annual.dueDate?.getTime() ?? 0) - (b.annual.dueDate?.getTime() ?? 0));
@@ -374,6 +376,7 @@ export default function Dashboard() {
             { key: "overdue", label: "Overdue", count: chipCounts.overdue },
             { key: "due_soon", label: "Due soon", count: chipCounts.due_soon },
             { key: "unscheduled", label: "No schedule set", count: chipCounts.unscheduled },
+            { key: "no_engagement_letter", label: "No engagement letter", count: chipCounts.no_engagement_letter },
           ] as const).filter((chip) => chip.key === "all" || chip.count > 0).map((chip) => {
             const active = annualFilter === chip.key;
             return (

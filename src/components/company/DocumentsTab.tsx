@@ -46,8 +46,12 @@ import {
   Pencil,
   Check,
   X,
+  FileSignature,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import EngagementLetterDialog from "@/components/company/EngagementLetterDialog";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import {
   COMPANY_DOCUMENTS_BUCKET,
@@ -111,6 +115,11 @@ export default function DocumentsTab({ companyId }: Props) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [engagementOpen, setEngagementOpen] = useState(false);
+  const [markSignedEngagement, setMarkSignedEngagement] = useState(false);
+  const [engagementExecutionDate, setEngagementExecutionDate] = useState(() =>
+    new Date().toISOString().slice(0, 10)
+  );
 
   const { data: documents = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["company_documents", companyId],
@@ -205,6 +214,20 @@ export default function DocumentsTab({ companyId }: Props) {
       }
       queryClient.invalidateQueries({ queryKey: ["company_documents", companyId] });
       toast.success(`${files.length} file(s) uploaded`);
+
+      // Marking an upload as the executed engagement letter records the
+      // execution date on the company (generating a draft does not).
+      if (markSignedEngagement && engagementExecutionDate) {
+        const { error: companyError } = await supabase
+          .from("companies")
+          .update({ engagement_letter_on_file: engagementExecutionDate })
+          .eq("id", companyId);
+        if (companyError) throw companyError;
+        queryClient.invalidateQueries({ queryKey: ["companies"] });
+        queryClient.invalidateQueries({ queryKey: ["company", companyId] });
+        setMarkSignedEngagement(false);
+        toast.success("Engagement letter marked as on file");
+      }
     } catch (err: any) {
       console.error("Document upload failed:", err);
       toast.error(`Upload failed: ${err?.message ?? "unknown error"}`);
@@ -337,6 +360,15 @@ export default function DocumentsTab({ companyId }: Props) {
               {uploading ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
               Upload Files
             </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs"
+              onClick={() => setEngagementOpen(true)}
+            >
+              <FileSignature className="h-3.5 w-3.5 mr-1.5" />
+              Generate Engagement Letter
+            </Button>
             <div className="flex-1" />
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -348,8 +380,37 @@ export default function DocumentsTab({ companyId }: Props) {
               />
             </div>
           </div>
+          <div className="flex items-center gap-3 flex-wrap mt-3 pt-3 border-t border-border">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="mark-signed-engagement"
+                checked={markSignedEngagement}
+                onCheckedChange={(v) => setMarkSignedEngagement(v === true)}
+              />
+              <Label htmlFor="mark-signed-engagement" className="text-xs font-normal cursor-pointer">
+                This upload is the signed engagement letter
+              </Label>
+            </div>
+            {markSignedEngagement && (
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-normal">Execution date</Label>
+                <Input
+                  type="date"
+                  className="h-8 text-xs w-[160px]"
+                  value={engagementExecutionDate}
+                  onChange={(e) => setEngagementExecutionDate(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
+
+      <EngagementLetterDialog
+        companyId={companyId}
+        open={engagementOpen}
+        onOpenChange={setEngagementOpen}
+      />
 
       {/* Category filter chips */}
       <div className="flex flex-wrap gap-1.5">

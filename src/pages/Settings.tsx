@@ -26,6 +26,7 @@ import { toast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Search, Code2, Database } from "lucide-react";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import AddressBookCard from "@/components/settings/AddressBookCard";
+import FirmInformationCard from "@/components/settings/FirmInformationCard";
 import { Link } from "react-router-dom";
 
 type Shortcode = {
@@ -130,6 +131,8 @@ export default function Settings() {
       {isError && <QueryErrorBanner message="Failed to load shortcodes." onRetry={refetch} />}
 
       <AnnualReviewSettingsCard />
+
+      <FirmInformationCard />
 
       <AddressBookCard />
 
