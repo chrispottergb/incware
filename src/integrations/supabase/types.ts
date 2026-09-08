@@ -1079,6 +1079,7 @@ export type Database = {
           ein: string | null
           ein_encrypted: string | null
           election_1244: boolean | null
+          engagement_letter_on_file: string | null
           entity_type: string
           filing_date: string | null
           first_year_annual_meeting: number | null
@@ -1165,6 +1166,7 @@ export type Database = {
           ein?: string | null
           ein_encrypted?: string | null
           election_1244?: boolean | null
+          engagement_letter_on_file?: string | null
           entity_type?: string
           filing_date?: string | null
           first_year_annual_meeting?: number | null
@@ -1251,6 +1253,7 @@ export type Database = {
           ein?: string | null
           ein_encrypted?: string | null
           election_1244?: boolean | null
+          engagement_letter_on_file?: string | null
           entity_type?: string
           filing_date?: string | null
           first_year_annual_meeting?: number | null
@@ -2399,6 +2402,7 @@ export type Database = {
           contact_name: string | null
           contact_title: string | null
           created_at: string
+          default_fee_terms: string | null
           email: string | null
           firm_name: string
           firm_type: string
@@ -2422,6 +2426,7 @@ export type Database = {
           contact_name?: string | null
           contact_title?: string | null
           created_at?: string
+          default_fee_terms?: string | null
           email?: string | null
           firm_name: string
           firm_type?: string
@@ -2445,6 +2450,7 @@ export type Database = {
           contact_name?: string | null
           contact_title?: string | null
           created_at?: string
+          default_fee_terms?: string | null
           email?: string | null
           firm_name?: string
           firm_type?: string
