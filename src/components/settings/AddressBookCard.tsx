@@ -61,6 +61,7 @@ const emptyForm = {
  */
 export default function AddressBookCard() {
   const { user } = useAuth();
+  const testCompanyIds = useTestCompanyIds();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [showHidden, setShowHidden] = useState(false);
