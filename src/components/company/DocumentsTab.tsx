@@ -46,8 +46,12 @@ import {
   Pencil,
   Check,
   X,
+  FileSignature,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import EngagementLetterDialog from "@/components/company/EngagementLetterDialog";
 import { QueryErrorBanner } from "@/components/ui/query-error-banner";
 import {
   COMPANY_DOCUMENTS_BUCKET,
