@@ -132,6 +132,8 @@ export default function Settings() {
 
       <AnnualReviewSettingsCard />
 
+      <FirmInformationCard />
+
       <AddressBookCard />
 
       <Card>
