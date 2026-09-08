@@ -1,0 +1,2 @@
+UPDATE public.ownership_snapshots SET status = 'amended' WHERE id IN ('a97e6e80-8803-4ae5-9f90-5cff5f341013','395061de-4080-4a26-b0a6-039629a6a02f','6e62fdda-19dd-43c5-aad9-2705ef4cc5eb') AND status = 'locked';
+DELETE FROM public.companies WHERE id IN ('1eb5a528-b8a5-466f-80ad-d047ba4a8c13','ca00fad9-8195-4810-92ca-da4ac6d79131','e52c83f8-4657-46bc-988e-85ea210b0ce1');
