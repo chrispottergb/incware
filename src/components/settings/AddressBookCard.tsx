@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useTestCompanyIds } from "@/hooks/useTestCompanies";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,9 +61,11 @@ const emptyForm = {
  */
 export default function AddressBookCard() {
   const { user } = useAuth();
+  const testCompanyIds = useTestCompanyIds();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [showHidden, setShowHidden] = useState(false);
+  const [showTest, setShowTest] = useState(false);
   const [editing, setEditing] = useState<EntryRow | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [renameConfirm, setRenameConfirm] = useState<{
@@ -206,7 +209,10 @@ export default function AddressBookCard() {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    const visible = showHidden ? entries : entries.filter((e) => !e.is_hidden);
+    let visible = showHidden ? entries : entries.filter((e) => !e.is_hidden);
+    if (!showTest) {
+      visible = visible.filter((e) => !e.company_id || !testCompanyIds.has(e.company_id));
+    }
     if (!q) return visible;
     return visible.filter(
       (e) =>
@@ -215,7 +221,7 @@ export default function AddressBookCard() {
         (e.city || "").toLowerCase().includes(q) ||
         (e.company_name || "").toLowerCase().includes(q)
     );
-  }, [entries, search, showHidden]);
+  }, [entries, search, showHidden, showTest, testCompanyIds]);
 
   const hiddenCount = useMemo(() => entries.filter((e) => e.is_hidden).length, [entries]);
 
@@ -287,6 +293,12 @@ export default function AddressBookCard() {
             <Switch id="show-hidden" checked={showHidden} onCheckedChange={setShowHidden} />
             <Label htmlFor="show-hidden" className="text-xs font-normal cursor-pointer">
               Show hidden{hiddenCount > 0 ? ` (${hiddenCount})` : ""}
+            </Label>
+          </div>
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            <Switch id="show-test" checked={showTest} onCheckedChange={setShowTest} />
+            <Label htmlFor="show-test" className="text-xs font-normal cursor-pointer">
+              Show test companies
             </Label>
           </div>
         </div>
