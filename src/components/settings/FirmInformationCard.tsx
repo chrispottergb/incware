@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Building2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useZipLookup } from "@/hooks/useZipLookup";
 
 export const OWN_FIRM_TYPE = "own_firm";
 
@@ -61,6 +62,9 @@ export default function FirmInformationCard() {
   const queryClient = useQueryClient();
   const { data: firm, isLoading } = useOwnFirm();
   const [form, setForm] = useState<OwnFirmRecord>(EMPTY);
+  const { handleZipChange, isLoading: zipLoading, zipError } = useZipLookup(({ city, state }) =>
+    setForm((f) => ({ ...f, city, state }))
+  );
 
   useEffect(() => {
     if (firm) {
@@ -154,7 +158,24 @@ export default function FirmInformationCard() {
               {field("address_2", "Address Line 2")}
               {field("city", "City")}
               {field("state", "State")}
-              {field("zip", "ZIP")}
+              <div className="space-y-1.5">
+                <Label className="text-xs">ZIP</Label>
+                <div className="relative">
+                  <Input
+                    className="h-8 text-xs pr-7"
+                    value={form.zip}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setForm((f) => ({ ...f, zip: v }));
+                      handleZipChange(v);
+                    }}
+                  />
+                  {zipLoading && (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  )}
+                </div>
+                {zipError && <p className="text-[11px] text-destructive">{zipError}</p>}
+              </div>
               {field("email", "Email")}
               {field("contact_name", "Signer Name")}
               {field("contact_title", "Signer Title")}
