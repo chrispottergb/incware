@@ -209,7 +209,10 @@ export default function AddressBookCard() {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    const visible = showHidden ? entries : entries.filter((e) => !e.is_hidden);
+    let visible = showHidden ? entries : entries.filter((e) => !e.is_hidden);
+    if (!showTest) {
+      visible = visible.filter((e) => !e.company_id || !testCompanyIds.has(e.company_id));
+    }
     if (!q) return visible;
     return visible.filter(
       (e) =>
@@ -218,7 +221,7 @@ export default function AddressBookCard() {
         (e.city || "").toLowerCase().includes(q) ||
         (e.company_name || "").toLowerCase().includes(q)
     );
-  }, [entries, search, showHidden]);
+  }, [entries, search, showHidden, showTest, testCompanyIds]);
 
   const hiddenCount = useMemo(() => entries.filter((e) => e.is_hidden).length, [entries]);
 
