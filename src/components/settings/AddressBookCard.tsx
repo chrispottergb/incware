@@ -295,6 +295,12 @@ export default function AddressBookCard() {
               Show hidden{hiddenCount > 0 ? ` (${hiddenCount})` : ""}
             </Label>
           </div>
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            <Switch id="show-test" checked={showTest} onCheckedChange={setShowTest} />
+            <Label htmlFor="show-test" className="text-xs font-normal cursor-pointer">
+              Show test companies
+            </Label>
+          </div>
         </div>
 
         {isLoading ? (
