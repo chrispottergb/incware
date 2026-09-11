@@ -53,6 +53,13 @@ Authorize a Line of Credit; Approve Member Distributions; Approve Reasonable Com
 
 Left on current status, unchanged: Dashboard badge (476), TimelineTab (236), record-book-pdf, annual-update-pdf, annual-review snapshot + public page, bylaws-pdf, smllc-scorp-operating-agreement-pdf, SMOperatingAgreementGenerator, SCorpOAWarningBanner, IncorporationTab summary card.
 
+### e. Meetings missing a tax year, and meeting-date vs. tax-year drift
+
+Meetings with no tax year: Annual Meeting 9 of 98; Written Consent 6 of 18; Organizational Meeting 1 of 13; Shareholder Meeting 0 of 46; Special Meeting of Board of Directors 0 of 2; Annual Meeting of Members 0 of 1.
+
+Of the 89 Annual Meetings that do have a tax year, 85 are dated in a **later** calendar year than the year they cover, 4 are in the same year, none earlier. That is expected practice (a 2024 year reviewed at a 2025 meeting), but it means the meeting-date fallback would read S status a year late for the 9 annual meetings with no tax year. Reported only — the fallback rule stays as written for now.
+
+
 ## What gets built
 
 1. **Schema** — add `companies.s_revocation_date` (date, nullable, no default, no backfill) with a check that it is null, or set only when an election date exists and falls after it.
