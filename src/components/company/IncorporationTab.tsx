@@ -601,8 +601,9 @@ export default function IncorporationTab({ company }: Props) {
           par_value_type: form.par_value_type,
           par_value: form.par_value ? parseFloat(form.par_value) : null,
           s_election_date: sElectionAvailable
-            ? (llcSElectionEnabled ? (form.s_election_date || null) : null)
+            ? ((llcSElectionEnabled || form.s_revocation_date) ? (form.s_election_date || null) : null)
             : (form.s_election_date || null),
+          s_revocation_date: form.s_revocation_date || null,
           scheduled_meeting_ordinal: form.scheduled_meeting_ordinal || null,
           scheduled_meeting_day_of_week: form.scheduled_meeting_day_of_week || null,
           scheduled_meeting_month: form.scheduled_meeting_month || null,
