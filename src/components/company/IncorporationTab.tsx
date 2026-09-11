@@ -578,6 +578,9 @@ export default function IncorporationTab({ company }: Props) {
       if (sElectionAvailable && llcSElectionEnabled && !form.s_election_date) {
         throw new Error("S Election Effective Date is required when S Corporation tax status is enabled.");
       }
+      if (form.s_revocation_date && (!form.s_election_date || form.s_revocation_date <= form.s_election_date)) {
+        throw new Error("The date the S election ended must be after the date of the S election.");
+      }
 
       // Diff-based auto-dismiss of the LLC "Authorized Units" backfill banner.
       // We flip the flag ONLY when the submitted authorized_shares differs from
