@@ -68,7 +68,11 @@ Of the 89 Annual Meetings that do have a tax year, 85 are dated in a **later** c
 
 3. **UI** — Incorporation tab and Organization tab. Unchecking a saved S election opens a dialog: "Did the S election end, or was it entered in error?" *Ended* asks for the effective date and stores it as the revocation date, keeping the election date. *Entered in error* clears both, as today. When a revocation date exists it is shown as an editable field, and re-checking the election is blocked with: "EntityIQ tracks one S election period. Re-election after revocation is not supported." An invalid revocation date is caught inline before saving, so the rest of the form still saves.
 
-4. **Meeting reads** — the sites in (d) switch to the tax year when the meeting has one, otherwise the meeting date. Resolution lists resolve from entity type plus time-aware status (Corporation + S → "S Corporation"; LLC + S → "LLC-S"; Single Member LLC keeps its own list). Resolutions already saved on a meeting keep displaying and printing even if they are no longer in the selected list.
+4. **Derived S resolution lists** — `resolution-types.ts` builds the S Corporation and LLC-S lists from the Corporation and LLC lists by the substitutions in finding (c), preserving the existing S-specific statute and template wording. The two keys stay available to any code that already uses them.
+
+5. **Meeting reads** — the sites in (d) switch to the tax year when the meeting has one, otherwise the meeting date. Resolution lists resolve from entity type plus time-aware status (Corporation + S → S Corporation; LLC + S → LLC-S; Single Member LLC keeps its own list). Resolutions already saved on a meeting keep displaying and printing even if they are no longer in the selected list.
+
+No `s_election_date` values are touched — the flagged rows in finding (a) are for manual correction.
 
 ## Verification
 
