@@ -496,14 +496,13 @@ export default function RetentionResolutionPanel({
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = () => {
     if (!validate()) return;
     save.mutate();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 border rounded-lg p-4 bg-muted/20">
+    <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold">Retention of Earnings Details</h4>
       </div>
