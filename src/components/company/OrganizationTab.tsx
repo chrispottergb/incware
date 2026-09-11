@@ -471,6 +471,9 @@ export default function OrganizationTab({ companyId, company }: Props) {
       if (isLLCType(company.entity_type) && company.entity_type !== "LLC-S" && llcSElectionEnabled && !filingForm.s_election_date) {
         throw new Error("S Election Effective Date is required when LLC S Corporation tax status is enabled.");
       }
+      if (filingForm.s_revocation_date && (!filingForm.s_election_date || filingForm.s_revocation_date <= filingForm.s_election_date)) {
+        throw new Error("The date the S election ended must be after the date of the S election.");
+      }
 
       // Diff-based auto-dismiss of the LLC "Authorized Units" backfill banner.
       // Only flip the flag when this specific field's value actually changed;
