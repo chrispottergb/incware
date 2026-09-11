@@ -2,6 +2,19 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { savePdfReliably } from "./pdf-save";
 import { registerArialFont } from "@/lib/arial-font";
+import { isSElectedForTaxYear, isSElectedOn } from "@/lib/entity-terminology";
+
+/**
+ * S/C tax status AS OF the meeting being printed, so reprinting an older meeting
+ * does not show today's status. Uses the meeting's tax year when it has one,
+ * otherwise the meeting date; with neither, falls back to current status.
+ */
+function isSElectedForMeeting(company: any, meeting?: any): boolean {
+  if (!company) return false;
+  if (meeting?.tax_year) return isSElectedForTaxYear(company, meeting.tax_year);
+  if (meeting?.meeting_date) return isSElectedOn(company, meeting.meeting_date);
+  return isSElectedOn(company, null);
+}
 
 
 // Wisconsin DFI-style document formatting
@@ -450,7 +463,7 @@ function addMeetingTypeHeader(doc: jsPDF, y: number, meetingType: string, compan
 
     // S-Corporation status paragraph for corporations with S-election
     const isLLC = (company.entity_type || "").toLowerCase().includes("llc");
-    const hasSElection = company.s_election_date != null;
+    const hasSElection = isSElectedForMeeting(company, meeting);
     if (!isLLC && hasSElection) {
       const fye = company.fiscal_year_end || "December 31";
       const sCorpText = `The Secretary noted that the corporation has elected S corporation status under Subchapter S of the Internal Revenue Code, and that said election remains in full force and effect for the tax year ending ${fye}.`;
@@ -1098,7 +1111,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
   const entityType = company?.entity_type || "Corporation";
   const isLLC = entityType === "LLC" || entityType === "Single Member LLC";
   const isNonprofit = entityType === "Non-Profit";
-  const isSCorp = !!company?.s_election_date;
+  const isSCorp = isSElectedForMeeting(company, meeting);
   const entityLabel = isLLC ? "limited liability company" : isNonprofit ? "nonprofit corporation" : "corporation";
   const governingBody = isLLC ? "members" : "Board of Directors";
   const companyName = company?.name || "the Company";
@@ -1279,7 +1292,7 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
   }
 
   // 9. S Corp Election
-  if (isSCorp || company?.s_election_date) {
+  if (isSCorp) {
     y = checkPageBreak(doc, y, 30);
     y = addSectionTitle(doc, y, "S Corporation Election");
     const sDate = company?.s_election_date
@@ -1529,7 +1542,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
       }
 
       // S-Corporation status paragraph for corporations with S-election
-      const hasSElection = company?.s_election_date != null;
+      const hasSElection = isSElectedForMeeting(company, meeting);
       if (!isLLC && hasSElection) {
         const fye = company?.fiscal_year_end || "December 31";
         const sCorpText = `The Secretary noted that the corporation has elected S corporation status under Subchapter S of the Internal Revenue Code, and that said election remains in full force and effect for the tax year ending ${fye}.`;
@@ -1562,7 +1575,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         y += 3;
 
         // S-Corporation status paragraph (rendered after secretary is elected)
-        const hasSElection = company?.s_election_date != null;
+        const hasSElection = isSElectedForMeeting(company, meeting);
         if (!isLLC && hasSElection) {
           const fye = company?.fiscal_year_end || "December 31";
           const sCorpText = `The Secretary noted that the corporation has elected S corporation status under Subchapter S of the Internal Revenue Code, and that said election remains in full force and effect for the tax year ending ${fye}.`;
@@ -1975,7 +1988,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (!isShareholderOnly && !isWrittenConsent && data.officers && (data.officers ?? []).length > 0) {
     y = checkPageBreak(doc, y, 30 + (data.officers ?? []).length * 7);
     y = section("Officers");
-    const isSCorp = !!company?.s_election_date;
+    const isSCorp = isSElectedForMeeting(company, meeting);
     const officerCompensationClause = isNonprofitMeeting
       ? ", and the Board has determined the compensation to be reasonable and aligned with IRS nonprofit compensation guidelines"
       : isSCorp
@@ -2159,7 +2172,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       // S-corp clause is driven strictly by an actual S-election on file,
       // never by entity type alone (a plain LLC has no § 1362 election).
       const isSCorpEntity =
-        !!company?.s_election_date || company?.entity_type === "LLC-S";
+        isSElectedForMeeting(company, meeting) || company?.entity_type === "LLC-S";
       const distribMembers = (data.shareholders ?? []).filter(s => s.distribution_amount != null && Number(s.distribution_amount) > 0);
 
       if (distribMembers.length > 0) {

@@ -110,7 +110,7 @@ export function filterByCategory(
  * NOTE: the "LLC-S" entity type assumes multi-member; single-member LLCs electing
  * S-corp status use the "Single Member LLC" entity type with an s_election_date instead.
  */
-export const RESOLUTION_TYPES: Record<string, ResolutionType[]> = {
+const BASE_RESOLUTION_TYPES: Record<string, ResolutionType[]> = {
   Corporation: [
     { label: "Authorize a Line of Credit", statute: "Wis. Stat. § 180.0302", template: "WHEREAS, it would be in the best interests of the corporation to obtain a line of credit, and after discussion, it was\n\nRESOLVED, that the proper officers of this corporation are hereby authorized to contact the Bank and are further authorized to execute any documents necessary to establish a line of credit not to exceed $_______ (amount) dollars for and on behalf of the corporation." },
     { label: "Approve Officer Bonuses", statute: "Wis. Stat. § 180.0302", template: "WHEREAS, the Board of Directors has reviewed the performance of the officers of the corporation and, after discussion, it was\n\nRESOLVED, that for the exceptional direction, leadership and commitment to the growth and success of the corporation, the officer(s) listed hereunder will receive the following bonus for the year ending December 31, [YEAR]:\n\n[Officer Name] - $[Amount]" },
@@ -297,3 +297,72 @@ export const RESOLUTION_TYPES: Record<string, ResolutionType[]> = {
     { label: "Other" },
   ],
 };
+
+/**
+ * The hand-maintained "S Corporation" and "LLC-S" arrays above had drifted from
+ * their base lists (they were missing Approve Amendments to Bylaws, Approve Merger
+ * or Consolidation and Name Directors to Committees for S Corporation, and Adopt
+ * Regular Meeting Resolution for LLC-S — all of which still apply to S-taxed
+ * entities). The S lists are therefore DERIVED from the base Corporation / LLC
+ * lists: every base entry is inherited in base order, with a few labels swapped for
+ * their S-specific counterparts. Where an S-specific entry already exists above,
+ * its statute and template text is reused verbatim.
+ */
+const S_CORP_LABEL_SUBSTITUTIONS: Record<string, string> = {
+  "Approve Officer Bonuses": "Approve Officer Bonuses (Reasonable Compensation)",
+  "Approve Distributions/Dividends": "Approve Distributions",
+  "Approve Tax Election (S-Corp)": "Revoke S-Election",
+};
+
+const LLC_S_LABEL_SUBSTITUTIONS: Record<string, string> = {
+  "Approve Guaranteed Payments": "Approve Reasonable Compensation",
+  "Approve Tax Classification Election": "Revoke S-Election",
+};
+
+function deriveSList(
+  baseList: ResolutionType[],
+  legacySList: ResolutionType[],
+  substitutions: Record<string, string>
+): ResolutionType[] {
+  const byLabel = new Map(legacySList.map((r) => [r.label, r]));
+  return baseList.map((entry) => {
+    const label = substitutions[entry.label] ?? entry.label;
+    const sVersion = byLabel.get(label);
+    if (sVersion) return sVersion;
+    return { ...entry, label };
+  });
+}
+
+export const RESOLUTION_TYPES: Record<string, ResolutionType[]> = {
+  ...BASE_RESOLUTION_TYPES,
+  "S Corporation": deriveSList(
+    BASE_RESOLUTION_TYPES.Corporation,
+    BASE_RESOLUTION_TYPES["S Corporation"],
+    S_CORP_LABEL_SUBSTITUTIONS
+  ),
+  "LLC-S": deriveSList(
+    BASE_RESOLUTION_TYPES.LLC,
+    BASE_RESOLUTION_TYPES["LLC-S"],
+    LLC_S_LABEL_SUBSTITUTIONS
+  ),
+};
+
+/**
+ * Resolves the resolution list for an entity, taking the S/C tax status that
+ * applies to the meeting being edited into account. Single Member LLC keeps its
+ * own list regardless of S status.
+ */
+export function getResolutionTypesFor(
+  entityType: string | undefined | null,
+  isSElectedForMeeting: boolean
+): ResolutionType[] {
+  const type = entityType || "Corporation";
+  if (isSElectedForMeeting) {
+    if (type === "Corporation") return RESOLUTION_TYPES["S Corporation"];
+    if (type === "LLC" || type === "LLC-S") return RESOLUTION_TYPES["LLC-S"];
+  } else {
+    // A meeting from before the S election (or after it ended) uses the base list.
+    if (type === "LLC-S") return RESOLUTION_TYPES.LLC;
+  }
+  return RESOLUTION_TYPES[type] || RESOLUTION_TYPES.Corporation;
+}

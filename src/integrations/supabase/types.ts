@@ -1122,6 +1122,7 @@ export type Database = {
           registered_agent_type: string | null
           registered_agent_zip: string | null
           s_election_date: string | null
+          s_revocation_date: string | null
           salutation_name: string | null
           scheduled_annual_meeting: string | null
           scheduled_meeting_day_of_week: string | null
@@ -1209,6 +1210,7 @@ export type Database = {
           registered_agent_type?: string | null
           registered_agent_zip?: string | null
           s_election_date?: string | null
+          s_revocation_date?: string | null
           salutation_name?: string | null
           scheduled_annual_meeting?: string | null
           scheduled_meeting_day_of_week?: string | null
@@ -1296,6 +1298,7 @@ export type Database = {
           registered_agent_type?: string | null
           registered_agent_zip?: string | null
           s_election_date?: string | null
+          s_revocation_date?: string | null
           salutation_name?: string | null
           scheduled_annual_meeting?: string | null
           scheduled_meeting_day_of_week?: string | null

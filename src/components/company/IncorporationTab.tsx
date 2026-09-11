@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { generateIRSFaxCoverSheet } from "@/lib/irs-fax-cover-pdf";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import SaveStatusIndicator from "@/components/SaveStatusIndicator";
+import SElectionEndDialog from "@/components/company/SElectionEndDialog";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import NameAutocomplete from "@/components/NameAutocomplete";
@@ -199,6 +200,7 @@ export default function IncorporationTab({ company }: Props) {
     par_value_type: company.par_value_type ?? "par",
     par_value: company.par_value?.toString() ?? "",
     s_election_date: company.s_election_date ?? "",
+    s_revocation_date: (company as any).s_revocation_date ?? "",
     scheduled_meeting_ordinal: (company as any).scheduled_meeting_ordinal ?? "",
     scheduled_meeting_day_of_week: (company as any).scheduled_meeting_day_of_week ?? "",
     scheduled_meeting_month: (company as any).scheduled_meeting_month ?? "",
@@ -263,7 +265,8 @@ export default function IncorporationTab({ company }: Props) {
     if (/^https?:\/\//i.test(trimmed)) return trimmed;
     return `https://${trimmed}`;
   };
-  const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(!!company.s_election_date);
+  const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(!!company.s_election_date && !(company as any).s_revocation_date);
+  const [sEndDialogOpen, setSEndDialogOpen] = useState(false);
 
   // Reset form when company changes (e.g. navigating between entities)
   useEffect(() => {
@@ -278,6 +281,7 @@ export default function IncorporationTab({ company }: Props) {
       par_value_type: company.par_value_type ?? "par",
       par_value: company.par_value?.toString() ?? "",
       s_election_date: company.s_election_date ?? "",
+      s_revocation_date: (company as any).s_revocation_date ?? "",
       scheduled_meeting_ordinal: (company as any).scheduled_meeting_ordinal ?? "",
       scheduled_meeting_day_of_week: (company as any).scheduled_meeting_day_of_week ?? "",
       scheduled_meeting_month: (company as any).scheduled_meeting_month ?? "",
@@ -323,7 +327,7 @@ export default function IncorporationTab({ company }: Props) {
         (company.entity_type === "Non-Profit" ? DEFAULT_NON_DISTRIBUTION_CLAUSE : ""),
       organizational_structure: (company as any).organizational_structure ?? "",
     });
-    setLlcSElectionEnabled(!!company.s_election_date);
+    setLlcSElectionEnabled(!!company.s_election_date && !(company as any).s_revocation_date);
   }, [company.id]);
 
 
@@ -575,6 +579,9 @@ export default function IncorporationTab({ company }: Props) {
       if (sElectionAvailable && llcSElectionEnabled && !form.s_election_date) {
         throw new Error("S Election Effective Date is required when S Corporation tax status is enabled.");
       }
+      if (form.s_revocation_date && (!form.s_election_date || form.s_revocation_date <= form.s_election_date)) {
+        throw new Error("The date the S election ended must be after the date of the S election.");
+      }
 
       // Diff-based auto-dismiss of the LLC "Authorized Units" backfill banner.
       // We flip the flag ONLY when the submitted authorized_shares differs from
@@ -598,8 +605,9 @@ export default function IncorporationTab({ company }: Props) {
           par_value_type: form.par_value_type,
           par_value: form.par_value ? parseFloat(form.par_value) : null,
           s_election_date: sElectionAvailable
-            ? (llcSElectionEnabled ? (form.s_election_date || null) : null)
+            ? ((llcSElectionEnabled || form.s_revocation_date) ? (form.s_election_date || null) : null)
             : (form.s_election_date || null),
+          s_revocation_date: form.s_revocation_date || null,
           scheduled_meeting_ordinal: form.scheduled_meeting_ordinal || null,
           scheduled_meeting_day_of_week: form.scheduled_meeting_day_of_week || null,
           scheduled_meeting_month: form.scheduled_meeting_month || null,
@@ -1590,10 +1598,18 @@ export default function IncorporationTab({ company }: Props) {
               <Checkbox
                 id="s_election_corp"
                 checked={llcSElectionEnabled}
+                disabled={!!form.s_revocation_date}
                 onCheckedChange={(checked) => {
                   const enabled = !!checked;
+                  if (!enabled) {
+                    if (company.s_election_date) {
+                      // A saved election is history — ask whether it ended or was a mistake.
+                      setSEndDialogOpen(true);
+                      return;
+                    }
+                    updateAndSave("s_election_date", "");
+                  }
                   setLlcSElectionEnabled(enabled);
-                  if (!enabled) updateAndSave("s_election_date", "");
                 }}
               />
               <div className="flex-1">
@@ -1624,9 +1640,37 @@ export default function IncorporationTab({ company }: Props) {
                     </button>
                   </div>
                 )}
+                {!!form.s_revocation_date && (
+                  <div className="mt-2 field-group max-w-xs">
+                    <p className="text-[11px] text-muted-foreground">
+                      S election in effect from {form.s_election_date}. To elect again, clear the end date below.
+                    </p>
+                    <Label className="field-label">Date the S election ended</Label>
+                    <DatePickerField
+                      value={form.s_revocation_date || ""}
+                      onChange={(v) => updateAndSave("s_revocation_date", v)}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
+
+          <SElectionEndDialog
+            open={sEndDialogOpen}
+            onOpenChange={setSEndDialogOpen}
+            electionDate={form.s_election_date || ""}
+            onEnded={(d) => {
+              setLlcSElectionEnabled(false);
+              updateAndSave("s_revocation_date", d);
+            }}
+            onEnteredInError={() => {
+              setLlcSElectionEnabled(false);
+              setForm((prev) => ({ ...prev, s_election_date: "", s_revocation_date: "" }));
+              setTimeout(() => incAutoSave.triggerSave(), 50);
+            }}
+          />
+
 
           {/* LLC: Membership Interest note */}
           {equityCard.showMembershipUnits && (
