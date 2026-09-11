@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { generateIRSFaxCoverSheet } from "@/lib/irs-fax-cover-pdf";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import SaveStatusIndicator from "@/components/SaveStatusIndicator";
+import SElectionEndDialog from "@/components/company/SElectionEndDialog";
 import { useZipLookup } from "@/hooks/useZipLookup";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import NameAutocomplete from "@/components/NameAutocomplete";
