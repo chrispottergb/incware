@@ -434,6 +434,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
 
   const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(!!company.s_election_date && !(company as any).s_revocation_date);
   const [sEndDialogOpen, setSEndDialogOpen] = useState(false);
+  const [pendingSElectionSave, setPendingSElectionSave] = useState(false);
 
   // Phone formatting helper
   const formatPhone = (value: string): string => {
@@ -1408,12 +1409,12 @@ export default function OrganizationTab({ companyId, company }: Props) {
               onEnded={(d) => {
                 setLlcSElectionEnabled(false);
                 setFilingForm((p) => ({ ...p, s_revocation_date: d }));
-                saveFiling.mutate();
+                setPendingSElectionSave(true);
               }}
               onEnteredInError={() => {
                 setLlcSElectionEnabled(false);
                 setFilingForm((p) => ({ ...p, s_election_date: "", s_revocation_date: "" }));
-                saveFiling.mutate();
+                setPendingSElectionSave(true);
               }}
             />
             <div className="flex justify-end">
