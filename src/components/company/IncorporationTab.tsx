@@ -1590,10 +1590,18 @@ export default function IncorporationTab({ company }: Props) {
               <Checkbox
                 id="s_election_corp"
                 checked={llcSElectionEnabled}
+                disabled={!!form.s_revocation_date}
                 onCheckedChange={(checked) => {
                   const enabled = !!checked;
+                  if (!enabled) {
+                    if (company.s_election_date) {
+                      // A saved election is history — ask whether it ended or was a mistake.
+                      setSEndDialogOpen(true);
+                      return;
+                    }
+                    updateAndSave("s_election_date", "");
+                  }
                   setLlcSElectionEnabled(enabled);
-                  if (!enabled) updateAndSave("s_election_date", "");
                 }}
               />
               <div className="flex-1">
