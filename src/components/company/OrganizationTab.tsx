@@ -340,6 +340,7 @@ export default function OrganizationTab({ companyId, company }: Props) {
     max_vps_allowed: company.max_vps_allowed?.toString() ?? "",
     additional_provisions: company.additional_provisions ?? "",
     s_election_date: company.s_election_date ?? "",
+    s_revocation_date: (company as any).s_revocation_date ?? "",
     address: company.address ?? "",
     address_2: company.address_2 ?? "",
     city: company.city ?? "",
@@ -431,7 +432,8 @@ export default function OrganizationTab({ companyId, company }: Props) {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(!!company.s_election_date);
+  const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(!!company.s_election_date && !(company as any).s_revocation_date);
+  const [sEndDialogOpen, setSEndDialogOpen] = useState(false);
 
   // Phone formatting helper
   const formatPhone = (value: string): string => {
@@ -453,9 +455,13 @@ export default function OrganizationTab({ companyId, company }: Props) {
   };
 
   useEffect(() => {
-    setLlcSElectionEnabled(!!company.s_election_date);
-    setFilingForm((prev) => ({ ...prev, s_election_date: company.s_election_date ?? "" }));
-  }, [company.id, company.s_election_date]);
+    setLlcSElectionEnabled(!!company.s_election_date && !(company as any).s_revocation_date);
+    setFilingForm((prev) => ({
+      ...prev,
+      s_election_date: company.s_election_date ?? "",
+      s_revocation_date: (company as any).s_revocation_date ?? "",
+    }));
+  }, [company.id, company.s_election_date, (company as any).s_revocation_date]);
 
    const saveFiling = useMutation({
     mutationFn: async () => {
@@ -517,8 +523,9 @@ export default function OrganizationTab({ companyId, company }: Props) {
           contact_cell: filingForm.contact_cell || null,
           contact_webpage: filingForm.contact_webpage ? formatWebpage(filingForm.contact_webpage) : null,
           s_election_date: isLLCType(company.entity_type) && company.entity_type !== "LLC-S"
-            ? (llcSElectionEnabled ? (filingForm.s_election_date || null) : null)
+            ? ((llcSElectionEnabled || filingForm.s_revocation_date) ? (filingForm.s_election_date || null) : null)
             : (filingForm.s_election_date || null),
+          s_revocation_date: filingForm.s_revocation_date || null,
           management_type: isLLCType(company.entity_type) ? (filingForm.management_type || null) : (company as any).management_type,
         } as any)
         .eq("id", companyId);
@@ -1348,12 +1355,18 @@ export default function OrganizationTab({ companyId, company }: Props) {
                 <Checkbox
                   id="s_election_llc"
                   checked={llcSElectionEnabled}
+                  disabled={!!filingForm.s_revocation_date}
                   onCheckedChange={(checked) => {
                     const enabled = !!checked;
-                    setLlcSElectionEnabled(enabled);
                     if (!enabled) {
+                      if (company.s_election_date) {
+                        // A saved election is history — ask whether it ended or was a mistake.
+                        setSEndDialogOpen(true);
+                        return;
+                      }
                       setFilingForm((p) => ({ ...p, s_election_date: "" }));
                     }
+                    setLlcSElectionEnabled(enabled);
                   }}
                 />
                 <div className="flex-1">
@@ -1372,9 +1385,37 @@ export default function OrganizationTab({ companyId, company }: Props) {
                       )}
                     </div>
                   )}
+                  {!!filingForm.s_revocation_date && (
+                    <div className="mt-2 field-group max-w-xs">
+                      <p className="text-[11px] text-muted-foreground">
+                        S election in effect from {filingForm.s_election_date}. To elect again, clear the end date below.
+                      </p>
+                      <Label className="field-label">Date the S election ended</Label>
+                      <DatePickerField
+                        value={filingForm.s_revocation_date}
+                        onChange={(v) => setFilingForm((p) => ({ ...p, s_revocation_date: v || "" }))}
+                        placeholder="Select end date"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             )}
+            <SElectionEndDialog
+              open={sEndDialogOpen}
+              onOpenChange={setSEndDialogOpen}
+              electionDate={filingForm.s_election_date}
+              onEnded={(d) => {
+                setLlcSElectionEnabled(false);
+                setFilingForm((p) => ({ ...p, s_revocation_date: d }));
+                saveFiling.mutate();
+              }}
+              onEnteredInError={() => {
+                setLlcSElectionEnabled(false);
+                setFilingForm((p) => ({ ...p, s_election_date: "", s_revocation_date: "" }));
+                saveFiling.mutate();
+              }}
+            />
             <div className="flex justify-end">
               <SaveStatusIndicator status={filingAutoSave.status} lastSavedAt={filingAutoSave.lastSavedAt} />
             </div>

@@ -25,7 +25,7 @@ import { Plus, Trash2, Loader2, FileText, Pencil, Link2, ArrowRightLeft, Layers,
 import { toast } from "sonner";
 import { createGeneratedDocumentSignedUrl, downloadGeneratedDocumentBlob, saveBlobAsFile } from "@/lib/document-storage";
 
-import { RESOLUTION_TYPES } from "@/lib/resolution-types";
+import { getResolutionTypesFor } from "@/lib/resolution-types";
 import { isLLCType } from "@/lib/entity-terminology";
 import CharitableContributionFields, {
   CHARITABLE_RESOLUTION_LABEL,
@@ -62,9 +62,11 @@ interface Props {
   availableShares?: number | null;
   meetingDate?: string;
   excludeResolutionIds?: string[];
+  /** S/C tax status as of THIS meeting (tax year, else meeting date). */
+  sElectedForMeeting?: boolean;
 }
 
-export default function MeetingResolutions({ meetingId, entityType, meetingType, companyId, companyName, availableShares, meetingDate, excludeResolutionIds }: Props) {
+export default function MeetingResolutions({ meetingId, entityType, meetingType, companyId, companyName, availableShares, meetingDate, excludeResolutionIds, sElectedForMeeting }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -88,14 +90,17 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
   const [leaseResolutionId, setLeaseResolutionId] = useState<string | null>(null);
 
   const resolutionOptions = useMemo(() => {
-    const opts = RESOLUTION_TYPES[entityType] || RESOLUTION_TYPES["Corporation"];
+    const opts = getResolutionTypesFor(
+      entityType,
+      sElectedForMeeting ?? entityType === "LLC-S"
+    );
     const seen = new Set<string>();
     return opts.filter((o) => {
       if (seen.has(o.label)) return false;
       seen.add(o.label);
       return true;
     });
-  }, [entityType]);
+  }, [entityType, sElectedForMeeting]);
 
   const { data: resolutions = [] } = useQuery({
     queryKey: ["meeting_resolutions", meetingId],

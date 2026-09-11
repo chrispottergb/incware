@@ -46,7 +46,7 @@ import {
   exportResolutionsPDF,
   exportFinancialsPDF,
 } from "@/lib/meeting-pdf-export";
-import { getTerminology, isLLCType } from "@/lib/entity-terminology";
+import { getTerminology, isLLCType, isSElectedOn, isSElectedForTaxYear } from "@/lib/entity-terminology";
 import { generateSmllcOrgMeetingPDF } from "@/lib/smllc-org-meeting-pdf";
 import type { OrgMeetingData } from "@/lib/org-meeting-pdf";
 import { useShareCalculations } from "@/hooks/useShareCalculations";
@@ -96,6 +96,12 @@ export default function MeetingDetail() {
   const isShareholderMeeting = meeting?.meeting_type === "Shareholder Meeting";
   const isStatutoryCloseShareholderMeeting = isShareholderMeeting && meeting?.sub_type === "Statutory Close Corporation";
   const showCompanyLevelCounselAndLeases = isAnnualMeeting || isOrganizational || isStatutoryCloseShareholderMeeting;
+
+  // S/C tax status AS OF this meeting (tax year when present, else meeting date),
+  // so an older meeting is not re-rendered with today's tax status.
+  const sElectedForMeeting = (meeting as any)?.tax_year
+    ? isSElectedForTaxYear(company as any, (meeting as any).tax_year)
+    : isSElectedOn(company as any, (meeting as any)?.meeting_date);
 
 
   // Fetch company-level data for organizational meeting boilerplate
@@ -797,7 +803,7 @@ export default function MeetingDetail() {
   });
   // Standard LLC (no S-election) officers receive distributions only — skip compensation validation
   const isStandardLLCForValidation =
-    isLLCType(company?.entity_type) && !company?.s_election_date;
+    isLLCType(company?.entity_type) && !sElectedForMeeting;
   const officerValidationFailed = !isStandardLLCForValidation && officers.length > 0 && (
     officersMissingStatus.length > 0 ||
     officersHaveReasonIssue ||
@@ -1116,6 +1122,7 @@ export default function MeetingDetail() {
         {/* Resolutions */}
         <MeetingResolutions
           meetingId={meeting.id}
+          sElectedForMeeting={sElectedForMeeting}
           entityType={company?.entity_type || "Corporation"}
           meetingType={meeting.meeting_type}
           companyId={id}
@@ -1388,7 +1395,7 @@ export default function MeetingDetail() {
             const isLLCNonSCorp =
               isLLCType(company?.entity_type) &&
               company?.entity_type !== "LLC-S" &&
-              !company?.s_election_date;
+              !sElectedForMeeting;
             const showSalary = !isLLCNonSCorp;
             return (
               <div className="space-y-4">
@@ -1504,6 +1511,7 @@ export default function MeetingDetail() {
               companyName={company?.name}
               availableShares={availableShares}
               meetingDate={meeting.meeting_date}
+              sElectedForMeeting={sElectedForMeeting}
             />
           </div>
         </TabsContent>

@@ -34,10 +34,10 @@ import {
 import MeetingResolutions from "@/components/meeting/MeetingResolutions";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { isLLCType, getTerminology } from "@/lib/entity-terminology";
+import { isLLCType, getTerminology, isSElectedOn, isSElectedForTaxYear } from "@/lib/entity-terminology";
 import { useShareCalculations } from "@/hooks/useShareCalculations";
 import {
-  RESOLUTION_TYPES,
+  getResolutionTypesFor,
   ACTION_CATEGORIES,
   filterByCategory,
   getResolutionCategory,
@@ -390,10 +390,15 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
 
   // Get resolution options for this entity type (deduped by label)
   const resolutionOptions = useMemo(() => {
-    const opts = RESOLUTION_TYPES[company.entity_type] || RESOLUTION_TYPES["Corporation"];
+    const opts = getResolutionTypesFor(
+      company.entity_type,
+      taxYear
+        ? isSElectedForTaxYear(company as any, taxYear)
+        : isSElectedOn(company as any, effectiveDate)
+    );
     const seen = new Set<string>();
     return opts.filter((o) => (seen.has(o.label) ? false : (seen.add(o.label), true)));
-  }, [company.entity_type]);
+  }, [company, taxYear, effectiveDate]);
 
   // Filtered actions by category
   const filteredActions = useMemo(() => {
