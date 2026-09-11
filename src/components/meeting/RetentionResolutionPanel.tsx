@@ -429,19 +429,23 @@ export default function RetentionResolutionPanel({
         if (deleteError) throw deleteError;
       }
 
-      // Upsert current reasons.
-      const reasonRows = activeReasons.map((r, i) => ({
-        id: r.id && keptIds.includes(r.id) ? r.id : undefined,
-        resolution_id: resolutionId,
-        category: r.category || null,
-        description: r.description.trim(),
-        estimated_cost: parseMoney(r.estimated_cost),
-        target_date: r.target_date || null,
-        carried_from_reason_id: r.carried_from_reason_id || null,
-        status: r.status || null,
-        status_note: r.status_note.trim() || null,
-        sort_order: i,
-      }));
+      // Upsert current reasons. Omit the id for new rows so the default
+      // gen_random_uuid() is used; only existing rows include their id.
+      const reasonRows = activeReasons.map((r, i) => {
+        const row: any = {
+          resolution_id: resolutionId,
+          category: r.category || null,
+          description: r.description.trim(),
+          estimated_cost: parseMoney(r.estimated_cost),
+          target_date: r.target_date || null,
+          carried_from_reason_id: r.carried_from_reason_id || null,
+          status: r.status || null,
+          status_note: r.status_note.trim() || null,
+          sort_order: i,
+        };
+        if (r.id && keptIds.includes(r.id)) row.id = r.id;
+        return row;
+      });
 
       if (reasonRows.length > 0) {
         const { error: insertError } = await supabase
