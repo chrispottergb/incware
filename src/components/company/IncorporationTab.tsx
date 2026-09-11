@@ -1632,9 +1632,37 @@ export default function IncorporationTab({ company }: Props) {
                     </button>
                   </div>
                 )}
+                {!!form.s_revocation_date && (
+                  <div className="mt-2 field-group max-w-xs">
+                    <p className="text-[11px] text-muted-foreground">
+                      S election in effect from {form.s_election_date}. To elect again, clear the end date below.
+                    </p>
+                    <Label className="field-label">Date the S election ended</Label>
+                    <DatePickerField
+                      value={form.s_revocation_date || ""}
+                      onChange={(v) => updateAndSave("s_revocation_date", v)}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
+
+          <SElectionEndDialog
+            open={sEndDialogOpen}
+            onOpenChange={setSEndDialogOpen}
+            electionDate={form.s_election_date || ""}
+            onEnded={(d) => {
+              setLlcSElectionEnabled(false);
+              updateAndSave("s_revocation_date", d);
+            }}
+            onEnteredInError={() => {
+              setLlcSElectionEnabled(false);
+              setForm((prev) => ({ ...prev, s_election_date: "", s_revocation_date: "" }));
+              setTimeout(() => incAutoSave.triggerSave(), 50);
+            }}
+          />
+
 
           {/* LLC: Membership Interest note */}
           {equityCard.showMembershipUnits && (
