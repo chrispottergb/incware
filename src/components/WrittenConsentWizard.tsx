@@ -1475,7 +1475,15 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
                 companyId={company.id}
                 companyName={company.name}
                 meetingDate={effectiveDate}
+                taxYear={taxYear || undefined}
                 excludeResolutionIds={[wizardResolutionId]}
+                sElectedForMeeting={
+                  taxYear
+                    ? isSElectedForTaxYear(company, taxYear)
+                    : isSElectedOn(company, effectiveDate)
+                }
+                company={company}
+                shareholders={shareholders}
               />
             </div>
           )}

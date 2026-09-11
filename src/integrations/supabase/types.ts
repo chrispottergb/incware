@@ -4248,6 +4248,120 @@ export type Database = {
         }
         Relationships: []
       }
+      retained_earnings_reasons: {
+        Row: {
+          carried_from_reason_id: string | null
+          category: string | null
+          created_at: string
+          description: string
+          estimated_cost: number | null
+          id: string
+          resolution_id: string
+          sort_order: number
+          status: string | null
+          status_note: string | null
+          target_date: string | null
+        }
+        Insert: {
+          carried_from_reason_id?: string | null
+          category?: string | null
+          created_at?: string
+          description: string
+          estimated_cost?: number | null
+          id?: string
+          resolution_id: string
+          sort_order?: number
+          status?: string | null
+          status_note?: string | null
+          target_date?: string | null
+        }
+        Update: {
+          carried_from_reason_id?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string
+          estimated_cost?: number | null
+          id?: string
+          resolution_id?: string
+          sort_order?: number
+          status?: string | null
+          status_note?: string | null
+          target_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retained_earnings_reasons_carried_from_reason_id_fkey"
+            columns: ["carried_from_reason_id"]
+            isOneToOne: false
+            referencedRelation: "retained_earnings_reasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retained_earnings_reasons_resolution_id_fkey"
+            columns: ["resolution_id"]
+            isOneToOne: false
+            referencedRelation: "retained_earnings_resolutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retained_earnings_resolutions: {
+        Row: {
+          company_id: string
+          created_at: string
+          decision: string
+          fiscal_year: number
+          id: string
+          meeting_id: string | null
+          notes: string | null
+          reported_as_of: string | null
+          reported_by: string | null
+          retained_earnings_reported: number | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          decision: string
+          fiscal_year: number
+          id?: string
+          meeting_id?: string | null
+          notes?: string | null
+          reported_as_of?: string | null
+          reported_by?: string | null
+          retained_earnings_reported?: number | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          decision?: string
+          fiscal_year?: number
+          id?: string
+          meeting_id?: string | null
+          notes?: string | null
+          reported_as_of?: string | null
+          reported_by?: string | null
+          retained_earnings_reported?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retained_earnings_resolutions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retained_earnings_resolutions_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       retired_ownership_records: {
         Row: {
           certificate_label: string | null

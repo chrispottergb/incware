@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import { savePdfReliably } from "./pdf-save";
 import { registerArialFont } from "@/lib/arial-font";
 import { isSElectedForTaxYear, isSElectedOn } from "@/lib/entity-terminology";
+import { resolveRetentionDisplayLabel } from "@/lib/resolution-types";
 
 /**
  * S/C tax status AS OF the meeting being printed, so reprinting an older meeting
@@ -222,6 +223,12 @@ interface MeetingData {
    * (public.conflict_disclosures). Nonprofit annual meetings only.
    */
   conflictDisclosures?: { person_name: string; received_date: string | null; conflict_disclosed: boolean }[];
+  /**
+   * Retention-of-earnings / distributions resolution for the meeting's tax year.
+   * Rendered before the ordinary per-shareholder distribution clause so the
+   * amounts are not duplicated.
+   */
+  retainedEarningsResolution?: any;
 }
 
 
@@ -1334,6 +1341,79 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
   return y;
 }
 
+function renderRetentionEarningsSection(
+  doc: jsPDF,
+  y: number,
+  data: MeetingData,
+  companyName: string,
+  entityType: string,
+  isLLC: boolean,
+  sElectedForMeeting: boolean
+): number {
+  const resolution = data.retainedEarningsResolution;
+  if (!resolution || !resolution.decision) return y;
+
+  const label = resolveRetentionDisplayLabel(entityType, sElectedForMeeting);
+  const fiscalYear = resolution.fiscal_year;
+  const reported = resolution.retained_earnings_reported != null
+    ? Number(resolution.retained_earnings_reported).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : null;
+  const reportedBy = resolution.reported_by || null;
+  const reportedAsOf = resolution.reported_as_of
+    ? new Date(resolution.reported_as_of + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+    : null;
+  const approver = isLLC ? "members/managers" : "Board of Directors";
+
+  let whereas = `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} of ${companyName} considered the appropriate handling of earnings for the fiscal year ended ${fiscalYear}; and`;
+  if (reported && reportedBy) {
+    whereas = `WHEREAS, management reported retained earnings in the amount of $${reported}, as reported by ${reportedBy}${reportedAsOf ? ` as of ${reportedAsOf}` : ""}, for the fiscal year ended ${fiscalYear}; and`;
+  } else if (reported) {
+    whereas = `WHEREAS, management reported retained earnings in the amount of $${reported} for the fiscal year ended ${fiscalYear}; and`;
+  }
+
+  const decision = resolution.decision as "retain_all" | "distribute_partial" | "distribute_all";
+  let resolved = "";
+  if (decision === "retain_all") {
+    resolved = `RESOLVED, that ${companyName} shall retain all earnings for the fiscal year ended ${fiscalYear} for the reasonable needs of the business, and no distribution shall be made at this time in respect of such earnings.`;
+  } else if (decision === "distribute_all") {
+    resolved = `RESOLVED, that all earnings for the fiscal year ended ${fiscalYear} shall be distributed to the ${isLLC ? "members" : "shareholders"} in accordance with their respective ${isLLC ? "membership interests" : "ownership interests"}.`;
+  } else {
+    resolved = `RESOLVED, that a portion of the earnings for the fiscal year ended ${fiscalYear} shall be distributed to the ${isLLC ? "members" : "shareholders"} as approved in the separate distribution resolution, and the remainder shall be retained for the reasonable needs of the business.`;
+  }
+
+  y = checkPageBreak(doc, y, 60);
+  y = addSectionTitle(doc, y, label);
+  y = addWhereasResolved(doc, y, whereas, resolved);
+
+  const reasons: any[] = (resolution.retained_earnings_reasons || [])
+    .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+
+  if (reasons.length > 0) {
+    y = checkPageBreak(doc, y, 8 + reasons.length * 14);
+    for (const r of reasons) {
+      const cost = r.estimated_cost != null
+        ? Number(r.estimated_cost).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : null;
+      const target = r.target_date
+        ? new Date(r.target_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+        : null;
+      let reasonText = r.description || "";
+      if (r.category) reasonText = `${r.category}${reasonText ? `: ${reasonText}` : ""}`;
+      if (cost) reasonText += ` (estimated cost $${cost}${target ? `, target date ${target}` : ""})`;
+      else if (target) reasonText += ` (target date ${target})`;
+      if (r.status) reasonText += ` — status: ${r.status}${r.status_note ? ` (${r.status_note})` : ""}`;
+      y = addResolutionBlock(doc, y, "Reason for Retention", reasonText);
+    }
+  }
+
+  if (resolution.notes) {
+    y = checkPageBreak(doc, y, 20);
+    y = addResolutionBlock(doc, y, "Notes", resolution.notes);
+  }
+
+  return y + 4;
+}
+
 export function exportMeetingMinutesPDF(data: MeetingData) {
   const doc = new jsPDF();
   try {
@@ -2166,6 +2246,11 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       },
     });
     y = (doc as any).lastAutoTable.finalY + 6;
+
+    // Retention-of-earnings / distributions resolution (rendered before the
+    // per-holder distribution clause so amounts are not duplicated).
+    const sElectedForMeeting = isSElectedForMeeting(company, meeting);
+    y = renderRetentionEarningsSection(doc, y, data, companyName, entityType, isLLC, sElectedForMeeting);
 
     // Distribution resolution for each member/shareholder with a distribution amount
     if (hasDistribution) {

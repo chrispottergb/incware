@@ -79,8 +79,31 @@ const CATEGORY_MAP: Record<string, ActionCategory> = {
   "Approve Partner Distributions": "Financial/Capital Transactions",
   "Approve Charitable Contributions": "Operations",
   "Approve Employer Contribution to Retirement Plan": "Benefits",
+  "Retention of Earnings and Distributions": "Financial/Capital Transactions",
   "Other": "Other",
 };
+
+/** Canonical stored value for the retention resolution. */
+export const RETENTION_RESOLUTION_LABEL = "Retention of Earnings and Distributions" as const;
+
+/**
+ * Returns the display label for the retention resolution based on the entity
+ * type and the S/C tax status that applied for the meeting's tax year.
+ * The stored `meeting_resolutions.purpose` always remains the canonical value.
+ */
+export function resolveRetentionDisplayLabel(
+  entityType: string | undefined | null,
+  sElectedForMeeting: boolean
+): string {
+  const type = entityType || "Corporation";
+  if (type === "Corporation") {
+    return sElectedForMeeting
+      ? "Distributions and Retention of Earnings"
+      : "Retention of Earnings";
+  }
+  if (type === "Single Member LLC") return "Distributions to Member";
+  return "Distributions to Members";
+}
 
 export function getResolutionCategory(label: string): ActionCategory {
   return CATEGORY_MAP[label] || "Other";
@@ -141,6 +164,7 @@ const BASE_RESOLUTION_TYPES: Record<string, ResolutionType[]> = {
     { label: "Approve Charitable Contributions", statute: "Wis. Stat. § 180.0302", template: "WHEREAS, during the tax year ending [TaxYear], the corporation made charitable contributions in the total amount of $[Amount] to a qualified charitable organization(s);\n\nRESOLVED, that the Shareholders hereby confirm, approve, and ratify the charitable contributions as expenditures made in the best interests of the corporation." },
     { label: "Approve Employer Contribution to Retirement Plan", statute: "IRC § 401(k); IRC § 404(a)", template: "WHEREAS, the Company maintains a [401(k) plan / SEP IRA / SIMPLE IRA / profit-sharing plan / other tax-qualified retirement plan] (the \"Plan\") for eligible personnel, and the employer contribution to the Plan for the [2025] plan year has been calculated;\n\nNOW, THEREFORE, BE IT RESOLVED, that the Company is authorized to fund the employer contribution to the Plan for the [2025] plan year in the amount of $[X], consistent with the contribution formula previously adopted by the Board, where applicable, or as otherwise determined and approved by the Board at this meeting;\n\nRESOLVED FURTHER, that the Company's authorized officers, managers, or agents are directed to coordinate with the Plan administrator, payroll provider, and accounting personnel (as applicable) to implement the contribution on or before the Company's tax return deadline, including extensions;\n\nRESOLVED FURTHER, that any actions previously taken by the Company's authorized officers, managers, or agents relating to the calculation or coordination of the employer contribution to the Plan are hereby ratified, confirmed, and approved." },
     { label: "Approve Employee Bonuses", statute: "Wis. Stat. § 180.0302", template: "Management reported that discretionary employee bonuses were issued for [FY] in accordance with the Company's compensation practices.\n\nRESOLVED, that the Board acknowledges such bonuses have been issued, with all details maintained in the Company's payroll and accounting records." },
+    { label: RETENTION_RESOLUTION_LABEL, statute: "IRC § 531; Treas. Reg. § 1.537" },
     { label: "Other" },
   ],
   "S Corporation": [
@@ -192,6 +216,7 @@ const BASE_RESOLUTION_TYPES: Record<string, ResolutionType[]> = {
     { label: "Approve Charitable Contributions", statute: "Wis. Stat. § 183.0301", template: "WHEREAS, during the tax year ending [TaxYear], the company made charitable contributions in the total amount of $[Amount] to a qualified charitable organization(s);\n\nRESOLVED, that the Managing Member hereby confirms, approves, and ratifies the charitable contributions as expenditures made in the best interests of the company." },
     { label: "Approve Employer Contribution to Retirement Plan", statute: "IRC § 401(k); IRC § 404(a)", template: "WHEREAS, the Company maintains a [401(k) plan / SEP IRA / SIMPLE IRA / profit-sharing plan / other tax-qualified retirement plan] (the \"Plan\") for eligible personnel, and the employer contribution to the Plan for the [2025] plan year has been calculated;\n\nNOW, THEREFORE, BE IT RESOLVED, that the Company is authorized to fund the employer contribution to the Plan for the [2025] plan year in the amount of $[X], consistent with the contribution formula previously adopted by the Board, where applicable, or as otherwise determined and approved by the Board at this meeting;\n\nRESOLVED FURTHER, that the Company's authorized officers, managers, or agents are directed to coordinate with the Plan administrator, payroll provider, and accounting personnel (as applicable) to implement the contribution on or before the Company's tax return deadline, including extensions;\n\nRESOLVED FURTHER, that any actions previously taken by the Company's authorized officers, managers, or agents relating to the calculation or coordination of the employer contribution to the Plan are hereby ratified, confirmed, and approved." },
     { label: "Approve Employee Bonuses", statute: "Wis. Stat. § 183.0301", template: "Management reported that discretionary employee bonuses were issued for [FY] in accordance with the Company's compensation practices.\n\nRESOLVED, that the Members/Managers acknowledge such bonuses have been issued, with all details maintained in the Company's payroll and accounting records." },
+    { label: RETENTION_RESOLUTION_LABEL, statute: "IRC § 531; Treas. Reg. § 1.537" },
     { label: "Other" },
   ],
   LLC: [
@@ -220,6 +245,7 @@ const BASE_RESOLUTION_TYPES: Record<string, ResolutionType[]> = {
     { label: "Approve Charitable Contributions", statute: "Wis. Stat. § 183.0301", template: "WHEREAS, during the tax year ending [TaxYear], the company made charitable contributions in the total amount of $[Amount] to a qualified charitable organization(s);\n\nRESOLVED, that the Members hereby confirm, approve, and ratify the charitable contributions as expenditures made in the best interests of the company." },
     { label: "Approve Employer Contribution to Retirement Plan", statute: "IRC § 401(k); IRC § 404(a)", template: "WHEREAS, the Company maintains a [401(k) plan / SEP IRA / SIMPLE IRA / profit-sharing plan / other tax-qualified retirement plan] (the \"Plan\") for eligible personnel, and the employer contribution to the Plan for the [2025] plan year has been calculated;\n\nNOW, THEREFORE, BE IT RESOLVED, that the Company is authorized to fund the employer contribution to the Plan for the [2025] plan year in the amount of $[X], consistent with the contribution formula previously adopted by the Board, where applicable, or as otherwise determined and approved by the Board at this meeting;\n\nRESOLVED FURTHER, that the Company's authorized officers, managers, or agents are directed to coordinate with the Plan administrator, payroll provider, and accounting personnel (as applicable) to implement the contribution on or before the Company's tax return deadline, including extensions;\n\nRESOLVED FURTHER, that any actions previously taken by the Company's authorized officers, managers, or agents relating to the calculation or coordination of the employer contribution to the Plan are hereby ratified, confirmed, and approved." },
     { label: "Approve Employee Bonuses", statute: "Wis. Stat. § 183.0301", template: "Management reported that discretionary employee bonuses were issued for [FY] in accordance with the Company's compensation practices.\n\nRESOLVED, that the Managing Member acknowledges such bonuses have been issued, with all details maintained in the Company's payroll and accounting records." },
+    { label: RETENTION_RESOLUTION_LABEL, statute: "IRC § 531; Treas. Reg. § 1.537" },
     { label: "Other" },
   ],
   "LLC-S": [
@@ -294,6 +320,7 @@ const BASE_RESOLUTION_TYPES: Record<string, ResolutionType[]> = {
     { label: "Universal Resolution", statute: "Wis. Stat. § 178.0401", template: "WRITTEN CONSENT IN LIEU OF MEETING\nOF THE PARTNERS\nOF [PARTNERSHIP NAME]\n\nThe undersigned, being all of the partners of [Partnership Name], a [State] Partnership, hereby adopt the following resolutions by written consent in lieu of a meeting:\n\nRECITALS\n\nWHEREAS, the Partnership desires to [describe purpose of resolution];\n\nRESOLUTIONS\n\nNOW, THEREFORE, BE IT RESOLVED, that [specific action approved];\n\nFURTHER RESOLVED, that the partners of the Partnership are hereby authorized and directed to take any and all actions necessary to carry out the foregoing resolution;\n\nEFFECTIVE DATE\n\nThis consent shall be effective as of [Date].\n\nIN WITNESS WHEREOF, the undersigned have executed this Written Consent as of the date first written above.\n\n______________________________\n[Name]\n[Title]\n\n______________________________\n[Name]\n[Title]" },
     { label: "Approve Employer Contribution to Retirement Plan", statute: "IRC § 401(k); IRC § 404(a)", template: "WHEREAS, the Company maintains a [401(k) plan / SEP IRA / SIMPLE IRA / profit-sharing plan / other tax-qualified retirement plan] (the \"Plan\") for eligible personnel, and the employer contribution to the Plan for the [2025] plan year has been calculated;\n\nNOW, THEREFORE, BE IT RESOLVED, that the Company is authorized to fund the employer contribution to the Plan for the [2025] plan year in the amount of $[X], consistent with the contribution formula previously adopted by the Board, where applicable, or as otherwise determined and approved by the Board at this meeting;\n\nRESOLVED FURTHER, that the Company's authorized officers, managers, or agents are directed to coordinate with the Plan administrator, payroll provider, and accounting personnel (as applicable) to implement the contribution on or before the Company's tax return deadline, including extensions;\n\nRESOLVED FURTHER, that any actions previously taken by the Company's authorized officers, managers, or agents relating to the calculation or coordination of the employer contribution to the Plan are hereby ratified, confirmed, and approved." },
     { label: "Approve Employee Bonuses", template: "Management reported that discretionary employee bonuses were issued for [FY] in accordance with the Partnership's compensation practices.\n\nRESOLVED, that the Partners acknowledge such bonuses have been issued, with all details maintained in the Partnership's payroll and accounting records." },
+    { label: RETENTION_RESOLUTION_LABEL, statute: "IRC § 531; Treas. Reg. § 1.537" },
     { label: "Other" },
   ],
 };
