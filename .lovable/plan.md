@@ -34,19 +34,31 @@ Prints when the meeting has at least one holder with `distribution_amount > 0`. 
 
 Without the flag the surrounding paragraph is identical, minus those phrases.
 
-### c. Resolution list differences
+### c. Resolution lists — the stored S lists are stale
 
-"S Corporation" adds vs "Corporation": Approve Officer Bonuses (Reasonable Compensation), Approve Distributions, Revoke S-Election.
-"S Corporation" drops vs "Corporation": Approve Officer Bonuses, Approve Distributions/Dividends, Name Directors to Committees, Approve Tax Election (S-Corp), Approve Amendments to Bylaws, Approve Merger or Consolidation.
+The hardcoded "S Corporation" array is missing Approve Amendments to Bylaws, Approve Merger or Consolidation, and Name Directors to Committees; "LLC-S" is missing Adopt Regular Meeting Resolution. All of these still apply to S-taxed entities. So the S lists will be **derived at read time** from the base lists by substitution, rather than kept as separate hand-maintained arrays. The `"S Corporation"` and `"LLC-S"` keys keep working for existing callers, but are backed by the derived lists. Substituted entries keep the S-specific statute and template text already written for them.
 
-"LLC-S" adds vs "LLC": Approve Reasonable Compensation, Revoke S-Election.
-"LLC-S" drops vs "LLC": Approve Guaranteed Payments, Approve Tax Classification Election, Adopt Regular Meeting Resolution.
+S Corporation = Corporation, with "Approve Officer Bonuses" → "Approve Officer Bonuses (Reasonable Compensation)", "Approve Distributions/Dividends" → "Approve Distributions", "Approve Tax Election (S-Corp)" → "Revoke S-Election". Resulting list, in order:
+
+Authorize a Line of Credit; Approve Officer Bonuses (Reasonable Compensation); Approve Annual Officer Compensation; Approve Issuance of Shares; Approve Transfer/Sale of Shares; Adopt Regular Meeting Resolution; Approve Distributions; Elect Officers; Elect Directors; Re-elect Board of Directors; Name Directors to Committees; Approve Employment Agreement; Approve Lease Agreement; Approve Purchase/Sale of Assets; Ratify Prior Actions; Revoke S-Election; Approve Employee Benefit Plan; Approve Amendments to Articles of Incorporation; Approve Amendments to Bylaws; Approve Merger or Consolidation; Approve Dissolution; Approve Loan from Related Party; Approve Loan to Related Party; Approve Related Party Loan Agreement; Approve AI Governance Policy; Universal Resolution; Approve Charitable Contributions; Approve Employer Contribution to Retirement Plan; Approve Employee Bonuses; Other.
+
+LLC-S = LLC, with "Approve Guaranteed Payments" → "Approve Reasonable Compensation", "Approve Tax Classification Election" → "Revoke S-Election". Resulting list, in order:
+
+Authorize a Line of Credit; Approve Member Distributions; Approve Reasonable Compensation; Admit New Member; Approve Transfer of Membership Interest; Elect/Appoint Managers; Re-elect Managers; Approve Employment/Service Agreement; Approve Lease Agreement; Approve Purchase/Sale of Assets; Revoke S-Election; Ratify Prior Actions; Approve Employee Benefit Plan; Adopt Regular Meeting Resolution; Approve Amendments to Operating Agreement; Approve Dissolution; Approve Authorized Binders; Approve Loan from Related Party; Approve Loan to Related Party; Approve Related Party Loan Agreement; Approve AI Governance Policy; Universal Resolution; Approve Charitable Contributions; Approve Employer Contribution to Retirement Plan; Approve Employee Bonuses; Other.
+
 
 ### d. Call sites
 
 `isSElected()` is defined in `src/lib/entity-terminology.ts` and, in practice, S status is read inline everywhere. Meeting-scoped reads to convert: `meeting-pdf-export.ts` (~453, 1101, 1282-1286, 1532, 1565, 1978, 2162), `OrgMeetingWizard.tsx` (107-108), `AnnualMeetingWizard.tsx` (575), `MeetingDetail.tsx` (800, 1390-1391), plus the resolution list lookups in `MeetingResolutions.tsx` (~91) and `WrittenConsentWizard.tsx` (~393).
 
 Left on current status, unchanged: Dashboard badge (476), TimelineTab (236), record-book-pdf, annual-update-pdf, annual-review snapshot + public page, bylaws-pdf, smllc-scorp-operating-agreement-pdf, SMOperatingAgreementGenerator, SCorpOAWarningBanner, IncorporationTab summary card.
+
+### e. Meetings missing a tax year, and meeting-date vs. tax-year drift
+
+Meetings with no tax year: Annual Meeting 9 of 98; Written Consent 6 of 18; Organizational Meeting 1 of 13; Shareholder Meeting 0 of 46; Special Meeting of Board of Directors 0 of 2; Annual Meeting of Members 0 of 1.
+
+Of the 89 Annual Meetings that do have a tax year, 85 are dated in a **later** calendar year than the year they cover, 4 are in the same year, none earlier. That is expected practice (a 2024 year reviewed at a 2025 meeting), but it means the meeting-date fallback would read S status a year late for the 9 annual meetings with no tax year. Reported only — the fallback rule stays as written for now.
+
 
 ## What gets built
 
@@ -56,7 +68,11 @@ Left on current status, unchanged: Dashboard badge (476), TimelineTab (236), rec
 
 3. **UI** — Incorporation tab and Organization tab. Unchecking a saved S election opens a dialog: "Did the S election end, or was it entered in error?" *Ended* asks for the effective date and stores it as the revocation date, keeping the election date. *Entered in error* clears both, as today. When a revocation date exists it is shown as an editable field, and re-checking the election is blocked with: "EntityIQ tracks one S election period. Re-election after revocation is not supported." An invalid revocation date is caught inline before saving, so the rest of the form still saves.
 
-4. **Meeting reads** — the sites in (d) switch to the tax year when the meeting has one, otherwise the meeting date. Resolution lists resolve from entity type plus time-aware status (Corporation + S → "S Corporation"; LLC + S → "LLC-S"; Single Member LLC keeps its own list). Resolutions already saved on a meeting keep displaying and printing even if they are no longer in the selected list.
+4. **Derived S resolution lists** — `resolution-types.ts` builds the S Corporation and LLC-S lists from the Corporation and LLC lists by the substitutions in finding (c), preserving the existing S-specific statute and template wording. The two keys stay available to any code that already uses them.
+
+5. **Meeting reads** — the sites in (d) switch to the tax year when the meeting has one, otherwise the meeting date. Resolution lists resolve from entity type plus time-aware status (Corporation + S → S Corporation; LLC + S → LLC-S; Single Member LLC keeps its own list). Resolutions already saved on a meeting keep displaying and printing even if they are no longer in the selected list.
+
+No `s_election_date` values are touched — the flagged rows in finding (a) are for manual correction.
 
 ## Verification
 
