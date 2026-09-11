@@ -794,10 +794,10 @@ export default function RetentionResolutionPanel({
         ))}
       </div>
 
-      <Button type="submit" className="w-full" disabled={save.isPending}>
+      <Button type="button" className="w-full" disabled={save.isPending} onClick={handleSave}>
         {save.isPending ? "Saving..." : "Save Retention Resolution"}
       </Button>
-    </form>
+    </div>
   );
 }
 
