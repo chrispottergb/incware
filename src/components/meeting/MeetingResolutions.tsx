@@ -25,8 +25,9 @@ import { Plus, Trash2, Loader2, FileText, Pencil, Link2, ArrowRightLeft, Layers,
 import { toast } from "sonner";
 import { createGeneratedDocumentSignedUrl, downloadGeneratedDocumentBlob, saveBlobAsFile } from "@/lib/document-storage";
 
-import { getResolutionTypesFor } from "@/lib/resolution-types";
+import { getResolutionTypesFor, RETENTION_RESOLUTION_LABEL, resolveRetentionDisplayLabel } from "@/lib/resolution-types";
 import { isLLCType } from "@/lib/entity-terminology";
+import RetentionResolutionPanel from "@/components/meeting/RetentionResolutionPanel";
 import CharitableContributionFields, {
   CHARITABLE_RESOLUTION_LABEL,
   composeCharitableText,
@@ -61,12 +62,15 @@ interface Props {
   companyName?: string;
   availableShares?: number | null;
   meetingDate?: string;
+  taxYear?: string | number | null;
   excludeResolutionIds?: string[];
   /** S/C tax status as of THIS meeting (tax year, else meeting date). */
   sElectedForMeeting?: boolean;
+  company?: any;
+  shareholders?: any[];
 }
 
-export default function MeetingResolutions({ meetingId, entityType, meetingType, companyId, companyName, availableShares, meetingDate, excludeResolutionIds, sElectedForMeeting }: Props) {
+export default function MeetingResolutions({ meetingId, entityType, meetingType, companyId, companyName, availableShares, meetingDate, taxYear, excludeResolutionIds, sElectedForMeeting, company, shareholders }: Props) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -187,12 +191,17 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
   });
 
   const deleteResolution = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, purpose }: { id: string; purpose?: string | null }) => {
       const { error } = await supabase.from("meeting_resolutions").delete().eq("id", id);
       if (error) throw error;
+      // Remove the linked retention record when the canonical resolution is deleted.
+      if (purpose === RETENTION_RESOLUTION_LABEL) {
+        await supabase.from("retained_earnings_resolutions").delete().eq("meeting_id", meetingId);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meeting_resolutions", meetingId] });
+      queryClient.invalidateQueries({ queryKey: ["retained_earnings_resolution", companyId, meetingId] });
       toast.success("Resolution removed.");
     },
     onError: (err: Error) => toast.error(err.message),
@@ -223,6 +232,7 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
   };
 
   const showCharitableFields = !editingId && purpose === CHARITABLE_RESOLUTION_LABEL;
+  const showRetentionPanel = purpose === RETENTION_RESOLUTION_LABEL;
 
   // Approving body comes from the meeting/entity type already stored — never a form field.
   const approvingBody = resolveApprovingBody(entityType, meetingType);
@@ -235,6 +245,7 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (showRetentionPanel) return; // Retention panel has its own save button.
     if (showCharitableFields) {
       const errs = validateCharitable(charitable);
       if (Object.keys(errs).length > 0) {
@@ -425,20 +436,38 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                     errors={charitableErrors}
                   />
                 )}
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">Resolution</Label>
-                  <Textarea
-                    value={resolutionText}
-                    onChange={(e) => setResolutionText(e.target.value)}
-                    rows={8}
-                    required
-                    className="font-mono text-sm"
+                {showRetentionPanel && company && (
+                  <RetentionResolutionPanel
+                    company={company}
+                    meetingId={meetingId}
+                    entityType={entityType}
+                    taxYear={taxYear}
+                    meetingDate={meetingDate}
+                    shareholders={shareholders}
+                    sElectedForMeeting={sElectedForMeeting ?? false}
+                    onSaved={() => {
+                      queryClient.invalidateQueries({ queryKey: ["meeting_resolutions", meetingId] });
+                      closeDialog();
+                      toast.success("Retention resolution saved.");
+                    }}
                   />
-                </div>
+                )}
+                {!showRetentionPanel && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Resolution</Label>
+                    <Textarea
+                      value={resolutionText}
+                      onChange={(e) => setResolutionText(e.target.value)}
+                      rows={8}
+                      required
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground italic">
                   If resolutions involve complex issues, it is advised to have your final documentation reviewed by your attorney or tax advisor.
                 </p>
-                <Button type="submit" className="w-full" disabled={isPending || !purpose || (purpose === "Other" && !customPurpose.trim())}>
+                <Button type="submit" className="w-full" disabled={isPending || !purpose || (purpose === "Other" && !customPurpose.trim()) || showRetentionPanel}>
                   {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {editingId ? "Save Changes" : "Add Resolution"}
                 </Button>
@@ -463,12 +492,15 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                 const showTransferButton = isTransferPurpose(r.purpose || "") && !hasLinkedTransaction && companyId && unlinkedTransferResolutions.length === 1;
                 // Show lease button for unlinked lease resolutions
                 const showLeaseButton = isLeasePurpose(r.purpose || "") && !hasLinkedLease && companyId;
+                const displayPurpose = r.purpose === RETENTION_RESOLUTION_LABEL
+                  ? resolveRetentionDisplayLabel(entityType, sElectedForMeeting ?? false)
+                  : r.purpose;
                 return (
                   <div key={r.id} className="rounded-lg border border-border p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">
-                          {r.purpose}
+                          {displayPurpose}
                         </p>
                         {match?.statute && (
                           <p className="text-[10px] text-muted-foreground mb-2">{match.statute}</p>
@@ -564,7 +596,7 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deleteResolution.mutate(r.id)}
+                          onClick={() => deleteResolution.mutate({ id: r.id, purpose: r.purpose })}
                           className="h-8 w-8 text-destructive/60 hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />

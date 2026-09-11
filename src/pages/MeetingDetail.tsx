@@ -588,6 +588,28 @@ export default function MeetingDetail() {
     enabled: !!id && Number.isFinite(disclosureYear),
   });
 
+  // Retention-of-earnings resolution for the meeting's tax year.
+  const retentionFiscalYear = (meeting as any)?.tax_year
+    ? Number((meeting as any).tax_year)
+    : meeting?.meeting_date
+      ? Number(String(meeting.meeting_date).slice(0, 4))
+      : null;
+  const { data: retainedEarningsResolution } = useQuery({
+    queryKey: ["retained_earnings_resolution_pdf", id, retentionFiscalYear, meetingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("retained_earnings_resolutions")
+        .select("*, retained_earnings_reasons(*)")
+        .eq("company_id", id!)
+        .or(`meeting_id.eq.${meetingId!},and(meeting_id.is.null,fiscal_year.eq.${retentionFiscalYear})`)
+        .order("created_at", { foreignTable: "retained_earnings_reasons" })
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id && (!!meetingId || Number.isFinite(retentionFiscalYear)),
+  });
+
 
 
 
@@ -962,6 +984,7 @@ export default function MeetingDetail() {
         ratifications,
         ratificationPeriod,
         conflictDisclosures,
+        retainedEarningsResolution,
       });
       
       return doc;
@@ -1128,6 +1151,9 @@ export default function MeetingDetail() {
           companyId={id}
           companyName={company?.name}
           meetingDate={meeting.meeting_date}
+          taxYear={(meeting as any)?.tax_year}
+          company={company}
+          shareholders={hydratedMeetingShareholders}
         />
 
         {/* Edit Written Consent Wizard */}
@@ -1512,6 +1538,9 @@ export default function MeetingDetail() {
               availableShares={availableShares}
               meetingDate={meeting.meeting_date}
               sElectedForMeeting={sElectedForMeeting}
+              taxYear={(meeting as any)?.tax_year}
+              company={company}
+              shareholders={hydratedMeetingShareholders}
             />
           </div>
         </TabsContent>
