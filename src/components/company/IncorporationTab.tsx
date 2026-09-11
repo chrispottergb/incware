@@ -199,6 +199,7 @@ export default function IncorporationTab({ company }: Props) {
     par_value_type: company.par_value_type ?? "par",
     par_value: company.par_value?.toString() ?? "",
     s_election_date: company.s_election_date ?? "",
+    s_revocation_date: (company as any).s_revocation_date ?? "",
     scheduled_meeting_ordinal: (company as any).scheduled_meeting_ordinal ?? "",
     scheduled_meeting_day_of_week: (company as any).scheduled_meeting_day_of_week ?? "",
     scheduled_meeting_month: (company as any).scheduled_meeting_month ?? "",
@@ -263,7 +264,8 @@ export default function IncorporationTab({ company }: Props) {
     if (/^https?:\/\//i.test(trimmed)) return trimmed;
     return `https://${trimmed}`;
   };
-  const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(!!company.s_election_date);
+  const [llcSElectionEnabled, setLlcSElectionEnabled] = useState(!!company.s_election_date && !(company as any).s_revocation_date);
+  const [sEndDialogOpen, setSEndDialogOpen] = useState(false);
 
   // Reset form when company changes (e.g. navigating between entities)
   useEffect(() => {
