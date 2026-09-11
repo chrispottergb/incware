@@ -326,7 +326,7 @@ export default function IncorporationTab({ company }: Props) {
         (company.entity_type === "Non-Profit" ? DEFAULT_NON_DISTRIBUTION_CLAUSE : ""),
       organizational_structure: (company as any).organizational_structure ?? "",
     });
-    setLlcSElectionEnabled(!!company.s_election_date);
+    setLlcSElectionEnabled(!!company.s_election_date && !(company as any).s_revocation_date);
   }, [company.id]);
 
 
