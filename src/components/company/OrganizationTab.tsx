@@ -570,6 +570,14 @@ export default function OrganizationTab({ companyId, company }: Props) {
     },
   });
 
+  // Saves the S-election end/clear choice once the form state has actually updated.
+  useEffect(() => {
+    if (!pendingSElectionSave) return;
+    setPendingSElectionSave(false);
+    saveFiling.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingSElectionSave, filingForm.s_election_date, filingForm.s_revocation_date]);
+
   const [officerForm, setOfficerForm] = useState({
     president: "",
     vice_president: "",
