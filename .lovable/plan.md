@@ -1,51 +1,69 @@
-# Record Audit Trail — backend only, additive
+# Time-aware S / C tax classification
 
-An append-only history of every change to the five record types that carry legal weight: companies, shareholders, share transactions, stock certificates, and meetings. No screens, no changes to existing tables or app code.
+Today a company is "S" whenever `s_election_date` is filled in. That means reprinting a 2018 meeting shows today's tax status, and turning an S election off erases the date entirely. This change derives the status **as of the meeting's tax year or date**, and records when an election ended instead of deleting it.
 
-## Step 0 — Discovery findings
+Additive only: one new nullable column, new helper functions, and read-time changes on meeting paths. No existing data is modified or backfilled. Ratification, record audit, and every non-meeting screen are untouched.
 
-**1. Sensitive columns to redact from the audit payload**
+## Pre-change findings
 
-| Table | Column | Why |
-| --- | --- | --- |
-| companies | `ein` | legacy plaintext EIN |
-| companies | `ein_encrypted` | encrypted EIN (bytea) |
-| shareholders | `ssn_ein_encrypted` | encrypted SSN/EIN (bytea) |
+### a. Companies with an S election on file (25)
 
-No bank account/routing columns exist on these five tables (plaintext bank columns were dropped in an earlier security pass; the remaining encrypted bank fields live on `company_banks` and `master_firms`, which are not in scope). `share_transactions`, `stock_certificates` and `meetings` carry no sensitive columns. These keys are removed entirely from both `old_values` and `new_values` — no masked or partial values.
+All have fiscal year end December 31. None has an election date in the future.
 
-**2. Service-role writes — confirmed gap.** Both `execute-share-transfer` and `execute-batch-transfer` read `SUPABASE_SERVICE_ROLE_KEY` and write `share_transactions` with a service-role client, so `auth.uid()` inside the trigger will be NULL and share transfers would be logged with no actor.
+Flagged rows:
 
-Proposed fix (reported only, not implemented in this pass): each function sets a request-local claim before its writes, e.g. `select set_config('app.actor_id', <caller uuid>, true)` on the same connection, and the trigger resolves the actor as `coalesce(auth.uid(), nullif(current_setting('app.actor_id', true),'')::uuid)`. The trigger in this pass will already include that `coalesce`, so no further database change is needed once the functions are updated. Until then, transfers executed through those functions log `changed_by = null`.
+| Company | Type | S election | Formed | Issue |
+|---|---|---|---|---|
+| Jossart Brothers, Inc. | Corporation | 0199-08-22 | 1996-07-01 | Year 199 — typo, likely 1996-08-22 |
+| Northern Electric, Inc. | Corporation | 0199-08-12 | 1992-08-07 | Year 199 — typo |
+| Nakashima Sushi, Inc. | Corporation | 1998-10-29 | 2010-11-01 | Election 12 years before formation |
+| Let Me Be Frank Productions, Inc. | Corporation | 2005-04-01 | 2005-05-10 | ~5 weeks before formation |
+| Packerland Tire & Auto Repair Center, Inc. | Corporation | 2007-03-01 | 2007-03-08 | 7 days before formation |
+| Smet AFH, LLC | LLC | 2026-01-01 | 2026-03-03 | 2 months before formation |
 
-**3. Recalculation noise.** `recalculate_ownership_percentages(company_id)` rewrites `shareholders.ownership_percentage` for every holder of a company. Across 58 companies the average is 2 holders and the maximum 13, so a typical call touches 2–13 rows and fires that many UPDATE triggers. The Step 2 suppression rule (skip UPDATEs whose only changed field is `ownership_percentage`) removes all of them, because the function writes no other column. Combined with the no-op rule (Postgres still fires the trigger when the recalculated value is unchanged), the log stays clean.
+These are reported only. This plan does not change them — the two year-0199 rows in particular would make any pre-2000 meeting print as S. Say the word and they get corrected separately.
 
-**4. Bulk paths.** Multi-row inserts come from the New Client wizard (`CreateCompanyWizard`: 1 company plus directors/officers/shareholders — roughly 1–15 audited rows per run, only company and shareholder rows being audited) and `cloneSubTables` in `MeetingsTab` (clones a prior meeting's sub-tables — only the single new `meetings` row is audited; the sub-tables are out of scope). Worst realistic case is well under 20 audit rows per run.
+The other 19 look clean: ABC LLC, American Antiques & Jewlery, Beauty By The Yard, Brice Masonry, Fabisch Builders, Flip Side, Fox Valley Rentals, Friebel Real Estate, Green Bay Pipe & TV, Holl Financial Services, MaB Technologies, Packer City Antiques, Popp's Resort, Schinkten Insurance, Spin Fresh Coin Laundry, Stahl Steel Rule Dies, The Energy Shop, Tri City Home Improvements, Valley Work Support.
 
-## Step 1 — Audit table
+### b. Distribution clause (meeting-pdf-export.ts ~2158-2200)
 
-Migration creates `public.record_audit` with: `id`, `table_name`, `record_id`, `company_id`, `operation`, `changed_by`, `changed_at`, `changed_fields text[]`, `old_values jsonb`, `new_values jsonb`. Indexes on `(table_name, record_id, changed_at desc)` and `(company_id, changed_at desc)`.
+Prints when the meeting has at least one holder with `distribution_amount > 0`. The S flag is `!!company.s_election_date || entity_type === "LLC-S"` and adds two phrases:
 
-Append-only, enforced in the database:
-- RLS enabled; `GRANT SELECT` to `authenticated` only, plus `GRANT ALL` to `service_role`.
-- One SELECT policy: rows whose `company_id` belongs to a company where `companies.user_id = auth.uid()` (the existing ownership pattern).
-- No insert/update/delete policy for users, and an explicit `REVOKE INSERT, UPDATE, DELETE ON public.record_audit FROM authenticated, anon`. Only the SECURITY DEFINER trigger writes.
+- In the WHEREAS: "and consistent with the Company's S Corporation election under Section 1362 of the Internal Revenue Code"
+- In each RESOLVED: "and in compliance with the Company's S Corporation tax election"
 
-## Step 2 — Trigger function
+Without the flag the surrounding paragraph is identical, minus those phrases.
 
-One generic `public.log_record_audit()`, `SECURITY DEFINER`, `SET search_path = public`, using `TG_TABLE_NAME`, `TG_OP`, `to_jsonb(OLD)`, `to_jsonb(NEW)`:
-- Strip the redaction keys from both payloads before anything else.
-- Return early when `OLD IS NOT DISTINCT FROM NEW`.
-- `changed_fields` = keys whose values actually differ, computed after redaction; return early if empty.
-- Suppression: skip the UPDATE when `changed_fields` is exactly `{ownership_percentage}`.
-- `company_id` = `NEW.id` for `companies`, otherwise `NEW.company_id` falling back to `OLD.company_id` on DELETE.
-- `changed_by` = `coalesce(auth.uid(), nullif(current_setting('app.actor_id', true), '')::uuid)`.
-- The insert is wrapped in an exception block that swallows any error, so an audit failure can never block the underlying write.
+### c. Resolution list differences
 
-## Step 3 — Attach triggers
+"S Corporation" adds vs "Corporation": Approve Officer Bonuses (Reasonable Compensation), Approve Distributions, Revoke S-Election.
+"S Corporation" drops vs "Corporation": Approve Officer Bonuses, Approve Distributions/Dividends, Name Directors to Committees, Approve Tax Election (S-Corp), Approve Amendments to Bylaws, Approve Merger or Consolidation.
 
-`AFTER INSERT OR UPDATE OR DELETE ... FOR EACH ROW` on exactly: `companies`, `shareholders`, `share_transactions`, `stock_certificates`, `meetings`. No other table.
+"LLC-S" adds vs "LLC": Approve Reasonable Compensation, Revoke S-Election.
+"LLC-S" drops vs "LLC": Approve Guaranteed Payments, Approve Tax Classification Election, Adopt Regular Meeting Resolution.
 
-## Step 4 — Verification (results reported after the migration)
+### d. Call sites
 
-Against a scratch company owned by a real user, prove and report row counts for: a name change logs one row with correct `changed_fields`; a no-op update logs nothing; an ownership-percentage-only update logs nothing; `ein`/`ein_encrypted`/`ssn_ein_encrypted` never appear in any payload; an authenticated user cannot update or delete a `record_audit` row; a user cannot read rows for a company they do not own; and the existing New Client flow still creates a company successfully. All scratch data is removed afterwards. Zero frontend files modified.
+`isSElected()` is defined in `src/lib/entity-terminology.ts` and, in practice, S status is read inline everywhere. Meeting-scoped reads to convert: `meeting-pdf-export.ts` (~453, 1101, 1282-1286, 1532, 1565, 1978, 2162), `OrgMeetingWizard.tsx` (107-108), `AnnualMeetingWizard.tsx` (575), `MeetingDetail.tsx` (800, 1390-1391), plus the resolution list lookups in `MeetingResolutions.tsx` (~91) and `WrittenConsentWizard.tsx` (~393).
+
+Left on current status, unchanged: Dashboard badge (476), TimelineTab (236), record-book-pdf, annual-update-pdf, annual-review snapshot + public page, bylaws-pdf, smllc-scorp-operating-agreement-pdf, SMOperatingAgreementGenerator, SCorpOAWarningBanner, IncorporationTab summary card.
+
+## What gets built
+
+1. **Schema** — add `companies.s_revocation_date` (date, nullable, no default, no backfill) with a check that it is null, or set only when an election date exists and falls after it.
+
+2. **Helpers** in `entity-terminology.ts` — `isSElected` stays as-is (current status). Add `isSElectedForTaxYear(company, taxYear)` and `isSElectedOn(company, date)`, both treating `LLC-S` as S, both requiring the election to have started by the date and no revocation to have taken effect before it. Tax-year boundaries come from the company's fiscal year end (default December 31).
+
+3. **UI** — Incorporation tab and Organization tab. Unchecking a saved S election opens a dialog: "Did the S election end, or was it entered in error?" *Ended* asks for the effective date and stores it as the revocation date, keeping the election date. *Entered in error* clears both, as today. When a revocation date exists it is shown as an editable field, and re-checking the election is blocked with: "EntityIQ tracks one S election period. Re-election after revocation is not supported." An invalid revocation date is caught inline before saving, so the rest of the form still saves.
+
+4. **Meeting reads** — the sites in (d) switch to the tax year when the meeting has one, otherwise the meeting date. Resolution lists resolve from entity type plus time-aware status (Corporation + S → "S Corporation"; LLC + S → "LLC-S"; Single Member LLC keeps its own list). Resolutions already saved on a meeting keep displaying and printing even if they are no longer in the selected list.
+
+## Verification
+
+- Election dated 2019-01-01: a tax-year-2018 meeting prints no S language; tax-year 2019 does.
+- Company with no election: output byte-identical to today.
+- S company, no revocation, current-year meeting: output byte-identical to today.
+- Uncheck → "entered in error" behaves as before; "ended" keeps the election date and stores the revocation date.
+- An invalid revocation date is blocked in the UI and does not break saving other fields.
+- An S-elected corporation's meeting shows the "S Corporation" resolution list.
+- Full test suite and production build, plus a list of every file changed.
