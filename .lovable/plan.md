@@ -34,13 +34,18 @@ Prints when the meeting has at least one holder with `distribution_amount > 0`. 
 
 Without the flag the surrounding paragraph is identical, minus those phrases.
 
-### c. Resolution list differences
+### c. Resolution lists — the stored S lists are stale
 
-"S Corporation" adds vs "Corporation": Approve Officer Bonuses (Reasonable Compensation), Approve Distributions, Revoke S-Election.
-"S Corporation" drops vs "Corporation": Approve Officer Bonuses, Approve Distributions/Dividends, Name Directors to Committees, Approve Tax Election (S-Corp), Approve Amendments to Bylaws, Approve Merger or Consolidation.
+The hardcoded "S Corporation" array is missing Approve Amendments to Bylaws, Approve Merger or Consolidation, and Name Directors to Committees; "LLC-S" is missing Adopt Regular Meeting Resolution. All of these still apply to S-taxed entities. So the S lists will be **derived at read time** from the base lists by substitution, rather than kept as separate hand-maintained arrays. The `"S Corporation"` and `"LLC-S"` keys keep working for existing callers, but are backed by the derived lists. Substituted entries keep the S-specific statute and template text already written for them.
 
-"LLC-S" adds vs "LLC": Approve Reasonable Compensation, Revoke S-Election.
-"LLC-S" drops vs "LLC": Approve Guaranteed Payments, Approve Tax Classification Election, Adopt Regular Meeting Resolution.
+S Corporation = Corporation, with "Approve Officer Bonuses" → "Approve Officer Bonuses (Reasonable Compensation)", "Approve Distributions/Dividends" → "Approve Distributions", "Approve Tax Election (S-Corp)" → "Revoke S-Election". Resulting list, in order:
+
+Authorize a Line of Credit; Approve Officer Bonuses (Reasonable Compensation); Approve Annual Officer Compensation; Approve Issuance of Shares; Approve Transfer/Sale of Shares; Adopt Regular Meeting Resolution; Approve Distributions; Elect Officers; Elect Directors; Re-elect Board of Directors; Name Directors to Committees; Approve Employment Agreement; Approve Lease Agreement; Approve Purchase/Sale of Assets; Ratify Prior Actions; Revoke S-Election; Approve Employee Benefit Plan; Approve Amendments to Articles of Incorporation; Approve Amendments to Bylaws; Approve Merger or Consolidation; Approve Dissolution; Approve Loan from Related Party; Approve Loan to Related Party; Approve Related Party Loan Agreement; Approve AI Governance Policy; Universal Resolution; Approve Charitable Contributions; Approve Employer Contribution to Retirement Plan; Approve Employee Bonuses; Other.
+
+LLC-S = LLC, with "Approve Guaranteed Payments" → "Approve Reasonable Compensation", "Approve Tax Classification Election" → "Revoke S-Election". Resulting list, in order:
+
+Authorize a Line of Credit; Approve Member Distributions; Approve Reasonable Compensation; Admit New Member; Approve Transfer of Membership Interest; Elect/Appoint Managers; Re-elect Managers; Approve Employment/Service Agreement; Approve Lease Agreement; Approve Purchase/Sale of Assets; Revoke S-Election; Ratify Prior Actions; Approve Employee Benefit Plan; Adopt Regular Meeting Resolution; Approve Amendments to Operating Agreement; Approve Dissolution; Approve Authorized Binders; Approve Loan from Related Party; Approve Loan to Related Party; Approve Related Party Loan Agreement; Approve AI Governance Policy; Universal Resolution; Approve Charitable Contributions; Approve Employer Contribution to Retirement Plan; Approve Employee Bonuses; Other.
+
 
 ### d. Call sites
 
