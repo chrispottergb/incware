@@ -14,6 +14,7 @@ export interface SplitAddress {
   city: string;
   state: string;
   zip: string;
+  county: string;
 }
 
 export const EMPTY_SPLIT_ADDRESS: SplitAddress = {
@@ -21,6 +22,7 @@ export const EMPTY_SPLIT_ADDRESS: SplitAddress = {
   city: "",
   state: "",
   zip: "",
+  county: "",
 };
 
 /**
@@ -58,6 +60,7 @@ export function splitAddressFallback(
     city: split?.city ?? "",
     state: split?.state ?? "",
     zip: split?.zip ?? "",
+    county: split?.county ?? "",
   };
   const hasAnySplit = !!(s.street || s.city || s.state || s.zip);
   if (hasAnySplit) return s;
