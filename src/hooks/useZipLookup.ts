@@ -38,7 +38,7 @@ export function useZipLookup(onResult: (result: ZipLookupResult) => void) {
 
       if (error) throw error;
       if (data?.city && data?.state) {
-        onResultRef.current({ city: data.city, state: data.state });
+        onResultRef.current({ city: data.city, state: data.state, county: data.county ?? null });
         setZipError(null);
       } else {
         setZipError("ZIP code not found.");
