@@ -549,7 +549,7 @@ export default function RetentionResolutionPanel({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-muted-foreground">Retained earnings as reported</Label>
           <Input
@@ -566,13 +566,6 @@ export default function RetentionResolutionPanel({
             onChange={(e) => setField("reported_by", e.target.value)}
             placeholder="Accountant / firm"
             className="bg-background"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-muted-foreground">As of date</Label>
-          <DatePickerField
-            value={form.reported_as_of}
-            onChange={(v) => setField("reported_as_of", v || "")}
           />
         </div>
       </div>
@@ -630,12 +623,6 @@ export default function RetentionResolutionPanel({
                       <div className="text-xs">
                         <p className="font-medium">{r.category || "Uncategorized"}</p>
                         <p className="text-muted-foreground mt-0.5">{r.description}</p>
-                        {r.estimated_cost != null && (
-                          <p className="text-muted-foreground">Est. cost: ${fmtMoney(r.estimated_cost)}</p>
-                        )}
-                        {r.target_date && (
-                          <p className="text-muted-foreground">Target date: {formatLongDate(r.target_date)}</p>
-                        )}
                       </div>
                       {!alreadyCarried && (
                         <Button
@@ -651,8 +638,6 @@ export default function RetentionResolutionPanel({
                                   ...emptyReason(prev.reasons.length),
                                   category: r.category || "",
                                   description: "",
-                                  estimated_cost: r.estimated_cost != null ? String(r.estimated_cost) : "",
-                                  target_date: r.target_date || "",
                                   carried_from_reason_id: r.id,
                                 },
                               ],
