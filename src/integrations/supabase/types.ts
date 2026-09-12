@@ -4114,6 +4114,130 @@ export type Database = {
         }
         Relationships: []
       }
+      real_property: {
+        Row: {
+          acquisition_date: string | null
+          authorized_by_meeting_id: string | null
+          buyer_name: string | null
+          city: string | null
+          company_id: string
+          county: string | null
+          created_at: string
+          deed_type: string | null
+          disposition_date: string | null
+          disposition_doc_number: string | null
+          id: string
+          is_financed: boolean
+          legal_description: string | null
+          lender_name: string | null
+          linked_loan_id: string | null
+          notes: string | null
+          parcel_id: string | null
+          property_label: string | null
+          property_use: string | null
+          purchase_price: number | null
+          recorded_date: string | null
+          recording_document_number: string | null
+          sale_price: number | null
+          seller_name: string | null
+          state: string | null
+          status: string
+          street_address: string | null
+          title_held_by_seller: boolean
+          titled_in_name_of: string | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          acquisition_date?: string | null
+          authorized_by_meeting_id?: string | null
+          buyer_name?: string | null
+          city?: string | null
+          company_id: string
+          county?: string | null
+          created_at?: string
+          deed_type?: string | null
+          disposition_date?: string | null
+          disposition_doc_number?: string | null
+          id?: string
+          is_financed?: boolean
+          legal_description?: string | null
+          lender_name?: string | null
+          linked_loan_id?: string | null
+          notes?: string | null
+          parcel_id?: string | null
+          property_label?: string | null
+          property_use?: string | null
+          purchase_price?: number | null
+          recorded_date?: string | null
+          recording_document_number?: string | null
+          sale_price?: number | null
+          seller_name?: string | null
+          state?: string | null
+          status?: string
+          street_address?: string | null
+          title_held_by_seller?: boolean
+          titled_in_name_of?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          acquisition_date?: string | null
+          authorized_by_meeting_id?: string | null
+          buyer_name?: string | null
+          city?: string | null
+          company_id?: string
+          county?: string | null
+          created_at?: string
+          deed_type?: string | null
+          disposition_date?: string | null
+          disposition_doc_number?: string | null
+          id?: string
+          is_financed?: boolean
+          legal_description?: string | null
+          lender_name?: string | null
+          linked_loan_id?: string | null
+          notes?: string | null
+          parcel_id?: string | null
+          property_label?: string | null
+          property_use?: string | null
+          purchase_price?: number | null
+          recorded_date?: string | null
+          recording_document_number?: string | null
+          sale_price?: number | null
+          seller_name?: string | null
+          state?: string | null
+          status?: string
+          street_address?: string | null
+          title_held_by_seller?: boolean
+          titled_in_name_of?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "real_property_authorized_by_meeting_id_fkey"
+            columns: ["authorized_by_meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "real_property_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "real_property_linked_loan_id_fkey"
+            columns: ["linked_loan_id"]
+            isOneToOne: false
+            referencedRelation: "meeting_loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       record_audit: {
         Row: {
           changed_at: string
