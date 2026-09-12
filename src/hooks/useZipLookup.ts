@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 interface ZipLookupResult {
   city: string;
   state: string;
+  /** County name from the Census geocoder (e.g. "Outagamie County"), or null if unavailable. */
+  county?: string | null;
 }
 
 /**
