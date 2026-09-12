@@ -39,6 +39,7 @@ import CounselTab from "@/components/company/CounselTab";
 import BanksTab from "@/components/company/BanksTab";
 import RelationshipsTab from "@/components/company/RelationshipsTab";
 import LeasesTab from "@/components/company/LeasesTab";
+import RealPropertyTab from "@/components/company/RealPropertyTab";
 import BuySellWorkflow from "@/components/company/BuySellWorkflow";
 import TransferLedgerTab from "@/components/company/TransferLedgerTab";
 import DocumentsTab from "@/components/company/DocumentsTab";
@@ -128,7 +129,7 @@ export default function CompanyDetail() {
   const defaultTab = isLLC ? "organization" : "incorporation";
 
   // Valid tab values for LLC vs non-LLC to prevent reversion
-  const LLC_TABS = ["organization", "meetings", "shareholders", "timeline", "leases", "counsel", "banks", "relationships", "ai-compliance", "operating-agreement", "filing-compliance", "record-book", "documents", "business-sales"];
+  const LLC_TABS = ["organization", "meetings", "shareholders", "timeline", "leases", "real-property", "counsel", "banks", "relationships", "ai-compliance", "operating-agreement", "filing-compliance", "record-book", "documents", "business-sales"];
   const validLLCTab = isLLC && rawHashTab && !LLC_TABS.includes(rawHashTab);
   const hashTab = (!rawHashTab || (rawHashTab === "incorporation" && isLLC) || validLLCTab) ? defaultTab : rawHashTab;
 
@@ -148,6 +149,7 @@ export default function CompanyDetail() {
         { value: "meetings", label: "Meetings" },
         { value: "timeline", label: "Timeline" },
         { value: "leases", label: "Leases" },
+        { value: "real-property", label: "Real Property" },
         { value: "counsel", label: "Counsel" },
         { value: "banks", label: "Bank" },
         { value: "relationships", label: "Relationships" },
@@ -171,6 +173,7 @@ export default function CompanyDetail() {
 
       { value: "timeline", label: "Timeline" },
       { value: "leases", label: "Leases" },
+      { value: "real-property", label: "Real Property" },
       { value: "counsel", label: "Counsel" },
       { value: "banks", label: "Banks" },
       { value: "relationships", label: "Relationships" },
@@ -503,6 +506,9 @@ export default function CompanyDetail() {
         </TabsContent>
         <TabsContent value="leases" className="mt-5">
           <LeasesTab companyId={company.id} companyName={company.name} companyAddress={[company.address, company.city, company.state, company.zip].filter(Boolean).join(", ")} />
+        </TabsContent>
+        <TabsContent value="real-property" className="mt-5">
+          <RealPropertyTab companyId={company.id} companyName={company.name} />
         </TabsContent>
         <TabsContent value="counsel" className="mt-5">
           <CounselTab companyId={company.id} />
