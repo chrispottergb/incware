@@ -39,6 +39,7 @@ import CounselTab from "@/components/company/CounselTab";
 import BanksTab from "@/components/company/BanksTab";
 import RelationshipsTab from "@/components/company/RelationshipsTab";
 import LeasesTab from "@/components/company/LeasesTab";
+import RealPropertyTab from "@/components/company/RealPropertyTab";
 import BuySellWorkflow from "@/components/company/BuySellWorkflow";
 import TransferLedgerTab from "@/components/company/TransferLedgerTab";
 import DocumentsTab from "@/components/company/DocumentsTab";
