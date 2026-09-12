@@ -31,7 +31,7 @@ export function SplitAddressFields({ label, value, onChange, showCounty = false 
 
   const handleZipBlur = () => {
     const zip = (value.zip || "").trim();
-    if (/^\d{5}$/.test(zip) && !(value.city && value.state)) {
+    if (/^\d{5}$/.test(zip) && (!(value.city && value.state) || (showCounty && !value.county))) {
       handleZipChange(zip);
     }
   };
