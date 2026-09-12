@@ -698,31 +698,20 @@ export default function RetentionResolutionPanel({
 
         {form.reasons.map((reason, i) => (
           <div key={i} className="rounded-md border bg-background p-3 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-medium text-muted-foreground">Category</Label>
-                <Select value={reason.category} onValueChange={(v) => setReason(i, "category", v)}>
-                  <SelectTrigger className="bg-background h-8 text-xs">
-                    <SelectValue placeholder="Select category..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover z-50">
-                    {RETENTION_REASON_CATEGORIES.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-medium text-muted-foreground">Estimated cost</Label>
-                <Input
-                  value={reason.estimated_cost}
-                  onChange={(e) => setReason(i, "estimated_cost", e.target.value)}
-                  placeholder="0.00"
-                  className="bg-background h-8 text-xs"
-                />
-              </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] font-medium text-muted-foreground">Category</Label>
+              <Select value={reason.category} onValueChange={(v) => setReason(i, "category", v)}>
+                <SelectTrigger className="bg-background h-8 text-xs">
+                  <SelectValue placeholder="Select category..." />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  {RETENTION_REASON_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label className="text-[10px] font-medium text-muted-foreground">Description</Label>
@@ -736,35 +725,26 @@ export default function RetentionResolutionPanel({
                 <p className="text-[11px] text-destructive">{errors[`reason_${i}_description`]}</p>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            {reason.carried_from_reason_id && (
               <div className="space-y-1">
-                <Label className="text-[10px] font-medium text-muted-foreground">Target date</Label>
-                <DatePickerField
-                  value={reason.target_date}
-                  onChange={(v) => setReason(i, "target_date", v || "")}
-                />
+                <Label className="text-[10px] font-medium text-muted-foreground">Status</Label>
+                <Select value={reason.status} onValueChange={(v) => setReason(i, "status", v)}>
+                  <SelectTrigger className="bg-background h-8 text-xs">
+                    <SelectValue placeholder="Select status..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {REASON_STATUS_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors[`reason_${i}_status`] && (
+                  <p className="text-[11px] text-destructive">{errors[`reason_${i}_status`]}</p>
+                )}
               </div>
-              {reason.carried_from_reason_id && (
-                <div className="space-y-1">
-                  <Label className="text-[10px] font-medium text-muted-foreground">Status</Label>
-                  <Select value={reason.status} onValueChange={(v) => setReason(i, "status", v)}>
-                    <SelectTrigger className="bg-background h-8 text-xs">
-                      <SelectValue placeholder="Select status..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover z-50">
-                      {REASON_STATUS_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors[`reason_${i}_status`] && (
-                    <p className="text-[11px] text-destructive">{errors[`reason_${i}_status`]}</p>
-                  )}
-                </div>
-              )}
-            </div>
+            )}
             {form.reasons.length > 1 && !reason.carried_from_reason_id && (
               <Button
                 type="button"
