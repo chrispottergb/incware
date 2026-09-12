@@ -129,7 +129,7 @@ export default function CompanyDetail() {
   const defaultTab = isLLC ? "organization" : "incorporation";
 
   // Valid tab values for LLC vs non-LLC to prevent reversion
-  const LLC_TABS = ["organization", "meetings", "shareholders", "timeline", "leases", "counsel", "banks", "relationships", "ai-compliance", "operating-agreement", "filing-compliance", "record-book", "documents", "business-sales"];
+  const LLC_TABS = ["organization", "meetings", "shareholders", "timeline", "leases", "real-property", "counsel", "banks", "relationships", "ai-compliance", "operating-agreement", "filing-compliance", "record-book", "documents", "business-sales"];
   const validLLCTab = isLLC && rawHashTab && !LLC_TABS.includes(rawHashTab);
   const hashTab = (!rawHashTab || (rawHashTab === "incorporation" && isLLC) || validLLCTab) ? defaultTab : rawHashTab;
 
