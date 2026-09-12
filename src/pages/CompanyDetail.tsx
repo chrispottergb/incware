@@ -149,6 +149,7 @@ export default function CompanyDetail() {
         { value: "meetings", label: "Meetings" },
         { value: "timeline", label: "Timeline" },
         { value: "leases", label: "Leases" },
+        { value: "real-property", label: "Real Property" },
         { value: "counsel", label: "Counsel" },
         { value: "banks", label: "Bank" },
         { value: "relationships", label: "Relationships" },
