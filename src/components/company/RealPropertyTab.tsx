@@ -19,6 +19,7 @@ import { DatePickerField } from "@/components/ui/date-picker-field";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import NameAutocomplete from "@/components/NameAutocomplete";
 import { useAddressBookContext } from "@/contexts/AddressBookContext";
+import { useZipLookup } from "@/hooks/useZipLookup";
 import { sanitizeCurrencyInput, formatCurrencyDisplay } from "@/lib/currency-format";
 import { Plus, Pencil, Trash2, Loader2, Home } from "lucide-react";
 import { toast } from "sonner";
@@ -229,14 +230,23 @@ export default function RealPropertyTab({ companyId, companyName }: Props) {
   const set = <K extends keyof FormState>(field: K) => (value: FormState[K]) =>
     setForm((f) => ({ ...f, [field]: value }));
 
+  // Auto-fill city/state once a 5-digit ZIP is entered (read-only suggestion —
+  // the user can still type over either field).
+  const { handleZipChange, isLoading: zipLoading, zipError, reset: resetZipLookup } =
+    useZipLookup(({ city, state }) =>
+      setForm((f) => ({ ...f, city, state })),
+    );
+
   const openAdd = () => {
     setEditingId(null);
+    resetZipLookup();
     setForm({ ...emptyForm, titled_in_name_of: companyName || "" });
     setDialogOpen(true);
   };
 
   const openEdit = (e: RealProperty) => {
     setEditingId(e.id);
+    resetZipLookup();
     setForm({
       property_label: e.property_label || "",
       street_address: e.street_address || "",
@@ -512,7 +522,19 @@ export default function RealPropertyTab({ companyId, companyName }: Props) {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">ZIP</Label>
-                    <Input value={form.zip} onChange={(ev) => set("zip")(ev.target.value)} />
+                    <div className="relative">
+                      <Input
+                        value={form.zip}
+                        onChange={(ev) => {
+                          set("zip")(ev.target.value);
+                          handleZipChange(ev.target.value);
+                        }}
+                      />
+                      {zipLoading && (
+                        <Loader2 className="absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
+                    {zipError && <p className="text-xs text-destructive">{zipError}</p>}
                   </div>
                 </div>
                 <div className="space-y-1.5">
