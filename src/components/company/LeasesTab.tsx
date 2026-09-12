@@ -192,6 +192,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
           address_city: f.property_addr.city || null,
           address_state: f.property_addr.state || null,
           address_zip: f.property_addr.zip || null,
+          address_county: f.property_addr.county || null,
           landlord_address_street: f.landlord_addr.street || null,
           landlord_address_city: f.landlord_addr.city || null,
           landlord_address_state: f.landlord_addr.state || null,
@@ -337,7 +338,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
       landlord_address: a.landlord_address || "",
       tenant_address: a.tenant_address || "",
       property_addr: splitAddressFallback(a.address, {
-        street: a.address_street, city: a.address_city, state: a.address_state, zip: a.address_zip,
+        street: a.address_street, city: a.address_city, state: a.address_state, zip: a.address_zip, county: a.address_county,
       }),
       landlord_addr: splitAddressFallback(a.landlord_address, {
         street: a.landlord_address_street, city: a.landlord_address_city, state: a.landlord_address_state, zip: a.landlord_address_zip,
@@ -525,6 +526,7 @@ export default function LeasesTab({ companyId, companyName = "", companyAddress 
                     label="Property Address"
                     value={form.property_addr}
                     onChange={(next) => setForm((p) => ({ ...p, property_addr: next }))}
+                    showCounty
                   />
                 </fieldset>
 

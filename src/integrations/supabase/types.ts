@@ -1324,6 +1324,7 @@ export type Database = {
           address: string | null
           address_2: string | null
           address_city: string | null
+          address_county: string | null
           address_state: string | null
           address_street: string | null
           address_zip: string | null
@@ -1396,6 +1397,7 @@ export type Database = {
           address?: string | null
           address_2?: string | null
           address_city?: string | null
+          address_county?: string | null
           address_state?: string | null
           address_street?: string | null
           address_zip?: string | null
@@ -1468,6 +1470,7 @@ export type Database = {
           address?: string | null
           address_2?: string | null
           address_city?: string | null
+          address_county?: string | null
           address_state?: string | null
           address_street?: string | null
           address_zip?: string | null
