@@ -507,6 +507,9 @@ export default function CompanyDetail() {
         <TabsContent value="leases" className="mt-5">
           <LeasesTab companyId={company.id} companyName={company.name} companyAddress={[company.address, company.city, company.state, company.zip].filter(Boolean).join(", ")} />
         </TabsContent>
+        <TabsContent value="real-property" className="mt-5">
+          <RealPropertyTab companyId={company.id} companyName={company.name} />
+        </TabsContent>
         <TabsContent value="counsel" className="mt-5">
           <CounselTab companyId={company.id} />
         </TabsContent>
