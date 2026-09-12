@@ -37,6 +37,7 @@ import {
   Target,
   PanelLeftClose,
   PanelLeftOpen,
+  Home,
 } from "lucide-react";
 import { isLLCType } from "@/lib/entity-terminology";
 import ResourcesPanel from "@/components/ResourcesPanel";
