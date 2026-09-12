@@ -1,0 +1,1 @@
+ALTER TABLE public.company_assets ADD COLUMN IF NOT EXISTS address_county text;
