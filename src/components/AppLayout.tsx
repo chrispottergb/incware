@@ -176,6 +176,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             { label: "Shareholders", href: `/company/${companyId}#shareholders`, icon: UsersRound },
             { label: "Timeline", href: `/company/${companyId}#timeline`, icon: Clock },
             { label: "Leases", href: `/company/${companyId}#leases`, icon: FileText },
+            { label: "Real Property", href: `/company/${companyId}#real-property`, icon: Home },
             { label: "Counsel", href: `/company/${companyId}#counsel`, icon: Scale },
             { label: "Banks", href: `/company/${companyId}#banks`, icon: Landmark },
             { label: "Relationships", href: `/company/${companyId}#relationships`, icon: GitBranch },
