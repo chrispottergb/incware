@@ -63,10 +63,33 @@ serve(async (req) => {
       );
     }
 
+    // County lookup: zippopotam.us doesn't return counties, so geocode the
+    // ZIP's coordinates against the Census Bureau's free geocoder.
+    let county: string | null = null;
+    const lat = place.latitude;
+    const lon = place.longitude;
+    if (lat && lon) {
+      try {
+        const geoRes = await fetch(
+          `https://geocoding.geo.census.gov/geocoder/geographies/coordinates?x=${lon}&y=${lat}&benchmark=Public_AR_Current&vintage=Current_Current&format=json`
+        );
+        if (geoRes.ok) {
+          const geo = await geoRes.json();
+          const counties = geo?.result?.geographies?.Counties;
+          if (Array.isArray(counties) && counties.length > 0 && counties[0].NAME) {
+            county = counties[0].NAME;
+          }
+        }
+      } catch (e) {
+        console.error("county lookup failed:", e);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         city: place["place name"],
         state: place["state abbreviation"],
+        county,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

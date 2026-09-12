@@ -230,11 +230,11 @@ export default function RealPropertyTab({ companyId, companyName }: Props) {
   const set = <K extends keyof FormState>(field: K) => (value: FormState[K]) =>
     setForm((f) => ({ ...f, [field]: value }));
 
-  // Auto-fill city/state once a 5-digit ZIP is entered (read-only suggestion —
-  // the user can still type over either field).
+  // Auto-fill city/state/county once a 5-digit ZIP is entered (read-only
+  // suggestion — the user can still type over any of these fields).
   const { handleZipChange, isLoading: zipLoading, zipError, reset: resetZipLookup } =
-    useZipLookup(({ city, state }) =>
-      setForm((f) => ({ ...f, city, state })),
+    useZipLookup(({ city, state, county }) =>
+      setForm((f) => ({ ...f, city, state, county: f.county || county || "" })),
     );
 
   const openAdd = () => {

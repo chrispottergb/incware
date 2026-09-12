@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 interface ZipLookupResult {
   city: string;
   state: string;
+  /** County name from the Census geocoder (e.g. "Outagamie County"), or null if unavailable. */
+  county?: string | null;
 }
 
 /**
@@ -36,7 +38,7 @@ export function useZipLookup(onResult: (result: ZipLookupResult) => void) {
 
       if (error) throw error;
       if (data?.city && data?.state) {
-        onResultRef.current({ city: data.city, state: data.state });
+        onResultRef.current({ city: data.city, state: data.state, county: data.county ?? null });
         setZipError(null);
       } else {
         setZipError("ZIP code not found.");
