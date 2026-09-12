@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DatePickerField } from "@/components/ui/date-picker-field";
+
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -125,13 +125,10 @@ function composeCanonicalResolutionText(
   const fiscalYear = form.fiscal_year;
   const reported = parseMoney(form.retained_earnings_reported);
   const reportedBy = form.reported_by.trim() || null;
-  const reportedAsOf = form.reported_as_of
-    ? new Date(form.reported_as_of + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
-    : null;
 
   let whereas = `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} of ${companyName} considered the appropriate handling of earnings for the fiscal year ended ${fiscalYear}; and`;
   if (reported != null && reportedBy) {
-    whereas = `WHEREAS, management reported retained earnings in the amount of $${fmtMoney(reported)}, as reported by ${reportedBy}${reportedAsOf ? ` as of ${reportedAsOf}` : ""}, for the fiscal year ended ${fiscalYear}; and`;
+    whereas = `WHEREAS, management reported retained earnings in the amount of $${fmtMoney(reported)}, as reported by ${reportedBy}, for the fiscal year ended ${fiscalYear}; and`;
   } else if (reported != null) {
     whereas = `WHEREAS, management reported retained earnings in the amount of $${fmtMoney(reported)} for the fiscal year ended ${fiscalYear}; and`;
   }
@@ -148,7 +145,7 @@ function composeCanonicalResolutionText(
 
   const reasons = form.reasons
     .filter((r) => r.description.trim())
-    .map((r, i) => `${i + 1}. ${r.category ? `[${r.category}] ` : ""}${r.description.trim()}${r.estimated_cost ? ` (estimated cost $${fmtMoney(r.estimated_cost)}` : ""}${r.estimated_cost && r.target_date ? `, target ${new Date(r.target_date + "T12:00:00").toLocaleDateString("en-US")}` : r.estimated_cost ? ")" : ""}`)
+    .map((r, i) => `${i + 1}. ${r.category ? `[${r.category}] ` : ""}${r.description.trim()}`)
     .join("\n");
 
   let text = `${label}\n\n${whereas}\n\n${resolved}`;
@@ -394,7 +391,7 @@ export default function RetentionResolutionPanel({
         decision: form.decision,
         retained_earnings_reported: parseMoney(form.retained_earnings_reported),
         reported_by: form.reported_by.trim() || null,
-        reported_as_of: form.reported_as_of || null,
+        reported_as_of: null,
         notes: form.notes.trim() || null,
       };
 
@@ -436,8 +433,8 @@ export default function RetentionResolutionPanel({
           resolution_id: resolutionId,
           category: r.category || null,
           description: r.description.trim(),
-          estimated_cost: parseMoney(r.estimated_cost),
-          target_date: r.target_date || null,
+          estimated_cost: null,
+          target_date: null,
           carried_from_reason_id: r.carried_from_reason_id || null,
           status: r.status || null,
           status_note: r.status_note.trim() || null,
@@ -552,7 +549,7 @@ export default function RetentionResolutionPanel({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-muted-foreground">Retained earnings as reported</Label>
           <Input
@@ -569,13 +566,6 @@ export default function RetentionResolutionPanel({
             onChange={(e) => setField("reported_by", e.target.value)}
             placeholder="Accountant / firm"
             className="bg-background"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-muted-foreground">As of date</Label>
-          <DatePickerField
-            value={form.reported_as_of}
-            onChange={(v) => setField("reported_as_of", v || "")}
           />
         </div>
       </div>
@@ -633,12 +623,6 @@ export default function RetentionResolutionPanel({
                       <div className="text-xs">
                         <p className="font-medium">{r.category || "Uncategorized"}</p>
                         <p className="text-muted-foreground mt-0.5">{r.description}</p>
-                        {r.estimated_cost != null && (
-                          <p className="text-muted-foreground">Est. cost: ${fmtMoney(r.estimated_cost)}</p>
-                        )}
-                        {r.target_date && (
-                          <p className="text-muted-foreground">Target date: {formatLongDate(r.target_date)}</p>
-                        )}
                       </div>
                       {!alreadyCarried && (
                         <Button
@@ -654,8 +638,6 @@ export default function RetentionResolutionPanel({
                                   ...emptyReason(prev.reasons.length),
                                   category: r.category || "",
                                   description: "",
-                                  estimated_cost: r.estimated_cost != null ? String(r.estimated_cost) : "",
-                                  target_date: r.target_date || "",
                                   carried_from_reason_id: r.id,
                                 },
                               ],
@@ -716,31 +698,20 @@ export default function RetentionResolutionPanel({
 
         {form.reasons.map((reason, i) => (
           <div key={i} className="rounded-md border bg-background p-3 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-medium text-muted-foreground">Category</Label>
-                <Select value={reason.category} onValueChange={(v) => setReason(i, "category", v)}>
-                  <SelectTrigger className="bg-background h-8 text-xs">
-                    <SelectValue placeholder="Select category..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover z-50">
-                    {RETENTION_REASON_CATEGORIES.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-medium text-muted-foreground">Estimated cost</Label>
-                <Input
-                  value={reason.estimated_cost}
-                  onChange={(e) => setReason(i, "estimated_cost", e.target.value)}
-                  placeholder="0.00"
-                  className="bg-background h-8 text-xs"
-                />
-              </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] font-medium text-muted-foreground">Category</Label>
+              <Select value={reason.category} onValueChange={(v) => setReason(i, "category", v)}>
+                <SelectTrigger className="bg-background h-8 text-xs">
+                  <SelectValue placeholder="Select category..." />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  {RETENTION_REASON_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label className="text-[10px] font-medium text-muted-foreground">Description</Label>
@@ -754,35 +725,26 @@ export default function RetentionResolutionPanel({
                 <p className="text-[11px] text-destructive">{errors[`reason_${i}_description`]}</p>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            {reason.carried_from_reason_id && (
               <div className="space-y-1">
-                <Label className="text-[10px] font-medium text-muted-foreground">Target date</Label>
-                <DatePickerField
-                  value={reason.target_date}
-                  onChange={(v) => setReason(i, "target_date", v || "")}
-                />
+                <Label className="text-[10px] font-medium text-muted-foreground">Status</Label>
+                <Select value={reason.status} onValueChange={(v) => setReason(i, "status", v)}>
+                  <SelectTrigger className="bg-background h-8 text-xs">
+                    <SelectValue placeholder="Select status..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {REASON_STATUS_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors[`reason_${i}_status`] && (
+                  <p className="text-[11px] text-destructive">{errors[`reason_${i}_status`]}</p>
+                )}
               </div>
-              {reason.carried_from_reason_id && (
-                <div className="space-y-1">
-                  <Label className="text-[10px] font-medium text-muted-foreground">Status</Label>
-                  <Select value={reason.status} onValueChange={(v) => setReason(i, "status", v)}>
-                    <SelectTrigger className="bg-background h-8 text-xs">
-                      <SelectValue placeholder="Select status..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover z-50">
-                      {REASON_STATUS_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors[`reason_${i}_status`] && (
-                    <p className="text-[11px] text-destructive">{errors[`reason_${i}_status`]}</p>
-                  )}
-                </div>
-              )}
-            </div>
+            )}
             {form.reasons.length > 1 && !reason.carried_from_reason_id && (
               <Button
                 type="button"
@@ -803,11 +765,4 @@ export default function RetentionResolutionPanel({
       </Button>
     </div>
   );
-}
-
-function formatLongDate(value?: string | null): string {
-  if (!value) return "";
-  const d = new Date(String(value).slice(0, 10) + "T12:00:00");
-  if (isNaN(d.getTime())) return String(value);
-  return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 }

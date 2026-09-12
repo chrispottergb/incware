@@ -1359,14 +1359,10 @@ function renderRetentionEarningsSection(
     ? Number(resolution.retained_earnings_reported).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : null;
   const reportedBy = resolution.reported_by || null;
-  const reportedAsOf = resolution.reported_as_of
-    ? new Date(resolution.reported_as_of + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
-    : null;
-  const approver = isLLC ? "members/managers" : "Board of Directors";
 
   let whereas = `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} of ${companyName} considered the appropriate handling of earnings for the fiscal year ended ${fiscalYear}; and`;
   if (reported && reportedBy) {
-    whereas = `WHEREAS, management reported retained earnings in the amount of $${reported}, as reported by ${reportedBy}${reportedAsOf ? ` as of ${reportedAsOf}` : ""}, for the fiscal year ended ${fiscalYear}; and`;
+    whereas = `WHEREAS, management reported retained earnings in the amount of $${reported}, as reported by ${reportedBy}, for the fiscal year ended ${fiscalYear}; and`;
   } else if (reported) {
     whereas = `WHEREAS, management reported retained earnings in the amount of $${reported} for the fiscal year ended ${fiscalYear}; and`;
   }
@@ -1391,16 +1387,8 @@ function renderRetentionEarningsSection(
   if (reasons.length > 0) {
     y = checkPageBreak(doc, y, 8 + reasons.length * 14);
     for (const r of reasons) {
-      const cost = r.estimated_cost != null
-        ? Number(r.estimated_cost).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-        : null;
-      const target = r.target_date
-        ? new Date(r.target_date + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
-        : null;
       let reasonText = r.description || "";
       if (r.category) reasonText = `${r.category}${reasonText ? `: ${reasonText}` : ""}`;
-      if (cost) reasonText += ` (estimated cost $${cost}${target ? `, target date ${target}` : ""})`;
-      else if (target) reasonText += ` (target date ${target})`;
       if (r.status) reasonText += ` — status: ${r.status}${r.status_note ? ` (${r.status_note})` : ""}`;
       y = addResolutionBlock(doc, y, "Reason for Retention", reasonText);
     }
