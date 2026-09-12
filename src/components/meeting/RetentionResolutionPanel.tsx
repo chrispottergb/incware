@@ -766,10 +766,3 @@ export default function RetentionResolutionPanel({
     </div>
   );
 }
-
-function formatLongDate(value?: string | null): string {
-  if (!value) return "";
-  const d = new Date(String(value).slice(0, 10) + "T12:00:00");
-  if (isNaN(d.getTime())) return String(value);
-  return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-}
