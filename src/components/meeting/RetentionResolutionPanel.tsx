@@ -125,13 +125,10 @@ function composeCanonicalResolutionText(
   const fiscalYear = form.fiscal_year;
   const reported = parseMoney(form.retained_earnings_reported);
   const reportedBy = form.reported_by.trim() || null;
-  const reportedAsOf = form.reported_as_of
-    ? new Date(form.reported_as_of + "T12:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
-    : null;
 
   let whereas = `WHEREAS, the ${isLLC ? "members/managers" : "Board of Directors"} of ${companyName} considered the appropriate handling of earnings for the fiscal year ended ${fiscalYear}; and`;
   if (reported != null && reportedBy) {
-    whereas = `WHEREAS, management reported retained earnings in the amount of $${fmtMoney(reported)}, as reported by ${reportedBy}${reportedAsOf ? ` as of ${reportedAsOf}` : ""}, for the fiscal year ended ${fiscalYear}; and`;
+    whereas = `WHEREAS, management reported retained earnings in the amount of $${fmtMoney(reported)}, as reported by ${reportedBy}, for the fiscal year ended ${fiscalYear}; and`;
   } else if (reported != null) {
     whereas = `WHEREAS, management reported retained earnings in the amount of $${fmtMoney(reported)} for the fiscal year ended ${fiscalYear}; and`;
   }
@@ -148,7 +145,7 @@ function composeCanonicalResolutionText(
 
   const reasons = form.reasons
     .filter((r) => r.description.trim())
-    .map((r, i) => `${i + 1}. ${r.category ? `[${r.category}] ` : ""}${r.description.trim()}${r.estimated_cost ? ` (estimated cost $${fmtMoney(r.estimated_cost)}` : ""}${r.estimated_cost && r.target_date ? `, target ${new Date(r.target_date + "T12:00:00").toLocaleDateString("en-US")}` : r.estimated_cost ? ")" : ""}`)
+    .map((r, i) => `${i + 1}. ${r.category ? `[${r.category}] ` : ""}${r.description.trim()}`)
     .join("\n");
 
   let text = `${label}\n\n${whereas}\n\n${resolved}`;
@@ -394,7 +391,7 @@ export default function RetentionResolutionPanel({
         decision: form.decision,
         retained_earnings_reported: parseMoney(form.retained_earnings_reported),
         reported_by: form.reported_by.trim() || null,
-        reported_as_of: form.reported_as_of || null,
+        reported_as_of: null,
         notes: form.notes.trim() || null,
       };
 
@@ -436,8 +433,8 @@ export default function RetentionResolutionPanel({
           resolution_id: resolutionId,
           category: r.category || null,
           description: r.description.trim(),
-          estimated_cost: parseMoney(r.estimated_cost),
-          target_date: r.target_date || null,
+          estimated_cost: null,
+          target_date: null,
           carried_from_reason_id: r.carried_from_reason_id || null,
           status: r.status || null,
           status_note: r.status_note.trim() || null,
