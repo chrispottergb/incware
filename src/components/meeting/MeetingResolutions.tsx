@@ -389,14 +389,15 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                 <Plus className="mr-2 h-4 w-4" /> Add
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-xl">
+            <DialogContent className="max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
               <DialogHeader>
                 <DialogTitle className="font-display">{editingId ? "Edit Resolution" : "Add Resolution"}</DialogTitle>
                 <DialogDescription>
                   {editingId ? "Update" : "Select"} the type of resolution for this <span className="font-semibold">{entityType}</span> entity.
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4 flex-1 overflow-y-auto pr-1">
+
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Resolution Type</Label>
                   <Select value={purpose} onValueChange={handlePurposeChange}>
