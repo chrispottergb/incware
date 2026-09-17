@@ -468,7 +468,7 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                 <p className="text-xs text-muted-foreground italic">
                   If resolutions involve complex issues, it is advised to have your final documentation reviewed by your attorney or tax advisor.
                 </p>
-                <Button type="submit" className="w-full" disabled={isPending || !purpose || (purpose === "Other" && !customPurpose.trim()) || showRetentionPanel}>
+                <Button type="submit" className="w-full sticky bottom-0" disabled={isPending || !purpose || (purpose === "Other" && !customPurpose.trim()) || showRetentionPanel}>
                   {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {editingId ? "Save Changes" : "Add Resolution"}
                 </Button>
