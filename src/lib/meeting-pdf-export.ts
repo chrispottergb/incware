@@ -3,7 +3,7 @@ import autoTable from "jspdf-autotable";
 import { savePdfReliably } from "./pdf-save";
 import { registerArialFont } from "@/lib/arial-font";
 import { isSElectedForTaxYear, isSElectedOn } from "@/lib/entity-terminology";
-import { resolveRetentionDisplayLabel } from "@/lib/resolution-types";
+import { resolveRetentionDisplayLabel, RETENTION_RESOLUTION_LABEL } from "@/lib/resolution-types";
 
 /**
  * S/C tax status AS OF the meeting being printed, so reprinting an older meeting
@@ -3296,11 +3296,13 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     });
   }
 
-  // Resolutions
-  if (data.resolutions && (data.resolutions ?? []).length > 0) {
-    y = checkPageBreak(doc, y, 20 + (data.resolutions ?? []).length * 15);
+  // Resolutions — exclude the Retention of Earnings resolution; it prints in its
+  // own dedicated section (renderRetentionEarningsSection) with entity-aware wording
+  const specialResolutions = (data.resolutions ?? []).filter((r) => r.purpose !== RETENTION_RESOLUTION_LABEL);
+  if (specialResolutions.length > 0) {
+    y = checkPageBreak(doc, y, 20 + specialResolutions.length * 15);
     y = section("Special Resolutions");
-    (data.resolutions ?? []).forEach((r) => {
+    specialResolutions.forEach((r) => {
       y = addResolutionBlock(doc, y, r.purpose, r.resolution_text || "");
     });
   }
