@@ -3,7 +3,7 @@ import autoTable from "jspdf-autotable";
 import { savePdfReliably } from "./pdf-save";
 import { registerArialFont } from "@/lib/arial-font";
 import { isSElectedForTaxYear, isSElectedOn } from "@/lib/entity-terminology";
-import { resolveRetentionDisplayLabel } from "@/lib/resolution-types";
+import { resolveRetentionDisplayLabel, RETENTION_RESOLUTION_LABEL } from "@/lib/resolution-types";
 
 /**
  * S/C tax status AS OF the meeting being printed, so reprinting an older meeting
