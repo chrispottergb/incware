@@ -67,6 +67,18 @@ export const EXPENSE_TOTAL_FIELD = {
   ref: "990 Part IX line 25 col A",
 } as const;
 
+/**
+ * The five figures the board actually reviews. This is the only set rendered
+ * in the UI, the on-screen preview and the PDF.
+ */
+export const BOARD_REVIEW_FIELDS = [
+  { key: "total_revenue", label: "Total Revenue", ref: "990 Part VIII line 12" },
+  { key: "total_expenses", label: "Total Expenses", ref: "990 Part IX line 25 col A" },
+  { key: "change_in_net_assets", label: "Change in Net Assets", ref: "990 Part XI line 3" },
+  { key: "net_assets_beginning", label: "Net Assets, Beginning of Year", ref: "990 Part XI line 4" },
+  { key: "net_assets_ending", label: "Net Assets, End of Year", ref: "990 Part XI line 10", total: true },
+] as const;
+
 export const NET_ASSET_FIELDS = [
   { key: "net_assets_beginning", label: "Net Assets, Beginning of Year", ref: "990 Part XI line 4" },
   { key: "change_in_net_assets", label: "Change in Net Assets", ref: "990 Part XI line 3" },
