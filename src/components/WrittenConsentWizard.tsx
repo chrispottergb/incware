@@ -394,7 +394,8 @@ export default function WrittenConsentWizard({ company, existingMeetingId, onClo
       company.entity_type,
       taxYear
         ? isSElectedForTaxYear(company as any, taxYear)
-        : isSElectedOn(company as any, effectiveDate)
+        : isSElectedOn(company as any, effectiveDate),
+      isNonprofit(company as any)
     );
     const seen = new Set<string>();
     return opts.filter((o) => (seen.has(o.label) ? false : (seen.add(o.label), true)));
