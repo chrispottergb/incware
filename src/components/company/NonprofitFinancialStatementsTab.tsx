@@ -123,9 +123,6 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
       (firstTag && STATEMENT_SOURCES.some((o) => o.value === firstTag) ? firstTag : null) ??
         (selected.return_filed_date ? "tax_return" : "internal"),
     );
-    setTier2Open(
-      TIER2_KEYS.some((k) => selected[k] !== null && selected[k] !== undefined && selected[k] !== ""),
-    );
   }, [selected?.id, selected?.updated_at]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const priorYear = useMemo(
