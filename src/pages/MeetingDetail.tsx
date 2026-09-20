@@ -12,6 +12,8 @@ import MeetingAuthorizedSigners from "@/components/meeting/MeetingAuthorizedSign
 import MeetingInfoCard from "@/components/meeting/MeetingInfoCard";
 import ConsentSignatureList from "@/components/meeting/ConsentSignatureList";
 import MeetingFinancials from "@/components/meeting/MeetingFinancials";
+import NonprofitMeetingFinancials from "@/components/meeting/NonprofitMeetingFinancials";
+import { isNonprofit } from "@/lib/nonprofit-financials";
 import MeetingSubTable from "@/components/meeting/MeetingSubTable";
 import MeetingResolutions from "@/components/meeting/MeetingResolutions";
 import MeetingAmendments from "@/components/meeting/MeetingAmendments";
@@ -1055,7 +1057,7 @@ export default function MeetingDetail() {
   // and director records still exist, keep the tab visible so the conflict is
   // surfaced rather than concealed.
   const shareholderTabs = new Set(["info", "shareholders", "directors", "resolutions", "other"]);
-  const isNonProfit = company?.entity_type === "Non-Profit";
+  const isNonProfit = isNonprofit(company);
   const boardEliminated = !!(company as any)?.board_eliminated;
   const hasAnyDirectorRecords = (companyDirectors?.length || 0) > 0 || (directors?.length || 0) > 0;
   const showDirectorsTabInCloseMeeting = boardEliminated && hasAnyDirectorRecords;
@@ -1253,7 +1255,11 @@ export default function MeetingDetail() {
                 fileName={`financials-${meetingFileName}`}
               />
             </div>
-            <MeetingFinancials meetingId={meeting.id} />
+            {isNonprofit(company) ? (
+              <NonprofitMeetingFinancials meetingId={meeting.id} meeting={meeting} company={company} />
+            ) : (
+              <MeetingFinancials meetingId={meeting.id} />
+            )}
           </div>
         </TabsContent>
         <TabsContent value="shareholders" className="mt-5">

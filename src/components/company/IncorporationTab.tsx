@@ -32,6 +32,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { isNonprofit, entityTypeChangeWarning } from "@/lib/nonprofit-financials";
 import { Loader2, Shield, Building2, Share2, UserCheck, ChevronDown, Users, Heart, RefreshCw, ExternalLink, User, Phone, Globe, Plus, Trash2, Check, AlertTriangle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -339,6 +340,24 @@ export default function IncorporationTab({ company }: Props) {
     setForm((prev) => ({ ...prev, [field]: value }));
     // triggerSave is called after state settles (via useAutoSave debounce)
     setTimeout(() => incAutoSave.triggerSave(), 50);
+  };
+
+  // Changing a nonprofit to another entity type hides the Financial Statements
+  // tab. The statements themselves are never deleted — warn and confirm first.
+  const [pendingEntityType, setPendingEntityType] = useState<{ value: string; count: number } | null>(null);
+  const handleEntityTypeChange = async (value: string) => {
+    const leavingNonprofit = isNonprofit({ entity_type: form.entity_type }) && !isNonprofit({ entity_type: value });
+    if (leavingNonprofit) {
+      const { count } = await supabase
+        .from("nonprofit_financial_statements" as any)
+        .select("id", { count: "exact", head: true })
+        .eq("company_id", company.id);
+      if ((count ?? 0) > 0) {
+        setPendingEntityType({ value, count: count ?? 0 });
+        return;
+      }
+    }
+    updateAndSave("entity_type", value);
   };
 
   // Statutory close corporation status (Wis. Stat. s. 180.1803) and the separate
@@ -837,7 +856,7 @@ export default function IncorporationTab({ company }: Props) {
                   </div>
                   <div className="field-group col-span-3">
                     <Label className="field-label">Entity Type</Label>
-                    <Select value={form.entity_type} onValueChange={(v) => updateAndSave("entity_type", v)}>
+                    <Select value={form.entity_type} onValueChange={(v) => handleEntityTypeChange(v)}>
                       <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {ENTITY_TYPES.map((t) => (
@@ -989,7 +1008,7 @@ export default function IncorporationTab({ company }: Props) {
             </div>
             <div className="field-group col-span-6 sm:col-span-3">
               <Label className="field-label">Entity Type</Label>
-              <Select value={form.entity_type} onValueChange={(v) => updateAndSave("entity_type", v)}>
+              <Select value={form.entity_type} onValueChange={(v) => handleEntityTypeChange(v)}>
                 <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ENTITY_TYPES.map((t) => (
@@ -1829,6 +1848,27 @@ export default function IncorporationTab({ company }: Props) {
       </Dialog>
       <ConfirmDeleteDialog open={!!deleteOrganizerId} onOpenChange={(open) => !open && setDeleteOrganizerId(null)} onConfirm={() => { if (deleteOrganizerId) { deleteOrganizer.mutate(deleteOrganizerId); setDeleteOrganizerId(null); } }} title="Delete organizer?" description="This will permanently remove this organizer record." />
       <ConfirmDeleteDialog open={!!deleteDirectorId} onOpenChange={(open) => !open && setDeleteDirectorId(null)} onConfirm={() => { if (deleteDirectorId) { deleteDirector.mutate(deleteDirectorId); setDeleteDirectorId(null); } }} title="Delete director?" description="This will permanently remove this director record." />
+      <Dialog open={!!pendingEntityType} onOpenChange={(open) => !open && setPendingEntityType(null)}>
+        <DialogContent className="min-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Change entity type?</DialogTitle>
+            <DialogDescription>
+              {pendingEntityType ? entityTypeChangeWarning(pendingEntityType.count) : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setPendingEntityType(null)}>Cancel</Button>
+            <Button
+              onClick={() => {
+                if (pendingEntityType) updateAndSave("entity_type", pendingEntityType.value);
+                setPendingEntityType(null);
+              }}
+            >
+              Change entity type
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

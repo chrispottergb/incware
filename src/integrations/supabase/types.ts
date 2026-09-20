@@ -1088,6 +1088,7 @@ export type Database = {
           id: string
           incorporation_date: string | null
           initial_directors_count: number | null
+          irs_form_type: string | null
           is_test: boolean
           llc_authorized_binders: Json | null
           llc_dfi_statement_date: string | null
@@ -1176,6 +1177,7 @@ export type Database = {
           id?: string
           incorporation_date?: string | null
           initial_directors_count?: number | null
+          irs_form_type?: string | null
           is_test?: boolean
           llc_authorized_binders?: Json | null
           llc_dfi_statement_date?: string | null
@@ -1264,6 +1266,7 @@ export type Database = {
           id?: string
           incorporation_date?: string | null
           initial_directors_count?: number | null
+          irs_form_type?: string | null
           is_test?: boolean
           llc_authorized_binders?: Json | null
           llc_dfi_statement_date?: string | null
@@ -2769,6 +2772,54 @@ export type Database = {
           },
         ]
       }
+      meeting_financial_snapshots: {
+        Row: {
+          created_at: string
+          id: string
+          meeting_id: string
+          snapshot_data: Json
+          snapshotted_at: string
+          source_statement_id: string | null
+          source_statement_updated_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meeting_id: string
+          snapshot_data?: Json
+          snapshotted_at?: string
+          source_statement_id?: string | null
+          source_statement_updated_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          snapshot_data?: Json
+          snapshotted_at?: string
+          source_statement_id?: string | null
+          source_statement_updated_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_financial_snapshots_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: true
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_financial_snapshots_source_statement_id_fkey"
+            columns: ["source_statement_id"]
+            isOneToOne: false
+            referencedRelation: "nonprofit_financial_statements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_financials: {
         Row: {
           created_at: string
@@ -3609,6 +3660,131 @@ export type Database = {
           target_table?: string
         }
         Relationships: []
+      }
+      nonprofit_financial_statements: {
+        Row: {
+          board_acknowledgment: string | null
+          board_reviewed_date: string | null
+          change_in_net_assets: number | null
+          company_id: string
+          contributions_grants: number | null
+          created_at: string
+          dismissed_warnings: Json
+          documented_date: string
+          fiscal_year: number
+          fiscal_year_label: string | null
+          fundraising_events_net: number | null
+          fundraising_expense: number | null
+          gross_receipts_under_threshold: boolean | null
+          id: string
+          in_kind_contributions: number | null
+          investment_income: number | null
+          is_audited: boolean
+          is_draft: boolean
+          management_general_expense: number | null
+          membership_dues: number | null
+          net_assets_beginning: number | null
+          net_assets_ending: number | null
+          net_assets_with_restrictions: number | null
+          net_assets_without_restrictions: number | null
+          other_revenue: number | null
+          period_end: string | null
+          period_start: string | null
+          program_service_revenue: number | null
+          program_services_expense: number | null
+          return_filed_date: string | null
+          source_tags: Json
+          total_assets: number | null
+          total_expenses: number | null
+          total_liabilities: number | null
+          total_revenue: number | null
+          updated_at: string
+        }
+        Insert: {
+          board_acknowledgment?: string | null
+          board_reviewed_date?: string | null
+          change_in_net_assets?: number | null
+          company_id: string
+          contributions_grants?: number | null
+          created_at?: string
+          dismissed_warnings?: Json
+          documented_date?: string
+          fiscal_year: number
+          fiscal_year_label?: string | null
+          fundraising_events_net?: number | null
+          fundraising_expense?: number | null
+          gross_receipts_under_threshold?: boolean | null
+          id?: string
+          in_kind_contributions?: number | null
+          investment_income?: number | null
+          is_audited?: boolean
+          is_draft?: boolean
+          management_general_expense?: number | null
+          membership_dues?: number | null
+          net_assets_beginning?: number | null
+          net_assets_ending?: number | null
+          net_assets_with_restrictions?: number | null
+          net_assets_without_restrictions?: number | null
+          other_revenue?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          program_service_revenue?: number | null
+          program_services_expense?: number | null
+          return_filed_date?: string | null
+          source_tags?: Json
+          total_assets?: number | null
+          total_expenses?: number | null
+          total_liabilities?: number | null
+          total_revenue?: number | null
+          updated_at?: string
+        }
+        Update: {
+          board_acknowledgment?: string | null
+          board_reviewed_date?: string | null
+          change_in_net_assets?: number | null
+          company_id?: string
+          contributions_grants?: number | null
+          created_at?: string
+          dismissed_warnings?: Json
+          documented_date?: string
+          fiscal_year?: number
+          fiscal_year_label?: string | null
+          fundraising_events_net?: number | null
+          fundraising_expense?: number | null
+          gross_receipts_under_threshold?: boolean | null
+          id?: string
+          in_kind_contributions?: number | null
+          investment_income?: number | null
+          is_audited?: boolean
+          is_draft?: boolean
+          management_general_expense?: number | null
+          membership_dues?: number | null
+          net_assets_beginning?: number | null
+          net_assets_ending?: number | null
+          net_assets_with_restrictions?: number | null
+          net_assets_without_restrictions?: number | null
+          other_revenue?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          program_service_revenue?: number | null
+          program_services_expense?: number | null
+          return_filed_date?: string | null
+          source_tags?: Json
+          total_assets?: number | null
+          total_expenses?: number | null
+          total_liabilities?: number | null
+          total_revenue?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nonprofit_financial_statements_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       nonprofit_form990_filings: {
         Row: {
