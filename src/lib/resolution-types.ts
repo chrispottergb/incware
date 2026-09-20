@@ -87,6 +87,14 @@ const CATEGORY_MAP: Record<string, ActionCategory> = {
 export const RETENTION_RESOLUTION_LABEL = "Retention of Earnings and Distributions" as const;
 
 /**
+ * Shown on an existing nonprofit record that already has the retention
+ * resolution adopted. The resolution is never removed retroactively — silently
+ * dropping an adopted resolution would corrupt the record.
+ */
+export const RETENTION_NONPROFIT_LEGACY_NOTICE =
+  "This resolution does not apply to nonprofit entities and is no longer available. It remains on this record as originally adopted. Review whether a correcting action is needed.";
+
+/**
  * Returns the display label for the retention resolution based on the entity
  * type and the S/C tax status that applied for the meeting's tax year.
  * The stored `meeting_resolutions.purpose` always remains the canonical value.
@@ -381,15 +389,49 @@ export const RESOLUTION_TYPES: Record<string, ResolutionType[]> = {
  */
 export function getResolutionTypesFor(
   entityType: string | undefined | null,
-  isSElectedForMeeting: boolean
+  isSElectedForMeeting: boolean,
+  nonprofit = false
 ): ResolutionType[] {
   const type = entityType || "Corporation";
-  if (isSElectedForMeeting) {
-    if (type === "Corporation") return RESOLUTION_TYPES["S Corporation"];
-    if (type === "LLC" || type === "LLC-S") return RESOLUTION_TYPES["LLC-S"];
-  } else {
+  let list: ResolutionType[];
+  if (isSElectedForMeeting && type === "Corporation") {
+    list = RESOLUTION_TYPES["S Corporation"];
+  } else if (isSElectedForMeeting && (type === "LLC" || type === "LLC-S")) {
+    list = RESOLUTION_TYPES["LLC-S"];
+  } else if (!isSElectedForMeeting && type === "LLC-S") {
     // A meeting from before the S election (or after it ended) uses the base list.
-    if (type === "LLC-S") return RESOLUTION_TYPES.LLC;
+    list = RESOLUTION_TYPES.LLC;
+  } else {
+    list = RESOLUTION_TYPES[type] || RESOLUTION_TYPES.Corporation;
   }
-  return RESOLUTION_TYPES[type] || RESOLUTION_TYPES.Corporation;
+  // A nonprofit has no earnings to retain and cannot distribute to members, so
+  // the retention resolution is never offered on a nonprofit entity.
+  if (nonprofit) return list.filter((r) => r.label !== RETENTION_RESOLUTION_LABEL);
+  return list;
+}
+
+/**
+ * Single source of truth for the ordered set of resolution sections on a
+ * meeting, consumed by both the on-screen meeting view and the PDF generator so
+ * the screen and the written record can never disagree.
+ *
+ * The retention resolution occupies its own section when a structured record
+ * exists; otherwise its stored row prints with the other resolutions.
+ */
+export function resolveMeetingResolutionSections<T extends { purpose?: string | null }>(
+  resolutions: T[] | null | undefined,
+  retentionAdopted: boolean
+): { retentionSection: boolean; special: T[]; orderedPurposes: string[] } {
+  const rows = resolutions ?? [];
+  const special = rows.filter(
+    (r) => !(retentionAdopted && r.purpose === RETENTION_RESOLUTION_LABEL)
+  );
+  return {
+    retentionSection: retentionAdopted,
+    special,
+    orderedPurposes: [
+      ...(retentionAdopted ? [RETENTION_RESOLUTION_LABEL] : []),
+      ...special.map((r) => r.purpose || "Other"),
+    ],
+  };
 }

@@ -3,7 +3,7 @@ import autoTable from "jspdf-autotable";
 import { savePdfReliably } from "./pdf-save";
 import { registerArialFont } from "@/lib/arial-font";
 import { isSElectedForTaxYear, isSElectedOn } from "@/lib/entity-terminology";
-import { resolveRetentionDisplayLabel, RETENTION_RESOLUTION_LABEL } from "@/lib/resolution-types";
+import { resolveMeetingResolutionSections, resolveRetentionDisplayLabel, RETENTION_RESOLUTION_LABEL } from "@/lib/resolution-types";
 
 /**
  * S/C tax status AS OF the meeting being printed, so reprinting an older meeting
@@ -2235,11 +2235,6 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     });
     y = (doc as any).lastAutoTable.finalY + 6;
 
-    // Retention-of-earnings / distributions resolution (rendered before the
-    // per-holder distribution clause so amounts are not duplicated).
-    const sElectedForMeeting = isSElectedForMeeting(company, meeting);
-    y = renderRetentionEarningsSection(doc, y, data, companyName, entityType, isLLC, sElectedForMeeting);
-
     // Distribution resolution for each member/shareholder with a distribution amount
     if (hasDistribution) {
       // S-corp clause is driven strictly by an actual S-election on file,
@@ -3296,15 +3291,49 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     });
   }
 
-  // Resolutions — exclude the Retention of Earnings resolution; it prints in its
-  // own dedicated section (renderRetentionEarningsSection) with entity-aware wording
-  const specialResolutions = (data.resolutions ?? []).filter((r) => r.purpose !== RETENTION_RESOLUTION_LABEL);
+  // Retention of Earnings / Distributions — a top-level section of its own. Its
+  // only condition is that the resolution exists on this meeting: it must never
+  // depend on shareholder rows, meeting type or any other block rendering, or the
+  // written record would silently omit an adopted resolution.
+  const renderedResolutionPurposes: string[] = [];
+  const retentionAdopted = !!data.retainedEarningsResolution?.decision;
+  const resolutionSections = resolveMeetingResolutionSections(data.resolutions, retentionAdopted);
+  if (retentionAdopted) {
+    y = renderRetentionEarningsSection(
+      doc,
+      y,
+      data,
+      companyName,
+      entityType,
+      isLLC,
+      isSElectedForMeeting(company, meeting),
+    );
+    renderedResolutionPurposes.push(RETENTION_RESOLUTION_LABEL);
+  }
+
+  // Resolutions — the Retention of Earnings row is skipped ONLY when the dedicated
+  // section above already printed it. Without a structured record (e.g. a written
+  // consent holding only free text) it still prints here, so it is never dropped.
+  const specialResolutions = resolutionSections.special;
   if (specialResolutions.length > 0) {
     y = checkPageBreak(doc, y, 20 + specialResolutions.length * 15);
     y = section("Special Resolutions");
     specialResolutions.forEach((r) => {
       y = addResolutionBlock(doc, y, r.purpose, r.resolution_text || "");
+      renderedResolutionPurposes.push(r.purpose);
     });
+  }
+
+  // Completeness guard: every adopted resolution on the meeting must appear in
+  // the printed record. Fail loudly rather than emit an incomplete document.
+  const adoptedPurposes = resolutionSections.orderedPurposes;
+  const missingResolutions = adoptedPurposes.filter(
+    (p) => !renderedResolutionPurposes.includes(p),
+  );
+  if (missingResolutions.length > 0) {
+    throw new Error(
+      `Minutes are incomplete — these adopted resolutions were not rendered: ${missingResolutions.join(", ")}`,
+    );
   }
 
   // Auto-generated resolutions from prior year comparison — skip for shareholder meetings and written consents

@@ -25,7 +25,13 @@ import { Plus, Trash2, Loader2, FileText, Pencil, Link2, ArrowRightLeft, Layers,
 import { toast } from "sonner";
 import { createGeneratedDocumentSignedUrl, downloadGeneratedDocumentBlob, saveBlobAsFile } from "@/lib/document-storage";
 
-import { getResolutionTypesFor, RETENTION_RESOLUTION_LABEL, resolveRetentionDisplayLabel } from "@/lib/resolution-types";
+import {
+  getResolutionTypesFor,
+  RETENTION_RESOLUTION_LABEL,
+  RETENTION_NONPROFIT_LEGACY_NOTICE,
+  resolveRetentionDisplayLabel,
+} from "@/lib/resolution-types";
+import { isNonprofit } from "@/lib/nonprofit-financials";
 import { isLLCType } from "@/lib/entity-terminology";
 import RetentionResolutionPanel from "@/components/meeting/RetentionResolutionPanel";
 import CharitableContributionFields, {
@@ -93,10 +99,13 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
   const [leaseOpen, setLeaseOpen] = useState(false);
   const [leaseResolutionId, setLeaseResolutionId] = useState<string | null>(null);
 
+  const nonprofitEntity = isNonprofit(company ?? { entity_type: entityType });
+
   const resolutionOptions = useMemo(() => {
     const opts = getResolutionTypesFor(
       entityType,
-      sElectedForMeeting ?? entityType === "LLC-S"
+      sElectedForMeeting ?? entityType === "LLC-S",
+      nonprofitEntity
     );
     const seen = new Set<string>();
     return opts.filter((o) => {
@@ -104,7 +113,7 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
       seen.add(o.label);
       return true;
     });
-  }, [entityType, sElectedForMeeting]);
+  }, [entityType, sElectedForMeeting, nonprofitEntity]);
 
   const { data: resolutions = [] } = useQuery({
     queryKey: ["meeting_resolutions", meetingId],
@@ -507,6 +516,14 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                           <p className="text-[10px] text-muted-foreground mb-2">{match.statute}</p>
                         )}
                         <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.resolution_text}</p>
+
+                        {/* Adopted on a nonprofit before the resolution was withdrawn — never removed silently. */}
+                        {nonprofitEntity && r.purpose === RETENTION_RESOLUTION_LABEL && (
+                          <p className="mt-2 rounded-md border-l-4 border-l-warning bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
+                            {RETENTION_NONPROFIT_LEGACY_NOTICE}
+                          </p>
+                        )}
+
 
                         {/* Linked transaction indicator */}
                         {hasLinkedTransaction && (
