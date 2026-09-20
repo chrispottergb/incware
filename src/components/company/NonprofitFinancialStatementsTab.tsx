@@ -281,12 +281,12 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
       const payload: Record<string, any> = {
         fiscal_year: Number(draft.fiscal_year),
         fiscal_year_label: draft.fiscal_year_label || defaultFiscalYearLabel(Number(draft.fiscal_year)),
-        period_start: draft.period_start || null,
-        period_end: draft.period_end || null,
+        period_start: resolvedPeriod.start,
+        period_end: resolvedPeriod.end,
+        has_irregular_period: !!draft.has_irregular_period,
         is_audited: sourceTag === "audited_financials",
         is_draft: draft.is_draft !== false,
         return_filed_date: draft.return_filed_date || null,
-        board_reviewed_date: draft.board_reviewed_date || null,
         gross_receipts_under_threshold: draft.gross_receipts_under_threshold ?? null,
         board_acknowledgment: draft.board_acknowledgment || null,
       };
