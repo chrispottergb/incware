@@ -492,57 +492,133 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
                   </div>
                 </div>
               ) : (
-                <div className="space-y-1">
+                <div className="space-y-5">
                   {vis.note && <p className="text-xs text-muted-foreground">{vis.note}</p>}
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="bg-primary/10">
-                        <th className="text-left px-2 py-1.5 font-medium">Line</th>
-                        <th className="text-left px-2 py-1.5 font-medium w-40">Amount</th>
-                        <th className="text-left px-2 py-1.5 font-medium w-40">Source</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {moneyRows.map((f) => (
-                        <tr key={f.key}>
-                          <td className="px-2 py-1" title={f.ref}>
-                            {f.label}
-                          </td>
-                          <td className="px-2 py-1">
-                            <Input
-                              className="h-7 text-xs"
-                              aria-label={f.label}
-                              inputMode="decimal"
-                              value={draft[f.key] ?? ""}
-                              onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
-                            />
-                          </td>
-                          <td className="px-2 py-1">
-                            <Select
-                              value={(draft.source_tags || {})[f.key] || "tax_return"}
-                              onValueChange={(v) =>
-                                setDraft((d) => ({
-                                  ...d,
-                                  source_tags: { ...(d.source_tags || {}), [f.key]: v as SourceTag },
-                                }))
-                              }
-                            >
-                              <SelectTrigger className="h-7 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {SOURCE_TAGS.map((t) => (
-                                  <SelectItem key={t} value={t}>
-                                    {SOURCE_TAG_LABELS[t]}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </td>
-                        </tr>
+
+                  <div className="rounded-md border bg-muted/30 px-3 py-2.5">
+                    <Label className="text-xs font-medium">Source of these figures</Label>
+                    <RadioGroup
+                      className="mt-2 flex flex-wrap gap-5"
+                      value={sourceTag}
+                      onValueChange={(v) => setSourceTag(v as SourceTag)}
+                    >
+                      {STATEMENT_SOURCES.map((o) => (
+                        <div key={o.value} className="flex items-center gap-2">
+                          <RadioGroupItem value={o.value} id={`src-${o.value}`} />
+                          <Label htmlFor={`src-${o.value}`} className="text-xs font-normal">
+                            {o.label}
+                          </Label>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
+                    </RadioGroup>
+                    <p className="mt-1.5 text-[10px] text-muted-foreground">
+                      Applies to every figure in this statement.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                      Board Review Figures
+                    </p>
+                    <div className="rounded-md border divide-y">
+                      {amountRow("Total Revenue", "total_revenue", {
+                        locked: derived.revenueDetailTotal != null,
+                        lockedValue: derived.totalRevenue,
+                      })}
+                      {amountRow("Total Expenses", "total_expenses", {
+                        locked: derived.expenseDetailTotal != null,
+                        lockedValue: derived.totalExpenses,
+                      })}
+                      {computedRow("Change in Net Assets", derived.changeInNetAssets)}
+                      {amountRow("Net Assets, Beginning of Year", "net_assets_beginning", {
+                        ref: "990 Part XI line 4",
+                      })}
+                      {computedRow("Net Assets, End of Year", derived.ending, { total: true })}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setTier2Open((o) => !o)}
+                    >
+                      {tier2Open ? (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      )}
+                      Add detail from Form 990
+                    </Button>
+
+                    {tier2Open && (
+                      <div className="space-y-5">
+                        {vis.showRevenueDetail && (
+                          <div className="space-y-1.5">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                              Support &amp; Revenue{" "}
+                              <span className="font-normal normal-case text-muted-foreground">
+                                (Form 990 Part VIII)
+                              </span>
+                            </p>
+                            <div className="rounded-md border divide-y">
+                              {REVENUE_FIELDS.map((f) => amountRow(f.label, f.key, { ref: f.ref }))}
+                              {computedRow("TOTAL SUPPORT & REVENUE", derived.revenueDetailTotal, {
+                                total: true,
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {vis.showFunctionalSplit && (
+                          <div className="space-y-1.5">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                              Expenses by Function{" "}
+                              <span className="font-normal normal-case text-muted-foreground">
+                                (Form 990 Part IX)
+                              </span>
+                            </p>
+                            <div className="rounded-md border divide-y">
+                              {FUNCTIONAL_EXPENSE_FIELDS.map((f) =>
+                                amountRow(f.label, f.key, { ref: f.ref }),
+                              )}
+                              {computedRow("TOTAL EXPENSES", derived.expenseDetailTotal, { total: true })}
+                            </div>
+                          </div>
+                        )}
+
+                        {vis.showNetAssets && (
+                          <div className="space-y-1.5">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                              Net Assets &amp; Balance Sheet{" "}
+                              <span className="font-normal normal-case text-muted-foreground">
+                                (Form 990 Part X)
+                              </span>
+                            </p>
+                            <div className="rounded-md border divide-y">
+                              {amountRow("Without Donor Restrictions", "net_assets_without_restrictions", {
+                                ref: "990 Part X line 27",
+                              })}
+                              {amountRow("With Donor Restrictions", "net_assets_with_restrictions", {
+                                ref: "990 Part X line 28",
+                              })}
+                              {computedRow("Net Assets (restriction split total)", derived.restrictionTotal)}
+                              {amountRow("Total Assets", "total_assets", { ref: "990 Part X line 16" })}
+                              {amountRow("Total Liabilities", "total_liabilities", {
+                                ref: "990 Part X line 26",
+                              })}
+                              {computedRow(
+                                "Net Assets (assets − liabilities)",
+                                derived.assetsLessLiabilities,
+                                { total: true },
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
