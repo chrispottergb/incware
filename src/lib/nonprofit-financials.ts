@@ -465,6 +465,8 @@ const fmtDate = (d: string | null | undefined): string => {
 export function buildStatementHeader(s: NonprofitStatement): StatementHeader {
   const filed = s.return_filed_date || null;
   const reviewed = s.board_reviewed_date || null;
+  const manualReview = isManualReviewDate(s);
+  const tag = primarySourceTag(s);
 
   let sourceLine: string;
   let postFilingNote: string | null = null;
@@ -477,21 +479,30 @@ export function buildStatementHeader(s: NonprofitStatement): StatementHeader {
       postFilingNote =
         "Board review occurred after the return was filed. This record supports ratification of the return as filed; it does not evidence pre-filing review under Form 990 Part VI.";
     }
-  } else if (filed) {
-    sourceLine = `Source: Form 990 as filed ${fmtDate(filed)}`;
-  } else if (s.is_audited) {
+    if (manualReview) sourceLine += " (review date entered manually)";
+  } else if (tag === "audited_financials") {
     sourceLine = "Source: Audited Financial Statements";
+  } else if (tag === "tax_return" || filed) {
+    sourceLine = filed ? `Source: Form 990 as filed ${fmtDate(filed)}` : "Source: Form 990 as filed";
   } else {
     sourceLine = "Source: Internal Records — Unaudited";
   }
 
+  const periodLine =
+    s.period_start && s.period_end
+      ? `Period: ${fmtDate(s.period_start)} – ${fmtDate(s.period_end)}`
+      : null;
+
   return {
     title: "Statement of Activities and Changes in Net Assets",
     fiscalYearLine: `Fiscal Year Ended: ${s.period_end ? fmtDate(s.period_end) : `FY${s.fiscal_year}`}`,
+    periodLine,
     sourceLine,
     statusLine: `Status: ${s.is_draft === false ? "Final" : "Draft"}`,
     documentedLine: `Documented: ${fmtDate(s.documented_date) || "—"}`,
-    boardReviewedLine: `Board Reviewed: ${reviewed ? fmtDate(reviewed) : "Pending Review"}`,
+    boardReviewedLine: `Board Reviewed: ${reviewed ? fmtDate(reviewed) : "Pending Review"}${
+      reviewed && manualReview ? ` — ${MANUAL_REVIEW_DATE_NOTE}` : ""
+    }`,
     postFilingNote,
   };
 }
