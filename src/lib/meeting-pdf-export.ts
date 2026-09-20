@@ -3297,6 +3297,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // written record would silently omit an adopted resolution.
   const renderedResolutionPurposes: string[] = [];
   const retentionAdopted = !!data.retainedEarningsResolution?.decision;
+  const resolutionSections = resolveMeetingResolutionSections(data.resolutions, retentionAdopted);
   if (retentionAdopted) {
     y = renderRetentionEarningsSection(
       doc,
