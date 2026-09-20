@@ -131,6 +131,7 @@ export default function NonprofitMeetingFinancials({ meetingId, meeting, company
       queryClient.invalidateQueries({ queryKey: ["meeting", meetingId] });
       queryClient.invalidateQueries({ queryKey: ["meeting_financial_snapshot", meetingId] });
       queryClient.invalidateQueries({ queryKey: ["nonprofit_snapshot_meetings", company?.id] });
+      queryClient.invalidateQueries({ queryKey: ["nonprofit_financial_statements", company?.id] });
       toast.success(next === "final" ? "Minutes finalized. Figures frozen." : "Minutes returned to draft.");
     },
     onError: (e: Error) => toast.error(e.message),
