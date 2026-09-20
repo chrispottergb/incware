@@ -63,22 +63,13 @@ const STATEMENT_SOURCES: { value: SourceTag; label: string }[] = [
   { value: "internal", label: "Internal Records — Unaudited" },
 ];
 
-const TIER2_KEYS = [
-  ...REVENUE_FIELDS.map((f) => f.key),
-  ...FUNCTIONAL_EXPENSE_FIELDS.map((f) => f.key),
-  "net_assets_without_restrictions",
-  "net_assets_with_restrictions",
-  "total_assets",
-  "total_liabilities",
-] as string[];
-
 export default function NonprofitFinancialStatementsTab({ companyId, company }: Props) {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Record<string, any>>({});
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [sourceTag, setSourceTag] = useState<SourceTag>("internal");
-  const [tier2Open, setTier2Open] = useState(false);
+
 
   const formType = (company?.irs_form_type ?? null) as IrsFormType | null;
 
