@@ -389,7 +389,58 @@ export function toleranceFor(endingNetAssets: number | null): number {
 const money = (n: number) =>
   `${n < 0 ? "-" : ""}$${Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+function makeChecker(s: NonprofitStatement, out: ReconciliationWarning[]) {
+  const tol = toleranceFor(num(s.net_assets_ending));
+  return (
+    code: string,
+    label: string,
+    leftVal: number | null,
+    rightVal: number | null,
+    leftText: string,
+    rightText: string,
+    prominent = false,
+  ) => {
+    if (leftVal == null || rightVal == null) return;
+    const diff = leftVal - rightVal;
+    if (Math.abs(diff) <= tol) return;
+    out.push({
+      code,
+      label,
+      left: `${leftText} = ${money(leftVal)}`,
+      right: `${rightText} = ${money(rightVal)}`,
+      difference: diff,
+      message: `${label}: ${leftText} (${money(leftVal)}) does not equal ${rightText} (${money(rightVal)}); difference ${money(diff)}.`,
+      prominent,
+    });
+  };
+}
+
+/**
+ * Active reconciliation: cross-year continuity only. The remaining checks
+ * depend on Form 990 detail and live in runTier2Reconciliation.
+ */
 export function runReconciliation(
+  _s: NonprofitStatement,
+  _formType: IrsFormType | null | undefined,
+  priorYear?: NonprofitStatement | null,
+): ReconciliationWarning[] {
+  const out: ReconciliationWarning[] = [];
+  if (!priorYear) return out;
+  const check = makeChecker(_s, out);
+  check(
+    "G",
+    "Cross-year continuity",
+    num(_s.net_assets_beginning),
+    num(priorYear.net_assets_ending),
+    "This year's beginning net assets",
+    `FY${priorYear.fiscal_year} ending net assets`,
+    true,
+  );
+  return out;
+}
+
+// Retained for Tier 2 (Form 990 detail) reintroduction. Not currently called from the UI.
+export function runTier2Reconciliation(
   s: NonprofitStatement,
   formType: IrsFormType | null | undefined,
   priorYear?: NonprofitStatement | null,
