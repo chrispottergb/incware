@@ -551,7 +551,7 @@ export function buildStatementHeader(s: NonprofitStatement): StatementHeader {
       : null;
 
   return {
-    title: "Statement of Activities and Changes in Net Assets",
+    title: "Annual Financial Review",
     fiscalYearLine: `Fiscal Year Ended: ${s.period_end ? fmtDate(s.period_end) : `FY${s.fiscal_year}`}`,
     periodLine,
     sourceLine,
