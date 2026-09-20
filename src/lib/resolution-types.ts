@@ -389,15 +389,23 @@ export const RESOLUTION_TYPES: Record<string, ResolutionType[]> = {
  */
 export function getResolutionTypesFor(
   entityType: string | undefined | null,
-  isSElectedForMeeting: boolean
+  isSElectedForMeeting: boolean,
+  nonprofit = false
 ): ResolutionType[] {
   const type = entityType || "Corporation";
-  if (isSElectedForMeeting) {
-    if (type === "Corporation") return RESOLUTION_TYPES["S Corporation"];
-    if (type === "LLC" || type === "LLC-S") return RESOLUTION_TYPES["LLC-S"];
-  } else {
+  let list: ResolutionType[];
+  if (isSElectedForMeeting && type === "Corporation") {
+    list = RESOLUTION_TYPES["S Corporation"];
+  } else if (isSElectedForMeeting && (type === "LLC" || type === "LLC-S")) {
+    list = RESOLUTION_TYPES["LLC-S"];
+  } else if (!isSElectedForMeeting && type === "LLC-S") {
     // A meeting from before the S election (or after it ended) uses the base list.
-    if (type === "LLC-S") return RESOLUTION_TYPES.LLC;
+    list = RESOLUTION_TYPES.LLC;
+  } else {
+    list = RESOLUTION_TYPES[type] || RESOLUTION_TYPES.Corporation;
   }
-  return RESOLUTION_TYPES[type] || RESOLUTION_TYPES.Corporation;
+  // A nonprofit has no earnings to retain and cannot distribute to members, so
+  // the retention resolution is never offered on a nonprofit entity.
+  if (nonprofit) return list.filter((r) => r.label !== RETENTION_RESOLUTION_LABEL);
+  return list;
 }
