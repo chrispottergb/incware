@@ -667,14 +667,8 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
                       Board Review Figures
                     </p>
                     <div className="rounded-md border divide-y">
-                      {amountRow("Total Revenue", "total_revenue", {
-                        locked: derived.revenueDetailTotal != null,
-                        lockedValue: derived.totalRevenue,
-                      })}
-                      {amountRow("Total Expenses", "total_expenses", {
-                        locked: derived.expenseDetailTotal != null,
-                        lockedValue: derived.totalExpenses,
-                      })}
+                      {amountRow("Total Revenue", "total_revenue")}
+                      {amountRow("Total Expenses", "total_expenses")}
                       {computedRow("Change in Net Assets", derived.changeInNetAssets)}
                       {amountRow("Net Assets, Beginning of Year", "net_assets_beginning", {
                         ref: "990 Part XI line 4",
