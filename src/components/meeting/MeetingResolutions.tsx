@@ -93,10 +93,13 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
   const [leaseOpen, setLeaseOpen] = useState(false);
   const [leaseResolutionId, setLeaseResolutionId] = useState<string | null>(null);
 
+  const nonprofitEntity = isNonprofit(company ?? { entity_type: entityType });
+
   const resolutionOptions = useMemo(() => {
     const opts = getResolutionTypesFor(
       entityType,
-      sElectedForMeeting ?? entityType === "LLC-S"
+      sElectedForMeeting ?? entityType === "LLC-S",
+      nonprofitEntity
     );
     const seen = new Set<string>();
     return opts.filter((o) => {
