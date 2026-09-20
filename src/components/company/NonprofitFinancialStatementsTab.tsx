@@ -136,17 +136,10 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
   useEffect(() => {
     if (!selected) return;
     setDraft({ ...selected });
-    const tags = (selected.source_tags as Record<string, SourceTag>) || {};
-    const firstTag = MONEY_KEYS.map((k) => tags[k]).find(
-      (t) => t && STATEMENT_SOURCES.some((o) => o.value === t),
-    );
+    const firstTag = primarySourceTag(selected);
     setSourceTag(
-      (firstTag as SourceTag) ??
-        (selected.is_audited
-          ? "audited_financials"
-          : selected.return_filed_date
-            ? "tax_return"
-            : "internal"),
+      (firstTag && STATEMENT_SOURCES.some((o) => o.value === firstTag) ? firstTag : null) ??
+        (selected.return_filed_date ? "tax_return" : "internal"),
     );
     setTier2Open(
       TIER2_KEYS.some((k) => selected[k] !== null && selected[k] !== undefined && selected[k] !== ""),
