@@ -3310,9 +3310,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     renderedResolutionPurposes.push(RETENTION_RESOLUTION_LABEL);
   }
 
-  // Resolutions — exclude the Retention of Earnings resolution; it prints in its
-  // own dedicated section above with entity-aware wording
-  const specialResolutions = (data.resolutions ?? []).filter((r) => r.purpose !== RETENTION_RESOLUTION_LABEL);
+  // Resolutions — the Retention of Earnings row is skipped ONLY when the dedicated
+  // section above already printed it. Without a structured record (e.g. a written
+  // consent holding only free text) it still prints here, so it is never dropped.
+  const specialResolutions = (data.resolutions ?? []).filter(
+    (r) => !(retentionAdopted && r.purpose === RETENTION_RESOLUTION_LABEL),
+  );
   if (specialResolutions.length > 0) {
     y = checkPageBreak(doc, y, 20 + specialResolutions.length * 15);
     y = section("Special Resolutions");
