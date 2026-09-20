@@ -108,6 +108,88 @@ export function defaultFiscalYearLabel(year: number): string {
   return `FY${year}`;
 }
 
+// ------------------------------------------------------------ period dates
+
+export interface DerivedPeriod {
+  start: string;
+  end: string;
+  /** True when the company has no usable fiscal year end and we fell back to the calendar year. */
+  usedCalendarFallback: boolean;
+}
+
+const iso = (d: Date) => d.toISOString().slice(0, 10);
+
+/**
+ * Period start/end derived from the company's fiscal year end (month/day) and
+ * the statement's fiscal year. The period ENDS in `fiscalYear`.
+ */
+export function derivePeriod(
+  fiscalYearEnd: string | null | undefined,
+  fiscalYear: number,
+): DerivedPeriod {
+  const m = String(fiscalYearEnd ?? "").match(/(\d{1,2})[-/](\d{1,2})$/);
+  if (!m || !Number.isFinite(fiscalYear)) {
+    return {
+      start: `${fiscalYear}-01-01`,
+      end: `${fiscalYear}-12-31`,
+      usedCalendarFallback: true,
+    };
+  }
+  const month = parseInt(m[1], 10);
+  const day = parseInt(m[2], 10);
+  const end = new Date(Date.UTC(fiscalYear, month - 1, day));
+  const start = new Date(Date.UTC(fiscalYear - 1, month - 1, day));
+  start.setUTCDate(start.getUTCDate() + 1);
+  return { start: iso(start), end: iso(end), usedCalendarFallback: false };
+}
+
+export const NO_FISCAL_YEAR_END_NOTE =
+  "Fiscal year end not set on this company. Using calendar year.";
+
+/**
+ * Resolve the period actually stored on a statement: user-entered when the
+ * period is short or irregular, derived otherwise.
+ */
+export function resolvePeriod(
+  s: { fiscal_year: number; has_irregular_period?: boolean | null; period_start?: string | null; period_end?: string | null },
+  fiscalYearEnd: string | null | undefined,
+): { start: string | null; end: string | null } {
+  if (s.has_irregular_period) {
+    return { start: s.period_start || null, end: s.period_end || null };
+  }
+  const d = derivePeriod(fiscalYearEnd, Number(s.fiscal_year));
+  return { start: d.start, end: d.end };
+}
+
+// --------------------------------------------------- source consistency note
+
+export function sourceConsistencyNote(
+  sourceTag: SourceTag | null | undefined,
+  returnFiledDate: string | null | undefined,
+): string | null {
+  if (sourceTag === "tax_return" && !returnFiledDate) {
+    return "No filing date entered. If the return has not been filed, consider 'Internal Records — Unaudited' as the source.";
+  }
+  if (sourceTag === "internal" && returnFiledDate) {
+    return "A filing date is recorded. Consider 'Form 990 as filed' as the source.";
+  }
+  return null;
+}
+
+export const MANUAL_REVIEW_DATE_NOTE = "Entered manually. Not linked to a meeting.";
+
+/** True for a legacy review date typed by a user rather than sourced from a meeting. */
+export function isManualReviewDate(s: NonprofitStatement): boolean {
+  return !!s.board_reviewed_date && !s.board_review_meeting_id;
+}
+
+/** The single source selection that applies to a statement's figures. */
+export function primarySourceTag(s: NonprofitStatement): SourceTag | null {
+  const tags = (s.source_tags || {}) as Record<string, SourceTag>;
+  const first = Object.values(tags).find((t) => SOURCE_TAGS.includes(t));
+  return (first as SourceTag) ?? null;
+}
+
 /**
  * Suggest a fiscal year from the company's fiscal year end (MM-DD or a date)
  * and a reference date. The fiscal year is the year the period ENDS in.
