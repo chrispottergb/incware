@@ -517,6 +517,14 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
                         )}
                         <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.resolution_text}</p>
 
+                        {/* Adopted on a nonprofit before the resolution was withdrawn — never removed silently. */}
+                        {nonprofitEntity && r.purpose === RETENTION_RESOLUTION_LABEL && (
+                          <p className="mt-2 rounded-md border-l-4 border-l-warning bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
+                            {RETENTION_NONPROFIT_LEGACY_NOTICE}
+                          </p>
+                        )}
+
+
                         {/* Linked transaction indicator */}
                         {hasLinkedTransaction && (
                           <div className="flex items-center gap-1.5 mt-2 text-[11px] text-primary font-medium">
