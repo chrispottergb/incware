@@ -155,7 +155,18 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const [warnings, setWarnings] = useState<ReturnType<typeof runReconciliation>>([]);
+  // Warnings are derived from the figures currently on screen so they are also
+  // visible when a saved statement is re-opened, not only right after a save.
+  // Differences the user has already accepted stay out of the active list.
+  const warnings = useMemo(() => {
+    if (!selected) return [];
+    const dismissed = new Set(((selected.dismissed_warnings as any[]) || []).map((w) => w.code));
+    return runReconciliation(
+      { ...(draft as any), fiscal_year: Number(draft.fiscal_year) },
+      formType,
+      priorYear,
+    ).filter((w) => !dismissed.has(w.code));
+  }, [draft, formType, priorYear, selected]);
 
   const save = useMutation({
     mutationFn: async () => {
