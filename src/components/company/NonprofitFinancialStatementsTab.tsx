@@ -585,13 +585,6 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
                 </div>
                 <div className="flex items-center gap-2 pt-5">
                   <Switch
-                    checked={!!draft.is_audited}
-                    onCheckedChange={(v) => setDraft((d) => ({ ...d, is_audited: v }))}
-                  />
-                  <Label className="text-xs">Audited</Label>
-                </div>
-                <div className="flex items-center gap-2 pt-5">
-                  <Switch
                     checked={draft.is_draft === false}
                     onCheckedChange={(v) => setDraft((d) => ({ ...d, is_draft: !v }))}
                   />
@@ -782,7 +775,7 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
           <NonprofitStatementView
             companyName={company?.name || "Organization"}
             formType={formType}
-            statement={{ ...(draft as NonprofitStatement), fiscal_year: Number(draft.fiscal_year) }}
+            statement={effectiveStatement}
             priorYear={priorYear}
           />
         </>
