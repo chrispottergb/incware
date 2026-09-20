@@ -3329,9 +3329,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   // the printed record. Fail loudly rather than emit an incomplete document.
   const adoptedPurposes = [
     ...(retentionAdopted ? [RETENTION_RESOLUTION_LABEL] : []),
-    ...(data.resolutions ?? [])
-      .filter((r) => r.purpose !== RETENTION_RESOLUTION_LABEL)
-      .map((r) => r.purpose),
+    ...specialResolutions.map((r) => r.purpose),
   ];
   const missingResolutions = adoptedPurposes.filter(
     (p) => !renderedResolutionPurposes.includes(p),
