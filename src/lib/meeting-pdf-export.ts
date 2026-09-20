@@ -2235,11 +2235,6 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     });
     y = (doc as any).lastAutoTable.finalY + 6;
 
-    // Retention-of-earnings / distributions resolution (rendered before the
-    // per-holder distribution clause so amounts are not duplicated).
-    const sElectedForMeeting = isSElectedForMeeting(company, meeting);
-    y = renderRetentionEarningsSection(doc, y, data, companyName, entityType, isLLC, sElectedForMeeting);
-
     // Distribution resolution for each member/shareholder with a distribution amount
     if (hasDistribution) {
       // S-corp clause is driven strictly by an actual S-election on file,
