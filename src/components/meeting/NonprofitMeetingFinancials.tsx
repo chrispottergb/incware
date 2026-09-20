@@ -186,12 +186,25 @@ export default function NonprofitMeetingFinancials({ meetingId, meeting, company
           </CardContent>
         </Card>
       ) : statement ? (
-        <NonprofitStatementView
-          companyName={company?.name || "Organization"}
-          formType={formType}
-          statement={statement as NonprofitStatement}
-          priorYear={priorYear}
-        />
+        <>
+          <Card className="border-l-4 border-l-primary">
+            <CardContent className="py-3 text-xs flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">
+                These figures are shown here for the minutes only. Enter or change the numbers for
+                FY{fiscalYear ?? "—"} on the Financial Statements tab; they update here automatically.
+              </span>
+              <Button asChild size="sm" variant="outline" className="shrink-0">
+                <Link to={`/company/${company?.id}#financial-statements`}>Edit FY{fiscalYear ?? ""} figures</Link>
+              </Button>
+            </CardContent>
+          </Card>
+          <NonprofitStatementView
+            companyName={company?.name || "Organization"}
+            formType={formType}
+            statement={statement as NonprofitStatement}
+            priorYear={priorYear}
+          />
+        </>
       ) : (
         <Card>
           <CardContent className="py-4 text-xs text-muted-foreground">
