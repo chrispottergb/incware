@@ -89,9 +89,40 @@ export default function NonprofitMeetingFinancials({ meetingId, meeting, company
             } as any,
             { onConflict: "meeting_id" } as any,
           );
+          // Board review is system-populated from the earliest finalized meeting
+          // that adopted this statement.
+          const reviewDate: string | null = meeting?.meeting_date || null;
+          const currentLinked = statement.board_review_meeting_id;
+          const currentDate = statement.board_reviewed_date;
+          if (reviewDate && (!currentLinked || !currentDate || reviewDate < currentDate)) {
+            await supabase
+              .from("nonprofit_financial_statements" as any)
+              .update({ board_reviewed_date: reviewDate, board_review_meeting_id: meetingId } as any)
+              .eq("id", statement.id);
+          }
         }
       } else {
         await supabase.from("meeting_financial_snapshots" as any).delete().eq("meeting_id", meetingId);
+        if (statement?.board_review_meeting_id === meetingId) {
+          // Fall back to the next earliest finalized meeting still adopting this statement.
+          const { data: others } = await supabase
+            .from("meeting_financial_snapshots" as any)
+            .select("meeting_id, meetings!inner(id, meeting_date, document_status)")
+            .eq("source_statement_id", statement.id)
+            .neq("meeting_id", meetingId);
+          const candidates = ((others as any[]) || [])
+            .map((r) => r.meetings)
+            .filter((m: any) => m && String(m.document_status || "").toLowerCase() === "final")
+            .sort((a: any, b: any) => String(a.meeting_date).localeCompare(String(b.meeting_date)));
+          const next2 = candidates[0];
+          await supabase
+            .from("nonprofit_financial_statements" as any)
+            .update({
+              board_reviewed_date: next2?.meeting_date ?? null,
+              board_review_meeting_id: next2?.id ?? null,
+            } as any)
+            .eq("id", statement.id);
+        }
       }
       const { error } = await supabase.from("meetings").update({ document_status: next }).eq("id", meetingId);
       if (error) throw error;
