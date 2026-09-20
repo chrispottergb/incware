@@ -116,6 +116,53 @@ describe("statement header wording", () => {
   });
 });
 
+describe("period derivation", () => {
+  it("derives the period from the company fiscal year end", () => {
+    const p = derivePeriod("06-30", 2025);
+    expect(p).toEqual({ start: "2024-07-01", end: "2025-06-30", usedCalendarFallback: false });
+  });
+  it("falls back to the calendar year when no fiscal year end is set", () => {
+    const p = derivePeriod(null, 2025);
+    expect(p).toEqual({ start: "2025-01-01", end: "2025-12-31", usedCalendarFallback: true });
+  });
+  it("uses typed dates only for an irregular period", () => {
+    const s = { fiscal_year: 2025, has_irregular_period: true, period_start: "2025-03-01", period_end: "2025-12-31" };
+    expect(resolvePeriod(s, "06-30")).toEqual({ start: "2025-03-01", end: "2025-12-31" });
+    expect(resolvePeriod({ ...s, has_irregular_period: false }, "06-30")).toEqual({
+      start: "2024-07-01",
+      end: "2025-06-30",
+    });
+  });
+});
+
+describe("source consistency", () => {
+  it("nudges when the source and filing date disagree", () => {
+    expect(sourceConsistencyNote("tax_return", null)).toContain("No filing date entered.");
+    expect(sourceConsistencyNote("internal", "2025-06-01")).toContain("A filing date is recorded.");
+    expect(sourceConsistencyNote("audited_financials", null)).toBeNull();
+    expect(sourceConsistencyNote("tax_return", "2025-06-01")).toBeNull();
+  });
+});
+
+describe("board review provenance", () => {
+  it("notes a legacy manually entered review date", () => {
+    const s = base({ board_reviewed_date: "2025-05-01" } as any);
+    expect(isManualReviewDate(s)).toBe(true);
+    expect(buildStatementHeader(s).boardReviewedLine).toContain(MANUAL_REVIEW_DATE_NOTE);
+  });
+  it("stays clean when the review date comes from a meeting", () => {
+    const s = base({ board_reviewed_date: "2025-05-01", board_review_meeting_id: "m1" } as any);
+    expect(isManualReviewDate(s)).toBe(false);
+    expect(buildStatementHeader(s).boardReviewedLine).not.toContain(MANUAL_REVIEW_DATE_NOTE);
+  });
+  it("uses the selected source rather than the retired audited flag", () => {
+    const h = buildStatementHeader(
+      base({ is_audited: false, source_tags: { total_revenue: "audited_financials" } } as any),
+    );
+    expect(h.sourceLine).toBe("Source: Audited Financial Statements");
+  });
+});
+
 describe("misc", () => {
   it("computes year-over-year percentages and guards divide by zero", () => {
     expect(yoyPercent(150, 100)).toBeCloseTo(50);
