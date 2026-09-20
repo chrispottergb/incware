@@ -374,31 +374,18 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
   const fmtAmt = (v: number | null) =>
     v == null ? "—" : v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const amountRow = (
-    label: string,
-    key: string,
-    opts: { ref?: string; locked?: boolean; lockedValue?: number | null } = {},
-  ) => (
+  const amountRow = (label: string, key: string, opts: { ref?: string } = {}) => (
     <div key={key} className="flex items-center justify-between gap-3 px-3 py-1.5">
       <span className="text-xs" title={opts.ref}>
         {label}
-        {opts.locked && (
-          <span className="ml-2 text-[10px] text-muted-foreground">From Form 990 detail below.</span>
-        )}
       </span>
-      {opts.locked ? (
-        <div className="w-40 rounded-md bg-muted px-2 py-1 text-right text-xs font-semibold tabular-nums">
-          {fmtAmt(opts.lockedValue ?? null)}
-        </div>
-      ) : (
-        <Input
-          className="h-7 w-40 text-xs text-right"
-          aria-label={label}
-          inputMode="decimal"
-          value={draft[key] ?? ""}
-          onChange={(e) => setDraft((d) => ({ ...d, [key]: e.target.value }))}
-        />
-      )}
+      <Input
+        className="h-7 w-40 text-xs text-right"
+        aria-label={label}
+        inputMode="decimal"
+        value={draft[key] ?? ""}
+        onChange={(e) => setDraft((d) => ({ ...d, [key]: e.target.value }))}
+      />
     </div>
   );
 
