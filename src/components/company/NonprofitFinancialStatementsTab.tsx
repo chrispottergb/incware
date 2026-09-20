@@ -191,16 +191,36 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
     };
   }, [draft, formType]);
 
+  const derivedPeriod = useMemo(
+    () => derivePeriod(company?.fiscal_year_end, Number(draft.fiscal_year)),
+    [company?.fiscal_year_end, draft.fiscal_year],
+  );
+
+  const resolvedPeriod = useMemo(
+    () =>
+      draft.has_irregular_period
+        ? { start: draft.period_start || null, end: draft.period_end || null }
+        : { start: derivedPeriod.start, end: derivedPeriod.end },
+    [draft.has_irregular_period, draft.period_start, draft.period_end, derivedPeriod],
+  );
+
+  const consistencyNote = useMemo(
+    () => sourceConsistencyNote(sourceTag, draft.return_filed_date),
+    [sourceTag, draft.return_filed_date],
+  );
+
   const effectiveStatement = useMemo(
     () => ({
       ...(draft as NonprofitStatement),
       fiscal_year: Number(draft.fiscal_year),
+      period_start: resolvedPeriod.start,
+      period_end: resolvedPeriod.end,
       total_revenue: derived.totalRevenue,
       total_expenses: derived.totalExpenses,
       change_in_net_assets: derived.changeInNetAssets,
       net_assets_ending: derived.ending,
     }),
-    [draft, derived],
+    [draft, derived, resolvedPeriod],
   );
 
   const setFormType = useMutation({
