@@ -23,6 +23,8 @@ import MeetingsTab from "@/components/company/MeetingsTab";
 import ShareholdersTab from "@/components/company/ShareholdersTab";
 import { NonProfitGovernanceTab } from "@/components/company/NonProfitGovernanceTab";
 import { TaxExemptionTab } from "@/components/company/TaxExemptionTab";
+import NonprofitFinancialStatementsTab from "@/components/company/NonprofitFinancialStatementsTab";
+import { isNonprofit } from "@/lib/nonprofit-financials";
 import StockCertificatesTab from "@/components/company/StockCertificatesTab";
 import StockLedgerTab from "@/components/company/StockLedgerTab";
 import BillsOfSaleTab from "@/components/company/BillsOfSaleTab";
@@ -163,13 +165,18 @@ export default function CompanyDetail() {
 
     }
     const isCorp = entityType === "Corporation" || entityType === "S-Corp";
-    const isNonProfit = entityType === "Non-Profit";
+    const isNonProfit = isNonprofit({ entity_type: entityType });
     const tabs = [
       { value: "incorporation", label: "Incorporation Info" },
       ...(!isCorp && !isNonProfit ? [{ value: "organization", label: "Organizational Info" }] : []),
       { value: "shareholders", label: isNonProfit ? "Governance" : getTerminology(entityType).shareholdersTab },
       { value: "meetings", label: "Meetings" },
-      ...(isNonProfit ? [{ value: "tax-exemption", label: "Tax Exemption" }] : []),
+      ...(isNonProfit
+        ? [
+            { value: "tax-exemption", label: "Tax Exemption" },
+            { value: "financial-statements", label: "Financial Statements" },
+          ]
+        : []),
 
       { value: "timeline", label: "Timeline" },
       { value: "leases", label: "Leases" },
@@ -496,10 +503,15 @@ export default function CompanyDetail() {
             onOpenChange={setEstablishOwnershipOpen}
           />
         </TabsContent>
-        {company.entity_type === "Non-Profit" && (
-          <TabsContent value="tax-exemption" className="mt-5">
-            <TaxExemptionTab companyId={company.id} />
-          </TabsContent>
+        {isNonprofit(company) && (
+          <>
+            <TabsContent value="tax-exemption" className="mt-5">
+              <TaxExemptionTab companyId={company.id} />
+            </TabsContent>
+            <TabsContent value="financial-statements" className="mt-5">
+              <NonprofitFinancialStatementsTab companyId={company.id} company={company} />
+            </TabsContent>
+          </>
         )}
         <TabsContent value="timeline" className="mt-5">
           <TimelineTab companyId={company.id} company={company} />
