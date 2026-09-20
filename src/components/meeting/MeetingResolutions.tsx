@@ -25,7 +25,13 @@ import { Plus, Trash2, Loader2, FileText, Pencil, Link2, ArrowRightLeft, Layers,
 import { toast } from "sonner";
 import { createGeneratedDocumentSignedUrl, downloadGeneratedDocumentBlob, saveBlobAsFile } from "@/lib/document-storage";
 
-import { getResolutionTypesFor, RETENTION_RESOLUTION_LABEL, resolveRetentionDisplayLabel } from "@/lib/resolution-types";
+import {
+  getResolutionTypesFor,
+  RETENTION_RESOLUTION_LABEL,
+  RETENTION_NONPROFIT_LEGACY_NOTICE,
+  resolveRetentionDisplayLabel,
+} from "@/lib/resolution-types";
+import { isNonprofit } from "@/lib/nonprofit-financials";
 import { isLLCType } from "@/lib/entity-terminology";
 import RetentionResolutionPanel from "@/components/meeting/RetentionResolutionPanel";
 import CharitableContributionFields, {
