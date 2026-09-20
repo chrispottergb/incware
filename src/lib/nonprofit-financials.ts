@@ -235,13 +235,15 @@ export interface FormVisibility {
 }
 
 export function getFormVisibility(formType: IrsFormType | null | undefined): FormVisibility {
+  // Form 990 detail (Tier 2) is not currently surfaced, so 990 and 990-EZ
+  // render identically. The detail flags are retained for reintroduction.
   const base: FormVisibility = {
     showStatement: true,
-    showRevenueDetail: true,
-    showFunctionalSplit: true,
-    showNetAssets: true,
+    showRevenueDetail: false,
+    showFunctionalSplit: false,
+    showNetAssets: false,
     showRatios: true,
-    showChart: true,
+    showChart: false,
     showConfirmationBlock: false,
     unsupportedMessage: null,
     note: null,
@@ -250,12 +252,7 @@ export function getFormVisibility(formType: IrsFormType | null | undefined): For
     case "990":
       return base;
     case "990-EZ":
-      return {
-        ...base,
-        showFunctionalSplit: false,
-        showChart: false,
-        note: "Form 990-EZ does not report a functional expense allocation.",
-      };
+      return base;
     case "990-N":
       return {
         ...base,
