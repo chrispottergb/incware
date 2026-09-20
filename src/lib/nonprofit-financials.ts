@@ -447,6 +447,7 @@ export function runReconciliation(
 export interface StatementHeader {
   title: string;
   fiscalYearLine: string;
+  periodLine: string | null;
   sourceLine: string;
   statusLine: string;
   documentedLine: string;
