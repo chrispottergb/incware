@@ -107,7 +107,7 @@ export default function MeetingResolutions({ meetingId, entityType, meetingType,
       seen.add(o.label);
       return true;
     });
-  }, [entityType, sElectedForMeeting]);
+  }, [entityType, sElectedForMeeting, nonprofitEntity]);
 
   const { data: resolutions = [] } = useQuery({
     queryKey: ["meeting_resolutions", meetingId],
