@@ -44,6 +44,7 @@ import {
   type ActionCategory,
   type ResolutionType,
 } from "@/lib/resolution-types";
+import { isNonprofit } from "@/lib/nonprofit-financials";
 import CharitableContributionFields, {
   CHARITABLE_RESOLUTION_LABEL,
   composeCharitableText,
