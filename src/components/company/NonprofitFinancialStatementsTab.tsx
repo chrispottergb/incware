@@ -134,41 +134,19 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
   );
 
   const derived = useMemo(() => {
-    const v = getFormVisibility(formType);
     const n = (x: any) => {
       if (x === "" || x === null || x === undefined) return null;
       const p = Number(x);
       return Number.isFinite(p) ? p : null;
     };
-    const sum = (keys: string[]) => {
-      const vals = keys.map((k) => n(draft[k])).filter((x): x is number => x != null);
-      return vals.length ? vals.reduce((a, b) => a + b, 0) : null;
-    };
-    const revenueDetailTotal = v.showRevenueDetail ? sum(REVENUE_FIELDS.map((f) => f.key)) : null;
-    const expenseDetailTotal = v.showFunctionalSplit
-      ? sum(FUNCTIONAL_EXPENSE_FIELDS.map((f) => f.key))
-      : null;
-    const totalRevenue = revenueDetailTotal ?? n(draft.total_revenue);
-    const totalExpenses = expenseDetailTotal ?? n(draft.total_expenses);
+    const totalRevenue = n(draft.total_revenue);
+    const totalExpenses = n(draft.total_expenses);
     const changeInNetAssets =
       totalRevenue != null && totalExpenses != null ? totalRevenue - totalExpenses : null;
     const beginning = n(draft.net_assets_beginning);
     const ending = beginning != null && changeInNetAssets != null ? beginning + changeInNetAssets : null;
-    const restrictionTotal = sum(["net_assets_without_restrictions", "net_assets_with_restrictions"]);
-    const assets = n(draft.total_assets);
-    const liabilities = n(draft.total_liabilities);
-    const assetsLessLiabilities = assets != null && liabilities != null ? assets - liabilities : null;
-    return {
-      revenueDetailTotal,
-      expenseDetailTotal,
-      totalRevenue,
-      totalExpenses,
-      changeInNetAssets,
-      ending,
-      restrictionTotal,
-      assetsLessLiabilities,
-    };
-  }, [draft, formType]);
+    return { totalRevenue, totalExpenses, changeInNetAssets, ending };
+  }, [draft]);
 
   const derivedPeriod = useMemo(
     () => derivePeriod(company?.fiscal_year_end, Number(draft.fiscal_year)),
