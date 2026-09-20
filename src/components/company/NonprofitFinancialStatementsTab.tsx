@@ -16,16 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import {
-  AlertTriangle,
-  ChevronDown,
-  ChevronRight,
-  Download,
-  FileText,
-  Loader2,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { AlertTriangle, Download, FileText, Loader2, Plus, Trash2 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
