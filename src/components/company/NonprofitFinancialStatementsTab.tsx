@@ -16,14 +16,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { AlertTriangle, Download, FileText, Loader2, Plus, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  Download,
+  FileText,
+  Loader2,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import NonprofitStatementView from "@/components/company/NonprofitStatementView";
 import { generateNonprofitFinancialStatementPDF } from "@/lib/nonprofit-financial-statement-pdf";
 import {
   IRS_FORM_TYPES,
-  SOURCE_TAGS,
-  SOURCE_TAG_LABELS,
   REVENUE_FIELDS,
   REVENUE_TOTAL_FIELD,
   FUNCTIONAL_EXPENSE_FIELDS,
@@ -52,11 +60,28 @@ const MONEY_KEYS = [
   ...NET_ASSET_FIELDS.map((f) => f.key),
 ] as string[];
 
+const STATEMENT_SOURCES: { value: SourceTag; label: string }[] = [
+  { value: "tax_return", label: "Form 990 as filed" },
+  { value: "audited_financials", label: "Audited Financial Statements" },
+  { value: "internal", label: "Internal Records — Unaudited" },
+];
+
+const TIER2_KEYS = [
+  ...REVENUE_FIELDS.map((f) => f.key),
+  ...FUNCTIONAL_EXPENSE_FIELDS.map((f) => f.key),
+  "net_assets_without_restrictions",
+  "net_assets_with_restrictions",
+  "total_assets",
+  "total_liabilities",
+] as string[];
+
 export default function NonprofitFinancialStatementsTab({ companyId, company }: Props) {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Record<string, any>>({});
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [sourceTag, setSourceTag] = useState<SourceTag>("internal");
+  const [tier2Open, setTier2Open] = useState(false);
 
   const formType = (company?.irs_form_type ?? null) as IrsFormType | null;
 
@@ -103,7 +128,23 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
   }, [statements, selectedId]);
 
   useEffect(() => {
-    if (selected) setDraft({ ...selected });
+    if (!selected) return;
+    setDraft({ ...selected });
+    const tags = (selected.source_tags as Record<string, SourceTag>) || {};
+    const firstTag = MONEY_KEYS.map((k) => tags[k]).find(
+      (t) => t && STATEMENT_SOURCES.some((o) => o.value === t),
+    );
+    setSourceTag(
+      (firstTag as SourceTag) ??
+        (selected.is_audited
+          ? "audited_financials"
+          : selected.return_filed_date
+            ? "tax_return"
+            : "internal"),
+    );
+    setTier2Open(
+      TIER2_KEYS.some((k) => selected[k] !== null && selected[k] !== undefined && selected[k] !== ""),
+    );
   }, [selected?.id, selected?.updated_at]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const priorYear = useMemo(
@@ -112,6 +153,55 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
         ? statements.find((s: any) => s.fiscal_year === Number(draft.fiscal_year) - 1) || null
         : null,
     [statements, draft.fiscal_year],
+  );
+
+  const derived = useMemo(() => {
+    const v = getFormVisibility(formType);
+    const n = (x: any) => {
+      if (x === "" || x === null || x === undefined) return null;
+      const p = Number(x);
+      return Number.isFinite(p) ? p : null;
+    };
+    const sum = (keys: string[]) => {
+      const vals = keys.map((k) => n(draft[k])).filter((x): x is number => x != null);
+      return vals.length ? vals.reduce((a, b) => a + b, 0) : null;
+    };
+    const revenueDetailTotal = v.showRevenueDetail ? sum(REVENUE_FIELDS.map((f) => f.key)) : null;
+    const expenseDetailTotal = v.showFunctionalSplit
+      ? sum(FUNCTIONAL_EXPENSE_FIELDS.map((f) => f.key))
+      : null;
+    const totalRevenue = revenueDetailTotal ?? n(draft.total_revenue);
+    const totalExpenses = expenseDetailTotal ?? n(draft.total_expenses);
+    const changeInNetAssets =
+      totalRevenue != null && totalExpenses != null ? totalRevenue - totalExpenses : null;
+    const beginning = n(draft.net_assets_beginning);
+    const ending = beginning != null && changeInNetAssets != null ? beginning + changeInNetAssets : null;
+    const restrictionTotal = sum(["net_assets_without_restrictions", "net_assets_with_restrictions"]);
+    const assets = n(draft.total_assets);
+    const liabilities = n(draft.total_liabilities);
+    const assetsLessLiabilities = assets != null && liabilities != null ? assets - liabilities : null;
+    return {
+      revenueDetailTotal,
+      expenseDetailTotal,
+      totalRevenue,
+      totalExpenses,
+      changeInNetAssets,
+      ending,
+      restrictionTotal,
+      assetsLessLiabilities,
+    };
+  }, [draft, formType]);
+
+  const effectiveStatement = useMemo(
+    () => ({
+      ...(draft as NonprofitStatement),
+      fiscal_year: Number(draft.fiscal_year),
+      total_revenue: derived.totalRevenue,
+      total_expenses: derived.totalExpenses,
+      change_in_net_assets: derived.changeInNetAssets,
+      net_assets_ending: derived.ending,
+    }),
+    [draft, derived],
   );
 
   const setFormType = useMutation({
@@ -161,32 +251,33 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
   const warnings = useMemo(() => {
     if (!selected) return [];
     const dismissed = new Set(((selected.dismissed_warnings as any[]) || []).map((w) => w.code));
-    return runReconciliation(
-      { ...(draft as any), fiscal_year: Number(draft.fiscal_year) },
-      formType,
-      priorYear,
-    ).filter((w) => !dismissed.has(w.code));
-  }, [draft, formType, priorYear, selected]);
+    return runReconciliation(effectiveStatement, formType, priorYear).filter(
+      (w) => !dismissed.has(w.code),
+    );
+  }, [effectiveStatement, formType, priorYear, selected]);
 
   const save = useMutation({
     mutationFn: async () => {
+      const tags: Record<string, SourceTag> = {};
       const payload: Record<string, any> = {
         fiscal_year: Number(draft.fiscal_year),
         fiscal_year_label: draft.fiscal_year_label || defaultFiscalYearLabel(Number(draft.fiscal_year)),
         period_start: draft.period_start || null,
         period_end: draft.period_end || null,
-        is_audited: !!draft.is_audited,
+        is_audited: sourceTag === "audited_financials",
         is_draft: draft.is_draft !== false,
         return_filed_date: draft.return_filed_date || null,
         board_reviewed_date: draft.board_reviewed_date || null,
         gross_receipts_under_threshold: draft.gross_receipts_under_threshold ?? null,
         board_acknowledgment: draft.board_acknowledgment || null,
-        source_tags: draft.source_tags || {},
       };
       for (const k of MONEY_KEYS) {
-        const v = draft[k];
-        payload[k] = v === "" || v === null || v === undefined ? null : Number(v);
+        const v = (effectiveStatement as any)[k];
+        const parsed = v === "" || v === null || v === undefined ? null : Number(v);
+        payload[k] = parsed;
+        if (parsed !== null) tags[k] = sourceTag;
       }
+      payload.source_tags = tags;
       const { error } = await supabase
         .from("nonprofit_financial_statements" as any)
         .update(payload as any)
@@ -255,7 +346,7 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
     const doc = generateNonprofitFinancialStatementPDF({
       companyName: company?.name || "Organization",
       formType,
-      statement: { ...(draft as NonprofitStatement), fiscal_year: Number(draft.fiscal_year) },
+      statement: effectiveStatement,
       priorYear,
     });
     const { savePdfReliably } = await import("@/lib/pdf-save");
@@ -296,14 +387,48 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
     );
   }
 
-  const moneyRows = [
-    ...(vis.showRevenueDetail
-      ? [...REVENUE_FIELDS.map((f) => ({ ...f })), { ...REVENUE_TOTAL_FIELD }]
-      : []),
-    ...(vis.showFunctionalSplit ? FUNCTIONAL_EXPENSE_FIELDS.map((f) => ({ ...f })) : []),
-    ...(vis.showStatement ? [{ ...EXPENSE_TOTAL_FIELD }] : []),
-    ...(vis.showNetAssets ? NET_ASSET_FIELDS.map((f) => ({ ...f })) : []),
-  ];
+  const fmtAmt = (v: number | null) =>
+    v == null ? "—" : v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const amountRow = (
+    label: string,
+    key: string,
+    opts: { ref?: string; locked?: boolean; lockedValue?: number | null } = {},
+  ) => (
+    <div key={key} className="flex items-center justify-between gap-3 px-3 py-1.5">
+      <span className="text-xs" title={opts.ref}>
+        {label}
+        {opts.locked && (
+          <span className="ml-2 text-[10px] text-muted-foreground">From Form 990 detail below.</span>
+        )}
+      </span>
+      {opts.locked ? (
+        <div className="w-40 rounded-md bg-muted px-2 py-1 text-right text-xs font-semibold tabular-nums">
+          {fmtAmt(opts.lockedValue ?? null)}
+        </div>
+      ) : (
+        <Input
+          className="h-7 w-40 text-xs text-right"
+          aria-label={label}
+          inputMode="decimal"
+          value={draft[key] ?? ""}
+          onChange={(e) => setDraft((d) => ({ ...d, [key]: e.target.value }))}
+        />
+      )}
+    </div>
+  );
+
+  const computedRow = (label: string, value: number | null, opts: { total?: boolean } = {}) => (
+    <div
+      key={label}
+      className={`flex items-center justify-between gap-3 bg-muted/40 px-3 py-1.5 ${opts.total ? "border-t-2" : ""}`}
+    >
+      <span className="text-xs font-semibold">{label}</span>
+      <div className="w-40 rounded-md bg-muted px-2 py-1 text-right text-xs font-bold tabular-nums">
+        {fmtAmt(value)}
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-5">
@@ -460,13 +585,6 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
                 </div>
                 <div className="flex items-center gap-2 pt-5">
                   <Switch
-                    checked={!!draft.is_audited}
-                    onCheckedChange={(v) => setDraft((d) => ({ ...d, is_audited: v }))}
-                  />
-                  <Label className="text-xs">Audited</Label>
-                </div>
-                <div className="flex items-center gap-2 pt-5">
-                  <Switch
                     checked={draft.is_draft === false}
                     onCheckedChange={(v) => setDraft((d) => ({ ...d, is_draft: !v }))}
                   />
@@ -492,57 +610,133 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
                   </div>
                 </div>
               ) : (
-                <div className="space-y-1">
+                <div className="space-y-5">
                   {vis.note && <p className="text-xs text-muted-foreground">{vis.note}</p>}
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="bg-primary/10">
-                        <th className="text-left px-2 py-1.5 font-medium">Line</th>
-                        <th className="text-left px-2 py-1.5 font-medium w-40">Amount</th>
-                        <th className="text-left px-2 py-1.5 font-medium w-40">Source</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {moneyRows.map((f) => (
-                        <tr key={f.key}>
-                          <td className="px-2 py-1" title={f.ref}>
-                            {f.label}
-                          </td>
-                          <td className="px-2 py-1">
-                            <Input
-                              className="h-7 text-xs"
-                              aria-label={f.label}
-                              inputMode="decimal"
-                              value={draft[f.key] ?? ""}
-                              onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
-                            />
-                          </td>
-                          <td className="px-2 py-1">
-                            <Select
-                              value={(draft.source_tags || {})[f.key] || "tax_return"}
-                              onValueChange={(v) =>
-                                setDraft((d) => ({
-                                  ...d,
-                                  source_tags: { ...(d.source_tags || {}), [f.key]: v as SourceTag },
-                                }))
-                              }
-                            >
-                              <SelectTrigger className="h-7 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {SOURCE_TAGS.map((t) => (
-                                  <SelectItem key={t} value={t}>
-                                    {SOURCE_TAG_LABELS[t]}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </td>
-                        </tr>
+
+                  <div className="rounded-md border bg-muted/30 px-3 py-2.5">
+                    <Label className="text-xs font-medium">Source of these figures</Label>
+                    <RadioGroup
+                      className="mt-2 flex flex-wrap gap-5"
+                      value={sourceTag}
+                      onValueChange={(v) => setSourceTag(v as SourceTag)}
+                    >
+                      {STATEMENT_SOURCES.map((o) => (
+                        <div key={o.value} className="flex items-center gap-2">
+                          <RadioGroupItem value={o.value} id={`src-${o.value}`} />
+                          <Label htmlFor={`src-${o.value}`} className="text-xs font-normal">
+                            {o.label}
+                          </Label>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
+                    </RadioGroup>
+                    <p className="mt-1.5 text-[10px] text-muted-foreground">
+                      Applies to every figure in this statement.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                      Board Review Figures
+                    </p>
+                    <div className="rounded-md border divide-y">
+                      {amountRow("Total Revenue", "total_revenue", {
+                        locked: derived.revenueDetailTotal != null,
+                        lockedValue: derived.totalRevenue,
+                      })}
+                      {amountRow("Total Expenses", "total_expenses", {
+                        locked: derived.expenseDetailTotal != null,
+                        lockedValue: derived.totalExpenses,
+                      })}
+                      {computedRow("Change in Net Assets", derived.changeInNetAssets)}
+                      {amountRow("Net Assets, Beginning of Year", "net_assets_beginning", {
+                        ref: "990 Part XI line 4",
+                      })}
+                      {computedRow("Net Assets, End of Year", derived.ending, { total: true })}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setTier2Open((o) => !o)}
+                    >
+                      {tier2Open ? (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      )}
+                      Add detail from Form 990
+                    </Button>
+
+                    {tier2Open && (
+                      <div className="space-y-5">
+                        {vis.showRevenueDetail && (
+                          <div className="space-y-1.5">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                              Support &amp; Revenue{" "}
+                              <span className="font-normal normal-case text-muted-foreground">
+                                (Form 990 Part VIII)
+                              </span>
+                            </p>
+                            <div className="rounded-md border divide-y">
+                              {REVENUE_FIELDS.map((f) => amountRow(f.label, f.key, { ref: f.ref }))}
+                              {computedRow("TOTAL SUPPORT & REVENUE", derived.revenueDetailTotal, {
+                                total: true,
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {vis.showFunctionalSplit && (
+                          <div className="space-y-1.5">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                              Expenses by Function{" "}
+                              <span className="font-normal normal-case text-muted-foreground">
+                                (Form 990 Part IX)
+                              </span>
+                            </p>
+                            <div className="rounded-md border divide-y">
+                              {FUNCTIONAL_EXPENSE_FIELDS.map((f) =>
+                                amountRow(f.label, f.key, { ref: f.ref }),
+                              )}
+                              {computedRow("TOTAL EXPENSES", derived.expenseDetailTotal, { total: true })}
+                            </div>
+                          </div>
+                        )}
+
+                        {vis.showNetAssets && (
+                          <div className="space-y-1.5">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                              Net Assets &amp; Balance Sheet{" "}
+                              <span className="font-normal normal-case text-muted-foreground">
+                                (Form 990 Part X)
+                              </span>
+                            </p>
+                            <div className="rounded-md border divide-y">
+                              {amountRow("Without Donor Restrictions", "net_assets_without_restrictions", {
+                                ref: "990 Part X line 27",
+                              })}
+                              {amountRow("With Donor Restrictions", "net_assets_with_restrictions", {
+                                ref: "990 Part X line 28",
+                              })}
+                              {computedRow("Net Assets (restriction split total)", derived.restrictionTotal)}
+                              {amountRow("Total Assets", "total_assets", { ref: "990 Part X line 16" })}
+                              {amountRow("Total Liabilities", "total_liabilities", {
+                                ref: "990 Part X line 26",
+                              })}
+                              {computedRow(
+                                "Net Assets (assets − liabilities)",
+                                derived.assetsLessLiabilities,
+                                { total: true },
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -581,7 +775,7 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
           <NonprofitStatementView
             companyName={company?.name || "Organization"}
             formType={formType}
-            statement={{ ...(draft as NonprofitStatement), fiscal_year: Number(draft.fiscal_year) }}
+            statement={effectiveStatement}
             priorYear={priorYear}
           />
         </>
