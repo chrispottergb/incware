@@ -67,29 +67,49 @@ describe("fiscal year", () => {
 });
 
 describe("ratios", () => {
-  it("computes the program expense ratio", () => {
+  it("computes operating reserve from total net assets", () => {
+    const cards = computeRatios(base({ net_assets_ending: 120, total_expenses: 120 } as any));
+    expect(cards).toHaveLength(1);
+    expect(cards[0].label).toContain("total net assets basis");
+    expect(cards[0].display).toBe("12.0 months");
+  });
+  it("no longer reports Form 990 detail ratios", () => {
     const cards = computeRatios(base({ program_services_expense: 80, total_expenses: 100 } as any));
-    expect(cards.find((c) => c.key === "program_expense_ratio")?.display).toBe("80.0%");
+    expect(cards.some((c) => c.key === "program_expense_ratio")).toBe(false);
   });
   it("omits ratios whose inputs are missing", () => {
     expect(computeRatios(base())).toHaveLength(0);
   });
 });
 
-describe("reconciliation", () => {
-  it("flags a broken roll-forward", () => {
-    const w = runReconciliation(
+describe("retained Tier 2 logic", () => {
+  it("still computes the program expense ratio", () => {
+    const cards = computeTier2Ratios(base({ program_services_expense: 80, total_expenses: 100 } as any));
+    expect(cards.find((c) => c.key === "program_expense_ratio")?.display).toBe("80.0%");
+  });
+  it("still flags a broken roll-forward", () => {
+    const w = runTier2Reconciliation(
       base({ net_assets_beginning: 100, change_in_net_assets: 50, net_assets_ending: 200 } as any),
       "990",
     );
     expect(w.some((x) => x.code === "A")).toBe(true);
   });
-  it("stays silent within tolerance", () => {
+});
+
+describe("empty statements", () => {
+  it("reports whether any board review figure exists", () => {
+    expect(hasBoardReviewFigures(base())).toBe(false);
+    expect(hasBoardReviewFigures(base({ total_revenue: 0 } as any))).toBe(true);
+  });
+});
+
+describe("reconciliation", () => {
+  it("no longer runs the Form 990 detail checks", () => {
     const w = runReconciliation(
-      base({ net_assets_beginning: 100, change_in_net_assets: 50, net_assets_ending: 150 } as any),
+      base({ net_assets_beginning: 100, change_in_net_assets: 50, net_assets_ending: 200 } as any),
       "990",
     );
-    expect(w.some((x) => x.code === "A")).toBe(false);
+    expect(w).toHaveLength(0);
   });
   it("skips the continuity check silently when there is no prior year", () => {
     const w = runReconciliation(base({ net_assets_beginning: 100, net_assets_ending: 100 } as any), "990", null);
