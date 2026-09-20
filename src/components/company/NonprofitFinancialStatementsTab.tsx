@@ -201,7 +201,6 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
         formType,
         priorYear,
       );
-      setWarnings(found);
       toast.success(found.length ? "Saved with reconciliation warnings." : "Financial statement saved.");
     },
     onError: (e: Error) => toast.error(e.message),
