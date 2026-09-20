@@ -587,3 +587,11 @@ export function yoyPercent(current: any, prior: any): number | null {
   if (c == null || p == null || p === 0) return null;
   return ((c - p) / Math.abs(p)) * 100;
 }
+
+/** True when at least one of the five board-review figures has a value. */
+export function hasBoardReviewFigures(s: NonprofitStatement): boolean {
+  return BOARD_REVIEW_FIELDS.some((f) => num(s[f.key]) != null);
+}
+
+export const EMPTY_STATEMENT_NOTE =
+  "No financial figures have been recorded for this fiscal year.";
