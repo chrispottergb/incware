@@ -84,7 +84,10 @@ export interface NonprofitStatement {
   fiscal_year_label?: string | null;
   period_start?: string | null;
   period_end?: string | null;
+  /** @deprecated Retired — the Source selector is the single source of truth. */
   is_audited?: boolean | null;
+  has_irregular_period?: boolean | null;
+  board_review_meeting_id?: string | null;
   is_draft?: boolean | null;
   return_filed_date?: string | null;
   documented_date?: string | null;
