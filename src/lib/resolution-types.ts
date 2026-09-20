@@ -409,3 +409,29 @@ export function getResolutionTypesFor(
   if (nonprofit) return list.filter((r) => r.label !== RETENTION_RESOLUTION_LABEL);
   return list;
 }
+
+/**
+ * Single source of truth for the ordered set of resolution sections on a
+ * meeting, consumed by both the on-screen meeting view and the PDF generator so
+ * the screen and the written record can never disagree.
+ *
+ * The retention resolution occupies its own section when a structured record
+ * exists; otherwise its stored row prints with the other resolutions.
+ */
+export function resolveMeetingResolutionSections<T extends { purpose?: string | null }>(
+  resolutions: T[] | null | undefined,
+  retentionAdopted: boolean
+): { retentionSection: boolean; special: T[]; orderedPurposes: string[] } {
+  const rows = resolutions ?? [];
+  const special = rows.filter(
+    (r) => !(retentionAdopted && r.purpose === RETENTION_RESOLUTION_LABEL)
+  );
+  return {
+    retentionSection: retentionAdopted,
+    special,
+    orderedPurposes: [
+      ...(retentionAdopted ? [RETENTION_RESOLUTION_LABEL] : []),
+      ...special.map((r) => r.purpose || "Other"),
+    ],
+  };
+}
