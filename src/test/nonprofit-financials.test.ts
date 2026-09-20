@@ -39,15 +39,15 @@ describe("isNonprofit", () => {
 });
 
 describe("getFormVisibility", () => {
-  it("990 shows everything", () => {
+  it("990 shows the statement without Form 990 detail or chart", () => {
     const v = getFormVisibility("990");
-    expect(v.showStatement && v.showFunctionalSplit && v.showChart && v.showRatios).toBe(true);
-  });
-  it("990-EZ hides the functional split and chart", () => {
-    const v = getFormVisibility("990-EZ");
+    expect(v.showStatement).toBe(true);
+    expect(v.showRatios).toBe(true);
     expect(v.showFunctionalSplit).toBe(false);
     expect(v.showChart).toBe(false);
-    expect(v.showStatement).toBe(true);
+  });
+  it("990 and 990-EZ render identically", () => {
+    expect(getFormVisibility("990-EZ")).toEqual(getFormVisibility("990"));
   });
   it("990-N shows only the confirmation block", () => {
     const v = getFormVisibility("990-N");
