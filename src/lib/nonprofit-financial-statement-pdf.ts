@@ -5,12 +5,10 @@ import {
   computeRatios,
   getFormVisibility,
   formatMoney,
+  hasBoardReviewFigures,
   yoyPercent,
-  REVENUE_FIELDS,
-  REVENUE_TOTAL_FIELD,
-  FUNCTIONAL_EXPENSE_FIELDS,
-  EXPENSE_TOTAL_FIELD,
-  NET_ASSET_FIELDS,
+  BOARD_REVIEW_FIELDS,
+  EMPTY_STATEMENT_NOTE,
   SOURCE_TAG_LABELS,
   type IrsFormType,
   type NonprofitStatement,
@@ -153,20 +151,14 @@ export function generateNonprofitFinancialStatementPDF(data: NonprofitStatementP
     y += 4;
   };
 
-  if (vis.showRevenueDetail) {
-    table("Support & Revenue", [...REVENUE_FIELDS, { ...REVENUE_TOTAL_FIELD, total: true }] as any);
+  const hasFigures = hasBoardReviewFigures(s);
+
+  if (!hasFigures) {
+    text(EMPTY_STATEMENT_NOTE, 9.5, "normal", 5);
+    return doc;
   }
-  const expenseRows = vis.showFunctionalSplit
-    ? ([...FUNCTIONAL_EXPENSE_FIELDS, { ...EXPENSE_TOTAL_FIELD, total: true }] as any)
-    : ([{ ...EXPENSE_TOTAL_FIELD, label: "Total Expenses", total: true }] as any);
-  table(vis.showFunctionalSplit ? "Expenses by Function" : "Expenses", expenseRows);
-  if (vis.note) {
-    text(vis.note, 8.5, "normal", 4.4);
-    y += 2;
-  }
-  if (vis.showNetAssets) {
-    table("Net Assets", NET_ASSET_FIELDS as any);
-  }
+
+  table("Annual Financial Review", BOARD_REVIEW_FIELDS as any);
 
   if (vis.showRatios) {
     const ratios = computeRatios(s);

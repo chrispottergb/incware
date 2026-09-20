@@ -16,16 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import {
-  AlertTriangle,
-  ChevronDown,
-  ChevronRight,
-  Download,
-  FileText,
-  Loader2,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { AlertTriangle, Download, FileText, Loader2, Plus, Trash2 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
@@ -72,22 +63,13 @@ const STATEMENT_SOURCES: { value: SourceTag; label: string }[] = [
   { value: "internal", label: "Internal Records — Unaudited" },
 ];
 
-const TIER2_KEYS = [
-  ...REVENUE_FIELDS.map((f) => f.key),
-  ...FUNCTIONAL_EXPENSE_FIELDS.map((f) => f.key),
-  "net_assets_without_restrictions",
-  "net_assets_with_restrictions",
-  "total_assets",
-  "total_liabilities",
-] as string[];
-
 export default function NonprofitFinancialStatementsTab({ companyId, company }: Props) {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Record<string, any>>({});
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [sourceTag, setSourceTag] = useState<SourceTag>("internal");
-  const [tier2Open, setTier2Open] = useState(false);
+
 
   const formType = (company?.irs_form_type ?? null) as IrsFormType | null;
 
@@ -141,9 +123,6 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
       (firstTag && STATEMENT_SOURCES.some((o) => o.value === firstTag) ? firstTag : null) ??
         (selected.return_filed_date ? "tax_return" : "internal"),
     );
-    setTier2Open(
-      TIER2_KEYS.some((k) => selected[k] !== null && selected[k] !== undefined && selected[k] !== ""),
-    );
   }, [selected?.id, selected?.updated_at]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const priorYear = useMemo(
@@ -155,41 +134,19 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
   );
 
   const derived = useMemo(() => {
-    const v = getFormVisibility(formType);
     const n = (x: any) => {
       if (x === "" || x === null || x === undefined) return null;
       const p = Number(x);
       return Number.isFinite(p) ? p : null;
     };
-    const sum = (keys: string[]) => {
-      const vals = keys.map((k) => n(draft[k])).filter((x): x is number => x != null);
-      return vals.length ? vals.reduce((a, b) => a + b, 0) : null;
-    };
-    const revenueDetailTotal = v.showRevenueDetail ? sum(REVENUE_FIELDS.map((f) => f.key)) : null;
-    const expenseDetailTotal = v.showFunctionalSplit
-      ? sum(FUNCTIONAL_EXPENSE_FIELDS.map((f) => f.key))
-      : null;
-    const totalRevenue = revenueDetailTotal ?? n(draft.total_revenue);
-    const totalExpenses = expenseDetailTotal ?? n(draft.total_expenses);
+    const totalRevenue = n(draft.total_revenue);
+    const totalExpenses = n(draft.total_expenses);
     const changeInNetAssets =
       totalRevenue != null && totalExpenses != null ? totalRevenue - totalExpenses : null;
     const beginning = n(draft.net_assets_beginning);
     const ending = beginning != null && changeInNetAssets != null ? beginning + changeInNetAssets : null;
-    const restrictionTotal = sum(["net_assets_without_restrictions", "net_assets_with_restrictions"]);
-    const assets = n(draft.total_assets);
-    const liabilities = n(draft.total_liabilities);
-    const assetsLessLiabilities = assets != null && liabilities != null ? assets - liabilities : null;
-    return {
-      revenueDetailTotal,
-      expenseDetailTotal,
-      totalRevenue,
-      totalExpenses,
-      changeInNetAssets,
-      ending,
-      restrictionTotal,
-      assetsLessLiabilities,
-    };
-  }, [draft, formType]);
+    return { totalRevenue, totalExpenses, changeInNetAssets, ending };
+  }, [draft]);
 
   const derivedPeriod = useMemo(
     () => derivePeriod(company?.fiscal_year_end, Number(draft.fiscal_year)),
@@ -417,31 +374,18 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
   const fmtAmt = (v: number | null) =>
     v == null ? "—" : v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const amountRow = (
-    label: string,
-    key: string,
-    opts: { ref?: string; locked?: boolean; lockedValue?: number | null } = {},
-  ) => (
+  const amountRow = (label: string, key: string, opts: { ref?: string } = {}) => (
     <div key={key} className="flex items-center justify-between gap-3 px-3 py-1.5">
       <span className="text-xs" title={opts.ref}>
         {label}
-        {opts.locked && (
-          <span className="ml-2 text-[10px] text-muted-foreground">From Form 990 detail below.</span>
-        )}
       </span>
-      {opts.locked ? (
-        <div className="w-40 rounded-md bg-muted px-2 py-1 text-right text-xs font-semibold tabular-nums">
-          {fmtAmt(opts.lockedValue ?? null)}
-        </div>
-      ) : (
-        <Input
-          className="h-7 w-40 text-xs text-right"
-          aria-label={label}
-          inputMode="decimal"
-          value={draft[key] ?? ""}
-          onChange={(e) => setDraft((d) => ({ ...d, [key]: e.target.value }))}
-        />
-      )}
+      <Input
+        className="h-7 w-40 text-xs text-right"
+        aria-label={label}
+        inputMode="decimal"
+        value={draft[key] ?? ""}
+        onChange={(e) => setDraft((d) => ({ ...d, [key]: e.target.value }))}
+      />
     </div>
   );
 
@@ -723,14 +667,8 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
                       Board Review Figures
                     </p>
                     <div className="rounded-md border divide-y">
-                      {amountRow("Total Revenue", "total_revenue", {
-                        locked: derived.revenueDetailTotal != null,
-                        lockedValue: derived.totalRevenue,
-                      })}
-                      {amountRow("Total Expenses", "total_expenses", {
-                        locked: derived.expenseDetailTotal != null,
-                        lockedValue: derived.totalExpenses,
-                      })}
+                      {amountRow("Total Revenue", "total_revenue")}
+                      {amountRow("Total Expenses", "total_expenses")}
                       {computedRow("Change in Net Assets", derived.changeInNetAssets)}
                       {amountRow("Net Assets, Beginning of Year", "net_assets_beginning", {
                         ref: "990 Part XI line 4",
@@ -739,88 +677,6 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setTier2Open((o) => !o)}
-                    >
-                      {tier2Open ? (
-                        <ChevronDown className="h-3.5 w-3.5" />
-                      ) : (
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      )}
-                      Add detail from Form 990
-                    </Button>
-
-                    {tier2Open && (
-                      <div className="space-y-5">
-                        {vis.showRevenueDetail && (
-                          <div className="space-y-1.5">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                              Support &amp; Revenue{" "}
-                              <span className="font-normal normal-case text-muted-foreground">
-                                (Form 990 Part VIII)
-                              </span>
-                            </p>
-                            <div className="rounded-md border divide-y">
-                              {REVENUE_FIELDS.map((f) => amountRow(f.label, f.key, { ref: f.ref }))}
-                              {computedRow("TOTAL SUPPORT & REVENUE", derived.revenueDetailTotal, {
-                                total: true,
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        {vis.showFunctionalSplit && (
-                          <div className="space-y-1.5">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                              Expenses by Function{" "}
-                              <span className="font-normal normal-case text-muted-foreground">
-                                (Form 990 Part IX)
-                              </span>
-                            </p>
-                            <div className="rounded-md border divide-y">
-                              {FUNCTIONAL_EXPENSE_FIELDS.map((f) =>
-                                amountRow(f.label, f.key, { ref: f.ref }),
-                              )}
-                              {computedRow("TOTAL EXPENSES", derived.expenseDetailTotal, { total: true })}
-                            </div>
-                          </div>
-                        )}
-
-                        {vis.showNetAssets && (
-                          <div className="space-y-1.5">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                              Net Assets &amp; Balance Sheet{" "}
-                              <span className="font-normal normal-case text-muted-foreground">
-                                (Form 990 Part X)
-                              </span>
-                            </p>
-                            <div className="rounded-md border divide-y">
-                              {amountRow("Without Donor Restrictions", "net_assets_without_restrictions", {
-                                ref: "990 Part X line 27",
-                              })}
-                              {amountRow("With Donor Restrictions", "net_assets_with_restrictions", {
-                                ref: "990 Part X line 28",
-                              })}
-                              {computedRow("Net Assets (restriction split total)", derived.restrictionTotal)}
-                              {amountRow("Total Assets", "total_assets", { ref: "990 Part X line 16" })}
-                              {amountRow("Total Liabilities", "total_liabilities", {
-                                ref: "990 Part X line 26",
-                              })}
-                              {computedRow(
-                                "Net Assets (assets − liabilities)",
-                                derived.assetsLessLiabilities,
-                                { total: true },
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
                 </div>
               )}
 

@@ -67,6 +67,18 @@ export const EXPENSE_TOTAL_FIELD = {
   ref: "990 Part IX line 25 col A",
 } as const;
 
+/**
+ * The five figures the board actually reviews. This is the only set rendered
+ * in the UI, the on-screen preview and the PDF.
+ */
+export const BOARD_REVIEW_FIELDS = [
+  { key: "total_revenue", label: "Total Revenue", ref: "990 Part VIII line 12" },
+  { key: "total_expenses", label: "Total Expenses", ref: "990 Part IX line 25 col A" },
+  { key: "change_in_net_assets", label: "Change in Net Assets", ref: "990 Part XI line 3" },
+  { key: "net_assets_beginning", label: "Net Assets, Beginning of Year", ref: "990 Part XI line 4" },
+  { key: "net_assets_ending", label: "Net Assets, End of Year", ref: "990 Part XI line 10", total: true },
+] as const;
+
 export const NET_ASSET_FIELDS = [
   { key: "net_assets_beginning", label: "Net Assets, Beginning of Year", ref: "990 Part XI line 4" },
   { key: "change_in_net_assets", label: "Change in Net Assets", ref: "990 Part XI line 3" },
@@ -223,13 +235,15 @@ export interface FormVisibility {
 }
 
 export function getFormVisibility(formType: IrsFormType | null | undefined): FormVisibility {
+  // Form 990 detail (Tier 2) is not currently surfaced, so 990 and 990-EZ
+  // render identically. The detail flags are retained for reintroduction.
   const base: FormVisibility = {
     showStatement: true,
-    showRevenueDetail: true,
-    showFunctionalSplit: true,
-    showNetAssets: true,
+    showRevenueDetail: false,
+    showFunctionalSplit: false,
+    showNetAssets: false,
     showRatios: true,
-    showChart: true,
+    showChart: false,
     showConfirmationBlock: false,
     unsupportedMessage: null,
     note: null,
@@ -238,12 +252,7 @@ export function getFormVisibility(formType: IrsFormType | null | undefined): For
     case "990":
       return base;
     case "990-EZ":
-      return {
-        ...base,
-        showFunctionalSplit: false,
-        showChart: false,
-        note: "Form 990-EZ does not report a functional expense allocation.",
-      };
+      return base;
     case "990-N":
       return {
         ...base,
@@ -294,7 +303,25 @@ export interface RatioCard {
   formula: string;
 }
 
+/**
+ * The only ratio derivable from the five board-review figures.
+ */
 export function computeRatios(s: NonprofitStatement): RatioCard[] {
+  const totalExp = num(s.total_expenses);
+  const ending = num(s.net_assets_ending);
+  if (ending == null || totalExp == null || totalExp <= 0) return [];
+  return [
+    {
+      key: "operating_reserve",
+      label: "Months of Operating Reserve (total net assets basis)",
+      display: `${(ending / (totalExp / 12)).toFixed(1)} months`,
+      formula: "Net Assets, End of Year ÷ (Total Expenses ÷ 12)",
+    },
+  ];
+}
+
+// Retained for Tier 2 (Form 990 detail) reintroduction. Not currently called from the UI.
+export function computeTier2Ratios(s: NonprofitStatement): RatioCard[] {
   const cards: RatioCard[] = [];
   const program = num(s.program_services_expense);
   const totalExp = num(s.total_expenses);
@@ -362,16 +389,9 @@ export function toleranceFor(endingNetAssets: number | null): number {
 const money = (n: number) =>
   `${n < 0 ? "-" : ""}$${Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export function runReconciliation(
-  s: NonprofitStatement,
-  formType: IrsFormType | null | undefined,
-  priorYear?: NonprofitStatement | null,
-): ReconciliationWarning[] {
-  const out: ReconciliationWarning[] = [];
-  const ending = num(s.net_assets_ending);
-  const tol = toleranceFor(ending);
-
-  const check = (
+function makeChecker(s: NonprofitStatement, out: ReconciliationWarning[]) {
+  const tol = toleranceFor(num(s.net_assets_ending));
+  return (
     code: string,
     label: string,
     leftVal: number | null,
@@ -393,6 +413,42 @@ export function runReconciliation(
       prominent,
     });
   };
+}
+
+/**
+ * Active reconciliation: cross-year continuity only. The remaining checks
+ * depend on Form 990 detail and live in runTier2Reconciliation.
+ */
+export function runReconciliation(
+  _s: NonprofitStatement,
+  _formType: IrsFormType | null | undefined,
+  priorYear?: NonprofitStatement | null,
+): ReconciliationWarning[] {
+  const out: ReconciliationWarning[] = [];
+  if (!priorYear) return out;
+  const check = makeChecker(_s, out);
+  check(
+    "G",
+    "Cross-year continuity",
+    num(_s.net_assets_beginning),
+    num(priorYear.net_assets_ending),
+    "This year's beginning net assets",
+    `FY${priorYear.fiscal_year} ending net assets`,
+    true,
+  );
+  return out;
+}
+
+// Retained for Tier 2 (Form 990 detail) reintroduction. Not currently called from the UI.
+export function runTier2Reconciliation(
+  s: NonprofitStatement,
+  formType: IrsFormType | null | undefined,
+  priorYear?: NonprofitStatement | null,
+): ReconciliationWarning[] {
+  const out: ReconciliationWarning[] = [];
+  const ending = num(s.net_assets_ending);
+  const check = makeChecker(s, out);
+
 
   const beginning = num(s.net_assets_beginning);
   const change = num(s.change_in_net_assets);
@@ -495,7 +551,7 @@ export function buildStatementHeader(s: NonprofitStatement): StatementHeader {
       : null;
 
   return {
-    title: "Statement of Activities and Changes in Net Assets",
+    title: "Annual Financial Review",
     fiscalYearLine: `Fiscal Year Ended: ${s.period_end ? fmtDate(s.period_end) : `FY${s.fiscal_year}`}`,
     periodLine,
     sourceLine,
@@ -531,3 +587,11 @@ export function yoyPercent(current: any, prior: any): number | null {
   if (c == null || p == null || p === 0) return null;
   return ((c - p) / Math.abs(p)) * 100;
 }
+
+/** True when at least one of the five board-review figures has a value. */
+export function hasBoardReviewFigures(s: NonprofitStatement): boolean {
+  return BOARD_REVIEW_FIELDS.some((f) => num(s[f.key]) != null);
+}
+
+export const EMPTY_STATEMENT_NOTE =
+  "No financial figures have been recorded for this fiscal year.";

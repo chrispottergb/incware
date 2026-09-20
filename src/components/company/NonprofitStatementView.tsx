@@ -6,12 +6,10 @@ import {
   computeRatios,
   getFormVisibility,
   formatMoney,
+  hasBoardReviewFigures,
   yoyPercent,
-  REVENUE_FIELDS,
-  REVENUE_TOTAL_FIELD,
-  FUNCTIONAL_EXPENSE_FIELDS,
-  EXPENSE_TOTAL_FIELD,
-  NET_ASSET_FIELDS,
+  BOARD_REVIEW_FIELDS,
+  EMPTY_STATEMENT_NOTE,
   SOURCE_TAG_LABELS,
   type IrsFormType,
   type NonprofitStatement,
@@ -34,9 +32,9 @@ interface Props {
 }
 
 /**
- * Read-only rendering of a nonprofit financial statement. Used on the company
- * Financial Statements tab and inside nonprofit meetings (live for drafts,
- * from the frozen snapshot for finalized minutes).
+ * Read-only rendering of a nonprofit annual financial review. Used on the
+ * company Financial Statements tab and inside nonprofit meetings (live for
+ * drafts, from the frozen snapshot for finalized minutes).
  */
 export default function NonprofitStatementView({ companyName, formType, statement, priorYear }: Props) {
   const vis = getFormVisibility(formType);
@@ -96,14 +94,8 @@ export default function NonprofitStatementView({ companyName, formType, statemen
     );
   }
 
+  const hasFigures = hasBoardReviewFigures(statement);
   const ratios = vis.showRatios ? computeRatios(statement) : [];
-
-  const split = FUNCTIONAL_EXPENSE_FIELDS.map((f) => {
-    const v = statement[f.key];
-    return v === null || v === undefined || v === "" ? null : Number(v);
-  });
-  const splitComplete = split.every((v) => v != null);
-  const splitTotal = splitComplete ? (split as number[]).reduce((a, b) => a + b, 0) : 0;
 
   return (
     <div className="space-y-5">
@@ -136,76 +128,30 @@ export default function NonprofitStatementView({ companyName, formType, statemen
           </CardContent>
         ) : (
           <CardContent className="space-y-5">
-            {vis.showRevenueDetail &&
-              renderTable("Support & Revenue", [
-                ...REVENUE_FIELDS.map((f) => ({ ...f })),
-                { ...REVENUE_TOTAL_FIELD, total: true },
-              ] as Row[])}
+            {!hasFigures ? (
+              <p className="text-xs text-muted-foreground">{EMPTY_STATEMENT_NOTE}</p>
+            ) : (
+              <>
+                {renderTable("Annual Financial Review", BOARD_REVIEW_FIELDS.map((f) => ({ ...f })) as Row[])}
 
-            {renderTable(
-              vis.showFunctionalSplit ? "Expenses by Function" : "Expenses",
-              (vis.showFunctionalSplit
-                ? [...FUNCTIONAL_EXPENSE_FIELDS.map((f) => ({ ...f })), { ...EXPENSE_TOTAL_FIELD, total: true }]
-                : [{ ...EXPENSE_TOTAL_FIELD, label: "Total Expenses", total: true }]) as Row[],
-            )}
-            {vis.note && <p className="text-xs text-muted-foreground">{vis.note}</p>}
-
-            {vis.showNetAssets && renderTable("Net Assets", NET_ASSET_FIELDS.map((f) => ({ ...f })) as Row[])}
-
-            {ratios.length > 0 && (
-              <div className="grid grid-cols-4 gap-3">
-                {ratios.map((r) => (
-                  <TooltipProvider key={r.key}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="rounded-md border border-border p-3 cursor-help">
-                          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{r.label}</p>
-                          <p className="text-sm font-semibold mt-1">{r.display}</p>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>{r.formula}</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ))}
-              </div>
-            )}
-
-            {vis.showChart && splitComplete && splitTotal > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-xs font-display font-semibold uppercase tracking-wide text-muted-foreground">
-                  Functional Expense Allocation
-                </h4>
-                {[
-                  { label: `FY${statement.fiscal_year}`, src: statement },
-                  ...(priorYear ? [{ label: `FY${priorYear.fiscal_year}`, src: priorYear }] : []),
-                ].map((row) => {
-                  const vals = FUNCTIONAL_EXPENSE_FIELDS.map((f) => Number(row.src[f.key] ?? 0));
-                  const tot = vals.reduce((a, b) => a + b, 0);
-                  if (!tot) return null;
-                  return (
-                    <div key={row.label}>
-                      <p className="text-[10px] text-muted-foreground mb-1">{row.label}</p>
-                      <div className="flex h-7 w-full overflow-hidden rounded">
-                        {FUNCTIONAL_EXPENSE_FIELDS.map((f, i) => {
-                          const pct = (vals[i] / tot) * 100;
-                          if (pct <= 0) return null;
-                          const shade = ["bg-primary", "bg-primary/60", "bg-primary/30"][i];
-                          return (
-                            <div
-                              key={f.key}
-                              className={`${shade} flex items-center justify-center text-[9px] text-primary-foreground overflow-hidden whitespace-nowrap`}
-                              style={{ width: `${pct}%` }}
-                              title={`${f.label}: ${formatMoney(vals[i])} (${pct.toFixed(1)}%)`}
-                            >
-                              {pct > 12 ? `${f.label} ${pct.toFixed(0)}%` : ""}
+                {ratios.length > 0 && (
+                  <div className="grid grid-cols-4 gap-3">
+                    {ratios.map((r) => (
+                      <TooltipProvider key={r.key}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="rounded-md border border-border p-3 cursor-help">
+                              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{r.label}</p>
+                              <p className="text-sm font-semibold mt-1">{r.display}</p>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                          </TooltipTrigger>
+                          <TooltipContent>{r.formula}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         )}
