@@ -67,6 +67,7 @@ export function generateNonprofitFinancialStatementPDF(data: NonprofitStatementP
   text(header.title, 11.5, "bold", 6);
   y += 1;
   text(header.fiscalYearLine, 9.5, "normal", 4.8);
+  if (header.periodLine) text(header.periodLine, 9.5, "normal", 4.8);
   text(header.sourceLine, 9.5, "normal", 4.8);
   text(header.statusLine, 9.5, "normal", 4.8);
   text(header.documentedLine, 9.5, "normal", 4.8);

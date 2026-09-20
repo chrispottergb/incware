@@ -84,7 +84,10 @@ export interface NonprofitStatement {
   fiscal_year_label?: string | null;
   period_start?: string | null;
   period_end?: string | null;
+  /** @deprecated Retired — the Source selector is the single source of truth. */
   is_audited?: boolean | null;
+  has_irregular_period?: boolean | null;
+  board_review_meeting_id?: string | null;
   is_draft?: boolean | null;
   return_filed_date?: string | null;
   documented_date?: string | null;
@@ -106,6 +109,88 @@ export interface DismissedWarning {
 
 export function defaultFiscalYearLabel(year: number): string {
   return `FY${year}`;
+}
+
+// ------------------------------------------------------------ period dates
+
+export interface DerivedPeriod {
+  start: string;
+  end: string;
+  /** True when the company has no usable fiscal year end and we fell back to the calendar year. */
+  usedCalendarFallback: boolean;
+}
+
+const iso = (d: Date) => d.toISOString().slice(0, 10);
+
+/**
+ * Period start/end derived from the company's fiscal year end (month/day) and
+ * the statement's fiscal year. The period ENDS in `fiscalYear`.
+ */
+export function derivePeriod(
+  fiscalYearEnd: string | null | undefined,
+  fiscalYear: number,
+): DerivedPeriod {
+  const m = String(fiscalYearEnd ?? "").match(/(\d{1,2})[-/](\d{1,2})$/);
+  if (!m || !Number.isFinite(fiscalYear)) {
+    return {
+      start: `${fiscalYear}-01-01`,
+      end: `${fiscalYear}-12-31`,
+      usedCalendarFallback: true,
+    };
+  }
+  const month = parseInt(m[1], 10);
+  const day = parseInt(m[2], 10);
+  const end = new Date(Date.UTC(fiscalYear, month - 1, day));
+  const start = new Date(Date.UTC(fiscalYear - 1, month - 1, day));
+  start.setUTCDate(start.getUTCDate() + 1);
+  return { start: iso(start), end: iso(end), usedCalendarFallback: false };
+}
+
+export const NO_FISCAL_YEAR_END_NOTE =
+  "Fiscal year end not set on this company. Using calendar year.";
+
+/**
+ * Resolve the period actually stored on a statement: user-entered when the
+ * period is short or irregular, derived otherwise.
+ */
+export function resolvePeriod(
+  s: { fiscal_year: number; has_irregular_period?: boolean | null; period_start?: string | null; period_end?: string | null },
+  fiscalYearEnd: string | null | undefined,
+): { start: string | null; end: string | null } {
+  if (s.has_irregular_period) {
+    return { start: s.period_start || null, end: s.period_end || null };
+  }
+  const d = derivePeriod(fiscalYearEnd, Number(s.fiscal_year));
+  return { start: d.start, end: d.end };
+}
+
+// --------------------------------------------------- source consistency note
+
+export function sourceConsistencyNote(
+  sourceTag: SourceTag | null | undefined,
+  returnFiledDate: string | null | undefined,
+): string | null {
+  if (sourceTag === "tax_return" && !returnFiledDate) {
+    return "No filing date entered. If the return has not been filed, consider 'Internal Records — Unaudited' as the source.";
+  }
+  if (sourceTag === "internal" && returnFiledDate) {
+    return "A filing date is recorded. Consider 'Form 990 as filed' as the source.";
+  }
+  return null;
+}
+
+export const MANUAL_REVIEW_DATE_NOTE = "Entered manually. Not linked to a meeting.";
+
+/** True for a legacy review date typed by a user rather than sourced from a meeting. */
+export function isManualReviewDate(s: NonprofitStatement): boolean {
+  return !!s.board_reviewed_date && !s.board_review_meeting_id;
+}
+
+/** The single source selection that applies to a statement's figures. */
+export function primarySourceTag(s: NonprofitStatement): SourceTag | null {
+  const tags = (s.source_tags || {}) as Record<string, SourceTag>;
+  const first = Object.values(tags).find((t) => SOURCE_TAGS.includes(t));
+  return (first as SourceTag) ?? null;
 }
 
 /**
@@ -362,6 +447,7 @@ export function runReconciliation(
 export interface StatementHeader {
   title: string;
   fiscalYearLine: string;
+  periodLine: string | null;
   sourceLine: string;
   statusLine: string;
   documentedLine: string;
@@ -380,6 +466,8 @@ const fmtDate = (d: string | null | undefined): string => {
 export function buildStatementHeader(s: NonprofitStatement): StatementHeader {
   const filed = s.return_filed_date || null;
   const reviewed = s.board_reviewed_date || null;
+  const manualReview = isManualReviewDate(s);
+  const tag = primarySourceTag(s);
 
   let sourceLine: string;
   let postFilingNote: string | null = null;
@@ -392,21 +480,30 @@ export function buildStatementHeader(s: NonprofitStatement): StatementHeader {
       postFilingNote =
         "Board review occurred after the return was filed. This record supports ratification of the return as filed; it does not evidence pre-filing review under Form 990 Part VI.";
     }
-  } else if (filed) {
-    sourceLine = `Source: Form 990 as filed ${fmtDate(filed)}`;
-  } else if (s.is_audited) {
+    if (manualReview) sourceLine += " (review date entered manually)";
+  } else if (tag === "audited_financials") {
     sourceLine = "Source: Audited Financial Statements";
+  } else if (tag === "tax_return" || filed) {
+    sourceLine = filed ? `Source: Form 990 as filed ${fmtDate(filed)}` : "Source: Form 990 as filed";
   } else {
     sourceLine = "Source: Internal Records — Unaudited";
   }
 
+  const periodLine =
+    s.period_start && s.period_end
+      ? `Period: ${fmtDate(s.period_start)} – ${fmtDate(s.period_end)}`
+      : null;
+
   return {
     title: "Statement of Activities and Changes in Net Assets",
     fiscalYearLine: `Fiscal Year Ended: ${s.period_end ? fmtDate(s.period_end) : `FY${s.fiscal_year}`}`,
+    periodLine,
     sourceLine,
     statusLine: `Status: ${s.is_draft === false ? "Final" : "Draft"}`,
     documentedLine: `Documented: ${fmtDate(s.documented_date) || "—"}`,
-    boardReviewedLine: `Board Reviewed: ${reviewed ? fmtDate(reviewed) : "Pending Review"}`,
+    boardReviewedLine: `Board Reviewed: ${reviewed ? fmtDate(reviewed) : "Pending Review"}${
+      reviewed && manualReview ? ` — ${MANUAL_REVIEW_DATE_NOTE}` : ""
+    }`,
     postFilingNote,
   };
 }

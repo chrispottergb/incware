@@ -27,6 +27,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import NonprofitStatementView from "@/components/company/NonprofitStatementView";
 import { generateNonprofitFinancialStatementPDF } from "@/lib/nonprofit-financial-statement-pdf";
@@ -39,9 +40,14 @@ import {
   NET_ASSET_FIELDS,
   amendedSinceFinalizeNotice,
   defaultFiscalYearLabel,
+  derivePeriod,
   getFormVisibility,
+  primarySourceTag,
   runReconciliation,
+  sourceConsistencyNote,
   suggestFiscalYear,
+  MANUAL_REVIEW_DATE_NOTE,
+  NO_FISCAL_YEAR_END_NOTE,
   type IrsFormType,
   type NonprofitStatement,
   type SourceTag,
@@ -130,17 +136,10 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
   useEffect(() => {
     if (!selected) return;
     setDraft({ ...selected });
-    const tags = (selected.source_tags as Record<string, SourceTag>) || {};
-    const firstTag = MONEY_KEYS.map((k) => tags[k]).find(
-      (t) => t && STATEMENT_SOURCES.some((o) => o.value === t),
-    );
+    const firstTag = primarySourceTag(selected);
     setSourceTag(
-      (firstTag as SourceTag) ??
-        (selected.is_audited
-          ? "audited_financials"
-          : selected.return_filed_date
-            ? "tax_return"
-            : "internal"),
+      (firstTag && STATEMENT_SOURCES.some((o) => o.value === firstTag) ? firstTag : null) ??
+        (selected.return_filed_date ? "tax_return" : "internal"),
     );
     setTier2Open(
       TIER2_KEYS.some((k) => selected[k] !== null && selected[k] !== undefined && selected[k] !== ""),
@@ -192,16 +191,36 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
     };
   }, [draft, formType]);
 
+  const derivedPeriod = useMemo(
+    () => derivePeriod(company?.fiscal_year_end, Number(draft.fiscal_year)),
+    [company?.fiscal_year_end, draft.fiscal_year],
+  );
+
+  const resolvedPeriod = useMemo(
+    () =>
+      draft.has_irregular_period
+        ? { start: draft.period_start || null, end: draft.period_end || null }
+        : { start: derivedPeriod.start, end: derivedPeriod.end },
+    [draft.has_irregular_period, draft.period_start, draft.period_end, derivedPeriod],
+  );
+
+  const consistencyNote = useMemo(
+    () => sourceConsistencyNote(sourceTag, draft.return_filed_date),
+    [sourceTag, draft.return_filed_date],
+  );
+
   const effectiveStatement = useMemo(
     () => ({
       ...(draft as NonprofitStatement),
       fiscal_year: Number(draft.fiscal_year),
+      period_start: resolvedPeriod.start,
+      period_end: resolvedPeriod.end,
       total_revenue: derived.totalRevenue,
       total_expenses: derived.totalExpenses,
       change_in_net_assets: derived.changeInNetAssets,
       net_assets_ending: derived.ending,
     }),
-    [draft, derived],
+    [draft, derived, resolvedPeriod],
   );
 
   const setFormType = useMutation({
@@ -262,12 +281,12 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
       const payload: Record<string, any> = {
         fiscal_year: Number(draft.fiscal_year),
         fiscal_year_label: draft.fiscal_year_label || defaultFiscalYearLabel(Number(draft.fiscal_year)),
-        period_start: draft.period_start || null,
-        period_end: draft.period_end || null,
+        period_start: resolvedPeriod.start,
+        period_end: resolvedPeriod.end,
+        has_irregular_period: !!draft.has_irregular_period,
         is_audited: sourceTag === "audited_financials",
         is_draft: draft.is_draft !== false,
         return_filed_date: draft.return_filed_date || null,
-        board_reviewed_date: draft.board_reviewed_date || null,
         gross_receipts_under_threshold: draft.gross_receipts_under_threshold ?? null,
         board_acknowledgment: draft.board_acknowledgment || null,
       };
@@ -386,6 +405,14 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
       </Card>
     );
   }
+
+  const fmtPeriodDate = (d: string | null) => {
+    if (!d) return "—";
+    const dt = new Date(`${d.slice(0, 10)}T00:00:00`);
+    return Number.isNaN(dt.getTime())
+      ? d
+      : dt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  };
 
   const fmtAmt = (v: number | null) =>
     v == null ? "—" : v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -552,35 +579,11 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">Period Start</Label>
-                  <Input
-                    type="date"
-                    value={draft.period_start ?? ""}
-                    onChange={(e) => setDraft((d) => ({ ...d, period_start: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Period End</Label>
-                  <Input
-                    type="date"
-                    value={draft.period_end ?? ""}
-                    onChange={(e) => setDraft((d) => ({ ...d, period_end: e.target.value }))}
-                  />
-                </div>
-                <div>
                   <Label className="text-xs">Return Filed</Label>
                   <Input
                     type="date"
                     value={draft.return_filed_date ?? ""}
                     onChange={(e) => setDraft((d) => ({ ...d, return_filed_date: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Board Reviewed</Label>
-                  <Input
-                    type="date"
-                    value={draft.board_reviewed_date ?? ""}
-                    onChange={(e) => setDraft((d) => ({ ...d, board_reviewed_date: e.target.value }))}
                   />
                 </div>
                 <div className="flex items-center gap-2 pt-5">
@@ -589,6 +592,84 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
                     onCheckedChange={(v) => setDraft((d) => ({ ...d, is_draft: !v }))}
                   />
                   <Label className="text-xs">Final</Label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-md border px-3 py-2.5 space-y-2">
+                  <Label className="text-xs font-medium">Period</Label>
+                  {draft.has_irregular_period ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="date"
+                        aria-label="Period Start"
+                        className="h-8 text-xs"
+                        value={draft.period_start ?? ""}
+                        onChange={(e) => setDraft((d) => ({ ...d, period_start: e.target.value }))}
+                      />
+                      <span className="text-xs text-muted-foreground">–</span>
+                      <Input
+                        type="date"
+                        aria-label="Period End"
+                        className="h-8 text-xs"
+                        value={draft.period_end ?? ""}
+                        onChange={(e) => setDraft((d) => ({ ...d, period_end: e.target.value }))}
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-xs">
+                      Period: {fmtPeriodDate(derivedPeriod.start)} – {fmtPeriodDate(derivedPeriod.end)}
+                    </p>
+                  )}
+                  {derivedPeriod.usedCalendarFallback && !draft.has_irregular_period && (
+                    <p className="text-[10px] text-muted-foreground">
+                      {NO_FISCAL_YEAR_END_NOTE}{" "}
+                      <Link className="underline" to={`/company/${companyId}#incorporation`}>
+                        Company record
+                      </Link>
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="irregular-period"
+                      checked={!!draft.has_irregular_period}
+                      onCheckedChange={(v) =>
+                        setDraft((d) => ({
+                          ...d,
+                          has_irregular_period: !!v,
+                          period_start: !!v ? (d.period_start ?? derivedPeriod.start) : d.period_start,
+                          period_end: !!v ? (d.period_end ?? derivedPeriod.end) : d.period_end,
+                        }))
+                      }
+                    />
+                    <Label htmlFor="irregular-period" className="text-xs font-normal">
+                      Short or irregular fiscal period
+                    </Label>
+                  </div>
+                </div>
+
+                <div className="rounded-md border px-3 py-2.5 space-y-1">
+                  <Label className="text-xs font-medium">Board Reviewed</Label>
+                  {selected.board_reviewed_date ? (
+                    <>
+                      <p className="text-xs">{selected.board_reviewed_date}</p>
+                      {selected.board_review_meeting_id ? (
+                        <Link
+                          className="text-[11px] underline"
+                          to={`/company/${companyId}/meetings/${selected.board_review_meeting_id}`}
+                        >
+                          View the meeting that adopted these figures
+                        </Link>
+                      ) : (
+                        <p className="text-[10px] text-muted-foreground">{MANUAL_REVIEW_DATE_NOTE}</p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Pending Review</p>
+                  )}
+                  <p className="text-[10px] text-muted-foreground">
+                    Set automatically when a meeting reviewing this fiscal year is finalized.
+                  </p>
                 </div>
               </div>
 
@@ -632,6 +713,9 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
                     <p className="mt-1.5 text-[10px] text-muted-foreground">
                       Applies to every figure in this statement.
                     </p>
+                    {consistencyNote && (
+                      <p className="mt-1 text-[10px] text-muted-foreground">{consistencyNote}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">

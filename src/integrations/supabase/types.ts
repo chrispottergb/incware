@@ -3664,6 +3664,7 @@ export type Database = {
       nonprofit_financial_statements: {
         Row: {
           board_acknowledgment: string | null
+          board_review_meeting_id: string | null
           board_reviewed_date: string | null
           change_in_net_assets: number | null
           company_id: string
@@ -3676,6 +3677,7 @@ export type Database = {
           fundraising_events_net: number | null
           fundraising_expense: number | null
           gross_receipts_under_threshold: boolean | null
+          has_irregular_period: boolean
           id: string
           in_kind_contributions: number | null
           investment_income: number | null
@@ -3702,6 +3704,7 @@ export type Database = {
         }
         Insert: {
           board_acknowledgment?: string | null
+          board_review_meeting_id?: string | null
           board_reviewed_date?: string | null
           change_in_net_assets?: number | null
           company_id: string
@@ -3714,6 +3717,7 @@ export type Database = {
           fundraising_events_net?: number | null
           fundraising_expense?: number | null
           gross_receipts_under_threshold?: boolean | null
+          has_irregular_period?: boolean
           id?: string
           in_kind_contributions?: number | null
           investment_income?: number | null
@@ -3740,6 +3744,7 @@ export type Database = {
         }
         Update: {
           board_acknowledgment?: string | null
+          board_review_meeting_id?: string | null
           board_reviewed_date?: string | null
           change_in_net_assets?: number | null
           company_id?: string
@@ -3752,6 +3757,7 @@ export type Database = {
           fundraising_events_net?: number | null
           fundraising_expense?: number | null
           gross_receipts_under_threshold?: boolean | null
+          has_irregular_period?: boolean
           id?: string
           in_kind_contributions?: number | null
           investment_income?: number | null
@@ -3777,6 +3783,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "nonprofit_financial_statements_board_review_meeting_id_fkey"
+            columns: ["board_review_meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "nonprofit_financial_statements_company_id_fkey"
             columns: ["company_id"]

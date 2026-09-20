@@ -113,6 +113,7 @@ export default function NonprofitStatementView({ companyName, formType, statemen
           <p className="text-sm font-medium">{header.title}</p>
           <div className="text-xs text-muted-foreground space-y-0.5 pt-1">
             <p>{header.fiscalYearLine}</p>
+            {header.periodLine && <p>{header.periodLine}</p>}
             <p>{header.sourceLine}</p>
             <p>{header.statusLine}</p>
             <p>{header.documentedLine}</p>
