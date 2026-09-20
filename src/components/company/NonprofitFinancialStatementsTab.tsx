@@ -705,6 +705,9 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
                     <p className="mt-1.5 text-[10px] text-muted-foreground">
                       Applies to every figure in this statement.
                     </p>
+                    {consistencyNote && (
+                      <p className="mt-1 text-[10px] text-muted-foreground">{consistencyNote}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
