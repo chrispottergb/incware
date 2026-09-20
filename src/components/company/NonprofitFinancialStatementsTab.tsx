@@ -406,6 +406,14 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
     );
   }
 
+  const fmtPeriodDate = (d: string | null) => {
+    if (!d) return "—";
+    const dt = new Date(`${d.slice(0, 10)}T00:00:00`);
+    return Number.isNaN(dt.getTime())
+      ? d
+      : dt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  };
+
   const fmtAmt = (v: number | null) =>
     v == null ? "—" : v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
