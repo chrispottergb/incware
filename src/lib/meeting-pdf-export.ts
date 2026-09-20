@@ -3291,15 +3291,52 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     });
   }
 
+  // Retention of Earnings / Distributions — a top-level section of its own. Its
+  // only condition is that the resolution exists on this meeting: it must never
+  // depend on shareholder rows, meeting type or any other block rendering, or the
+  // written record would silently omit an adopted resolution.
+  const renderedResolutionPurposes: string[] = [];
+  const retentionAdopted = !!data.retainedEarningsResolution?.decision;
+  if (retentionAdopted) {
+    y = renderRetentionEarningsSection(
+      doc,
+      y,
+      data,
+      companyName,
+      entityType,
+      isLLC,
+      isSElectedForMeeting(company, meeting),
+    );
+    renderedResolutionPurposes.push(RETENTION_RESOLUTION_LABEL);
+  }
+
   // Resolutions — exclude the Retention of Earnings resolution; it prints in its
-  // own dedicated section (renderRetentionEarningsSection) with entity-aware wording
+  // own dedicated section above with entity-aware wording
   const specialResolutions = (data.resolutions ?? []).filter((r) => r.purpose !== RETENTION_RESOLUTION_LABEL);
   if (specialResolutions.length > 0) {
     y = checkPageBreak(doc, y, 20 + specialResolutions.length * 15);
     y = section("Special Resolutions");
     specialResolutions.forEach((r) => {
       y = addResolutionBlock(doc, y, r.purpose, r.resolution_text || "");
+      renderedResolutionPurposes.push(r.purpose);
     });
+  }
+
+  // Completeness guard: every adopted resolution on the meeting must appear in
+  // the printed record. Fail loudly rather than emit an incomplete document.
+  const adoptedPurposes = [
+    ...(retentionAdopted ? [RETENTION_RESOLUTION_LABEL] : []),
+    ...(data.resolutions ?? [])
+      .filter((r) => r.purpose !== RETENTION_RESOLUTION_LABEL)
+      .map((r) => r.purpose),
+  ];
+  const missingResolutions = adoptedPurposes.filter(
+    (p) => !renderedResolutionPurposes.includes(p),
+  );
+  if (missingResolutions.length > 0) {
+    throw new Error(
+      `Minutes are incomplete — these adopted resolutions were not rendered: ${missingResolutions.join(", ")}`,
+    );
   }
 
   // Auto-generated resolutions from prior year comparison — skip for shareholder meetings and written consents
