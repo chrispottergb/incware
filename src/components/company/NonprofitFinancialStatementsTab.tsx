@@ -224,7 +224,7 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
       .update({ dismissed_warnings: next } as any)
       .eq("id", selected.id);
     if (error) return toast.error(error.message);
-    setWarnings((prev) => prev.filter((x) => x.code !== code));
+    setDraft((d) => ({ ...d, dismissed_warnings: next }));
     queryClient.invalidateQueries({ queryKey: ["nonprofit_financial_statements", companyId] });
   };
 
