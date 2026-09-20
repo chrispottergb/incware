@@ -447,30 +447,8 @@ export function runTier2Reconciliation(
 ): ReconciliationWarning[] {
   const out: ReconciliationWarning[] = [];
   const ending = num(s.net_assets_ending);
-  const tol = toleranceFor(ending);
+  const check = makeChecker(s, out);
 
-  const check = (
-    code: string,
-    label: string,
-    leftVal: number | null,
-    rightVal: number | null,
-    leftText: string,
-    rightText: string,
-    prominent = false,
-  ) => {
-    if (leftVal == null || rightVal == null) return;
-    const diff = leftVal - rightVal;
-    if (Math.abs(diff) <= tol) return;
-    out.push({
-      code,
-      label,
-      left: `${leftText} = ${money(leftVal)}`,
-      right: `${rightText} = ${money(rightVal)}`,
-      difference: diff,
-      message: `${label}: ${leftText} (${money(leftVal)}) does not equal ${rightText} (${money(rightVal)}); difference ${money(diff)}.`,
-      prominent,
-    });
-  };
 
   const beginning = num(s.net_assets_beginning);
   const change = num(s.change_in_net_assets);
