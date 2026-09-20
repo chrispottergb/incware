@@ -87,6 +87,14 @@ const CATEGORY_MAP: Record<string, ActionCategory> = {
 export const RETENTION_RESOLUTION_LABEL = "Retention of Earnings and Distributions" as const;
 
 /**
+ * Shown on an existing nonprofit record that already has the retention
+ * resolution adopted. The resolution is never removed retroactively — silently
+ * dropping an adopted resolution would corrupt the record.
+ */
+export const RETENTION_NONPROFIT_LEGACY_NOTICE =
+  "This resolution does not apply to nonprofit entities and is no longer available. It remains on this record as originally adopted. Review whether a correcting action is needed.";
+
+/**
  * Returns the display label for the retention resolution based on the entity
  * type and the S/C tax status that applied for the meeting's tax year.
  * The stored `meeting_resolutions.purpose` always remains the canonical value.
