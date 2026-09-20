@@ -552,35 +552,11 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">Period Start</Label>
-                  <Input
-                    type="date"
-                    value={draft.period_start ?? ""}
-                    onChange={(e) => setDraft((d) => ({ ...d, period_start: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Period End</Label>
-                  <Input
-                    type="date"
-                    value={draft.period_end ?? ""}
-                    onChange={(e) => setDraft((d) => ({ ...d, period_end: e.target.value }))}
-                  />
-                </div>
-                <div>
                   <Label className="text-xs">Return Filed</Label>
                   <Input
                     type="date"
                     value={draft.return_filed_date ?? ""}
                     onChange={(e) => setDraft((d) => ({ ...d, return_filed_date: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Board Reviewed</Label>
-                  <Input
-                    type="date"
-                    value={draft.board_reviewed_date ?? ""}
-                    onChange={(e) => setDraft((d) => ({ ...d, board_reviewed_date: e.target.value }))}
                   />
                 </div>
                 <div className="flex items-center gap-2 pt-5">
@@ -589,6 +565,84 @@ export default function NonprofitFinancialStatementsTab({ companyId, company }: 
                     onCheckedChange={(v) => setDraft((d) => ({ ...d, is_draft: !v }))}
                   />
                   <Label className="text-xs">Final</Label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-md border px-3 py-2.5 space-y-2">
+                  <Label className="text-xs font-medium">Period</Label>
+                  {draft.has_irregular_period ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="date"
+                        aria-label="Period Start"
+                        className="h-8 text-xs"
+                        value={draft.period_start ?? ""}
+                        onChange={(e) => setDraft((d) => ({ ...d, period_start: e.target.value }))}
+                      />
+                      <span className="text-xs text-muted-foreground">–</span>
+                      <Input
+                        type="date"
+                        aria-label="Period End"
+                        className="h-8 text-xs"
+                        value={draft.period_end ?? ""}
+                        onChange={(e) => setDraft((d) => ({ ...d, period_end: e.target.value }))}
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-xs">
+                      Period: {fmtPeriodDate(derivedPeriod.start)} – {fmtPeriodDate(derivedPeriod.end)}
+                    </p>
+                  )}
+                  {derivedPeriod.usedCalendarFallback && !draft.has_irregular_period && (
+                    <p className="text-[10px] text-muted-foreground">
+                      {NO_FISCAL_YEAR_END_NOTE}{" "}
+                      <Link className="underline" to={`/company/${companyId}#incorporation`}>
+                        Company record
+                      </Link>
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="irregular-period"
+                      checked={!!draft.has_irregular_period}
+                      onCheckedChange={(v) =>
+                        setDraft((d) => ({
+                          ...d,
+                          has_irregular_period: !!v,
+                          period_start: !!v ? (d.period_start ?? derivedPeriod.start) : d.period_start,
+                          period_end: !!v ? (d.period_end ?? derivedPeriod.end) : d.period_end,
+                        }))
+                      }
+                    />
+                    <Label htmlFor="irregular-period" className="text-xs font-normal">
+                      Short or irregular fiscal period
+                    </Label>
+                  </div>
+                </div>
+
+                <div className="rounded-md border px-3 py-2.5 space-y-1">
+                  <Label className="text-xs font-medium">Board Reviewed</Label>
+                  {selected.board_reviewed_date ? (
+                    <>
+                      <p className="text-xs">{selected.board_reviewed_date}</p>
+                      {selected.board_review_meeting_id ? (
+                        <Link
+                          className="text-[11px] underline"
+                          to={`/company/${companyId}/meetings/${selected.board_review_meeting_id}`}
+                        >
+                          View the meeting that adopted these figures
+                        </Link>
+                      ) : (
+                        <p className="text-[10px] text-muted-foreground">{MANUAL_REVIEW_DATE_NOTE}</p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Pending Review</p>
+                  )}
+                  <p className="text-[10px] text-muted-foreground">
+                    Set automatically when a meeting reviewing this fiscal year is finalized.
+                  </p>
                 </div>
               </div>
 
