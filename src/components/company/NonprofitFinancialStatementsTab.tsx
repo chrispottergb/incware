@@ -27,6 +27,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import NonprofitStatementView from "@/components/company/NonprofitStatementView";
 import { generateNonprofitFinancialStatementPDF } from "@/lib/nonprofit-financial-statement-pdf";
