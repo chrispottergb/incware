@@ -303,7 +303,25 @@ export interface RatioCard {
   formula: string;
 }
 
+/**
+ * The only ratio derivable from the five board-review figures.
+ */
 export function computeRatios(s: NonprofitStatement): RatioCard[] {
+  const totalExp = num(s.total_expenses);
+  const ending = num(s.net_assets_ending);
+  if (ending == null || totalExp == null || totalExp <= 0) return [];
+  return [
+    {
+      key: "operating_reserve",
+      label: "Months of Operating Reserve (total net assets basis)",
+      display: `${(ending / (totalExp / 12)).toFixed(1)} months`,
+      formula: "Net Assets, End of Year ÷ (Total Expenses ÷ 12)",
+    },
+  ];
+}
+
+// Retained for Tier 2 (Form 990 detail) reintroduction. Not currently called from the UI.
+export function computeTier2Ratios(s: NonprofitStatement): RatioCard[] {
   const cards: RatioCard[] = [];
   const program = num(s.program_services_expense);
   const totalExp = num(s.total_expenses);
