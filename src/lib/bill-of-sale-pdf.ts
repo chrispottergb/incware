@@ -96,7 +96,7 @@ export function generateBillOfSalePdf(data: BillOfSaleData): jsPDF {
     assetRows.push(["TOTAL", `$${assetTotal.toFixed(2)}`]);
 
     autoTable(doc, {
-      pageBreak: "avoid",
+      pageBreak: assetRows.length <= 24 ? "avoid" : "auto",
       rowPageBreak: "avoid",
       startY: y,
       head: [["Description", "Value"]],
