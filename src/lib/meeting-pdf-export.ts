@@ -1657,7 +1657,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         }
 
 
-        const quorumText = `The secretary announced that there were, present in person or by proxy, the following shareholder(s), representing a quorum of the shareholders and showing the current resident address and the number of shares held by each:`;
+        const quorumText = `The secretary announced that there were, present in person or by proxy, the following shareholder(s), representing a quorum of the shareholders:`;
         const quorumLines = doc.splitTextToSize(quorumText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
         for (const line of quorumLines) {
           y = checkPageBreak(doc, y, 6);
@@ -1766,21 +1766,15 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         doc.text("The following were present at the meeting:", MARGIN, y);
         y += 6;
 
-        // Address intentionally omitted from the attendee list per client request.
-        // Keep the single Name field to 2 inches now that no address column is shown.
-        autoTable(doc, {
-          startY: y,
-          head: [["Name"]],
-          body: attendeeEntries.map(e => [e.name]),
-          theme: "grid",
-          headStyles: tableHeadStyles,
-          bodyStyles: { fontSize: 10 },
-          margin: { left: MARGIN, right: R_MARGIN },
-          columnStyles: {
-            0: { cellWidth: 50.8 },
-          },
+        
+        attendeeEntries.forEach(e => {
+          const name = e.name.trim();
+          if (!name) return;
+          y = checkPageBreak(doc, y, 6);
+          doc.text(`•  ${name}`, MARGIN + 6, y);
+          y += 5.5;
         });
-        y = (doc as any).lastAutoTable.finalY + 6;
+        y += 3;
       }
 
       const chairText = `${meeting.chairperson || "[Chairperson]"} served as Chairperson and ${meeting.mtg_secretary || "[Secretary]"} served as Secretary of the meeting.`;
