@@ -18,12 +18,13 @@ const IRS_FAX_NUMBERS: { state: string; faxNumber: string }[] = [
 export async function generateIRSFaxCoverSheet(data: IRSFaxCoverData = {}): Promise<void> {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 54;
-  let y = margin;
+  const leftMargin = 90; // 1.25 inch binder margin
+  const rightMargin = 54; // 0.75 inch right margin
+  let y = rightMargin;
 
   // Header
   doc.setFillColor(0xD6, 0xE4, 0xF0);
-  doc.rect(margin, y, pageWidth - margin * 2, 60, "F");
+  doc.rect(leftMargin, y, pageWidth - leftMargin - rightMargin, 60, "F");
   doc.setTextColor(0x1F, 0x4E, 0x79);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
@@ -36,8 +37,8 @@ export async function generateIRSFaxCoverSheet(data: IRSFaxCoverData = {}): Prom
   doc.setTextColor(0, 0, 0);
 
   // To / From box
-  const labelX = margin;
-  const valueX = margin + 90;
+  const labelX = leftMargin;
+  const valueX = leftMargin + 90;
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
   const drawRow = (label: string, value: string) => {
@@ -49,7 +50,7 @@ export async function generateIRSFaxCoverSheet(data: IRSFaxCoverData = {}): Prom
     doc.text(value || "_______________________________", valueX, y);
     y += 18;
     doc.setDrawColor(0xCC, 0xCC, 0xCC);
-    doc.line(valueX, y - 4, pageWidth - margin, y - 4);
+    doc.line(valueX, y - 4, pageWidth - rightMargin, y - 4);
     y += 4;
   };
 
@@ -88,8 +89,8 @@ export async function generateIRSFaxCoverSheet(data: IRSFaxCoverData = {}): Prom
   doc.setTextColor(0, 0, 0);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
-  doc.text("IRS Form 2553 — Election by a Small Business Corporation to be treated as an S Corporation.", margin, y, {
-    maxWidth: pageWidth - margin * 2,
+  doc.text("IRS Form 2553 — Election by a Small Business Corporation to be treated as an S Corporation.", leftMargin, y, {
+    maxWidth: pageWidth - leftMargin - rightMargin,
   });
   y += 30;
 
@@ -105,31 +106,31 @@ export async function generateIRSFaxCoverSheet(data: IRSFaxCoverData = {}): Prom
     "Please find attached IRS Form 2553 (Election by a Small Business Corporation) for the above-named entity. " +
     "All required signatures and shareholder consents are included. Please confirm receipt and process accordingly. " +
     "If you have any questions, please contact us using the information above.";
-  const lines = doc.splitTextToSize(message, pageWidth - margin * 2);
-  doc.text(lines, margin, y);
+  const lines = doc.splitTextToSize(message, pageWidth - leftMargin - rightMargin);
+  doc.text(lines, leftMargin, y);
   y += lines.length * 13 + 20;
 
   // Confidentiality
   doc.setDrawColor(0x1F, 0x4E, 0x79);
   doc.setLineWidth(0.5);
-  doc.line(margin, y, pageWidth - margin, y);
+  doc.line(leftMargin, y, pageWidth - rightMargin, y);
   y += 14;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.text("CONFIDENTIALITY NOTICE:", margin, y);
+  doc.text("CONFIDENTIALITY NOTICE:", leftMargin, y);
   y += 12;
   doc.setFont("helvetica", "normal");
   const conf =
     "This facsimile transmission contains confidential information intended only for the named recipient. " +
     "If you have received this transmission in error, please notify the sender immediately and destroy all copies.";
-  const confLines = doc.splitTextToSize(conf, pageWidth - margin * 2);
-  doc.text(confLines, margin, y);
+  const confLines = doc.splitTextToSize(conf, pageWidth - leftMargin - rightMargin);
+  doc.text(confLines, leftMargin, y);
 
   // Page 2 — IRS fax numbers reference
   doc.addPage();
-  y = margin;
+  y = rightMargin;
   doc.setFillColor(0xD6, 0xE4, 0xF0);
-  doc.rect(margin, y, pageWidth - margin * 2, 40, "F");
+  doc.rect(leftMargin, y, pageWidth - leftMargin - rightMargin, 40, "F");
   doc.setTextColor(0x1F, 0x4E, 0x79);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
@@ -141,9 +142,9 @@ export async function generateIRSFaxCoverSheet(data: IRSFaxCoverData = {}): Prom
   doc.setFontSize(10);
   doc.text(
     "Send Form 2553 to the IRS fax number that corresponds to your principal business location. Verify the current fax number at IRS.gov before sending.",
-    margin,
+    leftMargin,
     y,
-    { maxWidth: pageWidth - margin * 2 }
+    { maxWidth: pageWidth - leftMargin - rightMargin }
   );
   y += 32;
 
@@ -151,13 +152,13 @@ export async function generateIRSFaxCoverSheet(data: IRSFaxCoverData = {}): Prom
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.setTextColor(0x1F, 0x4E, 0x79);
-    doc.text(`Fax: ${entry.faxNumber}`, margin, y);
+    doc.text(`Fax: ${entry.faxNumber}`, leftMargin, y);
     y += 14;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(0, 0, 0);
-    const stateLines = doc.splitTextToSize(`States: ${entry.state}`, pageWidth - margin * 2);
-    doc.text(stateLines, margin, y);
+    const stateLines = doc.splitTextToSize(`States: ${entry.state}`, pageWidth - leftMargin - rightMargin);
+    doc.text(stateLines, leftMargin, y);
     y += stateLines.length * 11 + 14;
   });
 
@@ -167,9 +168,9 @@ export async function generateIRSFaxCoverSheet(data: IRSFaxCoverData = {}): Prom
   doc.setTextColor(0x55, 0x55, 0x55);
   doc.text(
     "Source: IRS instructions for Form 2553. For the most current fax numbers and mailing addresses, visit https://www.irs.gov/forms-pubs/about-form-2553.",
-    margin,
+    leftMargin,
     y,
-    { maxWidth: pageWidth - margin * 2 }
+    { maxWidth: pageWidth - leftMargin - rightMargin }
   );
 
   const safeName = (data.companyName || "Company").replace(/[^a-z0-9]+/gi, "_");

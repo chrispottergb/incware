@@ -14,10 +14,10 @@ const NORMAL_MARGIN = 19.05; // 0.75 inch normal margin
 const BRAND = "EntityIQ";
 const BRAND_SUB = "Corporate Records Management";
 
-// Portrait: binder on left. Landscape: binder on top.
+// Every section PDF keeps the binder margin on the left, including landscape reports.
 function getMargins(landscape: boolean) {
   return {
-    left: landscape ? NORMAL_MARGIN : BINDER_MARGIN,
+    left: BINDER_MARGIN,
     right: NORMAL_MARGIN,
     top: landscape ? BINDER_MARGIN : NORMAL_MARGIN,
   };
