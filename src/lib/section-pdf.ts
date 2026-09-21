@@ -120,6 +120,8 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
   if (config.fields && config.fields.length > 0) {
     const fieldRows = config.fields.map((f) => [f.label, f.value || "—"]);
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Field", "Value"]],
       body: fieldRows,
@@ -163,6 +165,8 @@ export function generateSectionPdf(config: SectionPdfConfig): jsPDF {
     });
 
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [config.table.headers],
       body: expandedRows,

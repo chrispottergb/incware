@@ -71,6 +71,8 @@ function addKeyValueTable(doc: jsPDF, rows: [string, string][], y: number): numb
     return y + MARGIN;
   }
   autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
     startY: y,
     body: rows,
     theme: "plain",
@@ -93,6 +95,8 @@ function addDataTable(doc: jsPDF, headers: string[], rows: string[][], y: number
     return y + MARGIN;
   }
   autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
     startY: y,
     head: [headers],
     body: rows,

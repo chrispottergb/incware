@@ -247,6 +247,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   function addTable(headers: string[], rows: string[][]) {
     if (rows.length === 0) return;
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [headers],
       body: rows,
@@ -326,6 +328,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
   if ((data.members ?? []).length > 0) {
     const usable = pw - margin - rMargin;
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Name", "Address", "Membership Units", "Membership Interest %"]],
       body: (data.members ?? []).map(m => [m.name || "[Enter]", m.address || "[Enter]", m.units || "[Enter]", m.interestPct ? `${m.interestPct}%` : "[Enter]"]),
@@ -523,6 +527,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       resolvedPara(`that the following capital asset transactions are hereby approved and ratified:`);
 
       autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
         startY: y,
         head: [["Year / Make / Model", "Type", "Transaction", "VIN / Serial No.", "Date", "Amount", "Seller / Buyer"]],
         body: data.capitalAssets!.map(v => [
@@ -592,6 +598,8 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
       resolvedPara(`that the following vehicle dispositions are hereby approved, ratified, and confirmed:`);
 
       autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
         startY: y,
         head: [["Year / Make / Model", "VIN / Serial No.", "Sale Date", "Sale Price", "Buyer", "Reason"]],
         body: data.vehiclesSold!.map(v => [

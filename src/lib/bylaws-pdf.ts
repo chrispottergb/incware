@@ -210,6 +210,8 @@ export function generateBylawsPDF(data: BylawsData): jsPDF {
   if (shareholders.length > 0) {
     y = checkBreak(doc, y, 20);
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Shareholder Name", "Address", "City/State/Zip", "Status"]],
       body: shareholders.map((s) => [
@@ -254,6 +256,8 @@ export function generateBylawsPDF(data: BylawsData): jsPDF {
   if (directors.length > 0) {
     y = checkBreak(doc, y, 20);
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Director Name", "Address", "City/State/Zip", "Date Added"]],
       body: directors.map((d) => [

@@ -240,6 +240,8 @@ export function CompetitorPricingTracker() {
       ]);
 
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: 100,
       head: [["Competitor", "Plan", "Price", "Billing", "Key Features", "Our Positioning", "Verified"]],
       body: rows.map((r) => [r[0], r[1], r[2], r[3], (r[4] ? "• " + r[4] : ""), r[5], r[6]]),

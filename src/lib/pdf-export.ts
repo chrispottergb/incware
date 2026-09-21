@@ -111,6 +111,8 @@ export async function exportCompliancePDF(data: ComplianceItem[], overallScore: 
     y += 4;
 
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Requirement", "Status"]],
       body: item.checks.map((c) => [c.label, c.pass ? "Complete" : "Missing"]),
@@ -176,6 +178,8 @@ export async function exportStockLedgerPDF(certificates: CertificateRow[], compa
   const startY = lm.top + 4 + 6 + 12 + 7 + 4 + 7;
 
   autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
     startY,
     head: [["Cert #", "Company", "Shareholder", "Class", "Shares", "Par Value", "Issue Date", "Status"]],
     body: certificates.map((c) => [
@@ -249,6 +253,8 @@ export async function exportShareholderPDF(shareholders: ShareholderRow[]) {
   addHeader(doc, "Shareholder Summary Report", `${shareholders.length} shareholder(s)`);
 
   autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
     startY: 54,
     head: [["Name", "Company", "Address", "Status", "Date Added"]],
     body: shareholders.map((sh) => [
@@ -369,6 +375,8 @@ export async function exportAICompliancePDF(data: AIComplianceData) {
     y += MARGIN;
   } else {
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["System", "Provider", "Risk Level", "Status", "Deployed", "Purpose"]],
       body: data.systems.map(s => [
@@ -415,6 +423,8 @@ export async function exportAICompliancePDF(data: AIComplianceData) {
     y += MARGIN;
   } else {
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Liable Person", "Title", "AI System", "Competence", "Authority Scope", "Status"]],
       body: data.oversightPersons.map(p => [
@@ -452,6 +462,8 @@ export async function exportAICompliancePDF(data: AIComplianceData) {
     y += MARGIN;
   } else {
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Date", "System", "Type", "Description", "Reviewer", "Decision", "Notified"]],
       body: data.usageLogs.map(l => [
@@ -499,6 +511,8 @@ export async function exportAICompliancePDF(data: AIComplianceData) {
     y += MARGIN;
   } else {
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Date", "System", "Severity", "Status", "Description", "Reporter", "Provider", "Authority"]],
       body: data.incidents.map(i => [

@@ -166,6 +166,8 @@ export function generateSmllcOrgMeetingPDF(data: OrgMeetingData): jsPDF {
     {
       const usable = contentWidth;
       autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
         startY: y,
         head: [["Name", "Address", "Units", "%"]],
         body: [[
@@ -237,6 +239,8 @@ export function generateSmllcOrgMeetingPDF(data: OrgMeetingData): jsPDF {
         `that the following individuals are designated as authorized binders of the Company under Wis. Stat. § 183.0301, with authority to bind the Company in the ordinary course of business:`
       );
       autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
         startY: y,
         head: [["Name", "Title", "Scope of Authority"]],
         body: binders.map(b => [b.name || "[Enter]", b.title || "[Enter]", b.scopeOfAuthority || "[Enter]"]),

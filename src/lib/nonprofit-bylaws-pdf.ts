@@ -228,6 +228,8 @@ export function generateNonprofitBylawsPDF(data: NonprofitBylawsData): jsPDF {
   if (directors.length > 0) {
     y = checkBreak(doc, y, 20);
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Director Name", "Address", "City/State/Zip", "Date Added"]],
       body: directors.map((d) => [
