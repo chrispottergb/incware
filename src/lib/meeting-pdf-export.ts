@@ -1666,9 +1666,9 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         }
         y += 5;
 
-        // Shareholder table with address and basis
+        // Annual shareholder meeting: names only, with no representative details.
         shareholderData.forEach(s => {
-          const name = formatShareholderDisplay(s, "inline").trim();
+          const name = (s.shareholder_name || "").trim();
           if (!name) return;
           y = checkPageBreak(doc, y, 6);
           doc.text(`•  ${name}`, MARGIN + 6, y);
