@@ -3583,10 +3583,10 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     autoTable(doc, {
       startY: y,
       head: [["Notes"]],
-      body: (data.other ?? []).map(o => [o.notes]),
+      body: (data.other ?? []).map(o => [normalizeNotesPdfText(o.notes)]),
       theme: "grid",
       headStyles: tableHeadStyles,
-      bodyStyles: { fontSize: 10 },
+      bodyStyles: { font: "Arial", fontStyle: "normal", fontSize: 11, halign: "left", overflow: "linebreak" },
       margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 6;
@@ -4217,6 +4217,12 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   }
 }
 
+function normalizeNotesPdfText(value: unknown): string {
+  return String(value ?? "")
+    .replace(/[\u2010\u2011\u2012\u2013\u2212]/g, "-")
+    .replace(/[\u00a0\u2007\u202f]/g, " ");
+}
+
 // Export individual section PDFs
 export function exportSectionPDF(
   sectionTitle: string,
@@ -4243,6 +4249,7 @@ export function exportSectionPDF(
   if (tableBody.length > 0) {
     const usableWidth = doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN;
     const colCount = tableHead.length;
+    const isNotesTable = sectionTitle === "Other Notes" && colCount === 1;
     // For shareholders table (10 columns), use specific proportional widths
     const isShareholdersTable = colCount === 10 && (
       tableHead.includes("Ownership %") || tableHead.includes("Interest %")
@@ -4256,7 +4263,9 @@ export function exportSectionPDF(
     autoTable(doc, {
       startY: y,
       head: [tableHead],
-      body: tableBody,
+      body: isNotesTable
+        ? tableBody.map(row => [normalizeNotesPdfText(row[0])])
+        : tableBody,
       theme: "grid",
       headStyles: {
         fillColor: [250, 248, 242],
@@ -4268,11 +4277,15 @@ export function exportSectionPDF(
         lineColor: [0, 0, 0],
       },
       bodyStyles: {
-        fontSize: isShareholdersTable ? 9 : 10,
+        font: "Arial",
+        fontStyle: "normal",
+        fontSize: isNotesTable ? 11 : (isShareholdersTable ? 9 : 10),
+        halign: "left",
+        overflow: "linebreak",
         cellPadding: isShareholdersTable ? 3 : 5,
       },
       margin: { left: MARGIN, right: R_MARGIN },
-      styles: { overflow: "linebreak", cellWidth: "auto" },
+      styles: { font: "Arial", overflow: "linebreak", cellWidth: "auto" },
       ...(isShareholdersTable ? { columnStyles } : {}),
     });
   } else {
