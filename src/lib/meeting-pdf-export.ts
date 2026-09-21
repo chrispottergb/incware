@@ -1677,27 +1677,8 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         y += 3;
       }
     } else {
-      // Annual meeting: attendee list with addresses (deduplicate by normalized name)
-      const attendeeMap = new Map<string, { name: string; address: string }>(); // normalized → display entry
-      const normKey = (n: string) => n.toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim();
-
-      const buildAddress = (name: string): string => {
-        const nk = normKey(name);
-        // Check meeting shareholders first
-        const ms = (data.shareholders || []).find(s => normKey(s.shareholder_name || "") === nk);
-        const cs = (data.companyShareholders || []).find(c => normKey(c.name || "") === nk);
-        const cd = (data.companyDirectors || []).find(d => normKey(d.name || "") === nk);
-        const source = ms || cs || cd;
-        if (!source) return "";
-        const addr = (ms?.address || cs?.address || cd?.address || "");
-        const addr2 = ((ms as any)?.address_2 || (cs as any)?.address_2 || (cd as any)?.address_2 || "");
-        const city = (ms?.city || cs?.city || cd?.city || "");
-        const state = (ms?.state || cs?.state || cd?.state || "");
-        const zip = (ms?.zip || cs?.zip || cd?.zip || "");
-        const line1 = [addr, addr2].filter(Boolean).join(", ");
-        const line2 = [city, state].filter(Boolean).join(", ");
-        return [line1, line2, zip].filter(Boolean).join(" ");
-      };
+      // Annual meeting: name-only attendee list, deduplicated by normalized name.
+      const attendeeMap = new Map<string, string>();
 
       // Dedupe key that treats "Richard M. Kuranda" and "Richard Kuranda" as the
       // same person: punctuation and suffixes dropped, middle names/initials
@@ -1715,19 +1696,17 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         return `${tokens[0]} ${tokens[tokens.length - 1]}`;
       };
 
-      const addAttendee = (name: string | null | undefined, displayOverride?: string) => {
-        if (!name) return;
-        const key = personKey(name);
+      const addAttendee = (name: string | null | undefined) => {
+        const display = (name || "").trim();
+        if (!display) return;
+        const key = personKey(display);
         if (!key) return;
-        const display = (displayOverride || name).trim();
         const existing = attendeeMap.get(key);
         // Keep the most complete spelling (e.g. prefer "Richard M. Kuranda").
-        if (existing && existing.name.length >= display.length) return;
-        attendeeMap.set(key, { name: display, address: buildAddress(name) });
+        if (existing && existing.length >= display.length) return;
+        attendeeMap.set(key, display);
       };
-      (data.shareholders || []).forEach(s =>
-        addAttendee(s.shareholder_name, formatShareholderDisplay(s, "inline"))
-      );
+      (data.shareholders || []).forEach(s => addAttendee(s.shareholder_name));
       if (!isStatutoryClose) (data.directors || []).forEach(d => addAttendee(d.director_name));
       (data.officers || []).forEach(o => addAttendee(o.name));
 
@@ -1740,9 +1719,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         y += 6;
 
         
-        attendeeEntries.forEach(e => {
-          const name = e.name.trim();
-          if (!name) return;
+        attendeeEntries.forEach(name => {
           y = checkPageBreak(doc, y, 6);
           doc.text(`•  ${name}`, MARGIN + 6, y);
           y += 5.5;

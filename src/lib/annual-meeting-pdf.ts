@@ -284,11 +284,12 @@ export function generateAnnualMeetingPDF(data: AnnualMeetingData) {
 
   para(`The Annual Meeting of ${fullName}, a ${data.stateOfFormation} limited liability company, was held on ${dayOfWeek}, ${formattedDate}, at ${data.meetingTime || "[Time]"}, at ${data.meetingLocation || "[Location]"}.`);
 
-  if ((data.attendees ?? []).length > 0) {
+  const attendeeNames = (data.attendees ?? [])
+    .map((attendee) => attendee.name.trim())
+    .filter(Boolean);
+  if (attendeeNames.length > 0) {
     para("The following were present at the meeting:");
-    (data.attendees ?? []).forEach(a => {
-      para(`• ${a.name}${a.title ? `, ${a.title}` : ""}`, 10);
-    });
+    attendeeNames.forEach((name) => para(`• ${name}`, 10));
   }
 
   para(`${data.chairperson || "[Chairperson]"} served as Chairperson and ${data.secretary || "[Secretary]"} served as Secretary of the meeting.`);
