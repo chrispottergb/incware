@@ -85,6 +85,8 @@ function addTableSafe(doc: jsPDF, y: number, head: string[], body: string[][]): 
     return y + 10;
   }
   autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
     startY: y,
     head: [head],
     body,

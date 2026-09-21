@@ -87,6 +87,8 @@ function kvTable(doc: jsPDF, rows: [string, string][], y: number): number {
   const filtered = rows.filter(([, v]) => v && v !== "—");
   if (filtered.length === 0) return emptyNote(doc, "No data on file.", y);
   autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
     startY: y + 2,
     body: filtered,
     theme: "plain",
@@ -103,6 +105,8 @@ function kvTable(doc: jsPDF, rows: [string, string][], y: number): number {
 function dataTable(doc: jsPDF, headers: string[], rows: string[][], y: number, emptyText: string): number {
   if (rows.length === 0) return emptyNote(doc, emptyText, y);
   autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
     startY: y + 2,
     head: [headers],
     body: rows,

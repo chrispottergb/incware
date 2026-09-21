@@ -226,6 +226,8 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
 
   if ((data.managers ?? []).length > 0) {
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Name", "Title"]],
       body: (data.managers ?? []).map(m => [m.name || "[Enter]", m.title || "[Enter]"]),
@@ -251,6 +253,8 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
   if ((data.members ?? []).length > 0) {
     const usable = pw - margin - rMargin;
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Name", "Address", "Membership Units", "Membership Interest %"]],
       body: (data.members ?? []).map(m => [m.name || "[Enter]", m.address || "[Enter]", m.membershipUnits || "[Enter]", m.membershipInterestPct ? `${m.membershipInterestPct}%` : "[Enter]"]),
@@ -321,6 +325,8 @@ export function generateOrgMeetingPDF(data: OrgMeetingData) {
 
   if ((data.authorizedBinders ?? []).length > 0) {
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Name", "Title", "Scope of Authority"]],
       body: (data.authorizedBinders ?? []).map(b => [b.name || "[Enter]", b.title || "[Enter]", b.scopeOfAuthority || "[Enter]"]),

@@ -100,7 +100,11 @@ export function generateNonprofitFinancialStatementPDF(data: NonprofitStatementP
     title: string,
     rows: { key: string; label: string; ref: string; total?: boolean; indent?: boolean }[],
   ) => {
-    ensure(26);
+    const estimatedHeight = 15.5 + rows.reduce((height, row) => {
+      const rowHeight = tags[row.key] ? 8.2 : 5.4;
+      return height + rowHeight + (row.total ? 1.5 : 0);
+    }, 0);
+    ensure(estimatedHeight);
     sectionTitle(doc, title, () => y, (v) => (y = v), width);
 
     const colLabel = MARGIN;

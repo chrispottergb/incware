@@ -256,6 +256,8 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
   if (rosterMembers.length > 0) {
     y = checkBreak(doc, y, 20);
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Member Name", "Address", "City/State/Zip", "Status"]],
       body: rosterMembers.map((m) => [
@@ -453,6 +455,8 @@ export function generateOperatingAgreementPDF(data: OperatingAgreementData): jsP
 
   if (scheduleMembers.length > 0) {
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [showUnits
         ? ["Member Name", "Address", "City, State, ZIP", "Units", "Membership Interest (%)"]

@@ -1178,6 +1178,8 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
     y = addResolutionBlock(doc, y, `Initial ${isLLC ? "Managers/Officers" : "Officers"}`,
       `RESOLVED, that the following persons are hereby ${isLLC ? "appointed" : "elected"} as the initial ${isLLC ? "managers/officers" : "officers"} of the ${entityLabel}, to serve until their successors are duly ${isLLC ? "appointed" : "elected"} and qualified:\n\n${officerLines}.`);
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Title", "Name"]],
       body: officerSource.map((o: any) => [o.title, o.name]),
@@ -1254,6 +1256,8 @@ function addOrganizationalBoilerplate(doc: jsPDF, y: number, data: MeetingData):
         : [s.name || "—", s.address || "—", s.shares ? s.shares.toLocaleString() : "—"]
     );
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [tableHeaders],
       body: tableBody,
@@ -2046,6 +2050,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     if (hasSalaryData || hasBonusData) headRow.push("Bonus");
 
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [headRow],
       body: (data.officers ?? []).map(o => {
@@ -2112,6 +2118,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       );
     }
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Authorized Binder Name"]],
       body: (data.directors ?? []).map(d => [d.director_name]),
@@ -2136,6 +2144,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const hasDistribution = (data.shareholders ?? []).some(s => s.distribution_amount != null && Number(s.distribution_amount) > 0);
     const usableW = doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN;
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [[
         "Name",
@@ -2285,6 +2295,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
 
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["", "Current Year", "Previous Year", "YoY Change"]],
       body: tableBody,
@@ -2571,6 +2583,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
       const usableBankW = doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN;
       autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
         startY: y,
         head: [bankTableHead],
         body: bankTableBody,
@@ -2645,6 +2659,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         if (remainingSigners.length > 0) {
           y = checkPageBreak(doc, y, 20 + remainingSigners.length * 7);
           autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
             startY: y,
             head: [["Bank", "Authorized Signer", "Authority Type"]],
             body: remainingSigners.map((s: any) => [
@@ -2673,6 +2689,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bt
     );
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Type", "Rate", "Amount", "Date", "Notes"]],
       body: (data.loans ?? []).map(l => [
@@ -2706,14 +2724,18 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       if (toRows.length > 0) {
         doc.setFontSize(11); doc.setFont("Arial", "bold"); doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
         doc.text("Loans TO Shareholders / Members / Related Parties", MARGIN, y); y += 5;
-        autoTable(doc, { startY: y, head: balHead, body: toRows.map(mapRow), theme: "grid", headStyles: tableHeadStyles, bodyStyles: { fontSize: 10 }, margin: { left: MARGIN, right: R_MARGIN } });
+        autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid", startY: y, head: balHead, body: toRows.map(mapRow), theme: "grid", headStyles: tableHeadStyles, bodyStyles: { fontSize: 10 }, margin: { left: MARGIN, right: R_MARGIN } });
         y = (doc as any).lastAutoTable.finalY + 6;
       }
       if (fromRows.length > 0) {
         y = checkPageBreak(doc, y, 30);
         doc.setFontSize(11); doc.setFont("Arial", "bold"); doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
         doc.text("Loans FROM Shareholders / Members / Related Parties", MARGIN, y); y += 5;
-        autoTable(doc, { startY: y, head: balHead, body: fromRows.map(mapRow), theme: "grid", headStyles: tableHeadStyles, bodyStyles: { fontSize: 10 }, margin: { left: MARGIN, right: R_MARGIN } });
+        autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid", startY: y, head: balHead, body: fromRows.map(mapRow), theme: "grid", headStyles: tableHeadStyles, bodyStyles: { fontSize: 10 }, margin: { left: MARGIN, right: R_MARGIN } });
         y = (doc as any).lastAutoTable.finalY + 6;
       }
     }
@@ -2771,6 +2793,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const altRowBg: [number, number, number] = [245, 248, 252];
 
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Year / Make / Model", "Type", "Transaction", "VIN / Serial No.\nComments", "Date", "Amount"]],
       body: (data.capitalAssets ?? []).map((v: any) => {
@@ -2808,7 +2832,6 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
-      pageBreak: "avoid",
       didParseCell: (hookData: any) => {
         if (hookData.section === "head") {
           if (hookData.column.index === 4 || hookData.column.index === 5) {
@@ -2881,6 +2904,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     };
 
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Year / Make / Model", "Type", "VIN / Serial No.", "Lessor", "Start Date", "End Date", "Monthly\nPayment", "Total Lease\nValue"]],
       body: (data.vehicleLeases ?? []).map((v: any) => [
@@ -2910,7 +2935,6 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
-      pageBreak: "avoid",
       didParseCell: (hookData: any) => {
         if (hookData.section === "body") {
           if (hookData.row.index % 2 === 1) {
@@ -2967,6 +2991,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const soldAltRowBg: [number, number, number] = [245, 248, 252];
 
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Year / Make / Model", "VIN / Serial No.", "Sale Date", "Sale Price", "Buyer", "Reason"]],
       body: (data.vehiclesSold ?? []).map((v: any) => [
@@ -2994,7 +3020,6 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       },
       margin: { left: MARGIN, right: R_MARGIN },
       styles: { overflow: "linebreak", cellWidth: "auto" },
-      pageBreak: "avoid",
       didParseCell: (hookData: any) => {
         if (hookData.section === "body" && hookData.row.index % 2 === 1) {
           hookData.cell.styles.fillColor = soldAltRowBg;
@@ -3052,6 +3077,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     }
     y += 5;
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Transaction", "Date", "Equipment", "Make/Model", "Amount"]],
       body: (data.assets ?? []).map((a: any) => [
@@ -3080,6 +3107,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bt
     );
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Property / Vehicle", "Landlord / Lessor", "End Date", "Reason", "Early Term.", "Penalty"]],
       body: (data.leaseTerminations ?? []).map((v: any) => [
@@ -3117,6 +3146,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     const clAltRowBg: [number, number, number] = [245, 248, 252];
 
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Property Description", "Property Address", "Landlord", "Landlord Address", "Monthly\nPayment"]],
       body: (data.companyLeases ?? []).map((l: any) => [
@@ -3163,6 +3194,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y += 5;
 
       autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
         startY: y,
         head: [["Property", "Property Address", "Improvement Amount", "Description"]],
         body: leasesWithImprovements.map((l: any) => [
@@ -3559,6 +3592,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     // Summary table of all agreements
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Type", "Counterparty", "Date", "Amount", "Status"]],
       body: (data.agreements ?? []).map((a: any) => [
@@ -3581,6 +3616,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y = checkPageBreak(doc, y, 20 + (data.other ?? []).length * 7);
     y = section("Other Notes");
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Notes"]],
       body: (data.other ?? []).map(o => [normalizeNotesPdfText(o.notes)]),
@@ -3602,6 +3639,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       bt
     );
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["Name", "Authority Type", "Bank"]],
       body: (data.authorizedSigners ?? []).map(s => [s.signer_name, s.title || "—", s.bank_name || "—"]),
@@ -3650,6 +3689,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
 
     const ratTable = (rows: typeof ratified) => {
       autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
         startY: y,
         head: [["Date", "Action", "Amount"]],
         body: rows.map((r) => [
@@ -4187,6 +4228,8 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     doc.text("SCHEDULE A — ACTIONS RATIFIED", doc.internal.pageSize.getWidth() / 2, sy, { align: "center" });
     sy += 8;
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: sy,
       head: [["Date", "Action", "Amount"]],
       body: ordinaryRatified.map((r) => [
@@ -4261,6 +4304,8 @@ export function exportSectionPDF(
       pcts.forEach((p, i) => { columnStyles[i] = { cellWidth: usableWidth * p }; });
     }
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [tableHead],
       body: isNotesTable
@@ -4370,6 +4415,8 @@ export function exportFinancialsPDF(company: any, meeting: any, financials: any,
     }
 
     autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
       startY: y,
       head: [["", "Current Year", "Previous Year", "YoY Change"]],
       body: tableBody,
