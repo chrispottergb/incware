@@ -1667,41 +1667,14 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         y += 5;
 
         // Shareholder table with address and basis
-        const shareholderTableBody = shareholderData.map(s => {
-          const matchingShareholder = (data.companyShareholders || []).find(
-            cs => cs.name?.toLowerCase().trim() === s.shareholder_name?.toLowerCase().trim()
-          );
-          // Prefer address from the meeting shareholder record, fall back to company shareholder
-          const addr = s.address || matchingShareholder?.address || "";
-          const addr2 = s.address_2 || (matchingShareholder as any)?.address_2 || "";
-          const city = s.city || matchingShareholder?.city || "";
-          const state = s.state || matchingShareholder?.state || "";
-          const zip = s.zip || matchingShareholder?.zip || "";
-          const line1 = [addr, addr2].filter(Boolean).join(", ");
-          const line2 = [city, state].filter(Boolean).join(", ");
-          const address = [line1, line2, zip].filter(Boolean).join(" ");
-          return [
-            formatShareholderDisplay(s, "twoLine"),
-            address || "—",
-            s.common_shares?.toLocaleString() ?? "—",
-          ];
+        shareholderData.forEach(s => {
+          const name = formatShareholderDisplay(s, "inline").trim();
+          if (!name) return;
+          y = checkPageBreak(doc, y, 6);
+          doc.text(`•  ${name}`, MARGIN + 6, y);
+          y += 5.5;
         });
-
-        autoTable(doc, {
-          startY: y,
-          head: [["Shareholder", "Address", "Common Shares"]],
-          body: shareholderTableBody,
-          theme: "grid",
-          headStyles: tableHeadStyles,
-          bodyStyles: { fontSize: 10 },
-          margin: { left: MARGIN, right: R_MARGIN },
-          columnStyles: {
-            0: { cellWidth: 45 },
-            1: { cellWidth: 'auto' },
-            2: { cellWidth: 30 },
-          },
-        });
-        y = (doc as any).lastAutoTable.finalY + 6;
+        y += 3;
       }
     } else {
       // Annual meeting: attendee list with addresses (deduplicate by normalized name)
