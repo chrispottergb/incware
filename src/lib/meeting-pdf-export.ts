@@ -1657,7 +1657,7 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         }
 
 
-        const quorumText = `The secretary announced that there were, present in person or by proxy, the following shareholder(s), representing a quorum of the shareholders and showing the current resident address and the number of shares held by each:`;
+        const quorumText = `The secretary announced that there were, present in person or by proxy, the following shareholder(s), representing a quorum of the shareholders:`;
         const quorumLines = doc.splitTextToSize(quorumText, doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN);
         for (const line of quorumLines) {
           y = checkPageBreak(doc, y, 6);
@@ -1666,65 +1666,19 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         }
         y += 5;
 
-        // Shareholder table with address and basis
-        const shareholderTableBody = shareholderData.map(s => {
-          const matchingShareholder = (data.companyShareholders || []).find(
-            cs => cs.name?.toLowerCase().trim() === s.shareholder_name?.toLowerCase().trim()
-          );
-          // Prefer address from the meeting shareholder record, fall back to company shareholder
-          const addr = s.address || matchingShareholder?.address || "";
-          const addr2 = s.address_2 || (matchingShareholder as any)?.address_2 || "";
-          const city = s.city || matchingShareholder?.city || "";
-          const state = s.state || matchingShareholder?.state || "";
-          const zip = s.zip || matchingShareholder?.zip || "";
-          const line1 = [addr, addr2].filter(Boolean).join(", ");
-          const line2 = [city, state].filter(Boolean).join(", ");
-          const address = [line1, line2, zip].filter(Boolean).join(" ");
-          return [
-            formatShareholderDisplay(s, "twoLine"),
-            address || "—",
-            s.common_shares?.toLocaleString() ?? "—",
-          ];
+        // Annual shareholder meeting: names only, with no representative details.
+        shareholderData.forEach(s => {
+          const name = (s.shareholder_name || "").trim();
+          if (!name) return;
+          y = checkPageBreak(doc, y, 6);
+          doc.text(`•  ${name}`, MARGIN + 6, y);
+          y += 5.5;
         });
-
-        autoTable(doc, {
-          startY: y,
-          head: [["Shareholder", "Address", "Common Shares"]],
-          body: shareholderTableBody,
-          theme: "grid",
-          headStyles: tableHeadStyles,
-          bodyStyles: { fontSize: 10 },
-          margin: { left: MARGIN, right: R_MARGIN },
-          columnStyles: {
-            0: { cellWidth: 45 },
-            1: { cellWidth: 'auto' },
-            2: { cellWidth: 30 },
-          },
-        });
-        y = (doc as any).lastAutoTable.finalY + 6;
+        y += 3;
       }
     } else {
-      // Annual meeting: attendee list with addresses (deduplicate by normalized name)
-      const attendeeMap = new Map<string, { name: string; address: string }>(); // normalized → display entry
-      const normKey = (n: string) => n.toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim();
-
-      const buildAddress = (name: string): string => {
-        const nk = normKey(name);
-        // Check meeting shareholders first
-        const ms = (data.shareholders || []).find(s => normKey(s.shareholder_name || "") === nk);
-        const cs = (data.companyShareholders || []).find(c => normKey(c.name || "") === nk);
-        const cd = (data.companyDirectors || []).find(d => normKey(d.name || "") === nk);
-        const source = ms || cs || cd;
-        if (!source) return "";
-        const addr = (ms?.address || cs?.address || cd?.address || "");
-        const addr2 = ((ms as any)?.address_2 || (cs as any)?.address_2 || (cd as any)?.address_2 || "");
-        const city = (ms?.city || cs?.city || cd?.city || "");
-        const state = (ms?.state || cs?.state || cd?.state || "");
-        const zip = (ms?.zip || cs?.zip || cd?.zip || "");
-        const line1 = [addr, addr2].filter(Boolean).join(", ");
-        const line2 = [city, state].filter(Boolean).join(", ");
-        return [line1, line2, zip].filter(Boolean).join(" ");
-      };
+      // Annual meeting: name-only attendee list, deduplicated by normalized name.
+      const attendeeMap = new Map<string, string>();
 
       // Dedupe key that treats "Richard M. Kuranda" and "Richard Kuranda" as the
       // same person: punctuation and suffixes dropped, middle names/initials
@@ -1742,19 +1696,17 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         return `${tokens[0]} ${tokens[tokens.length - 1]}`;
       };
 
-      const addAttendee = (name: string | null | undefined, displayOverride?: string) => {
-        if (!name) return;
-        const key = personKey(name);
+      const addAttendee = (name: string | null | undefined) => {
+        const display = (name || "").trim();
+        if (!display) return;
+        const key = personKey(display);
         if (!key) return;
-        const display = (displayOverride || name).trim();
         const existing = attendeeMap.get(key);
         // Keep the most complete spelling (e.g. prefer "Richard M. Kuranda").
-        if (existing && existing.name.length >= display.length) return;
-        attendeeMap.set(key, { name: display, address: buildAddress(name) });
+        if (existing && existing.length >= display.length) return;
+        attendeeMap.set(key, display);
       };
-      (data.shareholders || []).forEach(s =>
-        addAttendee(s.shareholder_name, formatShareholderDisplay(s, "inline"))
-      );
+      (data.shareholders || []).forEach(s => addAttendee(s.shareholder_name));
       if (!isStatutoryClose) (data.directors || []).forEach(d => addAttendee(d.director_name));
       (data.officers || []).forEach(o => addAttendee(o.name));
 
@@ -1766,21 +1718,13 @@ export function exportMeetingMinutesPDF(data: MeetingData) {
         doc.text("The following were present at the meeting:", MARGIN, y);
         y += 6;
 
-        // Address intentionally omitted from the attendee list per client request.
-        // Keep the single Name field to 2 inches now that no address column is shown.
-        autoTable(doc, {
-          startY: y,
-          head: [["Name"]],
-          body: attendeeEntries.map(e => [e.name]),
-          theme: "grid",
-          headStyles: tableHeadStyles,
-          bodyStyles: { fontSize: 10 },
-          margin: { left: MARGIN, right: R_MARGIN },
-          columnStyles: {
-            0: { cellWidth: 50.8 },
-          },
+        
+        attendeeEntries.forEach(name => {
+          y = checkPageBreak(doc, y, 6);
+          doc.text(`•  ${name}`, MARGIN + 6, y);
+          y += 5.5;
         });
-        y = (doc as any).lastAutoTable.finalY + 6;
+        y += 3;
       }
 
       const chairText = `${meeting.chairperson || "[Chairperson]"} served as Chairperson and ${meeting.mtg_secretary || "[Secretary]"} served as Secretary of the meeting.`;

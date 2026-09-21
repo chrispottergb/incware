@@ -125,7 +125,6 @@ export function generateNonProfitAnnualMeetingPDF(data: NonProfitAnnualMeetingDa
     const location = data.meetingLocation || "[Location]";
 
     const scope = data.meetingScope === "members" ? "members" : "directors";
-    const attendeeNoun = scope === "members" ? "members" : "directors";
     const titleText = scope === "members" ? "ANNUAL MEETING OF MEMBERS" : "ANNUAL MEETING MINUTES";
     const bodyName = scope === "members" ? "membership" : "Board of Directors";
 
@@ -148,14 +147,19 @@ export function generateNonProfitAnnualMeetingPDF(data: NonProfitAnnualMeetingDa
 
     // 3. Call to order / attendees / quorum
     sectionHeading("Call to Order");
-    const attendeesList = (data.attendees ?? []).map(a => a.name).filter(Boolean);
-    const attendeesText = attendeesList.length > 0
-      ? attendeesList.join(", ")
-      : (scope === "members" ? "[Members Present]" : "[Directors Present]");
-    const quorumText = scope === "members"
-      ? `The meeting was called to order by ${chair} at ${time}. The following members were present in person or by proxy: ${attendeesText}. A quorum of the membership was confirmed.`
-      : `The meeting was called to order by ${chair} at ${time}. The following directors were present: ${attendeesText}. A quorum was confirmed.`;
-    para(quorumText);
+    const attendeeNames = (data.attendees ?? [])
+      .map((attendee) => attendee.name.trim())
+      .filter(Boolean);
+    para(`The meeting was called to order by ${chair} at ${time}.`);
+    if (attendeeNames.length > 0) {
+      para(scope === "members"
+        ? "The following members were present in person or by proxy:"
+        : "The following directors were present:");
+      bullets(attendeeNames);
+    }
+    para(scope === "members"
+      ? "A quorum of the membership was confirmed."
+      : "A quorum was confirmed.");
 
     // 4. Notice
     sectionHeading("Notice of Meeting");
