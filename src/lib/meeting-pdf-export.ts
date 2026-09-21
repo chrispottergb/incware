@@ -4460,19 +4460,20 @@ export function exportFinancialsPDF(company: any, meeting: any, financials: any,
     ];
 
     const maxVal = Math.max(...chartItems.map(i => Math.max(Math.abs(i.cur), Math.abs(i.prev))), 1);
-    const barMaxWidth = pw - 80;
+    const chartX = MARGIN + 36;
+    const barMaxWidth = pw - chartX - R_MARGIN - 18;
     const barHeight = 6;
     const groupHeight = 22;
 
     // Legend
     doc.setFillColor(45, 55, 120);
-    doc.rect(14, y, 8, 4, "F");
+    doc.rect(MARGIN, y, 8, 4, "F");
     doc.setFontSize(7);
     doc.setTextColor(80, 80, 80);
-    doc.text("Current Year", 24, y + 3);
+    doc.text("Current Year", MARGIN + 10, y + 3);
     doc.setFillColor(160, 160, 180);
-    doc.rect(60, y, 8, 4, "F");
-    doc.text("Previous Year", 70, y + 3);
+    doc.rect(MARGIN + 46, y, 8, 4, "F");
+    doc.text("Previous Year", MARGIN + 56, y + 3);
     y += 10;
 
     chartItems.forEach((item) => {
@@ -4485,16 +4486,16 @@ export function exportFinancialsPDF(company: any, meeting: any, financials: any,
       const prevWidth = maxVal > 0 ? (Math.abs(item.prev) / maxVal) * barMaxWidth : 0;
 
       doc.setFillColor(45, 55, 120);
-      doc.roundedRect(50, y - 2, Math.max(curWidth, 1), barHeight, 1, 1, "F");
+      doc.roundedRect(chartX, y - 2, Math.max(curWidth, 1), barHeight, 1, 1, "F");
 
       doc.setFillColor(160, 160, 180);
-      doc.roundedRect(50, y + barHeight, Math.max(prevWidth, 1), barHeight, 1, 1, "F");
+      doc.roundedRect(chartX, y + barHeight, Math.max(prevWidth, 1), barHeight, 1, 1, "F");
 
       // Values
       doc.setFontSize(6);
       doc.setTextColor(30, 30, 30);
-      if (item.cur > 0) doc.text(fmt(item.cur), 50 + curWidth + 2, y + 3);
-      if (item.prev > 0) doc.text(fmt(item.prev), 50 + prevWidth + 2, y + barHeight + 5);
+      if (item.cur > 0) doc.text(fmt(item.cur), chartX + curWidth + 2, y + 3);
+      if (item.prev > 0) doc.text(fmt(item.prev), chartX + prevWidth + 2, y + barHeight + 5);
 
       y += groupHeight;
     });

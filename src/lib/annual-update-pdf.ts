@@ -314,7 +314,7 @@ export function generateAnnualUpdatePdf(data: AnnualUpdateData): jsPDF {
   }
   y += 4;
   doc.setDrawColor(200, 200, 200);
-  doc.line(14, y, doc.internal.pageSize.getWidth() - 14, y);
+  doc.line(MARGIN, y, doc.internal.pageSize.getWidth() - R_MARGIN, y);
   y += 8;
   doc.setFontSize(8);
   doc.setFont("Arial", "italic");

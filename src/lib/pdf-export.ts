@@ -12,10 +12,10 @@ const BRAND_SUB = "Corporate Records Management";
 const MARGIN = BINDER_MARGIN;
 const R_MARGIN = NORMAL_MARGIN;
 
-// Portrait: binder on left. Landscape: binder on top.
+// Every PDF keeps the binder margin on the left, including landscape reports.
 function getMargins(landscape: boolean) {
   return {
-    left: landscape ? NORMAL_MARGIN : BINDER_MARGIN,
+    left: BINDER_MARGIN,
     right: NORMAL_MARGIN,
     top: landscape ? BINDER_MARGIN : NORMAL_MARGIN,
   };
@@ -548,7 +548,7 @@ export async function exportAICompliancePDF(data: AIComplianceData) {
   // --- Summary ---
   if (y > doc.internal.pageSize.getHeight() - 40) { doc.addPage(); y = 20; }
   doc.setDrawColor(200, 200, 200);
-  doc.line(14, y, pw - 14, y);
+  doc.line(MARGIN, y, pw - R_MARGIN, y);
   y += 8;
   doc.setFontSize(9);
   doc.setFont("Arial", "bold");

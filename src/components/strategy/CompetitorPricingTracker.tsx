@@ -217,15 +217,17 @@ export function CompetitorPricingTracker() {
   const exportPdf = () => {
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "letter" });
     const pageWidth = doc.internal.pageSize.getWidth();
+    const leftMargin = 90;
+    const rightMargin = 54;
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
-    doc.text("entityIQ — Competitor Pricing Comparison", 40, 50);
+    doc.text("entityIQ — Competitor Pricing Comparison", leftMargin, 50);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Verified snapshot generated ${format(new Date(), "MMM d, yyyy")}`, 40, 68);
-    doc.text("Internal & confidential — admin compiled from verified public sources", 40, 82);
+    doc.text(`Verified snapshot generated ${format(new Date(), "MMM d, yyyy")}`, leftMargin, 68);
+    doc.text("Internal & confidential — admin compiled from verified public sources", leftMargin, 82);
 
     const rows = entries
       .filter((e) => e.is_active)
@@ -257,12 +259,13 @@ export function CompetitorPricingTracker() {
         5: { cellWidth: 170 },
         6: { cellWidth: 65 },
       },
+      margin: { left: leftMargin, right: rightMargin },
       didDrawPage: (data) => {
         doc.setFontSize(8);
         doc.setTextColor(120);
         doc.text(
           `entityIQ Competitor Pricing — page ${doc.getNumberOfPages()}`,
-          pageWidth - 40,
+          pageWidth - rightMargin,
           doc.internal.pageSize.getHeight() - 20,
           { align: "right" }
         );
@@ -274,7 +277,7 @@ export function CompetitorPricingTracker() {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
     doc.setTextColor(30);
-    doc.text("Sources & Verification", 40, 50);
+    doc.text("Sources & Verification", leftMargin, 50);
     let y = 80;
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
@@ -284,18 +287,18 @@ export function CompetitorPricingTracker() {
         y = 50;
       }
       doc.setFont("helvetica", "bold");
-      doc.text(`${e.competitor_name} — ${e.plan_name}`, 40, y);
+      doc.text(`${e.competitor_name} — ${e.plan_name}`, leftMargin, y);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(80);
-      doc.text(`Verified ${format(new Date(e.verified_date), "MMM d, yyyy")} · ${e.price_display} · ${e.billing_cycle}`, 40, y + 14);
+      doc.text(`Verified ${format(new Date(e.verified_date), "MMM d, yyyy")} · ${e.price_display} · ${e.billing_cycle}`, leftMargin, y + 14);
       if (e.source_url) {
         doc.setTextColor(0, 102, 204);
-        doc.textWithLink(e.source_url, 40, y + 28, { url: e.source_url });
+        doc.textWithLink(e.source_url, leftMargin, y + 28, { url: e.source_url });
       }
       if (e.notes) {
         doc.setTextColor(60);
-        const wrapped = doc.splitTextToSize(`Notes: ${e.notes}`, pageWidth - 80);
-        doc.text(wrapped, 40, y + 42);
+        const wrapped = doc.splitTextToSize(`Notes: ${e.notes}`, pageWidth - leftMargin - rightMargin);
+        doc.text(wrapped, leftMargin, y + 42);
         y += 14 * wrapped.length;
       }
       doc.setTextColor(30);
