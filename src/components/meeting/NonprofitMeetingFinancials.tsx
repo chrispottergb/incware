@@ -147,6 +147,23 @@ export default function NonprofitMeetingFinancials({ meetingId, meeting, company
     snapshot.source_statement_updated_at &&
     new Date(statement.updated_at).getTime() > new Date(snapshot.source_statement_updated_at).getTime();
 
+  const fileName = `financials-${(company?.name || "meeting").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-FY${fiscalYear ?? ""}`;
+
+  const statementPdf = (stmt: NonprofitStatement, prior: NonprofitStatement | null, ft: IrsFormType | null, name: string) => (
+    <PrintPreviewButton
+      label="Print"
+      generatePDF={() =>
+        generateNonprofitFinancialStatementPDF({
+          companyName: name,
+          formType: ft,
+          statement: stmt,
+          priorYear: prior,
+        })
+      }
+      fileName={fileName}
+    />
+  );
+
   const finalizeBar = (
     <div className="flex items-center justify-between gap-3">
       <div className="flex items-center gap-2">
