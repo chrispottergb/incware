@@ -68,7 +68,7 @@ export default function NonprofitMeetingFinancials({ meetingId, meeting, company
     queryFn: async () => {
       const { data } = await supabase
         .from("meeting_financials")
-        .select("id, current_total_sales, current_cog, current_net_income")
+        .select("*")
         .eq("meeting_id", meetingId)
         .maybeSingle();
       return data;
