@@ -1248,13 +1248,15 @@ export default function MeetingDetail() {
         </TabsContent>
         <TabsContent value="financials" className="mt-5">
           <div className="space-y-4">
-            <div className="flex justify-end">
-              <PrintPreviewButton
-                label="Print"
-                generatePDF={() => exportFinancialsPDF(company, meeting, financials, nonRecurringItems)}
-                fileName={`financials-${meetingFileName}`}
-              />
-            </div>
+            {!isNonprofit(company) && (
+              <div className="flex justify-end">
+                <PrintPreviewButton
+                  label="Print"
+                  generatePDF={() => exportFinancialsPDF(company, meeting, financials, nonRecurringItems)}
+                  fileName={`financials-${meetingFileName}`}
+                />
+              </div>
+            )}
             {isNonprofit(company) ? (
               <NonprofitMeetingFinancials meetingId={meeting.id} meeting={meeting} company={company} />
             ) : (

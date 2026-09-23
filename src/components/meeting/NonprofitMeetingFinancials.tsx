@@ -8,6 +8,9 @@ import { toast } from "sonner";
 import { AlertTriangle, Lock, Unlock } from "lucide-react";
 import MeetingFinancials from "@/components/meeting/MeetingFinancials";
 import NonprofitStatementView from "@/components/company/NonprofitStatementView";
+import PrintPreviewButton from "@/components/meeting/PrintPreviewButton";
+import { generateNonprofitFinancialStatementPDF } from "@/lib/nonprofit-financial-statement-pdf";
+import { exportFinancialsPDF } from "@/lib/meeting-pdf-export";
 import {
   LEGACY_MEETING_FINANCIALS_NOTE,
   amendedSinceFinalizeNotice,
