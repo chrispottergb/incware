@@ -193,7 +193,15 @@ export default function NonprofitMeetingFinancials({ meetingId, meeting, company
     const snap = snapshot.snapshot_data;
     return (
       <div className="space-y-4">
-        {finalizeBar}
+        <div className="flex items-center justify-between gap-3">
+          {finalizeBar}
+          {statementPdf(
+            snap.statement as NonprofitStatement,
+            snap.priorYear || null,
+            snap.formType ?? formType,
+            snap.companyName || company?.name || "Organization",
+          )}
+        </div>
         {amended && (
           <Card className="border-l-4 border-l-warning">
             <CardContent className="py-3 text-xs flex gap-2">
@@ -216,7 +224,14 @@ export default function NonprofitMeetingFinancials({ meetingId, meeting, company
   if (isFinal && legacyFinancials) {
     return (
       <div className="space-y-4">
-        {finalizeBar}
+        <div className="flex items-center justify-between gap-3">
+          {finalizeBar}
+          <PrintPreviewButton
+            label="Print"
+            generatePDF={() => exportFinancialsPDF(company, meeting, legacyFinancials, [])}
+            fileName={fileName}
+          />
+        </div>
         <p className="text-xs text-muted-foreground">{LEGACY_MEETING_FINANCIALS_NOTE}</p>
         <MeetingFinancials meetingId={meetingId} />
       </div>
@@ -226,7 +241,12 @@ export default function NonprofitMeetingFinancials({ meetingId, meeting, company
   // Draft → live read.
   return (
     <div className="space-y-4">
-      {finalizeBar}
+      <div className="flex items-center justify-between gap-3">
+        {finalizeBar}
+        {statement
+          ? statementPdf(statement as NonprofitStatement, priorYear, formType, company?.name || "Organization")
+          : null}
+      </div>
       {!formType ? (
         <Card>
           <CardContent className="py-4 text-xs text-muted-foreground">
