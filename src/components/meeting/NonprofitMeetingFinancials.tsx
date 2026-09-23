@@ -8,6 +8,9 @@ import { toast } from "sonner";
 import { AlertTriangle, Lock, Unlock } from "lucide-react";
 import MeetingFinancials from "@/components/meeting/MeetingFinancials";
 import NonprofitStatementView from "@/components/company/NonprofitStatementView";
+import PrintPreviewButton from "@/components/meeting/PrintPreviewButton";
+import { generateNonprofitFinancialStatementPDF } from "@/lib/nonprofit-financial-statement-pdf";
+import { exportFinancialsPDF } from "@/lib/meeting-pdf-export";
 import {
   LEGACY_MEETING_FINANCIALS_NOTE,
   amendedSinceFinalizeNotice,
@@ -65,7 +68,7 @@ export default function NonprofitMeetingFinancials({ meetingId, meeting, company
     queryFn: async () => {
       const { data } = await supabase
         .from("meeting_financials")
-        .select("id, current_total_sales, current_cog, current_net_income")
+        .select("*")
         .eq("meeting_id", meetingId)
         .maybeSingle();
       return data;
@@ -144,6 +147,23 @@ export default function NonprofitMeetingFinancials({ meetingId, meeting, company
     snapshot.source_statement_updated_at &&
     new Date(statement.updated_at).getTime() > new Date(snapshot.source_statement_updated_at).getTime();
 
+  const fileName = `financials-${(company?.name || "meeting").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-FY${fiscalYear ?? ""}`;
+
+  const statementPdf = (stmt: NonprofitStatement, prior: NonprofitStatement | null, ft: IrsFormType | null, name: string) => (
+    <PrintPreviewButton
+      label="Print"
+      generatePDF={() =>
+        generateNonprofitFinancialStatementPDF({
+          companyName: name,
+          formType: ft,
+          statement: stmt,
+          priorYear: prior,
+        })
+      }
+      fileName={fileName}
+    />
+  );
+
   const finalizeBar = (
     <div className="flex items-center justify-between gap-3">
       <div className="flex items-center gap-2">
@@ -173,7 +193,15 @@ export default function NonprofitMeetingFinancials({ meetingId, meeting, company
     const snap = snapshot.snapshot_data;
     return (
       <div className="space-y-4">
-        {finalizeBar}
+        <div className="flex items-center justify-between gap-3">
+          {finalizeBar}
+          {statementPdf(
+            snap.statement as NonprofitStatement,
+            snap.priorYear || null,
+            snap.formType ?? formType,
+            snap.companyName || company?.name || "Organization",
+          )}
+        </div>
         {amended && (
           <Card className="border-l-4 border-l-warning">
             <CardContent className="py-3 text-xs flex gap-2">
@@ -196,7 +224,14 @@ export default function NonprofitMeetingFinancials({ meetingId, meeting, company
   if (isFinal && legacyFinancials) {
     return (
       <div className="space-y-4">
-        {finalizeBar}
+        <div className="flex items-center justify-between gap-3">
+          {finalizeBar}
+          <PrintPreviewButton
+            label="Print"
+            generatePDF={() => exportFinancialsPDF(company, meeting, legacyFinancials, [])}
+            fileName={fileName}
+          />
+        </div>
         <p className="text-xs text-muted-foreground">{LEGACY_MEETING_FINANCIALS_NOTE}</p>
         <MeetingFinancials meetingId={meetingId} />
       </div>
@@ -206,7 +241,12 @@ export default function NonprofitMeetingFinancials({ meetingId, meeting, company
   // Draft → live read.
   return (
     <div className="space-y-4">
-      {finalizeBar}
+      <div className="flex items-center justify-between gap-3">
+        {finalizeBar}
+        {statement
+          ? statementPdf(statement as NonprofitStatement, priorYear, formType, company?.name || "Organization")
+          : null}
+      </div>
       {!formType ? (
         <Card>
           <CardContent className="py-4 text-xs text-muted-foreground">
