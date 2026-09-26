@@ -2004,6 +2004,30 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
   if (isNonprofitMeeting && !isShareholderOnly && !isWrittenConsent && data.officers && (data.officers ?? []).length > 0) {
     const officers = (data.officers ?? []).filter((o: any) => (o.title || "").trim() || (o.name || "").trim());
     const hasVal = (v: any) => v != null && String(v).trim() !== "";
+    const furtherResolved = (body: string) => {
+      const prefix = "FURTHER RESOLVED, ";
+      const pwx = doc.internal.pageSize.getWidth();
+      doc.setFontSize(11);
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
+      const lines = doc.splitTextToSize(prefix + body, pwx - MARGIN - R_MARGIN - RESOLVED_INDENT);
+      y = checkPageBreak(doc, y, lines.length * 5.5 + 6);
+      lines.forEach((ln: string, i: number) => {
+        y = checkPageBreak(doc, y, 6);
+        if (i === 0) {
+          doc.setFont("Arial", "bold");
+          const w = doc.getTextWidth(prefix);
+          doc.text(prefix, MARGIN + RESOLVED_INDENT, y);
+          doc.setFont("Arial", "normal");
+          const rest = ln.substring(prefix.length);
+          if (rest) doc.text(rest, MARGIN + RESOLVED_INDENT + w, y);
+        } else {
+          doc.setFont("Arial", "normal");
+          doc.text(ln, MARGIN + RESOLVED_INDENT, y);
+        }
+        y += 5.5;
+      });
+      y += 3;
+    };
     y = checkPageBreak(doc, y, 30 + officers.length * 7);
     y = section("Officers");
     y = addWhereasResolved(doc, y, "",
@@ -2021,9 +2045,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       margin: { left: MARGIN, right: R_MARGIN },
     });
     y = (doc as any).lastAutoTable.finalY + 6;
-    y = addWhereasResolved(doc, y, "",
-      "FURTHER RESOLVED, that each officer shall perform the duties and exercise the authority of the respective office as provided in the Articles of Incorporation, Bylaws, and applicable resolutions of the Board of Directors.",
-      bt);
+    furtherResolved("that each officer shall perform the duties and exercise the authority of the respective office as provided in the Articles of Incorporation, Bylaws, and applicable resolutions of the Board of Directors.");
 
     const paid = officers.filter((o: any) => hasVal(o.salary) || hasVal(o.bonus));
     if (paid.length > 0) {
@@ -2060,9 +2082,7 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
         margin: { left: MARGIN, right: R_MARGIN },
       });
       y = (doc as any).lastAutoTable.finalY + 6;
-      y = addWhereasResolved(doc, y, "",
-        "FURTHER RESOLVED, that the Board of Directors has determined that the compensation approved above is reasonable compensation for the services to be provided to the Corporation.",
-        bt);
+      furtherResolved("that the Board of Directors has determined that the compensation approved above is reasonable compensation for the services to be provided to the Corporation.");
     }
     y += 3;
   }
