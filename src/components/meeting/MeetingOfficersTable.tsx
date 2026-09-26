@@ -75,7 +75,7 @@ function getDefaultNoteText(
       return `Compensation for ${name} as ${title} has not yet been established. Compensation to be determined and approved by Board or Member Resolution at a future meeting.`;
     case "reasonable":
       return isNonprofit
-        ? `The Board has reviewed the compensation of ${name} as ${title} and determined that the salary of ${amt} is reasonable and commensurate with the services performed. The Board has determined the compensation to be reasonable and aligned with IRS nonprofit compensation guidelines.`
+        ? `The Board has reviewed the compensation of ${name} as ${title} and determined that the salary of ${amt} is reasonable and commensurate with the services performed.`
         : `The Board has reviewed the compensation of ${name} as ${title} and determined that the salary of ${amt} is reasonable and commensurate with the services performed, consistent with IRC § 1366.`;
     case "below_market":
       return `The Board has reviewed the compensation of ${name} as ${title} and determined that the salary of ${amt} is below prevailing market rates. The Board finds this level of compensation appropriate at this time for the following reason: [REASON]. The Board intends to review this compensation at the next annual meeting.`;
@@ -85,7 +85,7 @@ function getDefaultNoteText(
       return `${name} serves as both ${primaryTitle || "[PRIMARY TITLE]"} and ${secondaryTitle || "[SECONDARY TITLE]"} of the corporation. Compensation is reported under the ${primaryTitle || "[PRIMARY TITLE]"} title. The Board determined that no separate compensation is assigned to the ${secondaryTitle || "[SECONDARY TITLE]"} role, as it is fulfilled by the same individual in conjunction with their primary duties.`;
     case "non_compensable":
       return isNonprofit
-        ? `The Board determined that the ${title} position is held in a limited, non-compensable capacity. The Board has determined the compensation to be reasonable and aligned with IRS nonprofit compensation guidelines.`
+        ? `The Board determined that the ${title} position is held in a limited, non-compensable capacity.`
         : `The Board determined that the ${title} position is held in a limited, non-compensable capacity, as the duties performed do not constitute substantial services under IRC § 1366.`;
     case "payroll_wages":
       return `The Board noted that ${name} holds an officer title but is compensated through standard employee payroll for operational services. Wages will be reported as officer compensation on the Company's tax return in accordance with IRS requirements.`;

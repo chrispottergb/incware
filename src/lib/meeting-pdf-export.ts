@@ -2000,8 +2000,95 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
     y += 8;
   }
 
+  // Nonprofit Officers — concise election resolution + optional compensation resolution
+  if (isNonprofitMeeting && !isShareholderOnly && !isWrittenConsent && data.officers && (data.officers ?? []).length > 0) {
+    const officers = (data.officers ?? []).filter((o: any) => (o.title || "").trim() || (o.name || "").trim());
+    const hasVal = (v: any) => v != null && String(v).trim() !== "";
+    const furtherResolved = (body: string) => {
+      const prefix = "FURTHER RESOLVED, ";
+      const pwx = doc.internal.pageSize.getWidth();
+      doc.setFontSize(11);
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
+      const lines = doc.splitTextToSize(prefix + body, pwx - MARGIN - R_MARGIN - RESOLVED_INDENT);
+      y = checkPageBreak(doc, y, lines.length * 5.5 + 6);
+      lines.forEach((ln: string, i: number) => {
+        y = checkPageBreak(doc, y, 6);
+        if (i === 0) {
+          doc.setFont("Arial", "bold");
+          const w = doc.getTextWidth(prefix);
+          doc.text(prefix, MARGIN + RESOLVED_INDENT, y);
+          doc.setFont("Arial", "normal");
+          const rest = ln.substring(prefix.length);
+          if (rest) doc.text(rest, MARGIN + RESOLVED_INDENT + w, y);
+        } else {
+          doc.setFont("Arial", "normal");
+          doc.text(ln, MARGIN + RESOLVED_INDENT, y);
+        }
+        y += 5.5;
+      });
+      y += 3;
+    };
+    y = checkPageBreak(doc, y, 30 + officers.length * 7);
+    y = section("Officers");
+    y = addWhereasResolved(doc, y, "",
+      `RESOLVED, that the following individuals are hereby elected to serve as officers of ${companyName}, to hold the respective offices set forth below until their successors are duly elected and qualified, or until their earlier resignation or removal:`,
+      bt);
+    autoTable(doc, {
+      pageBreak: "avoid",
+      rowPageBreak: "avoid",
+      startY: y,
+      head: [["Office", "Name"]],
+      body: officers.map((o: any) => [o.title || "", o.name || ""]),
+      theme: "grid",
+      headStyles: tableHeadStyles,
+      bodyStyles: { fontSize: 10 },
+      margin: { left: MARGIN, right: R_MARGIN },
+    });
+    y = (doc as any).lastAutoTable.finalY + 6;
+    furtherResolved("that each officer shall perform the duties and exercise the authority of the respective office as provided in the Articles of Incorporation, Bylaws, and applicable resolutions of the Board of Directors.");
+
+    const paid = officers.filter((o: any) => hasVal(o.salary) || hasVal(o.bonus));
+    if (paid.length > 0) {
+      const showSal = paid.some((o: any) => hasVal(o.salary));
+      const showBon = paid.some((o: any) => hasVal(o.bonus));
+      y = checkPageBreak(doc, y, 30 + paid.length * 7);
+      y += 2;
+      doc.setFont("Arial", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(BODY_COLOR[0], BODY_COLOR[1], BODY_COLOR[2]);
+      doc.text("OFFICER COMPENSATION", MARGIN, y);
+      y += 7;
+      doc.setFont("Arial", "normal");
+      y = addWhereasResolved(doc, y, "",
+        "RESOLVED, that the Board of Directors hereby approves the compensation, if any, to be paid to the officers for services to the Corporation as set forth below:",
+        bt);
+      const head = ["Officer", "Position"];
+      if (showSal) head.push("Salary");
+      if (showBon) head.push("Bonus");
+      autoTable(doc, {
+        pageBreak: "avoid",
+        rowPageBreak: "avoid",
+        startY: y,
+        head: [head],
+        body: paid.map((o: any) => {
+          const r = [o.name || "", o.title || ""];
+          if (showSal) r.push(hasVal(o.salary) ? fmt(Number(o.salary)) : "");
+          if (showBon) r.push(hasVal(o.bonus) ? fmt(Number(o.bonus)) : "");
+          return r;
+        }),
+        theme: "grid",
+        headStyles: tableHeadStyles,
+        bodyStyles: { fontSize: 10 },
+        margin: { left: MARGIN, right: R_MARGIN },
+      });
+      y = (doc as any).lastAutoTable.finalY + 6;
+      furtherResolved("that the Board of Directors has determined that the compensation approved above is reasonable compensation for the services to be provided to the Corporation.");
+    }
+    y += 3;
+  }
+
   // Officers (with salary/bonus) — skip for shareholder meetings and written consents
-  if (!isShareholderOnly && !isWrittenConsent && data.officers && (data.officers ?? []).length > 0) {
+  if (!isNonprofitMeeting && !isShareholderOnly && !isWrittenConsent && data.officers && (data.officers ?? []).length > 0) {
     y = checkPageBreak(doc, y, 30 + (data.officers ?? []).length * 7);
     y = section("Officers");
     const isSCorp = isSElectedForMeeting(company, meeting);
