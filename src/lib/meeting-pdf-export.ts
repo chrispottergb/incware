@@ -2659,33 +2659,38 @@ BE IT FURTHER RESOLVED, that the proper officers of the corporation are hereby a
       y = checkPageBreak(doc, y, 40);
       y = section("Banking");
 
-      // Banking summary table
-      const bankTableBody: string[][] = [];
-      const bankTableHead = ["LOC Amount", "Interest Rate", "Bank"];
-      bankTableBody.push([
-        locAmount != null ? fmt(locAmount) : "—",
-        locRate ? locRate : "—",
-        bankNameForTable || "—",
-      ]);
+      // Banking summary table — only when an actual LOC amount has been entered
+      const locAmountNum = locAmount != null && locAmount !== "" ? Number(locAmount) : NaN;
+      const hasLocAmount = Number.isFinite(locAmountNum) && locAmountNum > 0;
 
-      const usableBankW = doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN;
-      autoTable(doc, {
-      pageBreak: "avoid",
-      rowPageBreak: "avoid",
-        startY: y,
-        head: [bankTableHead],
-        body: bankTableBody,
-        theme: "grid",
-        headStyles: tableHeadStyles,
-        bodyStyles: { fontSize: 10 },
-        margin: { left: MARGIN, right: R_MARGIN },
-        columnStyles: {
-          0: { cellWidth: usableBankW * 0.22 },
-          1: { cellWidth: usableBankW * 0.38 },
-          2: { cellWidth: usableBankW * 0.40 },
-        },
-      });
-      y = (doc as any).lastAutoTable.finalY + 6;
+      if (hasLocAmount) {
+        const bankTableBody: string[][] = [];
+        const bankTableHead = ["LOC Amount", "Interest Rate", "Bank"];
+        bankTableBody.push([
+          fmt(locAmountNum),
+          locRate ? locRate : "—",
+          bankNameForTable || "—",
+        ]);
+
+        const usableBankW = doc.internal.pageSize.getWidth() - MARGIN - R_MARGIN;
+        autoTable(doc, {
+          pageBreak: "avoid",
+          rowPageBreak: "avoid",
+          startY: y,
+          head: [bankTableHead],
+          body: bankTableBody,
+          theme: "grid",
+          headStyles: tableHeadStyles,
+          bodyStyles: { fontSize: 10 },
+          margin: { left: MARGIN, right: R_MARGIN },
+          columnStyles: {
+            0: { cellWidth: usableBankW * 0.22 },
+            1: { cellWidth: usableBankW * 0.38 },
+            2: { cellWidth: usableBankW * 0.40 },
+          },
+        });
+        y = (doc as any).lastAutoTable.finalY + 6;
+      }
 
       // Banking Resolutions for Annual Meetings (use company-level bank data)
       const annualBanks = data.companyBanks || [];
